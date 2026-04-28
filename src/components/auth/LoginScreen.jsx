@@ -85,7 +85,7 @@ export default function LoginScreen({ onLogin }) {
           <div className="bg-primary p-3.5 rounded-2xl shadow-xl shadow-primary/30 mb-4">
             <BookOpen size={32} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">WR-EN</h1>
+          <h1 className="text-3xl font-bold text-white">WR-EDU®</h1>
           <p className="text-slate-400 text-sm mt-1">Plataforma de Estudos</p>
         </div>
 
