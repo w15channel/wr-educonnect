@@ -1,11 +1,11 @@
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
 
+import LoginScreen from './components/auth/LoginScreen';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
@@ -14,28 +14,24 @@ import Tasks from './pages/Tasks';
 import Forum from './pages/Forum';
 import Students from './pages/Students';
 import Announcements from './pages/Announcements';
+import Profile from './pages/Profile';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { session, loading, login } = useCustomAuth();
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background">
+      <div className="fixed inset-0 flex items-center justify-center bg-slate-900">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-sm text-muted-foreground font-medium">Carregando EduConnect...</p>
+          <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-sm text-slate-400 font-medium">Carregando EduConnect...</p>
         </div>
       </div>
     );
   }
 
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return null;
-    }
+  if (!session) {
+    return <LoginScreen onLogin={login} />;
   }
 
   return (
@@ -48,6 +44,7 @@ const AuthenticatedApp = () => {
         <Route path="/forum" element={<Forum />} />
         <Route path="/students" element={<Students />} />
         <Route path="/announcements" element={<Announcements />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -56,14 +53,14 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <AuthProvider>
+    <CustomAuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <AuthenticatedApp />
         </Router>
         <Toaster />
       </QueryClientProvider>
-    </AuthProvider>
+    </CustomAuthProvider>
   )
 }
 

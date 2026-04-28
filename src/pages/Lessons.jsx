@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format } from 'date-fns';
 
 export default function Lessons() {
-  const { user } = useOutletContext();
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  const { user: session } = useOutletContext();
+  const user = session;
+  const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', video_url: '', duration: '' });

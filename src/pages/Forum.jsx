@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 export default function Forum() {
-  const { user } = useOutletContext();
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  const { user: session } = useOutletContext();
+  const user = session;
+  const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [newPost, setNewPost] = useState('');
   const [expandedPost, setExpandedPost] = useState(null);
@@ -31,7 +32,7 @@ export default function Forum() {
   const createPostMutation = useMutation({
     mutationFn: (content) => base44.entities.ForumPost.create({
       content,
-      author_name: user?.full_name || 'Anônimo',
+      author_name: user?.name || user?.full_name || 'Anônimo',
       author_email: user?.email || '',
       author_role: isTeacher ? 'teacher' : 'student',
       reply_count: 0,
@@ -49,7 +50,7 @@ export default function Forum() {
       return base44.entities.ForumReply.create({
         post_id: postId,
         content,
-        author_name: user?.full_name || 'Anônimo',
+        author_name: user?.name || user?.full_name || 'Anônimo',
         author_email: user?.email || '',
         author_role: isTeacher ? 'teacher' : 'student',
       });
@@ -91,7 +92,7 @@ export default function Forum() {
       <form onSubmit={handlePostSubmit} className="bg-card p-5 rounded-2xl border border-border shadow-sm mb-6">
         <div className="flex gap-3 items-start">
           <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
-            {initials(user?.full_name)}
+            {initials(user?.name || user?.full_name)}
           </div>
           <div className="flex-1 flex flex-col sm:flex-row gap-3">
             <Textarea

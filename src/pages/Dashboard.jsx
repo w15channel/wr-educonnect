@@ -7,8 +7,9 @@ import StatCard from '../components/dashboard/StatCard';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
-  const { user } = useOutletContext();
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  const { user: session } = useOutletContext();
+  const user = session;
+  const isTeacher = session?.role === 'admin';
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
@@ -18,7 +19,7 @@ export default function Dashboard() {
   const { data: submissions = [] } = useQuery({
     queryKey: ['submissions'],
     queryFn: () => base44.entities.TaskSubmission.filter(
-      isTeacher ? {} : { student_email: user?.email },
+      isTeacher ? {} : { student_email: user?.email || '' },
       '-created_date', 50
     ),
     enabled: !!user,
@@ -63,7 +64,7 @@ export default function Dashboard() {
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-foreground">
-          Olá, {user?.full_name?.split(' ')[0] || 'Usuário'} 👋
+          Olá, {(user?.name || user?.full_name || 'Usuário').split(' ')[0]} 👋
         </h2>
         <p className="text-muted-foreground mt-1">Bem-vindo(a) de volta à plataforma EduConnect</p>
       </div>

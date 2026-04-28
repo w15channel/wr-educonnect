@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   BookOpen, Video, MessageSquare, FileText, 
-  BarChart, Users, LogOut, Play, Menu, X, Bell
+  BarChart, Users, LogOut, Play, Menu, X, Bell, User, Key
 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
 
-export default function Sidebar({ user }) {
+export default function Sidebar({ session }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  const { logout } = useCustomAuth();
+  const isAdmin = session?.role === 'admin';
 
   const navItems = [
     { icon: BarChart, label: 'Dashboard', path: '/' },
@@ -17,21 +18,22 @@ export default function Sidebar({ user }) {
     { icon: Video, label: 'Sala ao Vivo', path: '/live' },
     { icon: FileText, label: 'Tarefas e Provas', path: '/tasks' },
     { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum' },
-    ...(isTeacher ? [{ icon: Users, label: 'Gestão de Alunos', path: '/students' }] : []),
+    ...(isAdmin ? [
+      { icon: Users, label: 'Gestão de Alunos', path: '/students' },
+      { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes' },
+    ] : []),
     { icon: Bell, label: 'Avisos', path: '/announcements' },
+    ...(!isAdmin ? [{ icon: User, label: 'Meu Perfil', path: '/profile' }] : []),
   ];
 
-  const handleLogout = () => {
-    base44.auth.logout('/');
-  };
-
-  const initials = user?.full_name 
-    ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() 
+  const initials = session?.name
+    ? session.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : '?';
+
+  const avatarBg = session?.avatarColor || (isAdmin ? '#6366f1' : '#8b5cf6');
 
   return (
     <>
-      {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-sidebar rounded-lg text-sidebar-foreground shadow-lg"
@@ -39,15 +41,10 @@ export default function Sidebar({ user }) {
         <Menu size={20} />
       </button>
 
-      {/* Overlay */}
       {mobileOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-sidebar text-sidebar-foreground flex flex-col
@@ -73,7 +70,8 @@ export default function Sidebar({ user }) {
             Menu Principal
           </p>
           {navItems.map(item => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || 
+              (item.path.includes('?') && location.pathname === item.path.split('?')[0] && location.search.includes(item.path.split('?')[1]));
             return (
               <Link
                 key={item.path}
@@ -95,18 +93,21 @@ export default function Sidebar({ user }) {
         {/* User section */}
         <div className="p-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3 mb-3 px-1">
-            <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center font-bold text-sm text-sidebar-foreground">
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white"
+              style={{ backgroundColor: avatarBg }}
+            >
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{user?.full_name || 'Usuário'}</p>
+              <p className="text-sm font-medium truncate">{session?.name || 'Usuário'}</p>
               <p className="text-xs text-sidebar-foreground/50 capitalize">
-                {isTeacher ? 'Professor' : 'Estudante'}
+                {isAdmin ? 'Professor / Admin' : 'Estudante'}
               </p>
             </div>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={logout}
             className="flex items-center gap-2 text-sidebar-foreground/50 hover:text-sidebar-foreground w-full px-1 py-2 rounded-lg transition-colors text-sm"
           >
             <LogOut size={16} />

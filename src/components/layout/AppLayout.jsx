@@ -1,25 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { base44 } from '@/api/base44Client';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 export default function AppLayout() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      const me = await base44.auth.me();
-      setUser(me);
-    };
-    loadUser();
-  }, []);
+  const { session } = useCustomAuth();
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar user={user} />
+      <Sidebar session={session} />
       <main className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         <div className="flex-1 overflow-auto">
-          <Outlet context={{ user }} />
+          <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
         </div>
       </main>
     </div>

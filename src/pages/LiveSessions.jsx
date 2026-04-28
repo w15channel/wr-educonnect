@@ -13,8 +13,9 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function LiveSessions() {
-  const { user } = useOutletContext();
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  const { user: session } = useOutletContext();
+  const user = session;
+  const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -62,7 +63,7 @@ export default function LiveSessions() {
     if (!newMsg.trim() || !selectedSession) return;
     sendMessageMutation.mutate({
       session_id: selectedSession.id,
-      author_name: user?.full_name || 'Anônimo',
+      author_name: user?.name || user?.full_name || 'Anônimo',
       author_email: user?.email || '',
       content: newMsg,
     });
@@ -72,9 +73,9 @@ export default function LiveSessions() {
   const handleRaiseHand = () => {
     sendMessageMutation.mutate({
       session_id: selectedSession.id,
-      author_name: user?.full_name || 'Anônimo',
+      author_name: user?.name || user?.full_name || 'Anônimo',
       author_email: user?.email || '',
-      content: `✋ ${user?.full_name || 'Aluno'} levantou a mão!`,
+      content: `✋ ${user?.name || user?.full_name || 'Aluno'} levantou a mão!`,
       is_hand_raised: true,
     });
     toast.success('Mão levantada! O professor foi notificado.');

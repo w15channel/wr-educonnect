@@ -15,8 +15,9 @@ import QuizView from '../components/tasks/QuizView';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 
 export default function Tasks() {
-  const { user } = useOutletContext();
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  const { user: session } = useOutletContext();
+  const user = session;
+  const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
@@ -56,8 +57,8 @@ export default function Tasks() {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       return base44.entities.TaskSubmission.create({
         task_id: taskId,
-        student_email: user.email,
-        student_name: user.full_name,
+        student_email: user.email || user.code || '',
+        student_name: user.name || user.full_name || '',
         file_url,
         status: 'submitted',
       });

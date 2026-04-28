@@ -1,0 +1,42 @@
+{
+  "name": "AccessCode",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "The unique access code"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Name of the student this code belongs to"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email of the student (optional)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this code is active"
+    },
+    "profile_name": {
+      "type": "string",
+      "description": "Student's display name after login"
+    },
+    "profile_bio": {
+      "type": "string",
+      "description": "Student's bio"
+    },
+    "profile_avatar_color": {
+      "type": "string",
+      "description": "Avatar color hex"
+    },
+    "last_login": {
+      "type": "string",
+      "description": "Last login timestamp"
+    }
+  },
+  "required": [
+    "code"
+  ]
+}

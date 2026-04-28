@@ -32,8 +32,8 @@ export default function QuizView({ task, user, onBack }) {
 
     await base44.entities.TaskSubmission.create({
       task_id: task.id,
-      student_email: user.email,
-      student_name: user.full_name,
+      student_email: user.email || user.code || '',
+      student_name: user.name || user.full_name || '',
       quiz_answers: answers,
       grade: Number(grade),
       status: 'graded',

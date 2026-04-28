@@ -12,8 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
 export default function Announcements() {
-  const { user } = useOutletContext();
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  const { user: session } = useOutletContext();
+  const user = session;
+  const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', content: '', type: 'info' });
