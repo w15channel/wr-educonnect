@@ -100,8 +100,8 @@ export default function LoginScreen({ onLogin }) {
               <Key size={15} /> Código de Acesso
             </button>
             <button
-              onClick={() => {setMode('admin');setError('');}}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${mode === 'admin' ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
+              onClick={() => {setMode('admin');setError('');}} className="bg-primary text-white py-2.5 text-sm font-medium opacity-45 rounded-lg flex-1 transition-all flex items-center justify-center gap-1.5 shadow-md">
+              
               
               <Lock size={15} /> Admin
             </button>
