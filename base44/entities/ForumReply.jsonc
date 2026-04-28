@@ -1,0 +1,34 @@
+{
+  "name": "ForumReply",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "ID of the parent post"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the author"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email of the author"
+    },
+    "author_role": {
+      "type": "string",
+      "enum": [
+        "teacher",
+        "student"
+      ],
+      "description": "Role of the author"
+    },
+    "content": {
+      "type": "string",
+      "description": "Reply content"
+    }
+  },
+  "required": [
+    "post_id",
+    "content"
+  ]
+}

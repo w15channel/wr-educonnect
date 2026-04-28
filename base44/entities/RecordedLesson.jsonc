@@ -1,0 +1,33 @@
+{
+  "name": "RecordedLesson",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the recorded lesson"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of the lesson"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL of the video (YouTube, Vimeo, etc.)"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "description": "Thumbnail image URL"
+    },
+    "duration": {
+      "type": "string",
+      "description": "Duration of the video (e.g., 45 min)"
+    },
+    "order": {
+      "type": "number",
+      "description": "Order of the lesson in the course"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

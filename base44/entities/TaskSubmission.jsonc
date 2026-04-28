@@ -1,0 +1,50 @@
+{
+  "name": "TaskSubmission",
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "ID of the task"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email of the student who submitted"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Name of the student"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL of the uploaded file"
+    },
+    "quiz_answers": {
+      "type": "array",
+      "description": "Student's quiz answers (index of selected option)",
+      "items": {
+        "type": "number"
+      }
+    },
+    "grade": {
+      "type": "number",
+      "description": "Grade given by teacher"
+    },
+    "feedback": {
+      "type": "string",
+      "description": "Teacher feedback"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "graded"
+      ],
+      "default": "submitted",
+      "description": "Status of the submission"
+    }
+  },
+  "required": [
+    "task_id",
+    "student_email"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "ForumPost",
+  "type": "object",
+  "properties": {
+    "author_name": {
+      "type": "string",
+      "description": "Name of the author"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email of the author"
+    },
+    "author_role": {
+      "type": "string",
+      "enum": [
+        "teacher",
+        "student"
+      ],
+      "description": "Role of the author"
+    },
+    "content": {
+      "type": "string",
+      "description": "Post content"
+    },
+    "reply_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of replies"
+    }
+  },
+  "required": [
+    "content"
+  ]
+}

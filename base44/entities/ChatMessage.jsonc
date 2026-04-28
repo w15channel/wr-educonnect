@@ -1,0 +1,31 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID of the live session"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the message author"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email of the author"
+    },
+    "content": {
+      "type": "string",
+      "description": "Message content"
+    },
+    "is_hand_raised": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a hand raise notification"
+    }
+  },
+  "required": [
+    "session_id",
+    "content"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "LiveSession",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the live session"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the session"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the live session is scheduled"
+    },
+    "stream_url": {
+      "type": "string",
+      "description": "URL of the live stream (YouTube Live, Twitch, etc.)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "live",
+        "ended"
+      ],
+      "default": "scheduled",
+      "description": "Current status of the session"
+    },
+    "recording_url": {
+      "type": "string",
+      "description": "URL of the recording after the session ends"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

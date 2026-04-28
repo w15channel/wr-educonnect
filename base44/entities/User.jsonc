@@ -1,0 +1,43 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "teacher",
+        "student"
+      ],
+      "default": "student",
+      "description": "Role of the user in the platform"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "Profile picture URL"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short biography"
+    },
+    "overall_grade": {
+      "type": "number",
+      "description": "Student's overall average grade"
+    },
+    "progress_percent": {
+      "type": "number",
+      "description": "Student's overall progress percentage"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "attention",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Student status"
+    }
+  },
+  "required": []
+}

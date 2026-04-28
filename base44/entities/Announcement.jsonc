@@ -1,0 +1,27 @@
+{
+  "name": "Announcement",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Announcement title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Announcement content"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "urgent"
+      ],
+      "default": "info",
+      "description": "Type of announcement"
+    }
+  },
+  "required": [
+    "content"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the task"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description or instructions"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "upload",
+        "quiz"
+      ],
+      "description": "Type of task: file upload or quiz"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Deadline for submission"
+    },
+    "max_grade": {
+      "type": "number",
+      "default": 10,
+      "description": "Maximum grade for this task"
+    },
+    "quiz_questions": {
+      "type": "array",
+      "description": "Questions for quiz type tasks",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correct_index": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "title",
+    "type"
+  ]
+}
