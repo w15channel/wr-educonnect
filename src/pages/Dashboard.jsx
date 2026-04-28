@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Video, FileText, BarChart, Users, AlertCircle, Info, Bell } from 'lucide-react';
 import StatCard from '../components/dashboard/StatCard';
+import FeaturesSection from '../components/dashboard/FeaturesSection';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
@@ -89,6 +90,8 @@ export default function Dashboard() {
           iconColor="text-green-500"
         />
       </div>
+
+      <FeaturesSection />
 
       {/* Announcements */}
       <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
