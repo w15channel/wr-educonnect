@@ -31,6 +31,10 @@
       "type": "string",
       "description": "Avatar color hex"
     },
+    "profile_photo_url": {
+      "type": "string",
+      "description": "Student profile photo URL"
+    },
     "last_login": {
       "type": "string",
       "description": "Last login timestamp"

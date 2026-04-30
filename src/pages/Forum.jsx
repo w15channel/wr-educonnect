@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { MessageSquare, Send, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, ChevronDown, ChevronUp, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +17,11 @@ export default function Forum() {
   const [newPost, setNewPost] = useState('');
   const [expandedPost, setExpandedPost] = useState(null);
   const [replyText, setReplyText] = useState('');
+
+  const { data: accessCodes = [] } = useQuery({
+    queryKey: ['access-codes'],
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+  });
 
   const { data: posts = [] } = useQuery({
     queryKey: ['forum-posts'],
@@ -81,6 +86,14 @@ export default function Forum() {
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
 
+  const getUserAvatar = (authorName, authorEmail, role) => {
+    const code = accessCodes.find(c => c.student_email === authorEmail || c.profile_name === authorName);
+    return {
+      photoUrl: code?.profile_photo_url || '',
+      avatarColor: code?.profile_avatar_color || (role === 'teacher' ? '#6366f1' : '#8b5cf6'),
+    };
+  };
+
   return (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto">
       <div className="mb-6">
@@ -91,9 +104,13 @@ export default function Forum() {
       {/* New Post */}
       <form onSubmit={handlePostSubmit} className="bg-card p-5 rounded-2xl border border-border shadow-sm mb-6">
         <div className="flex gap-3 items-start">
-          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
-            {initials(user?.name || user?.full_name)}
-          </div>
+          {user?.photoUrl ? (
+            <img src={user.photoUrl} alt={user.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style={{ backgroundColor: user?.avatarColor || '#6366f1' }}>
+              {initials(user?.name || user?.full_name)}
+            </div>
+          )}
           <div className="flex-1 flex flex-col sm:flex-row gap-3">
             <Textarea
               placeholder="Faça uma pergunta para a turma ou professor..."
@@ -120,9 +137,16 @@ export default function Forum() {
             <div key={post.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
               <div className="p-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${post.author_role === 'teacher' ? 'bg-accent' : 'bg-muted-foreground'}`}>
-                    {initials(post.author_name)}
-                  </div>
+                  {(() => {
+                    const av = getUserAvatar(post.author_name, post.author_email, post.author_role);
+                    return av.photoUrl ? (
+                      <img src={av.photoUrl} alt={post.author_name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: av.avatarColor }}>
+                        {initials(post.author_name)}
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-sm text-foreground">{post.author_name}</p>
                     {post.author_role === 'teacher' && (
@@ -153,9 +177,16 @@ export default function Forum() {
                 <div className="border-t border-border bg-secondary/30 p-4 space-y-3">
                   {replies.map(reply => (
                     <div key={reply.id} className="flex gap-3 pl-2">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ${reply.author_role === 'teacher' ? 'bg-accent' : 'bg-muted-foreground'}`}>
-                        {initials(reply.author_name)}
-                      </div>
+                      {(() => {
+                        const av = getUserAvatar(reply.author_name, reply.author_email, reply.author_role);
+                        return av.photoUrl ? (
+                          <img src={av.photoUrl} alt={reply.author_name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: av.avatarColor }}>
+                            {initials(reply.author_name)}
+                          </div>
+                        );
+                      })()}
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-xs text-foreground">{reply.author_name}</p>

@@ -96,7 +96,7 @@ export default function Sidebar({ session }) {
             <div className="bg-primary p-2 rounded-xl">
               <GraduationCap size={22} className="text-primary-foreground" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight">EduConnect</h1>
+            <h1 className="text-lg font-bold tracking-tight">WR-EDU</h1>
           </div>
           <button onClick={() => setMobileOpen(false)} className="lg:hidden text-sidebar-foreground/60">
             <X size={20} />

@@ -1,13 +1,33 @@
 import React from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, FileText, BarChart, Users, AlertCircle, Info, Bell, Trophy, TrendingUp, Star } from 'lucide-react';
-import StatCard from '../components/dashboard/StatCard';
+import { Video, FileText, BarChart, Users, Trophy, TrendingUp, Star } from 'lucide-react';
 import { format } from 'date-fns';
+import AnnouncementsBell from '../components/dashboard/AnnouncementsBell';
+
+function ClickableStatCard({ title, value, icon: Icon, iconColor, to, subtitle }) {
+  const navigate = useNavigate();
+  return (
+    <button
+      onClick={() => navigate(to)}
+      className="bg-card p-5 rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/30 transition-all text-left group w-full"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-muted-foreground font-medium">{title}</p>
+        <div className={`p-2 rounded-xl bg-secondary group-hover:scale-110 transition-transform`}>
+          <Icon size={18} className={iconColor} />
+        </div>
+      </div>
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      {subtitle && <p className="text-xs text-primary mt-1 font-medium">{subtitle}</p>}
+    </button>
+  );
+}
 
 export default function Dashboard() {
   const { user: session } = useOutletContext();
+  const navigate = useNavigate();
   const isTeacher = session?.role === 'admin';
 
   const { data: tasks = [] } = useQuery({
@@ -33,11 +53,6 @@ export default function Dashboard() {
   const { data: liveSessions = [] } = useQuery({
     queryKey: ['live-sessions'],
     queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 5),
-  });
-
-  const { data: announcements = [] } = useQuery({
-    queryKey: ['announcements'],
-    queryFn: () => base44.entities.Announcement.list('-created_date', 5),
   });
 
   const { data: accessCodes = [] } = useQuery({
@@ -78,7 +93,7 @@ export default function Dashboard() {
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
-  // Build ranking from allSubmissions
+  // Ranking
   const rankMap = {};
   allSubmissions.forEach(s => {
     if (s.grade !== undefined && s.grade !== null && s.student_email) {
@@ -94,13 +109,6 @@ export default function Dashboard() {
 
   const myRank = ranking.findIndex(r => r.email === session?.email) + 1;
 
-  const typeIcons = { info: Info, warning: AlertCircle, urgent: Bell };
-  const typeColors = {
-    info: 'bg-primary/10 text-primary border-primary/20',
-    warning: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    urgent: 'bg-destructive/10 text-destructive border-destructive/20',
-  };
-
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div>
@@ -108,29 +116,35 @@ export default function Dashboard() {
           Olá, {(session?.name || 'Usuário').split(' ')[0]} 👋
         </h2>
         <p className="text-muted-foreground mt-1">
-          {isTeacher ? 'Painel administrativo — EduConnect' : 'Bem-vindo(a) de volta à plataforma EduConnect'}
+          {isTeacher ? 'Painel administrativo — WR-EDU' : 'Bem-vindo(a) de volta à plataforma WR-EDU'}
         </p>
       </div>
 
-      {/* Stats */}
+      {/* Stats — clickable shortcuts */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard
+        <ClickableStatCard
           title="Próxima Live"
           value={nextLive ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Nenhuma'}
           icon={Video}
           iconColor="text-destructive"
+          to="/live"
+          subtitle="→ Ir para Sala ao Vivo"
         />
-        <StatCard
+        <ClickableStatCard
           title={isTeacher ? 'Entregas para Corrigir' : 'Tarefas Pendentes'}
           value={pendingTasks}
           icon={FileText}
           iconColor="text-primary"
+          to="/tasks"
+          subtitle="→ Ir para Tarefas"
         />
-        <StatCard
+        <ClickableStatCard
           title={isTeacher ? 'Alunos Ativos' : 'Sua Média de Notas'}
           value={isTeacher ? studentCount : avgGrade}
           icon={isTeacher ? Users : BarChart}
           iconColor="text-green-500"
+          to={isTeacher ? '/students' : '/tasks'}
+          subtitle={isTeacher ? '→ Gestão de Alunos' : '→ Ver Tarefas e Notas'}
         />
       </div>
 
@@ -138,10 +152,14 @@ export default function Dashboard() {
       {!isTeacher && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Progress */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+          <button
+            onClick={() => navigate('/lessons')}
+            className="bg-card rounded-2xl border border-border shadow-sm p-5 text-left hover:shadow-md hover:border-primary/30 transition-all group"
+          >
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp size={18} className="text-primary" />
               <h3 className="font-bold text-sm text-foreground">Progresso nas Aulas</h3>
+              <span className="ml-auto text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">→ Ver Aulas</span>
             </div>
             <div className="mb-3">
               <div className="flex justify-between text-sm mb-1.5">
@@ -164,7 +182,7 @@ export default function Dashboard() {
               })}
             </div>
             {myGrades.length === 0 && <p className="text-sm text-muted-foreground mt-3">Suas notas aparecerão aqui assim que forem lançadas.</p>}
-          </div>
+          </button>
 
           {/* Ranking */}
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
@@ -188,14 +206,19 @@ export default function Dashboard() {
                   const code = accessCodes.find(c => c.student_email === r.email);
                   const displayName = code?.profile_name || r.name;
                   const avatarColor = code?.profile_avatar_color || '#6366f1';
+                  const photoUrl = code?.profile_photo_url || '';
                   return (
                     <div key={r.email} className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/10 border border-primary/20' : 'hover:bg-secondary/50'}`}>
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-slate-300 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-secondary text-muted-foreground'}`}>
                         {i + 1}
                       </span>
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
-                        {displayName?.charAt(0)?.toUpperCase()}
-                      </div>
+                      {photoUrl ? (
+                        <img src={photoUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                          {displayName?.charAt(0)?.toUpperCase()}
+                        </div>
+                      )}
                       <span className={`flex-1 text-sm font-medium truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{displayName}</span>
                       <div className="flex items-center gap-1 shrink-0">
                         <Star size={12} className="text-yellow-400 fill-yellow-400" />
@@ -210,29 +233,34 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Announcements */}
-      <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
-        <h3 className="text-lg font-semibold mb-4 pb-3 border-b border-border">Avisos Recentes</h3>
-        {announcements.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Nenhum aviso no momento.</p>
-        ) : (
-          <div className="space-y-3">
-            {announcements.map(a => {
-              const Icon = typeIcons[a.type] || Info;
-              const color = typeColors[a.type] || typeColors.info;
-              return (
-                <div key={a.id} className={`flex gap-3 p-4 rounded-xl border ${color}`}>
-                  <Icon size={20} className="shrink-0 mt-0.5" />
-                  <div>
-                    {a.title && <p className="font-semibold text-sm mb-1">{a.title}</p>}
-                    <p className="text-sm">{a.content}</p>
+      {/* Admin ranking */}
+      {isTeacher && (
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy size={18} className="text-yellow-500" />
+            <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho dos Alunos</h3>
+          </div>
+          {ranking.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma nota lançada ainda.</p>
+          ) : (
+            <div className="space-y-2">
+              {ranking.map((r, i) => (
+                <div key={r.email} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary/50">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-slate-300 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'bg-secondary text-muted-foreground'}`}>{i + 1}</span>
+                  <span className="flex-1 text-sm font-medium text-foreground truncate">{r.name}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                    <span className="text-sm font-bold">{r.avg.toFixed(1)}</span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Announcements Bell — compact collapsible */}
+      <AnnouncementsBell limit={3} />
     </div>
   );
 }

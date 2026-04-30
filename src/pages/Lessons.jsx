@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Play, Clock, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Clock, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,12 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
+const EMPTY_FORM = { title: '', description: '', video_url: '', duration: '' };
+
 export default function Lessons() {
   const { user: session } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', video_url: '', duration: '' });
+  const [editingLesson, setEditingLesson] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [expandedLesson, setExpandedLesson] = useState(null);
   const [commentDraft, setCommentDraft] = useState({});
@@ -37,7 +40,19 @@ export default function Lessons() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
       setShowForm(false);
-      setForm({ title: '', description: '', video_url: '', duration: '' });
+      setForm(EMPTY_FORM);
+      toast.success('Aula criada!');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.RecordedLesson.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      setShowForm(false);
+      setEditingLesson(null);
+      setForm(EMPTY_FORM);
+      toast.success('Aula atualizada!');
     },
   });
 
@@ -86,6 +101,20 @@ export default function Lessons() {
     return url;
   };
 
+  const openEdit = (lesson) => {
+    setEditingLesson(lesson);
+    setForm({ title: lesson.title, description: lesson.description || '', video_url: lesson.video_url || '', duration: lesson.duration || '' });
+    setShowForm(true);
+  };
+
+  const handleSave = () => {
+    if (editingLesson) {
+      updateMutation.mutate({ id: editingLesson.id, data: form });
+    } else {
+      createMutation.mutate({ ...form, order: lessons.length + 1 });
+    }
+  };
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -94,19 +123,19 @@ export default function Lessons() {
           <p className="text-muted-foreground text-sm mt-1">Assista às aulas no seu ritmo</p>
         </div>
         {isTeacher && (
-          <Dialog open={showForm} onOpenChange={setShowForm}>
+          <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingLesson(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
               <Button className="gap-2"><Plus size={16} /> Nova Aula</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Adicionar Aula Gravada</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{editingLesson ? 'Editar Aula' : 'Adicionar Aula Gravada'}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-4">
                 <Input placeholder="Título da aula" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
                 <Textarea placeholder="Descrição" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
                 <Input placeholder="URL do vídeo (YouTube, Vimeo, etc.)" value={form.video_url} onChange={e => setForm({...form, video_url: e.target.value})} />
                 <Input placeholder="Duração (ex: 45 min)" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
-                <Button onClick={() => createMutation.mutate({...form, order: lessons.length + 1})} disabled={!form.title} className="w-full">
-                  Salvar Aula
+                <Button onClick={handleSave} disabled={!form.title} className="w-full">
+                  {editingLesson ? 'Salvar Alterações' : 'Salvar Aula'}
                 </Button>
               </div>
             </DialogContent>
@@ -158,12 +187,9 @@ export default function Lessons() {
       </Dialog>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="space-y-3">
           {[1,2,3].map(i => (
-            <div key={i} className="bg-card rounded-2xl border border-border animate-pulse">
-              <div className="h-40 bg-muted rounded-t-2xl" />
-              <div className="p-4 space-y-2"><div className="h-4 bg-muted rounded w-3/4" /><div className="h-3 bg-muted rounded w-1/2" /></div>
-            </div>
+            <div key={i} className="bg-card rounded-2xl border border-border animate-pulse h-20" />
           ))}
         </div>
       ) : lessons.length === 0 ? (
@@ -181,9 +207,7 @@ export default function Lessons() {
 
             return (
               <div key={lesson.id} className={`bg-card rounded-2xl border shadow-sm transition-all ${isWatched ? 'border-green-200' : 'border-border'}`}>
-                {/* Lesson header row */}
                 <div className="flex items-center gap-4 p-4">
-                  {/* Thumbnail / play */}
                   <div
                     className="w-24 h-16 bg-foreground/5 rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 cursor-pointer group"
                     onClick={() => setSelectedVideo(lesson)}
@@ -218,9 +242,14 @@ export default function Lessons() {
 
                   <div className="flex items-center gap-2 shrink-0">
                     {isTeacher && (
-                      <button onClick={() => deleteMutation.mutate(lesson.id)} className="text-muted-foreground hover:text-destructive transition-colors p-2">
-                        <Trash2 size={15} />
-                      </button>
+                      <>
+                        <button onClick={() => openEdit(lesson)} className="text-muted-foreground hover:text-primary transition-colors p-2">
+                          <Pencil size={15} />
+                        </button>
+                        <button onClick={() => deleteMutation.mutate(lesson.id)} className="text-muted-foreground hover:text-destructive transition-colors p-2">
+                          <Trash2 size={15} />
+                        </button>
+                      </>
                     )}
                     {!isTeacher && (
                       <Button
@@ -241,7 +270,6 @@ export default function Lessons() {
                   </div>
                 </div>
 
-                {/* Expanded: comment + summary */}
                 {!isTeacher && isExpanded && (
                   <div className="px-4 pb-4 border-t border-border pt-4 space-y-4">
                     <div>

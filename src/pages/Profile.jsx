@@ -63,6 +63,7 @@ export default function Profile() {
         profile_name: name,
         profile_bio: bio,
         profile_avatar_color: avatarColor,
+        profile_photo_url: photoUrl,
       });
     }
     // Upsert StudentProfile

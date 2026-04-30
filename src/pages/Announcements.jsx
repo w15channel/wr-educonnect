@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Bell, Plus, Trash2, AlertCircle, Info } from 'lucide-react';
+import { Bell, Plus, Trash2, AlertCircle, Info, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,13 +11,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
+const EMPTY_FORM = { title: '', content: '', type: 'info' };
+
 export default function Announcements() {
   const { user: session } = useOutletContext();
-  const user = session;
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', content: '', type: 'info' });
+  const [editingItem, setEditingItem] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const { data: announcements = [] } = useQuery({
     queryKey: ['announcements-all'],
@@ -30,7 +32,18 @@ export default function Announcements() {
       queryClient.invalidateQueries({ queryKey: ['announcements-all'] });
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
       setShowForm(false);
-      setForm({ title: '', content: '', type: 'info' });
+      setForm(EMPTY_FORM);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Announcement.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['announcements-all'] });
+      queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      setShowForm(false);
+      setEditingItem(null);
+      setForm(EMPTY_FORM);
     },
   });
 
@@ -41,6 +54,20 @@ export default function Announcements() {
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
     },
   });
+
+  const openEdit = (a) => {
+    setEditingItem(a);
+    setForm({ title: a.title || '', content: a.content, type: a.type });
+    setShowForm(true);
+  };
+
+  const handleSave = () => {
+    if (editingItem) {
+      updateMutation.mutate({ id: editingItem.id, data: form });
+    } else {
+      createMutation.mutate(form);
+    }
+  };
 
   const typeIcons = { info: Info, warning: AlertCircle, urgent: Bell };
   const typeColors = {
@@ -58,12 +85,12 @@ export default function Announcements() {
           <p className="text-muted-foreground text-sm mt-1">Comunicados e lembretes da turma</p>
         </div>
         {isTeacher && (
-          <Dialog open={showForm} onOpenChange={setShowForm}>
+          <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingItem(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
               <Button className="gap-2"><Plus size={16} /> Novo Aviso</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Criar Aviso</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{editingItem ? 'Editar Aviso' : 'Criar Aviso'}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-4">
                 <Input placeholder="Título (opcional)" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
                 <Textarea placeholder="Conteúdo do aviso" value={form.content} onChange={e => setForm({...form, content: e.target.value})} />
@@ -75,8 +102,8 @@ export default function Announcements() {
                     <SelectItem value="urgent">Urgente</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button onClick={() => createMutation.mutate(form)} disabled={!form.content} className="w-full">
-                  Publicar Aviso
+                <Button onClick={handleSave} disabled={!form.content} className="w-full">
+                  {editingItem ? 'Salvar Alterações' : 'Publicar Aviso'}
                 </Button>
               </div>
             </DialogContent>
@@ -108,9 +135,14 @@ export default function Announcements() {
                     </div>
                   </div>
                   {isTeacher && (
-                    <button onClick={() => deleteMutation.mutate(a.id)} className="text-muted-foreground hover:text-destructive shrink-0">
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => openEdit(a)} className="text-muted-foreground hover:text-primary p-1">
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={() => deleteMutation.mutate(a.id)} className="text-muted-foreground hover:text-destructive p-1">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
