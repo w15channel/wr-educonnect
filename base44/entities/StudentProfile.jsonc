@@ -1,0 +1,51 @@
+{
+  "name": "StudentProfile",
+  "type": "object",
+  "properties": {
+    "code_id": {
+      "type": "string",
+      "description": "ID do c\u00f3digo de acesso vinculado"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Nome completo"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de nascimento"
+    },
+    "whatsapp": {
+      "type": "string",
+      "description": "WhatsApp"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "URL da foto de perfil"
+    },
+    "avatar_color": {
+      "type": "string",
+      "description": "Cor do avatar"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Apresenta\u00e7\u00e3o"
+    },
+    "points": {
+      "type": "number",
+      "default": 0,
+      "description": "Pontua\u00e7\u00e3o total gamificada"
+    }
+  },
+  "required": [
+    "student_email"
+  ]
+}

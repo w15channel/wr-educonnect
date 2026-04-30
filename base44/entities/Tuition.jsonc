@@ -1,0 +1,50 @@
+{
+  "name": "Tuition",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome do aluno"
+    },
+    "month_ref": {
+      "type": "string",
+      "description": "Refer\u00eancia do m\u00eas (ex: 2025-01)"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Valor da mensalidade"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de vencimento"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de pagamento"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "overdue"
+      ],
+      "default": "pending",
+      "description": "Status do pagamento"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    }
+  },
+  "required": [
+    "student_email",
+    "month_ref"
+  ]
+}

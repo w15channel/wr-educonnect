@@ -15,6 +15,8 @@ import Forum from './pages/Forum';
 import Students from './pages/Students';
 import Announcements from './pages/Announcements';
 import Profile from './pages/Profile';
+import Calendar from './pages/Calendar';
+import Tuitions from './pages/Tuitions';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -45,6 +47,8 @@ const AuthenticatedApp = () => {
         <Route path="/students" element={<Students />} />
         <Route path="/announcements" element={<Announcements />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/tuitions" element={<Tuitions />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

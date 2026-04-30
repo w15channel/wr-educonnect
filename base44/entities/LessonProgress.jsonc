@@ -1,0 +1,31 @@
+{
+  "name": "LessonProgress",
+  "type": "object",
+  "properties": {
+    "lesson_id": {
+      "type": "string",
+      "description": "ID da aula"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "watched": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aula marcada como assistida"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Coment\u00e1rio do aluno sobre a aula"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Resumo da aula feito pelo aluno"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "student_email"
+  ]
+}

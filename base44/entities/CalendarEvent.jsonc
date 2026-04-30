@@ -1,0 +1,43 @@
+{
+  "name": "CalendarEvent",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do evento"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do evento"
+    },
+    "event_time": {
+      "type": "string",
+      "description": "Hor\u00e1rio (ex: 14:00)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "aula",
+        "prova",
+        "tarefa",
+        "evento",
+        "feriado"
+      ],
+      "default": "aula",
+      "description": "Tipo do evento"
+    },
+    "color": {
+      "type": "string",
+      "description": "Cor do evento"
+    }
+  },
+  "required": [
+    "title",
+    "event_date"
+  ]
+}

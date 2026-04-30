@@ -2,25 +2,34 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Play, Clock, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { Play, Clock, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function Lessons() {
   const { user: session } = useOutletContext();
-  const user = session;
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', video_url: '', duration: '' });
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [expandedLesson, setExpandedLesson] = useState(null);
+  const [commentDraft, setCommentDraft] = useState({});
+  const [summaryDraft, setSummaryDraft] = useState({});
 
   const { data: lessons = [], isLoading } = useQuery({
     queryKey: ['lessons'],
     queryFn: () => base44.entities.RecordedLesson.list('order', 100),
+  });
+
+  const { data: progresses = [] } = useQuery({
+    queryKey: ['lesson-progress', session?.email],
+    queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email }, '-created_date', 200),
+    enabled: !isTeacher && !!session?.email,
   });
 
   const createMutation = useMutation({
@@ -36,6 +45,37 @@ export default function Lessons() {
     mutationFn: (id) => base44.entities.RecordedLesson.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lessons'] }),
   });
+
+  const upsertProgress = async (lessonId, patch) => {
+    const existing = progresses.find(p => p.lesson_id === lessonId);
+    if (existing) {
+      await base44.entities.LessonProgress.update(existing.id, patch);
+    } else {
+      await base44.entities.LessonProgress.create({ lesson_id: lessonId, student_email: session?.email, ...patch });
+    }
+    queryClient.invalidateQueries({ queryKey: ['lesson-progress', session?.email] });
+  };
+
+  const toggleWatched = async (lessonId) => {
+    const existing = progresses.find(p => p.lesson_id === lessonId);
+    await upsertProgress(lessonId, { watched: !existing?.watched });
+    toast.success(!existing?.watched ? 'Aula marcada como assistida!' : 'Marcação removida.');
+  };
+
+  const saveComment = async (lessonId) => {
+    await upsertProgress(lessonId, { comment: commentDraft[lessonId] || '' });
+    toast.success('Comentário salvo!');
+  };
+
+  const saveSummary = async (lessonId) => {
+    await upsertProgress(lessonId, { summary: summaryDraft[lessonId] || '' });
+    toast.success('Resumo salvo!');
+  };
+
+  const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId);
+
+  const watchedCount = progresses.filter(p => p.watched).length;
+  const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
   const getEmbedUrl = (url) => {
     if (!url) return null;
@@ -59,9 +99,7 @@ export default function Lessons() {
               <Button className="gap-2"><Plus size={16} /> Nova Aula</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Adicionar Aula Gravada</DialogTitle>
-              </DialogHeader>
+              <DialogHeader><DialogTitle>Adicionar Aula Gravada</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-4">
                 <Input placeholder="Título da aula" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
                 <Textarea placeholder="Descrição" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
@@ -76,22 +114,32 @@ export default function Lessons() {
         )}
       </div>
 
+      {/* Student progress bar */}
+      {!isTeacher && lessons.length > 0 && (
+        <div className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <BookOpen size={18} className="text-primary" />
+              <span className="font-semibold text-sm text-foreground">Seu Progresso no Curso</span>
+            </div>
+            <span className="text-sm font-bold text-primary">{progressPct}%</span>
+          </div>
+          <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+            <div className="bg-primary h-3 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">{watchedCount} de {lessons.length} aulas assistidas</p>
+        </div>
+      )}
+
       {/* Video Player Modal */}
       <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
         <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{selectedVideo?.title}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>{selectedVideo?.title}</DialogTitle></DialogHeader>
           {selectedVideo && (
             <div className="mt-2">
               {getEmbedUrl(selectedVideo.video_url) ? (
                 <div className="aspect-video rounded-xl overflow-hidden bg-black">
-                  <iframe
-                    src={getEmbedUrl(selectedVideo.video_url)}
-                    className="w-full h-full"
-                    allowFullScreen
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  />
+                  <iframe src={getEmbedUrl(selectedVideo.video_url)} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
                 </div>
               ) : (
                 <div className="aspect-video rounded-xl bg-muted flex items-center justify-center flex-col gap-3">
@@ -125,50 +173,108 @@ export default function Lessons() {
           {isTeacher && <p className="text-sm mt-1">Clique em "Nova Aula" para adicionar</p>}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {lessons.map(lesson => (
-            <div
-              key={lesson.id}
-              onClick={() => setSelectedVideo(lesson)}
-              className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-all group cursor-pointer"
-            >
-              <div className="h-40 bg-foreground/5 relative flex items-center justify-center">
-                {lesson.thumbnail_url ? (
-                  <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" />
-                ) : (
-                  <Play size={40} className="text-muted-foreground/30 group-hover:scale-110 transition-transform" />
-                )}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Play size={20} className="text-primary-foreground ml-0.5" />
+        <div className="space-y-4">
+          {lessons.map((lesson, idx) => {
+            const prog = getProgress(lesson.id);
+            const isExpanded = expandedLesson === lesson.id;
+            const isWatched = prog?.watched;
+
+            return (
+              <div key={lesson.id} className={`bg-card rounded-2xl border shadow-sm transition-all ${isWatched ? 'border-green-200' : 'border-border'}`}>
+                {/* Lesson header row */}
+                <div className="flex items-center gap-4 p-4">
+                  {/* Thumbnail / play */}
+                  <div
+                    className="w-24 h-16 bg-foreground/5 rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 cursor-pointer group"
+                    onClick={() => setSelectedVideo(lesson)}
+                  >
+                    {lesson.thumbnail_url ? (
+                      <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <Play size={24} className="text-muted-foreground/40 group-hover:scale-110 transition-transform" />
+                    )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Play size={14} className="text-white ml-0.5" />
+                      </div>
+                    </div>
+                    {lesson.duration && (
+                      <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">{lesson.duration}</span>
+                    )}
                   </div>
-                </div>
-                {lesson.duration && (
-                  <span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-md font-medium">
-                    {lesson.duration}
-                  </span>
-                )}
-              </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-semibold text-foreground text-sm leading-snug">{lesson.title}</h3>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1.5">
-                      <Clock size={12} /> {format(new Date(lesson.created_date), 'dd/MM/yyyy')}
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-mono text-muted-foreground">#{idx + 1}</span>
+                      <h3 className="font-semibold text-foreground text-sm">{lesson.title}</h3>
+                      {isWatched && <span className="inline-flex items-center gap-1 text-green-600 text-xs bg-green-50 px-2 py-0.5 rounded-full"><CheckCircle size={11} /> Assistida</span>}
+                    </div>
+                    {lesson.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{lesson.description}</p>}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      <Clock size={11} className="inline mr-1" />
+                      {format(new Date(lesson.created_date), 'dd/MM/yyyy')}
                     </p>
                   </div>
-                  {isTeacher && (
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isTeacher && (
+                      <button onClick={() => deleteMutation.mutate(lesson.id)} className="text-muted-foreground hover:text-destructive transition-colors p-2">
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                    {!isTeacher && (
+                      <Button
+                        size="sm"
+                        variant={isWatched ? 'secondary' : 'default'}
+                        className="gap-1.5 text-xs"
+                        onClick={() => toggleWatched(lesson.id)}
+                      >
+                        {isWatched ? <><Circle size={13} /> Desmarcar</> : <><CheckCircle size={13} /> Marcar como Assistida</>}
+                      </Button>
+                    )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(lesson.id); }}
-                      className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                      onClick={() => setExpandedLesson(isExpanded ? null : lesson.id)}
+                      className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground"
                     >
-                      <Trash2 size={15} />
+                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>
-                  )}
+                  </div>
                 </div>
+
+                {/* Expanded: comment + summary */}
+                {!isTeacher && isExpanded && (
+                  <div className="px-4 pb-4 border-t border-border pt-4 space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                        <MessageSquare size={13} className="text-primary" /> Meu Comentário sobre a Aula
+                      </label>
+                      <Textarea
+                        placeholder="Escreva seu comentário ou percepção sobre esta aula..."
+                        value={commentDraft[lesson.id] ?? prog?.comment ?? ''}
+                        onChange={e => setCommentDraft(prev => ({...prev, [lesson.id]: e.target.value}))}
+                        rows={2}
+                        className="text-sm"
+                      />
+                      <Button size="sm" variant="outline" className="mt-2" onClick={() => saveComment(lesson.id)}>Salvar Comentário</Button>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                        <BookOpen size={13} className="text-primary" /> Meu Resumo da Aula
+                      </label>
+                      <Textarea
+                        placeholder="Anote os principais pontos e aprendizados desta aula..."
+                        value={summaryDraft[lesson.id] ?? prog?.summary ?? ''}
+                        onChange={e => setSummaryDraft(prev => ({...prev, [lesson.id]: e.target.value}))}
+                        rows={3}
+                        className="text-sm"
+                      />
+                      <Button size="sm" variant="outline" className="mt-2" onClick={() => saveSummary(lesson.id)}>Salvar Resumo</Button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
