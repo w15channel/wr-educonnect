@@ -36,13 +36,13 @@ export default function AppLayout() {
         <Sidebar session={session} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
       </div>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Mobile top header */}
         <MobileHeader />
 
-        <div className="flex-1 overflow-auto pb-[env(safe-area-inset-bottom)] md:pb-0">
-          {/* Extra bottom padding on mobile for bottom nav */}
-          <div className="pb-16 md:pb-0">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          {/* Extra bottom padding on mobile for bottom nav + safe area */}
+          <div className="pb-20 md:pb-0" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={location.pathname}
@@ -51,6 +51,7 @@ export default function AppLayout() {
                 animate="animate"
                 exit="exit"
                 transition={{ duration: 0.18, ease: 'easeInOut' }}
+                className="md:pb-0"
               >
                 <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
               </motion.div>

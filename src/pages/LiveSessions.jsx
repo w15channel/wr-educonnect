@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 const YT_CHANNEL = 'https://www.youtube.com/@wrmidia';
 // Channel ID do canal @wrmidia — necessário para o embed de live do canal
 // Para encontrar: acesse youtube.com/@wrmidia → Sobre → Compartilhar canal → Copiar ID do canal
-const WR_CHANNEL_ID = 'UCPlaceholder'; // ← substitua pelo Channel ID real (UCxxxxxxxx)
+const WR_CHANNEL_ID = 'UCO_BmZpsYnRHYoK0xZITEZw';
 const WR_LIVE_EMBED = `https://www.youtube.com/embed/live_stream?channel=${WR_CHANNEL_ID}&autoplay=1`;
 
 // Convert various live URLs to embeddable form
@@ -142,67 +142,67 @@ export default function LiveSessions() {
 
   // ── Session detail view ──
   if (selectedSession) {
-    // Prioridade: link específico da sessão (se for YouTube embeddable) → canal WR Mídia ao vivo
     const sessionEmbed = getEmbedUrl(selectedSession.stream_url);
     const embedSrc = sessionEmbed || WR_LIVE_EMBED;
 
     return (
-      <div className="p-4 lg:p-6 h-full flex flex-col gap-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => setSelectedSession(null)}>← Voltar</Button>
-          <h2 className="text-lg font-bold text-foreground truncate flex-1">{selectedSession.title}</h2>
-          <Badge className={statusColors[selectedSession.status]}>{statusLabels[selectedSession.status]}</Badge>
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card flex-wrap">
+          <Button variant="ghost" size="sm" onClick={() => setSelectedSession(null)} className="shrink-0 px-2">
+            ← <span className="hidden sm:inline ml-1">Voltar</span>
+          </Button>
+          <h2 className="text-sm font-bold text-foreground truncate flex-1 min-w-0">{selectedSession.title}</h2>
+          <Badge className={`${statusColors[selectedSession.status]} shrink-0 text-xs`}>{statusLabels[selectedSession.status]}</Badge>
           {isTeacher && (
             <Button
               size="sm"
               variant={selectedSession.status === 'live' ? 'destructive' : 'default'}
-              className="gap-1.5"
+              className="gap-1 text-xs shrink-0 h-8 px-2"
               onClick={() => toggleLiveStatus(selectedSession)}
             >
-              {selectedSession.status === 'live' ? <><WifiOff size={14} /> Encerrar Live</> : <><Wifi size={14} /> Ativar Online</>}
+              {selectedSession.status === 'live' ? <><WifiOff size={12} /> Encerrar</> : <><Wifi size={12} /> Ativar</>}
             </Button>
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
-          {/* Stream area — sempre exibe o canal WR Mídia (ou link específico da sessão) */}
-          <div className="flex-1 flex flex-col bg-black rounded-2xl overflow-hidden border border-border min-h-[300px] relative">
+        {/* Content: video + chat stacked on mobile, side-by-side on desktop */}
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+          {/* Stream area */}
+          <div className="flex flex-col bg-black lg:flex-1 relative">
             {selectedSession.status === 'live' && (
-              <div className="absolute top-3 left-3 z-10 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
+              <div className="absolute top-2 left-2 z-10 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> AO VIVO
               </div>
             )}
-
-            <iframe
-              src={embedSrc}
-              className="w-full flex-1 min-h-[300px]"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-            />
-
+            {/* 16:9 ratio on mobile, flex-fill on desktop */}
+            <div className="aspect-video lg:aspect-auto lg:flex-1 lg:h-full">
+              <iframe
+                src={embedSrc}
+                className="w-full h-full"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
             {/* Bottom bar */}
-            <div className="bg-card border-t border-border flex items-center justify-between px-4 py-2.5 gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <a href={`${YT_CHANNEL}/live`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-red-500 hover:underline shrink-0">
-                  <Youtube size={14} /> Canal WR Mídia
-                </a>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                {!isTeacher && selectedSession.status === 'live' && (
-                  <Button variant="outline" size="sm" className="gap-1.5 text-yellow-600 border-yellow-300 hover:bg-yellow-50" onClick={handleRaiseHand}>
-                    <Hand size={14} /> Levantar Mão
-                  </Button>
-                )}
-              </div>
+            <div className="bg-card border-t border-border flex items-center justify-between px-3 py-2 gap-2">
+              <a href={`${YT_CHANNEL}/live`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-red-500 hover:underline">
+                <Youtube size={13} /> Canal WR Mídia
+              </a>
+              {!isTeacher && selectedSession.status === 'live' && (
+                <Button variant="outline" size="sm" className="gap-1.5 text-yellow-600 border-yellow-300 hover:bg-yellow-50 h-8 text-xs" onClick={handleRaiseHand}>
+                  <Hand size={13} /> Levantar Mão
+                </Button>
+              )}
             </div>
           </div>
 
-          {/* Chat */}
-          <div className="w-full lg:w-80 bg-card rounded-2xl border border-border flex flex-col h-[400px] lg:h-auto">
-            <div className="p-3 border-b border-border bg-secondary/50 rounded-t-2xl">
+          {/* Chat — fixed height on mobile, full on desktop */}
+          <div className="w-full lg:w-80 bg-card border-t lg:border-t-0 lg:border-l border-border flex flex-col h-[280px] lg:h-full">
+            <div className="px-3 py-2 border-b border-border bg-secondary/40">
               <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
-                <MessageSquare size={16} /> Chat ao Vivo
+                <MessageSquare size={14} /> Chat ao Vivo
               </h3>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -211,15 +211,15 @@ export default function LiveSessions() {
               )}
               {chatMessages.map(msg => (
                 <div key={msg.id} className={`text-sm ${msg.is_hand_raised ? 'bg-yellow-50 p-2 rounded-lg border border-yellow-200' : ''}`}>
-                  <span className="font-semibold text-foreground mr-1.5">{msg.author_name}:</span>
+                  <span className="font-semibold text-foreground mr-1">{msg.author_name}:</span>
                   <span className="text-muted-foreground">{msg.content}</span>
                 </div>
               ))}
               <div ref={chatEndRef} />
             </div>
-            <form onSubmit={handleSend} className="p-3 border-t border-border flex gap-2">
+            <form onSubmit={handleSend} className="p-2.5 border-t border-border flex gap-2">
               <Input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Digite no chat..." className="flex-1 h-9 text-sm" />
-              <Button type="submit" size="sm" className="h-9 w-9 p-0 shrink-0"><Send size={16} /></Button>
+              <Button type="submit" size="sm" aria-label="Enviar" className="h-9 w-9 p-0 shrink-0"><Send size={15} /></Button>
             </form>
           </div>
         </div>
@@ -233,21 +233,20 @@ export default function LiveSessions() {
   const past = sessions.filter(s => s.status === 'ended');
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Sala ao Vivo</h2>
-          <p className="text-muted-foreground text-sm mt-1">Participe das transmissões ao vivo</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Sala ao Vivo</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Participe das transmissões ao vivo</p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* YouTube channel link */}
+        <div className="flex items-center gap-2 flex-wrap">
           <a
-            href={YT_CHANNEL}
+            href={`${YT_CHANNEL}/live`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-sm text-red-500 border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-xs sm:text-sm text-red-500 border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors font-medium"
           >
-            <Youtube size={16} /> Canal WR Mídia
+            <Youtube size={14} /> Canal WR Mídia
           </a>
           {isTeacher && (
             <Dialog open={showForm} onOpenChange={setShowForm}>

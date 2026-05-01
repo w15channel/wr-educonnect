@@ -116,11 +116,11 @@ export default function Lessons() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-5 gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Aulas Gravadas</h2>
-          <p className="text-muted-foreground text-sm mt-1">Assista às aulas no seu ritmo</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Aulas Gravadas</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Assista às aulas no seu ritmo</p>
         </div>
         {isTeacher && (
           <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingLesson(null); setForm(EMPTY_FORM); } }}>
@@ -207,63 +207,60 @@ export default function Lessons() {
 
             return (
               <div key={lesson.id} className={`bg-card rounded-2xl border shadow-sm transition-all ${isWatched ? 'border-green-200' : 'border-border'}`}>
-                <div className="flex items-center gap-4 p-4">
+                <div className="flex items-center gap-3 p-3 sm:p-4">
+                  {/* Thumbnail */}
                   <div
-                    className="w-24 h-16 bg-foreground/5 rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 cursor-pointer group"
+                    className="w-20 h-14 sm:w-24 sm:h-16 bg-foreground/5 rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 cursor-pointer group"
                     onClick={() => setSelectedVideo(lesson)}
                   >
                     {lesson.thumbnail_url ? (
                       <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" />
                     ) : (
-                      <Play size={24} className="text-muted-foreground/40 group-hover:scale-110 transition-transform" />
+                      <Play size={20} className="text-muted-foreground/40 group-hover:scale-110 transition-transform" />
                     )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                      <div className="w-8 h-8 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Play size={14} className="text-white ml-0.5" />
+                      <div className="w-7 h-7 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Play size={12} className="text-white ml-0.5" />
                       </div>
                     </div>
                     {lesson.duration && (
-                      <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">{lesson.duration}</span>
+                      <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded">{lesson.duration}</span>
                     )}
                   </div>
 
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-mono text-muted-foreground">#{idx + 1}</span>
-                      <h3 className="font-semibold text-foreground text-sm">{lesson.title}</h3>
-                      {isWatched && <span className="inline-flex items-center gap-1 text-green-600 text-xs bg-green-50 px-2 py-0.5 rounded-full"><CheckCircle size={11} /> Assistida</span>}
+                      <h3 className="font-semibold text-foreground text-sm leading-tight">{lesson.title}</h3>
                     </div>
-                    {lesson.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{lesson.description}</p>}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      <Clock size={11} className="inline mr-1" />
-                      {format(new Date(lesson.created_date), 'dd/MM/yyyy')}
-                    </p>
+                    {isWatched && <span className="inline-flex items-center gap-1 text-green-600 text-xs bg-green-50 px-2 py-0.5 rounded-full mt-1"><CheckCircle size={10} /> Assistida</span>}
+                    {lesson.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 hidden sm:block">{lesson.description}</p>}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isTeacher && (
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isTeacher ? (
                       <>
-                        <button onClick={() => openEdit(lesson)} className="text-muted-foreground hover:text-primary transition-colors p-2">
-                          <Pencil size={15} />
+                        <button onClick={() => openEdit(lesson)} className="text-muted-foreground hover:text-primary transition-colors p-2 min-w-[36px] min-h-[36px] flex items-center justify-center">
+                          <Pencil size={14} />
                         </button>
-                        <button onClick={() => deleteMutation.mutate(lesson.id)} className="text-muted-foreground hover:text-destructive transition-colors p-2">
-                          <Trash2 size={15} />
+                        <button onClick={() => deleteMutation.mutate(lesson.id)} className="text-muted-foreground hover:text-destructive transition-colors p-2 min-w-[36px] min-h-[36px] flex items-center justify-center">
+                          <Trash2 size={14} />
                         </button>
                       </>
-                    )}
-                    {!isTeacher && (
-                      <Button
-                        size="sm"
-                        variant={isWatched ? 'secondary' : 'default'}
-                        className="gap-1.5 text-xs"
+                    ) : (
+                      <button
                         onClick={() => toggleWatched(lesson.id)}
+                        title={isWatched ? 'Desmarcar' : 'Marcar como assistida'}
+                        className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg transition-colors ${isWatched ? 'text-green-600 hover:bg-green-50' : 'text-muted-foreground hover:text-green-600 hover:bg-green-50'}`}
                       >
-                        {isWatched ? <><Circle size={13} /> Desmarcar</> : <><CheckCircle size={13} /> Marcar como Assistida</>}
-                      </Button>
+                        {isWatched ? <CheckCircle size={18} /> : <Circle size={18} />}
+                      </button>
                     )}
                     <button
                       onClick={() => setExpandedLesson(isExpanded ? null : lesson.id)}
-                      className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground"
+                      className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-secondary rounded-lg transition-colors text-muted-foreground"
                     >
                       {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>

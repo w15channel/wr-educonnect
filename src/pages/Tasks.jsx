@@ -130,11 +130,11 @@ export default function Tasks() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-5 gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Tarefas e Avaliações</h2>
-          <p className="text-muted-foreground text-sm mt-1">Gerencie trabalhos, provas e entregas</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Tarefas e Avaliações</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Gerencie trabalhos, provas e entregas</p>
         </div>
         {isTeacher && (
           <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingTask(null); setForm(EMPTY_FORM); } }}>
@@ -167,19 +167,19 @@ export default function Tasks() {
       </div>
 
       {/* Tabs: Tarefas / Provas */}
-      <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-5 w-full sm:w-fit">
         <button
           onClick={() => setActiveTab('tasks')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'tasks' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'tasks' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <ClipboardList size={16} /> Tarefas
+          <ClipboardList size={15} /> Tarefas
           {uploadTasks.length > 0 && <span className="bg-primary/10 text-primary text-xs px-1.5 py-0.5 rounded-full">{uploadTasks.length}</span>}
         </button>
         <button
           onClick={() => setActiveTab('quizzes')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'quizzes' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'quizzes' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <GraduationCap size={16} /> Provas / Quizzes
+          <GraduationCap size={15} /> Provas
           {quizTasks.length > 0 && <span className="bg-accent/10 text-accent text-xs px-1.5 py-0.5 rounded-full">{quizTasks.length}</span>}
         </button>
       </div>
@@ -206,55 +206,56 @@ export default function Tasks() {
             const submission = getSubmission(task.id);
             const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
             return (
-              <div key={task.id} className="bg-card p-5 rounded-2xl border border-border shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:shadow-md transition-shadow">
+              <div key={task.id} className="bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2.5 rounded-xl ${task.type === 'quiz' ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary'}`}>
-                    <FileText size={20} />
+                  <div className={`p-2.5 rounded-xl shrink-0 ${task.type === 'quiz' ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary'}`}>
+                    <FileText size={18} />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">{task.title}</h3>
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-sm leading-snug">{task.title}</h3>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
                       <Badge variant="secondary" className="text-xs">{task.type === 'quiz' ? 'Prova' : 'Tarefa'}</Badge>
                       {task.deadline && (
                         <span className={`text-xs flex items-center gap-1 ${isPastDeadline ? 'text-destructive' : 'text-muted-foreground'}`}>
-                          <Clock size={12} /> {format(new Date(task.deadline), 'dd/MM/yyyy HH:mm')}
+                          <Clock size={11} /> {format(new Date(task.deadline), 'dd/MM HH:mm')}
                         </span>
                       )}
-                      {task.max_grade && <span className="text-xs text-muted-foreground">Nota máx: {task.max_grade}</span>}
+                      {task.max_grade && <span className="text-xs text-muted-foreground">Máx: {task.max_grade}</span>}
                     </div>
-                    {task.description && <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">{task.description}</p>}
+                    {task.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Action row — full width below on mobile */}
+                <div className="mt-3 flex items-center justify-end gap-2">
                   {!isTeacher ? (
                     submission ? (
-                      <div className="text-right">
+                      <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-medium">
-                          <CheckCircle size={13} /> Entregue
+                          <CheckCircle size={12} /> Entregue
                         </span>
                         {submission.grade !== undefined && submission.grade !== null && (
-                          <p className="text-sm font-bold text-foreground mt-1">Nota: {submission.grade}</p>
+                          <span className="text-sm font-bold text-foreground">Nota: {submission.grade}</span>
                         )}
                       </div>
                     ) : task.type === 'upload' ? (
-                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleFileUpload(task.id)} disabled={submitFileMutation.isPending}>
+                      <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto" onClick={() => handleFileUpload(task.id)} disabled={submitFileMutation.isPending}>
                         <Upload size={14} /> Enviar Arquivo
                       </Button>
                     ) : (
-                      <Button size="sm" className="gap-1.5" onClick={() => setSelectedQuiz(task)}>
+                      <Button size="sm" className="gap-1.5 w-full sm:w-auto" onClick={() => setSelectedQuiz(task)}>
                         <Play size={14} /> Iniciar Prova
                       </Button>
                     )
                   ) : (
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setViewSubmissions(task)}>
+                    <div className="flex gap-2 w-full sm:w-auto justify-end">
+                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setViewSubmissions(task)}>
                         Ver Entregas
                       </Button>
-                      <button onClick={() => openEdit(task)} className="p-2 text-muted-foreground hover:text-primary transition-colors">
+                      <button onClick={() => openEdit(task)} className="p-2 text-muted-foreground hover:text-primary transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center">
                         <Pencil size={15} />
                       </button>
-                      <button onClick={() => deleteTaskMutation.mutate(task.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
+                      <button onClick={() => deleteTaskMutation.mutate(task.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center">
                         <Trash2 size={15} />
                       </button>
                     </div>

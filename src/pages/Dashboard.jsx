@@ -110,18 +110,18 @@ export default function Dashboard() {
   const myRank = ranking.findIndex(r => r.email === session?.email) + 1;
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-5">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">
+        <h2 className="text-xl lg:text-2xl font-bold text-foreground">
           Olá, {(session?.name || 'Usuário').split(' ')[0]} 👋
         </h2>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground text-sm mt-0.5">
           {isTeacher ? 'Painel administrativo — WR-EDU' : 'Bem-vindo(a) de volta à plataforma WR-EDU'}
         </p>
       </div>
 
       {/* Stats — clickable shortcuts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <ClickableStatCard
           title="Próxima Live"
           value={nextLive ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Nenhuma'}
@@ -150,7 +150,7 @@ export default function Dashboard() {
 
       {/* Student-specific: progress + ranking */}
       {!isTeacher && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Progress */}
           <button
             onClick={() => navigate('/lessons')}
