@@ -13,7 +13,10 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 const YT_CHANNEL = 'https://www.youtube.com/@wrmidia';
-const YT_CHANNEL_LIVE_EMBED = 'https://www.youtube.com/embed/live_stream?channel=UCPlaceholder&autoplay=1';
+// Channel ID do canal @wrmidia — necessário para o embed de live do canal
+// Para encontrar: acesse youtube.com/@wrmidia → Sobre → Compartilhar canal → Copiar ID do canal
+const WR_CHANNEL_ID = 'UCPlaceholder'; // ← substitua pelo Channel ID real (UCxxxxxxxx)
+const WR_LIVE_EMBED = `https://www.youtube.com/embed/live_stream?channel=${WR_CHANNEL_ID}&autoplay=1`;
 
 // Convert various live URLs to embeddable form
 const getEmbedUrl = (url) => {
@@ -139,8 +142,9 @@ export default function LiveSessions() {
 
   // ── Session detail view ──
   if (selectedSession) {
-    const embed = getEmbedUrl(selectedSession.stream_url);
-    const canEmbed = !!embed;
+    // Prioridade: link específico da sessão (se for YouTube embeddable) → canal WR Mídia ao vivo
+    const sessionEmbed = getEmbedUrl(selectedSession.stream_url);
+    const embedSrc = sessionEmbed || WR_LIVE_EMBED;
 
     return (
       <div className="p-4 lg:p-6 h-full flex flex-col gap-4">
@@ -161,7 +165,7 @@ export default function LiveSessions() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
-          {/* Stream area */}
+          {/* Stream area — sempre exibe o canal WR Mídia (ou link específico da sessão) */}
           <div className="flex-1 flex flex-col bg-black rounded-2xl overflow-hidden border border-border min-h-[300px] relative">
             {selectedSession.status === 'live' && (
               <div className="absolute top-3 left-3 z-10 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
@@ -169,54 +173,20 @@ export default function LiveSessions() {
               </div>
             )}
 
-            {canEmbed ? (
-              <iframe
-                src={embed}
-                className="w-full flex-1 min-h-[300px]"
-                allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-white p-6">
-                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
-                  <Video size={32} className="opacity-60" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-white/70 mb-1">Transmissão em plataforma externa</p>
-                  <p className="text-xs text-white/50 mb-4">
-                    {selectedSession.stream_url?.includes('zoom') ? 'Zoom' :
-                     selectedSession.stream_url?.includes('meet') ? 'Google Meet' :
-                     selectedSession.stream_url?.includes('instagram') ? 'Instagram' : 'Plataforma Externa'}
-                    {' '}não suporta incorporação direta
-                  </p>
-                  {selectedSession.stream_url && (
-                    <a
-                      href={selectedSession.stream_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-medium hover:bg-primary/90 transition-colors text-sm"
-                    >
-                      <ExternalLink size={16} /> Abrir Transmissão
-                    </a>
-                  )}
-                </div>
-                {!selectedSession.stream_url && (
-                  <p className="text-white/40 text-sm">Nenhum link configurado</p>
-                )}
-              </div>
-            )}
+            <iframe
+              src={embedSrc}
+              className="w-full flex-1 min-h-[300px]"
+              allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
 
             {/* Bottom bar */}
             <div className="bg-card border-t border-border flex items-center justify-between px-4 py-2.5 gap-3">
               <div className="flex items-center gap-2 min-w-0">
-                <a href={YT_CHANNEL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-red-500 hover:underline shrink-0">
+                <a href={`${YT_CHANNEL}/live`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-red-500 hover:underline shrink-0">
                   <Youtube size={14} /> Canal WR Mídia
                 </a>
-                {selectedSession.stream_url && !canEmbed && (
-                  <a href={selectedSession.stream_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
-                    <ExternalLink size={12} /> Ver transmissão
-                  </a>
-                )}
               </div>
               <div className="flex gap-2 shrink-0">
                 {!isTeacher && selectedSession.status === 'live' && (
