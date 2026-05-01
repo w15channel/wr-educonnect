@@ -42,9 +42,27 @@ export default function Forum() {
       author_role: isTeacher ? 'teacher' : 'student',
       reply_count: 0,
     }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
+    onMutate: async (content) => {
+      await queryClient.cancelQueries({ queryKey: ['forum-posts'] });
+      const previous = queryClient.getQueryData(['forum-posts']);
+      const optimistic = {
+        id: `optimistic-${Date.now()}`,
+        content,
+        author_name: user?.name || user?.full_name || 'Anônimo',
+        author_email: user?.email || '',
+        author_role: isTeacher ? 'teacher' : 'student',
+        reply_count: 0,
+        created_date: new Date().toISOString(),
+      };
+      queryClient.setQueryData(['forum-posts'], old => [optimistic, ...(old || [])]);
       setNewPost('');
+      return { previous };
+    },
+    onError: (_err, _content, context) => {
+      if (context?.previous) queryClient.setQueryData(['forum-posts'], context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
     },
   });
 
@@ -155,7 +173,11 @@ export default function Forum() {
                     <span className="text-xs text-muted-foreground">{format(new Date(post.created_date), 'dd/MM HH:mm')}</span>
                   </div>
                   {(isTeacher || post.author_email === user?.email) && (
-                    <button onClick={() => deletePostMutation.mutate(post.id)} className="ml-auto text-muted-foreground hover:text-destructive">
+                    <button
+                      onClick={() => deletePostMutation.mutate(post.id)}
+                      aria-label="Excluir post"
+                      className="ml-auto text-muted-foreground hover:text-destructive min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors"
+                    >
                       <Trash2 size={14} />
                     </button>
                   )}
@@ -203,7 +225,7 @@ export default function Forum() {
                       onChange={e => setReplyText(e.target.value)}
                       className="flex-1 h-9 text-sm"
                     />
-                    <Button type="submit" size="sm" className="h-9 w-9 p-0 shrink-0">
+                    <Button type="submit" size="sm" aria-label="Enviar resposta" className="h-11 w-11 p-0 shrink-0">
                       <Send size={14} />
                     </Button>
                   </form>

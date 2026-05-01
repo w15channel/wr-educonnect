@@ -7,10 +7,16 @@ import {
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
-export default function Sidebar({ session }) {
+export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { logout } = useCustomAuth();
+
+  const isOpen = mobileOpenProp !== undefined ? mobileOpenProp : mobileOpen;
+  const handleClose = () => {
+    if (onMobileClose) onMobileClose();
+    else setMobileOpen(false);
+  };
   const isAdmin = session?.role === 'admin';
 
   const adminNav = [
@@ -59,7 +65,7 @@ export default function Sidebar({ session }) {
   const NavLink = ({ item }) => (
     <Link
       to={item.path}
-      onClick={() => setMobileOpen(false)}
+      onClick={handleClose}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
         isActive(item.path)
           ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-primary/20'
@@ -73,22 +79,15 @@ export default function Sidebar({ session }) {
 
   return (
     <>
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-sidebar rounded-lg text-sidebar-foreground shadow-lg"
-      >
-        <Menu size={20} />
-      </button>
-
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setMobileOpen(false)} />
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={handleClose} />
       )}
 
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
+        fixed md:static inset-y-0 left-0 z-50
         w-64 bg-sidebar text-sidebar-foreground flex flex-col
         transform transition-transform duration-300 ease-in-out
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
         <div className="p-5 flex items-center justify-between border-b border-sidebar-border">
@@ -98,7 +97,7 @@ export default function Sidebar({ session }) {
             </div>
             <h1 className="text-lg font-bold tracking-tight">WR-EDU</h1>
           </div>
-          <button onClick={() => setMobileOpen(false)} className="lg:hidden text-sidebar-foreground/60">
+          <button onClick={handleClose} aria-label="Fechar menu" className="md:hidden text-sidebar-foreground/60 p-1">
             <X size={20} />
           </button>
         </div>
@@ -142,7 +141,8 @@ export default function Sidebar({ session }) {
           </div>
           <button
             onClick={logout}
-            className="flex items-center gap-2 text-sidebar-foreground/50 hover:text-sidebar-foreground w-full px-1 py-2 rounded-lg transition-colors text-sm"
+            aria-label="Sair da conta"
+            className="flex items-center gap-2 text-sidebar-foreground/50 hover:text-sidebar-foreground w-full px-1 py-2 rounded-lg transition-colors text-sm min-h-[44px]"
           >
             <LogOut size={16} />
             <span className="font-medium">Sair</span>

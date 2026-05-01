@@ -4,9 +4,9 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { User, Save, CheckCircle, Camera, Upload } from 'lucide-react';
+import { User, Save, CheckCircle, Camera, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 const AVATAR_COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
@@ -16,6 +16,7 @@ const AVATAR_COLORS = [
 
 export default function Profile() {
   const session = getSession();
+  const { logout } = useCustomAuth();
   const [name, setName] = useState(session?.name || '');
   const [bio, setBio] = useState(session?.bio || '');
   const [avatarColor, setAvatarColor] = useState(session?.avatarColor || '#6366f1');
@@ -25,6 +26,8 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
   const fileRef = useRef();
 
   useEffect(() => {
@@ -109,7 +112,8 @@ export default function Profile() {
             )}
             <button
               onClick={() => fileRef.current?.click()}
-              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
+              aria-label="Alterar foto de perfil"
+              className="absolute bottom-0 right-0 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
               disabled={uploading}
             >
               {uploading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera size={14} />}
@@ -161,6 +165,57 @@ export default function Profile() {
         <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
           {saved ? <><CheckCircle size={16} /> Salvo!</> : <><Save size={16} /> {saving ? 'Salvando...' : 'Salvar Perfil'}</>}
         </Button>
+      </div>
+
+      {/* Account Deletion */}
+      <div className="mt-6 bg-destructive/5 border border-destructive/20 rounded-2xl p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={18} className="text-destructive" />
+          <h3 className="font-semibold text-destructive text-sm">Zona de Perigo</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          A exclusão da conta remove permanentemente todos os seus dados. Esta ação não pode ser desfeita.
+        </p>
+        {!deleteConfirm ? (
+          <Button
+            variant="outline"
+            className="border-destructive/40 text-destructive hover:bg-destructive hover:text-white gap-2"
+            onClick={() => setDeleteConfirm(true)}
+          >
+            <Trash2 size={15} /> Excluir minha conta
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-foreground">
+              Digite <span className="font-bold">EXCLUIR</span> para confirmar:
+            </p>
+            <Input
+              value={deleteInput}
+              onChange={e => setDeleteInput(e.target.value)}
+              placeholder="EXCLUIR"
+              className="border-destructive/40 focus-visible:ring-destructive"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                disabled={deleteInput !== 'EXCLUIR'}
+                className="gap-2"
+                onClick={async () => {
+                  if (session?.codeId) {
+                    await base44.entities.AccessCode.update(session.codeId, { is_active: false });
+                  }
+                  toast.success('Conta desativada. Até logo!');
+                  setTimeout(() => logout(), 1500);
+                }}
+              >
+                <Trash2 size={15} /> Confirmar exclusão
+              </Button>
+              <Button variant="outline" onClick={() => { setDeleteConfirm(false); setDeleteInput(''); }}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
