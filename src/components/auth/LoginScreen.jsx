@@ -309,7 +309,7 @@ export default function LoginScreen({ onLogin }) {
                 <span>WR-EDU © 2025 — Escola de Formação de Terapeutas</span>
                 <Star size={10} className="fill-current" />
               </div>
-              <p className="text-white/15 text-[10px] mt-1">Desenvolvido p com  para transformar vidasor 
+              <p className="text-white/15 text-[10px] mt-1">Desenvolvido com  para transformar vidas
 
               </p>
             </div>
