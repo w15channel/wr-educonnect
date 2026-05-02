@@ -240,10 +240,12 @@ export default function Monitores() {
             }}
           >
             {/* Header institution */}
-            <div style={{ borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
+              <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png" alt="WR" style={{ width: 60, height: 60, objectFit: 'contain' }} crossOrigin="anonymous" />
               <p style={{ fontSize: 11, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>
                 WR — Instituto de Desenvolvimento Humano
               </p>
+              <div style={{ width: 60 }} />
             </div>
 
             {/* Title */}

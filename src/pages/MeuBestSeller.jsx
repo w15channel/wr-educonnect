@@ -170,93 +170,147 @@ export default function MeuBestSeller() {
     toast.success('Referências sugeridas pela IA!');
   };
 
-  // Generate Word-compatible HTML document (ABNT)
+  // Generate Word-compatible HTML document — full editorial structure
   const handleExportWord = async () => {
     setWordLoading(true);
     const bookTitle = selectedBook?.title || 'Meu Livro';
+    const subtitle = selectedBook?.subtitle || '';
     const author = selectedBook?.author_name || session?.name || '';
+    const year = new Date().getFullYear();
 
-    let bodyHtml = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-      <head>
-        <meta charset="UTF-8">
-        <title>${bookTitle}</title>
-        <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml><![endif]-->
-        <style>
-          @page { size: A4; margin: 3cm 2cm 2cm 3cm; }
-          body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; color: #000; }
-          h1 { font-size: 14pt; font-weight: bold; text-align: center; margin-top: 0; page-break-before: always; }
-          h2 { font-size: 12pt; font-weight: bold; text-transform: uppercase; }
-          p { text-indent: 1.25cm; margin: 0 0 6pt; text-align: justify; }
-          .cover { text-align: center; padding-top: 8cm; page-break-after: always; }
-          .cover h1 { font-size: 14pt; text-transform: uppercase; }
-          .cover p { text-indent: 0; }
-          .section-title { text-align: center; font-size: 12pt; font-weight: bold; text-transform: uppercase; margin-bottom: 1cm; }
-          .references { font-size: 12pt; text-indent: 0; hanging-indent: 1.25cm; }
-        </style>
-      </head>
-      <body>
-    `;
+    const pageSize = selectedBook?.page_format === 'A5' ? 'A5'
+      : selectedBook?.page_format === 'Letter' ? 'letter'
+      : selectedBook?.page_format === '6x9' ? '6in 9in'
+      : 'A4';
 
-    // Capa
-    bodyHtml += `<div class="cover">
-      <p>&nbsp;</p><p>&nbsp;</p>
-      <p style="text-indent:0">${author}</p>
-      <p>&nbsp;</p><p>&nbsp;</p>
-      <h1>${bookTitle}</h1>
-      ${selectedBook?.subtitle ? `<p style="text-indent:0"><em>${selectedBook.subtitle}</em></p>` : ''}
-    </div>`;
+    const marginInner = '2.5cm';
+    const marginOuter = '2.0cm';
 
-    // Dedicatória
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="UTF-8">
+  <title>${bookTitle}</title>
+  <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml><![endif]-->
+  <style>
+    @page Section1 { size: ${pageSize}; margin: 2.0cm ${marginOuter} 2.0cm ${marginInner}; }
+    div.Section1 { page: Section1; }
+    body { font-family: Georgia, "Garamond", serif; font-size: 11.5pt; line-height: 1.4; color: #000; }
+    h1.chapter { font-family: Georgia, serif; font-size: 16pt; font-weight: bold; text-align: left; margin: 0 0 1.2em; page-break-before: always; line-height: 1.0; }
+    h2 { font-family: Georgia, serif; font-size: 12.5pt; font-weight: bold; margin: 1.2em 0 0.6em; }
+    p { font-size: 11.5pt; text-indent: 0.75cm; margin: 0; text-align: justify; line-height: 1.35; }
+    p.noindent { text-indent: 0; }
+    .page-break { page-break-after: always; }
+    .cover { text-align: center; padding-top: 7cm; }
+    .cover p { text-indent: 0; text-align: center; }
+    .cover .author { font-size: 12pt; letter-spacing: 2pt; text-transform: uppercase; margin-bottom: 3cm; }
+    .cover .title { font-size: 22pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1pt; margin-bottom: 0.5cm; }
+    .cover .subtitle { font-size: 13pt; font-style: italic; margin-bottom: 4cm; }
+    .cover .publisher { font-size: 10pt; color: #555; }
+    .credits { font-size: 9pt; line-height: 1.6; padding-top: 14cm; }
+    .credits p { text-indent: 0; }
+    .dedication { padding-top: 10cm; text-align: right; }
+    .dedication p { text-indent: 0; text-align: right; max-width: 50%; margin-left: auto; font-style: italic; }
+    .section-heading { font-size: 14pt; font-weight: bold; text-transform: uppercase; text-align: center; margin-bottom: 1.5cm; letter-spacing: 2pt; }
+    .toc-entry { font-size: 11pt; margin: 0; text-indent: 0; line-height: 1.8; }
+    .ref-entry { font-size: 11pt; text-indent: 0; margin: 0 0 6pt; text-align: justify; }
+    .author-bio { font-size: 11pt; text-indent: 0; text-align: justify; }
+    .back-cover { padding-top: 5cm; text-align: center; }
+    .back-cover p { text-indent: 0; font-size: 11.5pt; max-width: 70%; margin: 0 auto 1cm; font-style: italic; line-height: 1.6; text-align: justify; }
+  </style>
+</head>
+<body>
+<div class="Section1">`;
+
+    // 1. CAPA
+    html += `<div class="cover page-break">
+  <p class="author">${author}</p>
+  <p class="title">${bookTitle}</p>
+  ${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}
+  <p class="publisher">WR — Instituto de Desenvolvimento Humano<br/>${year}</p>
+</div>`;
+
+    // 2. PÁGINA DE ROSTO (Half title)
+    html += `<div style="text-align:center;padding-top:12cm;" class="page-break">
+  <p style="font-size:18pt;font-weight:bold;text-indent:0;text-transform:uppercase;letter-spacing:2pt;">${bookTitle}</p>
+  ${subtitle ? `<p style="font-size:12pt;font-style:italic;text-indent:0;margin-top:0.5cm;">${subtitle}</p>` : ''}
+</div>`;
+
+    // 3. CRÉDITOS (Copyright)
+    html += `<div class="credits page-break">
+  <p class="noindent">© ${year} ${author}</p>
+  <p class="noindent">Todos os direitos reservados.</p>
+  <p class="noindent" style="margin-top:1cm;">Publicado em parceria com WR — Instituto de Desenvolvimento Humano.</p>
+  <p class="noindent" style="margin-top:0.5cm;">Formato: ${selectedBook?.page_format || 'A4'}</p>
+  <p class="noindent" style="margin-top:0.5cm;font-style:italic">Esta obra foi produzida na plataforma WR-EDU.</p>
+</div>`;
+
+    // 4. DEDICATÓRIA
     if (selectedBook?.dedication) {
-      bodyHtml += `<div style="page-break-after:always; padding-top:10cm; text-align:right">
-        <p style="text-indent:0;text-align:right;max-width:50%;margin-left:auto;font-style:italic">${selectedBook.dedication.replace(/\n/g,'<br/>')}</p>
-      </div>`;
+      html += `<div class="dedication page-break">`;
+      selectedBook.dedication.split('\n').forEach(l => {
+        if (l.trim()) html += `<p>${l}</p>`;
+      });
+      html += `</div>`;
     }
 
-    // Sumário simples
-    bodyHtml += `<h1 class="section-title">SUMÁRIO</h1>`;
-    chapters.forEach((ch, i) => {
-      bodyHtml += `<p style="text-indent:0">${i+1}. ${ch.title}</p>`;
-    });
-    bodyHtml += `<div style="page-break-after:always"></div>`;
-
-    // Prefácio
+    // 5. PREFÁCIO
     if (selectedBook?.preface) {
-      bodyHtml += `<h1 class="section-title">PREFÁCIO</h1>`;
-      selectedBook.preface.split('\n').forEach(line => {
-        if (line.trim()) bodyHtml += `<p>${line}</p>`;
+      html += `<div class="page-break"><p class="section-heading">Prefácio</p>`;
+      selectedBook.preface.split('\n').forEach(l => {
+        if (l.trim()) html += `<p>${l}</p>`;
       });
+      html += `</div>`;
     }
 
-    // Capítulos
+    // 6. SUMÁRIO
+    html += `<div class="page-break"><p class="section-heading">Sumário</p>`;
+    chapters.forEach((ch, i) => {
+      html += `<p class="toc-entry">${i + 1}. ${ch.title}</p>`;
+    });
+    html += `</div>`;
+
+    // 7. CAPÍTULOS
     chapters.forEach((ch) => {
-      bodyHtml += `<h1>${ch.order}. ${ch.title.toUpperCase()}</h1>`;
-      const plain = ch.content ? ch.content.replace(/<[^>]+>/g, '').trim() : '';
-      plain.split('\n').forEach(line => {
-        if (line.trim()) bodyHtml += `<p>${line}</p>`;
+      html += `<div class="page-break">`;
+      html += `<h1 class="chapter">${ch.order}. ${ch.title}</h1>`;
+      const text = ch.content ? ch.content.replace(/<[^>]+>/g, '').trim() : '';
+      text.split('\n').forEach(l => {
+        if (l.trim()) html += `<p>${l}</p>`;
       });
+      html += `</div>`;
     });
 
-    // Referências
+    // 8. REFERÊNCIAS
     if (selectedBook?.references) {
-      bodyHtml += `<h1 class="section-title">REFERÊNCIAS</h1>`;
-      selectedBook.references.split('\n').forEach(line => {
-        if (line.trim()) bodyHtml += `<p class="references" style="text-indent:0">${line}</p>`;
+      html += `<div class="page-break"><p class="section-heading">Referências Bibliográficas</p>`;
+      selectedBook.references.split('\n').forEach(l => {
+        if (l.trim()) html += `<p class="ref-entry">${l}</p>`;
       });
+      html += `</div>`;
     }
 
-    bodyHtml += `</body></html>`;
+    // 9. SOBRE O AUTOR
+    html += `<div class="page-break"><p class="section-heading">Sobre o Autor</p>
+  <p class="author-bio">${author} é autor(a) desta obra produzida pela plataforma WR-EDU. Para mais informações, entre em contato pelo Instituto WR.</p>
+</div>`;
 
-    const blob = new Blob([bodyHtml], { type: 'application/msword' });
+    // 10. CONTRACAPA
+    html += `<div class="back-cover">
+  <p>${bookTitle}${subtitle ? ` — ${subtitle}` : ''}</p>
+  <p style="font-size:9pt;color:#555;margin-top:2cm;font-style:normal;">WR — Instituto de Desenvolvimento Humano · ${year}</p>
+</div>`;
+
+    html += `</div></body></html>`;
+
+    const blob = new Blob([html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${bookTitle.replace(/\s+/g, '-')}-ABNT.doc`;
+    a.download = `${bookTitle.replace(/\s+/g, '-')}-editorial.doc`;
     a.click();
     URL.revokeObjectURL(url);
     setWordLoading(false);
-    toast.success('Arquivo Word (ABNT) gerado!');
+    toast.success('Livro exportado com estrutura editorial completa!');
   };
 
   const handleAISpellcheck = async () => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle } from 'lucide-react';
+import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ const CATEGORY_CONFIG = {
   task: { label: 'Tarefa', icon: FileText, color: 'bg-orange-100 text-orange-700' },
   quiz: { label: 'Prova', icon: Trophy, color: 'bg-blue-100 text-blue-700' },
   forum: { label: 'Fórum', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
+  therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' },
 };
 
 function StudentScoreDetail({ code, onBack }) {
@@ -30,6 +31,7 @@ function StudentScoreDetail({ code, onBack }) {
   const { data: forumPosts = [] } = useQuery({ queryKey: ['forum-posts', email], queryFn: () => base44.entities.ForumPost.filter({ author_email: email }, '-created_date', 100) });
   const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies', email], queryFn: () => base44.entities.ForumReply.filter({ author_email: email }, '-created_date', 100) });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items', email], queryFn: () => base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 500) });
+  const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-score', email], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
 
   const [scores, setScores] = useState({});
   const [notes, setNotes] = useState({});
@@ -59,7 +61,10 @@ function StudentScoreDetail({ code, onBack }) {
     { key: 'lives', label: 'Presenças', icon: Video },
     { key: 'tasks', label: 'Tarefas', icon: FileText },
     { key: 'forum', label: 'Fórum', icon: MessageSquare },
+    { key: 'therapist', label: 'Terapeutas', icon: Heart },
   ];
+
+  const myPairings = pairings.filter(p => p.therapist_email === email || p.patient_email === email);
 
   // Detect uncorrected submissions for this student
   const uncorrectedTaskIds = new Set(
@@ -270,6 +275,43 @@ function StudentScoreDetail({ code, onBack }) {
                 </div>
               </ScoreRow>
             ))}
+          </>
+        )}
+
+        {activeSection === 'therapist' && (
+          <>
+            {myPairings.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação em Terapeuta da Semana.</p>
+            )}
+            {myPairings.map((p, i) => {
+              const role = p.therapist_email === email ? 'Terapeuta' : 'Paciente';
+              const partner = p.therapist_email === email ? p.patient_name || p.patient_email : p.therapist_name || p.therapist_email;
+              const submitted = p.therapist_email === email ? p.therapist_submitted : p.patient_submitted;
+              const partnerScore = p.therapist_email === email ? p.therapist_score : p.patient_score;
+              const comment = p.therapist_email === email ? p.therapist_comment : p.patient_comment;
+              return (
+                <ScoreRow key={p.id} category="therapist" ref_id={p.id} ref_title={`Sessão ${i + 1} — ${role} de ${partner}`} max_score={10}>
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${role === 'Terapeuta' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {role}
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${submitted ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                      {submitted ? '✅ Avaliação enviada' : '⏳ Sem avaliação'}
+                    </span>
+                    {partnerScore !== undefined && partnerScore !== null && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">
+                        Nota do par: {partnerScore}/10
+                      </span>
+                    )}
+                  </div>
+                  {comment && (
+                    <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Relato: </span>{comment}
+                    </div>
+                  )}
+                </ScoreRow>
+              );
+            })}
           </>
         )}
       </div>

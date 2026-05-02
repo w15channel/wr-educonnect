@@ -33,6 +33,7 @@ const adminGroups = [
       { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes', color: 'text-emerald-400' },
       { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
       { icon: Trophy, label: 'Controle de Pontuação', path: '/scores', color: 'text-yellow-400' },
+      { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
     ],
   },
@@ -77,6 +78,7 @@ const studentGroups = [
     items: [
       { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
       { icon: BookOpen, label: 'Meu Best Seller', path: '/bestseller', color: 'text-emerald-400' },
+      { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
     ],
   },

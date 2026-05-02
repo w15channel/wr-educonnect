@@ -24,6 +24,7 @@ import RankingGeral from './pages/RankingGeral';
 import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
 import MeuBestSeller from './pages/MeuBestSeller';
+import HistoricoAcademico from './pages/HistoricoAcademico';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
         <Route path="/monitores" element={<Monitores />} />
         <Route path="/terapeuta" element={<TerapeutaDaSemana />} />
         <Route path="/bestseller" element={<MeuBestSeller />} />
+        <Route path="/historico" element={<HistoricoAcademico />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
