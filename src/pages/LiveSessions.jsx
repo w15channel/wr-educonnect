@@ -36,7 +36,7 @@ export default function LiveSessions() {
   const [selectedSession, setSelectedSession] = useState(null);
   const [newMsg, setNewMsg] = useState('');
   const [attendanceConfirmed, setAttendanceConfirmed] = useState(false);
-  const [attendanceTimer, setAttendanceTimer] = useState(null);
+  const [attendanceTimer, setAttendanceTimer] = useState(1200);
   const chatEndRef = useRef(null);
   const [form, setForm] = useState({
     title: '', description: '', stream_url: '', scheduled_at: '', status: 'scheduled', platform: 'youtube'
@@ -148,24 +148,12 @@ export default function LiveSessions() {
     },
   });
 
-  const getAttendanceWindow = (sess) => {
-    // 1200 seconds from session created_date
-    if (sess.status !== 'live') return null;
-    const started = new Date(sess.created_date);
-    const cutoff = new Date(started.getTime() + 1200 * 1000);
-    const now = new Date();
-    if (now > cutoff) return { expired: true, secondsLeft: 0 };
-    const secondsLeft = Math.floor((cutoff - now) / 1000);
-    return { expired: false, secondsLeft };
-  };
-
   // ── Session room view ──
   if (selectedSession) {
     const sessionEmbed = getEmbedUrl(selectedSession.stream_url);
     const embedSrc = sessionEmbed || WR_LIVE_EMBED;
     const isLive = selectedSession.status === 'live';
     const alreadyAttended = myAttendances.some(a => a.session_id === selectedSession.id);
-    const window = getAttendanceWindow(selectedSession);
 
     return (
       <div className="flex flex-col h-full bg-background">
@@ -253,11 +241,9 @@ export default function LiveSessions() {
             {/* Attendance + Emojis + Hand */}
             <div className="px-2 py-1.5 border-t border-border space-y-1.5">
               {!isTeacher && isLive && !alreadyAttended && !attendanceConfirmed && (
-                window && !window.expired
-                  ? <AttendanceWidget window={window} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
-                  : <Button size="sm" className="w-full h-8 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => confirmAttendanceMutation.mutate(selectedSession)} disabled={confirmAttendanceMutation.isPending}>
-                      <UserCheck size={12} /> Confirmar Presença
-                    </Button>
+                attendanceTimer > 0
+                  ? <AttendanceWidget secondsLeft={attendanceTimer} onTick={setAttendanceTimer} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
+                  : <span className="text-xs text-muted-foreground">Janela de presença encerrada</span>
               )}
               {!isTeacher && isLive && (alreadyAttended || attendanceConfirmed) && (
                 <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-1 rounded-full w-fit">
@@ -404,11 +390,10 @@ export default function LiveSessions() {
   );
 }
 
-function AttendanceWidget({ window: win, onConfirm, loading }) {
-  const [secondsLeft, setSecondsLeft] = React.useState(win.secondsLeft);
+function AttendanceWidget({ secondsLeft, onConfirm, loading, onTick }) {
   React.useEffect(() => {
     if (secondsLeft <= 0) return;
-    const t = setTimeout(() => setSecondsLeft(s => s - 1), 1000);
+    const t = setTimeout(() => onTick(secondsLeft - 1), 1000);
     return () => clearTimeout(t);
   }, [secondsLeft]);
   const mins = Math.floor(secondsLeft / 60);
@@ -418,7 +403,7 @@ function AttendanceWidget({ window: win, onConfirm, loading }) {
     <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-1.5">
       <UserCheck size={13} className="text-blue-600 shrink-0" />
       <span className="text-xs font-semibold text-blue-800">Confirmar presença</span>
-      <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">{mins}:{String(secs).padStart(2,'0')}</span>
+      <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">{String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}</span>
       <Button size="sm" className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700" onClick={onConfirm} disabled={loading}>
         Confirmar
       </Button>

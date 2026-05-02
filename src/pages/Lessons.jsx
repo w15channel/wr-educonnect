@@ -111,8 +111,8 @@ export default function Lessons() {
 
   const getEmbedUrl = (url) => {
     if (!url) return null;
-    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&\s]+)/);
-    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/);
+    if (ytMatch) return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
     const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
     if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
     return url;
@@ -211,7 +211,13 @@ export default function Lessons() {
             <div>
               {getEmbedUrl(selectedVideo.video_url) ? (
                 <div className="aspect-video bg-black">
-                  <iframe src={getEmbedUrl(selectedVideo.video_url)} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+                  <iframe
+                    src={getEmbedUrl(selectedVideo.video_url)}
+                    className="w-full h-full"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
                 </div>
               ) : (
                 <div className="aspect-video bg-muted flex items-center justify-center flex-col gap-3">

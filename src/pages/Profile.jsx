@@ -4,7 +4,7 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, Trash2, AlertTriangle, User, Smile } from 'lucide-react';
+import { Save, CheckCircle, Camera, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
@@ -44,8 +44,6 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [deleteInput, setDeleteInput] = useState('');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const fileRef = useRef();
 
@@ -243,40 +241,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Danger zone */}
-      <div className="mt-5 bg-red-50 border border-red-200 rounded-2xl p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <AlertTriangle size={16} className="text-red-500" />
-          <h3 className="font-bold text-red-600 text-sm">Zona de Perigo</h3>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          A exclusão desativa sua conta permanentemente. Esta ação não pode ser desfeita.
-        </p>
-        {!deleteConfirm ? (
-          <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-600 hover:text-white gap-2 h-9 text-sm" onClick={() => setDeleteConfirm(true)}>
-            <Trash2 size={14} /> Excluir minha conta
-          </Button>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs font-semibold text-foreground">Digite <strong>EXCLUIR</strong> para confirmar:</p>
-            <Input value={deleteInput} onChange={e => setDeleteInput(e.target.value)} placeholder="EXCLUIR" className="border-red-300" />
-            <div className="flex gap-2">
-              <Button variant="destructive" disabled={deleteInput !== 'EXCLUIR'} className="gap-2 h-9 text-sm"
-                onClick={async () => {
-                  if (session?.codeId) await base44.entities.AccessCode.update(session.codeId, { is_active: false });
-                  toast.success('Conta desativada. Até logo!');
-                  setTimeout(() => logout(), 1500);
-                }}
-              >
-                <Trash2 size={13} /> Confirmar
-              </Button>
-              <Button variant="outline" className="h-9 text-sm" onClick={() => { setDeleteConfirm(false); setDeleteInput(''); }}>
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

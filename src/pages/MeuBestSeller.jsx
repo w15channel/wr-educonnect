@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import ReactQuill from 'react-quill';
 import { toast } from 'sonner';
 
 // Large curated set of Unsplash covers
@@ -159,20 +158,6 @@ export default function MeuBestSeller() {
     },
   });
 
-  const handleAISuggest = async () => {
-    if (!editingChapter) return;
-    setAiLoading(true);
-    const bookTitle = selectedBook?.title || 'meu livro';
-    const chapTitle = editingChapter.title || 'capítulo';
-    const currentText = chapterContent.replace(/<[^>]+>/g, '').substring(0, 500);
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Sou um estudante escrevendo um livro chamado "${bookTitle}". Estou no capítulo "${chapTitle}". ${currentText ? `O que escrevi até agora: "${currentText}". ` : ''}Sugira um parágrafo criativo e inspirador para continuar este capítulo, no estilo de um livro de desenvolvimento pessoal. Escreva em português, de forma fluida e envolvente. Responda apenas com o parágrafo sugerido.`,
-    });
-    setChapterContent(prev => prev + `<p>${result}</p>`);
-    setAiLoading(false);
-    toast.success('Sugestão da IA adicionada!');
-  };
-
   const handleSuggestReferences = async () => {
     if (!selectedBook?.title) return;
     setSuggestingRefs(true);
@@ -274,6 +259,17 @@ export default function MeuBestSeller() {
     toast.success('Arquivo Word (ABNT) gerado!');
   };
 
+  const handleAISpellcheck = async () => {
+    if (!chapterContent.trim()) return;
+    setAiLoading(true);
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `Corrija ortografia e gramática do texto a seguir, mantendo o estilo e conteúdo do autor. Retorne apenas o texto corrigido, sem comentários:\n\n${chapterContent}`,
+    });
+    setChapterContent(result);
+    setAiLoading(false);
+    toast.success('Texto corrigido pela IA!');
+  };
+
   // ── Editor de capítulo ──
   if (editingChapter) {
     return (
@@ -282,40 +278,29 @@ export default function MeuBestSeller() {
           <Button variant="ghost" size="sm" onClick={() => setEditingChapter(null)} className="gap-1.5 text-xs">
             <ChevronLeft size={14} /> Voltar ao Livro
           </Button>
-          <Button
-            size="sm"
-            className="gap-2"
-            onClick={() => updateChapterMutation.mutate({ id: editingChapter.id, data: { content: chapterContent } })}
-            disabled={updateChapterMutation.isPending}
-          >
-            Salvar Capítulo
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleAISpellcheck} disabled={aiLoading || !chapterContent.trim()}>
+              {aiLoading ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+              Corrigir com IA
+            </Button>
+            <Button
+              size="sm"
+              className="gap-2"
+              onClick={() => updateChapterMutation.mutate({ id: editingChapter.id, data: { content: chapterContent } })}
+              disabled={updateChapterMutation.isPending}
+            >
+              Salvar Capítulo
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-foreground">{editingChapter.title}</h2>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleAISuggest} disabled={aiLoading}>
-            {aiLoading ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
-            Sugestão IA
-          </Button>
-        </div>
-        <div className="flex-1 bg-white rounded-xl border border-border overflow-hidden">
-          <ReactQuill
-            value={chapterContent}
-            onChange={setChapterContent}
-            style={{ height: '60vh' }}
-            theme="snow"
-            modules={{
-              toolbar: [
-                [{ header: [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ align: [] }],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['blockquote'],
-                ['clean'],
-              ],
-            }}
-          />
-        </div>
+        <h2 className="text-lg font-bold text-foreground">{editingChapter.title}</h2>
+        <Textarea
+          value={chapterContent}
+          onChange={e => setChapterContent(e.target.value)}
+          placeholder="Escreva o conteúdo do capítulo aqui..."
+          className="flex-1 resize-none text-sm leading-relaxed"
+          style={{ minHeight: '65vh' }}
+        />
       </div>
     );
   }

@@ -6,7 +6,7 @@ import { Trophy, Star, Crown, Download, RefreshCw, Calendar } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { format, startOfWeek, endOfWeek, addDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -230,27 +230,70 @@ export default function Monitores() {
           </DialogHeader>
           <div
             ref={certRef}
-            className="bg-white p-10 rounded-xl border-4 border-yellow-400 text-center space-y-4"
-            style={{ fontFamily: 'Georgia, serif', minHeight: 400 }}
+            className="bg-white text-center"
+            style={{
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              minHeight: 480,
+              padding: '48px 56px',
+              border: '2px solid #1e3a5f',
+              boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f',
+            }}
           >
-            <div className="flex justify-center">
-              <Crown size={48} className="text-yellow-500" />
+            {/* Header institution */}
+            <div style={{ borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
+              <p style={{ fontSize: 11, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>
+                WR — Instituto de Desenvolvimento Humano
+              </p>
             </div>
-            <h1 className="text-2xl font-bold text-slate-800">CERTIFICADO DE MONITOR</h1>
-            <p className="text-slate-600 text-lg">Certificamos que</p>
-            <h2 className="text-3xl font-bold text-yellow-700">{certStudent?.student_name}</h2>
-            <p className="text-slate-600 text-base leading-relaxed max-w-lg mx-auto">
-              foi reconhecido(a) como <strong>Monitor de Classe por Mérito</strong>, ocupando a{' '}
-              <strong>{certStudent?.rank_position}ª posição</strong> no ranking de desempenho, durante o período de{' '}
-              <strong>{certStudent?.period_start ? format(new Date(certStudent.period_start + 'T00:00:00'), 'dd/MM/yyyy') : ''}</strong> a{' '}
-              <strong>{certStudent?.period_end ? format(new Date(certStudent.period_end + 'T00:00:00'), 'dd/MM/yyyy') : ''}</strong>.
+
+            {/* Title */}
+            <p style={{ fontSize: 11, letterSpacing: 5, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 8px' }}>
+              Certificado de Reconhecimento Acadêmico
             </p>
-            <div className="flex justify-center gap-2 pt-2">
-              <Star className="text-yellow-400 fill-yellow-400" size={18} />
-              <Star className="text-yellow-400 fill-yellow-400" size={18} />
-              <Star className="text-yellow-400 fill-yellow-400" size={18} />
+            <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 28px', letterSpacing: 2, textTransform: 'uppercase' }}>
+              Monitor de Excelência
+            </h1>
+
+            {/* Body */}
+            <p style={{ fontSize: 13, color: '#444', margin: '0 0 10px' }}>Certificamos que</p>
+            <h2 style={{ fontSize: 30, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 20px', fontStyle: 'italic' }}>
+              {certStudent?.student_name}
+            </h2>
+            <p style={{ fontSize: 13, color: '#444', lineHeight: 1.9, maxWidth: 480, margin: '0 auto 24px', textAlign: 'justify' }}>
+              foi reconhecido(a) como <strong>Monitor de Classe por Mérito Acadêmico</strong>, alcançando a{' '}
+              <strong>{certStudent?.rank_position === 1 ? '1ª' : certStudent?.rank_position === 2 ? '2ª' : '3ª'} posição</strong>{' '}
+              no Ranking Geral de Desempenho, demonstrando excelência, dedicação e comprometimento com o aprendizado,
+              durante o período de{' '}
+              <strong>{certStudent?.period_start ? format(new Date(certStudent.period_start + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>{' '}
+              a{' '}
+              <strong>{certStudent?.period_end ? format(new Date(certStudent.period_end + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>.
+            </p>
+
+            {/* Divider */}
+            <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '0 auto 24px' }} />
+
+            {/* Signature area */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 80, marginTop: 16 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 140, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
+                  <p style={{ fontSize: 10, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>COORDENAÇÃO PEDAGÓGICA</p>
+                  <p style={{ fontSize: 9, color: '#888', margin: 0 }}>WR — Instituto</p>
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 140, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
+                  <p style={{ fontSize: 10, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>DIREÇÃO GERAL</p>
+                  <p style={{ fontSize: 9, color: '#888', margin: 0 }}>WR — Instituto</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-slate-400 pt-4">WR-EDU — Plataforma de Ensino</p>
+
+            {/* Footer */}
+            <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 24, paddingTop: 12 }}>
+              <p style={{ fontSize: 9, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
+                Documento emitido digitalmente pela plataforma WR-EDU · {format(new Date(), 'yyyy')}
+              </p>
+            </div>
           </div>
           <Button onClick={handlePrintCert} className="gap-2 w-full mt-2">
             <Download size={15} /> Baixar Certificado em PDF

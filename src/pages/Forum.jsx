@@ -13,8 +13,8 @@ import { toast } from 'sonner';
 
 const LESSON_TOPICS = [
   'Geral', 'Introdução à Terapia', 'Escuta Ativa', 'Técnicas Terapêuticas',
-  'Ética Profissional', 'Práticas de Meditação', 'Terapia Familiar',
-  'Psicologia Positiva', 'Mindfulness', 'Traumas e Cura', 'Outro'
+  'Ética Profissional', 'Terapia Familiar',
+  'Psicologia Positiva', 'Sexualidade', 'Traumas e Cura', 'Outro'
 ];
 
 export default function Forum() {
