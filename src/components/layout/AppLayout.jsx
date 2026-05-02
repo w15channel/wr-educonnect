@@ -102,6 +102,7 @@ export default function AppLayout() {
               exit="exit"
               transition={{ duration: 0.18, ease: 'easeOut' }}
               ref={scrollRef}
+              data-scroll-container
               className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
               style={{
                 paddingBottom: location.pathname !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,

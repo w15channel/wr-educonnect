@@ -25,6 +25,9 @@ import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
 import MeuBestSeller from './pages/MeuBestSeller';
 import HistoricoAcademico from './pages/HistoricoAcademico';
+import StudentDetail from './pages/StudentDetail';
+import TaskQuizView from './pages/TaskQuizView';
+import TaskExamBuilder from './pages/TaskExamBuilder';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -51,8 +54,11 @@ const AuthenticatedApp = () => {
         <Route path="/lessons" element={<Lessons />} />
         <Route path="/live" element={<LiveSessions />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/tasks/quiz/:id" element={<TaskQuizView />} />
+        <Route path="/tasks/builder/:id" element={<TaskExamBuilder />} />
         <Route path="/forum" element={<Forum />} />
         <Route path="/students" element={<Students />} />
+        <Route path="/students/:id" element={<StudentDetail />} />
         <Route path="/announcements" element={<Announcements />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/calendar" element={<Calendar />} />

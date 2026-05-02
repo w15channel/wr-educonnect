@@ -1,22 +1,20 @@
 import React, { useState } from 'react';
-import { useOutletContext, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Users, Search, Key, Eye, CheckCircle, XCircle, Star, Phone, Mail, CalendarDays, Activity, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import CodeManager from '@/components/admin/CodeManager';
-import { format } from 'date-fns';
 
 export default function Students() {
   const location = useLocation();
+  const navigate = useNavigate();
   const defaultTab = location.search.includes('tab=codes') ? 'codes' : 'students';
   const [tab, setTab] = useState(defaultTab);
   const [search, setSearch] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState(null);
   const [sortBy, setSortBy] = useState('date_desc');
   const queryClient = useQueryClient();
 
@@ -83,10 +81,6 @@ export default function Students() {
       // date_desc default
       return new Date(b.created_date) - new Date(a.created_date);
     });
-
-  const selectedProfile = selectedStudent ? getStudentProfile(selectedStudent) : null;
-  const selectedStats = selectedStudent ? getStudentStats(selectedStudent) : null;
-  const selectedTuitions = selectedStudent ? tuitions.filter(t => t.student_email === selectedStudent.student_email) : [];
 
   const tuitionConfig = {
     paid: { label: 'Em dia', class: 'text-green-700 bg-green-100 border-green-200', icon: CheckCircle },
@@ -193,8 +187,8 @@ export default function Students() {
                           </span>
                         </div>
                       </div>
-                      <button onClick={() => setSelectedStudent(code)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors">
-                        <Eye size={15} />
+                      <button onClick={() => navigate(`/students/${code.id}`)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors">
+                       <Eye size={15} />
                       </button>
                     </div>
                   );
@@ -266,7 +260,7 @@ export default function Students() {
                               </Select>
                             </td>
                             <td className="p-4">
-                              <button onClick={() => setSelectedStudent(code)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
+                              <button onClick={() => navigate(`/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
                                 <Eye size={13} /> Detalhes
                               </button>
                             </td>
@@ -282,93 +276,6 @@ export default function Students() {
         </>
       )}
 
-      {/* Student detail modal */}
-      <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Perfil do Aluno</DialogTitle></DialogHeader>
-          {selectedStudent && (
-            <div className="space-y-4 mt-2">
-              <div className="flex items-center gap-4">
-                {selectedProfile?.photo_url ? (
-                  <img src={selectedProfile.photo_url} alt="Foto" className="w-16 h-16 rounded-2xl object-cover border-2 border-border" />
-                ) : (
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white" style={{ backgroundColor: selectedStudent.profile_avatar_color || '#5b5ef4' }}>
-                    {(selectedStudent.profile_name || selectedStudent.student_name || '?').charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <p className="text-lg font-bold text-foreground">{selectedStudent.profile_name || selectedStudent.student_name || 'Sem nome'}</p>
-                  <p className="text-sm text-muted-foreground">{selectedStudent.student_email}</p>
-                  <code className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-lg mt-1 inline-block">{selectedStudent.code}</code>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {selectedProfile?.birth_date && (
-                  <div className="flex items-center gap-2 text-sm bg-secondary/50 rounded-xl p-3">
-                    <CalendarDays size={14} className="text-muted-foreground" />
-                    <div>
-                      <p className="text-[10px] text-muted-foreground">Nascimento</p>
-                      <p className="font-semibold text-xs">{format(new Date(selectedProfile.birth_date + 'T12:00:00'), 'dd/MM/yyyy')}</p>
-                    </div>
-                  </div>
-                )}
-                {selectedProfile?.whatsapp && (
-                  <div className="flex items-center gap-2 text-sm bg-secondary/50 rounded-xl p-3">
-                    <Phone size={14} className="text-muted-foreground" />
-                    <div>
-                      <p className="text-[10px] text-muted-foreground">WhatsApp</p>
-                      <p className="font-semibold text-xs">{selectedProfile.whatsapp}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {selectedProfile?.bio && (
-                <div className="bg-secondary/50 rounded-xl p-3">
-                  <p className="text-xs font-bold text-muted-foreground mb-1">Apresentação</p>
-                  <p className="text-sm">{selectedProfile.bio}</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-primary/5 rounded-xl p-3 text-center border border-primary/10">
-                  <p className="text-2xl font-black text-primary">{selectedStats?.submissions}</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold">Entregas</p>
-                </div>
-                <div className="bg-primary/5 rounded-xl p-3 text-center border border-primary/10">
-                  <p className="text-2xl font-black text-primary">{selectedStats?.avg}</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold">Média</p>
-                </div>
-                <div className="bg-yellow-50 rounded-xl p-3 text-center border border-yellow-200">
-                  <p className="text-2xl font-black text-yellow-600">{selectedStats?.total || 0}</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold">Pontos</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-bold text-foreground mb-2">Mensalidades</p>
-                {selectedTuitions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma mensalidade lançada.</p>
-                ) : (
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                    {selectedTuitions.map(t => {
-                      const cfg = tuitionConfig[t.status] || tuitionConfig.pending;
-                      return (
-                        <div key={t.id} className={`flex items-center justify-between p-2.5 rounded-xl border text-xs ${cfg.class}`}>
-                          <span className="font-bold">{t.month_ref}</span>
-                          <span>{t.amount ? `R$ ${Number(t.amount).toFixed(2)}` : ''}</span>
-                          <span className="font-black">{cfg.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

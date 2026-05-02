@@ -44,6 +44,21 @@ function StudentScoreDetail({ code, onBack }) {
       if (existing) return base44.entities.ScoreItem.update(existing.id, data);
       return base44.entities.ScoreItem.create(data);
     },
+    onMutate: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
+      await queryClient.cancelQueries({ queryKey: ['score-items', email] });
+      const previous = queryClient.getQueryData(['score-items', email]);
+      queryClient.setQueryData(['score-items', email], (old = []) => {
+        const existing = old.find(s => s.category === category && s.ref_id === ref_id);
+        const updated = { student_email: email, category, ref_id, ref_title, score: Number(score), max_score, verified: true, notes: itemNotes || '', id: existing?.id || `optimistic_${ref_id}` };
+        if (existing) return old.map(s => s.category === category && s.ref_id === ref_id ? updated : s);
+        return [...old, updated];
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['score-items', email], ctx.previous);
+      toast.error('Erro ao salvar pontuação.');
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['score-items', email] });
       queryClient.invalidateQueries({ queryKey: ['score-items-all'] });

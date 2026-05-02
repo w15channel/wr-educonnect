@@ -87,37 +87,45 @@ export default function Profile() {
 
   const handleSave = async () => {
     setSaving(true);
-    if (session?.codeId) {
-      await base44.entities.AccessCode.update(session.codeId, {
-        profile_name: name,
-        profile_bio: bio,
-        profile_avatar_color: avatarColor,
-        profile_photo_url: photoUrl,
-      });
-    }
-    const existing = await base44.entities.StudentProfile.filter({ student_email: session?.email }, '-created_date', 1);
-    const profileData = {
-      student_email: session?.email,
-      full_name: name,
-      nickname,
-      bio,
-      avatar_color: avatarColor,
-      avatar_emoji: selectedAvatar,
-      birth_date: birthDate,
-      whatsapp,
-      email,
-      photo_url: photoUrl,
-    };
-    if (existing.length > 0) {
-      await base44.entities.StudentProfile.update(existing[0].id, profileData);
-    } else {
-      await base44.entities.StudentProfile.create(profileData);
-    }
+    // Optimistic: update session immediately so UI reflects changes at once
     setSession({ ...session, name, bio, avatarColor, photoUrl });
-    setSaving(false);
     setSaved(true);
-    toast.success('Perfil atualizado!');
-    setTimeout(() => setSaved(false), 2500);
+    try {
+      if (session?.codeId) {
+        await base44.entities.AccessCode.update(session.codeId, {
+          profile_name: name,
+          profile_bio: bio,
+          profile_avatar_color: avatarColor,
+          profile_photo_url: photoUrl,
+        });
+      }
+      const existing = await base44.entities.StudentProfile.filter({ student_email: session?.email }, '-created_date', 1);
+      const profileData = {
+        student_email: session?.email,
+        full_name: name,
+        nickname,
+        bio,
+        avatar_color: avatarColor,
+        avatar_emoji: selectedAvatar,
+        birth_date: birthDate,
+        whatsapp,
+        email,
+        photo_url: photoUrl,
+      };
+      if (existing.length > 0) {
+        await base44.entities.StudentProfile.update(existing[0].id, profileData);
+      } else {
+        await base44.entities.StudentProfile.create(profileData);
+      }
+      toast.success('Perfil atualizado!');
+    } catch {
+      // Rollback optimistic session update
+      setSession(session);
+      toast.error('Erro ao salvar perfil.');
+    } finally {
+      setSaving(false);
+      setTimeout(() => setSaved(false), 2500);
+    }
   };
 
   const handleDeleteAccount = async () => {

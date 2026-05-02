@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { FileText, Clock, CheckCircle, Plus, Play, Trash2, Pencil, GraduationCap, ClipboardList, Send, MessageSquare } from 'lucide-react';
@@ -11,9 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import QuizView from '../components/tasks/QuizView';
 import SubmissionsList from '../components/tasks/SubmissionsList';
-import ExamBuilder from '../components/tasks/ExamBuilder';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 
@@ -23,18 +21,16 @@ export default function Tasks() {
   const { user: session } = useOutletContext();
   const user = session;
   const isTeacher = session?.role === 'admin';
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [viewSubmissions, setViewSubmissions] = useState(null);
   const [activeTab, setActiveTab] = useState('tasks');
   const [form, setForm] = useState(EMPTY_FORM);
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFiles, setUploadFiles] = useState({});
   const [commentInputs, setCommentInputs] = useState({});
-  const [showExamBuilder, setShowExamBuilder] = useState(false);
-  const [editingExam, setEditingExam] = useState(null);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
@@ -149,9 +145,7 @@ export default function Tasks() {
     },
   });
 
-  if (selectedQuiz) return <QuizView task={selectedQuiz} user={user} onBack={() => { setSelectedQuiz(null); queryClient.invalidateQueries({ queryKey: ['submissions-mine'] }); }} />;
   if (viewSubmissions) return <SubmissionsList task={viewSubmissions} onBack={() => setViewSubmissions(null)} />;
-  if (showExamBuilder) return <ExamBuilder editingExam={editingExam} onBack={() => { setShowExamBuilder(false); setEditingExam(null); }} />;
 
   return (
     <div className="p-4 lg:p-7 max-w-5xl mx-auto animate-fade-in-up">
@@ -162,7 +156,7 @@ export default function Tasks() {
         </div>
         {isTeacher && (
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-2 h-9 text-sm border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => { setEditingExam(null); setShowExamBuilder(true); }}>
+            <Button variant="outline" className="gap-2 h-9 text-sm border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => navigate('/tasks/builder/new')}>
               <GraduationCap size={15} /> Nova Prova
             </Button>
           <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingTask(null); setForm(EMPTY_FORM); } }}>
@@ -308,7 +302,7 @@ export default function Tasks() {
                         )}
                       </div>
                     ) : task.type === 'quiz' ? (
-                      <Button size="sm" className="gap-1.5 w-full sm:w-auto h-9 text-xs" onClick={() => setSelectedQuiz(task)}>
+                      <Button size="sm" className="gap-1.5 w-full sm:w-auto h-9 text-xs" onClick={() => navigate(`/tasks/quiz/${task.id}`)}>
                         <Play size={13} /> Iniciar Prova
                       </Button>
                     ) : null
@@ -318,7 +312,7 @@ export default function Tasks() {
                         Ver Entregas
                       </Button>
                       <button onClick={() => {
-                        if (task.type === 'quiz') { setEditingExam(task); setShowExamBuilder(true); }
+                        if (task.type === 'quiz') { navigate(`/tasks/builder/${task.id}`); }
                         else openEdit(task);
                       }} className="p-2 text-muted-foreground hover:text-primary transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg">
                         <Pencil size={13} />
