@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useOutletContext, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Users, Search, Key, Eye, CheckCircle, XCircle, Star, Phone, Mail, CalendarDays, Activity } from 'lucide-react';
+import { Users, Search, Key, Eye, CheckCircle, XCircle, Star, Phone, Mail, CalendarDays, Activity, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,7 @@ export default function Students() {
   const [tab, setTab] = useState(defaultTab);
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [sortBy, setSortBy] = useState('date_desc');
   const queryClient = useQueryClient();
 
   const { data: codes = [], isLoading: codesLoading } = useQuery({
@@ -60,12 +62,27 @@ export default function Students() {
     return 'paid';
   };
 
-  const filtered = codes.filter(c =>
-    !search ||
-    (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.student_email || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.profile_name || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = codes
+    .filter(c =>
+      !search ||
+      (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.student_email || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.profile_name || '').toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === 'alpha') return (a.profile_name || a.student_name || '').localeCompare(b.profile_name || b.student_name || '');
+      if (sortBy === 'alpha_desc') return (b.profile_name || b.student_name || '').localeCompare(a.profile_name || a.student_name || '');
+      if (sortBy === 'date_asc') return new Date(a.created_date) - new Date(b.created_date);
+      if (sortBy === 'status_active') return (b.is_active ? 1 : 0) - (a.is_active ? 1 : 0);
+      if (sortBy === 'tuition_overdue') {
+        const ta = getStudentTuitionStatus(a) || '';
+        const tb = getStudentTuitionStatus(b) || '';
+        const order = { overdue: 0, pending: 1, paid: 2, '': 3 };
+        return (order[ta] ?? 3) - (order[tb] ?? 3);
+      }
+      // date_desc default
+      return new Date(b.created_date) - new Date(a.created_date);
+    });
 
   const selectedProfile = selectedStudent ? getStudentProfile(selectedStudent) : null;
   const selectedStats = selectedStudent ? getStudentStats(selectedStudent) : null;
@@ -104,9 +121,35 @@ export default function Students() {
         <CodeManager />
       ) : (
         <>
-          <div className="mb-4 relative w-full sm:w-80">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="relative w-full sm:w-72">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+            </div>
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={14} className="text-muted-foreground" />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-9 text-xs w-48">
+                  <SelectValue placeholder="Ordenar por..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date_desc">Mais recentes primeiro</SelectItem>
+                  <SelectItem value="date_asc">Mais antigos primeiro</SelectItem>
+                  <SelectItem value="alpha">A-Z (nome)</SelectItem>
+                  <SelectItem value="alpha_desc">Z-A (nome)</SelectItem>
+                  <SelectItem value="status_active">Ativos primeiro</SelectItem>
+                  <SelectItem value="tuition_overdue">Inadimplentes primeiro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-9 text-xs"
+              onClick={() => queryClient.invalidateQueries()}
+            >
+              <RefreshCw size={13} /> Atualizar Dados
+            </Button>
           </div>
 
           {codesLoading ? (
@@ -128,12 +171,16 @@ export default function Students() {
                   const tCfg = tStatus ? tuitionConfig[tStatus] : null;
                   return (
                     <div key={code.id} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
-                        style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}
-                      >
-                        {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                      </div>
+                      {code.profile_photo_url ? (
+                        <img src={code.profile_photo_url} alt={displayName} className="w-10 h-10 rounded-full object-cover shrink-0 border border-border" />
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
+                          style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}
+                        >
+                          {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm text-foreground truncate">{displayName}</p>
                         <div className="flex items-center gap-2 flex-wrap mt-0.5">
@@ -179,9 +226,13 @@ export default function Students() {
                           <tr key={code.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
                             <td className="p-4">
                               <div className="flex items-center gap-3">
+                                {code.profile_photo_url ? (
+                                <img src={code.profile_photo_url} alt={displayName} className="w-9 h-9 rounded-full object-cover shrink-0 border border-border" />
+                              ) : (
                                 <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
                                   {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                 </div>
+                              )}
                                 <div>
                                   <p className="font-semibold text-foreground text-sm">{displayName}</p>
                                   <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>

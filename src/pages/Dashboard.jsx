@@ -1,8 +1,11 @@
 import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
+import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -35,7 +38,18 @@ function StatCard({ title, value, icon: Icon, iconBg, to, subtitle, pulse }) {
 export default function Dashboard() {
   const { user: session } = useOutletContext();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isTeacher = session?.role === 'admin';
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefreshAll = async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries();
+    setTimeout(() => {
+      setRefreshing(false);
+      toast.success('Todos os dados atualizados!');
+    }, 800);
+  };
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
@@ -133,6 +147,18 @@ export default function Dashboard() {
             {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
+        {isTeacher && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 shrink-0"
+            onClick={handleRefreshAll}
+            disabled={refreshing}
+          >
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
+            {refreshing ? 'Atualizando...' : 'Atualizar Gestão'}
+          </Button>
+        )}
       </div>
 
       {/* Live Banner */}

@@ -252,8 +252,12 @@ export default function LiveSessions() {
             </div>
             {/* Attendance + Emojis + Hand */}
             <div className="px-2 py-1.5 border-t border-border space-y-1.5">
-              {!isTeacher && isLive && !alreadyAttended && !attendanceConfirmed && window && !window.expired && (
-                <AttendanceWidget window={window} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
+              {!isTeacher && isLive && !alreadyAttended && !attendanceConfirmed && (
+                window && !window.expired
+                  ? <AttendanceWidget window={window} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
+                  : <Button size="sm" className="w-full h-8 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => confirmAttendanceMutation.mutate(selectedSession)} disabled={confirmAttendanceMutation.isPending}>
+                      <UserCheck size={12} /> Confirmar Presença
+                    </Button>
               )}
               {!isTeacher && isLive && (alreadyAttended || attendanceConfirmed) && (
                 <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-1 rounded-full w-fit">

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
-const EMPTY_FORM = { title: '', description: '', video_url: '', duration: '', material_links: '' };
+const EMPTY_FORM = { title: '', description: '', video_url: '', thumbnail_url: '', duration: '', material_links: '' };
 
 export default function Lessons() {
   const { user: session } = useOutletContext();
@@ -19,6 +19,7 @@ export default function Lessons() {
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [expandedLesson, setExpandedLesson] = useState(null);
   const [commentDraft, setCommentDraft] = useState({});
@@ -117,9 +118,18 @@ export default function Lessons() {
     return url;
   };
 
+  const handleCoverUpload = async (file) => {
+    if (!file) return;
+    setCoverUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(prev => ({ ...prev, thumbnail_url: file_url }));
+    setCoverUploading(false);
+    toast.success('Capa carregada!');
+  };
+
   const openEdit = (lesson) => {
     setEditingLesson(lesson);
-    setForm({ title: lesson.title, description: lesson.description || '', video_url: lesson.video_url || '', duration: lesson.duration || '', material_links: lesson.material_links || '' });
+    setForm({ title: lesson.title, description: lesson.description || '', video_url: lesson.video_url || '', thumbnail_url: lesson.thumbnail_url || '', duration: lesson.duration || '', material_links: lesson.material_links || '' });
     setShowForm(true);
   };
 
@@ -146,6 +156,19 @@ export default function Lessons() {
                 <Input placeholder="Título da aula" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
                 <Textarea placeholder="Resumo da aula (visível para os alunos)" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} />
                 <Input placeholder="URL do vídeo (YouTube, Vimeo...)" value={form.video_url} onChange={e => setForm({...form, video_url: e.target.value})} />
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Capa da Aula (imagem)</label>
+                  {form.thumbnail_url && (
+                    <img src={form.thumbnail_url} alt="Capa" className="w-full h-28 object-cover rounded-xl mb-2 border border-border" />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => handleCoverUpload(e.target.files[0])}
+                    className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                  />
+                  {coverUploading && <p className="text-xs text-muted-foreground mt-1">Enviando capa...</p>}
+                </div>
                 <Input placeholder="Duração (ex: 45 min)" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
                 <Input placeholder="Links de materiais (separados por vírgula)" value={form.material_links} onChange={e => setForm({...form, material_links: e.target.value})} />
                 <Button onClick={handleSave} disabled={!form.title} className="w-full">
@@ -237,12 +260,16 @@ export default function Lessons() {
                     style={{ minWidth: '4.5rem' }}
                     onClick={() => setSelectedVideo(lesson)}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20" />
-                    <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+                    {lesson.thumbnail_url ? (
+                      <img src={lesson.thumbnail_url} alt={lesson.title} className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20" />
+                    )}
+                    <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md z-10">
                       <Play size={14} className="text-primary ml-0.5" />
                     </div>
                     {lesson.duration && (
-                      <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded">{lesson.duration}</span>
+                      <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded z-10">{lesson.duration}</span>
                     )}
                   </div>
 

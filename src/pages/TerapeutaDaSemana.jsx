@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2 } from 'lucide-react';
+import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
@@ -33,6 +33,11 @@ export default function TerapeutaDaSemana() {
   const createPairingMutation = useMutation({
     mutationFn: (data) => base44.entities.TherapistPairing.create(data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] }),
+  });
+
+  const deletePairingMutation = useMutation({
+    mutationFn: (id) => base44.entities.TherapistPairing.delete(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] }); toast.success('Pareamento removido.'); },
   });
 
   const updatePairingMutation = useMutation({
@@ -67,8 +72,10 @@ export default function TerapeutaDaSemana() {
     };
   };
 
-  const handleGeneratePairings = () => {
-    const activeStudents = accessCodes.filter(c => c.is_active && c.student_email);
+  const handleGeneratePairings = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+    const freshCodes = await base44.entities.AccessCode.list('-created_date', 200);
+    const activeStudents = freshCodes.filter(c => c.is_active && c.student_email);
     if (activeStudents.length < 2) {
       toast.error('São necessários pelo menos 2 alunos para criar pareamentos.');
       return;
@@ -77,7 +84,6 @@ export default function TerapeutaDaSemana() {
     const shuffled = [...activeStudents].sort(() => Math.random() - 0.5);
     const date = todayStr;
     const endDate = format(addDays(today, 4), 'yyyy-MM-dd');
-    // Cria pares: 0→1, 2→3, etc. (o ultimo pode virar terapeuta do primeiro se ímpar)
     const pairs = [];
     for (let i = 0; i < shuffled.length - 1; i += 2) {
       pairs.push({ therapist: shuffled[i], patient: shuffled[i + 1] });
@@ -85,8 +91,8 @@ export default function TerapeutaDaSemana() {
     if (shuffled.length % 2 !== 0) {
       pairs.push({ therapist: shuffled[shuffled.length - 1], patient: shuffled[0] });
     }
-    pairs.forEach(({ therapist, patient }) => {
-      createPairingMutation.mutate({
+    for (const { therapist, patient } of pairs) {
+      await createPairingMutation.mutateAsync({
         therapist_email: therapist.student_email,
         therapist_name: therapist.profile_name || therapist.student_name,
         patient_email: patient.student_email,
@@ -94,8 +100,8 @@ export default function TerapeutaDaSemana() {
         pairing_date: date,
         period_end: endDate,
       });
-    });
-    toast.success('✅ Novos pareamentos gerados!');
+    }
+    toast.success(`✅ ${pairs.length} pareamento(s) gerado(s) com ${activeStudents.length} alunos!`);
   };
 
   const handleSubmitEval = () => {
@@ -217,13 +223,13 @@ export default function TerapeutaDaSemana() {
               </div>
             )}
             {currentPairings.map(p => (
-              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} />
+              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} onDelete={() => deletePairingMutation.mutate(p.id)} />
             ))}
           </TabsContent>
           <TabsContent value="past" className="mt-4 space-y-3">
             {pastPairings.length === 0 && <p className="text-muted-foreground text-sm text-center py-8">Nenhum pareamento anterior.</p>}
             {pastPairings.map(p => (
-              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} />
+              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} onDelete={() => deletePairingMutation.mutate(p.id)} />
             ))}
           </TabsContent>
         </Tabs>
@@ -293,16 +299,17 @@ export default function TerapeutaDaSemana() {
   );
 }
 
-function PairingCard({ pairing, getStudentInfo, showScores }) {
+function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
   const therapist = getStudentInfo(pairing.therapist_email);
   const patient = getStudentInfo(pairing.patient_email);
   return (
     <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-1">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: '#ec4899' }}>
-            {therapist.name?.charAt(0)}
-          </div>
+          {therapist.photo
+            ? <img src={therapist.photo} alt={therapist.name} className="w-9 h-9 rounded-full object-cover" />
+            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: therapist.color || '#ec4899' }}>{therapist.name?.charAt(0)}</div>
+          }
           <div>
             <p className="text-xs font-bold text-foreground">{therapist.name}</p>
             <Badge className="text-[9px] bg-pink-100 text-pink-700 border-pink-200">Terapeuta</Badge>
@@ -310,9 +317,10 @@ function PairingCard({ pairing, getStudentInfo, showScores }) {
         </div>
         <span className="text-muted-foreground text-sm">⇄</span>
         <div className="flex items-center gap-2 flex-1">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: '#3b82f6' }}>
-            {patient.name?.charAt(0)}
-          </div>
+          {patient.photo
+            ? <img src={patient.photo} alt={patient.name} className="w-9 h-9 rounded-full object-cover" />
+            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: patient.color || '#3b82f6' }}>{patient.name?.charAt(0)}</div>
+          }
           <div>
             <p className="text-xs font-bold text-foreground">{patient.name}</p>
             <Badge className="text-[9px] bg-blue-100 text-blue-700 border-blue-200">Paciente</Badge>
@@ -321,6 +329,11 @@ function PairingCard({ pairing, getStudentInfo, showScores }) {
         <div className="flex items-center gap-1.5 shrink-0">
           {pairing.therapist_submitted ? <CheckCircle2 size={13} className="text-green-500" /> : <div className="w-3 h-3 rounded-full bg-orange-300" />}
           {pairing.patient_submitted ? <CheckCircle2 size={13} className="text-green-500" /> : <div className="w-3 h-3 rounded-full bg-orange-300" />}
+          {onDelete && (
+            <button onClick={onDelete} className="ml-1 p-1.5 text-muted-foreground hover:text-destructive rounded-lg transition-colors" title="Excluir pareamento">
+              <Trash2 size={13} />
+            </button>
+          )}
         </div>
       </div>
       {showScores && (pairing.therapist_submitted || pairing.patient_submitted) && (
