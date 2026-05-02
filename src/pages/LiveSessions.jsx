@@ -244,8 +244,8 @@ export default function LiveSessions() {
               )}
               {chatMessages.map(msg => (
                 <div key={msg.id} className={`text-sm ${msg.is_hand_raised ? 'bg-amber-50 p-2 rounded-xl border border-amber-200' : ''}`}>
-                  <span className="font-semibold text-xs" style={{ color: '#1a1a2e' }}>{msg.author_name}: </span>
-                  <span className="text-xs" style={{ color: '#1a1a2e' }}>{msg.content}</span>
+                  <span className="font-semibold text-xs text-gray-800">{msg.author_name}: </span>
+                  <span className="text-xs text-gray-700">{msg.content}</span>
                 </div>
               ))}
               <div ref={chatEndRef} />
@@ -270,7 +270,7 @@ export default function LiveSessions() {
                   <button
                     onClick={handleRaiseHand}
                     title="Pedir para falar"
-                    className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors ml-auto shrink-0"
+                    className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors"
                   >
                     ✋ Falar
                   </button>

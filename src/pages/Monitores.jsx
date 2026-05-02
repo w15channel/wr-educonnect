@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, Crown, Award, Download, RefreshCw, Calendar } from 'lucide-react';
+import { Trophy, Star, Crown, Award, Download, RefreshCw, Calendar, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -70,25 +70,39 @@ export default function Monitores() {
   const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
   const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
+  // Monitores atuais: os definidos na semana vigente OU os mais recentes
+  const latestPeriod = monitorHistory.length > 0
+    ? [...monitorHistory].sort((a, b) => b.period_start.localeCompare(a.period_start))[0]?.period_start
+    : null;
   const currentMonitors = monitorHistory.filter(m => m.period_start === weekStart);
 
-  const handleDefineMonitors = () => {
+  const handleDefineMonitors = async () => {
     if (currentMonitors.length > 0) {
       toast.info('Monitores desta semana já foram definidos.');
       return;
     }
-    topMonitors.forEach((m, i) => {
-      const code = accessCodes.find(c => c.student_email === m.email);
-      const name = code?.profile_name || code?.student_name || m.email;
-      createMonitorMutation.mutate({
-        student_email: m.email,
-        student_name: name,
-        period_start: weekStart,
-        period_end: weekEnd,
-        rank_position: i + 1,
-      });
-    });
-    toast.success('✅ Monitores da semana definidos!');
+    if (topMonitors.length === 0) {
+      toast.error('Nenhum aluno pontuado encontrado no ranking.');
+      return;
+    }
+    try {
+      for (let i = 0; i < topMonitors.length; i++) {
+        const m = topMonitors[i];
+        const code = accessCodes.find(c => c.student_email === m.email);
+        const name = code?.profile_name || code?.student_name || m.email;
+        await base44.entities.MonitorHistory.create({
+          student_email: m.email,
+          student_name: name,
+          period_start: weekStart,
+          period_end: weekEnd,
+          rank_position: i + 1,
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['monitor-history'] });
+      toast.success('✅ Monitores da semana definidos!');
+    } catch (e) {
+      toast.error('Erro ao definir monitores.');
+    }
   };
 
   const getStudentInfo = (email) => {

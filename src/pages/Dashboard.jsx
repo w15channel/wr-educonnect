@@ -281,6 +281,7 @@ export default function Dashboard() {
                   const displayName = code?.profile_name || code?.student_name || r.email;
                   const avatarColor = code?.profile_avatar_color || '#5b5ef4';
                   const photoUrl = code?.profile_photo_url || '';
+                  const avatarEmoji = code?.profile_avatar_emoji || '';
                   const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
                   return (
                     <div key={r.email} className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/8 border border-primary/15' : 'hover:bg-secondary/50'}`}>
@@ -289,6 +290,10 @@ export default function Dashboard() {
                       </span>
                       {photoUrl ? (
                         <img src={photoUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      ) : avatarEmoji ? (
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ backgroundColor: avatarColor }}>
+                          {avatarEmoji}
+                        </div>
                       ) : (
                         <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
                           {displayName?.charAt(0)?.toUpperCase()}
@@ -324,16 +329,29 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {ranking.map((r, i) => (
-                <div key={r.email} className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-secondary/50">
-                  <span className="text-sm w-5 text-center shrink-0">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground font-bold">{i+1}</span>}</span>
-                  <span className="flex-1 text-xs font-semibold text-foreground truncate">{r.name}</span>
-                  <div className="flex items-center gap-1">
-                    <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-xs font-bold">{r.total}</span>
+              {ranking.map((r, i) => {
+                const code = accessCodes.find(c => c.student_email === r.email);
+                const displayName = code?.profile_name || code?.student_name || r.email;
+                const avatarColor = code?.profile_avatar_color || '#5b5ef4';
+                const photoUrl = code?.profile_photo_url || '';
+                return (
+                  <div key={r.email} className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-secondary/50">
+                    <span className="text-sm w-5 text-center shrink-0">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground font-bold">{i+1}</span>}</span>
+                    {photoUrl ? (
+                      <img src={photoUrl} alt={displayName} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                        {displayName?.charAt(0)?.toUpperCase()}
+                      </div>
+                    )}
+                    <span className="flex-1 text-xs font-semibold text-foreground truncate">{displayName}</span>
+                    <div className="flex items-center gap-1">
+                      <Star size={11} className="text-yellow-400 fill-yellow-400" />
+                      <span className="text-xs font-bold">{r.total}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
