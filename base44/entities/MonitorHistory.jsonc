@@ -1,0 +1,32 @@
+{
+  "name": "MonitorHistory",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno monitor"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome do aluno monitor"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date",
+      "description": "In\u00edcio do per\u00edodo como monitor"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Fim do per\u00edodo como monitor"
+    },
+    "rank_position": {
+      "type": "number",
+      "description": "Posi\u00e7\u00e3o no ranking (1, 2 ou 3)"
+    }
+  },
+  "required": [
+    "student_email",
+    "period_start"
+  ]
+}

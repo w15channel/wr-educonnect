@@ -1,0 +1,32 @@
+{
+  "name": "BookChapter",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID do livro"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email do autor"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do cap\u00edtulo"
+    },
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado do cap\u00edtulo (HTML rich text)"
+    },
+    "order": {
+      "type": "number",
+      "default": 1,
+      "description": "Ordem do cap\u00edtulo"
+    }
+  },
+  "required": [
+    "book_id",
+    "author_email",
+    "title"
+  ]
+}

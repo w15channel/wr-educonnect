@@ -21,6 +21,9 @@ import TutorDigital from './pages/TutorDigital';
 import ScoreControl from './pages/ScoreControl';
 import Certificadora from './pages/Certificadora';
 import RankingGeral from './pages/RankingGeral';
+import Monitores from './pages/Monitores';
+import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
+import MeuBestSeller from './pages/MeuBestSeller';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -57,6 +60,9 @@ const AuthenticatedApp = () => {
         <Route path="/scores" element={<ScoreControl />} />
         <Route path="/certificadora" element={<Certificadora />} />
         <Route path="/ranking" element={<RankingGeral />} />
+        <Route path="/monitores" element={<Monitores />} />
+        <Route path="/terapeuta" element={<TerapeutaDaSemana />} />
+        <Route path="/bestseller" element={<MeuBestSeller />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

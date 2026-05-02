@@ -4,7 +4,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Trophy, Award
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
@@ -17,6 +17,7 @@ const adminNav = [
   { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
   { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
   { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
+  { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
 ];
 
 const adminToolsNav = [
@@ -24,6 +25,8 @@ const adminToolsNav = [
   { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes', color: 'text-emerald-400' },
   { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
   { icon: Trophy, label: 'Controle de Pontuação', path: '/scores', color: 'text-yellow-400' },
+  { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
+  { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
 ];
 
 const studentNav = [
@@ -36,6 +39,9 @@ const studentNav = [
   { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
   { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
   { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
+  { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
+  { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
+  { icon: BookOpen, label: 'Meu Best Seller', path: '/bestseller', color: 'text-emerald-400' },
   { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
   { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
 ];

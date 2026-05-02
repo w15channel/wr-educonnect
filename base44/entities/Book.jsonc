@@ -1,0 +1,59 @@
+{
+  "name": "Book",
+  "type": "object",
+  "properties": {
+    "author_email": {
+      "type": "string",
+      "description": "Email do autor"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Nome do autor"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do livro"
+    },
+    "subtitle": {
+      "type": "string",
+      "description": "Subt\u00edtulo do livro"
+    },
+    "cover_image_url": {
+      "type": "string",
+      "description": "URL da imagem de capa"
+    },
+    "page_format": {
+      "type": "string",
+      "enum": [
+        "A4",
+        "A5",
+        "Letter",
+        "Carta 6x9"
+      ],
+      "default": "A4",
+      "description": "Formato das p\u00e1ginas"
+    },
+    "dedication": {
+      "type": "string",
+      "description": "Dedicat\u00f3ria"
+    },
+    "preface": {
+      "type": "string",
+      "description": "Pref\u00e1cio"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_progress",
+        "finished"
+      ],
+      "default": "draft",
+      "description": "Status do livro"
+    }
+  },
+  "required": [
+    "author_email",
+    "title"
+  ]
+}

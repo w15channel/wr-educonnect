@@ -1,0 +1,63 @@
+{
+  "name": "TherapistPairing",
+  "type": "object",
+  "properties": {
+    "therapist_email": {
+      "type": "string",
+      "description": "Email do terapeuta"
+    },
+    "therapist_name": {
+      "type": "string",
+      "description": "Nome do terapeuta"
+    },
+    "patient_email": {
+      "type": "string",
+      "description": "Email do paciente"
+    },
+    "patient_name": {
+      "type": "string",
+      "description": "Nome do paciente"
+    },
+    "pairing_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do pareamento"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de encerramento do pareamento"
+    },
+    "therapist_comment": {
+      "type": "string",
+      "description": "Relato do terapeuta sobre o paciente (privado)"
+    },
+    "therapist_score": {
+      "type": "number",
+      "description": "Nota do terapeuta para o paciente 0-10 (privado)"
+    },
+    "patient_comment": {
+      "type": "string",
+      "description": "Relato do paciente sobre o terapeuta (privado)"
+    },
+    "patient_score": {
+      "type": "number",
+      "description": "Nota do paciente para o terapeuta 0-10 (privado)"
+    },
+    "therapist_submitted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Terapeuta j\u00e1 enviou avalia\u00e7\u00e3o"
+    },
+    "patient_submitted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Paciente j\u00e1 enviou avalia\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "therapist_email",
+    "patient_email",
+    "pairing_date"
+  ]
+}
