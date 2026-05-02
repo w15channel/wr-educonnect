@@ -130,6 +130,13 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
+  input, textarea, select {
+    background-color: #ffffff !important;
+    color: #1a1a2e !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: #8896a8 !important;
+  }
 }
 
 @layer utilities {
