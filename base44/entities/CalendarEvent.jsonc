@@ -2,34 +2,47 @@
   "name": "CalendarEvent",
   "type": "object",
   "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno dono do evento"
+    },
     "title": {
       "type": "string",
       "description": "T\u00edtulo do evento"
     },
     "description": {
       "type": "string",
-      "description": "Descri\u00e7\u00e3o"
+      "description": "Descri\u00e7\u00e3o do evento"
     },
-    "event_date": {
+    "date": {
       "type": "string",
-      "format": "date",
-      "description": "Data do evento"
+      "description": "Data (YYYY-MM-DD)"
     },
-    "event_time": {
+    "time": {
       "type": "string",
-      "description": "Hor\u00e1rio (ex: 14:00)"
+      "description": "Hor\u00e1rio (HH:mm)"
     },
     "type": {
       "type": "string",
       "enum": [
-        "aula",
-        "prova",
-        "tarefa",
-        "evento",
-        "feriado"
+        "personal",
+        "study",
+        "live",
+        "task",
+        "exam",
+        "reminder"
       ],
-      "default": "aula",
+      "default": "personal",
       "description": "Tipo do evento"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do evento (legado)"
+    },
+    "event_time": {
+      "type": "string",
+      "description": "Hor\u00e1rio legado"
     },
     "color": {
       "type": "string",
@@ -37,7 +50,6 @@
     }
   },
   "required": [
-    "title",
-    "event_date"
+    "title"
   ]
 }

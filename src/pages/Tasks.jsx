@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Clock, CheckCircle, Plus, Upload, Play, Trash2, Pencil, GraduationCap, ClipboardList } from 'lucide-react';
+import { FileText, Clock, CheckCircle, Plus, Upload, Play, Trash2, Pencil, GraduationCap, ClipboardList, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import QuizView from '../components/tasks/QuizView';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 
-const GOOGLE_DRIVE_FOLDER = 'https://drive.google.com/drive/folders/14OwZOk8Yo4xWAbDWCzcJUU09U3d1pxp3?usp=sharing';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 
 const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 10, quiz_questions: [] };
 
@@ -27,8 +27,10 @@ export default function Tasks() {
   const [editingTask, setEditingTask] = useState(null);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [viewSubmissions, setViewSubmissions] = useState(null);
-  const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'quizzes'
+  const [activeTab, setActiveTab] = useState('tasks');
   const [form, setForm] = useState(EMPTY_FORM);
+  const [uploadStatus, setUploadStatus] = useState({});
+  const [uploadFiles, setUploadFiles] = useState({});
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
@@ -46,23 +48,12 @@ export default function Tasks() {
 
   const createTaskMutation = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      setShowForm(false);
-      setForm(EMPTY_FORM);
-      toast.success('Tarefa criada!');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks'] }); setShowForm(false); setForm(EMPTY_FORM); toast.success('Tarefa criada!'); },
   });
 
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      setEditingTask(null);
-      setShowForm(false);
-      setForm(EMPTY_FORM);
-      toast.success('Tarefa atualizada!');
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks'] }); setEditingTask(null); setShowForm(false); setForm(EMPTY_FORM); toast.success('Tarefa atualizada!'); },
   });
 
   const deleteTaskMutation = useMutation({
@@ -72,7 +63,6 @@ export default function Tasks() {
 
   const submitFileMutation = useMutation({
     mutationFn: async ({ taskId, file }) => {
-      // Upload to base44 storage, then also provide Google Drive folder link to user
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       return base44.entities.TaskSubmission.create({
         task_id: taskId,
@@ -82,26 +72,48 @@ export default function Tasks() {
         status: 'submitted',
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
-      toast.success('Arquivo enviado com sucesso!', {
-        description: 'Seu arquivo foi salvo na plataforma.',
-        action: { label: 'Ver Drive', onClick: () => window.open(GOOGLE_DRIVE_FOLDER, '_blank') },
-      });
+      setUploadStatus(prev => ({ ...prev, [taskId]: 'success' }));
+      toast.success('Arquivo enviado com sucesso!');
+      setTimeout(() => setUploadStatus(prev => ({ ...prev, [taskId]: null })), 5000);
     },
   });
 
-  const getSubmission = (taskId) => submissions.find(s => s.task_id === taskId);
-
-  const handleFileUpload = (taskId) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) submitFileMutation.mutate({ taskId, file });
+  const handleGoogleDriveUpload = async (taskId) => {
+    const file = uploadFiles[taskId];
+    if (!file) { toast.error('Selecione um arquivo'); return; }
+    setUploadStatus(prev => ({ ...prev, [taskId]: 'sending' }));
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64Data = e.target.result.split(',')[1];
+      const params = new URLSearchParams();
+      params.append('fileName', file.name);
+      params.append('mimeType', file.type);
+      params.append('fileData', base64Data);
+      try {
+        await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
+        // Also save to platform
+        await base44.entities.TaskSubmission.create({
+          task_id: taskId,
+          student_email: user.email || user.code || '',
+          student_name: user.name || user.full_name || '',
+          file_name: file.name,
+          status: 'submitted',
+        });
+        queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
+        setUploadStatus(prev => ({ ...prev, [taskId]: 'success' }));
+        setUploadFiles(prev => ({ ...prev, [taskId]: null }));
+        toast.success('Trabalho enviado com sucesso!');
+        setTimeout(() => setUploadStatus(prev => ({ ...prev, [taskId]: null })), 5000);
+      } catch (err) {
+        setUploadStatus(prev => ({ ...prev, [taskId]: 'error' }));
+      }
     };
-    input.click();
+    reader.readAsDataURL(file);
   };
+
+  const getSubmission = (taskId) => submissions.find(s => s.task_id === taskId);
 
   const openEdit = (task) => {
     setEditingTask(task);
@@ -110,27 +122,19 @@ export default function Tasks() {
   };
 
   const handleSave = () => {
-    if (editingTask) {
-      updateTaskMutation.mutate({ id: editingTask.id, data: form });
-    } else {
-      createTaskMutation.mutate(form);
-    }
+    if (editingTask) updateTaskMutation.mutate({ id: editingTask.id, data: form });
+    else createTaskMutation.mutate(form);
   };
 
   const uploadTasks = tasks.filter(t => t.type === 'upload');
   const quizTasks = tasks.filter(t => t.type === 'quiz');
   const displayedTasks = activeTab === 'tasks' ? uploadTasks : quizTasks;
 
-  if (selectedQuiz) {
-    return <QuizView task={selectedQuiz} user={user} onBack={() => { setSelectedQuiz(null); queryClient.invalidateQueries({ queryKey: ['submissions-mine'] }); }} />;
-  }
-
-  if (viewSubmissions) {
-    return <SubmissionsList task={viewSubmissions} onBack={() => setViewSubmissions(null)} />;
-  }
+  if (selectedQuiz) return <QuizView task={selectedQuiz} user={user} onBack={() => { setSelectedQuiz(null); queryClient.invalidateQueries({ queryKey: ['submissions-mine'] }); }} />;
+  if (viewSubmissions) return <SubmissionsList task={viewSubmissions} onBack={() => setViewSubmissions(null)} />;
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+    <div className="p-4 lg:p-7 max-w-5xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Tarefas e Avaliações</h2>
@@ -139,15 +143,13 @@ export default function Tasks() {
         {isTeacher && (
           <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingTask(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus size={16} /> Nova Tarefa</Button>
+              <Button className="gap-2 h-9 text-sm"><Plus size={15} /> Nova Tarefa</Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>{editingTask ? 'Editar Tarefa' : 'Criar Tarefa'}</DialogTitle>
-              </DialogHeader>
+              <DialogHeader><DialogTitle>{editingTask ? 'Editar Tarefa' : 'Criar Tarefa'}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-4">
                 <Input placeholder="Título" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                <Textarea placeholder="Descrição / Instruções" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                <Textarea placeholder="Descrição / Instruções para o aluno" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} />
                 <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -155,7 +157,11 @@ export default function Tasks() {
                     <SelectItem value="quiz">Prova / Quiz</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input type="datetime-local" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} />
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Data de entrega</label>
+                  <Input type="datetime-local" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} />
+                  <p className="text-[10px] text-muted-foreground mt-1">Esta data também será adicionada ao calendário dos alunos</p>
+                </div>
                 <Input type="number" placeholder="Nota máxima" value={form.max_grade} onChange={e => setForm({...form, max_grade: Number(e.target.value)})} />
                 <Button onClick={handleSave} disabled={!form.title || createTaskMutation.isPending || updateTaskMutation.isPending} className="w-full">
                   {editingTask ? 'Salvar Alterações' : 'Criar Tarefa'}
@@ -166,97 +172,111 @@ export default function Tasks() {
         )}
       </div>
 
-      {/* Tabs: Tarefas / Provas */}
+      {/* Tabs */}
       <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-5 w-full sm:w-fit">
         <button
           onClick={() => setActiveTab('tasks')}
-          className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'tasks' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'tasks' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <ClipboardList size={15} /> Tarefas
-          {uploadTasks.length > 0 && <span className="bg-primary/10 text-primary text-xs px-1.5 py-0.5 rounded-full">{uploadTasks.length}</span>}
+          <ClipboardList size={14} /> Tarefas
+          {uploadTasks.length > 0 && <span className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">{uploadTasks.length}</span>}
         </button>
         <button
           onClick={() => setActiveTab('quizzes')}
-          className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'quizzes' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'quizzes' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <GraduationCap size={15} /> Provas
-          {quizTasks.length > 0 && <span className="bg-accent/10 text-accent text-xs px-1.5 py-0.5 rounded-full">{quizTasks.length}</span>}
+          <GraduationCap size={14} /> Provas
+          {quizTasks.length > 0 && <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">{quizTasks.length}</span>}
         </button>
       </div>
 
-      {/* Drive note for students */}
-      {!isTeacher && activeTab === 'tasks' && (
-        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 mb-4 text-xs text-blue-700">
-          <Upload size={14} className="shrink-0" />
-          Os arquivos enviados são armazenados na plataforma.
-          <a href={GOOGLE_DRIVE_FOLDER} target="_blank" rel="noopener noreferrer" className="underline font-medium ml-1">Ver pasta do Drive ↗</a>
-        </div>
-      )}
-
       {displayedTasks.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
-          {activeTab === 'tasks' ? <ClipboardList size={48} className="mx-auto mb-4 opacity-30" /> : <GraduationCap size={48} className="mx-auto mb-4 opacity-30" />}
-          <p className="text-lg font-medium">
-            {activeTab === 'tasks' ? 'Nenhuma tarefa criada ainda' : 'Nenhuma prova criada ainda'}
-          </p>
+          {activeTab === 'tasks' ? <ClipboardList size={48} className="mx-auto mb-4 opacity-20" /> : <GraduationCap size={48} className="mx-auto mb-4 opacity-20" />}
+          <p className="text-lg font-semibold">{activeTab === 'tasks' ? 'Nenhuma tarefa criada' : 'Nenhuma prova criada'}</p>
+          {isTeacher && <p className="text-sm mt-1">Clique em "Nova Tarefa" para adicionar</p>}
         </div>
       ) : (
         <div className="space-y-3">
           {displayedTasks.map(task => {
             const submission = getSubmission(task.id);
             const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
+            const status = uploadStatus[task.id];
+
             return (
-              <div key={task.id} className="bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${task.type === 'quiz' ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary'}`}>
-                    <FileText size={18} />
+              <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div className="flex items-start gap-3 p-4 sm:p-5">
+                  <div className={`p-2.5 rounded-xl shrink-0 ${task.type === 'quiz' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
+                    <FileText size={17} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm leading-snug">{task.title}</h3>
+                    <h3 className="font-bold text-foreground text-sm leading-snug">{task.title}</h3>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      <Badge variant="secondary" className="text-xs">{task.type === 'quiz' ? 'Prova' : 'Tarefa'}</Badge>
+                      <Badge variant="secondary" className="text-[10px]">{task.type === 'quiz' ? 'Prova' : 'Tarefa'}</Badge>
                       {task.deadline && (
-                        <span className={`text-xs flex items-center gap-1 ${isPastDeadline ? 'text-destructive' : 'text-muted-foreground'}`}>
-                          <Clock size={11} /> {format(new Date(task.deadline), 'dd/MM HH:mm')}
+                        <span className={`text-[10px] flex items-center gap-1 font-semibold ${isPastDeadline ? 'text-red-600' : 'text-muted-foreground'}`}>
+                          <Clock size={10} /> Entrega: {format(new Date(task.deadline), 'dd/MM HH:mm')}
+                          {isPastDeadline && ' (Expirou)'}
                         </span>
                       )}
-                      {task.max_grade && <span className="text-xs text-muted-foreground">Máx: {task.max_grade}</span>}
+                      {task.max_grade && <span className="text-[10px] text-muted-foreground">Valor: {task.max_grade} pts</span>}
                     </div>
-                    {task.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>}
+                    {task.description && <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{task.description}</p>}
                   </div>
                 </div>
 
-                {/* Action row — full width below on mobile */}
-                <div className="mt-3 flex items-center justify-end gap-2">
+                {/* Student upload section */}
+                {!isTeacher && task.type === 'upload' && !submission && (
+                  <div className="px-4 sm:px-5 pb-4 border-t border-border pt-3 bg-secondary/20">
+                    <p className="text-xs font-bold text-foreground mb-2">Enviar Trabalho</p>
+                    <input
+                      type="file"
+                      onChange={e => setUploadFiles(prev => ({ ...prev, [task.id]: e.target.files[0] }))}
+                      className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer mb-2"
+                    />
+                    <Button
+                      size="sm"
+                      className="w-full h-9 text-xs gap-1.5"
+                      disabled={!uploadFiles[task.id] || status === 'sending'}
+                      onClick={() => handleGoogleDriveUpload(task.id)}
+                    >
+                      <Send size={13} />
+                      {status === 'sending' ? 'Enviando, aguarde...' : 'Enviar Arquivo'}
+                    </Button>
+                    {status === 'sending' && <p className="text-xs text-muted-foreground text-center mt-1.5">Preparando o envio...</p>}
+                    {status === 'error' && <p className="text-xs text-red-500 text-center mt-1.5 font-semibold">❌ Erro ao enviar. Tente novamente.</p>}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="px-4 sm:px-5 pb-4 flex items-center justify-end gap-2 flex-wrap">
                   {!isTeacher ? (
                     submission ? (
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-medium">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
                           <CheckCircle size={12} /> Entregue
                         </span>
                         {submission.grade !== undefined && submission.grade !== null && (
-                          <span className="text-sm font-bold text-foreground">Nota: {submission.grade}</span>
+                          <span className="text-sm font-black text-foreground bg-secondary px-3 py-1.5 rounded-xl border border-border">
+                            Nota: {submission.grade}
+                          </span>
                         )}
                       </div>
-                    ) : task.type === 'upload' ? (
-                      <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto" onClick={() => handleFileUpload(task.id)} disabled={submitFileMutation.isPending}>
-                        <Upload size={14} /> Enviar Arquivo
+                    ) : task.type === 'quiz' ? (
+                      <Button size="sm" className="gap-1.5 w-full sm:w-auto h-9 text-xs" onClick={() => setSelectedQuiz(task)}>
+                        <Play size={13} /> Iniciar Prova
                       </Button>
-                    ) : (
-                      <Button size="sm" className="gap-1.5 w-full sm:w-auto" onClick={() => setSelectedQuiz(task)}>
-                        <Play size={14} /> Iniciar Prova
-                      </Button>
-                    )
+                    ) : null
                   ) : (
                     <div className="flex gap-2 w-full sm:w-auto justify-end">
-                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setViewSubmissions(task)}>
+                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 text-xs" onClick={() => setViewSubmissions(task)}>
                         Ver Entregas
                       </Button>
-                      <button onClick={() => openEdit(task)} className="p-2 text-muted-foreground hover:text-primary transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center">
-                        <Pencil size={15} />
+                      <button onClick={() => openEdit(task)} className="p-2 text-muted-foreground hover:text-primary transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg">
+                        <Pencil size={13} />
                       </button>
-                      <button onClick={() => deleteTaskMutation.mutate(task.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center">
-                        <Trash2 size={15} />
+                      <button onClick={() => deleteTaskMutation.mutate(task.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg">
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   )}

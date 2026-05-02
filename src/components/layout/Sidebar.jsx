@@ -1,11 +1,42 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Video, MessageSquare, FileText, 
-  BarChart, Users, LogOut, Play, Menu, X, Bell, User, Key,
-  Calendar, DollarSign, GraduationCap, Brain
+import {
+  Video, MessageSquare, FileText,
+  BarChart3, Users, LogOut, Play, X, Bell, User, Key,
+  CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
+  ChevronRight
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
+
+const adminNav = [
+  { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
+  { icon: Play, label: 'Aulas Gravadas', path: '/lessons', color: 'text-purple-400' },
+  { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
+  { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
+  { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
+  { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
+  { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
+  { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
+];
+
+const adminToolsNav = [
+  { icon: Users, label: 'Gestão de Alunos', path: '/students', color: 'text-indigo-400' },
+  { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes', color: 'text-emerald-400' },
+  { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
+];
+
+const studentNav = [
+  { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
+  { icon: Play, label: 'Videoaulas', path: '/lessons', color: 'text-purple-400' },
+  { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
+  { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
+  { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
+  { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
+  { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
+  { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
+  { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
+  { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
+];
 
 export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
   const location = useLocation();
@@ -19,41 +50,10 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   };
   const isAdmin = session?.role === 'admin';
 
-  const adminNav = [
-    { icon: BarChart, label: 'Dashboard', path: '/' },
-    { icon: Play, label: 'Aulas Gravadas', path: '/lessons' },
-    { icon: Video, label: 'Sala ao Vivo', path: '/live' },
-    { icon: FileText, label: 'Tarefas e Provas', path: '/tasks' },
-    { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum' },
-    { icon: Bell, label: 'Avisos', path: '/announcements' },
-    { icon: Calendar, label: 'Calendário', path: '/calendar' },
-    { icon: Brain, label: 'Tutor Digital', path: '/tutor' },
-  ];
-
-  const adminToolsNav = [
-    { icon: Users, label: 'Gestão de Alunos', path: '/students' },
-    { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes' },
-    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions' },
-  ];
-
-  const studentNav = [
-    { icon: BarChart, label: 'Dashboard', path: '/' },
-    { icon: Play, label: 'Videoaulas', path: '/lessons' },
-    { icon: Video, label: 'Sala ao Vivo', path: '/live' },
-    { icon: FileText, label: 'Tarefas e Provas', path: '/tasks' },
-    { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum' },
-    { icon: Bell, label: 'Avisos', path: '/announcements' },
-    { icon: Calendar, label: 'Calendário', path: '/calendar' },
-    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions' },
-    { icon: Brain, label: 'Tutor Digital', path: '/tutor' },
-    { icon: User, label: 'Meu Perfil', path: '/profile' },
-  ];
-
   const initials = session?.name
     ? session.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : '?';
-
-  const avatarBg = session?.avatarColor || (isAdmin ? '#6366f1' : '#8b5cf6');
+  const avatarBg = session?.avatarColor || (isAdmin ? '#5b5ef4' : '#7c3aed');
 
   const isActive = (path) => {
     if (path.includes('?')) {
@@ -62,56 +62,70 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     return location.pathname === path;
   };
 
-  const NavLink = ({ item }) => (
-    <Link
-      to={item.path}
-      onClick={handleClose}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-        isActive(item.path)
-          ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-primary/20'
-          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
-      }`}
-    >
-      <item.icon size={19} />
-      <span className="font-medium text-sm">{item.label}</span>
-    </Link>
-  );
+  const NavLink = ({ item }) => {
+    const active = isActive(item.path);
+    return (
+      <Link
+        to={item.path}
+        onClick={handleClose}
+        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative ${
+          active
+            ? 'bg-white/10 text-white shadow-sm'
+            : 'text-white/55 hover:bg-white/6 hover:text-white/85'
+        }`}
+      >
+        {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />}
+        <item.icon size={17} className={active ? 'text-white' : item.color} />
+        <span className="font-medium text-[13px] flex-1">{item.label}</span>
+        {active && <ChevronRight size={12} className="opacity-40" />}
+      </Link>
+    );
+  };
 
   return (
     <>
       {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={handleClose} />
+        <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={handleClose} />
       )}
 
       <aside className={`
         fixed md:static inset-y-0 left-0 z-50
-        w-64 bg-sidebar text-sidebar-foreground flex flex-col
+        w-60 flex flex-col
+        bg-sidebar text-sidebar-foreground
+        border-r border-sidebar-border
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
-        <div className="p-5 flex items-center justify-between border-b border-sidebar-border">
+        <div className="p-5 flex items-center justify-between border-b border-white/8">
           <div className="flex items-center gap-3">
-            <div className="bg-primary p-2 rounded-xl">
-              <GraduationCap size={22} className="text-primary-foreground" />
+            <div className="relative">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/40">
+                <GraduationCap size={20} className="text-white" />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-sidebar" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight">WR-EDU</h1>
+            <div>
+              <h1 className="text-[15px] font-bold tracking-tight text-white">WR-EDU</h1>
+              <p className="text-[10px] text-white/40 -mt-0.5">Portal Educacional</p>
+            </div>
           </div>
-          <button onClick={handleClose} aria-label="Fechar menu" className="md:hidden text-sidebar-foreground/60 p-1">
-            <X size={20} />
+          <button onClick={handleClose} className="md:hidden text-white/40 hover:text-white p-1 rounded-lg transition-colors">
+            <X size={18} />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="p-3 flex flex-col gap-1 flex-grow overflow-y-auto">
-          <p className="text-[11px] font-semibold text-sidebar-foreground/40 uppercase tracking-wider mb-1 mt-2 px-3">
-            Menu Principal
+        <nav className="p-3 flex flex-col gap-0.5 flex-grow overflow-y-auto scrollbar-thin">
+          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-2 px-3">
+            Menu
           </p>
           {(isAdmin ? adminNav : studentNav).map(item => <NavLink key={item.path} item={item} />)}
 
           {isAdmin && (
             <>
-              <p className="text-[11px] font-semibold text-sidebar-foreground/40 uppercase tracking-wider mb-1 mt-4 px-3">
+              <div className="my-3 border-t border-white/8" />
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 px-3">
                 Administrativo
               </p>
               {adminToolsNav.map(item => <NavLink key={item.path} item={item} />)}
@@ -119,33 +133,33 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
           )}
         </nav>
 
-        {/* User section */}
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 mb-3 px-1">
+        {/* User footer */}
+        <div className="p-3 border-t border-white/8">
+          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/6 transition-colors mb-1">
             {session?.photoUrl ? (
-              <img src={session.photoUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover shrink-0" />
+              <img src={session.photoUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
             ) : (
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0"
+                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] text-white ring-2 ring-white/20 shrink-0"
                 style={{ backgroundColor: avatarBg }}
               >
                 {initials}
               </div>
             )}
-            <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-xs text-sidebar-foreground/50">
-                {isAdmin ? 'Professor / Admin' : 'Estudante'}
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-white/90 truncate">{session?.name || 'Usuário'}</p>
+              <p className="text-[10px] text-white/40">
+                {isAdmin ? 'Administrador' : 'Estudante'}
               </p>
             </div>
+            <Sparkles size={13} className="text-white/20 shrink-0" />
           </div>
           <button
             onClick={logout}
-            aria-label="Sair da conta"
-            className="flex items-center gap-2 text-sidebar-foreground/50 hover:text-sidebar-foreground w-full px-1 py-2 rounded-lg transition-colors text-sm min-h-[44px]"
+            className="flex items-center gap-2 text-white/35 hover:text-red-400 w-full px-3 py-2 rounded-xl transition-colors text-[12px] font-medium"
           >
-            <LogOut size={16} />
-            <span className="font-medium">Sair</span>
+            <LogOut size={14} />
+            Sair da conta
           </button>
         </div>
       </aside>

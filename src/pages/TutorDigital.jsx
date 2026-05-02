@@ -1,234 +1,188 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Send, Bot, User, Sparkles, RefreshCw, BookOpen, Brain, Heart } from 'lucide-react';
+import { Send, Brain, Sparkles, RefreshCw, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import ReactMarkdown from 'react-markdown';
+import { Input } from '@/components/ui/input';
 
-const SYSTEM_PROMPT = `Você é o Tutor Digital, um assistente educacional empático e acolhedor da plataforma EduConnect.
-
-Seu papel combina o de um tutor acadêmico com o de um terapeuta de aprendizagem. Você:
-
-1. **Responde dúvidas teóricas** de qualquer disciplina com clareza, exemplos e linguagem acessível.
-2. **Acolhe emocionalmente** alunos que estão com dificuldades, ansiedade ou desmotivação — respondendo com empatia como um terapeuta faria.
-3. **Orienta o uso da plataforma** EduConnect: videoaulas, tarefas, sala ao vivo, fórum, calendário, mensalidades, perfil e todos os recursos disponíveis.
-4. **Motiva** os alunos, celebra pequenas conquistas e ajuda a criar estratégias de estudo.
-5. **Nunca faz diagnósticos médicos** — quando percebe situação de crise, encoraja buscar apoio profissional.
-
-Plataforma EduConnect — guia rápido para você informar alunos:
-- 📹 Videoaulas: assista no seu ritmo, marque como assistida, escreva resumos e comentários
-- ✅ Tarefas e Provas: envie arquivos ou responda quizzes dentro da plataforma
-- 🔴 Sala ao Vivo: acompanhe as lives do canal YouTube, Zoom, Meet ou Instagram
-- 💬 Fórum: tire dúvidas por tema com professores e colegas
-- 📅 Calendário: veja datas de provas, aulas e eventos
-- 💰 Mensalidades: acompanhe seu status financeiro
-- 👤 Perfil: atualize seus dados, foto e cor do avatar
-- 🏆 Dashboard: veja seu ranking, notas e progresso nas aulas
-
-Responda sempre em português brasileiro. Seja cálido, encorajador e objetivo. Use markdown quando ajudar na clareza.`;
-
-const WELCOME_MSG = {
-  role: 'assistant',
-  content: `Olá! 👋 Sou o **Tutor Digital** da EduConnect.
-
-Estou aqui para ajudar você de várias formas:
-
-- 🎓 **Dúvidas acadêmicas** — explico qualquer tema das suas aulas
-- 💙 **Suporte emocional** — se estiver ansioso, desmotivado ou sobrecarregado, pode falar comigo
-- 🛠️ **Usar a plataforma** — te guio em qualquer funcionalidade do EduConnect
-
-Como posso te ajudar hoje?`,
-};
-
-const SUGGESTIONS = [
-  'Como faço para enviar uma tarefa?',
-  'Estou me sentindo sobrecarregado com os estudos',
-  'Explica o que é fotossíntese',
-  'Como funciona a sala ao vivo?',
-  'Não estou conseguindo me concentrar',
-  'Como ver minhas notas?',
+const QUICK_ACTIONS = [
+  'Como usar a plataforma?',
+  'Quais tarefas estão pendentes?',
+  'Como funciona o ranking?',
+  'Preciso de apoio emocional',
+  'Como entro na sala ao vivo?',
+  'Como envio uma atividade?',
 ];
+
+const SYSTEM_CONTEXT = `Você é EDU, o tutor digital da plataforma WR-EDU — uma escola de formação de terapeutas.
+Você ajuda alunos a:
+- Navegar e usar a plataforma (videoaulas, sala ao vivo, tarefas, fórum, calendário, mensalidades, perfil)
+- Entender dinâmicas como datas, prazos, ranking e presença
+- Oferecer apoio emocional como um terapeuta virtual gentil e empático
+- Responder perguntas sobre a formação em terapia
+- Encorajar o aluno em sua jornada de aprendizado
+
+Seja caloroso, encorajador, empático e profissional. Use linguagem simples e acessível.
+Quando o aluno precisar de apoio emocional, seja um espaço seguro e acolhedor como um terapeuta.
+Máximo de 3 parágrafos por resposta. Use emojis com moderação.`;
 
 export default function TutorDigital() {
   const { user: session } = useOutletContext();
-  const [messages, setMessages] = useState([WELCOME_MSG]);
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content: `Olá, ${session?.name?.split(' ')[0] || 'aluno(a)'}! 😊 Sou o EDU, seu tutor digital da WR-EDU.\n\nEstou aqui para te ajudar a navegar pela plataforma, tirar dúvidas sobre a formação em terapia, e também oferecer apoio emocional quando precisar.\n\nComo posso te ajudar hoje?`
+    }
+  ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
+  const chatEndRef = useRef(null);
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: () => base44.entities.Task.list('-created_date', 20),
+  });
+
+  const { data: submissions = [] } = useQuery({
+    queryKey: ['submissions-mine-tutor'],
+    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: session?.email || '' }, '-created_date', 50),
+    enabled: !!session?.email,
+  });
+
+  const { data: liveSessions = [] } = useQuery({
+    queryKey: ['live-sessions'],
+    queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 5),
+  });
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  const sendMessage = async (text) => {
-    const userText = (text || input).trim();
-    if (!userText || loading) return;
+  const buildContext = () => {
+    const pendingTasks = tasks.filter(t => !submissions.find(s => s.task_id === t.id));
+    const nextLive = liveSessions.find(s => s.status === 'live' || s.status === 'scheduled');
+    return `
+Contexto do aluno:
+- Nome: ${session?.name || 'Aluno'}
+- Tarefas pendentes: ${pendingTasks.length} (${pendingTasks.slice(0, 3).map(t => t.title).join(', ')})
+- Próxima aula ao vivo: ${nextLive ? `${nextLive.title} - ${nextLive.scheduled_at ? new Date(nextLive.scheduled_at).toLocaleString('pt-BR') : 'sem data'}` : 'nenhuma agendada'}
+`;
+  };
+
+  const sendMessage = async (content = input) => {
+    if (!content.trim() || loading) return;
+    const userMsg = { role: 'user', content };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInput('');
-
-    const userMsg = { role: 'user', content: userText };
-    const newHistory = [...messages, userMsg];
-    setMessages(newHistory);
     setLoading(true);
 
-    // Build prompt with conversation context (last 10 messages)
-    const historyContext = newHistory.slice(-10)
-      .map(m => `${m.role === 'user' ? 'Aluno' : 'Tutor'}: ${m.content}`)
-      .join('\n\n');
+    const context = buildContext();
+    const prompt = `${SYSTEM_CONTEXT}\n\n${context}\n\nConversa:\n${newMessages.map(m => `${m.role === 'user' ? 'Aluno' : 'EDU'}: ${m.content}`).join('\n')}\n\nEDU:`;
 
-    const fullPrompt = `${SYSTEM_PROMPT}
-
---- HISTÓRICO DA CONVERSA ---
-${historyContext}
-
---- RESPONDA AGORA COMO TUTOR ---`;
-
-    const response = await base44.integrations.Core.InvokeLLM({ prompt: fullPrompt });
+    const response = await base44.integrations.Core.InvokeLLM({ prompt });
     setMessages(prev => [...prev, { role: 'assistant', content: response }]);
     setLoading(false);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const resetChat = () => {
-    setMessages([WELCOME_MSG]);
-    setInput('');
-  };
-
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] max-h-[900px] p-4 lg:p-6 max-w-4xl mx-auto">
+    <div className="flex flex-col h-full max-h-screen bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
-            <Brain size={22} className="text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-              Tutor Digital <Sparkles size={16} className="text-violet-500" />
-            </h2>
-            <p className="text-xs text-muted-foreground">IA educacional e de apoio emocional</p>
-          </div>
+      <div className="px-4 py-3 border-b border-border bg-card flex items-center gap-3 shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-500/30">
+          <Brain size={20} className="text-white" />
         </div>
-        <Button variant="ghost" size="sm" onClick={resetChat} className="gap-1.5 text-muted-foreground text-xs">
-          <RefreshCw size={14} /> Nova conversa
-        </Button>
+        <div>
+          <h2 className="font-bold text-sm text-foreground flex items-center gap-1.5">
+            EDU — Tutor Digital <Sparkles size={13} className="text-yellow-400 fill-yellow-400" />
+          </h2>
+          <p className="text-xs text-muted-foreground">Seu assistente de aprendizado e bem-estar</p>
+        </div>
+        <button
+          onClick={() => setMessages([messages[0]])}
+          className="ml-auto text-muted-foreground hover:text-foreground p-2 rounded-xl transition-colors"
+          title="Reiniciar conversa"
+        >
+          <RefreshCw size={15} />
+        </button>
       </div>
 
-      {/* Info pills */}
-      <div className="flex gap-2 flex-wrap mb-4 shrink-0">
-        {[
-          { icon: BookOpen, label: 'Dúvidas acadêmicas', color: 'text-blue-500 bg-blue-50 border-blue-100' },
-          { icon: Heart, label: 'Suporte emocional', color: 'text-pink-500 bg-pink-50 border-pink-100' },
-          { icon: Bot, label: 'Guia da plataforma', color: 'text-violet-500 bg-violet-50 border-violet-100' },
-        ].map(({ icon: Icon, label, color }) => (
-          <span key={label} className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium ${color}`}>
-            <Icon size={12} /> {label}
-          </span>
-        ))}
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-2">
+      {/* Chat area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-            {/* Avatar */}
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-              msg.role === 'user'
-                ? 'text-white text-xs font-bold'
-                : 'bg-gradient-to-br from-violet-500 to-purple-600'
-            }`} style={msg.role === 'user' ? { backgroundColor: session?.avatarColor || '#6366f1' } : {}}>
-              {msg.role === 'user'
-                ? (session?.name?.charAt(0)?.toUpperCase() || <User size={14} />)
-                : <Brain size={15} className="text-white" />
-              }
-            </div>
-
-            {/* Bubble */}
-            <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-              msg.role === 'user'
-                ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                : 'bg-card border border-border text-foreground rounded-tl-sm shadow-sm'
-            }`}>
-              {msg.role === 'assistant' ? (
-                <ReactMarkdown
-                  className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-p:my-1 prose-ul:my-1 prose-li:my-0"
-                  components={{
-                    p: ({ children }) => <p className="my-1">{children}</p>,
-                    ul: ({ children }) => <ul className="my-1 ml-4 list-disc">{children}</ul>,
-                    ol: ({ children }) => <ol className="my-1 ml-4 list-decimal">{children}</ol>,
-                    li: ({ children }) => <li className="my-0.5">{children}</li>,
-                    strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-                  }}
-                >
-                  {msg.content}
-                </ReactMarkdown>
-              ) : (
-                <p>{msg.content}</p>
-              )}
+          <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            {msg.role === 'assistant' && (
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+                <Brain size={14} className="text-white" />
+              </div>
+            )}
+            <div
+              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                msg.role === 'user'
+                  ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                  : 'bg-card border border-border text-foreground rounded-tl-sm'
+              }`}
+            >
+              {msg.content.split('\n').map((line, li) => (
+                <span key={li}>{line}{li < msg.content.split('\n').length - 1 && <br />}</span>
+              ))}
             </div>
           </div>
         ))}
 
-        {/* Loading */}
         {loading && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
-              <Brain size={15} className="text-white" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+              <Brain size={14} className="text-white" />
             </div>
-            <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
+              <div className="flex gap-1">
+                {[0, 0.2, 0.4].map((d, i) => (
+                  <div key={i} className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: `${d}s` }} />
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">EDU está pensando...</span>
             </div>
           </div>
         )}
-
-        <div ref={bottomRef} />
+        <div ref={chatEndRef} />
       </div>
 
-      {/* Suggestions (show only at beginning) */}
-      {messages.length <= 1 && (
-        <div className="flex flex-wrap gap-2 my-3 shrink-0">
-          {SUGGESTIONS.map(s => (
+      {/* Quick actions */}
+      <div className="px-4 py-2 border-t border-border bg-card/50">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {QUICK_ACTIONS.map(action => (
             <button
-              key={s}
-              onClick={() => sendMessage(s)}
-              className="text-xs border border-border bg-card hover:bg-secondary rounded-full px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
+              key={action}
+              onClick={() => sendMessage(action)}
+              disabled={loading}
+              className="shrink-0 text-xs bg-secondary hover:bg-secondary/70 text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-xl transition-colors font-medium whitespace-nowrap border border-border"
             >
-              {s}
+              {action}
             </button>
           ))}
         </div>
-      )}
+      </div>
 
       {/* Input */}
-      <div className="flex gap-2 mt-3 shrink-0">
-        <Textarea
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Escreva sua dúvida ou como está se sentindo... (Enter para enviar)"
-          rows={2}
-          className="flex-1 resize-none text-sm"
-          disabled={loading}
-        />
-        <Button
-          onClick={() => sendMessage()}
-          disabled={!input.trim() || loading}
-          className="h-full px-4 bg-gradient-to-b from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
-        >
-          <Send size={18} />
-        </Button>
+      <div className="p-4 border-t border-border bg-card shrink-0">
+        <form onSubmit={e => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+          <Input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Pergunte ao EDU..."
+            className="flex-1 h-11"
+            disabled={loading}
+          />
+          <Button type="submit" className="h-11 w-11 p-0 shrink-0 bg-gradient-to-br from-pink-500 to-purple-600 border-0 hover:opacity-90" disabled={!input.trim() || loading}>
+            <Send size={16} />
+          </Button>
+        </form>
+        <p className="text-[10px] text-muted-foreground text-center mt-2 flex items-center justify-center gap-1">
+          <Heart size={9} className="text-pink-400 fill-pink-400" /> EDU oferece suporte com empatia e cuidado
+        </p>
       </div>
-      <p className="text-center text-[10px] text-muted-foreground mt-2 shrink-0">
-        Tutor Digital usa IA — não substitui atendimento médico ou psicológico profissional.
-      </p>
     </div>
   );
 }

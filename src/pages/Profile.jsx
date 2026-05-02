@@ -4,30 +4,49 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { User, Save, CheckCircle, Camera, Trash2, AlertTriangle } from 'lucide-react';
+import { Save, CheckCircle, Camera, Trash2, AlertTriangle, User, Smile } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 const AVATAR_COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
-  '#f97316', '#eab308', '#22c55e', '#14b8a6',
-  '#3b82f6', '#06b6d4',
+  '#5b5ef4', '#7c3aed', '#db2777', '#dc2626',
+  '#ea580c', '#ca8a04', '#16a34a', '#0d9488',
+  '#2563eb', '#0891b2', '#9333ea', '#c2410c',
+];
+
+const AVATARS = [
+  { id: 'a1', emoji: '🧑‍🎓', label: 'Estudante' },
+  { id: 'a2', emoji: '🧘', label: 'Zen' },
+  { id: 'a3', emoji: '🌟', label: 'Estrela' },
+  { id: 'a4', emoji: '🦋', label: 'Borboleta' },
+  { id: 'a5', emoji: '🌸', label: 'Flor' },
+  { id: 'a6', emoji: '🦁', label: 'Leão' },
+  { id: 'a7', emoji: '🐬', label: 'Golfinho' },
+  { id: 'a8', emoji: '🌈', label: 'Arco-íris' },
+  { id: 'a9', emoji: '🔮', label: 'Cristal' },
+  { id: 'a10', emoji: '🌻', label: 'Girassol' },
+  { id: 'a11', emoji: '🦉', label: 'Coruja' },
+  { id: 'a12', emoji: '🌊', label: 'Onda' },
 ];
 
 export default function Profile() {
   const session = getSession();
   const { logout } = useCustomAuth();
   const [name, setName] = useState(session?.name || '');
+  const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState(session?.bio || '');
-  const [avatarColor, setAvatarColor] = useState(session?.avatarColor || '#6366f1');
+  const [avatarColor, setAvatarColor] = useState(session?.avatarColor || '#5b5ef4');
+  const [selectedAvatar, setSelectedAvatar] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [email, setEmail] = useState(session?.email || '');
   const [photoUrl, setPhotoUrl] = useState(session?.photoUrl || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const fileRef = useRef();
 
   useEffect(() => {
@@ -39,9 +58,12 @@ export default function Profile() {
             setBirthDate(p.birth_date || '');
             setWhatsapp(p.whatsapp || '');
             setPhotoUrl(p.photo_url || session?.photoUrl || '');
-            setAvatarColor(p.avatar_color || session?.avatarColor || '#6366f1');
+            setAvatarColor(p.avatar_color || session?.avatarColor || '#5b5ef4');
             setName(p.full_name || session?.name || '');
             setBio(p.bio || session?.bio || '');
+            setNickname(p.nickname || '');
+            setSelectedAvatar(p.avatar_emoji || '');
+            setEmail(p.email || session?.email || '');
           }
         });
     }
@@ -69,15 +91,17 @@ export default function Profile() {
         profile_photo_url: photoUrl,
       });
     }
-    // Upsert StudentProfile
     const existing = await base44.entities.StudentProfile.filter({ student_email: session?.email }, '-created_date', 1);
     const profileData = {
       student_email: session?.email,
       full_name: name,
+      nickname,
       bio,
       avatar_color: avatarColor,
+      avatar_emoji: selectedAvatar,
       birth_date: birthDate,
       whatsapp,
+      email,
       photo_url: photoUrl,
     };
     if (existing.length > 0) {
@@ -92,125 +116,161 @@ export default function Profile() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  return (
-    <div className="p-6 lg:p-8 max-w-xl mx-auto">
-      <h2 className="text-2xl font-bold text-foreground mb-6">Meu Perfil</h2>
+  const avatarEl = selectedAvatar ? AVATARS.find(a => a.id === selectedAvatar) : null;
 
-      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-6">
-        {/* Avatar / Photo */}
-        <div className="flex flex-col items-center gap-4">
+  return (
+    <div className="p-4 lg:p-7 max-w-2xl mx-auto animate-fade-in-up">
+      <div className="mb-6">
+        <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Perfil</h2>
+        <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações</p>
+      </div>
+
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        {/* Header with avatar */}
+        <div className="bg-gradient-to-br from-primary/10 to-accent/10 p-6 flex flex-col items-center gap-4 border-b border-border">
+          {/* Avatar preview */}
           <div className="relative">
             {photoUrl ? (
-              <img src={photoUrl} alt="Foto" className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-background" />
+              <img src={photoUrl} alt="Foto" className="w-24 h-24 rounded-2xl object-cover shadow-lg border-4 border-white ring-2 ring-primary/20" />
+            ) : avatarEl ? (
+              <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-4xl shadow-lg border-4 border-white" style={{ backgroundColor: avatarColor }}>
+                {avatarEl.emoji}
+              </div>
             ) : (
-              <div
-                className="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg"
-                style={{ backgroundColor: avatarColor }}
-              >
+              <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg border-4 border-white" style={{ backgroundColor: avatarColor }}>
                 {initials}
               </div>
             )}
             <button
               onClick={() => fileRef.current?.click()}
-              aria-label="Alterar foto de perfil"
-              className="absolute bottom-0 right-0 w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
+              className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
               disabled={uploading}
             >
-              {uploading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera size={14} />}
+              {uploading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera size={13} />}
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
           </div>
-          <div className="flex flex-wrap gap-2 justify-center">
-            {AVATAR_COLORS.map(color => (
-              <button
-                key={color}
-                onClick={() => setAvatarColor(color)}
-                className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${avatarColor === color ? 'border-foreground scale-110' : 'border-transparent'}`}
-                style={{ backgroundColor: color }}
-              />
-            ))}
+
+          <div className="text-center">
+            <p className="font-bold text-foreground">{name || 'Seu Nome'}</p>
+            {nickname && <p className="text-sm text-muted-foreground">"{nickname}"</p>}
           </div>
-          <p className="text-xs text-muted-foreground">Cor do avatar e foto de perfil</p>
+
+          {/* Color picker */}
+          <div>
+            <p className="text-[10px] text-muted-foreground text-center mb-2 font-semibold uppercase tracking-wider">Cor do Perfil</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {AVATAR_COLORS.map(color => (
+                <button
+                  key={color}
+                  onClick={() => setAvatarColor(color)}
+                  className={`w-7 h-7 rounded-full border-3 transition-all hover:scale-110 ${avatarColor === color ? 'border-foreground scale-110 shadow-md' : 'border-transparent'}`}
+                  style={{ backgroundColor: color, borderWidth: '2px' }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Avatar emoji picker */}
+          <div className="w-full">
+            <p className="text-[10px] text-muted-foreground text-center mb-2 font-semibold uppercase tracking-wider">Avatar</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <button
+                onClick={() => setSelectedAvatar('')}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg border-2 transition-all hover:scale-110 ${!selectedAvatar ? 'border-primary bg-primary/10' : 'border-transparent bg-secondary hover:bg-secondary/70'}`}
+              >
+                <User size={16} className="text-muted-foreground" />
+              </button>
+              {AVATARS.map(av => (
+                <button
+                  key={av.id}
+                  onClick={() => setSelectedAvatar(av.id)}
+                  title={av.label}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl border-2 transition-all hover:scale-110 ${selectedAvatar === av.id ? 'border-primary bg-primary/10 scale-110' : 'border-transparent bg-secondary hover:bg-secondary/70'}`}
+                >
+                  {av.emoji}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-foreground block mb-1.5">Nome completo</label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome completo" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        {/* Form fields */}
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-foreground block mb-1.5">Data de nascimento</label>
+              <label className="text-xs font-bold text-foreground block mb-1.5">Nome Completo *</label>
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome completo" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1.5">Apelido / Nickname</label>
+              <Input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="Como quer ser chamado(a)" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1.5">Data de Nascimento</label>
               <Input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground block mb-1.5">WhatsApp</label>
+              <label className="text-xs font-bold text-foreground block mb-1.5">WhatsApp</label>
               <Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="(00) 00000-0000" />
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-foreground block mb-1.5">Email</label>
-            <Input value={session?.email || ''} disabled className="opacity-60" />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground block mb-1.5">Apresentação</label>
-            <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Conte um pouco sobre você..." rows={3} />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground block mb-1.5">Código de acesso</label>
-            <Input value={session?.code || '—'} disabled className="font-mono text-center tracking-widest opacity-60" />
-          </div>
-        </div>
 
-        <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
-          {saved ? <><CheckCircle size={16} /> Salvo!</> : <><Save size={16} /> {saving ? 'Salvando...' : 'Salvar Perfil'}</>}
-        </Button>
+          <div>
+            <label className="text-xs font-bold text-foreground block mb-1.5">Email</label>
+            <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-foreground block mb-1.5">Apresentação Pessoal</label>
+            <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Conte um pouco sobre você, sua jornada..." rows={3} />
+          </div>
+
+          {session?.code && (
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-1.5">Código de Acesso</label>
+              <Input value={session.code} disabled className="font-mono text-center tracking-widest opacity-60 bg-secondary" />
+              <p className="text-[10px] text-muted-foreground mt-1">Este é seu código exclusivo de acesso à plataforma</p>
+            </div>
+          )}
+
+          <Button onClick={handleSave} disabled={saving} className="w-full h-11 font-bold gap-2">
+            {saved ? <><CheckCircle size={16} /> Perfil Salvo!</> : <><Save size={16} /> {saving ? 'Salvando...' : 'Salvar Perfil'}</>}
+          </Button>
+        </div>
       </div>
 
-      {/* Account Deletion */}
-      <div className="mt-6 bg-destructive/5 border border-destructive/20 rounded-2xl p-6 space-y-4">
+      {/* Danger zone */}
+      <div className="mt-5 bg-red-50 border border-red-200 rounded-2xl p-5 space-y-3">
         <div className="flex items-center gap-2">
-          <AlertTriangle size={18} className="text-destructive" />
-          <h3 className="font-semibold text-destructive text-sm">Zona de Perigo</h3>
+          <AlertTriangle size={16} className="text-red-500" />
+          <h3 className="font-bold text-red-600 text-sm">Zona de Perigo</h3>
         </div>
-        <p className="text-sm text-muted-foreground">
-          A exclusão da conta remove permanentemente todos os seus dados. Esta ação não pode ser desfeita.
+        <p className="text-xs text-muted-foreground">
+          A exclusão desativa sua conta permanentemente. Esta ação não pode ser desfeita.
         </p>
         {!deleteConfirm ? (
-          <Button
-            variant="outline"
-            className="border-destructive/40 text-destructive hover:bg-destructive hover:text-white gap-2"
-            onClick={() => setDeleteConfirm(true)}
-          >
-            <Trash2 size={15} /> Excluir minha conta
+          <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-600 hover:text-white gap-2 h-9 text-sm" onClick={() => setDeleteConfirm(true)}>
+            <Trash2 size={14} /> Excluir minha conta
           </Button>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm font-medium text-foreground">
-              Digite <span className="font-bold">EXCLUIR</span> para confirmar:
-            </p>
-            <Input
-              value={deleteInput}
-              onChange={e => setDeleteInput(e.target.value)}
-              placeholder="EXCLUIR"
-              className="border-destructive/40 focus-visible:ring-destructive"
-            />
+            <p className="text-xs font-semibold text-foreground">Digite <strong>EXCLUIR</strong> para confirmar:</p>
+            <Input value={deleteInput} onChange={e => setDeleteInput(e.target.value)} placeholder="EXCLUIR" className="border-red-300" />
             <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                disabled={deleteInput !== 'EXCLUIR'}
-                className="gap-2"
+              <Button variant="destructive" disabled={deleteInput !== 'EXCLUIR'} className="gap-2 h-9 text-sm"
                 onClick={async () => {
-                  if (session?.codeId) {
-                    await base44.entities.AccessCode.update(session.codeId, { is_active: false });
-                  }
+                  if (session?.codeId) await base44.entities.AccessCode.update(session.codeId, { is_active: false });
                   toast.success('Conta desativada. Até logo!');
                   setTimeout(() => logout(), 1500);
                 }}
               >
-                <Trash2 size={15} /> Confirmar exclusão
+                <Trash2 size={13} /> Confirmar
               </Button>
-              <Button variant="outline" onClick={() => { setDeleteConfirm(false); setDeleteInput(''); }}>
+              <Button variant="outline" className="h-9 text-sm" onClick={() => { setDeleteConfirm(false); setDeleteInput(''); }}>
                 Cancelar
               </Button>
             </div>

@@ -1,57 +1,60 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart, Play, Video, MessageSquare, Menu } from 'lucide-react';
+import { BarChart3, Play, Video, MessageSquare, LayoutGrid } from 'lucide-react';
 
 const tabs = [
-  { icon: BarChart, label: 'Início', path: '/' },
+  { icon: BarChart3, label: 'Início', path: '/' },
   { icon: Play, label: 'Aulas', path: '/lessons' },
   { icon: Video, label: 'Live', path: '/live' },
   { icon: MessageSquare, label: 'Fórum', path: '/forum' },
-  { icon: Menu, label: 'Menu', path: '__menu__' },
+  { icon: LayoutGrid, label: 'Menu', path: '__menu__' },
 ];
 
 export default function BottomNav({ onMenuOpen }) {
   const location = useLocation();
-
   const isActive = (path) => location.pathname === path;
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 bg-sidebar border-t border-sidebar-border flex md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      aria-label="Navegação principal"
     >
-      {tabs.map(({ icon: Icon, label, path }) => {
-        const active = path !== '__menu__' && isActive(path);
-        if (path === '__menu__') {
+      {/* Blur backdrop */}
+      <div className="absolute inset-0 bg-sidebar/95 backdrop-blur-xl border-t border-sidebar-border" />
+      <div className="relative flex items-stretch">
+        {tabs.map(({ icon: Icon, label, path }) => {
+          const active = path !== '__menu__' && isActive(path);
+          if (path === '__menu__') {
+            return (
+              <button
+                key="menu"
+                onClick={onMenuOpen}
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] text-white/40 hover:text-white/70 transition-colors"
+              >
+                <Icon size={20} />
+                <span className="text-[9px] font-semibold uppercase tracking-wide">{label}</span>
+              </button>
+            );
+          }
           return (
-            <button
-              key="menu"
-              onClick={onMenuOpen}
-              aria-label="Abrir menu completo"
-              className="flex-1 flex flex-col items-center justify-center gap-1 py-2 min-h-[56px] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+            <Link
+              key={path}
+              to={path}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors relative ${
+                active ? 'text-white' : 'text-white/40 hover:text-white/70'
+              }`}
             >
-              <Icon size={22} />
-              <span className="text-[10px] font-medium">{label}</span>
-            </button>
+              {active && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-primary" />
+              )}
+              <Icon size={20} className={active ? 'text-primary' : ''} />
+              <span className={`text-[9px] font-semibold uppercase tracking-wide ${active ? 'text-white' : ''}`}>
+                {label}
+              </span>
+            </Link>
           );
-        }
-        return (
-          <Link
-            key={path}
-            to={path}
-            aria-label={label}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 min-h-[56px] transition-colors ${
-              active
-                ? 'text-sidebar-primary'
-                : 'text-sidebar-foreground/60 hover:text-sidebar-foreground'
-            }`}
-          >
-            <Icon size={22} />
-            <span className="text-[10px] font-medium">{label}</span>
-          </Link>
-        );
-      })}
+        })}
+      </div>
     </nav>
   );
 }

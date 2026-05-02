@@ -8,9 +8,9 @@ import MobileHeader from './MobileHeader';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 const pageVariants = {
-  initial: { x: 24, opacity: 0 },
-  animate: { x: 0, opacity: 1 },
-  exit: { x: -24, opacity: 0 },
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
 };
 
 export default function AppLayout() {
@@ -19,19 +19,13 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div
-      className="flex h-screen bg-background overflow-hidden"
-      style={{
-        paddingLeft: 'env(safe-area-inset-left)',
-        paddingRight: 'env(safe-area-inset-right)',
-      }}
-    >
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Desktop sidebar */}
-      <div className="hidden md:block">
+      <div className="hidden md:block shrink-0">
         <Sidebar session={session} />
       </div>
 
-      {/* Mobile sidebar (drawer) */}
+      {/* Mobile sidebar drawer */}
       <div className="md:hidden">
         <Sidebar session={session} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
       </div>
@@ -41,8 +35,10 @@ export default function AppLayout() {
         <MobileHeader />
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          {/* Extra bottom padding on mobile for bottom nav + safe area */}
-          <div className="pb-20 md:pb-0" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+          <div
+            className="md:pb-0"
+            style={{ paddingBottom: 'calc(76px + env(safe-area-inset-bottom))' }}
+          >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={location.pathname}
@@ -50,8 +46,7 @@ export default function AppLayout() {
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={{ duration: 0.18, ease: 'easeInOut' }}
-                className="md:pb-0"
+                transition={{ duration: 0.18, ease: 'easeOut' }}
               >
                 <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
               </motion.div>

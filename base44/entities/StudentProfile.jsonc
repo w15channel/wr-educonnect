@@ -14,9 +14,13 @@
       "type": "string",
       "description": "Nome completo"
     },
+    "nickname": {
+      "type": "string",
+      "description": "Apelido / Nickname"
+    },
     "email": {
       "type": "string",
-      "description": "Email"
+      "description": "Email pessoal"
     },
     "birth_date": {
       "type": "string",
@@ -35,9 +39,13 @@
       "type": "string",
       "description": "Cor do avatar"
     },
+    "avatar_emoji": {
+      "type": "string",
+      "description": "ID do avatar emoji selecionado"
+    },
     "bio": {
       "type": "string",
-      "description": "Apresenta\u00e7\u00e3o"
+      "description": "Apresenta\u00e7\u00e3o pessoal"
     },
     "points": {
       "type": "number",
