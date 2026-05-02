@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video } from 'lucide-react';
+import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
@@ -7,17 +7,10 @@ import { setSession, verifyPassword } from '@/lib/customAuth';
 import SetupAdminModal from './SetupAdminModal';
 
 const HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
-  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
-  'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1400&q=85',
-];
-
-const FEATURES = [
-  { icon: BookOpen, title: 'Videoaulas', desc: 'Conteúdo terapêutico exclusivo' },
-  { icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
-  { icon: Users, title: 'Comunidade', desc: 'Fórum de dúvidas e troca' },
-  { icon: Heart, title: 'Prática', desc: 'Experiência terapêutica ao longo do curso' },
+  'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80', // students studying
+  'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80', // classroom
+  'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&q=80', // library
+  'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80', // graduation
 ];
 
 export default function LoginScreen({ onLogin }) {
@@ -34,7 +27,7 @@ export default function LoginScreen({ onLogin }) {
 
   useEffect(() => {
     checkAdminSetup();
-    const interval = setInterval(() => setHeroImg(i => (i + 1) % HERO_IMAGES.length), 6000);
+    const interval = setInterval(() => setHeroImg(i => (i + 1) % HERO_IMAGES.length), 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -63,7 +56,7 @@ export default function LoginScreen({ onLogin }) {
       name: record.profile_name || record.student_name || 'Aluno',
       email: record.student_email || '',
       bio: record.profile_bio || '',
-      avatarColor: record.profile_avatar_color || '#5b5ef4',
+      avatarColor: record.profile_avatar_color || '#6366f1',
       photoUrl: record.profile_photo_url || '',
     });
     onLogin();
@@ -92,228 +85,153 @@ export default function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#080b14] flex flex-col">
-      {/* ── HERO SECTION ── */}
-      <div className="relative min-h-screen flex flex-col lg:flex-row">
-
-        {/* Left — Hero imagery & content */}
-        <div className="relative flex-1 overflow-hidden min-h-[50vh] lg:min-h-screen">
-          {HERO_IMAGES.map((src, i) => (
-            <div
-              key={src}
-              className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}
-            >
-              <img src={src} alt="" className="w-full h-full object-cover object-center" />
+    <div className="min-h-screen flex">
+      {/* Left panel — hero image carousel */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden">
+        {HERO_IMAGES.map((src, i) => (
+          <img
+            key={src}
+            src={src}
+            alt="Estudantes"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ))}
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-slate-900/20" />
+        {/* Text overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-12 text-white">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-primary p-2.5 rounded-xl shadow-xl">
+              <GraduationCap size={28} className="text-white" />
             </div>
-          ))}
-
-          {/* Gradient overlays */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#080b14]/95 via-[#080b14]/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#080b14] via-transparent to-[#080b14]/30" />
-
-          {/* Content over image */}
-          <div className="relative z-10 flex flex-col justify-between h-full p-8 lg:p-14">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center shadow-2xl shadow-[#5b5ef4]/40">
-                <GraduationCap size={22} className="text-white" />
-              </div>
-              <div>
-                <span className="text-xl font-bold text-white tracking-tight">WR-EDU</span>
-                <p className="text-[10px] text-white/40 -mt-0.5 tracking-widest uppercase">Portal Educacional</p>
-              </div>
-            </div>
-
-            {/* Center content */}
-            <div className="hidden lg:block">
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-1.5 mb-6">
-                <Sparkles size={12} className="text-yellow-400" />
-                <span className="text-xs font-semibold text-white/80">Escola de Formação de Terapeutas</span>
-              </div>
-              <h1 className="text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6 max-w-lg">
-                Transforme vidas
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">
-                  através da cura.
-                </span>
-              </h1>
-              <p className="text-white/60 text-lg leading-relaxed max-w-md mb-10">
-                Uma formação completa em terapia, com o diferencial da prática terapêutica ao longo de toda a jornada.
-              </p>
-
-              {/* Feature cards */}
-              <div className="grid grid-cols-2 gap-3 max-w-sm">
-                {FEATURES.map(({ icon: Icon, title, desc }) => (
-                  <div key={title} className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-3.5">
-                    <Icon size={16} className="text-[#1db89e] mb-2" />
-                    <p className="text-white font-semibold text-sm">{title}</p>
-                    <p className="text-white/50 text-xs mt-0.5">{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Dots */}
-            <div className="hidden lg:flex gap-2">
-              {HERO_IMAGES.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setHeroImg(i)}
-                  className={`h-1 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`}
-                />
-              ))}
-            </div>
+            <span className="text-2xl font-bold tracking-tight">WR-EDU</span>
+          </div>
+          <h2 className="text-4xl font-bold mb-3 leading-tight">
+            Sua jornada de aprendizado começa aqui
+          </h2>
+          <p className="text-slate-300 text-lg leading-relaxed max-w-md">
+            Acesse videoaulas, participe de lives, entregue atividades e acompanhe seu progresso — tudo em um só lugar.
+          </p>
+          {/* Dots */}
+          <div className="flex gap-2 mt-8">
+            {HERO_IMAGES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setHeroImg(i)}
+                className={`h-1.5 rounded-full transition-all ${i === heroImg ? 'bg-primary w-8' : 'bg-white/40 w-4'}`}
+              />
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Right — Login panel */}
-        <div className="w-full lg:w-[420px] bg-[#0d1120] border-l border-white/8 flex flex-col justify-center p-7 lg:p-10 relative overflow-hidden">
-          {/* Glow */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#5b5ef4]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#1db89e]/8 rounded-full blur-2xl pointer-events-none" />
+      {/* Right panel — login form */}
+      <div className="w-full lg:w-[440px] flex flex-col items-center justify-center bg-slate-900 p-8 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-primary/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative">
-            {/* Mobile logo */}
-            <div className="flex flex-col items-center mb-8 lg:hidden">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center shadow-2xl shadow-[#5b5ef4]/40 mb-3">
-                <GraduationCap size={26} className="text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-white">WR-EDU</h1>
-              <p className="text-white/40 text-xs mt-1 tracking-widest uppercase">Escola de Terapeutas</p>
+        <div className="relative w-full max-w-sm">
+          {/* Mobile logo */}
+          <div className="flex flex-col items-center mb-8 lg:hidden">
+            <div className="bg-primary p-3 rounded-2xl shadow-xl shadow-primary/30 mb-3">
+              <GraduationCap size={28} className="text-white" />
             </div>
-
-            {/* Title */}
-            <div className="hidden lg:block mb-8">
-              <h2 className="text-2xl font-bold text-white">Entrar na plataforma</h2>
-              <p className="text-white/40 text-sm mt-1">Escolha seu tipo de acesso abaixo</p>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-1 bg-white/5 rounded-2xl p-1 mb-6 border border-white/8">
-              <button
-                onClick={() => { setMode('code'); setError(''); }}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                  mode === 'code'
-                    ? 'bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] text-white shadow-lg shadow-[#5b5ef4]/30'
-                    : 'text-white/40 hover:text-white/70'
-                }`}
-              >
-                <Key size={14} /> Código de Aluno
-              </button>
-              <button
-                onClick={() => { setMode('admin'); setError(''); }}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                  mode === 'admin'
-                    ? 'bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] text-white shadow-lg shadow-[#5b5ef4]/30'
-                    : 'text-white/40 hover:text-white/70'
-                }`}
-              >
-                <Lock size={14} /> Admin
-              </button>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-sm p-3.5 rounded-xl mb-5">
-                <AlertCircle size={15} className="shrink-0" />
-                {error}
-              </div>
-            )}
-
-            {/* Form card */}
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 shadow-2xl">
-              {mode === 'code' ? (
-                <form onSubmit={handleCodeLogin} className="space-y-4">
-                  <div>
-                    <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">
-                      Código de acesso
-                    </label>
-                    <Input
-                      placeholder="EDU-XXXX-XXXX"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.toUpperCase())}
-                      className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-13 text-center text-xl tracking-widest font-mono focus:border-[#5b5ef4]/60"
-                      autoCapitalize="characters"
-                    />
-                    <p className="text-white/30 text-xs mt-2 text-center">
-                      Insira o código fornecido pelo seu professor
-                    </p>
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] hover:opacity-90 transition-opacity border-0 shadow-lg shadow-[#5b5ef4]/30 gap-2"
-                    disabled={code.length < 3 || loading}
-                  >
-                    {loading ? 'Verificando...' : <><span>Entrar na Plataforma</span> <ChevronRight size={16} /></>}
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleAdminLogin} className="space-y-4">
-                  <div>
-                    <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">Email</label>
-                    <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
-                      className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-11 focus:border-[#5b5ef4]/60"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">Senha</label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                        className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-11 pr-11 focus:border-[#5b5ef4]/60"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] hover:opacity-90 transition-opacity border-0 shadow-lg shadow-[#5b5ef4]/30 gap-2"
-                    disabled={!adminEmail || !adminPassword || loading}
-                  >
-                    {loading ? 'Entrando...' : <><span>Entrar como Admin</span> <ChevronRight size={16} /></>}
-                  </Button>
-                </form>
-              )}
-            </div>
-
-            {/* Setup lock */}
-            {adminConfigured === false && (
-              <div className="flex justify-center mt-5">
-                <button
-                  onClick={() => setShowSetup(true)}
-                  className="flex items-center gap-2.5 bg-blue-500/10 border border-blue-400/20 backdrop-blur text-blue-300 hover:text-blue-200 hover:bg-blue-500/20 transition-all px-5 py-3 rounded-2xl text-sm font-medium"
-                >
-                  <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <Lock size={12} className="text-blue-400" />
-                  </div>
-                  Configurar acesso administrativo
-                </button>
-              </div>
-            )}
-
-            {/* Footer credits */}
-            <div className="mt-8 text-center">
-              <div className="flex items-center justify-center gap-1.5 text-white/20 text-xs">
-                <Star size={10} className="fill-current" />
-                <span>WR-EDU © 2025 — Escola de Formação de Terapeutas</span>
-                <Star size={10} className="fill-current" />
-              </div>
-              <p className="text-white/15 text-[10px] mt-1">
-                Desenvolvido com <Heart size={8} className="inline fill-current text-red-400/60" /> para transformar vidas
-              </p>
-            </div>
+            <h1 className="text-2xl font-bold text-white">WR-EDU</h1>
+            <p className="text-slate-400 text-sm mt-1">Plataforma de Estudos</p>
           </div>
+
+          {/* Desktop title */}
+          <div className="hidden lg:block mb-8">
+            <h1 className="text-3xl font-bold text-white">Bem-vindo(a) 👋</h1>
+            <p className="text-slate-400 mt-1">Acesse sua conta para continuar</p>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-1 bg-white/5 rounded-xl p-1 mb-6">
+            <button
+              onClick={() => { setMode('code'); setError(''); }}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${mode === 'code' ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+            >
+              <Key size={15} /> Código de Acesso
+            </button>
+            <button
+              onClick={() => { setMode('admin'); setError(''); }}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${mode === 'admin' ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+            >
+              <Lock size={15} /> Admin
+            </button>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-400/20 text-red-300 text-sm p-3 rounded-xl mb-4">
+              <AlertCircle size={16} className="shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
+            {mode === 'code' ? (
+              <form onSubmit={handleCodeLogin} className="space-y-4">
+                <div>
+                  <label className="text-slate-300 text-sm font-medium block mb-2">Seu código de acesso</label>
+                  <Input
+                    placeholder="EDU-XXXX-XXXX"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    className="bg-white/10 border-white/10 text-white placeholder:text-slate-500 h-13 text-center text-xl tracking-widest font-mono"
+                    autoCapitalize="characters"
+                  />
+                  <p className="text-slate-500 text-xs mt-2 text-center">Insira o código fornecido pelo seu professor</p>
+                </div>
+                <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={code.length < 3 || loading}>
+                  {loading ? 'Verificando...' : 'Entrar na Plataforma'}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleAdminLogin} className="space-y-4">
+                <div>
+                  <label className="text-slate-300 text-sm font-medium block mb-1.5">Email</label>
+                  <Input
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    className="bg-white/10 border-white/10 text-white placeholder:text-slate-500 h-11"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-sm font-medium block mb-1.5">Senha</label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      className="bg-white/10 border-white/10 text-white placeholder:text-slate-500 h-11 pr-10"
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={!adminEmail || !adminPassword || loading}>
+                  {loading ? 'Entrando...' : 'Entrar como Admin'}
+                </Button>
+              </form>
+            )}
+          </div>
+
+          {adminConfigured === false && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setShowSetup(true)}
+                className="flex items-center gap-2 bg-blue-500/15 border border-blue-400/25 backdrop-blur text-blue-300 hover:text-blue-200 hover:bg-blue-500/25 transition-all px-5 py-3 rounded-2xl text-sm font-medium"
+              >
+                <Lock size={16} className="text-blue-400" />
+                Configurar acesso administrativo
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
