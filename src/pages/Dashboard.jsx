@@ -181,8 +181,8 @@ export default function Dashboard() {
           value={pendingTasks}
           icon={FileText}
           iconBg="bg-orange-500"
-          to="/tasks"
-          subtitle="Ir para Tarefas"
+          to={isTeacher ? '/scores' : '/tasks'}
+          subtitle={isTeacher ? 'Controle de Pontuação' : 'Ir para Tarefas'}
         />
         <StatCard
           title={isTeacher ? 'Alunos Ativos' : 'Sua Média'}

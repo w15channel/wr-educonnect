@@ -40,8 +40,37 @@ export default function CodeManager() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.AccessCode.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['access-codes'] }),
+    mutationFn: async (code) => {
+      const email = code.student_email;
+      // Cascade delete all student data
+      const [profiles, submissions, progresses, tuitions, attendances, scoreItems, chatMessages, forumPosts, forumReplies] = await Promise.all([
+        email ? base44.entities.StudentProfile.filter({ student_email: email }, '-created_date', 200) : [],
+        email ? base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 500) : [],
+        email ? base44.entities.LessonProgress.filter({ student_email: email }, '-created_date', 500) : [],
+        email ? base44.entities.Tuition.filter({ student_email: email }, '-created_date', 500) : [],
+        email ? base44.entities.LiveAttendance.filter({ student_email: email }, '-created_date', 500) : [],
+        email ? base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 500) : [],
+        email ? base44.entities.ChatMessage.filter({ author_email: email }, '-created_date', 500) : [],
+        email ? base44.entities.ForumPost.filter({ author_email: email }, '-created_date', 500) : [],
+        email ? base44.entities.ForumReply.filter({ author_email: email }, '-created_date', 500) : [],
+      ]);
+      await Promise.all([
+        ...profiles.map(r => base44.entities.StudentProfile.delete(r.id)),
+        ...submissions.map(r => base44.entities.TaskSubmission.delete(r.id)),
+        ...progresses.map(r => base44.entities.LessonProgress.delete(r.id)),
+        ...tuitions.map(r => base44.entities.Tuition.delete(r.id)),
+        ...attendances.map(r => base44.entities.LiveAttendance.delete(r.id)),
+        ...scoreItems.map(r => base44.entities.ScoreItem.delete(r.id)),
+        ...chatMessages.map(r => base44.entities.ChatMessage.delete(r.id)),
+        ...forumPosts.map(r => base44.entities.ForumPost.delete(r.id)),
+        ...forumReplies.map(r => base44.entities.ForumReply.delete(r.id)),
+      ]);
+      return base44.entities.AccessCode.delete(code.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      toast.success('Aluno e todos os dados excluídos.');
+    },
   });
 
   const regenerateMutation = useMutation({
@@ -133,7 +162,7 @@ export default function CodeManager() {
                   >
                     {c.is_active ? <ToggleRight size={18} className="text-green-600" /> : <ToggleLeft size={18} />}
                   </button>
-                  <button onClick={() => deleteMutation.mutate(c.id)} title="Excluir" className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-destructive transition-colors">
+                  <button onClick={() => { if (confirm(`Excluir "${c.student_name}" permanentemente? Todos os dados do aluno serão apagados.`)) deleteMutation.mutate(c); }} title="Excluir" className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-destructive transition-colors">
                     <Trash2 size={15} />
                   </button>
                 </div>

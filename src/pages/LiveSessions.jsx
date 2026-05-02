@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, MessageSquare, Send, Hand, Plus, Youtube, Wifi, WifiOff, Trash2, ExternalLink, ChevronLeft, Clock, Calendar } from 'lucide-react';
+import { Video, MessageSquare, Send, Hand, Plus, Youtube, Wifi, WifiOff, Trash2, ExternalLink, ChevronLeft, Clock, Calendar, CheckCircle, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +35,8 @@ export default function LiveSessions() {
   const [showForm, setShowForm] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [newMsg, setNewMsg] = useState('');
+  const [attendanceConfirmed, setAttendanceConfirmed] = useState(false);
+  const [attendanceTimer, setAttendanceTimer] = useState(null);
   const chatEndRef = useRef(null);
   const [form, setForm] = useState({
     title: '', description: '', stream_url: '', scheduled_at: '', status: 'scheduled', platform: 'youtube'
@@ -125,11 +127,45 @@ export default function LiveSessions() {
     toast.success(newStatus === 'live' ? '🔴 Live ativada!' : '⭕ Live encerrada.');
   };
 
+  const { data: myAttendances = [] } = useQuery({
+    queryKey: ['my-attendances', session?.email],
+    queryFn: () => base44.entities.LiveAttendance.filter({ student_email: session?.email || '' }, '-created_date', 100),
+    enabled: !isTeacher && !!session?.email,
+  });
+
+  const confirmAttendanceMutation = useMutation({
+    mutationFn: (sess) => base44.entities.LiveAttendance.create({
+      session_id: sess.id,
+      session_title: sess.title,
+      student_email: session?.email || '',
+      student_name: session?.name || '',
+      confirmed_at: new Date().toISOString(),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-attendances', session?.email] });
+      setAttendanceConfirmed(true);
+      toast.success('✅ Presença confirmada!');
+    },
+  });
+
+  const getAttendanceWindow = (sess) => {
+    // Available for 20 min from when live started (use updated_date as proxy if no live_started_at)
+    if (sess.status !== 'live') return null;
+    const started = new Date(sess.updated_date || sess.created_date);
+    const cutoff = new Date(started.getTime() + 20 * 60 * 1000);
+    const now = new Date();
+    if (now > cutoff) return { expired: true, secondsLeft: 0 };
+    const secondsLeft = Math.floor((cutoff - now) / 1000);
+    return { expired: false, secondsLeft };
+  };
+
   // ── Session room view ──
   if (selectedSession) {
     const sessionEmbed = getEmbedUrl(selectedSession.stream_url);
     const embedSrc = sessionEmbed || WR_LIVE_EMBED;
     const isLive = selectedSession.status === 'live';
+    const alreadyAttended = myAttendances.some(a => a.session_id === selectedSession.id);
+    const window = getAttendanceWindow(selectedSession);
 
     return (
       <div className="flex flex-col h-full bg-background">
@@ -188,6 +224,14 @@ export default function LiveSessions() {
                 <Button variant="outline" size="sm" className="gap-1.5 text-amber-600 border-amber-300 hover:bg-amber-50 h-8 text-xs" onClick={handleRaiseHand}>
                   <Hand size={13} /> Pedir para falar
                 </Button>
+              )}
+              {!isTeacher && isLive && !alreadyAttended && !attendanceConfirmed && window && !window.expired && (
+                <AttendanceWidget window={window} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
+              )}
+              {!isTeacher && isLive && (alreadyAttended || attendanceConfirmed) && (
+                <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
+                  <CheckCircle size={11} /> Presença confirmada
+                </span>
               )}
               {!isTeacher && !sessionEmbed && (
                 <a href={selectedSession.stream_url || `${YT_CHANNEL}`} target="_blank" rel="noopener noreferrer"
@@ -340,6 +384,28 @@ export default function LiveSessions() {
           {isTeacher && <p className="text-sm mt-1">Clique em "Nova Sessão" para criar uma transmissão</p>}
         </div>
       )}
+    </div>
+  );
+}
+
+function AttendanceWidget({ window: win, onConfirm, loading }) {
+  const [secondsLeft, setSecondsLeft] = React.useState(win.secondsLeft);
+  React.useEffect(() => {
+    if (secondsLeft <= 0) return;
+    const t = setTimeout(() => setSecondsLeft(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [secondsLeft]);
+  const mins = Math.floor(secondsLeft / 60);
+  const secs = secondsLeft % 60;
+  if (secondsLeft <= 0) return <span className="text-xs text-muted-foreground">Janela de presença encerrada</span>;
+  return (
+    <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-1.5">
+      <UserCheck size={13} className="text-blue-600 shrink-0" />
+      <span className="text-xs font-semibold text-blue-800">Confirmar presença</span>
+      <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">{mins}:{String(secs).padStart(2,'0')}</span>
+      <Button size="sm" className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700" onClick={onConfirm} disabled={loading}>
+        Confirmar
+      </Button>
     </div>
   );
 }

@@ -18,12 +18,18 @@
       "type": "string",
       "description": "URL of the uploaded file"
     },
+    "file_name": {
+      "type": "string",
+      "description": "Name of the uploaded file"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Student comment/text answer (for tasks without file)"
+    },
     "quiz_answers": {
       "type": "array",
-      "description": "Student's quiz answers (index of selected option)",
-      "items": {
-        "type": "number"
-      }
+      "description": "Student's quiz answers \u2014 each item is index (choice) or {text: string} (written)",
+      "items": {}
     },
     "grade": {
       "type": "number",

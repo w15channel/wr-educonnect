@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Clock, CheckCircle, Plus, Upload, Play, Trash2, Pencil, GraduationCap, ClipboardList, Send } from 'lucide-react';
+import { FileText, Clock, CheckCircle, Plus, Play, Trash2, Pencil, GraduationCap, ClipboardList, Send, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import QuizView from '../components/tasks/QuizView';
 import SubmissionsList from '../components/tasks/SubmissionsList';
+import ExamBuilder from '../components/tasks/ExamBuilder';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 
@@ -31,6 +32,9 @@ export default function Tasks() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFiles, setUploadFiles] = useState({});
+  const [commentInputs, setCommentInputs] = useState({});
+  const [showExamBuilder, setShowExamBuilder] = useState(false);
+  const [editingExam, setEditingExam] = useState(null);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
@@ -130,8 +134,24 @@ export default function Tasks() {
   const quizTasks = tasks.filter(t => t.type === 'quiz');
   const displayedTasks = activeTab === 'tasks' ? uploadTasks : quizTasks;
 
+  const submitCommentMutation = useMutation({
+    mutationFn: ({ taskId, comment }) => base44.entities.TaskSubmission.create({
+      task_id: taskId,
+      student_email: user?.email || user?.code || '',
+      student_name: user?.name || user?.full_name || '',
+      comment,
+      status: 'submitted',
+    }),
+    onSuccess: (_, { taskId }) => {
+      queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
+      setCommentInputs(prev => ({ ...prev, [taskId]: '' }));
+      toast.success('Comentário enviado!');
+    },
+  });
+
   if (selectedQuiz) return <QuizView task={selectedQuiz} user={user} onBack={() => { setSelectedQuiz(null); queryClient.invalidateQueries({ queryKey: ['submissions-mine'] }); }} />;
   if (viewSubmissions) return <SubmissionsList task={viewSubmissions} onBack={() => setViewSubmissions(null)} />;
+  if (showExamBuilder) return <ExamBuilder editingExam={editingExam} onBack={() => { setShowExamBuilder(false); setEditingExam(null); }} />;
 
   return (
     <div className="p-4 lg:p-7 max-w-5xl mx-auto animate-fade-in-up">
@@ -141,6 +161,10 @@ export default function Tasks() {
           <p className="text-muted-foreground text-sm mt-0.5">Gerencie trabalhos, provas e entregas</p>
         </div>
         {isTeacher && (
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2 h-9 text-sm border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => { setEditingExam(null); setShowExamBuilder(true); }}>
+              <GraduationCap size={15} /> Nova Prova
+            </Button>
           <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingTask(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
               <Button className="gap-2 h-9 text-sm"><Plus size={15} /> Nova Tarefa</Button>
@@ -169,6 +193,7 @@ export default function Tasks() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
 
@@ -225,26 +250,46 @@ export default function Tasks() {
                   </div>
                 </div>
 
-                {/* Student upload section */}
+                {/* Student upload/comment section */}
                 {!isTeacher && task.type === 'upload' && !submission && (
-                  <div className="px-4 sm:px-5 pb-4 border-t border-border pt-3 bg-secondary/20">
-                    <p className="text-xs font-bold text-foreground mb-2">Enviar Trabalho</p>
-                    <input
-                      type="file"
-                      onChange={e => setUploadFiles(prev => ({ ...prev, [task.id]: e.target.files[0] }))}
-                      className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer mb-2"
-                    />
-                    <Button
-                      size="sm"
-                      className="w-full h-9 text-xs gap-1.5"
-                      disabled={!uploadFiles[task.id] || status === 'sending'}
-                      onClick={() => handleGoogleDriveUpload(task.id)}
-                    >
-                      <Send size={13} />
-                      {status === 'sending' ? 'Enviando, aguarde...' : 'Enviar Arquivo'}
-                    </Button>
-                    {status === 'sending' && <p className="text-xs text-muted-foreground text-center mt-1.5">Preparando o envio...</p>}
-                    {status === 'error' && <p className="text-xs text-red-500 text-center mt-1.5 font-semibold">❌ Erro ao enviar. Tente novamente.</p>}
+                  <div className="px-4 sm:px-5 pb-4 border-t border-border pt-3 bg-secondary/20 space-y-3">
+                    <div>
+                      <p className="text-xs font-bold text-foreground mb-2">📎 Enviar Arquivo</p>
+                      <input
+                        type="file"
+                        onChange={e => setUploadFiles(prev => ({ ...prev, [task.id]: e.target.files[0] }))}
+                        className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer mb-2"
+                      />
+                      <Button
+                        size="sm"
+                        className="w-full h-9 text-xs gap-1.5"
+                        disabled={!uploadFiles[task.id] || status === 'sending'}
+                        onClick={() => handleGoogleDriveUpload(task.id)}
+                      >
+                        <Send size={13} />
+                        {status === 'sending' ? 'Enviando, aguarde...' : 'Enviar Arquivo'}
+                      </Button>
+                      {status === 'error' && <p className="text-xs text-red-500 text-center mt-1.5 font-semibold">❌ Erro ao enviar. Tente novamente.</p>}
+                    </div>
+                    <div className="border-t border-border/50 pt-3">
+                      <p className="text-xs font-bold text-foreground mb-2">💬 Responder por Comentário</p>
+                      <Textarea
+                        placeholder="Se não puder enviar arquivo, escreva sua resposta aqui..."
+                        value={commentInputs[task.id] || ''}
+                        onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))}
+                        rows={3}
+                        className="text-xs"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full h-9 text-xs gap-1.5 mt-2"
+                        disabled={!commentInputs[task.id]?.trim() || submitCommentMutation.isPending}
+                        onClick={() => submitCommentMutation.mutate({ taskId: task.id, comment: commentInputs[task.id] })}
+                      >
+                        <MessageSquare size={13} /> Enviar Comentário
+                      </Button>
+                    </div>
                   </div>
                 )}
 
@@ -272,7 +317,10 @@ export default function Tasks() {
                       <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 text-xs" onClick={() => setViewSubmissions(task)}>
                         Ver Entregas
                       </Button>
-                      <button onClick={() => openEdit(task)} className="p-2 text-muted-foreground hover:text-primary transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg">
+                      <button onClick={() => {
+                        if (task.type === 'quiz') { setEditingExam(task); setShowExamBuilder(true); }
+                        else openEdit(task);
+                      }} className="p-2 text-muted-foreground hover:text-primary transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg">
                         <Pencil size={13} />
                       </button>
                       <button onClick={() => deleteTaskMutation.mutate(task.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg">

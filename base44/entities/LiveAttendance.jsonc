@@ -1,0 +1,30 @@
+{
+  "name": "LiveAttendance",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID da sess\u00e3o ao vivo"
+    },
+    "session_title": {
+      "type": "string",
+      "description": "T\u00edtulo da sess\u00e3o"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome do aluno"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "description": "Timestamp da confirma\u00e7\u00e3o de presen\u00e7a"
+    }
+  },
+  "required": [
+    "session_id",
+    "student_email"
+  ]
+}

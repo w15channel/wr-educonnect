@@ -4,7 +4,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight
+  ChevronRight, Trophy, Award
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
@@ -23,6 +23,7 @@ const adminToolsNav = [
   { icon: Users, label: 'Gestão de Alunos', path: '/students', color: 'text-indigo-400' },
   { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes', color: 'text-emerald-400' },
   { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
+  { icon: Trophy, label: 'Controle de Pontuação', path: '/scores', color: 'text-yellow-400' },
 ];
 
 const studentNav = [
@@ -35,6 +36,7 @@ const studentNav = [
   { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
   { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
   { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
+  { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
   { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
 ];
 
