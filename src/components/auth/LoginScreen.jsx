@@ -7,18 +7,18 @@ import { setSession, verifyPassword } from '@/lib/customAuth';
 import SetupAdminModal from './SetupAdminModal';
 
 const HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
-  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
-  'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1400&q=85',
-];
+'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
+'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
+'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
+'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1400&q=85'];
+
 
 const FEATURES = [
-  { icon: BookOpen, title: 'Videoaulas', desc: 'Conteúdo terapêutico exclusivo' },
-  { icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
-  { icon: Users, title: 'Comunidade', desc: 'Fórum de dúvidas e troca' },
-  { icon: Heart, title: 'Prática', desc: 'Experiência terapêutica ao longo do curso' },
-];
+{ icon: BookOpen, title: 'Videoaulas', desc: 'Conteúdo terapêutico exclusivo' },
+{ icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
+{ icon: Users, title: 'Comunidade', desc: 'Fórum de dúvidas e troca' },
+{ icon: Heart, title: 'Prática', desc: 'Experiência terapêutica ao longo do curso' }];
+
 
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState('code');
@@ -34,7 +34,7 @@ export default function LoginScreen({ onLogin }) {
 
   useEffect(() => {
     checkAdminSetup();
-    const interval = setInterval(() => setHeroImg(i => (i + 1) % HERO_IMAGES.length), 6000);
+    const interval = setInterval(() => setHeroImg((i) => (i + 1) % HERO_IMAGES.length), 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -64,7 +64,7 @@ export default function LoginScreen({ onLogin }) {
       email: record.student_email || '',
       bio: record.profile_bio || '',
       avatarColor: record.profile_avatar_color || '#5b5ef4',
-      photoUrl: record.profile_photo_url || '',
+      photoUrl: record.profile_photo_url || ''
     });
     onLogin();
     setLoading(false);
@@ -98,14 +98,14 @@ export default function LoginScreen({ onLogin }) {
 
         {/* Left — Hero imagery & content */}
         <div className="relative flex-1 overflow-hidden min-h-[50vh] lg:min-h-screen">
-          {HERO_IMAGES.map((src, i) => (
-            <div
-              key={src}
-              className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}
-            >
+          {HERO_IMAGES.map((src, i) =>
+          <div
+            key={src}
+            className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
+            
               <img src={src} alt="" className="w-full h-full object-cover object-center" />
             </div>
-          ))}
+          )}
 
           {/* Gradient overlays */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#080b14]/95 via-[#080b14]/60 to-transparent" />
@@ -142,25 +142,25 @@ export default function LoginScreen({ onLogin }) {
 
               {/* Feature cards */}
               <div className="grid grid-cols-2 gap-3 max-w-sm">
-                {FEATURES.map(({ icon: Icon, title, desc }) => (
-                  <div key={title} className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-3.5">
+                {FEATURES.map(({ icon: Icon, title, desc }) =>
+                <div key={title} className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-3.5">
                     <Icon size={16} className="text-[#1db89e] mb-2" />
                     <p className="text-white font-semibold text-sm">{title}</p>
                     <p className="text-white/50 text-xs mt-0.5">{desc}</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
             {/* Dots */}
             <div className="hidden lg:flex gap-2">
-              {HERO_IMAGES.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setHeroImg(i)}
-                  className={`h-1 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`}
-                />
-              ))}
+              {HERO_IMAGES.map((_, i) =>
+              <button
+                key={i}
+                onClick={() => setHeroImg(i)}
+                className={`h-1 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`} />
+
+              )}
             </div>
           </div>
         </div>
@@ -190,117 +190,117 @@ export default function LoginScreen({ onLogin }) {
             {/* Tabs */}
             <div className="flex gap-1 bg-white/5 rounded-2xl p-1 mb-6 border border-white/8">
               <button
-                onClick={() => { setMode('code'); setError(''); }}
+                onClick={() => {setMode('code');setError('');}}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                  mode === 'code'
-                    ? 'bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] text-white shadow-lg shadow-[#5b5ef4]/30'
-                    : 'text-white/40 hover:text-white/70'
-                }`}
-              >
+                mode === 'code' ?
+                'bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] text-white shadow-lg shadow-[#5b5ef4]/30' :
+                'text-white/40 hover:text-white/70'}`
+                }>
+                
                 <Key size={14} /> Código de Aluno
               </button>
               <button
-                onClick={() => { setMode('admin'); setError(''); }}
+                onClick={() => {setMode('admin');setError('');}}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                  mode === 'admin'
-                    ? 'bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] text-white shadow-lg shadow-[#5b5ef4]/30'
-                    : 'text-white/40 hover:text-white/70'
-                }`}
-              >
+                mode === 'admin' ?
+                'bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] text-white shadow-lg shadow-[#5b5ef4]/30' :
+                'text-white/40 hover:text-white/70'}`
+                }>
+                
                 <Lock size={14} /> Admin
               </button>
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-sm p-3.5 rounded-xl mb-5">
+            {error &&
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-sm p-3.5 rounded-xl mb-5">
                 <AlertCircle size={15} className="shrink-0" />
                 {error}
               </div>
-            )}
+            }
 
             {/* Form card */}
             <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 shadow-2xl">
-              {mode === 'code' ? (
-                <form onSubmit={handleCodeLogin} className="space-y-4">
+              {mode === 'code' ?
+              <form onSubmit={handleCodeLogin} className="space-y-4">
                   <div>
                     <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">
                       Código de acesso
                     </label>
                     <Input
-                      placeholder="EDU-XXXX-XXXX"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.toUpperCase())}
-                      className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-13 text-center text-xl tracking-widest font-mono focus:border-[#5b5ef4]/60"
-                      autoCapitalize="characters"
-                    />
+                    placeholder="EDU-XXXX-XXXX"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-13 text-center text-xl tracking-widest font-mono focus:border-[#5b5ef4]/60"
+                    autoCapitalize="characters" />
+                  
                     <p className="text-white/30 text-xs mt-2 text-center">
                       Insira o código fornecido pelo seu professor
                     </p>
                   </div>
                   <Button
-                    type="submit"
-                    className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] hover:opacity-90 transition-opacity border-0 shadow-lg shadow-[#5b5ef4]/30 gap-2"
-                    disabled={code.length < 3 || loading}
-                  >
+                  type="submit"
+                  className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] hover:opacity-90 transition-opacity border-0 shadow-lg shadow-[#5b5ef4]/30 gap-2"
+                  disabled={code.length < 3 || loading}>
+                  
                     {loading ? 'Verificando...' : <><span>Entrar na Plataforma</span> <ChevronRight size={16} /></>}
                   </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleAdminLogin} className="space-y-4">
+                </form> :
+
+              <form onSubmit={handleAdminLogin} className="space-y-4">
                   <div>
                     <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">Email</label>
                     <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
-                      className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-11 focus:border-[#5b5ef4]/60"
-                    />
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-11 focus:border-[#5b5ef4]/60" />
+                  
                   </div>
                   <div>
                     <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">Senha</label>
                     <div className="relative">
                       <Input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="••••••••"
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                        className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-11 pr-11 focus:border-[#5b5ef4]/60"
-                      />
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-11 pr-11 focus:border-[#5b5ef4]/60" />
+                    
                       <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
-                      >
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors">
+                      
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
                   <Button
-                    type="submit"
-                    className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] hover:opacity-90 transition-opacity border-0 shadow-lg shadow-[#5b5ef4]/30 gap-2"
-                    disabled={!adminEmail || !adminPassword || loading}
-                  >
+                  type="submit"
+                  className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] hover:opacity-90 transition-opacity border-0 shadow-lg shadow-[#5b5ef4]/30 gap-2"
+                  disabled={!adminEmail || !adminPassword || loading}>
+                  
                     {loading ? 'Entrando...' : <><span>Entrar como Admin</span> <ChevronRight size={16} /></>}
                   </Button>
                 </form>
-              )}
+              }
             </div>
 
             {/* Setup lock */}
-            {adminConfigured === false && (
-              <div className="flex justify-center mt-5">
+            {adminConfigured === false &&
+            <div className="flex justify-center mt-5">
                 <button
-                  onClick={() => setShowSetup(true)}
-                  className="flex items-center gap-2.5 bg-blue-500/10 border border-blue-400/20 backdrop-blur text-blue-300 hover:text-blue-200 hover:bg-blue-500/20 transition-all px-5 py-3 rounded-2xl text-sm font-medium"
-                >
+                onClick={() => setShowSetup(true)}
+                className="flex items-center gap-2.5 bg-blue-500/10 border border-blue-400/20 backdrop-blur text-blue-300 hover:text-blue-200 hover:bg-blue-500/20 transition-all px-5 py-3 rounded-2xl text-sm font-medium">
+                
                   <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
                     <Lock size={12} className="text-blue-400" />
                   </div>
                   Configurar acesso administrativo
                 </button>
               </div>
-            )}
+            }
 
             {/* Footer credits */}
             <div className="mt-8 text-center">
@@ -309,20 +309,20 @@ export default function LoginScreen({ onLogin }) {
                 <span>WR-EDU © 2025 — Escola de Formação de Terapeutas</span>
                 <Star size={10} className="fill-current" />
               </div>
-              <p className="text-white/15 text-[10px] mt-1">
-                Desenvolvido com <Heart size={8} className="inline fill-current text-red-400/60" /> para transformar vidas
+              <p className="text-white/15 text-[10px] mt-1">Desenvolvido p com  para transformar vidasor 
+
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {showSetup && (
-        <SetupAdminModal
-          onClose={() => setShowSetup(false)}
-          onConfigured={() => { setAdminConfigured(true); setShowSetup(false); }}
-        />
-      )}
-    </div>
-  );
+      {showSetup &&
+      <SetupAdminModal
+        onClose={() => setShowSetup(false)}
+        onConfigured={() => {setAdminConfigured(true);setShowSetup(false);}} />
+
+      }
+    </div>);
+
 }
