@@ -20,6 +20,7 @@ import Tuitions from './pages/Tuitions';
 import TutorDigital from './pages/TutorDigital';
 import ScoreControl from './pages/ScoreControl';
 import Certificadora from './pages/Certificadora';
+import RankingGeral from './pages/RankingGeral';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -55,6 +56,7 @@ const AuthenticatedApp = () => {
         <Route path="/tutor" element={<TutorDigital />} />
         <Route path="/scores" element={<ScoreControl />} />
         <Route path="/certificadora" element={<Certificadora />} />
+        <Route path="/ranking" element={<RankingGeral />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

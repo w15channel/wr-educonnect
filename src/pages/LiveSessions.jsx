@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, MessageSquare, Send, Hand, Plus, Youtube, Wifi, WifiOff, Trash2, ExternalLink, ChevronLeft, Clock, Calendar, CheckCircle, UserCheck } from 'lucide-react';
+import { Video, MessageSquare, Send, Plus, Youtube, Wifi, WifiOff, Trash2, ExternalLink, ChevronLeft, Clock, Calendar, CheckCircle, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -149,10 +149,10 @@ export default function LiveSessions() {
   });
 
   const getAttendanceWindow = (sess) => {
-    // Available for 20 min from when live started (use updated_date as proxy if no live_started_at)
+    // 1200 seconds from session created_date
     if (sess.status !== 'live') return null;
-    const started = new Date(sess.updated_date || sess.created_date);
-    const cutoff = new Date(started.getTime() + 20 * 60 * 1000);
+    const started = new Date(sess.created_date);
+    const cutoff = new Date(started.getTime() + 1200 * 1000);
     const now = new Date();
     if (now > cutoff) return { expired: true, secondsLeft: 0 };
     const secondsLeft = Math.floor((cutoff - now) / 1000);
@@ -220,19 +220,6 @@ export default function LiveSessions() {
                 <Youtube size={13} /> Canal WR Mídia
                 <ExternalLink size={11} className="opacity-50" />
               </a>
-              {!isTeacher && isLive && (
-                <Button variant="outline" size="sm" className="gap-1.5 text-amber-600 border-amber-300 hover:bg-amber-50 h-8 text-xs" onClick={handleRaiseHand}>
-                  <Hand size={13} /> Pedir para falar
-                </Button>
-              )}
-              {!isTeacher && isLive && !alreadyAttended && !attendanceConfirmed && window && !window.expired && (
-                <AttendanceWidget window={window} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
-              )}
-              {!isTeacher && isLive && (alreadyAttended || attendanceConfirmed) && (
-                <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
-                  <CheckCircle size={11} /> Presença confirmada
-                </span>
-              )}
               {!isTeacher && !sessionEmbed && (
                 <a href={selectedSession.stream_url || `${YT_CHANNEL}`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs text-primary hover:underline">
@@ -257,22 +244,47 @@ export default function LiveSessions() {
               )}
               {chatMessages.map(msg => (
                 <div key={msg.id} className={`text-sm ${msg.is_hand_raised ? 'bg-amber-50 p-2 rounded-xl border border-amber-200' : ''}`}>
-                  <span className="font-semibold text-foreground text-xs">{msg.author_name}: </span>
-                  <span className="text-foreground/80 text-xs">{msg.content}</span>
+                  <span className="font-semibold text-xs" style={{ color: '#1a1a2e' }}>{msg.author_name}: </span>
+                  <span className="text-xs" style={{ color: '#1a1a2e' }}>{msg.content}</span>
                 </div>
               ))}
               <div ref={chatEndRef} />
             </div>
-            {/* Emojis */}
-            <div className="px-2 py-1.5 border-t border-border flex gap-1 flex-wrap">
-              {EMOJIS.map(emoji => (
-                <button key={emoji} onClick={() => sendEmoji(emoji)} className="text-base hover:scale-125 transition-transform p-0.5">
-                  {emoji}
-                </button>
-              ))}
+            {/* Attendance + Emojis + Hand */}
+            <div className="px-2 py-1.5 border-t border-border space-y-1.5">
+              {!isTeacher && isLive && !alreadyAttended && !attendanceConfirmed && window && !window.expired && (
+                <AttendanceWidget window={window} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
+              )}
+              {!isTeacher && isLive && (alreadyAttended || attendanceConfirmed) && (
+                <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-1 rounded-full w-fit">
+                  <CheckCircle size={11} /> Presença confirmada
+                </span>
+              )}
+              <div className="flex items-center gap-1 flex-wrap">
+                {EMOJIS.map(emoji => (
+                  <button key={emoji} onClick={() => sendEmoji(emoji)} className="text-base hover:scale-125 transition-transform p-0.5">
+                    {emoji}
+                  </button>
+                ))}
+                {!isTeacher && isLive && (
+                  <button
+                    onClick={handleRaiseHand}
+                    title="Pedir para falar"
+                    className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors ml-auto shrink-0"
+                  >
+                    ✋ Falar
+                  </button>
+                )}
+              </div>
             </div>
             <form onSubmit={handleSend} className="p-2 border-t border-border flex gap-2">
-              <Input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Digite no chat..." className="flex-1 h-9 text-xs" />
+              <input
+                value={newMsg}
+                onChange={e => setNewMsg(e.target.value)}
+                placeholder="Digite no chat..."
+                className="flex-1 h-9 text-xs px-3 rounded-md border border-input outline-none focus:ring-1 focus:ring-ring"
+                style={{ backgroundColor: '#ffffff', color: '#1a1a2e' }}
+              />
               <Button type="submit" size="sm" className="h-9 w-9 p-0 shrink-0"><Send size={14} /></Button>
             </form>
           </div>

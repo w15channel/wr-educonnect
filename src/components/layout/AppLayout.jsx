@@ -34,24 +34,23 @@ export default function AppLayout() {
         {/* Mobile top header */}
         <MobileHeader />
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div
-            className="md:pb-0"
-            style={{ paddingBottom: 'calc(76px + env(safe-area-inset-bottom))' }}
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={location.pathname}
-                variants={pageVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{ duration: 0.18, ease: 'easeOut' }}
-              >
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
+              style={{ paddingBottom: location.pathname !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined }}
+            >
+              <div className={location.pathname === '/certificadora' ? 'flex-1 min-h-0 flex flex-col' : ''}>
                 <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Mobile bottom nav */}

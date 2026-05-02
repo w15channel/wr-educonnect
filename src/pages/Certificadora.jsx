@@ -35,7 +35,7 @@ export default function Certificadora() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col bg-background" style={{ height: '100%', minHeight: 0 }}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-border bg-card flex items-center gap-3 shrink-0 flex-wrap gap-y-2">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-md">
@@ -107,10 +107,10 @@ export default function Certificadora() {
       )}
 
       {/* Iframe */}
-      <div className="flex-1 min-h-0 mt-3 mx-0 sm:mx-0">
+      <div className="flex-1 min-h-0" style={{ overflow: 'hidden' }}>
         <iframe
           src={CERT_URL}
-          className="w-full h-full border-0"
+          style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
           title="Unidade Certificadora VENES"
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
           referrerPolicy="no-referrer-when-downgrade"

@@ -2,7 +2,7 @@ import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, CalendarDays, AlertTriangle } from 'lucide-react';
+import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -51,9 +51,9 @@ export default function Dashboard() {
     enabled: !!session,
   });
 
-  const { data: allSubmissions = [] } = useQuery({
-    queryKey: ['all-submissions-rank'],
-    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 500),
+  const { data: allScoreItems = [] } = useQuery({
+    queryKey: ['all-score-items-rank'],
+    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
   });
 
   const { data: liveSessions = [] } = useQuery({
@@ -90,25 +90,25 @@ export default function Dashboard() {
   const isLiveNow = nextLive?.status === 'live';
   const studentCount = accessCodes.filter(c => c.is_active).length;
 
+  // Média do aluno por ScoreItems
+  const myScoreItems = allScoreItems.filter(s => s.student_email === session?.email && s.verified);
   const myGrades = submissions.filter(s => s.grade !== undefined && s.grade !== null);
-  const avgGrade = myGrades.length > 0
-    ? (myGrades.reduce((sum, s) => sum + s.grade, 0) / myGrades.length).toFixed(1)
+  const avgGrade = myScoreItems.length > 0
+    ? (myScoreItems.reduce((sum, s) => sum + (s.score || 0), 0) / myScoreItems.length).toFixed(1)
     : '—';
 
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
-  // Ranking — somatória de pontos
+  // Ranking por ScoreItems verificados
   const rankMap = {};
-  allSubmissions.forEach(s => {
-    if (s.grade !== undefined && s.grade !== null && s.student_email) {
-      if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, name: s.student_name || s.student_email, total: 0, count: 0 };
-      rankMap[s.student_email].total += s.grade;
-      rankMap[s.student_email].count += 1;
-    }
+  allScoreItems.filter(s => s.verified).forEach(s => {
+    if (!s.student_email) return;
+    if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0, count: 0 };
+    rankMap[s.student_email].total += (s.score || 0);
+    rankMap[s.student_email].count += 1;
   });
   const ranking = Object.values(rankMap)
-    .map(r => ({ ...r, avg: r.count > 0 ? (r.total / r.count) : 0 }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 10);
 
@@ -250,7 +250,10 @@ export default function Dashboard() {
           </button>
 
           {/* Ranking */}
-          <div className="bg-card rounded-2xl border border-border p-5">
+          <button
+            onClick={() => navigate('/ranking')}
+            className="bg-card rounded-2xl border border-border p-5 text-left hover:border-primary/30 hover:shadow-lg transition-all group"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
@@ -261,11 +264,12 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">Pontuação acumulada</p>
                 </div>
               </div>
-              {myRank > 0 && (
-                <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-                  #{myRank}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {myRank > 0 && (
+                  <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full">#{myRank}</span>
+                )}
+                <ArrowRight size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
             {ranking.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">O ranking será exibido após as primeiras notas</p>
@@ -274,7 +278,7 @@ export default function Dashboard() {
                 {ranking.map((r, i) => {
                   const isMe = r.email === session?.email;
                   const code = accessCodes.find(c => c.student_email === r.email);
-                  const displayName = code?.profile_name || r.name;
+                  const displayName = code?.profile_name || code?.student_name || r.email;
                   const avatarColor = code?.profile_avatar_color || '#5b5ef4';
                   const photoUrl = code?.profile_photo_url || '';
                   const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
@@ -300,7 +304,7 @@ export default function Dashboard() {
                 })}
               </div>
             )}
-          </div>
+          </button>
         </div>
       )}
 

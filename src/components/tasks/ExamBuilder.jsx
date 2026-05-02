@@ -61,7 +61,10 @@ export default function ExamBuilder({ onBack, editingExam }) {
 
   const handleSave = () => {
     if (!title.trim()) { toast.error('Informe o título da prova'); return; }
-    if (questions.some(q => !q.question.trim())) { toast.error('Preencha todas as questões'); return; }
+    if (questions.some(q => !q.question.trim())) { toast.error('Preencha o enunciado de todas as questões'); return; }
+    if (questions.some(q => q.answer_type === 'choice' && q.options.filter(o => o.trim()).length < 2)) {
+      toast.error('Questões de seleção precisam de pelo menos 2 alternativas'); return;
+    }
     saveMutation.mutate({
       title, description, deadline, max_grade: Number(maxGrade),
       type: 'quiz',
