@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, Play, Video, MessageSquare, LayoutGrid } from 'lucide-react';
 
 const tabs = [
@@ -12,7 +12,18 @@ const tabs = [
 
 export default function BottomNav({ onMenuOpen }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = (path) => location.pathname === path;
+
+  const handleTabClick = (e, path) => {
+    if (isActive(path)) {
+      // Already on this tab — reset to root route
+      e.preventDefault();
+      navigate(path, { replace: true });
+      // Scroll the main content to top
+      document.querySelector('main')?.querySelector('[class*="overflow-y-auto"]')?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <nav
@@ -40,6 +51,7 @@ export default function BottomNav({ onMenuOpen }) {
             <Link
               key={path}
               to={path}
+              onClick={(e) => handleTabClick(e, path)}
               className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors relative ${
                 active ? 'text-white' : 'text-white/40 hover:text-white/70'
               }`}

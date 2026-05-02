@@ -4,9 +4,14 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User } from 'lucide-react';
+import { Save, CheckCircle, Camera, User, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const AVATAR_COLORS = [
   '#5b5ef4', '#7c3aed', '#db2777', '#dc2626',
@@ -45,6 +50,7 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileRef = useRef();
 
   useEffect(() => {
@@ -112,6 +118,24 @@ export default function Profile() {
     setSaved(true);
     toast.success('Perfil atualizado!');
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      if (session?.codeId) {
+        await base44.entities.AccessCode.delete(session.codeId);
+      }
+      const profiles = await base44.entities.StudentProfile.filter({ student_email: session?.email }, '-created_date', 10);
+      for (const p of profiles) {
+        await base44.entities.StudentProfile.delete(p.id);
+      }
+      toast.success('Conta excluída.');
+      logout();
+    } catch {
+      toast.error('Erro ao excluir conta. Tente novamente.');
+      setDeleting(false);
+    }
   };
 
   const avatarEl = selectedAvatar ? AVATARS.find(a => a.id === selectedAvatar) : null;
@@ -238,9 +262,37 @@ export default function Profile() {
           <Button onClick={handleSave} disabled={saving} className="w-full h-11 font-bold gap-2">
             {saved ? <><CheckCircle size={16} /> Perfil Salvo!</> : <><Save size={16} /> {saving ? 'Salvando...' : 'Salvar Perfil'}</>}
           </Button>
+
+          <div className="border-t border-border pt-4 mt-2">
+            <p className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">Zona de Perigo</p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full h-10 text-destructive border-destructive/40 hover:bg-destructive/5 gap-2">
+                  <Trash2 size={14} /> Excluir Minha Conta
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação é irreversível. Seu código de acesso e todos os seus dados de perfil serão permanentemente removidos da plataforma.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                  >
+                    {deleting ? 'Excluindo...' : 'Sim, excluir minha conta'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </div>
-
     </div>
   );
 }
