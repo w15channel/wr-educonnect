@@ -8,42 +8,78 @@ import {
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
-const adminNav = [
-  { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
-  { icon: Play, label: 'Aulas Gravadas', path: '/lessons', color: 'text-purple-400' },
-  { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
-  { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
-  { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
-  { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
-  { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
-  { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
-  { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
+const adminGroups = [
+  {
+    label: 'Classe',
+    items: [
+      { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
+      { icon: Play, label: 'Aulas Gravadas', path: '/lessons', color: 'text-purple-400' },
+      { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
+      { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
+      { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
+    ],
+  },
+  {
+    label: 'Comunidade',
+    items: [
+      { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
+      { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
+    ],
+  },
+  {
+    label: 'Gestão',
+    items: [
+      { icon: Users, label: 'Gestão de Alunos', path: '/students', color: 'text-indigo-400' },
+      { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes', color: 'text-emerald-400' },
+      { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
+      { icon: Trophy, label: 'Controle de Pontuação', path: '/scores', color: 'text-yellow-400' },
+      { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
+    ],
+  },
+  {
+    label: 'Ferramentas',
+    items: [
+      { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
+      { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
+      { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
+    ],
+  },
 ];
 
-const adminToolsNav = [
-  { icon: Users, label: 'Gestão de Alunos', path: '/students', color: 'text-indigo-400' },
-  { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes', color: 'text-emerald-400' },
-  { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
-  { icon: Trophy, label: 'Controle de Pontuação', path: '/scores', color: 'text-yellow-400' },
-  { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
-  { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
-];
-
-const studentNav = [
-  { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
-  { icon: Play, label: 'Videoaulas', path: '/lessons', color: 'text-purple-400' },
-  { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
-  { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
-  { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
-  { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
-  { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
-  { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
-  { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
-  { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
-  { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
-  { icon: BookOpen, label: 'Meu Best Seller', path: '/bestseller', color: 'text-emerald-400' },
-  { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
-  { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
+const studentGroups = [
+  {
+    label: 'Classe',
+    items: [
+      { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
+      { icon: Play, label: 'Videoaulas', path: '/lessons', color: 'text-purple-400' },
+      { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
+      { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
+      { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
+    ],
+  },
+  {
+    label: 'Comunidade',
+    items: [
+      { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
+      { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
+    ],
+  },
+  {
+    label: 'Minha Área',
+    items: [
+      { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
+      { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
+      { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
+    ],
+  },
+  {
+    label: 'Ferramentas',
+    items: [
+      { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
+      { icon: BookOpen, label: 'Meu Best Seller', path: '/bestseller', color: 'text-emerald-400' },
+      { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
+    ],
+  },
 ];
 
 export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
@@ -90,6 +126,8 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     );
   };
 
+  const groups = isAdmin ? adminGroups : studentGroups;
+
   return (
     <>
       {isOpen && (
@@ -125,20 +163,14 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
         {/* Nav */}
         <nav className="p-3 flex flex-col gap-0.5 flex-grow overflow-y-auto scrollbar-thin">
-          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-2 px-3">
-            Menu
-          </p>
-          {(isAdmin ? adminNav : studentNav).map(item => <NavLink key={item.path} item={item} />)}
-
-          {isAdmin && (
-            <>
-              <div className="my-3 border-t border-white/8" />
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-2 px-3">
-                Administrativo
+          {groups.map((group, gi) => (
+            <div key={gi} className={gi > 0 ? 'mt-3' : ''}>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5 px-3">
+                {group.label}
               </p>
-              {adminToolsNav.map(item => <NavLink key={item.path} item={item} />)}
-            </>
-          )}
+              {group.items.map(item => <NavLink key={item.path} item={item} />)}
+            </div>
+          ))}
         </nav>
 
         {/* User footer */}

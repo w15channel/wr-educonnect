@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { BookOpen, Plus, Trash2, ChevronLeft, Download, Search, Wand2, Loader2, Image, AlignLeft, FileText } from 'lucide-react';
+import {
+  BookOpen, Plus, Trash2, ChevronLeft, Download, Search, Wand2,
+  Loader2, Image, AlignLeft, FileText, BookMarked, Lightbulb, ChevronDown, ChevronUp
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,17 +15,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import ReactQuill from 'react-quill';
 import { toast } from 'sonner';
-import jsPDF from 'jspdf';
 
-const COVER_SUGGESTIONS = [
-  'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&q=80',
-  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
-  'https://images.unsplash.com/photo-1474932430478-367dbb6832c1?w=400&q=80',
-  'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&q=80',
-  'https://images.unsplash.com/photo-1499244571948-7ccddb3583f1?w=400&q=80',
-  'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=400&q=80',
-  'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80',
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80',
+// Large curated set of Unsplash covers
+const ALL_COVERS = [
+  { url: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&q=80', tags: 'livro escrita literatura' },
+  { url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80', tags: 'café leitura estudo' },
+  { url: 'https://images.unsplash.com/photo-1474932430478-367dbb6832c1?w=400&q=80', tags: 'natureza floresta verde' },
+  { url: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&q=80', tags: 'biblioteca estantes conhecimento' },
+  { url: 'https://images.unsplash.com/photo-1499244571948-7ccddb3583f1?w=400&q=80', tags: 'negócios sucesso profissional' },
+  { url: 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=400&q=80', tags: 'oceano praia azul' },
+  { url: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80', tags: 'escrita caneta papel' },
+  { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80', tags: 'montanha paisagem aventura' },
+  { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400&q=80', tags: 'montanha neve inverno' },
+  { url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=80', tags: 'floresta caminho natureza' },
+  { url: 'https://images.unsplash.com/photo-1476820865390-c52aeebb9891?w=400&q=80', tags: 'cidade noturna luzes urbano' },
+  { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', tags: 'pessoa retrato rosto' },
+  { url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&q=80', tags: 'homem negócios executivo' },
+  { url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80', tags: 'mulher negócios profissional' },
+  { url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&q=80', tags: 'equipe colaboração trabalho' },
+  { url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80', tags: 'escritório moderno trabalho' },
+  { url: 'https://images.unsplash.com/photo-1502085671122-2d218cd434e6?w=400&q=80', tags: 'abstrato colorido arte' },
+  { url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&q=80', tags: 'espaço universo galáxia' },
+  { url: 'https://images.unsplash.com/photo-1520209759809-a9bcb6cb3241?w=400&q=80', tags: 'saúde bem estar meditação' },
+  { url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80', tags: 'fitness exercício esporte' },
+  { url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80', tags: 'comida culinária gastronomia' },
+  { url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', tags: 'tecnologia digital futuro' },
+  { url: 'https://images.unsplash.com/photo-1527689368864-3a821dbccc34?w=400&q=80', tags: 'educação ensino escola' },
+  { url: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&q=80', tags: 'estudo aprendizado notas' },
+  { url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&q=80', tags: 'liderança gestão empreendedorismo' },
+  { url: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&q=80', tags: 'marketing estratégia planejamento' },
+  { url: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400&q=80', tags: 'laptop tecnologia café trabalho' },
+  { url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&q=80', tags: 'computador notebook mac' },
+  { url: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400&q=80', tags: 'livros pilha leitura' },
+  { url: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&q=80', tags: 'biblioteca antiga história' },
+  { url: 'https://images.unsplash.com/photo-1545987796-200677ee1011?w=400&q=80', tags: 'finanças dinheiro investimento' },
+  { url: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&q=80', tags: 'foco mente psicologia' },
+  { url: 'https://images.unsplash.com/photo-1492176273113-2d51f47b23b0?w=400&q=80', tags: 'pôr do sol céu horizonte' },
+  { url: 'https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400&q=80', tags: 'rio água cachoeira natureza' },
+  { url: 'https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=400&q=80', tags: 'noite estrelas astronomia' },
+  { url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80', tags: 'circuito tecnologia programação' },
+  { url: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&q=80', tags: 'mulher retrato elegante' },
+  { url: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=400&q=80', tags: 'gestão liderança reunião' },
+  { url: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80', tags: 'livro aberto página' },
+  { url: 'https://images.unsplash.com/photo-1467746474745-41dd2c7524cf?w=400&q=80', tags: 'pôr do sol laranja cores' },
 ];
 
 const PAGE_FORMATS = [
@@ -35,6 +70,15 @@ const PAGE_FORMATS = [
 const STATUS_LABELS = { draft: 'Rascunho', in_progress: 'Em andamento', finished: 'Finalizado' };
 const STATUS_COLORS = { draft: 'bg-muted text-muted-foreground', in_progress: 'bg-blue-100 text-blue-700', finished: 'bg-green-100 text-green-700' };
 
+const WRITING_GUIDE = [
+  { title: '1. Defina seu propósito', content: 'Antes de escrever, responda: Por que escrever este livro? Para quem? Qual transformação quero causar no leitor? Escreva suas respostas em poucas linhas — isso vai guiar toda a obra.' },
+  { title: '2. Conheça seu público-alvo', content: 'Descreva detalhadamente quem é seu leitor ideal: idade, desafios, sonhos, vocabulário. Escreva como se fosse uma conversa com essa pessoa específica.' },
+  { title: '3. Crie seu esboço (outline)', content: 'Liste os capítulos principais e o que cada um vai cobrir. Um bom livro tem começo (apresentação do problema), meio (desenvolvimento e soluções) e fim (conclusão e chamada à ação).' },
+  { title: '4. Escreva sem editar primeiro', content: 'Na primeira passagem, apenas escreva. Não se preocupe com perfeição. Quantidade antes de qualidade. Depois você revisa.' },
+  { title: '5. Revisão e polimento', content: 'Leia em voz alta. Peça feedback. Verifique coerência, clareza e fluidez. Elimine repetições e parágrafos desnecessários.' },
+  { title: '6. Normas ABNT para citações', content: 'Cite fontes no texto com (SOBRENOME, Ano, p. X) e liste na seção de Referências. Ex: FREIRE, Paulo. Pedagogia do Oprimido. 50. ed. São Paulo: Paz e Terra, 2019.' },
+];
+
 export default function MeuBestSeller() {
   const { user: session } = useOutletContext();
   const queryClient = useQueryClient();
@@ -43,11 +87,16 @@ export default function MeuBestSeller() {
   const [chapterContent, setChapterContent] = useState('');
   const [showCoverPicker, setShowCoverPicker] = useState(false);
   const [coverSearch, setCoverSearch] = useState('');
-  const [coverResults, setCoverResults] = useState(COVER_SUGGESTIONS);
   const [aiLoading, setAiLoading] = useState(false);
+  const [suggestingRefs, setSuggestingRefs] = useState(false);
   const [newBookForm, setNewBookForm] = useState({ title: '', subtitle: '', page_format: 'A4', cover_image_url: '', dedication: '', preface: '' });
   const [showNewBook, setShowNewBook] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const [wordLoading, setWordLoading] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(null);
+
+  const filteredCovers = coverSearch.trim()
+    ? ALL_COVERS.filter(c => c.tags.toLowerCase().includes(coverSearch.toLowerCase()))
+    : ALL_COVERS;
 
   const { data: books = [] } = useQuery({
     queryKey: ['books', session?.email],
@@ -110,22 +159,6 @@ export default function MeuBestSeller() {
     },
   });
 
-  const handleSearchCover = async () => {
-    if (!coverSearch.trim()) return;
-    const query = encodeURIComponent(coverSearch + ' book cover background');
-    setCoverResults([
-      `https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&q=80&sig=${Math.random()}`,
-      `https://source.unsplash.com/400x600/?${encodeURIComponent(coverSearch)}`,
-      `https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80`,
-      `https://images.unsplash.com/photo-1474932430478-367dbb6832c1?w=400&q=80`,
-      `https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&q=80`,
-      `https://images.unsplash.com/photo-1499244571948-7ccddb3583f1?w=400&q=80`,
-      `https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=400&q=80`,
-      `https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80`,
-    ]);
-    toast.info('Mostrando sugestões de capa.');
-  };
-
   const handleAISuggest = async () => {
     if (!editingChapter) return;
     setAiLoading(true);
@@ -140,67 +173,105 @@ export default function MeuBestSeller() {
     toast.success('Sugestão da IA adicionada!');
   };
 
-  const handleExportPDF = async () => {
-    setPdfLoading(true);
-    const formatMap = { A4: [210, 297], A5: [148, 210], Letter: [216, 279], '6x9': [152, 229] };
-    const dims = formatMap[selectedBook?.page_format] || [210, 297];
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: dims });
-    const W = pdf.internal.pageSize.getWidth();
-    const H = pdf.internal.pageSize.getHeight();
+  const handleSuggestReferences = async () => {
+    if (!selectedBook?.title) return;
+    setSuggestingRefs(true);
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `Sugira 5 referências bibliográficas reais e relevantes para um livro chamado "${selectedBook.title}"${selectedBook.subtitle ? ` (subtítulo: ${selectedBook.subtitle})` : ''}. Formate cada referência nas normas ABNT. Responda apenas com a lista numerada, uma por linha.`,
+    });
+    const current = selectedBook.references || '';
+    updateBookMutation.mutate({ id: selectedBook.id, data: { references: current ? current + '\n\n' + result : result } });
+    setSuggestingRefs(false);
+    toast.success('Referências sugeridas pela IA!');
+  };
+
+  // Generate Word-compatible HTML document (ABNT)
+  const handleExportWord = async () => {
+    setWordLoading(true);
+    const bookTitle = selectedBook?.title || 'Meu Livro';
+    const author = selectedBook?.author_name || session?.name || '';
+
+    let bodyHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="UTF-8">
+        <title>${bookTitle}</title>
+        <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml><![endif]-->
+        <style>
+          @page { size: A4; margin: 3cm 2cm 2cm 3cm; }
+          body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; color: #000; }
+          h1 { font-size: 14pt; font-weight: bold; text-align: center; margin-top: 0; page-break-before: always; }
+          h2 { font-size: 12pt; font-weight: bold; text-transform: uppercase; }
+          p { text-indent: 1.25cm; margin: 0 0 6pt; text-align: justify; }
+          .cover { text-align: center; padding-top: 8cm; page-break-after: always; }
+          .cover h1 { font-size: 14pt; text-transform: uppercase; }
+          .cover p { text-indent: 0; }
+          .section-title { text-align: center; font-size: 12pt; font-weight: bold; text-transform: uppercase; margin-bottom: 1cm; }
+          .references { font-size: 12pt; text-indent: 0; hanging-indent: 1.25cm; }
+        </style>
+      </head>
+      <body>
+    `;
 
     // Capa
-    if (selectedBook?.cover_image_url) {
-      try {
-        pdf.addImage(selectedBook.cover_image_url, 'JPEG', 0, 0, W, H);
-      } catch {}
-    } else {
-      pdf.setFillColor(30, 30, 60);
-      pdf.rect(0, 0, W, H, 'F');
-    }
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(22);
-    pdf.text(selectedBook?.title || 'Meu Livro', W / 2, H / 2 - 10, { align: 'center', maxWidth: W - 20 });
-    if (selectedBook?.subtitle) {
-      pdf.setFontSize(13);
-      pdf.text(selectedBook.subtitle, W / 2, H / 2 + 8, { align: 'center', maxWidth: W - 20 });
-    }
-    pdf.setFontSize(11);
-    pdf.text(session?.name || '', W / 2, H - 20, { align: 'center' });
+    bodyHtml += `<div class="cover">
+      <p>&nbsp;</p><p>&nbsp;</p>
+      <p style="text-indent:0">${author}</p>
+      <p>&nbsp;</p><p>&nbsp;</p>
+      <h1>${bookTitle}</h1>
+      ${selectedBook?.subtitle ? `<p style="text-indent:0"><em>${selectedBook.subtitle}</em></p>` : ''}
+    </div>`;
 
     // Dedicatória
     if (selectedBook?.dedication) {
-      pdf.addPage();
-      pdf.setTextColor(40, 40, 40);
-      pdf.setFontSize(13);
-      pdf.text('Dedicatória', W / 2, 30, { align: 'center' });
-      pdf.setFontSize(11);
-      pdf.text(selectedBook.dedication, 20, 50, { maxWidth: W - 40 });
+      bodyHtml += `<div style="page-break-after:always; padding-top:10cm; text-align:right">
+        <p style="text-indent:0;text-align:right;max-width:50%;margin-left:auto;font-style:italic">${selectedBook.dedication.replace(/\n/g,'<br/>')}</p>
+      </div>`;
     }
+
+    // Sumário simples
+    bodyHtml += `<h1 class="section-title">SUMÁRIO</h1>`;
+    chapters.forEach((ch, i) => {
+      bodyHtml += `<p style="text-indent:0">${i+1}. ${ch.title}</p>`;
+    });
+    bodyHtml += `<div style="page-break-after:always"></div>`;
 
     // Prefácio
     if (selectedBook?.preface) {
-      pdf.addPage();
-      pdf.setTextColor(40, 40, 40);
-      pdf.setFontSize(13);
-      pdf.text('Prefácio', W / 2, 30, { align: 'center' });
-      pdf.setFontSize(11);
-      pdf.text(selectedBook.preface, 20, 50, { maxWidth: W - 40 });
+      bodyHtml += `<h1 class="section-title">PREFÁCIO</h1>`;
+      selectedBook.preface.split('\n').forEach(line => {
+        if (line.trim()) bodyHtml += `<p>${line}</p>`;
+      });
     }
 
     // Capítulos
-    for (const ch of chapters) {
-      pdf.addPage();
-      pdf.setTextColor(40, 40, 40);
-      pdf.setFontSize(15);
-      pdf.text(`Capítulo ${ch.order}: ${ch.title}`, W / 2, 25, { align: 'center', maxWidth: W - 20 });
-      pdf.setFontSize(11);
-      const plain = ch.content ? ch.content.replace(/<[^>]+>/g, '') : '';
-      pdf.text(plain, 15, 40, { maxWidth: W - 30, lineHeightFactor: 1.6 });
+    chapters.forEach((ch) => {
+      bodyHtml += `<h1>${ch.order}. ${ch.title.toUpperCase()}</h1>`;
+      const plain = ch.content ? ch.content.replace(/<[^>]+>/g, '').trim() : '';
+      plain.split('\n').forEach(line => {
+        if (line.trim()) bodyHtml += `<p>${line}</p>`;
+      });
+    });
+
+    // Referências
+    if (selectedBook?.references) {
+      bodyHtml += `<h1 class="section-title">REFERÊNCIAS</h1>`;
+      selectedBook.references.split('\n').forEach(line => {
+        if (line.trim()) bodyHtml += `<p class="references" style="text-indent:0">${line}</p>`;
+      });
     }
 
-    pdf.save(`${selectedBook?.title || 'livro'}.pdf`);
-    setPdfLoading(false);
-    toast.success('PDF gerado!');
+    bodyHtml += `</body></html>`;
+
+    const blob = new Blob([bodyHtml], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${bookTitle.replace(/\s+/g, '-')}-ABNT.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setWordLoading(false);
+    toast.success('Arquivo Word (ABNT) gerado!');
   };
 
   // ── Editor de capítulo ──
@@ -258,8 +329,8 @@ export default function MeuBestSeller() {
             <ChevronLeft size={14} /> Meus Livros
           </Button>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleExportPDF} disabled={pdfLoading}>
-              {pdfLoading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />} Exportar PDF
+            <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleExportWord} disabled={wordLoading}>
+              {wordLoading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />} Exportar Word (ABNT)
             </Button>
             <Button variant="ghost" size="sm" className="text-destructive gap-1.5 text-xs" onClick={() => deleteBookMutation.mutate(selectedBook.id)}>
               <Trash2 size={13} /> Excluir
@@ -320,9 +391,11 @@ export default function MeuBestSeller() {
                 </div>
               </div>
             </div>
-            <TabsList className="mb-4">
+            <TabsList className="mb-4 flex-wrap h-auto">
               <TabsTrigger value="chapters"><AlignLeft size={13} className="mr-1.5" /> Capítulos</TabsTrigger>
               <TabsTrigger value="meta"><FileText size={13} className="mr-1.5" /> Dedicatória & Prefácio</TabsTrigger>
+              <TabsTrigger value="references"><BookMarked size={13} className="mr-1.5" /> Referências</TabsTrigger>
+              <TabsTrigger value="guide"><Lightbulb size={13} className="mr-1.5" /> Guia de Escrita</TabsTrigger>
             </TabsList>
 
             <TabsContent value="chapters" className="space-y-3">
@@ -386,6 +459,55 @@ export default function MeuBestSeller() {
                 />
               </div>
             </TabsContent>
+
+            <TabsContent value="references" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">Referências Bibliográficas</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Formato ABNT. Uma referência por linha.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs shrink-0"
+                  onClick={handleSuggestReferences}
+                  disabled={suggestingRefs}
+                >
+                  {suggestingRefs ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                  Sugerir pela IA
+                </Button>
+              </div>
+              <Textarea
+                rows={10}
+                placeholder={`Ex: SOBRENOME, Nome. Título do Livro. Edição. Cidade: Editora, Ano.\n\nSe não tiver referências, use o botão "Sugerir pela IA" para obter sugestões baseadas no título do seu livro.`}
+                value={selectedBook.references || ''}
+                onChange={e => updateBookMutation.mutate({ id: selectedBook.id, data: { references: e.target.value } })}
+                className="font-mono text-xs"
+              />
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+                <strong>Formato ABNT:</strong> SOBRENOME, Nome. <em>Título em itálico</em>. Nº ed. Cidade: Editora, Ano.
+              </div>
+            </TabsContent>
+
+            <TabsContent value="guide" className="space-y-3">
+              <p className="text-sm text-muted-foreground">Siga este passo a passo para escrever seu livro com mais clareza e profissionalismo.</p>
+              {WRITING_GUIDE.map((step, i) => (
+                <div key={i} className="border border-border rounded-xl overflow-hidden">
+                  <button
+                    className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 hover:bg-secondary/50 transition-colors text-left"
+                    onClick={() => setGuideOpen(guideOpen === i ? null : i)}
+                  >
+                    <span className="font-semibold text-sm text-foreground">{step.title}</span>
+                    {guideOpen === i ? <ChevronUp size={15} className="text-muted-foreground shrink-0" /> : <ChevronDown size={15} className="text-muted-foreground shrink-0" />}
+                  </button>
+                  {guideOpen === i && (
+                    <div className="px-4 py-3 text-sm text-muted-foreground bg-card leading-relaxed">
+                      {step.content}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -393,20 +515,34 @@ export default function MeuBestSeller() {
         <Dialog open={showCoverPicker} onOpenChange={setShowCoverPicker}>
           <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle className="flex items-center gap-2"><Image size={16} /> Escolher Capa</DialogTitle></DialogHeader>
-            <div className="flex gap-2 mb-4">
-              <Input placeholder="Pesquisar tema de capa..." value={coverSearch} onChange={e => setCoverSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearchCover()} />
-              <Button variant="outline" onClick={handleSearchCover}><Search size={15} /></Button>
+            <div className="flex gap-2 mb-3">
+              <Input
+                placeholder="Pesquisar por tema (ex: natureza, negócios, tecnologia)..."
+                value={coverSearch}
+                onChange={e => setCoverSearch(e.target.value)}
+              />
+              <Button variant="outline" size="sm" onClick={() => setCoverSearch('')}>Limpar</Button>
             </div>
-            <div className="grid grid-cols-4 gap-2 max-h-80 overflow-y-auto">
-              {coverResults.map((url, i) => (
+            <p className="text-xs text-muted-foreground mb-2">{filteredCovers.length} capas disponíveis</p>
+            <div className="grid grid-cols-5 gap-2 max-h-96 overflow-y-auto">
+              {filteredCovers.map((item, i) => (
                 <div
                   key={i}
-                  className={`aspect-[2/3] rounded-xl overflow-hidden cursor-pointer border-2 transition-all hover:border-primary ${selectedBook.cover_image_url === url ? 'border-primary' : 'border-transparent'}`}
-                  onClick={() => { updateBookMutation.mutate({ id: selectedBook.id, data: { cover_image_url: url } }); setShowCoverPicker(false); toast.success('Capa atualizada!'); }}
+                  className={`aspect-[2/3] rounded-xl overflow-hidden cursor-pointer border-2 transition-all hover:border-primary ${selectedBook.cover_image_url === item.url ? 'border-primary' : 'border-transparent'}`}
+                  onClick={() => {
+                    updateBookMutation.mutate({ id: selectedBook.id, data: { cover_image_url: item.url } });
+                    setShowCoverPicker(false);
+                    toast.success('Capa atualizada!');
+                  }}
                 >
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img src={item.url} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
+              {filteredCovers.length === 0 && (
+                <div className="col-span-5 text-center py-8 text-muted-foreground text-sm">
+                  Nenhuma capa encontrada para "{coverSearch}". Tente outro termo.
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>

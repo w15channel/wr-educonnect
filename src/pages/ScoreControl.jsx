@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search } from 'lucide-react';
+import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,20 +61,31 @@ function StudentScoreDetail({ code, onBack }) {
     { key: 'forum', label: 'Fórum', icon: MessageSquare },
   ];
 
+  // Detect uncorrected submissions for this student
+  const uncorrectedTaskIds = new Set(
+    submissions
+      .filter(s => s.status === 'submitted' && !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === email && si.verified))
+      .map(s => s.task_id)
+  );
+
   const ScoreRow = ({ category, ref_id, ref_title, max_score = 10, children }) => {
     const item = getScoreItem(category, ref_id);
     const key = `${category}_${ref_id}`;
     const currentScore = scores[key] !== undefined ? scores[key] : (item?.score ?? '');
     const currentNotes = notes[key] !== undefined ? notes[key] : (item?.notes ?? '');
+    const needsCorrection = (category === 'task' || category === 'quiz') && uncorrectedTaskIds.has(ref_id);
 
     return (
-      <div className={`p-4 rounded-xl border transition-all ${item?.verified ? 'border-green-200 bg-green-50/30' : 'border-border bg-card'}`}>
+      <div className={`p-4 rounded-xl border transition-all ${needsCorrection ? 'border-red-300 bg-red-50/40' : item?.verified ? 'border-green-200 bg-green-50/30' : 'border-border bg-card'}`}>
         <div className="flex items-start gap-3 mb-3">
           <div className={`p-1.5 rounded-lg shrink-0 ${CATEGORY_CONFIG[category].color}`}>
             {React.createElement(CATEGORY_CONFIG[category].icon, { size: 13 })}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground leading-snug">{ref_title}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-foreground leading-snug">{ref_title}</p>
+              {needsCorrection && <AlertCircle size={13} className="text-red-500 shrink-0" />}
+            </div>
             {children}
           </div>
           {item?.verified && <CheckCircle size={15} className="text-green-600 shrink-0 mt-0.5" />}
@@ -330,40 +341,53 @@ export default function ScoreControl() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map(code => {
-            const studentScores = scoreItems.filter(s => s.student_email === code.student_email);
-            const total = studentScores.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0);
-            const verifiedCount = studentScores.filter(s => s.verified).length;
-            const displayName = code.profile_name || code.student_name || 'Sem nome';
+          {filtered
+            .map(code => {
+              const hasPending = submissions.some(s =>
+                s.status === 'submitted' &&
+                s.student_email === code.student_email &&
+                !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
+              );
+              return { code, hasPending };
+            })
+            .sort((a, b) => (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0))
+            .map(({ code, hasPending }) => {
+              const studentScores = scoreItems.filter(s => s.student_email === code.student_email);
+              const total = studentScores.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0);
+              const verifiedCount = studentScores.filter(s => s.verified).length;
+              const displayName = code.profile_name || code.student_name || 'Sem nome';
 
-            return (
-              <div
-                key={code.id}
-                onClick={() => setSelectedCode(code)}
-                className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:border-primary/30 hover:shadow-md transition-all"
-              >
+              return (
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
-                  style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}
+                  key={code.id}
+                  onClick={() => setSelectedCode(code)}
+                  className={`bg-card rounded-2xl border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}
                 >
-                  {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-foreground truncate">{displayName}</p>
-                  <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  {verifiedCount > 0 && (
-                    <span className="text-xs text-muted-foreground">{verifiedCount} verificado(s)</span>
-                  )}
-                  <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
-                    <Star size={11} className="text-yellow-500 fill-yellow-500" />
-                    <span className="text-sm font-black text-yellow-700">{total}</span>
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
+                    style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}
+                  >
+                    {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
-                  <ChevronLeft size={14} className="text-muted-foreground rotate-180" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-bold text-sm text-foreground truncate">{displayName}</p>
+                      {hasPending && <AlertCircle size={14} className="text-red-500 shrink-0" />}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {verifiedCount > 0 && (
+                      <span className="text-xs text-muted-foreground">{verifiedCount} verificado(s)</span>
+                    )}
+                    <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
+                      <Star size={11} className="text-yellow-500 fill-yellow-500" />
+                      <span className="text-sm font-black text-yellow-700">{total}</span>
+                    </div>
+                    <ChevronLeft size={14} className="text-muted-foreground rotate-180" />
+                  </div>
                 </div>
-              </div>
-            );
+              );
           })}
         </div>
       )}

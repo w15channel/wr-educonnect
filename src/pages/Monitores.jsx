@@ -176,14 +176,16 @@ export default function Monitores() {
                     Bônus: +{MONITOR_BONUS} por atividade
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 text-xs w-full"
-                  onClick={() => setCertStudent(m)}
-                >
-                  <Download size={12} /> Certificado PDF
-                </Button>
+                {isMe && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 text-xs w-full"
+                    onClick={() => setCertStudent(m)}
+                  >
+                    <Download size={12} /> Certificado PDF
+                  </Button>
+                )}
               </div>
             );
           })}

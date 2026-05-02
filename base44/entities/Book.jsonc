@@ -41,6 +41,10 @@
       "type": "string",
       "description": "Pref\u00e1cio"
     },
+    "references": {
+      "type": "string",
+      "description": "Refer\u00eancias bibliogr\u00e1ficas (formato ABNT)"
+    },
     "status": {
       "type": "string",
       "enum": [
