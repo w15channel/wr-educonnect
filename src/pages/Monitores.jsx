@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, Crown, Award, Download, RefreshCw, Calendar, AlertCircle } from 'lucide-react';
+import { Trophy, Star, Crown, Download, RefreshCw, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -33,6 +33,7 @@ export default function Monitores() {
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [certStudent, setCertStudent] = useState(null);
+  const [defining, setDefining] = useState(false);
   const certRef = useRef(null);
 
   const { data: scoreItems = [] } = useQuery({
@@ -48,11 +49,6 @@ export default function Monitores() {
   const { data: monitorHistory = [] } = useQuery({
     queryKey: ['monitor-history'],
     queryFn: () => base44.entities.MonitorHistory.list('-period_start', 50),
-  });
-
-  const createMonitorMutation = useMutation({
-    mutationFn: (data) => base44.entities.MonitorHistory.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['monitor-history'] }),
   });
 
   // Calcula ranking a partir de ScoreItems verificados
@@ -82,9 +78,10 @@ export default function Monitores() {
       return;
     }
     if (topMonitors.length === 0) {
-      toast.error('Nenhum aluno pontuado encontrado no ranking.');
+      toast.error('Nenhum aluno pontuado encontrado no ranking. Verifique se há ScoreItems verificados.');
       return;
     }
+    setDefining(true);
     try {
       for (let i = 0; i < topMonitors.length; i++) {
         const m = topMonitors[i];
@@ -98,10 +95,13 @@ export default function Monitores() {
           rank_position: i + 1,
         });
       }
-      queryClient.invalidateQueries({ queryKey: ['monitor-history'] });
-      toast.success('✅ Monitores da semana definidos!');
+      await queryClient.invalidateQueries({ queryKey: ['monitor-history'] });
+      toast.success('✅ Monitores da semana definidos com sucesso!');
     } catch (e) {
-      toast.error('Erro ao definir monitores.');
+      console.error('Erro ao definir monitores:', e);
+      toast.error('Erro ao definir monitores: ' + (e?.message || 'tente novamente'));
+    } finally {
+      setDefining(false);
     }
   };
 
@@ -140,8 +140,9 @@ export default function Monitores() {
           </p>
         </div>
         {isTeacher && (
-          <Button onClick={handleDefineMonitors} className="gap-2" disabled={createMonitorMutation.isPending}>
-            <RefreshCw size={15} /> Definir Monitores da Semana
+          <Button onClick={handleDefineMonitors} className="gap-2" disabled={defining}>
+            <RefreshCw size={15} className={defining ? 'animate-spin' : ''} /> 
+            {defining ? 'Definindo...' : 'Definir Monitores da Semana'}
           </Button>
         )}
       </div>
