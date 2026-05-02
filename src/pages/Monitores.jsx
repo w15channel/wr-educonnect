@@ -136,7 +136,7 @@ export default function Monitores() {
             <Crown size={22} className="text-yellow-500" /> Monitores da Semana
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {format(today, "Semana de dd/MM", { locale: ptBR })} — Top 3 alunos por pontuação
+            {format(today, "'Semana de' dd/MM", { locale: ptBR })} — Top 3 alunos por pontuação
           </p>
         </div>
         {isTeacher && (
