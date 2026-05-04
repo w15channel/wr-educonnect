@@ -7,6 +7,11 @@ import BottomNav from './BottomNav';
 import MobileHeader from './MobileHeader';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import ServiceTermsModal from '../onboarding/ServiceTermsModal';
+import TutorialModal from '../onboarding/TutorialModal';
+
+const TERMS_KEY = 'wr_terms_accepted';
+const TUTORIAL_KEY = 'wr_tutorial_done';
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -21,6 +26,35 @@ export default function AppLayout() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isStudent = session?.role === 'student';
+  const sessionKey = session?.email || session?.code || '';
+  const [showTerms, setShowTerms] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    if (!isStudent || !sessionKey) return;
+    const termsKey = `${TERMS_KEY}_${sessionKey}`;
+    const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
+    const termsAccepted = localStorage.getItem(termsKey);
+    const tutDone = localStorage.getItem(tutKey);
+    if (!termsAccepted) { setShowTerms(true); return; }
+    if (!tutDone) { setShowTutorial(true); }
+  }, [isStudent, sessionKey]);
+
+  const handleTermsAccept = () => {
+    const termsKey = `${TERMS_KEY}_${sessionKey}`;
+    localStorage.setItem(termsKey, '1');
+    setShowTerms(false);
+    const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
+    if (!localStorage.getItem(tutKey)) setShowTutorial(true);
+  };
+
+  const handleTutorialFinish = () => {
+    const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
+    localStorage.setItem(tutKey, '1');
+    setShowTutorial(false);
+  };
 
   // Pull-to-refresh state
   const [pullY, setPullY] = useState(0);
@@ -64,6 +98,12 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
+      {showTerms && isStudent && (
+        <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />
+      )}
+      {showTutorial && isStudent && !showTerms && (
+        <TutorialModal onFinish={handleTutorialFinish} />
+      )}
       {/* Desktop sidebar */}
       <div className="hidden md:block shrink-0">
         <Sidebar session={session} />

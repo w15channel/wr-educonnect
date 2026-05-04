@@ -4,15 +4,33 @@
   "properties": {
     "title": {
       "type": "string",
-      "description": "Title of the recorded lesson"
+      "description": "Title of the lesson"
     },
     "description": {
       "type": "string",
       "description": "Brief description of the lesson"
     },
+    "lesson_type": {
+      "type": "string",
+      "enum": [
+        "video_external",
+        "text_written",
+        "content_external"
+      ],
+      "default": "video_external",
+      "description": "Tipo de aula: v\u00eddeo externo, texto escrito na plataforma, ou material externo"
+    },
     "video_url": {
       "type": "string",
-      "description": "URL of the video (YouTube, Vimeo, etc.)"
+      "description": "URL do v\u00eddeo (YouTube, Vimeo, Instagram, etc.)"
+    },
+    "external_url": {
+      "type": "string",
+      "description": "URL de material externo (artigo, site, etc.)"
+    },
+    "text_content": {
+      "type": "string",
+      "description": "Conte\u00fado de aula em texto (quando lesson_type=text_written)"
     },
     "thumbnail_url": {
       "type": "string",
@@ -20,11 +38,19 @@
     },
     "duration": {
       "type": "string",
-      "description": "Duration of the video (e.g., 45 min)"
+      "description": "Duration of the lesson (e.g., 45 min)"
     },
     "order": {
       "type": "number",
       "description": "Order of the lesson in the course"
+    },
+    "material_links": {
+      "type": "string",
+      "description": "Links de materiais de suporte (separados por v\u00edrgula)"
+    },
+    "research_links": {
+      "type": "string",
+      "description": "Links para pesquisa online (separados por v\u00edrgula com t\u00edtulos separados por |)"
     }
   },
   "required": [

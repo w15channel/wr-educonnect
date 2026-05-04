@@ -4,7 +4,8 @@ import { GraduationCap } from 'lucide-react';
 
 const routeLabels = {
   '/': 'Dashboard',
-  '/lessons': 'Videoaulas',
+  '/lessons': 'Aulas',
+  '/chat': 'Chat da Turma',
   '/live': 'Sala ao Vivo',
   '/tasks': 'Tarefas e Provas',
   '/forum': 'Fórum de Dúvidas',

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Play, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil, Upload, Link, Clock, FileDown } from 'lucide-react';
+import { Play, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil, Upload, Link, Clock, FileDown, FileText, Globe, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,7 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
-const EMPTY_FORM = { title: '', description: '', video_url: '', thumbnail_url: '', duration: '', material_links: '' };
+const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '' };
+
+const LESSON_TYPE_CONFIG = {
+  video_external: { label: 'Vídeo Externo', icon: Video, color: 'text-purple-500', desc: 'YouTube, Vimeo, Instagram...' },
+  text_written: { label: 'Aula em Texto', icon: FileText, color: 'text-blue-500', desc: 'Escrita diretamente na plataforma' },
+  content_external: { label: 'Material Externo', icon: Globe, color: 'text-green-500', desc: 'Link para artigo, site ou PDF externo' },
+};
 
 export default function Lessons() {
   const { user: session } = useOutletContext();
@@ -129,7 +135,7 @@ export default function Lessons() {
 
   const openEdit = (lesson) => {
     setEditingLesson(lesson);
-    setForm({ title: lesson.title, description: lesson.description || '', video_url: lesson.video_url || '', thumbnail_url: lesson.thumbnail_url || '', duration: lesson.duration || '', material_links: lesson.material_links || '' });
+    setForm({ title: lesson.title, description: lesson.description || '', lesson_type: lesson.lesson_type || 'video_external', video_url: lesson.video_url || '', external_url: lesson.external_url || '', text_content: lesson.text_content || '', thumbnail_url: lesson.thumbnail_url || '', duration: lesson.duration || '', material_links: lesson.material_links || '', research_links: lesson.research_links || '' });
     setShowForm(true);
   };
 
@@ -142,39 +148,63 @@ export default function Lessons() {
     <div className="p-4 lg:p-7 max-w-7xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Videoaulas</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Assista às aulas no seu ritmo</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Aulas</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Assista, leia e estude no seu ritmo</p>
         </div>
         {isTeacher && (
           <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingLesson(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
               <Button className="gap-2 h-9 text-sm"><Plus size={15} /> Nova Aula</Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>{editingLesson ? 'Editar Aula' : 'Adicionar Aula'}</DialogTitle></DialogHeader>
-              <div className="space-y-4 mt-4">
-                <Input placeholder="Título da aula" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                <Textarea placeholder="Resumo da aula (visível para os alunos)" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} />
-                <Input placeholder="URL do vídeo (YouTube, Vimeo...)" value={form.video_url} onChange={e => setForm({...form, video_url: e.target.value})} />
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Capa da Aula (imagem)</label>
-                  {form.thumbnail_url && (
-                    <img src={form.thumbnail_url} alt="Capa" className="w-full h-28 object-cover rounded-xl mb-2 border border-border" />
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={e => handleCoverUpload(e.target.files[0])}
-                    className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
-                  />
-                  {coverUploading && <p className="text-xs text-muted-foreground mt-1">Enviando capa...</p>}
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>{editingLesson ? 'Editar Aula' : 'Nova Aula'}</DialogTitle></DialogHeader>
+            <div className="space-y-4 mt-4">
+              <Input placeholder="Título da aula" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-2">Tipo de Aula</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {Object.entries(LESSON_TYPE_CONFIG).map(([key, cfg]) => {
+                    const Icon = cfg.icon;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setForm({...form, lesson_type: key})}
+                        className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-xs font-semibold transition-all ${form.lesson_type === key ? 'border-primary bg-primary/8 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                      >
+                        <Icon size={16} className={cfg.color} />
+                        <span>{cfg.label}</span>
+                        <span className="text-[9px] font-normal text-muted-foreground">{cfg.desc}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <Input placeholder="Duração (ex: 45 min)" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
-                <Input placeholder="Links de materiais (separados por vírgula)" value={form.material_links} onChange={e => setForm({...form, material_links: e.target.value})} />
-                <Button onClick={handleSave} disabled={!form.title} className="w-full">
-                  {editingLesson ? 'Salvar Alterações' : 'Salvar Aula'}
-                </Button>
               </div>
+              <Textarea placeholder="Descrição/resumo da aula" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={2} />
+              {form.lesson_type === 'video_external' && (
+                <Input placeholder="URL do vídeo (YouTube, Vimeo, Instagram...)" value={form.video_url} onChange={e => setForm({...form, video_url: e.target.value})} />
+              )}
+              {form.lesson_type === 'content_external' && (
+                <Input placeholder="URL do material externo (artigo, PDF, site...)" value={form.external_url} onChange={e => setForm({...form, external_url: e.target.value})} />
+              )}
+              {form.lesson_type === 'text_written' && (
+                <Textarea placeholder="Conteúdo da aula em texto (escreva aqui)..." value={form.text_content} onChange={e => setForm({...form, text_content: e.target.value})} rows={8} />
+              )}
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Capa da Aula (imagem)</label>
+                {form.thumbnail_url && (
+                  <img src={form.thumbnail_url} alt="Capa" className="w-full h-28 object-cover rounded-xl mb-2 border border-border" />
+                )}
+                <input type="file" accept="image/*" onChange={e => handleCoverUpload(e.target.files[0])} className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer" />
+                {coverUploading && <p className="text-xs text-muted-foreground mt-1">Enviando capa...</p>}
+              </div>
+              <Input placeholder="Duração (ex: 45 min)" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} />
+              <Input placeholder="Links de materiais de apoio (separados por vírgula)" value={form.material_links} onChange={e => setForm({...form, material_links: e.target.value})} />
+              <Input placeholder='Links de pesquisa (formato: Título|URL, separados por vírgula)' value={form.research_links} onChange={e => setForm({...form, research_links: e.target.value})} />
+              <Button onClick={handleSave} disabled={!form.title} className="w-full">
+                {editingLesson ? 'Salvar Alterações' : 'Salvar Aula'}
+              </Button>
+            </div>
             </DialogContent>
           </Dialog>
         )}
@@ -291,6 +321,12 @@ export default function Lessons() {
                           <CheckCircle size={9} /> Assistida
                         </span>
                       )}
+                       {lesson.lesson_type && lesson.lesson_type !== 'video_external' && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1 bg-secondary px-1.5 py-0.5 rounded-full">
+                          {lesson.lesson_type === 'text_written' ? <FileText size={9} /> : <Globe size={9} />}
+                          {LESSON_TYPE_CONFIG[lesson.lesson_type]?.label}
+                        </span>
+                      )}
                       {lesson.duration && (
                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                           <Clock size={9} /> {lesson.duration}
@@ -343,6 +379,51 @@ export default function Lessons() {
                       <div className="px-4 py-3 bg-secondary/20">
                         <p className="text-xs font-semibold text-muted-foreground mb-1">Resumo da Aula</p>
                         <p className="text-sm text-foreground/80">{lesson.description}</p>
+                      </div>
+                    )}
+
+                    {/* Text content */}
+                    {lesson.lesson_type === 'text_written' && lesson.text_content && (
+                      <div className="px-4 py-3 border-t border-border">
+                        <p className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
+                          <FileText size={13} className="text-blue-500" /> Conteúdo da Aula
+                        </p>
+                        <div className="bg-secondary/30 rounded-xl p-4 text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                          {lesson.text_content}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* External content link */}
+                    {lesson.lesson_type === 'content_external' && lesson.external_url && (
+                      <div className="px-4 py-3 border-t border-border">
+                        <a href={lesson.external_url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-primary bg-primary/8 border border-primary/15 px-4 py-3 rounded-xl hover:bg-primary/15 transition-colors font-semibold">
+                          <Globe size={15} /> Acessar Material Externo
+                          <ExternalLink size={12} className="ml-auto" />
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Research links */}
+                    {lesson.research_links && (
+                      <div className="px-4 py-3 border-t border-border">
+                        <p className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
+                          <Globe size={13} className="text-green-500" /> Links de Pesquisa
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {lesson.research_links.split(',').map((item, li) => {
+                            const parts = item.trim().split('|');
+                            const label = parts.length > 1 ? parts[0].trim() : `Pesquisa ${li + 1}`;
+                            const url = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                            return (
+                              <a key={li} href={url} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors font-medium">
+                                <Globe size={10} /> {label}
+                              </a>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 

@@ -4,7 +4,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
@@ -13,15 +13,16 @@ const adminGroups = [
     label: 'Classe',
     items: [
       { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
-      { icon: Play, label: 'Aulas Gravadas', path: '/lessons', color: 'text-purple-400' },
+      { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
       { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
       { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
-      { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
     ],
   },
   {
     label: 'Comunidade',
     items: [
+      { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
+      { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
       { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
     ],
@@ -52,15 +53,16 @@ const studentGroups = [
     label: 'Classe',
     items: [
       { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
-      { icon: Play, label: 'Videoaulas', path: '/lessons', color: 'text-purple-400' },
+      { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
       { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
       { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
-      { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
     ],
   },
   {
     label: 'Comunidade',
     items: [
+      { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
+      { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
       { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
     ],

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { DollarSign, Plus, CheckCircle, XCircle, AlertCircle, Trash2, CreditCard } from 'lucide-react';
+import { DollarSign, Plus, CheckCircle, XCircle, AlertCircle, Trash2, CreditCard, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,8 +21,11 @@ export default function Tuitions() {
   const isAdmin = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
   const [form, setForm] = useState({ student_email: '', student_name: '', month_ref: '', amount: '', due_date: '', status: 'pending', notes: '' });
+  const [bulk, setBulk] = useState({ month_ref: '', amount: '', due_date: '', status: 'pending', notes: '', mode: 'all', selectedEmails: [] });
   const [selectedStudent, setSelectedStudent] = useState('all');
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const { data: tuitions = [], isLoading } = useQuery({
     queryKey: ['tuitions'],
@@ -58,6 +61,41 @@ export default function Tuitions() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tuitions'] }),
   });
 
+  const handleBulkLaunch = async () => {
+    if (!bulk.month_ref) { toast.error('Informe o mês de referência'); return; }
+    setBulkLoading(true);
+    let targets = codes.filter(c => c.student_email);
+    if (bulk.mode === 'selected') targets = targets.filter(c => bulk.selectedEmails.includes(c.student_email));
+    for (const c of targets) {
+      const alreadyExists = tuitions.find(t => t.student_email === c.student_email && t.month_ref === bulk.month_ref);
+      if (!alreadyExists) {
+        await base44.entities.Tuition.create({
+          student_email: c.student_email,
+          student_name: c.profile_name || c.student_name || '',
+          month_ref: bulk.month_ref,
+          amount: Number(bulk.amount) || 0,
+          due_date: bulk.due_date,
+          status: bulk.status,
+          notes: bulk.notes,
+        });
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ['tuitions'] });
+    setBulkLoading(false);
+    setShowBulk(false);
+    setBulk({ month_ref: '', amount: '', due_date: '', status: 'pending', notes: '', mode: 'all', selectedEmails: [] });
+    toast.success(`Mensalidades lançadas para ${targets.length} aluno(s)!`);
+  };
+
+  const toggleBulkEmail = (email) => {
+    setBulk(prev => ({
+      ...prev,
+      selectedEmails: prev.selectedEmails.includes(email)
+        ? prev.selectedEmails.filter(e => e !== email)
+        : [...prev.selectedEmails, email],
+    }));
+  };
+
   const filtered = selectedStudent === 'all' ? tuitions : tuitions.filter(t => t.student_email === selectedStudent);
 
   const overallStatus = !isAdmin && tuitions.length > 0
@@ -72,9 +110,14 @@ export default function Tuitions() {
           <p className="text-muted-foreground text-sm mt-0.5">{isAdmin ? 'Gerencie pagamentos dos alunos' : 'Histórico de mensalidades'}</p>
         </div>
         {isAdmin && (
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" className="gap-2 h-9 text-sm" onClick={() => setShowBulk(v => !v)}>
+              <Users size={15} /> Lançamento em Massa
+              {showBulk ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </Button>
           <Dialog open={showForm} onOpenChange={setShowForm}>
             <DialogTrigger asChild>
-              <Button className="gap-2 h-9 text-sm"><Plus size={15} /> Lançar</Button>
+              <Button className="gap-2 h-9 text-sm"><Plus size={15} /> Lançar Individual</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Nova Mensalidade</DialogTitle></DialogHeader>
@@ -108,8 +151,70 @@ export default function Tuitions() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
+
+      {/* Bulk launch panel */}
+      {isAdmin && showBulk && (
+        <div className="bg-card border border-border rounded-2xl p-5 space-y-4 animate-fade-in-up">
+          <div className="flex items-center gap-2 mb-1">
+            <Users size={16} className="text-primary" />
+            <h3 className="font-bold text-foreground text-sm">Lançamento em Massa</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Input placeholder="Mês de referência (ex: Maio/2025)" value={bulk.month_ref} onChange={e => setBulk({...bulk, month_ref: e.target.value})} />
+            <Input type="number" placeholder="Valor (R$)" value={bulk.amount} onChange={e => setBulk({...bulk, amount: e.target.value})} />
+            <Input type="date" placeholder="Vencimento" value={bulk.due_date} onChange={e => setBulk({...bulk, due_date: e.target.value})} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select value={bulk.status} onValueChange={v => setBulk({...bulk, status: v})}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="paid">Pago</SelectItem>
+                <SelectItem value="overdue">Inadimplente</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input placeholder="Observações (opcional)" value={bulk.notes} onChange={e => setBulk({...bulk, notes: e.target.value})} />
+          </div>
+          {/* Mode selector */}
+          <div className="flex gap-2 flex-wrap">
+            {[{ v: 'all', label: 'Todos os alunos' }, { v: 'selected', label: 'Alunos selecionados' }].map(opt => (
+              <button
+                key={opt.v}
+                onClick={() => setBulk(b => ({ ...b, mode: opt.v, selectedEmails: [] }))}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${bulk.mode === opt.v ? 'bg-primary text-white border-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {bulk.mode === 'selected' && (
+            <div className="space-y-1.5 max-h-44 overflow-y-auto border border-border rounded-xl p-2">
+              {codes.filter(c => c.student_email).map(c => {
+                const name = c.profile_name || c.student_name || 'Sem nome';
+                const checked = bulk.selectedEmails.includes(c.student_email);
+                return (
+                  <label key={c.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-secondary/50 cursor-pointer">
+                    <input type="checkbox" checked={checked} onChange={() => toggleBulkEmail(c.student_email)} className="accent-primary w-4 h-4" />
+                    <span className="text-sm font-medium text-foreground">{name}</span>
+                    <span className="text-xs text-muted-foreground">{c.student_email}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <Button
+            onClick={handleBulkLaunch}
+            disabled={bulkLoading || !bulk.month_ref || (bulk.mode === 'selected' && bulk.selectedEmails.length === 0)}
+            className="w-full gap-2"
+          >
+            {bulkLoading ? 'Lançando...' : `🚀 Lançar para ${bulk.mode === 'all' ? `${codes.filter(c=>c.student_email).length} alunos` : `${bulk.selectedEmails.length} selecionados`}`}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center">Alunos que já possuem mensalidade para este mês serão ignorados automaticamente.</p>
+        </div>
+      )}
 
       {/* Student status banner */}
       {!isAdmin && overallStatus && (

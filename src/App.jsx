@@ -24,6 +24,7 @@ import RankingGeral from './pages/RankingGeral';
 import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
 import MeuBestSeller from './pages/MeuBestSeller';
+import ClassChat from './pages/ClassChat';
 import HistoricoAcademico from './pages/HistoricoAcademico';
 import StudentDetail from './pages/StudentDetail';
 import TaskQuizView from './pages/TaskQuizView';
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
         <Route path="/tasks/quiz/:id" element={<TaskQuizView />} />
         <Route path="/tasks/builder/:id" element={<TaskExamBuilder />} />
         <Route path="/forum" element={<Forum />} />
+        <Route path="/chat" element={<ClassChat />} />
         <Route path="/students" element={<Students />} />
         <Route path="/students/:id" element={<StudentDetail />} />
         <Route path="/announcements" element={<Announcements />} />
