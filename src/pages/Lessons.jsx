@@ -115,6 +115,13 @@ export default function Lessons() {
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
+  const openInBrowser = (url) => {
+    if (!url) return;
+    // Store URL and navigate to EDU Browser
+    sessionStorage.setItem('edu_browser_url', url);
+    window.location.href = '/browser?url=' + encodeURIComponent(url);
+  };
+
   const getEmbedUrl = (url) => {
     if (!url) return null;
     const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/);
@@ -347,13 +354,16 @@ export default function Lessons() {
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => toggleWatched(lesson.id)}
-                        title={isWatched ? 'Desmarcar' : 'Marcar como assistida'}
-                        className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl transition-colors ${isWatched ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-green-600 hover:bg-green-50'}`}
-                      >
-                        {isWatched ? <CheckCircle size={18} /> : <Circle size={18} />}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => toggleWatched(lesson.id)}
+                          title={isWatched ? 'Desmarcar presença' : 'Confirmar Presença'}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${isWatched ? 'text-green-600 bg-green-50 border border-green-200' : 'text-muted-foreground bg-secondary hover:text-green-600 hover:bg-green-50 hover:border-green-200 border border-transparent'}`}
+                        >
+                          {isWatched ? <CheckCircle size={13} /> : <Circle size={13} />}
+                          <span className="hidden sm:inline">{isWatched ? 'Presente' : 'Confirmar Presença'}</span>
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => setExpandedLesson(isExpanded ? null : lesson.id)}
@@ -397,11 +407,11 @@ export default function Lessons() {
                     {/* External content link */}
                     {lesson.lesson_type === 'content_external' && lesson.external_url && (
                       <div className="px-4 py-3 border-t border-border">
-                        <a href={lesson.external_url} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-primary bg-primary/8 border border-primary/15 px-4 py-3 rounded-xl hover:bg-primary/15 transition-colors font-semibold">
+                        <button onClick={() => openInBrowser(lesson.external_url)}
+                          className="flex items-center gap-2 text-sm text-primary bg-primary/8 border border-primary/15 px-4 py-3 rounded-xl hover:bg-primary/15 transition-colors font-semibold w-full">
                           <Globe size={15} /> Acessar Material Externo
                           <ExternalLink size={12} className="ml-auto" />
-                        </a>
+                        </button>
                       </div>
                     )}
 
@@ -417,10 +427,10 @@ export default function Lessons() {
                             const label = parts.length > 1 ? parts[0].trim() : `Pesquisa ${li + 1}`;
                             const url = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                             return (
-                              <a key={li} href={url} target="_blank" rel="noopener noreferrer"
+                              <button key={li} onClick={() => openInBrowser(url)}
                                 className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors font-medium">
                                 <Globe size={10} /> {label}
-                              </a>
+                              </button>
                             );
                           })}
                         </div>
@@ -435,10 +445,10 @@ export default function Lessons() {
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {materialLinks.map((link, li) => (
-                            <a key={li} href={link} target="_blank" rel="noopener noreferrer"
+                            <button key={li} onClick={() => openInBrowser(link)}
                               className="flex items-center gap-1 text-xs text-primary bg-primary/8 border border-primary/15 px-3 py-1.5 rounded-lg hover:bg-primary/15 transition-colors font-medium">
                               <Link size={11} /> Material {li + 1}
-                            </a>
+                            </button>
                           ))}
                         </div>
                       </div>

@@ -20,8 +20,14 @@ function normalizeUrl(input) {
 }
 
 export default function EduBrowser() {
-  const [url, setUrl] = useState(HOME_URL);
-  const [inputUrl, setInputUrl] = useState(HOME_URL);
+  const initialUrl = (() => {
+    const params = new URLSearchParams(window.location.search);
+    const u = params.get('url');
+    return u ? decodeURIComponent(u) : HOME_URL;
+  })();
+
+  const [url, setUrl] = useState(initialUrl);
+  const [inputUrl, setInputUrl] = useState(initialUrl);
   const [loading, setLoading] = useState(false);
   const [bookmarks, setBookmarks] = useState(BOOKMARKS);
   const [showBookmarks, setShowBookmarks] = useState(false);
