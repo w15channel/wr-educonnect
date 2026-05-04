@@ -204,9 +204,12 @@ export default function HistoricoAcademico() {
   useEffect(() => {
     if (!isTeacher && session?.email && codes.length > 0) {
       const myCode = codes.find(c => c.student_email === session.email);
-      if (myCode) {
-        setSelectedStudent({ name: myCode.profile_name || myCode.student_name || session.email, email: myCode.student_email, code: myCode });
-      }
+      const name = myCode?.profile_name || myCode?.student_name || session.email;
+      const email = myCode?.student_email || session.email;
+      setSelectedStudent({ name, email, code: myCode });
+      // Pre-select all available items for the student
+      setShowDocument(false);
+      setShowSelector(false);
     }
   }, [isTeacher, session, codes]);
 
@@ -282,37 +285,41 @@ export default function HistoricoAcademico() {
     return acc;
   }, {});
 
-  // ── If showing the document ──────────────────────────────────────────────
-  if (showDocument && selectedStudent) {
-    return (
-      <div className="p-4 lg:p-7 max-w-4xl mx-auto">
-        <div className="flex gap-2 mb-4">
-          <button onClick={() => { setShowDocument(false); }} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar para Seleção</button>
+  // ── STUDENT VIEW: direct record view with selector ───────────────────────
+  if (!isTeacher) {
+    if (!selectedStudent) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-        <AcademicRecord
-          student={selectedStudent}
-          rows={selectedRows}
-          totalScore={totalScore}
-          totalMaxScore={totalMaxScore}
-          totalHours={totalHours}
-          approvalRate={approvalRate}
-          onClose={isTeacher ? () => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); } : undefined}
-        />
-      </div>
-    );
-  }
+      );
+    }
 
-  // ── If showing the selector ──────────────────────────────────────────────
-  if (showSelector && selectedStudent) {
+    if (showDocument) {
+      return (
+        <div className="p-4 lg:p-7 max-w-4xl mx-auto">
+          <button onClick={() => setShowDocument(false)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">← Voltar</button>
+          <AcademicRecord
+            student={selectedStudent}
+            rows={selectedRows}
+            totalScore={totalScore}
+            totalMaxScore={totalMaxScore}
+            totalHours={totalHours}
+            approvalRate={approvalRate}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-5 animate-fade-in-up">
-        <div className="flex items-center gap-3 flex-wrap">
-          {isTeacher && (
-            <button onClick={() => { setShowSelector(false); setSelectedStudent(null); }} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar</button>
-          )}
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold text-foreground">Selecionar Conteúdo do Histórico</h2>
-            <p className="text-sm text-muted-foreground">Aluno: <span className="font-semibold text-foreground">{selectedStudent.name}</span></p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <GraduationCap size={20} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Histórico Acadêmico</h2>
+            <p className="text-muted-foreground text-sm mt-0.5">{selectedStudent.name}</p>
           </div>
         </div>
 
@@ -331,7 +338,6 @@ export default function HistoricoAcademico() {
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={selectAll} className="h-8 text-xs gap-1.5">
             <CheckSquare size={13} /> Selecionar Tudo
@@ -339,42 +345,74 @@ export default function HistoricoAcademico() {
           <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5">
             <Square size={13} /> Limpar
           </Button>
-          <Button
-            size="sm"
-            className="h-8 text-xs gap-1.5 ml-auto"
-            disabled={selectedItems.size === 0}
-            onClick={() => setShowDocument(true)}
-          >
-            <Download size={13} /> Gerar Histórico ({selectedItems.size})
+          <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedItems.size === 0} onClick={() => setShowDocument(true)}>
+            <Download size={13} /> Gerar PDF ({selectedItems.size})
           </Button>
         </div>
 
-        {/* Grouped checkboxes */}
         {Object.entries(groupedRows).map(([cat, items]) => (
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {items.map(r => (
-                <ItemCheckbox
-                  key={r.key}
-                  checked={selectedItems.has(r.key)}
-                  onChange={() => toggleItem(r.key)}
-                  label={r.title}
-                  sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${r.score}/${r.max} pts` : 'Sem nota'}`}
-                />
+                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${r.score}/${r.max} pts` : 'Sem nota'}`} />
               ))}
             </div>
           </div>
         ))}
-
-        {allRows.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground text-sm">Nenhuma atividade encontrada para este aluno.</div>
-        )}
+        {allRows.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">Nenhuma atividade encontrada ainda.</div>}
       </div>
     );
   }
 
-  // ── Student list (teacher) ───────────────────────────────────────────────
+  // ── TEACHER: document view ───────────────────────────────────────────────
+  if (showDocument && selectedStudent) {
+    return (
+      <div className="p-4 lg:p-7 max-w-4xl mx-auto">
+        <button onClick={() => setShowDocument(false)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">← Voltar para Seleção</button>
+        <AcademicRecord student={selectedStudent} rows={selectedRows} totalScore={totalScore} totalMaxScore={totalMaxScore} totalHours={totalHours} approvalRate={approvalRate} onClose={() => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); }} />
+      </div>
+    );
+  }
+
+  // ── TEACHER: selector view ───────────────────────────────────────────────
+  if (showSelector && selectedStudent) {
+    return (
+      <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-5 animate-fade-in-up">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button onClick={() => { setShowSelector(false); setSelectedStudent(null); }} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar</button>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-bold text-foreground">Selecionar Conteúdo do Histórico</h2>
+            <p className="text-sm text-muted-foreground">Aluno: <span className="font-semibold text-foreground">{selectedStudent.name}</span></p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Pontuação', value: `${totalScore}/${totalMaxScore}` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: `${totalHours}h` }].map(item => (
+            <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
+              <p className="text-xs text-muted-foreground">{item.label}</p>
+              <p className="text-base font-black text-primary">{item.value}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={selectAll} className="h-8 text-xs gap-1.5"><CheckSquare size={13} /> Selecionar Tudo</Button>
+          <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5"><Square size={13} /> Limpar</Button>
+          <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedItems.size === 0} onClick={() => setShowDocument(true)}><Download size={13} /> Gerar Histórico ({selectedItems.size})</Button>
+        </div>
+        {Object.entries(groupedRows).map(([cat, items]) => (
+          <div key={cat}>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${r.score}/${r.max} pts` : 'Sem nota'}`} />)}
+            </div>
+          </div>
+        ))}
+        {allRows.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">Nenhuma atividade encontrada para este aluno.</div>}
+      </div>
+    );
+  }
+
+  // ── TEACHER: student list ────────────────────────────────────────────────
   const filtered = codes.filter(c =>
     !search ||
     (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -407,15 +445,9 @@ export default function HistoricoAcademico() {
           const total = studentScores.reduce((sum, s) => sum + (s.score || 0), 0);
           const max = studentScores.reduce((sum, s) => sum + (s.max_score || 10), 0);
           const rate = max > 0 ? ((total / max) * 100).toFixed(0) : 0;
-
           return (
-            <div
-              key={code.id}
-              onClick={() => openSelector({ name, email, code })}
-              className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
-                style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
+            <div key={code.id} onClick={() => openSelector({ name, email, code })} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
                 {name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">

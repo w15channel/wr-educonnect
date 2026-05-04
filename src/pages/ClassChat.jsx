@@ -26,14 +26,37 @@ const STICKERS = [
 
 const MSN_COLORS = ['#5b5ef4','#e94f8b','#f4a23d','#1db89e','#a855f7','#ef4444','#3b82f6','#10b981'];
 
+// MSN Live Messenger avatar SVGs (orange for "me", blue for others)
+function MSNAvatar({ isMe, size = 32 }) {
+  if (isMe) {
+    // Orange MSN figure
+    return (
+      <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="9" r="5" fill="#f97316"/>
+        <ellipse cx="16" cy="23" rx="8" ry="6" fill="#f97316"/>
+        <ellipse cx="10" cy="20" rx="3" ry="5" fill="#f97316" transform="rotate(-20 10 20)"/>
+        <ellipse cx="22" cy="20" rx="3" ry="5" fill="#f97316" transform="rotate(20 22 20)"/>
+        <circle cx="14" cy="8" r="1.2" fill="#fff" opacity="0.7"/>
+      </svg>
+    );
+  }
+  // Blue MSN figure
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="9" r="5" fill="#3b82f6"/>
+      <ellipse cx="16" cy="23" rx="8" ry="6" fill="#3b82f6"/>
+      <ellipse cx="10" cy="20" rx="3" ry="5" fill="#3b82f6" transform="rotate(-20 10 20)"/>
+      <ellipse cx="22" cy="20" rx="3" ry="5" fill="#3b82f6" transform="rotate(20 22 20)"/>
+      <circle cx="14" cy="8" r="1.2" fill="#fff" opacity="0.7"/>
+    </svg>
+  );
+}
+
 function MSNBubble({ msg, isMe, name, color, time }) {
   return (
     <div className={`flex items-end gap-2 mb-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white shrink-0 shadow"
-        style={{ backgroundColor: color }}
-      >
-        {name?.charAt(0)?.toUpperCase() || '?'}
+      <div className="shrink-0">
+        <MSNAvatar isMe={isMe} size={32} />
       </div>
       <div className={`max-w-[72%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
         {!isMe && <span className="text-[10px] font-bold mb-0.5 ml-1" style={{ color }}>{name}</span>}
