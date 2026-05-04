@@ -275,17 +275,12 @@ export default function Monitores() {
             <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '0 auto 24px' }} />
 
             {/* Signature area */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 80, marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 60, marginTop: 16 }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 140, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
-                  <p style={{ fontSize: 10, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>COORDENAÇÃO PEDAGÓGICA</p>
-                  <p style={{ fontSize: 9, color: '#888', margin: 0 }}>WR — Instituto</p>
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 140, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
+                <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 2, letterSpacing: 1 }}>W.Ribeiro</div>
+                <div style={{ width: 160, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
                   <p style={{ fontSize: 10, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>DIREÇÃO GERAL</p>
-                  <p style={{ fontSize: 9, color: '#888', margin: 0 }}>WR — Instituto</p>
+                  <p style={{ fontSize: 9, color: '#888', margin: 0 }}>WR — Instituto de Desenvolvimento Humano</p>
                 </div>
               </div>
             </div>

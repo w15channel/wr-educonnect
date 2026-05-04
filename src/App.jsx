@@ -29,6 +29,8 @@ import HistoricoAcademico from './pages/HistoricoAcademico';
 import StudentDetail from './pages/StudentDetail';
 import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
+import EduBrowser from './pages/EduBrowser';
+import DirectMessage from './pages/DirectMessage';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -73,6 +75,8 @@ const AuthenticatedApp = () => {
         <Route path="/terapeuta" element={<TerapeutaDaSemana />} />
         <Route path="/bestseller" element={<MeuBestSeller />} />
         <Route path="/historico" element={<HistoricoAcademico />} />
+        <Route path="/browser" element={<EduBrowser />} />
+        <Route path="/dm/:email" element={<DirectMessage />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
