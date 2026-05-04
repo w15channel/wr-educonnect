@@ -37,9 +37,19 @@ export default function Tuitions() {
 
   const { data: codes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 500),
     enabled: isAdmin,
   });
+
+  // Todos os alunos ativos: com ou sem e-mail, usando e-mail ou código como chave única
+  const allStudents = codes
+    .filter(c => c.is_active !== false)
+    .map(c => ({
+      key: c.student_email || c.code,
+      email: c.student_email || '',
+      name: c.profile_name || c.student_name || c.code || 'Sem nome',
+    }))
+    .filter((s, i, arr) => arr.findIndex(x => x.key === s.key) === i); // dedup
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Tuition.create(data),
@@ -64,14 +74,14 @@ export default function Tuitions() {
   const handleBulkLaunch = async () => {
     if (!bulk.month_ref) { toast.error('Informe o mês de referência'); return; }
     setBulkLoading(true);
-    let targets = codes.filter(c => c.student_email);
-    if (bulk.mode === 'selected') targets = targets.filter(c => bulk.selectedEmails.includes(c.student_email));
-    for (const c of targets) {
-      const alreadyExists = tuitions.find(t => t.student_email === c.student_email && t.month_ref === bulk.month_ref);
+    let targets = allStudents;
+    if (bulk.mode === 'selected') targets = targets.filter(s => bulk.selectedEmails.includes(s.key));
+    for (const s of targets) {
+      const alreadyExists = tuitions.find(t => (t.student_email === s.key || t.student_email === s.email) && t.month_ref === bulk.month_ref);
       if (!alreadyExists) {
         await base44.entities.Tuition.create({
-          student_email: c.student_email,
-          student_name: c.profile_name || c.student_name || '',
+          student_email: s.key,
+          student_name: s.name,
           month_ref: bulk.month_ref,
           amount: Number(bulk.amount) || 0,
           due_date: bulk.due_date,
@@ -87,12 +97,12 @@ export default function Tuitions() {
     toast.success(`Mensalidades lançadas para ${targets.length} aluno(s)!`);
   };
 
-  const toggleBulkEmail = (email) => {
+  const toggleBulkEmail = (key) => {
     setBulk(prev => ({
       ...prev,
-      selectedEmails: prev.selectedEmails.includes(email)
-        ? prev.selectedEmails.filter(e => e !== email)
-        : [...prev.selectedEmails, email],
+      selectedEmails: prev.selectedEmails.includes(key)
+        ? prev.selectedEmails.filter(e => e !== key)
+        : [...prev.selectedEmails, key],
     }));
   };
 
@@ -128,8 +138,8 @@ export default function Tuitions() {
                 }}>
                   <SelectTrigger><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
                   <SelectContent>
-                    {codes.filter(c => c.student_email).map(c => (
-                      <SelectItem key={c.id} value={c.student_email}>{c.profile_name || c.student_name}</SelectItem>
+                    {allStudents.map(s => (
+                      <SelectItem key={s.key} value={s.key}>{s.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -192,14 +202,13 @@ export default function Tuitions() {
           </div>
           {bulk.mode === 'selected' && (
             <div className="space-y-1.5 max-h-44 overflow-y-auto border border-border rounded-xl p-2">
-              {codes.filter(c => c.student_email).map(c => {
-                const name = c.profile_name || c.student_name || 'Sem nome';
-                const checked = bulk.selectedEmails.includes(c.student_email);
+              {allStudents.map(s => {
+                const checked = bulk.selectedEmails.includes(s.key);
                 return (
-                  <label key={c.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-secondary/50 cursor-pointer">
-                    <input type="checkbox" checked={checked} onChange={() => toggleBulkEmail(c.student_email)} className="accent-primary w-4 h-4" />
-                    <span className="text-sm font-medium text-foreground">{name}</span>
-                    <span className="text-xs text-muted-foreground">{c.student_email}</span>
+                  <label key={s.key} className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-secondary/50 cursor-pointer">
+                    <input type="checkbox" checked={checked} onChange={() => toggleBulkEmail(s.key)} className="accent-primary w-4 h-4" />
+                    <span className="text-sm font-medium text-foreground">{s.name}</span>
+                    {s.email && <span className="text-xs text-muted-foreground">{s.email}</span>}
                   </label>
                 );
               })}
@@ -210,7 +219,7 @@ export default function Tuitions() {
             disabled={bulkLoading || !bulk.month_ref || (bulk.mode === 'selected' && bulk.selectedEmails.length === 0)}
             className="w-full gap-2"
           >
-            {bulkLoading ? 'Lançando...' : `🚀 Lançar para ${bulk.mode === 'all' ? `${codes.filter(c=>c.student_email).length} alunos` : `${bulk.selectedEmails.length} selecionados`}`}
+            {bulkLoading ? 'Lançando...' : `🚀 Lançar para ${bulk.mode === 'all' ? `${allStudents.length} alunos` : `${bulk.selectedEmails.length} selecionados`}`}
           </Button>
           <p className="text-xs text-muted-foreground text-center">Alunos que já possuem mensalidade para este mês serão ignorados automaticamente.</p>
         </div>
@@ -236,10 +245,10 @@ export default function Tuitions() {
         <Select value={selectedStudent} onValueChange={setSelectedStudent}>
           <SelectTrigger className="w-full sm:w-64 h-9 text-sm"><SelectValue placeholder="Filtrar por aluno" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os alunos</SelectItem>
-            {codes.filter(c => c.student_email).map(c => (
-              <SelectItem key={c.id} value={c.student_email}>{c.profile_name || c.student_name}</SelectItem>
-            ))}
+          <SelectItem value="all">Todos os alunos</SelectItem>
+          {allStudents.map(s => (
+            <SelectItem key={s.key} value={s.key}>{s.name}</SelectItem>
+          ))}
           </SelectContent>
         </Select>
       )}
