@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { GraduationCap, Download, Search } from 'lucide-react';
+import { GraduationCap, Download, Search, Settings2, Save, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -14,48 +13,23 @@ import html2canvas from 'html2canvas';
 
 const WR_LOGO = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png';
 
-// Hours per activity type
 const HOURS_MAP = { lesson: 2, live_attendance: 2, task: 1, quiz: 1.5, forum: 0.5, therapist: 1 };
 
-function AcademicRecord({ student, lessons, liveSessions, tasks, scoreItems, pairings, onClose }) {
+// ─── Assinatura SVG manual ────────────────────────────────────────────────────
+function SignatureSVG() {
+  return (
+    <svg width="140" height="38" viewBox="0 0 140 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', margin: '0 auto 2px' }}>
+      <path d="M8 28 C12 18, 16 10, 20 20 C24 30, 28 10, 32 22 C34 28, 36 14, 40 24 C42 30, 44 20, 48 26 C50 30, 52 22, 56 26 C60 30, 62 20, 66 22 C68 24, 70 18, 74 20 C76 22, 78 18, 82 16 C86 14, 90 10, 96 14 C100 17, 102 22, 106 18 C108 16, 110 20, 114 22 C116 23, 118 20, 122 22 C126 24, 128 28, 132 28" stroke="#1e3a5f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      <path d="M20 32 C30 30, 50 31, 70 30 C90 29, 110 31, 130 30" stroke="#1e3a5f" strokeWidth="0.8" strokeLinecap="round" strokeDasharray="1 3" fill="none"/>
+    </svg>
+  );
+}
+
+// ─── AcademicRecord document ──────────────────────────────────────────────────
+function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, onClose }) {
   const certRef = useRef(null);
-
-  const scoreMap = {};
-  scoreItems.forEach(s => { scoreMap[`${s.category}_${s.ref_id}`] = s; });
-
-  const verifiedScores = scoreItems.filter(s => s.student_email === student.email && s.verified);
-  const totalScore = verifiedScores.reduce((sum, s) => sum + (s.score || 0), 0);
-  const totalMaxScore = verifiedScores.reduce((sum, s) => sum + (s.max_score || 10), 0);
-
-  const approvalRate = totalMaxScore > 0 ? ((totalScore / totalMaxScore) * 100).toFixed(1) : 0;
-
-  // Build grade table rows
-  const rows = [];
-
-  lessons.forEach(l => {
-    const si = verifiedScores.find(s => s.category === 'lesson' && s.ref_id === l.id);
-    rows.push({ category: 'Aula Gravada', title: l.title, score: si?.score ?? '—', max: 10, hours: HOURS_MAP.lesson, status: si ? 'Avaliado' : 'Pendente' });
-  });
-
-  liveSessions.forEach(l => {
-    const si = verifiedScores.find(s => s.category === 'live_attendance' && s.ref_id === l.id);
-    rows.push({ category: 'Aula ao Vivo', title: l.title, score: si?.score ?? '—', max: 5, hours: HOURS_MAP.live_attendance, status: si ? 'Avaliado' : 'Pendente' });
-  });
-
-  tasks.forEach(t => {
-    const cat = t.type === 'quiz' ? 'quiz' : 'task';
-    const si = verifiedScores.find(s => s.category === cat && s.ref_id === t.id);
-    rows.push({ category: t.type === 'quiz' ? 'Prova' : 'Tarefa', title: t.title, score: si?.score ?? '—', max: t.max_grade || 10, hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task, status: si ? 'Avaliado' : 'Pendente' });
-  });
-
-  const myPairings = pairings.filter(p => p.therapist_email === student.email || p.patient_email === student.email);
-  myPairings.forEach((p, i) => {
-    const role = p.therapist_email === student.email ? 'Terapeuta' : 'Paciente';
-    const si = verifiedScores.find(s => s.category === 'therapist' && s.ref_id === p.id);
-    rows.push({ category: 'Terapia da Semana', title: `Sessão ${i + 1} (${role})`, score: si?.score ?? '—', max: 10, hours: HOURS_MAP.therapist, status: si ? 'Avaliado' : 'Pendente' });
-  });
-
-  const totalHours = rows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + r.hours, 0);
+  const emissionDate = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  const emissionTime = format(new Date(), "HH:mm:ss");
 
   const handleDownloadPDF = async () => {
     if (!certRef.current) return;
@@ -72,8 +46,10 @@ function AcademicRecord({ student, lessons, liveSessions, tasks, scoreItems, pai
   return (
     <div className="space-y-4 animate-fade-in-up">
       <div className="flex items-center gap-3 flex-wrap justify-between">
-        <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar</button>
-        <Button onClick={handleDownloadPDF} className="gap-2">
+        {onClose && (
+          <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar</button>
+        )}
+        <Button onClick={handleDownloadPDF} className="gap-2 ml-auto">
           <Download size={15} /> Exportar PDF
         </Button>
       </div>
@@ -117,9 +93,10 @@ function AcademicRecord({ student, lessons, liveSessions, tasks, scoreItems, pai
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aluno(a)</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{student.name}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aproveitamento</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{approvalRate}%</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Total de Pontos</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalScore} / {totalMaxScore}</p></div>
-          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Carga Horária (atividades avaliadas)</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours}h</p></div>
-          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Data de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p></div>
-          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Situação</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{Number(approvalRate) >= 60 ? 'Aprovado(a)' : 'Em andamento'}</p></div>
+          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Carga Horária</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours}h</p></div>
+          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Data de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionDate}</p></div>
+          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Horário de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionTime}</p></div>
+          <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Situação</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{Number(approvalRate) >= 60 ? 'Aprovado(a)' : 'Em andamento'}</p></div>
         </div>
 
         {/* Grade table */}
@@ -135,7 +112,9 @@ function AcademicRecord({ student, lessons, liveSessions, tasks, scoreItems, pai
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
+            {rows.length === 0 ? (
+              <tr><td colSpan={5} style={{ padding: '16px 8px', textAlign: 'center', color: '#aaa', fontSize: 10 }}>Nenhuma atividade selecionada para este histórico.</td></tr>
+            ) : rows.map((r, i) => (
               <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <td style={{ padding: '5px 8px', color: '#1e3a5f', maxWidth: 200 }}>{r.title}</td>
                 <td style={{ padding: '5px 8px', color: '#555' }}>{r.category}</td>
@@ -165,23 +144,22 @@ function AcademicRecord({ student, lessons, liveSessions, tasks, scoreItems, pai
           </div>
         </div>
 
-        {/* Signatures */}
-        <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '20px auto' }} />
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 80 }}>
-          {['Coordenação Pedagógica', 'Direção Geral'].map((label, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ width: 140, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
-                <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>{label}</p>
-                <p style={{ fontSize: 8, color: '#888', margin: 0 }}>WR — Instituto</p>
-              </div>
+        {/* Signature */}
+        <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '24px auto 20px' }} />
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
+            <SignatureSVG />
+            <div style={{ width: 160, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
+              <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>Direção Geral</p>
+              <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>WR — Instituto de Desenvolvimento Humano</p>
             </div>
-          ))}
+          </div>
         </div>
 
         {/* Footer */}
         <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 20, paddingTop: 10, textAlign: 'center' }}>
           <p style={{ fontSize: 8, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-            Documento emitido digitalmente pela plataforma WR-EDU · {format(new Date(), 'yyyy')}
+            Documento emitido digitalmente pela plataforma WR-EDU · {emissionDate} às {emissionTime}
           </p>
         </div>
       </div>
@@ -189,11 +167,32 @@ function AcademicRecord({ student, lessons, liveSessions, tasks, scoreItems, pai
   );
 }
 
+// ─── Item selector checkbox ───────────────────────────────────────────────────
+function ItemCheckbox({ checked, onChange, label, sublabel }) {
+  return (
+    <div
+      onClick={onChange}
+      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${checked ? 'border-primary/40 bg-primary/5' : 'border-border bg-card hover:border-primary/20'}`}
+    >
+      {checked ? <CheckSquare size={16} className="text-primary mt-0.5 shrink-0" /> : <Square size={16} className="text-muted-foreground mt-0.5 shrink-0" />}
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-foreground truncate">{label}</p>
+        {sublabel && <p className="text-[10px] text-muted-foreground">{sublabel}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function HistoricoAcademico() {
   const { user: session } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showSelector, setShowSelector] = useState(false);
+  // selectedItems: Set of "category_refId" keys
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [showDocument, setShowDocument] = useState(false);
 
   const { data: codes = [] } = useQuery({ queryKey: ['access-codes'], queryFn: () => base44.entities.AccessCode.list('-created_date', 200) });
   const { data: lessons = [] } = useQuery({ queryKey: ['lessons'], queryFn: () => base44.entities.RecordedLesson.list('order', 100) });
@@ -202,8 +201,7 @@ export default function HistoricoAcademico() {
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
 
-  // If student, show only own record
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isTeacher && session?.email && codes.length > 0) {
       const myCode = codes.find(c => c.student_email === session.email);
       if (myCode) {
@@ -212,22 +210,171 @@ export default function HistoricoAcademico() {
     }
   }, [isTeacher, session, codes]);
 
-  if (selectedStudent) {
+  // Build all possible rows for a student
+  function buildAllRows(student) {
+    const verifiedScores = scoreItems.filter(s => s.student_email === student.email && s.verified);
+    const rows = [];
+
+    lessons.forEach(l => {
+      const si = verifiedScores.find(s => s.category === 'lesson' && s.ref_id === l.id);
+      rows.push({ key: `lesson_${l.id}`, category: 'Aula Gravada', title: l.title, score: si?.score ?? '—', max: 10, hours: HOURS_MAP.lesson, status: si ? 'Avaliado' : 'Pendente' });
+    });
+
+    liveSessions.forEach(l => {
+      const si = verifiedScores.find(s => s.category === 'live_attendance' && s.ref_id === l.id);
+      rows.push({ key: `live_attendance_${l.id}`, category: 'Aula ao Vivo', title: l.title, score: si?.score ?? '—', max: 5, hours: HOURS_MAP.live_attendance, status: si ? 'Avaliado' : 'Pendente' });
+    });
+
+    tasks.forEach(t => {
+      const cat = t.type === 'quiz' ? 'quiz' : 'task';
+      const si = verifiedScores.find(s => s.category === cat && s.ref_id === t.id);
+      rows.push({ key: `${cat}_${t.id}`, category: t.type === 'quiz' ? 'Prova' : 'Tarefa', title: t.title, score: si?.score ?? '—', max: t.max_grade || 10, hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task, status: si ? 'Avaliado' : 'Pendente' });
+    });
+
+    const myPairings = pairings.filter(p => p.therapist_email === student.email || p.patient_email === student.email);
+    myPairings.forEach((p, i) => {
+      const role = p.therapist_email === student.email ? 'Terapeuta' : 'Paciente';
+      const si = verifiedScores.find(s => s.category === 'therapist' && s.ref_id === p.id);
+      rows.push({ key: `therapist_${p.id}`, category: 'Terapia da Semana', title: `Sessão ${i + 1} (${role})`, score: si?.score ?? '—', max: 10, hours: HOURS_MAP.therapist, status: si ? 'Avaliado' : 'Pendente' });
+    });
+
+    return rows;
+  }
+
+  function openSelector(student) {
+    setSelectedStudent(student);
+    setSelectedItems(new Set()); // start empty — teacher selects
+    setShowSelector(true);
+    setShowDocument(false);
+  }
+
+  function openStudentDirect(student) {
+    setSelectedStudent(student);
+    setSelectedItems(new Set()); // empty initially for student self-view — they see selector too
+    setShowSelector(true);
+    setShowDocument(false);
+  }
+
+  const allRows = selectedStudent ? buildAllRows(selectedStudent) : [];
+
+  const selectedRows = allRows.filter(r => selectedItems.has(r.key));
+  const selectedScoreRows = selectedRows.filter(r => r.status === 'Avaliado');
+  const totalScore = selectedScoreRows.reduce((sum, r) => sum + (typeof r.score === 'number' ? r.score : 0), 0);
+  const totalMaxScore = selectedScoreRows.reduce((sum, r) => sum + r.max, 0);
+  const totalHours = selectedRows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + r.hours, 0);
+  const approvalRate = totalMaxScore > 0 ? ((totalScore / totalMaxScore) * 100).toFixed(1) : 0;
+
+  const toggleItem = (key) => {
+    setSelectedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedItems(new Set(allRows.map(r => r.key)));
+  const clearAll = () => setSelectedItems(new Set());
+
+  // Group rows by category label for the selector UI
+  const groupedRows = allRows.reduce((acc, r) => {
+    if (!acc[r.category]) acc[r.category] = [];
+    acc[r.category].push(r);
+    return acc;
+  }, {});
+
+  // ── If showing the document ──────────────────────────────────────────────
+  if (showDocument && selectedStudent) {
     return (
       <div className="p-4 lg:p-7 max-w-4xl mx-auto">
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { setShowDocument(false); }} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar para Seleção</button>
+        </div>
         <AcademicRecord
           student={selectedStudent}
-          lessons={lessons}
-          liveSessions={liveSessions}
-          tasks={tasks}
-          scoreItems={scoreItems.filter(s => s.student_email === selectedStudent.email)}
-          pairings={pairings}
-          onClose={isTeacher ? () => setSelectedStudent(null) : undefined}
+          rows={selectedRows}
+          totalScore={totalScore}
+          totalMaxScore={totalMaxScore}
+          totalHours={totalHours}
+          approvalRate={approvalRate}
+          onClose={isTeacher ? () => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); } : undefined}
         />
       </div>
     );
   }
 
+  // ── If showing the selector ──────────────────────────────────────────────
+  if (showSelector && selectedStudent) {
+    return (
+      <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-5 animate-fade-in-up">
+        <div className="flex items-center gap-3 flex-wrap">
+          {isTeacher && (
+            <button onClick={() => { setShowSelector(false); setSelectedStudent(null); }} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar</button>
+          )}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-bold text-foreground">Selecionar Conteúdo do Histórico</h2>
+            <p className="text-sm text-muted-foreground">Aluno: <span className="font-semibold text-foreground">{selectedStudent.name}</span></p>
+          </div>
+        </div>
+
+        {/* Summary bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Itens selecionados', value: selectedItems.size },
+            { label: 'Pontuação', value: `${totalScore}/${totalMaxScore}` },
+            { label: 'Aproveitamento', value: `${approvalRate}%` },
+            { label: 'Carga Horária', value: `${totalHours}h` },
+          ].map(item => (
+            <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
+              <p className="text-xs text-muted-foreground">{item.label}</p>
+              <p className="text-base font-black text-primary">{item.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={selectAll} className="h-8 text-xs gap-1.5">
+            <CheckSquare size={13} /> Selecionar Tudo
+          </Button>
+          <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5">
+            <Square size={13} /> Limpar
+          </Button>
+          <Button
+            size="sm"
+            className="h-8 text-xs gap-1.5 ml-auto"
+            disabled={selectedItems.size === 0}
+            onClick={() => setShowDocument(true)}
+          >
+            <Download size={13} /> Gerar Histórico ({selectedItems.size})
+          </Button>
+        </div>
+
+        {/* Grouped checkboxes */}
+        {Object.entries(groupedRows).map(([cat, items]) => (
+          <div key={cat}>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {items.map(r => (
+                <ItemCheckbox
+                  key={r.key}
+                  checked={selectedItems.has(r.key)}
+                  onChange={() => toggleItem(r.key)}
+                  label={r.title}
+                  sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${r.score}/${r.max} pts` : 'Sem nota'}`}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {allRows.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground text-sm">Nenhuma atividade encontrada para este aluno.</div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Student list (teacher) ───────────────────────────────────────────────
   const filtered = codes.filter(c =>
     !search ||
     (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -243,7 +390,7 @@ export default function HistoricoAcademico() {
         </div>
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Histórico Acadêmico</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Selecione um aluno para visualizar e emitir o histórico</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Selecione um aluno para configurar e emitir o histórico</p>
         </div>
       </div>
 
@@ -264,7 +411,7 @@ export default function HistoricoAcademico() {
           return (
             <div
               key={code.id}
-              onClick={() => setSelectedStudent({ name, email, code })}
+              onClick={() => openSelector({ name, email, code })}
               className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
             >
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
@@ -284,6 +431,7 @@ export default function HistoricoAcademico() {
                   <p className="text-xs text-muted-foreground">Pontos</p>
                   <p className="text-sm font-black text-primary">{total}</p>
                 </div>
+                <Settings2 size={15} className="text-muted-foreground" />
               </div>
             </div>
           );
