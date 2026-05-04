@@ -2,7 +2,8 @@ import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, CalendarHeart, Brain } from 'lucide-react';
+import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw } from 'lucide-react';
+import ServicosCard from '@/components/dashboard/ServicosCard';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -386,37 +387,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Mentoria / Terapia buttons */}
-      {!isTeacher && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            onClick={() => navigate('/browser?url=' + encodeURIComponent('https://calendly.com/wrterapia/atendimentos'))}
-            className="group flex items-center gap-4 bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white rounded-2xl p-5 hover:shadow-xl hover:shadow-primary/20 transition-all text-left"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <Brain size={24} className="text-white" />
-            </div>
-            <div>
-              <p className="font-black text-base leading-tight">Adquirir Mentoria Particular</p>
-              <p className="text-white/70 text-xs mt-0.5">Agende sua sessão individual com W.Ribeiro</p>
-            </div>
-            <ArrowRight size={18} className="ml-auto opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all shrink-0" />
-          </button>
-          <button
-            onClick={() => navigate('/browser?url=' + encodeURIComponent('https://calendly.com/wrterapia/atendimentos'))}
-            className="group flex items-center gap-4 bg-gradient-to-br from-[#1db89e] to-[#059669] text-white rounded-2xl p-5 hover:shadow-xl hover:shadow-accent/20 transition-all text-left"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <CalendarHeart size={24} className="text-white" />
-            </div>
-            <div>
-              <p className="font-black text-base leading-tight">Reservar Terapia Particular</p>
-              <p className="text-white/70 text-xs mt-0.5">Agende sua sessão terapêutica individual</p>
-            </div>
-            <ArrowRight size={18} className="ml-auto opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all shrink-0" />
-          </button>
-        </div>
-      )}
+      {/* Serviços */}
+      {!isTeacher && <ServicosCard />}
 
       {/* Announcements */}
       {announcements.length > 0 && (

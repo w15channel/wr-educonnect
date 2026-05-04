@@ -117,9 +117,7 @@ export default function Lessons() {
 
   const openInBrowser = (url) => {
     if (!url) return;
-    // Store URL and navigate to EDU Browser
-    sessionStorage.setItem('edu_browser_url', url);
-    window.location.href = '/browser?url=' + encodeURIComponent(url);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const getEmbedUrl = (url) => {
