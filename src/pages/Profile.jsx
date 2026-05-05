@@ -54,23 +54,25 @@ export default function Profile() {
   const fileRef = useRef();
 
   useEffect(() => {
-    if (session?.codeId) {
-      base44.entities.StudentProfile.filter({ student_email: session?.email }, '-created_date', 1)
-        .then(profiles => {
-          if (profiles.length > 0) {
-            const p = profiles[0];
-            setBirthDate(p.birth_date || '');
-            setWhatsapp(p.whatsapp || '');
-            setPhotoUrl(p.photo_url || session?.photoUrl || '');
-            setAvatarColor(p.avatar_color || session?.avatarColor || '#5b5ef4');
-            setName(p.full_name || session?.name || '');
-            setBio(p.bio || session?.bio || '');
-            setNickname(p.nickname || '');
-            setSelectedAvatar(p.avatar_emoji || '');
-            setEmail(p.email || session?.email || '');
-          }
-        });
-    }
+    // CRITICAL: Only load profile if we have a unique codeId to identify this student.
+    // Never filter by empty email — that would return another student's profile.
+    if (!session?.codeId) return;
+
+    base44.entities.StudentProfile.filter({ code_id: session.codeId }, '-created_date', 1)
+      .then(profiles => {
+        if (profiles.length > 0) {
+          const p = profiles[0];
+          setBirthDate(p.birth_date || '');
+          setWhatsapp(p.whatsapp || '');
+          setPhotoUrl(p.photo_url || session?.photoUrl || '');
+          setAvatarColor(p.avatar_color || session?.avatarColor || '#5b5ef4');
+          setName(p.full_name || session?.name || '');
+          setBio(p.bio || session?.bio || '');
+          setNickname(p.nickname || '');
+          setSelectedAvatar(p.avatar_emoji || '');
+          setEmail(p.email || session?.email || '');
+        }
+      });
   }, []);
 
   const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
@@ -99,9 +101,11 @@ export default function Profile() {
           profile_photo_url: photoUrl,
         });
       }
-      const existing = await base44.entities.StudentProfile.filter({ student_email: session?.email }, '-created_date', 1);
+      // Filter by codeId to avoid cross-student collisions when email is empty
+      const existing = await base44.entities.StudentProfile.filter({ code_id: session?.codeId }, '-created_date', 1);
       const profileData = {
-        student_email: session?.email,
+        code_id: session?.codeId,
+        student_email: session?.email || '',
         full_name: name,
         nickname,
         bio,

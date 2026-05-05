@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, ExternalLink, Search, BookOpen, Star, ArrowRight, Home, Youtube, BookMarked, Newspaper } from 'lucide-react';
+import { Globe, ExternalLink, Search, X, ArrowLeft, RefreshCw } from 'lucide-react';
 
 const QUICK_LINKS = [
   { label: 'Google', url: 'https://www.google.com', icon: '🔍', color: 'from-blue-500 to-blue-600' },
@@ -27,23 +27,70 @@ export default function EduBrowser() {
     return u ? decodeURIComponent(u) : null;
   })();
 
-  const [pendingUrl, setPendingUrl] = useState(initialUrl);
-  const [inputUrl, setInputUrl] = useState(initialUrl || '');
+  const [iframeUrl, setIframeUrl] = useState(initialUrl || '');
+  const [activeUrl, setActiveUrl] = useState(initialUrl || '');
   const [searchQuery, setSearchQuery] = useState('');
+  const [iframeKey, setIframeKey] = useState(0);
 
-  const openUrl = (url) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const navigate = (url) => {
+    setActiveUrl(url);
+    setIframeUrl(url);
+    setIframeKey(k => k + 1);
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    const url = normalizeUrl(searchQuery || inputUrl);
-    if (url) openUrl(url);
+    const url = normalizeUrl(searchQuery);
+    if (url) navigate(url);
   };
 
-  const handleQuickLink = (url) => {
-    openUrl(url);
-  };
+  const handleQuickLink = (url) => navigate(url);
+
+  // If we have a URL to show, render the integrated browser
+  if (activeUrl) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)] animate-fade-in">
+        {/* Browser toolbar */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-card border-b border-border shrink-0">
+          <button
+            onClick={() => { setActiveUrl(''); setIframeUrl(''); }}
+            className="p-1.5 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+            title="Voltar ao portal"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <button
+            onClick={() => setIframeKey(k => k + 1)}
+            className="p-1.5 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+            title="Recarregar"
+          >
+            <RefreshCw size={14} />
+          </button>
+          <div className="flex-1 flex items-center gap-2 bg-secondary/60 border border-border rounded-xl px-3 py-1.5 text-xs text-muted-foreground truncate">
+            <Globe size={12} className="shrink-0" />
+            <span className="truncate">{activeUrl}</span>
+          </div>
+          <button
+            onClick={() => window.open(activeUrl, '_blank', 'noopener,noreferrer')}
+            className="p-1.5 hover:bg-secondary rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+            title="Abrir em nova aba"
+          >
+            <ExternalLink size={14} />
+          </button>
+        </div>
+
+        {/* iframe */}
+        <iframe
+          key={iframeKey}
+          src={iframeUrl}
+          className="flex-1 w-full border-0 bg-white"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+          title="EDU Browser"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-7 max-w-5xl mx-auto animate-fade-in-up">
@@ -61,13 +108,13 @@ export default function EduBrowser() {
       {/* Search Bar */}
       <form onSubmit={handleSearch} className="mb-6">
         <div className="flex gap-2">
-          <div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-2xl px-4 py-3 shadow-sm focus-within:border-primary/40 focus-within:shadow-primary/5 focus-within:shadow-lg transition-all">
+          <div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-2xl px-4 py-3 shadow-sm focus-within:border-primary/40 transition-all">
             <Search size={16} className="text-muted-foreground shrink-0" />
             <input
               className="flex-1 bg-transparent text-foreground text-sm outline-none placeholder:text-muted-foreground"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Pesquisar no Google ou digitar um endereço..."
+              placeholder="Pesquisar ou digitar um endereço..."
             />
           </div>
           <button
@@ -87,29 +134,14 @@ export default function EduBrowser() {
             <button
               key={link.url}
               onClick={() => handleQuickLink(link.url)}
-              className="group flex flex-col items-center gap-2 bg-card border border-border rounded-2xl p-4 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all"
+              className="group flex flex-col items-center gap-2 bg-card border border-border rounded-2xl p-4 hover:border-primary/30 hover:shadow-lg transition-all"
             >
               <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${link.color} flex items-center justify-center text-2xl shadow-md group-hover:scale-110 transition-transform`}>
                 {link.icon}
               </div>
               <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">{link.label}</span>
-              <ExternalLink size={10} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* Info banner */}
-      <div className="bg-secondary/50 border border-border rounded-2xl p-4 flex items-start gap-3">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-          <Globe size={16} className="text-primary" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-foreground">Como funciona o EDU Browser?</p>
-          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            Por questões de segurança dos sites, a navegação é feita abrindo os links em uma nova aba do seu navegador. 
-            Use a barra de pesquisa acima para buscar qualquer conteúdo, ou clique nos atalhos de acesso rápido.
-          </p>
         </div>
       </div>
     </div>

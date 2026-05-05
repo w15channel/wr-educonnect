@@ -117,7 +117,7 @@ export default function Lessons() {
 
   const openInBrowser = (url) => {
     if (!url) return;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.location.href = `/browser?url=${encodeURIComponent(url)}`;
   };
 
   const getEmbedUrl = (url) => {
@@ -295,20 +295,30 @@ export default function Lessons() {
               <div key={lesson.id} className={`bg-card rounded-2xl border shadow-sm transition-all ${isWatched ? 'border-green-200' : 'border-border'}`}>
                 {/* Header row */}
                 <div className="flex items-center gap-3 p-3 sm:p-4">
-                  {/* Thumbnail */}
+                  {/* Thumbnail — only clickable/play for video type */}
                   <div
-                    className="w-18 h-12 sm:w-24 sm:h-16 bg-muted rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 cursor-pointer group"
+                    className={`w-18 h-12 sm:w-24 sm:h-16 bg-muted rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 ${lesson.lesson_type === 'video_external' ? 'cursor-pointer group' : 'cursor-default'}`}
                     style={{ minWidth: '4.5rem' }}
-                    onClick={() => setSelectedVideo(lesson)}
+                    onClick={() => lesson.lesson_type === 'video_external' && setSelectedVideo(lesson)}
                   >
                     {lesson.thumbnail_url ? (
                       <img src={lesson.thumbnail_url} alt={lesson.title} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20" />
                     )}
-                    <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md z-10">
-                      <Play size={14} className="text-primary ml-0.5" />
-                    </div>
+                    {lesson.lesson_type === 'video_external' ? (
+                      <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md z-10">
+                        <Play size={14} className="text-primary ml-0.5" />
+                      </div>
+                    ) : lesson.lesson_type === 'text_written' ? (
+                      <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-md z-10">
+                        <FileText size={14} className="text-blue-500" />
+                      </div>
+                    ) : (
+                      <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-md z-10">
+                        <Globe size={14} className="text-green-500" />
+                      </div>
+                    )}
                     {lesson.duration && (
                       <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded z-10">{lesson.duration}</span>
                     )}
