@@ -52,6 +52,14 @@ export function verifyPassword(password, hash) {
   return hashPassword(password) === hash;
 }
 
+// Returns current timestamp in ISO format adjusted to GMT-3 (Brasília)
+export function nowBRT() {
+  const now = new Date();
+  // Offset to UTC-3
+  const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  return brt.toISOString().replace('Z', '-03:00');
+}
+
 // Generate a random access code like: EDU-XXXX-XXXX
 export function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
