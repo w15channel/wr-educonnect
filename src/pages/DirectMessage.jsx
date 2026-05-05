@@ -3,8 +3,6 @@ import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Send, ArrowLeft } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 const DM_PREFIX = 'dm_';
 
@@ -117,7 +115,8 @@ export default function DirectMessage() {
         )}
         {messages.map(msg => {
           const isMe = msg.author_email === session?.email;
-          const time = msg.created_date ? format(new Date(msg.created_date), 'HH:mm', { locale: ptBR }) : '';
+          const rawDate = msg.created_date ? new Date(new Date(msg.created_date).getTime() - 3 * 60 * 60 * 1000) : null;
+          const time = rawDate ? rawDate.toISOString().slice(11, 16) : '';
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               <MSNAvatar isMe={isMe} size={28} />

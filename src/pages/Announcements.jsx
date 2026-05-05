@@ -17,29 +17,29 @@ const TYPE_CONFIG = {
   info: {
     icon: Info,
     label: 'Simples',
-    card: 'border-blue-200 bg-blue-50/50',
-    badge: 'bg-blue-100 text-blue-700 border-blue-200',
-    iconColor: 'text-blue-500',
+    card: 'border-blue-400/20 bg-blue-500/5 backdrop-blur-md',
+    badge: 'bg-blue-400/10 text-blue-500 border-blue-400/20',
+    iconColor: 'text-blue-400',
     bellRead: 'text-blue-400',
-    bellUnread: 'text-red-500',
+    bellUnread: 'text-red-400',
   },
   warning: {
     icon: AlertCircle,
     label: 'Moderado',
-    card: 'border-yellow-200 bg-yellow-50/50',
-    badge: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    iconColor: 'text-yellow-500',
+    card: 'border-yellow-400/20 bg-yellow-500/5 backdrop-blur-md',
+    badge: 'bg-yellow-400/10 text-yellow-500 border-yellow-400/20',
+    iconColor: 'text-yellow-400',
     bellRead: 'text-blue-400',
-    bellUnread: 'text-red-500',
+    bellUnread: 'text-red-400',
   },
   urgent: {
     icon: AlertTriangle,
     label: 'Urgente',
-    card: 'border-red-200 bg-red-50/50',
-    badge: 'bg-red-100 text-red-700 border-red-200',
-    iconColor: 'text-red-500',
+    card: 'border-red-400/20 bg-red-500/5 backdrop-blur-md',
+    badge: 'bg-red-400/10 text-red-500 border-red-400/20',
+    iconColor: 'text-red-400',
     bellRead: 'text-blue-400',
-    bellUnread: 'text-red-500',
+    bellUnread: 'text-red-400',
   },
 };
 
@@ -191,10 +191,10 @@ export default function Announcements() {
                   </div>
                   {isTeacher && (
                     <div className="flex gap-1 shrink-0">
-                      <button onClick={() => openEdit(a)} className={`p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center ${a.type === 'warning' ? 'text-yellow-800 hover:bg-yellow-200' : a.type === 'urgent' ? 'text-red-800 hover:bg-red-200' : 'text-blue-800 hover:bg-blue-200'}`}>
+                      <button onClick={() => openEdit(a)} className="p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center text-muted-foreground hover:bg-white/10">
                         <Pencil size={13} />
                       </button>
-                      <button onClick={() => deleteMutation.mutate(a.id)} className={`p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center ${a.type === 'warning' ? 'text-yellow-900 hover:bg-yellow-300' : a.type === 'urgent' ? 'text-red-900 hover:bg-red-300' : 'text-blue-900 hover:bg-blue-300'}`}>
+                      <button onClick={() => deleteMutation.mutate(a.id)} className="p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center text-muted-foreground hover:bg-red-500/10 hover:text-red-400">
                         <Trash2 size={13} />
                       </button>
                     </div>

@@ -30,6 +30,7 @@ import StudentDetail from './pages/StudentDetail';
 import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
+import Classe from './pages/Classe';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
         <Route path="/bestseller" element={<MeuBestSeller />} />
         <Route path="/historico" element={<HistoricoAcademico />} />
         <Route path="/dm/:email" element={<DirectMessage />} />
+        <Route path="/classe" element={<Classe />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

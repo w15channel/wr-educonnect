@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Send, Smile } from 'lucide-react';
+import { Send, Smile, Lock, Users, Search } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // MSN-style emoji/sticker sets
@@ -85,12 +83,21 @@ function MSNBubble({ msg, isMe, name, color, time, email }) {
   );
 }
 
+function formatBRT(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(new Date(dateStr).getTime() - 3 * 60 * 60 * 1000);
+  return d.toISOString().slice(11, 16);
+}
+
 export default function ClassChat() {
   const { user: session } = useOutletContext();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('geral'); // 'geral' | 'particular'
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState('emoji');
+  const [dmSearch, setDmSearch] = useState('');
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -156,6 +163,19 @@ export default function ClassChat() {
     return acc;
   }, []);
 
+  // Students list for DM tab
+  const otherStudents = codes
+    .filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
+    .filter(c => {
+      const name = (c.profile_name || c.student_name || c.student_email || '').toLowerCase();
+      return name.includes(dmSearch.toLowerCase());
+    })
+    .sort((a, b) => {
+      const na = (a.profile_name || a.student_name || '').toLowerCase();
+      const nb = (b.profile_name || b.student_name || '').toLowerCase();
+      return na.localeCompare(nb, 'pt-BR');
+    });
+
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-[calc(100vh-32px)] max-w-3xl mx-auto">
       {/* MSN-style header */}
@@ -176,17 +196,83 @@ export default function ClassChat() {
             <span className="text-white/60 text-[10px]">{messages.length > 0 ? `${new Set(messages.map(m => m.author_email)).size} online` : 'online'}</span>
           </div>
         </div>
-      </div>
-
-      {/* MSN marquee notice */}
-      <div className="shrink-0 bg-[#dde8f8] border-b border-[#a8c0e8] overflow-hidden">
-        <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap py-1 text-[11px] text-[#1e3a8a] font-medium px-4 inline-block">
-          ✦ Bem-vindo ao Chat da Turma WR-EDU! ✦ Seja educado e respeitoso ✦ Use emojis e figurinhas para se expressar ✦ Bons estudos! ✦ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        {/* Tabs */}
+        <div className="flex gap-1 mt-3">
+          <button
+            onClick={() => setActiveTab('geral')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'geral' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80'}`}
+          >
+            <Users size={12} /> Geral
+          </button>
+          <button
+            onClick={() => setActiveTab('particular')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'particular' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80'}`}
+          >
+            <Lock size={12} /> Particular
+          </button>
         </div>
       </div>
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-[#f0f4fb]" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(91,94,244,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(29,184,158,0.05) 0%, transparent 50%)' }}>
+      {/* MSN marquee notice — only on geral */}
+      {activeTab === 'geral' && (
+        <div className="shrink-0 bg-[#dde8f8] border-b border-[#a8c0e8] overflow-hidden">
+          <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap py-1 text-[11px] text-[#1e3a8a] font-medium px-4 inline-block">
+            ✦ Bem-vindo ao Chat da Turma WR-EDU! ✦ Seja educado e respeitoso ✦ Use emojis e figurinhas para se expressar ✦ Bons estudos! ✦ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          </div>
+        </div>
+      )}
+
+      {/* Particular tab — student picker */}
+      {activeTab === 'particular' && (
+        <div className="flex-1 overflow-y-auto bg-[#f0f4fb] p-4">
+          <p className="text-xs text-gray-500 font-semibold mb-3 flex items-center gap-1.5">
+            <Lock size={11} /> Selecione um colega para iniciar uma conversa privada
+          </p>
+          <div className="relative mb-3">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              className="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-[#5b5ef4]/50"
+              placeholder="Buscar colega..."
+              value={dmSearch}
+              onChange={e => setDmSearch(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            {otherStudents.map(c => {
+              const name = c.profile_name || c.student_name || c.student_email;
+              const color = c.profile_avatar_color || '#5b5ef4';
+              const photo = c.profile_photo_url;
+              const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => navigate(`/dm/${encodeURIComponent(c.student_email)}`)}
+                  className="w-full flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 hover:bg-[#5b5ef4]/5 hover:border-[#5b5ef4]/30 transition-all text-left"
+                >
+                  {photo ? (
+                    <img src={photo} alt={name} className="w-9 h-9 rounded-full object-cover shrink-0" style={{ border: `2px solid ${color}` }} />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: color }}>
+                      {initials}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
+                    <p className="text-[11px] text-gray-400">Clique para abrir conversa privada</p>
+                  </div>
+                  <Lock size={13} className="text-gray-300 shrink-0" />
+                </button>
+              );
+            })}
+            {otherStudents.length === 0 && (
+              <p className="text-center text-gray-400 text-sm py-8">Nenhum colega encontrado</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Messages area — only geral */}
+      {activeTab === 'geral' && <div className="flex-1 overflow-y-auto px-4 py-4 bg-[#f0f4fb]" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(91,94,244,0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(29,184,158,0.05) 0%, transparent 50%)' }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
             <div className="text-5xl">💬</div>
@@ -197,7 +283,7 @@ export default function ClassChat() {
         {groupedMessages.map((msg) => {
           const isMe = msg.author_email === session?.email;
           const color = getColor(msg.author_email);
-          const time = msg.created_date ? format(new Date(msg.created_date), 'HH:mm', { locale: ptBR }) : '';
+          const time = formatBRT(msg.created_date);
           return (
             <MSNBubble
               key={msg.id}
@@ -211,10 +297,10 @@ export default function ClassChat() {
           );
         })}
         <div ref={bottomRef} />
-      </div>
+      </div>}
 
-      {/* Emoji/sticker picker */}
-      {showPicker && (
+      {/* Emoji/sticker picker — only geral */}
+      {activeTab === 'geral' && showPicker && (
         <div className="shrink-0 bg-white border-t border-border shadow-lg">
           <div className="flex border-b border-border">
             <button
@@ -255,8 +341,8 @@ export default function ClassChat() {
         </div>
       )}
 
-      {/* Input bar */}
-      <div className="shrink-0 bg-white border-t border-border p-3">
+      {/* Input bar — only geral */}
+      {activeTab === 'geral' && <div className="shrink-0 bg-white border-t border-border p-3">
         <form onSubmit={handleSend} className="flex gap-2 items-center">
           <button
             type="button"
@@ -282,7 +368,7 @@ export default function ClassChat() {
           </button>
         </form>
         <p className="text-[9px] text-gray-300 text-center mt-1.5 font-mono">★ WR-EDU Chat · inspirado no MSN Messenger ★</p>
-      </div>
+      </div>}
 
       <style>{`
         @keyframes marquee {
