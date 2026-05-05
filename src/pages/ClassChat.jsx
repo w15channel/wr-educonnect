@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Send, Smile } from 'lucide-react';
+import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -52,14 +53,18 @@ function MSNAvatar({ isMe, size = 32 }) {
   );
 }
 
-function MSNBubble({ msg, isMe, name, color, time }) {
+function MSNBubble({ msg, isMe, name, color, time, email }) {
   return (
     <div className={`flex items-end gap-2 mb-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
       <div className="shrink-0">
         <MSNAvatar isMe={isMe} size={32} />
       </div>
       <div className={`max-w-[72%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
-        {!isMe && <span className="text-[10px] font-bold mb-0.5 ml-1" style={{ color }}>{name}</span>}
+        {!isMe && (
+          <ClickableStudent email={email} className="text-[10px] font-bold mb-0.5 ml-1" style={{ color }}>
+            <span style={{ color }}>{name}</span>
+          </ClickableStudent>
+        )}
         <div
           className={`px-3 py-2 rounded-2xl text-sm shadow-sm relative ${
             isMe
@@ -199,6 +204,7 @@ export default function ClassChat() {
               msg={msg}
               isMe={isMe}
               name={msg.author_name}
+              email={msg.author_email}
               color={color}
               time={time}
             />

@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2 } from 'lucide-react';
+import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
@@ -153,10 +154,10 @@ export default function TerapeutaDaSemana() {
             </div>
             {myTherapistPairing ? (
               <>
-                <div className="flex items-center gap-3 bg-pink-50 rounded-xl p-3">
+                <div className="flex items-center gap-3 rounded-xl p-3 border border-pink-200 bg-transparent backdrop-blur-sm">
                   <StudentAvatar email={myTherapistPairing.patient_email} />
                   <div>
-                    <p className="font-bold text-sm">{getStudentInfo(myTherapistPairing.patient_email).name}</p>
+                    <ClickableStudent email={myTherapistPairing.patient_email} className="font-bold text-sm">{getStudentInfo(myTherapistPairing.patient_email).name}</ClickableStudent>
                     <p className="text-xs text-muted-foreground">Paciente</p>
                   </div>
                 </div>
@@ -186,10 +187,10 @@ export default function TerapeutaDaSemana() {
             </div>
             {myPatientPairing ? (
               <>
-                <div className="flex items-center gap-3 bg-blue-50 rounded-xl p-3">
+                <div className="flex items-center gap-3 rounded-xl p-3 border border-blue-200 bg-transparent backdrop-blur-sm">
                   <StudentAvatar email={myPatientPairing.therapist_email} />
                   <div>
-                    <p className="font-bold text-sm">{getStudentInfo(myPatientPairing.therapist_email).name}</p>
+                    <ClickableStudent email={myPatientPairing.therapist_email} className="font-bold text-sm">{getStudentInfo(myPatientPairing.therapist_email).name}</ClickableStudent>
                     <p className="text-xs text-muted-foreground">Terapeuta</p>
                   </div>
                 </div>
@@ -339,8 +340,8 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
       {showScores && (pairing.therapist_submitted || pairing.patient_submitted) && (
         <div className="border-t border-border pt-3 space-y-2">
           {pairing.therapist_submitted && (
-            <div className="bg-pink-50 rounded-xl p-3">
-              <p className="text-xs font-bold text-pink-700 mb-1">Avaliação do Terapeuta → Paciente</p>
+            <div className="border border-pink-200 rounded-xl p-3 bg-transparent">
+              <p className="text-xs font-bold text-pink-600 mb-1">Avaliação do Terapeuta → Paciente</p>
               <p className="text-xs text-foreground">{pairing.therapist_comment}</p>
               <div className="flex items-center gap-1 mt-1.5">
                 <Star size={11} className="text-yellow-400 fill-yellow-400" />
@@ -349,8 +350,8 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
             </div>
           )}
           {pairing.patient_submitted && (
-            <div className="bg-blue-50 rounded-xl p-3">
-              <p className="text-xs font-bold text-blue-700 mb-1">Avaliação do Paciente → Terapeuta</p>
+            <div className="border border-blue-200 rounded-xl p-3 bg-transparent">
+              <p className="text-xs font-bold text-blue-600 mb-1">Avaliação do Paciente → Terapeuta</p>
               <p className="text-xs text-foreground">{pairing.patient_comment}</p>
               <div className="flex items-center gap-1 mt-1.5">
                 <Star size={11} className="text-yellow-400 fill-yellow-400" />

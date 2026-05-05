@@ -70,6 +70,7 @@ const studentGroups = [
   {
     label: 'Minha Área',
     items: [
+      { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
       { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
       { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
       { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },

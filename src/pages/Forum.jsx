@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { MessageSquare, Send, ChevronDown, ChevronUp, Trash2, Star, BookOpen } from 'lucide-react';
+import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -210,8 +211,8 @@ export default function Forum() {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <p className="font-bold text-sm text-foreground">{post.author_name}</p>
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                       <ClickableStudent email={post.author_email} className="font-bold text-sm text-foreground">{post.author_name}</ClickableStudent>
                         {post.author_role === 'teacher' && (
                           <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] py-0 px-1.5">Professor</Badge>
                         )}
@@ -266,7 +267,7 @@ export default function Forum() {
                           )}
                           <div className="flex-1 bg-card rounded-xl p-3 border border-border">
                             <div className="flex items-center gap-2 mb-1">
-                              <p className="font-bold text-xs text-foreground">{reply.author_name}</p>
+                              <ClickableStudent email={reply.author_email} className="font-bold text-xs text-foreground">{reply.author_name}</ClickableStudent>
                               {reply.author_role === 'teacher' && <Badge className="bg-primary/10 text-primary text-[9px] py-0 px-1">Prof.</Badge>}
                               <span className="text-[10px] text-muted-foreground ml-auto">{format(new Date(reply.created_date), 'dd/MM HH:mm')}</span>
                             </div>
