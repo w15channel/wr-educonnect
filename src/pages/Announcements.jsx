@@ -191,10 +191,10 @@ export default function Announcements() {
                   </div>
                   {isTeacher && (
                     <div className="flex gap-1 shrink-0">
-                      <button onClick={() => openEdit(a)} className="p-2 text-muted-foreground hover:text-primary rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center">
+                      <button onClick={() => openEdit(a)} className={`p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center ${a.type === 'warning' ? 'text-yellow-800 hover:bg-yellow-200' : a.type === 'urgent' ? 'text-red-800 hover:bg-red-200' : 'text-blue-800 hover:bg-blue-200'}`}>
                         <Pencil size={13} />
                       </button>
-                      <button onClick={() => deleteMutation.mutate(a.id)} className="p-2 text-muted-foreground hover:text-destructive rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center">
+                      <button onClick={() => deleteMutation.mutate(a.id)} className={`p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center ${a.type === 'warning' ? 'text-yellow-900 hover:bg-yellow-300' : a.type === 'urgent' ? 'text-red-900 hover:bg-red-300' : 'text-blue-900 hover:bg-blue-300'}`}>
                         <Trash2 size={13} />
                       </button>
                     </div>

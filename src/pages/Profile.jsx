@@ -275,7 +275,7 @@ export default function Profile() {
             {saved ? <><CheckCircle size={16} /> Perfil Salvo!</> : <><Save size={16} /> {saving ? 'Salvando...' : 'Salvar Perfil'}</>}
           </Button>
 
-          <div className="border-t border-border pt-4 mt-2">
+          {session?.role === 'admin' && <div className="border-t border-border pt-4 mt-2">
             <p className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">Zona de Perigo</p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -300,11 +300,11 @@ export default function Profile() {
                     {deleting ? 'Excluindo...' : 'Sim, excluir minha conta'}
                   </AlertDialogAction>
                 </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+                </AlertDialogContent>
+                </AlertDialog>
+                </div>}
+                </div>
+                </div>
+                </div>
+                );
 }
