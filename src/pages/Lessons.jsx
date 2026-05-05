@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import EmbeddedBrowser from '@/components/layout/EmbeddedBrowser';
 import { base44 } from '@/api/base44Client';
 import { Play, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil, Upload, Link, Clock, FileDown, FileText, Globe, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -116,13 +115,10 @@ export default function Lessons() {
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
-  const [embeddedUrl, setEmbeddedUrl] = useState(null);
-  const [embeddedTitle, setEmbeddedTitle] = useState('');
-
-  const openInBrowser = (url, title = '') => {
+  // Abre link em nova aba do navegador (funciona em modo quiosque também)
+  const openExternal = (url) => {
     if (!url) return;
-    setEmbeddedUrl(url);
-    setEmbeddedTitle(title);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const getEmbedUrl = (url) => {
@@ -153,16 +149,6 @@ export default function Lessons() {
     if (editingLesson) updateMutation.mutate({ id: editingLesson.id, data: form });
     else createMutation.mutate({ ...form, order: lessons.length + 1 });
   };
-
-  if (embeddedUrl) {
-    return (
-      <EmbeddedBrowser
-        url={embeddedUrl}
-        title={embeddedTitle}
-        onClose={() => { setEmbeddedUrl(null); setEmbeddedTitle(''); }}
-      />
-    );
-  }
 
   return (
     <div className="p-4 lg:p-7 max-w-7xl mx-auto animate-fade-in-up">
@@ -430,11 +416,11 @@ export default function Lessons() {
                     {/* External content link */}
                     {lesson.lesson_type === 'content_external' && lesson.external_url && (
                       <div className="px-4 py-3 border-t border-border">
-                        <button onClick={() => openInBrowser(lesson.external_url, lesson.title)}
+                        <a href={lesson.external_url} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-2 text-sm text-primary bg-primary/8 border border-primary/15 px-4 py-3 rounded-xl hover:bg-primary/15 transition-colors font-semibold w-full">
                           <Globe size={15} /> Acessar Material Externo
                           <ExternalLink size={12} className="ml-auto" />
-                        </button>
+                        </a>
                       </div>
                     )}
 
@@ -450,10 +436,10 @@ export default function Lessons() {
                             const label = parts.length > 1 ? parts[0].trim() : `Pesquisa ${li + 1}`;
                             const url = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                             return (
-                              <button key={li} onClick={() => openInBrowser(url, label)}
+                              <a key={li} href={url} target="_blank" rel="noopener noreferrer"
                                 className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors font-medium">
                                 <Globe size={10} /> {label}
-                              </button>
+                              </a>
                             );
                           })}
                         </div>
@@ -468,10 +454,10 @@ export default function Lessons() {
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {materialLinks.map((link, li) => (
-                            <button key={li} onClick={() => openInBrowser(link, `Material ${li + 1} — ${lesson.title}`)}
+                            <a key={li} href={link} target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 text-xs text-primary bg-primary/8 border border-primary/15 px-3 py-1.5 rounded-lg hover:bg-primary/15 transition-colors font-medium">
                               <Link size={11} /> Material {li + 1}
-                            </button>
+                            </a>
                           ))}
                         </div>
                       </div>
