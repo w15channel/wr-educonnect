@@ -44,7 +44,6 @@ const adminGroups = [
       { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
       { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
-      { icon: Globe, label: 'EDU Browser', path: '/browser', color: 'text-sky-400' },
     ],
   },
 ];
@@ -83,7 +82,6 @@ const studentGroups = [
       { icon: BookOpen, label: 'Meu Best Seller', path: '/bestseller', color: 'text-emerald-400' },
       { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
-      { icon: Globe, label: 'EDU Browser', path: '/browser', color: 'text-sky-400' },
     ],
   },
 ];
