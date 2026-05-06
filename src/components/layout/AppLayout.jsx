@@ -9,6 +9,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import ServiceTermsModal from '../onboarding/ServiceTermsModal';
 import TutorialModal from '../onboarding/TutorialModal';
+import { useVersionCheck } from '@/hooks/useVersionCheck';
 
 const TERMS_KEY = 'wr_terms_accepted';
 const TUTORIAL_KEY = 'wr_tutorial_done';
@@ -24,6 +25,7 @@ const PTR_THRESHOLD = 72; // px to pull before triggering refresh
 export default function AppLayout() {
   const { session } = useCustomAuth();
   const location = useLocation();
+  useVersionCheck(60000); // checks every 60s for a new version
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
