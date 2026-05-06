@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
+import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -471,6 +472,9 @@ export default function Dashboard() {
 
       {/* Serviços */}
       {!isTeacher && <ServicosCard />}
+
+      {/* Lesson Comments Panel — teacher only */}
+      {isTeacher && <LessonCommentsPanel />}
 
       {/* Announcements */}
       {announcements.length > 0 && (
