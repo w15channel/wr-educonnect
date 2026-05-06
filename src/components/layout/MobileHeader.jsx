@@ -27,7 +27,7 @@ export default function MobileHeader() {
   return (
     <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border shrink-0">
       <div className="w-7 h-7 flex items-center justify-center">
-        <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/e178a715b_textodoseupargrafoWR_20251219_192959_0000.png" alt="WR" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+        <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png" alt="WR" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
       </div>
       <h1 className="text-sm font-bold text-white tracking-tight">{label}</h1>
       <div className="ml-auto flex items-center gap-2">
