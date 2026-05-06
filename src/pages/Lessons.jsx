@@ -71,6 +71,15 @@ export default function Lessons() {
 
   const toggleWatched = async (lessonId) => {
     const existing = progresses.find(p => p.lesson_id === lessonId);
+    if (!existing?.watched) {
+      // Validação: precisa ter comentário e resumo para marcar como assistida
+      const comment = commentDraft[lessonId] ?? existing?.comment ?? '';
+      const summary = summaryDraft[lessonId] ?? existing?.summary ?? '';
+      if (!comment.trim() || !summary.trim()) {
+        toast.error('Preencha o Resumo e o Comentário da aula antes de confirmar presença.');
+        return;
+      }
+    }
     await upsertProgress(lessonId, { watched: !existing?.watched });
     toast.success(!existing?.watched ? '✅ Aula marcada como assistida!' : 'Marcação removida.');
   };
@@ -364,14 +373,22 @@ export default function Lessons() {
                       </>
                     ) : (
                       <>
-                        <button
-                          onClick={() => toggleWatched(lesson.id)}
-                          title={isWatched ? 'Desmarcar presença' : 'Confirmar Presença'}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${isWatched ? 'text-green-600 bg-green-50 border border-green-200' : 'text-muted-foreground bg-secondary hover:text-green-600 hover:bg-green-50 hover:border-green-200 border border-transparent'}`}
-                        >
-                          {isWatched ? <CheckCircle size={13} /> : <Circle size={13} />}
-                          <span className="hidden sm:inline">{isWatched ? 'Presente' : 'Confirmar Presença'}</span>
-                        </button>
+                        {(() => {
+                          const comment = commentDraft[lesson.id] ?? prog?.comment ?? '';
+                          const summary = summaryDraft[lesson.id] ?? prog?.summary ?? '';
+                          const canWatch = comment.trim() && summary.trim();
+                          return (
+                            <button
+                              onClick={() => toggleWatched(lesson.id)}
+                              title={isWatched ? 'Desmarcar presença' : canWatch ? 'Confirmar Presença' : 'Preencha resumo e comentário primeiro'}
+                              disabled={!isWatched && !canWatch}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${isWatched ? 'text-green-600 bg-green-50 border border-green-200' : canWatch ? 'text-muted-foreground bg-secondary hover:text-green-600 hover:bg-green-50 hover:border-green-200 border border-transparent' : 'text-muted-foreground/40 bg-secondary/50 border border-transparent cursor-not-allowed'}`}
+                            >
+                              {isWatched ? <CheckCircle size={13} /> : <Circle size={13} />}
+                              <span className="hidden sm:inline">{isWatched ? 'Presente' : canWatch ? 'Confirmar Presença' : '🔒 Presença'}</span>
+                            </button>
+                          );
+                        })()}
                       </>
                     )}
                     <button
@@ -512,29 +529,23 @@ export default function Lessons() {
                           )}
                         </div>
 
-                        {/* Upload activity */}
-                        <div className="bg-secondary/30 rounded-xl p-4 border border-border">
-                          <p className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5">
-                            <Upload size={12} className="text-orange-500" /> Enviar Atividade da Aula
-                          </p>
-                          <input
-                            type="file"
-                            onChange={e => setUploadFile(prev => ({ ...prev, [lesson.id]: e.target.files[0] }))}
-                            className="w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer mb-3"
-                          />
-                          <Button
-                            size="sm"
-                            className="w-full h-9 text-xs gap-1.5"
-                            disabled={!uploadFile[lesson.id] || status === 'sending'}
-                            onClick={() => handleFileUploadToGDrive(lesson.id)}
-                          >
-                            <Upload size={13} />
-                            {status === 'sending' ? 'Enviando, aguarde...' : 'Enviar Arquivo'}
-                          </Button>
-                          {status === 'sending' && <p className="text-xs text-muted-foreground text-center mt-2">Preparando o envio...</p>}
-                          {status === 'success' && <p className="text-xs text-green-600 text-center mt-2 font-semibold">✅ Trabalho enviado com sucesso!</p>}
-                          {status === 'error' && <p className="text-xs text-red-500 text-center mt-2">❌ Erro ao enviar. Tente novamente.</p>}
-                        </div>
+                        {/* Watched button with lock indicator */}
+                        {(() => {
+                          const comment = commentDraft[lesson.id] ?? prog?.comment ?? '';
+                          const summary = summaryDraft[lesson.id] ?? prog?.summary ?? '';
+                          const canWatch = comment.trim() && summary.trim();
+                          const isWatched = prog?.watched;
+                          if (isWatched) return null;
+                          return (
+                            <div className={`rounded-xl p-3 border text-xs flex items-center gap-2 ${canWatch ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+                              {canWatch ? (
+                                <p className="text-green-700 font-semibold flex-1">✅ Resumo e comentário preenchidos! Você já pode confirmar presença.</p>
+                              ) : (
+                                <p className="text-amber-700 font-semibold flex-1">🔒 Preencha o <strong>Resumo</strong> e o <strong>Comentário</strong> acima para liberar a confirmação de presença.</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

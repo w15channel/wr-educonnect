@@ -1,6 +1,8 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { GraduationCap } from 'lucide-react';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
+import NotificationsBell from '@/components/dashboard/NotificationsBell';
 
 const routeLabels = {
   '/': 'Dashboard',
@@ -19,6 +21,7 @@ const routeLabels = {
 
 export default function MobileHeader() {
   const location = useLocation();
+  const { session } = useCustomAuth();
   const label = routeLabels[location.pathname] || 'WR-EDU';
 
   return (
@@ -27,7 +30,12 @@ export default function MobileHeader() {
         <GraduationCap size={14} className="text-white" />
       </div>
       <h1 className="text-sm font-bold text-white tracking-tight">{label}</h1>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        {session?.role === 'admin' && (
+          <div className="[&_button]:text-white/70 [&_button:hover]:bg-white/10">
+            <NotificationsBell session={session} />
+          </div>
+        )}
         <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">WR-EDU</span>
       </div>
     </header>

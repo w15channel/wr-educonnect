@@ -7,6 +7,7 @@ import {
   ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, Globe, UsersRound
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
+import NotificationsBell from '@/components/dashboard/NotificationsBell';
 
 const adminGroups = [
   {
@@ -178,6 +179,16 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
             </div>
           ))}
         </nav>
+
+        {/* Admin notifications */}
+        {isAdmin && (
+          <div className="px-3 py-2 border-t border-white/8 flex items-center gap-2">
+            <div className="[&_button]:text-white/60 [&_button:hover]:bg-white/10 [&_button]:rounded-xl">
+              <NotificationsBell session={session} />
+            </div>
+            <span className="text-xs text-white/40 font-medium">Notificações</span>
+          </div>
+        )}
 
         {/* User footer */}
         <div className="p-3 border-t border-white/8">

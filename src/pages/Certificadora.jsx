@@ -63,6 +63,18 @@ export default function Certificadora() {
         </div>
       </div>
 
+      {/* Alert: abrir em nova guia */}
+      <div className="mx-4 mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-3 shrink-0">
+        <ExternalLink size={16} className="text-blue-500 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-blue-800">⚠️ Atenção: Problemas com o login?</p>
+          <p className="text-xs text-blue-700 mt-0.5">
+            Se o login na plataforma de certificação falhar aqui dentro, clique em{' '}
+            <strong>"Abrir em nova aba"</strong> (botão no cabeçalho acima) e faça o login diretamente pelo seu navegador.
+          </p>
+        </div>
+      </div>
+
       {/* Daily reminder */}
       {showReminder && (
         <div className="mx-4 mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3 shrink-0">

@@ -1,0 +1,49 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "recipient_email": {
+      "type": "string",
+      "description": "Email de quem deve receber a notifica\u00e7\u00e3o (professor/admin)"
+    },
+    "sender_email": {
+      "type": "string",
+      "description": "Email de quem gerou a notifica\u00e7\u00e3o (aluno)"
+    },
+    "sender_name": {
+      "type": "string",
+      "description": "Nome de quem gerou a notifica\u00e7\u00e3o"
+    },
+    "message": {
+      "type": "string",
+      "description": "Texto da notifica\u00e7\u00e3o"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "ID da tarefa relacionada"
+    },
+    "task_title": {
+      "type": "string",
+      "description": "T\u00edtulo da tarefa"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "task_submission",
+        "quiz_submission"
+      ],
+      "default": "task_submission",
+      "description": "Tipo de notifica\u00e7\u00e3o"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a notifica\u00e7\u00e3o foi lida"
+    }
+  },
+  "required": [
+    "recipient_email",
+    "sender_email",
+    "message"
+  ]
+}
