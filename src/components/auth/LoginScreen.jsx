@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
 import SetupAdminModal from './SetupAdminModal';
 
-const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/e178a715b_textodoseupargrafoWR_20251219_192959_0000.png';
+const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
 const HERO_IMAGES = [
   'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
@@ -118,7 +118,7 @@ export default function LoginScreen({ onLogin }) {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 flex items-center justify-center">
-                <img src={LOGO_URL} alt="WR" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={LOGO_URL} alt="WR" className="w-full h-full object-contain" />
               </div>
               <div>
                 <span className="text-xl font-bold text-white tracking-tight">WR-EDU</span>
@@ -178,7 +178,7 @@ export default function LoginScreen({ onLogin }) {
             {/* Mobile logo */}
             <div className="flex flex-col items-center lg:hidden">
               <div className="w-16 h-16 flex items-center justify-center mb-3">
-                <img src={LOGO_URL} alt="WR" className="w-full h-full object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={LOGO_URL} alt="WR" className="w-full h-full object-contain" />
               </div>
               <h1 className="text-2xl font-bold text-white tracking-tight">WR-EDU</h1>
               <p className="text-white/35 text-xs mt-1 tracking-widest uppercase">Escola de Terapeutas</p>
