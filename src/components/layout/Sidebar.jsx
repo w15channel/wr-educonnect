@@ -153,8 +153,8 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         <div className="p-5 flex items-center justify-between border-b border-white/8">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/40">
-                <GraduationCap size={20} className="text-white" />
+              <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center">
+                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/e178a715b_textodoseupargrafoWR_20251219_192959_0000.png" alt="WR" className="w-full h-full object-contain" />
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-sidebar" />
             </div>
