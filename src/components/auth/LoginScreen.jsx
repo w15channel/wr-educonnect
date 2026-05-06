@@ -11,6 +11,7 @@ const HERO_IMAGES = [
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
   'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
   'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1400&q=85',
 ];
 
 const FEATURES = [
@@ -115,8 +116,8 @@ export default function LoginScreen({ onLogin }) {
           <div className="relative z-10 flex flex-col justify-between h-full p-8 lg:p-14">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shadow-2xl shadow-[#5b5ef4]/40 overflow-hidden">
-                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/e178a715b_textodoseupargrafoWR_20251219_192959_0000.png" alt="WR Logo" className="w-9 h-9 object-contain" />
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center shadow-2xl shadow-[#5b5ef4]/40">
+                <GraduationCap size={22} className="text-white" />
               </div>
               <div>
                 <span className="text-xl font-bold text-white tracking-tight">WR-EDU</span>
@@ -175,8 +176,8 @@ export default function LoginScreen({ onLogin }) {
           <div className="relative flex flex-col h-full justify-between gap-6">
             {/* Mobile logo */}
             <div className="flex flex-col items-center lg:hidden">
-              <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-2xl shadow-[#5b5ef4]/50 mb-3 overflow-hidden">
-                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/e178a715b_textodoseupargrafoWR_20251219_192959_0000.png" alt="WR Logo" className="w-14 h-14 object-contain" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center shadow-2xl shadow-[#5b5ef4]/50 mb-3">
+                <GraduationCap size={28} className="text-white" />
               </div>
               <h1 className="text-2xl font-bold text-white tracking-tight">WR-EDU</h1>
               <p className="text-white/35 text-xs mt-1 tracking-widest uppercase">Escola de Terapeutas</p>
