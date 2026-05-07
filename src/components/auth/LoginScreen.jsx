@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap, Search, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
@@ -327,24 +326,14 @@ export default function LoginScreen({ onLogin }) {
 
             {/* Footer */}
             <div className="text-center space-y-2 pt-2 border-t border-white/6">
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <Link to="/" className="flex items-center gap-1 text-white/30 hover:text-white/60 text-[11px] transition-colors">
-                  <ArrowLeft size={10} /> Página Inicial
-                </Link>
-                <Link to="/certificate-verification" className="flex items-center gap-1 text-white/30 hover:text-[#1db89e] text-[11px] transition-colors">
-                  <Search size={10} /> Verificar Certificado
-                </Link>
-              </div>
               <div className="flex items-center justify-center gap-1.5 text-white/20 text-xs">
                 <Star size={9} className="fill-current" />
-                <span>WR-EDU © 2026 — Escola de Formação de Terapeutas</span>
+                <span>WR-EDU © 2025 — Escola de Formação de Terapeutas</span>
                 <Star size={9} className="fill-current" />
               </div>
-              <div className="flex items-center justify-center gap-3 text-[10px] text-white/20">
-                <Link to="/terms" className="hover:text-white/40 transition-colors">Termos de Serviço</Link>
-                <span>·</span>
-                <Link to="/privacy" className="hover:text-white/40 transition-colors">Privacidade</Link>
-              </div>
+              <p className="text-white/12 text-[10px]">
+                Desenvolvido com <Heart size={8} className="inline fill-current text-red-400/50" /> para transformar vidas
+              </p>
               <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
                 <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-001-00</span>
