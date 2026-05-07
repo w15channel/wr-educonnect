@@ -45,7 +45,6 @@ const adminGroups = [
       { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
       { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
-      { icon: GraduationCap, label: 'Emitir Certificados', path: '/certificates', color: 'text-green-400' },
     ],
   },
 ];
