@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart } from 'lucide-react';
@@ -336,7 +335,6 @@ function StudentScoreDetail({ code, onBack }) {
 }
 
 export default function ScoreControl() {
-  const location = useLocation();
   const [selectedCode, setSelectedCode] = useState(null);
   const [search, setSearch] = useState('');
 
@@ -354,20 +352,6 @@ export default function ScoreControl() {
     queryKey: ['all-submissions'],
     queryFn: () => base44.entities.TaskSubmission.list('-created_date', 500),
   });
-
-  // Auto-select first student with pending submissions when coming from dashboard shortcut
-  useEffect(() => {
-    if (!location.search.includes('filter=pending')) return;
-    if (selectedCode || codes.length === 0 || submissions.length === 0) return;
-    const firstPending = codes.find(code =>
-      submissions.some(s =>
-        s.status === 'submitted' &&
-        s.student_email === code.student_email &&
-        !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
-      )
-    );
-    if (firstPending) setSelectedCode(firstPending);
-  }, [codes, submissions, scoreItems, location.search]);
 
   if (selectedCode) return <StudentScoreDetail code={selectedCode} onBack={() => setSelectedCode(null)} />;
 

@@ -4,10 +4,9 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, Globe, UsersRound, LayoutGrid
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import NotificationsBell from '@/components/dashboard/NotificationsBell';
 
 const adminGroups = [
   {
@@ -45,7 +44,6 @@ const adminGroups = [
       { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
       { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
-      { icon: LayoutGrid, label: 'Catálogo de Cursos', path: '/cursos', color: 'text-emerald-400' },
     ],
   },
 ];
@@ -67,13 +65,11 @@ const studentGroups = [
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
       { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
-      { icon: UsersRound, label: 'Classe', path: '/classe', color: 'text-sky-400' },
     ],
   },
   {
     label: 'Minha Área',
     items: [
-      { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
       { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
       { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
       { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
@@ -86,7 +82,6 @@ const studentGroups = [
       { icon: BookOpen, label: 'Meu Best Seller', path: '/bestseller', color: 'text-emerald-400' },
       { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
-      { icon: LayoutGrid, label: 'Mais Cursos', path: '/cursos', color: 'text-green-400' },
     ],
   },
 ];
@@ -155,8 +150,8 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         <div className="p-5 flex items-center justify-between border-b border-white/8">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-9 h-9 flex items-center justify-center">
-                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png" alt="WR" className="w-full h-full object-contain" />
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/40">
+                <GraduationCap size={20} className="text-white" />
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-sidebar" />
             </div>
@@ -181,16 +176,6 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
             </div>
           ))}
         </nav>
-
-        {/* Admin notifications */}
-        {isAdmin && (
-          <div className="px-3 py-2 border-t border-white/8 flex items-center gap-2">
-            <div className="[&_button]:text-white/60 [&_button:hover]:bg-white/10 [&_button]:rounded-xl">
-              <NotificationsBell session={session} />
-            </div>
-            <span className="text-xs text-white/40 font-medium">Notificações</span>
-          </div>
-        )}
 
         {/* User footer */}
         <div className="p-3 border-t border-white/8">

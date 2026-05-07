@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap, Mail, ExternalLink } from 'lucide-react';
+import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
-import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
+import { setSession, verifyPassword } from '@/lib/customAuth';
 import SetupAdminModal from './SetupAdminModal';
 
-const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
-
 const HERO_IMAGES = [
-  'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
   'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
   'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1400&q=85',
 ];
 
 const FEATURES = [
@@ -25,7 +23,6 @@ const FEATURES = [
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState('code');
   const [code, setCode] = useState('');
-  const [googleEmail, setGoogleEmail] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -58,40 +55,13 @@ export default function LoginScreen({ onLogin }) {
       return;
     }
     const record = results[0];
-    await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
+    await base44.entities.AccessCode.update(record.id, { last_login: new Date().toISOString() });
     setSession({
       role: 'student',
       codeId: record.id,
       code: trimmed,
       name: record.profile_name || record.student_name || 'Aluno',
       email: record.student_email || '',
-      bio: record.profile_bio || '',
-      avatarColor: record.profile_avatar_color || '#5b5ef4',
-      photoUrl: record.profile_photo_url || '',
-    });
-    onLogin();
-    setLoading(false);
-  };
-
-  const handleGoogleEmailLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    const trimmed = googleEmail.trim().toLowerCase();
-    const results = await base44.entities.AccessCode.filter({ google_email: trimmed, is_active: true });
-    if (results.length === 0) {
-      setError('Nenhuma conta vinculada a este email. Use seu código de aluno.');
-      setLoading(false);
-      return;
-    }
-    const record = results[0];
-    await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
-    setSession({
-      role: 'student',
-      codeId: record.id,
-      code: record.code,
-      name: record.profile_name || record.student_name || 'Aluno',
-      email: record.student_email || trimmed,
       bio: record.profile_bio || '',
       avatarColor: record.profile_avatar_color || '#5b5ef4',
       photoUrl: record.profile_photo_url || '',
@@ -145,8 +115,8 @@ export default function LoginScreen({ onLogin }) {
           <div className="relative z-10 flex flex-col justify-between h-full p-8 lg:p-14">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 flex items-center justify-center">
-                <img src={LOGO_URL} alt="WR" className="w-full h-full object-contain" />
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center shadow-2xl shadow-[#5b5ef4]/40">
+                <GraduationCap size={22} className="text-white" />
               </div>
               <div>
                 <span className="text-xl font-bold text-white tracking-tight">WR-EDU</span>
@@ -196,224 +166,152 @@ export default function LoginScreen({ onLogin }) {
         </div>
 
         {/* Right — Login panel */}
-        <div className="w-full lg:w-[440px] bg-[#0d1120] border-l border-white/8 flex flex-col justify-center p-7 lg:p-10 relative overflow-hidden">
-          {/* Ambient glows */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-[#5b5ef4]/12 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-56 h-56 bg-[#1db89e]/10 rounded-full blur-3xl pointer-events-none translate-y-1/2 -translate-x-1/2" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-3/4 bg-gradient-to-b from-transparent via-white/5 to-transparent pointer-events-none" />
+        <div className="w-full lg:w-[420px] bg-[#0d1120] border-l border-white/8 flex flex-col justify-center p-7 lg:p-10 relative overflow-hidden">
+          {/* Glow */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#5b5ef4]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#1db89e]/8 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative flex flex-col h-full justify-between gap-6">
+          <div className="relative">
             {/* Mobile logo */}
-            <div className="flex flex-col items-center lg:hidden">
-              <div className="w-16 h-16 flex items-center justify-center mb-3">
-                <img src={LOGO_URL} alt="WR" className="w-full h-full object-contain" />
+            <div className="flex flex-col items-center mb-8 lg:hidden">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center shadow-2xl shadow-[#5b5ef4]/40 mb-3">
+                <GraduationCap size={26} className="text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">WR-EDU</h1>
-              <p className="text-white/35 text-xs mt-1 tracking-widest uppercase">Escola de Terapeutas</p>
+              <h1 className="text-2xl font-bold text-white">WR-EDU</h1>
+              <p className="text-white/40 text-xs mt-1 tracking-widest uppercase">Escola de Terapeutas</p>
             </div>
 
-            <div>
-              {/* Title */}
-              <div className="hidden lg:block mb-8">
-                <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/15 border border-[#5b5ef4]/25 rounded-full px-3 py-1 mb-4">
-                  <Zap size={11} className="text-[#7c5ef4]" />
-                  <span className="text-[11px] font-semibold text-[#a09ef4] tracking-wide">Acesso Seguro</span>
-                </div>
-                <h2 className="text-[26px] font-bold text-white leading-tight">Entrar na plataforma</h2>
-                <p className="text-white/35 text-sm mt-1.5">Escolha seu tipo de acesso abaixo</p>
-              </div>
+            {/* Title */}
+            <div className="hidden lg:block mb-8">
+              <h2 className="text-2xl font-bold text-white">Entrar na plataforma</h2>
+              <p className="text-white/40 text-sm mt-1">Escolha seu tipo de acesso abaixo</p>
+            </div>
 
-              {/* Tabs */}
-              <div className="flex gap-1 bg-white/4 rounded-2xl p-1.5 mb-6 border border-white/8 shadow-inner">
-                <button
-                  onClick={() => { setMode('code'); setError(''); }}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
-                    mode === 'code'
-                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg shadow-[#5b5ef4]/40'
-                      : 'text-white/35 hover:text-white/65 hover:bg-white/5'
-                  }`}
-                >
-                  <Key size={12} /> Código
-                </button>
-                <button
-                  onClick={() => { setMode('google'); setError(''); }}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
-                    mode === 'google'
-                      ? 'bg-gradient-to-br from-[#1db89e] to-[#059669] text-white shadow-lg shadow-[#1db89e]/40'
-                      : 'text-white/35 hover:text-white/65 hover:bg-white/5'
-                  }`}
-                >
-                  <Mail size={12} /> Email
-                </button>
-                <button
-                  onClick={() => { setMode('admin'); setError(''); }}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
-                    mode === 'admin'
-                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg shadow-[#5b5ef4]/40'
-                      : 'text-white/35 hover:text-white/65 hover:bg-white/5'
-                  }`}
-                >
-                  <Shield size={12} /> Admin
-                </button>
-              </div>
+            {/* Tabs */}
+            <div className="flex gap-1 bg-white/5 rounded-2xl p-1 mb-6 border border-white/8">
+              <button
+                onClick={() => { setMode('code'); setError(''); }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                  mode === 'code'
+                    ? 'bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] text-white shadow-lg shadow-[#5b5ef4]/30'
+                    : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                <Key size={14} /> Código de Aluno
+              </button>
+              <button
+                onClick={() => { setMode('admin'); setError(''); }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                  mode === 'admin'
+                    ? 'bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] text-white shadow-lg shadow-[#5b5ef4]/30'
+                    : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                <Lock size={14} /> Admin
+              </button>
+            </div>
 
-              {error && (
-                <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/25 text-red-300 text-sm p-4 rounded-2xl mb-5 animate-fade-in">
-                  <div className="w-7 h-7 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
-                    <AlertCircle size={14} className="text-red-400" />
+            {error && (
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-sm p-3.5 rounded-xl mb-5">
+                <AlertCircle size={15} className="shrink-0" />
+                {error}
+              </div>
+            )}
+
+            {/* Form card */}
+            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 shadow-2xl">
+              {mode === 'code' ? (
+                <form onSubmit={handleCodeLogin} className="space-y-4">
+                  <div>
+                    <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">
+                      Código de acesso
+                    </label>
+                    <Input
+                      placeholder="EDU-XXXX-XXXX"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.toUpperCase())}
+                      className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-13 text-center text-xl tracking-widest font-mono focus:border-[#5b5ef4]/60"
+                      autoCapitalize="characters"
+                    />
+                    <p className="text-white/30 text-xs mt-2 text-center">
+                      Insira o código fornecido pelo seu professor
+                    </p>
                   </div>
-                  {error}
-                </div>
-              )}
-
-              {/* Form card */}
-              <div className="bg-gradient-to-b from-white/7 to-white/3 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/30">
-                {mode === 'code' ? (
-                  <form onSubmit={handleCodeLogin} className="space-y-5">
-                    <div>
-                      <label className="text-white/50 text-[11px] font-bold uppercase tracking-widest block mb-2.5 flex items-center gap-1.5">
-                        <Key size={10} className="text-[#5b5ef4]" /> Código de acesso
-                      </label>
-                      <div className="relative">
-                        <Input
-                          placeholder="EDU-XXXX-XXXX"
-                          value={code}
-                          onChange={(e) => setCode(e.target.value.toUpperCase())}
-                          className="bg-white/6 border-white/10 text-white placeholder:text-white/20 h-14 text-center text-xl tracking-[0.3em] font-mono focus:border-[#5b5ef4]/60 focus:bg-white/8 transition-all rounded-xl"
-                          autoCapitalize="characters"
-                        />
-                        {code.length >= 3 && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#1db89e] animate-pulse" />
-                        )}
-                      </div>
-                      <p className="text-white/25 text-xs mt-2.5 text-center flex items-center justify-center gap-1">
-                        <Lock size={9} /> Código fornecido pelo seu professor
-                      </p>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full h-13 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] via-[#6d5ef4] to-[#1db89e] hover:opacity-90 hover:shadow-xl transition-all border-0 shadow-lg shadow-[#5b5ef4]/35 gap-2 rounded-xl"
-                      disabled={code.length < 3 || loading}
-                    >
-                      {loading
-                        ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verificando...</>
-                        : <><span>Entrar na Plataforma</span> <ChevronRight size={16} /></>
-                      }
-                    </Button>
-                  </form>
-                ) : mode === 'google' ? (
-                  <form onSubmit={handleGoogleEmailLogin} className="space-y-5">
-                    <div>
-                      <label className="text-white/50 text-[11px] font-bold uppercase tracking-widest block mb-2.5 flex items-center gap-1.5">
-                        <Mail size={10} className="text-[#1db89e]" /> Email Google vinculado
-                      </label>
-                      <Input
-                        type="email"
-                        placeholder="seu@gmail.com"
-                        value={googleEmail}
-                        onChange={(e) => setGoogleEmail(e.target.value)}
-                        className="bg-white/6 border-white/10 text-white placeholder:text-white/20 h-12 focus:border-[#1db89e]/60 focus:bg-white/8 transition-all rounded-xl"
-                      />
-                      <p className="text-white/25 text-xs mt-2.5 text-center">
-                        Para alunos que já vincularam seu email Google
-                      </p>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#1db89e] to-[#059669] hover:opacity-90 transition-all border-0 shadow-lg gap-2 rounded-xl"
-                      disabled={!googleEmail.includes('@') || loading}
-                    >
-                      {loading
-                        ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verificando...</>
-                        : <><span>Entrar com Email</span> <ChevronRight size={16} /></>
-                      }
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleAdminLogin} className="space-y-4">
-                    <div>
-                      <label className="text-white/50 text-[11px] font-bold uppercase tracking-widest block mb-2">Email administrativo</label>
-                      <Input
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={adminEmail}
-                        onChange={(e) => setAdminEmail(e.target.value)}
-                        className="bg-white/6 border-white/10 text-white placeholder:text-white/20 h-11 focus:border-[#5b5ef4]/60 focus:bg-white/8 transition-all rounded-xl"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-white/50 text-[11px] font-bold uppercase tracking-widest block mb-2">Senha</label>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          value={adminPassword}
-                          onChange={(e) => setAdminPassword(e.target.value)}
-                          className="bg-white/6 border-white/10 text-white placeholder:text-white/20 h-11 pr-11 focus:border-[#5b5ef4]/60 focus:bg-white/8 transition-all rounded-xl"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/70 transition-colors"
-                        >
-                          {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] via-[#6d5ef4] to-[#1db89e] hover:opacity-90 hover:shadow-xl transition-all border-0 shadow-lg shadow-[#5b5ef4]/35 gap-2 rounded-xl"
-                      disabled={!adminEmail || !adminPassword || loading}
-                    >
-                      {loading
-                        ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Entrando...</>
-                        : <><span>Entrar como Admin</span> <ChevronRight size={16} /></>
-                      }
-                    </Button>
-                  </form>
-                )}
-              </div>
-
-              {/* Link to public pages */}
-              <div className="flex justify-center gap-4 mt-3">
-                <a href="/sobre" className="text-white/25 hover:text-white/50 text-xs transition-colors flex items-center gap-1">
-                  <ExternalLink size={9} /> Sobre o Professor
-                </a>
-                <a href="/verificar-certificado" className="text-white/25 hover:text-white/50 text-xs transition-colors flex items-center gap-1">
-                  <Shield size={9} /> Verificar Certificado
-                </a>
-              </div>
-
-              {/* Setup lock */}
-              {adminConfigured === false && (
-                <div className="flex justify-center mt-5">
-                  <button
-                    onClick={() => setShowSetup(true)}
-                    className="flex items-center gap-2.5 bg-blue-500/10 border border-blue-400/20 backdrop-blur text-blue-300 hover:text-blue-200 hover:bg-blue-500/20 transition-all px-5 py-3 rounded-2xl text-sm font-medium"
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] hover:opacity-90 transition-opacity border-0 shadow-lg shadow-[#5b5ef4]/30 gap-2"
+                    disabled={code.length < 3 || loading}
                   >
-                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <Lock size={12} className="text-blue-400" />
+                    {loading ? 'Verificando...' : <><span>Entrar na Plataforma</span> <ChevronRight size={16} /></>}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleAdminLogin} className="space-y-4">
+                  <div>
+                    <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">Email</label>
+                    <Input
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-11 focus:border-[#5b5ef4]/60"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-xs font-semibold uppercase tracking-wider block mb-2">Senha</label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        className="bg-white/8 border-white/12 text-white placeholder:text-white/25 h-11 pr-11 focus:border-[#5b5ef4]/60"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
-                    Configurar acesso administrativo
-                  </button>
-                </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#5b5ef4] to-[#7c5ef4] hover:opacity-90 transition-opacity border-0 shadow-lg shadow-[#5b5ef4]/30 gap-2"
+                    disabled={!adminEmail || !adminPassword || loading}
+                  >
+                    {loading ? 'Entrando...' : <><span>Entrar como Admin</span> <ChevronRight size={16} /></>}
+                  </Button>
+                </form>
               )}
             </div>
 
-            {/* Footer */}
-            <div className="text-center space-y-2 pt-2 border-t border-white/6">
+            {/* Setup lock */}
+            {adminConfigured === false && (
+              <div className="flex justify-center mt-5">
+                <button
+                  onClick={() => setShowSetup(true)}
+                  className="flex items-center gap-2.5 bg-blue-500/10 border border-blue-400/20 backdrop-blur text-blue-300 hover:text-blue-200 hover:bg-blue-500/20 transition-all px-5 py-3 rounded-2xl text-sm font-medium"
+                >
+                  <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <Lock size={12} className="text-blue-400" />
+                  </div>
+                  Configurar acesso administrativo
+                </button>
+              </div>
+            )}
+
+            {/* Footer credits */}
+            <div className="mt-8 text-center">
               <div className="flex items-center justify-center gap-1.5 text-white/20 text-xs">
-                <Star size={9} className="fill-current" />
+                <Star size={10} className="fill-current" />
                 <span>WR-EDU © 2025 — Escola de Formação de Terapeutas</span>
-                <Star size={9} className="fill-current" />
+                <Star size={10} className="fill-current" />
               </div>
-              <p className="text-white/12 text-[10px]">
-                Desenvolvido com <Heart size={8} className="inline fill-current text-red-400/50" /> para transformar vidas
+              <p className="text-white/15 text-[10px] mt-1">
+                Desenvolvido com <Heart size={8} className="inline fill-current text-red-400/60" /> para transformar vidas
               </p>
-              <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-                <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-001-00</span>
-              </div>
             </div>
           </div>
         </div>

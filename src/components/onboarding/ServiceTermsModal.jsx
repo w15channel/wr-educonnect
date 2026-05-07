@@ -15,8 +15,7 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      {/* Modal container */}
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden" style={{ height: 'calc(100dvh - 80px)', maxHeight: '90vh' }}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="bg-gradient-to-br from-[#1e3a8a] to-[#5b5ef4] p-6 text-white shrink-0">
           <div className="flex items-center gap-3 mb-3">
@@ -31,10 +30,9 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
           <p className="text-white/80 text-sm">Olá, <strong>{studentName}</strong>! Antes de continuar, leia e aceite nossos termos.</p>
         </div>
 
-        {/* Scrollable content — with extra bottom padding so content isn't hidden behind floating footer */}
+        {/* Scrollable content */}
         <div
           className="flex-1 overflow-y-auto p-6 space-y-5 text-sm text-gray-700"
-          style={{ paddingBottom: '7rem' }}
           onScroll={handleScroll}
         >
           {/* LGPD */}
@@ -108,18 +106,16 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
             <p className="text-center text-xs text-gray-400 animate-pulse">↓ Role até o final para aceitar os termos</p>
           )}
         </div>
-      </div>
 
-      {/* Floating footer — always visible at bottom, centered */}
-      <div className="fixed bottom-0 left-0 right-0 z-[101] flex justify-center px-4 pb-4 pt-3 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg">
-        <div className="w-full max-w-xl space-y-3">
+        {/* Footer */}
+        <div className="shrink-0 p-5 border-t border-gray-100 bg-gray-50 space-y-4">
           <label className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={checked}
               onChange={e => setChecked(e.target.checked)}
               disabled={!scrolledToBottom}
-              className="mt-0.5 w-4 h-4 accent-[#5b5ef4] shrink-0"
+              className="mt-0.5 w-4 h-4 accent-[#5b5ef4]"
             />
             <span className={`text-xs leading-relaxed ${!scrolledToBottom ? 'text-gray-300' : 'text-gray-700'}`}>
               Li e aceito os <strong>Termos de Prestação de Serviços</strong>, estou ciente sobre a <strong>LGPD</strong>, sobre a certificação pela <strong>Escola Venes</strong> e credenciamento pela <strong>AHDE</strong>, e sobre o requisito de <strong>90% de conclusão</strong> para obtenção do certificado.

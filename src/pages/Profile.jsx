@@ -4,8 +4,7 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User, Trash2, Link } from 'lucide-react';
-import GoogleLinkModal from '@/components/auth/GoogleLinkModal';
+import { Save, CheckCircle, Camera, User, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import {
@@ -52,38 +51,26 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showGoogleLink, setShowGoogleLink] = useState(false);
-  const [googleLinked, setGoogleLinked] = useState(false);
-
-  useEffect(() => {
-    if (session?.codeId) {
-      base44.entities.AccessCode.get(session.codeId).then(code => {
-        if (code?.google_email) setGoogleLinked(code.google_email);
-      });
-    }
-  }, [session?.codeId]);
   const fileRef = useRef();
 
   useEffect(() => {
-    // CRITICAL: Only load profile if we have a unique codeId to identify this student.
-    // Never filter by empty email — that would return another student's profile.
-    if (!session?.codeId) return;
-
-    base44.entities.StudentProfile.filter({ code_id: session.codeId }, '-created_date', 1)
-      .then(profiles => {
-        if (profiles.length > 0) {
-          const p = profiles[0];
-          setBirthDate(p.birth_date || '');
-          setWhatsapp(p.whatsapp || '');
-          setPhotoUrl(p.photo_url || session?.photoUrl || '');
-          setAvatarColor(p.avatar_color || session?.avatarColor || '#5b5ef4');
-          setName(p.full_name || session?.name || '');
-          setBio(p.bio || session?.bio || '');
-          setNickname(p.nickname || '');
-          setSelectedAvatar(p.avatar_emoji || '');
-          setEmail(p.email || session?.email || '');
-        }
-      });
+    if (session?.codeId) {
+      base44.entities.StudentProfile.filter({ student_email: session?.email }, '-created_date', 1)
+        .then(profiles => {
+          if (profiles.length > 0) {
+            const p = profiles[0];
+            setBirthDate(p.birth_date || '');
+            setWhatsapp(p.whatsapp || '');
+            setPhotoUrl(p.photo_url || session?.photoUrl || '');
+            setAvatarColor(p.avatar_color || session?.avatarColor || '#5b5ef4');
+            setName(p.full_name || session?.name || '');
+            setBio(p.bio || session?.bio || '');
+            setNickname(p.nickname || '');
+            setSelectedAvatar(p.avatar_emoji || '');
+            setEmail(p.email || session?.email || '');
+          }
+        });
+    }
   }, []);
 
   const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
@@ -112,11 +99,9 @@ export default function Profile() {
           profile_photo_url: photoUrl,
         });
       }
-      // Filter by codeId to avoid cross-student collisions when email is empty
-      const existing = await base44.entities.StudentProfile.filter({ code_id: session?.codeId }, '-created_date', 1);
+      const existing = await base44.entities.StudentProfile.filter({ student_email: session?.email }, '-created_date', 1);
       const profileData = {
-        code_id: session?.codeId,
-        student_email: session?.email || '',
+        student_email: session?.email,
         full_name: name,
         nickname,
         bio,
@@ -165,12 +150,6 @@ export default function Profile() {
 
   return (
     <div className="p-4 lg:p-7 max-w-2xl mx-auto animate-fade-in-up">
-      {showGoogleLink && (
-        <GoogleLinkModal
-          session={session}
-          onClose={() => setShowGoogleLink(false)}
-        />
-      )}
       <div className="mb-6">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Perfil</h2>
         <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações</p>
@@ -288,35 +267,11 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Google email link */}
-          {session?.role === 'student' && (
-            <div className="bg-gradient-to-r from-[#1db89e]/8 to-[#5b5ef4]/8 border border-[#1db89e]/20 rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                    <Link size={13} className="text-[#1db89e]" /> Email Google Vinculado
-                  </p>
-                  {googleLinked ? (
-                    <p className="text-xs text-muted-foreground mt-0.5">{googleLinked}</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-0.5">Nenhum email vinculado ainda</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowGoogleLink(true)}
-                  className="text-xs font-bold text-[#1db89e] hover:underline"
-                >
-                  {googleLinked ? 'Alterar' : 'Vincular'}
-                </button>
-              </div>
-            </div>
-          )}
-
           <Button onClick={handleSave} disabled={saving} className="w-full h-11 font-bold gap-2">
             {saved ? <><CheckCircle size={16} /> Perfil Salvo!</> : <><Save size={16} /> {saving ? 'Salvando...' : 'Salvar Perfil'}</>}
           </Button>
 
-          {session?.role === 'admin' && <div className="border-t border-border pt-4 mt-2">
+          <div className="border-t border-border pt-4 mt-2">
             <p className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">Zona de Perigo</p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -341,11 +296,11 @@ export default function Profile() {
                     {deleting ? 'Excluindo...' : 'Sim, excluir minha conta'}
                   </AlertDialogAction>
                 </AlertDialogFooter>
-                </AlertDialogContent>
-                </AlertDialog>
-                </div>}
-                </div>
-                </div>
-                </div>
-                );
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

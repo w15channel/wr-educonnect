@@ -148,8 +148,8 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '24px auto 20px' }} />
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: 'Georgia, serif', fontSize: 26, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 4, letterSpacing: 1 }}>W.Ribeiro</div>
-            <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
+            <SignatureSVG />
+            <div style={{ width: 160, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
               <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>Direção Geral</p>
               <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>WR — Instituto de Desenvolvimento Humano</p>
             </div>

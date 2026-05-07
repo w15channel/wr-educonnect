@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap } from 'lucide-react';
+import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import CodeManager from '@/components/admin/CodeManager';
-import { toast } from 'sonner';
 
 export default function Students() {
   const location = useLocation();
@@ -43,52 +42,6 @@ export default function Students() {
     mutationFn: ({ id, data }) => base44.entities.AccessCode.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['access-codes'] }),
   });
-
-  const [syncing, setSyncing] = useState(false);
-
-  const syncStudents = async () => {
-    setSyncing(true);
-    try {
-      const [lessons, liveSessions, tasks, scoreItems] = await Promise.all([
-        base44.entities.RecordedLesson.list('order', 200),
-        base44.entities.LiveSession.list('-scheduled_at', 100),
-        base44.entities.Task.list('-created_date', 200),
-        base44.entities.ScoreItem.list('-created_date', 5000),
-      ]);
-      let created = 0;
-      for (const code of codes) {
-        if (!code.student_email || !code.is_active) continue;
-        const email = code.student_email;
-        const existingScores = scoreItems.filter(s => s.student_email === email);
-        const toCreate = [];
-        for (const lesson of lessons) {
-          if (!existingScores.find(s => s.category === 'lesson' && s.ref_id === lesson.id)) {
-            toCreate.push({ student_email: email, category: 'lesson', ref_id: lesson.id, ref_title: lesson.title, score: 0, max_score: 10, verified: false });
-          }
-        }
-        for (const session of liveSessions) {
-          if (!existingScores.find(s => s.category === 'live_attendance' && s.ref_id === session.id)) {
-            toCreate.push({ student_email: email, category: 'live_attendance', ref_id: session.id, ref_title: session.title, score: 0, max_score: 5, verified: false });
-          }
-        }
-        for (const task of tasks) {
-          const cat = task.type === 'quiz' ? 'quiz' : 'task';
-          if (!existingScores.find(s => s.category === cat && s.ref_id === task.id)) {
-            toCreate.push({ student_email: email, category: cat, ref_id: task.id, ref_title: task.title, score: 0, max_score: task.max_grade || 10, verified: false });
-          }
-        }
-        if (toCreate.length > 0) {
-          await base44.entities.ScoreItem.bulkCreate(toCreate);
-          created += toCreate.length;
-        }
-      }
-      queryClient.invalidateQueries();
-      toast.success(`Sincronização concluída! ${created} registros criados.`);
-    } catch (err) {
-      toast.error('Erro na sincronização.');
-    }
-    setSyncing(false);
-  };
 
   const getStudentProfile = (code) => studentProfiles.find(p => p.student_email === code.student_email);
 
@@ -190,15 +143,6 @@ export default function Students() {
               onClick={() => queryClient.invalidateQueries()}
             >
               <RefreshCw size={13} /> Atualizar Dados
-            </Button>
-            <Button
-              size="sm"
-              className="gap-1.5 h-9 text-xs bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white border-0"
-              onClick={syncStudents}
-              disabled={syncing}
-            >
-              <Zap size={13} className={syncing ? 'animate-spin' : ''} />
-              {syncing ? 'Sincronizando...' : 'Sincronizar Alunos'}
             </Button>
           </div>
 
