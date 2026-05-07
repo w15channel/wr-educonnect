@@ -1,0 +1,70 @@
+{
+  "name": "Course",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do curso"
+    },
+    "short_description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o curta para o cat\u00e1logo"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o completa do curso"
+    },
+    "price": {
+      "type": "number",
+      "description": "Pre\u00e7o de venda (R$)"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "description": "Imagem de capa do curso"
+    },
+    "duration": {
+      "type": "string",
+      "description": "Dura\u00e7\u00e3o total (ex: 6 meses)"
+    },
+    "workload": {
+      "type": "string",
+      "description": "Carga hor\u00e1ria (ex: 120 horas)"
+    },
+    "modules_count": {
+      "type": "number",
+      "description": "N\u00famero de m\u00f3dulos"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "coming_soon",
+        "locked"
+      ],
+      "default": "locked",
+      "description": "Status do curso"
+    },
+    "is_flagship": {
+      "type": "boolean",
+      "default": false,
+      "description": "Curso principal (j\u00e1 incluso para todos os alunos)"
+    },
+    "order": {
+      "type": "number",
+      "default": 1,
+      "description": "Ordem de exibi\u00e7\u00e3o no cat\u00e1logo"
+    },
+    "whatsapp_contact": {
+      "type": "string",
+      "description": "Link WhatsApp para aquisi\u00e7\u00e3o"
+    },
+    "highlight_color": {
+      "type": "string",
+      "description": "Cor de destaque (hex)"
+    }
+  },
+  "required": [
+    "name",
+    "status"
+  ]
+}

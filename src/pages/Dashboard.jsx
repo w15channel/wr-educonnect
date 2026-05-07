@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
+import CursosPromoBanner from '@/components/dashboard/CursosPromoBanner';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -469,6 +470,9 @@ export default function Dashboard() {
           </div>
         );
       })()}
+
+      {/* Cursos promo banner — student only */}
+      {!isTeacher && <CursosPromoBanner />}
 
       {/* Serviços */}
       {!isTeacher && <ServicosCard />}

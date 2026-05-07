@@ -4,7 +4,8 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User, Trash2 } from 'lucide-react';
+import { Save, CheckCircle, Camera, User, Trash2, Link } from 'lucide-react';
+import GoogleLinkModal from '@/components/auth/GoogleLinkModal';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import {
@@ -51,6 +52,16 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showGoogleLink, setShowGoogleLink] = useState(false);
+  const [googleLinked, setGoogleLinked] = useState(false);
+
+  useEffect(() => {
+    if (session?.codeId) {
+      base44.entities.AccessCode.get(session.codeId).then(code => {
+        if (code?.google_email) setGoogleLinked(code.google_email);
+      });
+    }
+  }, [session?.codeId]);
   const fileRef = useRef();
 
   useEffect(() => {
@@ -154,6 +165,12 @@ export default function Profile() {
 
   return (
     <div className="p-4 lg:p-7 max-w-2xl mx-auto animate-fade-in-up">
+      {showGoogleLink && (
+        <GoogleLinkModal
+          session={session}
+          onClose={() => setShowGoogleLink(false)}
+        />
+      )}
       <div className="mb-6">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Perfil</h2>
         <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações</p>
@@ -268,6 +285,30 @@ export default function Profile() {
               <label className="text-xs font-bold text-foreground block mb-1.5">Código de Acesso</label>
               <Input value={session.code} disabled className="font-mono text-center tracking-widest opacity-60 bg-secondary" />
               <p className="text-[10px] text-muted-foreground mt-1">Este é seu código exclusivo de acesso à plataforma</p>
+            </div>
+          )}
+
+          {/* Google email link */}
+          {session?.role === 'student' && (
+            <div className="bg-gradient-to-r from-[#1db89e]/8 to-[#5b5ef4]/8 border border-[#1db89e]/20 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <Link size={13} className="text-[#1db89e]" /> Email Google Vinculado
+                  </p>
+                  {googleLinked ? (
+                    <p className="text-xs text-muted-foreground mt-0.5">{googleLinked}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-0.5">Nenhum email vinculado ainda</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowGoogleLink(true)}
+                  className="text-xs font-bold text-[#1db89e] hover:underline"
+                >
+                  {googleLinked ? 'Alterar' : 'Vincular'}
+                </button>
+              </div>
             </div>
           )}
 

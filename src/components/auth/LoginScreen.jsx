@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap } from 'lucide-react';
+import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap, Mail, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
@@ -25,6 +25,7 @@ const FEATURES = [
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState('code');
   const [code, setCode] = useState('');
+  const [googleEmail, setGoogleEmail] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -64,6 +65,33 @@ export default function LoginScreen({ onLogin }) {
       code: trimmed,
       name: record.profile_name || record.student_name || 'Aluno',
       email: record.student_email || '',
+      bio: record.profile_bio || '',
+      avatarColor: record.profile_avatar_color || '#5b5ef4',
+      photoUrl: record.profile_photo_url || '',
+    });
+    onLogin();
+    setLoading(false);
+  };
+
+  const handleGoogleEmailLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const trimmed = googleEmail.trim().toLowerCase();
+    const results = await base44.entities.AccessCode.filter({ google_email: trimmed, is_active: true });
+    if (results.length === 0) {
+      setError('Nenhuma conta vinculada a este email. Use seu código de aluno.');
+      setLoading(false);
+      return;
+    }
+    const record = results[0];
+    await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
+    setSession({
+      role: 'student',
+      codeId: record.id,
+      code: record.code,
+      name: record.profile_name || record.student_name || 'Aluno',
+      email: record.student_email || trimmed,
       bio: record.profile_bio || '',
       avatarColor: record.profile_avatar_color || '#5b5ef4',
       photoUrl: record.profile_photo_url || '',
@@ -196,26 +224,36 @@ export default function LoginScreen({ onLogin }) {
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1.5 bg-white/4 rounded-2xl p-1.5 mb-6 border border-white/8 shadow-inner">
+              <div className="flex gap-1 bg-white/4 rounded-2xl p-1.5 mb-6 border border-white/8 shadow-inner">
                 <button
                   onClick={() => { setMode('code'); setError(''); }}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
                     mode === 'code'
-                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg shadow-[#5b5ef4]/40 scale-[1.01]'
+                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg shadow-[#5b5ef4]/40'
                       : 'text-white/35 hover:text-white/65 hover:bg-white/5'
                   }`}
                 >
-                  <Key size={14} /> Código de Aluno
+                  <Key size={12} /> Código
+                </button>
+                <button
+                  onClick={() => { setMode('google'); setError(''); }}
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
+                    mode === 'google'
+                      ? 'bg-gradient-to-br from-[#1db89e] to-[#059669] text-white shadow-lg shadow-[#1db89e]/40'
+                      : 'text-white/35 hover:text-white/65 hover:bg-white/5'
+                  }`}
+                >
+                  <Mail size={12} /> Email
                 </button>
                 <button
                   onClick={() => { setMode('admin'); setError(''); }}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
                     mode === 'admin'
-                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg shadow-[#5b5ef4]/40 scale-[1.01]'
+                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg shadow-[#5b5ef4]/40'
                       : 'text-white/35 hover:text-white/65 hover:bg-white/5'
                   }`}
                 >
-                  <Shield size={14} /> Admin
+                  <Shield size={12} /> Admin
                 </button>
               </div>
 
@@ -263,6 +301,34 @@ export default function LoginScreen({ onLogin }) {
                       }
                     </Button>
                   </form>
+                ) : mode === 'google' ? (
+                  <form onSubmit={handleGoogleEmailLogin} className="space-y-5">
+                    <div>
+                      <label className="text-white/50 text-[11px] font-bold uppercase tracking-widest block mb-2.5 flex items-center gap-1.5">
+                        <Mail size={10} className="text-[#1db89e]" /> Email Google vinculado
+                      </label>
+                      <Input
+                        type="email"
+                        placeholder="seu@gmail.com"
+                        value={googleEmail}
+                        onChange={(e) => setGoogleEmail(e.target.value)}
+                        className="bg-white/6 border-white/10 text-white placeholder:text-white/20 h-12 focus:border-[#1db89e]/60 focus:bg-white/8 transition-all rounded-xl"
+                      />
+                      <p className="text-white/25 text-xs mt-2.5 text-center">
+                        Para alunos que já vincularam seu email Google
+                      </p>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full h-12 text-sm font-bold bg-gradient-to-r from-[#1db89e] to-[#059669] hover:opacity-90 transition-all border-0 shadow-lg gap-2 rounded-xl"
+                      disabled={!googleEmail.includes('@') || loading}
+                    >
+                      {loading
+                        ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verificando...</>
+                        : <><span>Entrar com Email</span> <ChevronRight size={16} /></>
+                      }
+                    </Button>
+                  </form>
                 ) : (
                   <form onSubmit={handleAdminLogin} className="space-y-4">
                     <div>
@@ -306,6 +372,16 @@ export default function LoginScreen({ onLogin }) {
                     </Button>
                   </form>
                 )}
+              </div>
+
+              {/* Link to public pages */}
+              <div className="flex justify-center gap-4 mt-3">
+                <a href="/sobre" className="text-white/25 hover:text-white/50 text-xs transition-colors flex items-center gap-1">
+                  <ExternalLink size={9} /> Sobre o Professor
+                </a>
+                <a href="/verificar-certificado" className="text-white/25 hover:text-white/50 text-xs transition-colors flex items-center gap-1">
+                  <Shield size={9} /> Verificar Certificado
+                </a>
               </div>
 
               {/* Setup lock */}

@@ -3,6 +3,8 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
+import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
 
 import LoginScreen from './components/auth/LoginScreen';
@@ -31,6 +33,9 @@ import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
+import CursosCatalogo from './pages/CursosCatalogo';
+import CertificateVerification from './pages/CertificateVerification';
+import AboutProfessor from './pages/AboutProfessor';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -77,7 +82,10 @@ const AuthenticatedApp = () => {
         <Route path="/historico" element={<HistoricoAcademico />} />
         <Route path="/dm/:email" element={<DirectMessage />} />
         <Route path="/classe" element={<Classe />} />
+        <Route path="/cursos" element={<CursosCatalogo />} />
       </Route>
+      <Route path="/verificar-certificado" element={<CertificateVerification />} />
+      <Route path="/sobre" element={<AboutProfessor />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -85,14 +93,16 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <CustomAuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </CustomAuthProvider>
+    <AuthProvider>
+      <CustomAuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </CustomAuthProvider>
+    </AuthProvider>
   )
 }
 

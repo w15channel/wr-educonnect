@@ -4,7 +4,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, Globe, UsersRound
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, Globe, UsersRound, LayoutGrid
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import NotificationsBell from '@/components/dashboard/NotificationsBell';
@@ -45,6 +45,7 @@ const adminGroups = [
       { icon: Brain, label: 'Tutor Digital EDU', path: '/tutor', color: 'text-pink-400' },
       { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
+      { icon: LayoutGrid, label: 'Catálogo de Cursos', path: '/cursos', color: 'text-emerald-400' },
     ],
   },
 ];
@@ -85,6 +86,7 @@ const studentGroups = [
       { icon: BookOpen, label: 'Meu Best Seller', path: '/bestseller', color: 'text-emerald-400' },
       { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificadora', path: '/certificadora', color: 'text-yellow-400' },
+      { icon: LayoutGrid, label: 'Mais Cursos', path: '/cursos', color: 'text-green-400' },
     ],
   },
 ];

@@ -1,0 +1,62 @@
+{
+  "name": "Certificate",
+  "type": "object",
+  "properties": {
+    "student_full_name": {
+      "type": "string",
+      "description": "Nome completo do aluno"
+    },
+    "student_cpf": {
+      "type": "string",
+      "description": "CPF do aluno"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "course_name": {
+      "type": "string",
+      "description": "Nome do curso conclu\u00eddo"
+    },
+    "workload": {
+      "type": "string",
+      "description": "Carga hor\u00e1ria total (ex: 120 horas)"
+    },
+    "completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de conclus\u00e3o"
+    },
+    "authenticity_code": {
+      "type": "string",
+      "description": "C\u00f3digo \u00fanico de autenticidade"
+    },
+    "access_code_ref": {
+      "type": "string",
+      "description": "C\u00f3digo de acesso do aluno vinculado"
+    },
+    "coordinator_name": {
+      "type": "string",
+      "default": "William Ribeiro",
+      "description": "Nome do coordenador"
+    },
+    "legal_basis": {
+      "type": "string",
+      "default": "Lei n\u00ba 9.394/96 e Decreto n\u00ba 5.154/04",
+      "description": "Base legal"
+    },
+    "is_valid": {
+      "type": "boolean",
+      "default": true,
+      "description": "Certificado v\u00e1lido"
+    }
+  },
+  "required": [
+    "student_full_name",
+    "student_cpf",
+    "course_name",
+    "workload",
+    "completion_date",
+    "authenticity_code"
+  ]
+}

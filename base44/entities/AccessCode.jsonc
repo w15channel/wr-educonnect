@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Email of the student (optional)"
     },
+    "google_email": {
+      "type": "string",
+      "description": "Email Google vinculado para login alternativo"
+    },
     "is_active": {
       "type": "boolean",
       "default": true,
@@ -38,6 +42,13 @@
     "last_login": {
       "type": "string",
       "description": "Last login timestamp"
+    },
+    "enrolled_course_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos cursos adicionais adquiridos pelo aluno"
     }
   },
   "required": [
