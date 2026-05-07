@@ -4,6 +4,9 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
+// REQUIRED platform imports — do NOT remove or rename
+import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import LoginScreen from './components/auth/LoginScreen';
 import AppLayout from './components/layout/AppLayout';
@@ -31,6 +34,7 @@ import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
+import SobreNos from './pages/SobreNos';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -77,6 +81,7 @@ const AuthenticatedApp = () => {
         <Route path="/historico" element={<HistoricoAcademico />} />
         <Route path="/dm/:email" element={<DirectMessage />} />
         <Route path="/classe" element={<Classe />} />
+        <Route path="/sobre" element={<SobreNos />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -85,14 +90,16 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <CustomAuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </CustomAuthProvider>
+    <AuthProvider>
+      <CustomAuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </CustomAuthProvider>
+    </AuthProvider>
   )
 }
 

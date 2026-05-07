@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap, Award, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
@@ -151,6 +152,27 @@ export default function LoginScreen({ onLogin }) {
                     <p className="text-white/50 text-xs mt-0.5">{desc}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Credenciais destaque */}
+            <div className="hidden lg:block mb-8">
+              <div className="flex flex-col gap-2">
+                <p className="text-white/30 text-[10px] uppercase tracking-widest font-bold mb-1 flex items-center gap-1.5"><Award size={10} className="text-[#1db89e]" /> Credenciais do Coordenador</p>
+                {[
+                  { label: 'Psicoterapeuta — Faculdade Unypublica' },
+                  { label: 'Psicanalista Diplomado — Unifatec' },
+                  { label: 'Logoterapeuta — Faculdade Unypublica' },
+                  { label: 'Sexólogo Integrativo — Unifast' },
+                ].map(c => (
+                  <div key={c.label} className="flex items-center gap-2 text-white/50 text-xs">
+                    <div className="w-1 h-1 rounded-full bg-[#1db89e] shrink-0" />
+                    {c.label}
+                  </div>
+                ))}
+                <a href="/sobre" className="inline-flex items-center gap-1 text-[#1db89e]/70 hover:text-[#1db89e] text-xs mt-1 transition-colors" target="_blank" rel="noopener noreferrer">
+                  Ver todas as certificações <ExternalLink size={10} />
+                </a>
               </div>
             </div>
 
