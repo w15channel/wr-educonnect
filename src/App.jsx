@@ -4,6 +4,10 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
+import PublicLanding from './pages/PublicLanding';
+import CertificateVerification from './pages/CertificateVerification';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 import LoginScreen from './components/auth/LoginScreen';
 import AppLayout from './components/layout/AppLayout';
@@ -29,6 +33,9 @@ import HistoricoAcademico from './pages/HistoricoAcademico';
 import StudentDetail from './pages/StudentDetail';
 import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
+import DirectMessage from './pages/DirectMessage';
+import Classe from './pages/Classe';
+import IssueCertificate from './pages/IssueCertificate';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -45,7 +52,16 @@ const AuthenticatedApp = () => {
   }
 
   if (!session) {
-    return <LoginScreen onLogin={login} />;
+    return (
+      <Routes>
+        <Route path="/" element={<PublicLanding />} />
+        <Route path="/login" element={<LoginScreen onLogin={login} />} />
+        <Route path="/certificate-verification" element={<CertificateVerification />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="*" element={<PublicLanding />} />
+      </Routes>
+    );
   }
 
   return (
@@ -73,6 +89,12 @@ const AuthenticatedApp = () => {
         <Route path="/terapeuta" element={<TerapeutaDaSemana />} />
         <Route path="/bestseller" element={<MeuBestSeller />} />
         <Route path="/historico" element={<HistoricoAcademico />} />
+        <Route path="/dm/:email" element={<DirectMessage />} />
+        <Route path="/classe" element={<Classe />} />
+        <Route path="/certificates" element={<IssueCertificate />} />
+        <Route path="/certificate-verification" element={<CertificateVerification />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

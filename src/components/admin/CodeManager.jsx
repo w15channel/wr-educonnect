@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
-import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react';
+import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,8 @@ export default function CodeManager() {
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [editingEmailId, setEditingEmailId] = useState(null);
+  const [editingEmailValue, setEditingEmailValue] = useState('');
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -70,6 +72,15 @@ export default function CodeManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       toast.success('Aluno e todos os dados excluídos.');
+    },
+  });
+
+  const updateEmailMutation = useMutation({
+    mutationFn: ({ id, email }) => base44.entities.AccessCode.update(id, { student_email: email }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      setEditingEmailId(null);
+      toast.success('Email atualizado!');
     },
   });
 
@@ -132,11 +143,36 @@ export default function CodeManager() {
                 <div className="flex items-center gap-3 min-w-0">
                   <div>
                     <p className="font-medium text-foreground text-sm">{c.student_name || 'Sem nome'}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <code className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                         {c.code}
                       </code>
-                      {c.student_email && <span className="text-xs text-muted-foreground">{c.student_email}</span>}
+                      {editingEmailId === c.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            autoFocus
+                            className="text-xs border border-border rounded-md px-2 py-0.5 bg-background text-foreground outline-none focus:border-primary w-48"
+                            value={editingEmailValue}
+                            onChange={e => setEditingEmailValue(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') updateEmailMutation.mutate({ id: c.id, email: editingEmailValue });
+                              if (e.key === 'Escape') setEditingEmailId(null);
+                            }}
+                          />
+                          <button onClick={() => updateEmailMutation.mutate({ id: c.id, email: editingEmailValue })} className="p-0.5 text-green-600 hover:text-green-700"><Check size={13} /></button>
+                          <button onClick={() => setEditingEmailId(null)} className="p-0.5 text-muted-foreground hover:text-destructive"><X size={13} /></button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setEditingEmailId(c.id); setEditingEmailValue(c.student_email || ''); }}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground group"
+                        >
+                          <span className={c.student_email ? '' : 'italic text-destructive/70'}>
+                            {c.student_email || 'Sem email'}
+                          </span>
+                          <Pencil size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      )}
                     </div>
                     {c.last_login && (
                       <p className="text-xs text-muted-foreground mt-0.5">

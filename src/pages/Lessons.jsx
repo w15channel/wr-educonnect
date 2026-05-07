@@ -71,6 +71,15 @@ export default function Lessons() {
 
   const toggleWatched = async (lessonId) => {
     const existing = progresses.find(p => p.lesson_id === lessonId);
+    if (!existing?.watched) {
+      // Validação: precisa ter comentário e resumo para marcar como assistida
+      const comment = commentDraft[lessonId] ?? existing?.comment ?? '';
+      const summary = summaryDraft[lessonId] ?? existing?.summary ?? '';
+      if (!comment.trim() || !summary.trim()) {
+        toast.error('Preencha o Resumo e o Comentário da aula antes de confirmar presença.');
+        return;
+      }
+    }
     await upsertProgress(lessonId, { watched: !existing?.watched });
     toast.success(!existing?.watched ? '✅ Aula marcada como assistida!' : 'Marcação removida.');
   };
@@ -114,6 +123,12 @@ export default function Lessons() {
 
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
+
+  // Abre link em nova aba do navegador (funciona em modo quiosque também)
+  const openExternal = (url) => {
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const getEmbedUrl = (url) => {
     if (!url) return null;
@@ -290,20 +305,30 @@ export default function Lessons() {
               <div key={lesson.id} className={`bg-card rounded-2xl border shadow-sm transition-all ${isWatched ? 'border-green-200' : 'border-border'}`}>
                 {/* Header row */}
                 <div className="flex items-center gap-3 p-3 sm:p-4">
-                  {/* Thumbnail */}
+                  {/* Thumbnail — only clickable/play for video type */}
                   <div
-                    className="w-18 h-12 sm:w-24 sm:h-16 bg-muted rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 cursor-pointer group"
+                    className={`w-18 h-12 sm:w-24 sm:h-16 bg-muted rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 ${lesson.lesson_type === 'video_external' ? 'cursor-pointer group' : 'cursor-default'}`}
                     style={{ minWidth: '4.5rem' }}
-                    onClick={() => setSelectedVideo(lesson)}
+                    onClick={() => lesson.lesson_type === 'video_external' && setSelectedVideo(lesson)}
                   >
                     {lesson.thumbnail_url ? (
                       <img src={lesson.thumbnail_url} alt={lesson.title} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20" />
                     )}
-                    <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md z-10">
-                      <Play size={14} className="text-primary ml-0.5" />
-                    </div>
+                    {lesson.lesson_type === 'video_external' ? (
+                      <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform shadow-md z-10">
+                        <Play size={14} className="text-primary ml-0.5" />
+                      </div>
+                    ) : lesson.lesson_type === 'text_written' ? (
+                      <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-md z-10">
+                        <FileText size={14} className="text-blue-500" />
+                      </div>
+                    ) : (
+                      <div className="relative w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-md z-10">
+                        <Globe size={14} className="text-green-500" />
+                      </div>
+                    )}
                     {lesson.duration && (
                       <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded z-10">{lesson.duration}</span>
                     )}
@@ -347,13 +372,24 @@ export default function Lessons() {
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => toggleWatched(lesson.id)}
-                        title={isWatched ? 'Desmarcar' : 'Marcar como assistida'}
-                        className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl transition-colors ${isWatched ? 'text-green-600 bg-green-50' : 'text-muted-foreground hover:text-green-600 hover:bg-green-50'}`}
-                      >
-                        {isWatched ? <CheckCircle size={18} /> : <Circle size={18} />}
-                      </button>
+                      <>
+                        {(() => {
+                          const comment = commentDraft[lesson.id] ?? prog?.comment ?? '';
+                          const summary = summaryDraft[lesson.id] ?? prog?.summary ?? '';
+                          const canWatch = comment.trim() && summary.trim();
+                          return (
+                            <button
+                              onClick={() => toggleWatched(lesson.id)}
+                              title={isWatched ? 'Desmarcar presença' : canWatch ? 'Confirmar Presença' : 'Preencha resumo e comentário primeiro'}
+                              disabled={!isWatched && !canWatch}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${isWatched ? 'text-green-600 bg-green-50 border border-green-200' : canWatch ? 'text-muted-foreground bg-secondary hover:text-green-600 hover:bg-green-50 hover:border-green-200 border border-transparent' : 'text-muted-foreground/40 bg-secondary/50 border border-transparent cursor-not-allowed'}`}
+                            >
+                              {isWatched ? <CheckCircle size={13} /> : <Circle size={13} />}
+                              <span className="hidden sm:inline">{isWatched ? 'Presente' : canWatch ? 'Confirmar Presença' : '🔒 Presença'}</span>
+                            </button>
+                          );
+                        })()}
+                      </>
                     )}
                     <button
                       onClick={() => setExpandedLesson(isExpanded ? null : lesson.id)}
@@ -398,7 +434,7 @@ export default function Lessons() {
                     {lesson.lesson_type === 'content_external' && lesson.external_url && (
                       <div className="px-4 py-3 border-t border-border">
                         <a href={lesson.external_url} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-primary bg-primary/8 border border-primary/15 px-4 py-3 rounded-xl hover:bg-primary/15 transition-colors font-semibold">
+                          className="flex items-center gap-2 text-sm text-primary bg-primary/8 border border-primary/15 px-4 py-3 rounded-xl hover:bg-primary/15 transition-colors font-semibold w-full">
                           <Globe size={15} /> Acessar Material Externo
                           <ExternalLink size={12} className="ml-auto" />
                         </a>
@@ -493,29 +529,23 @@ export default function Lessons() {
                           )}
                         </div>
 
-                        {/* Upload activity */}
-                        <div className="bg-secondary/30 rounded-xl p-4 border border-border">
-                          <p className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5">
-                            <Upload size={12} className="text-orange-500" /> Enviar Atividade da Aula
-                          </p>
-                          <input
-                            type="file"
-                            onChange={e => setUploadFile(prev => ({ ...prev, [lesson.id]: e.target.files[0] }))}
-                            className="w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer mb-3"
-                          />
-                          <Button
-                            size="sm"
-                            className="w-full h-9 text-xs gap-1.5"
-                            disabled={!uploadFile[lesson.id] || status === 'sending'}
-                            onClick={() => handleFileUploadToGDrive(lesson.id)}
-                          >
-                            <Upload size={13} />
-                            {status === 'sending' ? 'Enviando, aguarde...' : 'Enviar Arquivo'}
-                          </Button>
-                          {status === 'sending' && <p className="text-xs text-muted-foreground text-center mt-2">Preparando o envio...</p>}
-                          {status === 'success' && <p className="text-xs text-green-600 text-center mt-2 font-semibold">✅ Trabalho enviado com sucesso!</p>}
-                          {status === 'error' && <p className="text-xs text-red-500 text-center mt-2">❌ Erro ao enviar. Tente novamente.</p>}
-                        </div>
+                        {/* Watched button with lock indicator */}
+                        {(() => {
+                          const comment = commentDraft[lesson.id] ?? prog?.comment ?? '';
+                          const summary = summaryDraft[lesson.id] ?? prog?.summary ?? '';
+                          const canWatch = comment.trim() && summary.trim();
+                          const isWatched = prog?.watched;
+                          if (isWatched) return null;
+                          return (
+                            <div className={`rounded-xl p-3 border text-xs flex items-center gap-2 ${canWatch ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+                              {canWatch ? (
+                                <p className="text-green-700 font-semibold flex-1">✅ Resumo e comentário preenchidos! Você já pode confirmar presença.</p>
+                              ) : (
+                                <p className="text-amber-700 font-semibold flex-1">🔒 Preencha o <strong>Resumo</strong> e o <strong>Comentário</strong> acima para liberar a confirmação de presença.</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

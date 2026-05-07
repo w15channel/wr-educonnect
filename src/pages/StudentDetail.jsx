@@ -1,9 +1,10 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ChevronLeft, CalendarDays, Phone, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronLeft, CalendarDays, Phone, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
 const tuitionConfig = {
   paid:    { label: 'Em dia',       class: 'text-green-700 bg-green-100 border-green-200',   icon: CheckCircle },
@@ -14,6 +15,7 @@ const tuitionConfig = {
 export default function StudentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: session } = useOutletContext() || {};
 
   const { data: codes = [] } = useQuery({
     queryKey: ['access-codes'],
@@ -78,13 +80,22 @@ export default function StudentDetail() {
               {displayName.charAt(0).toUpperCase()}
             </div>
           )}
-          <div>
+          <div className="flex-1">
             <p className="text-lg font-bold text-foreground">{displayName}</p>
             <p className="text-sm text-muted-foreground">{code.student_email}</p>
             <code className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-lg mt-1 inline-block">
               {code.code}
             </code>
           </div>
+          {session?.email && code.student_email && session.email !== code.student_email && (
+            <Button
+              size="sm"
+              className="gap-1.5 text-xs shrink-0"
+              onClick={() => navigate(`/dm/${encodeURIComponent(code.student_email)}`)}
+            >
+              <MessageCircle size={13} /> Mensagem
+            </Button>
+          )}
         </div>
 
         <div className="p-5 space-y-4">

@@ -2,7 +2,9 @@ import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle } from 'lucide-react';
+import ServicosCard from '@/components/dashboard/ServicosCard';
+import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -210,8 +212,8 @@ export default function Dashboard() {
           value={pendingTasks}
           icon={FileText}
           iconBg="bg-orange-500"
-          to={isTeacher ? '/scores' : '/tasks'}
-          subtitle={isTeacher ? 'Controle de Pontuação' : 'Ir para Tarefas'}
+          to={isTeacher ? '/scores?filter=pending' : '/tasks'}
+          subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Ir para Tarefas'}
         />
         <StatCard
           title={isTeacher ? 'Alunos Ativos' : 'Sua Média'}
@@ -385,6 +387,94 @@ export default function Dashboard() {
           )}
         </div>
       )}
+
+      {/* Pendências do Aluno */}
+      {!isTeacher && (() => {
+        const unwatchedLessons = lessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched));
+        const pendingTasksList = tasks.filter(t => t.type === 'upload' && !submissions.find(s => s.task_id === t.id));
+        const pendingQuizzes = tasks.filter(t => t.type === 'quiz' && !submissions.find(s => s.task_id === t.id));
+        const liveNow = liveSessions.filter(s => s.status === 'live');
+        const totalPending = unwatchedLessons.length + pendingTasksList.length + pendingQuizzes.length + liveNow.length;
+
+        if (totalPending === 0) return null;
+
+        return (
+          <div className="bg-card rounded-2xl border border-orange-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
+                <ClipboardList size={16} className="text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Minhas Pendências</h3>
+                <p className="text-xs text-muted-foreground">{totalPending} {totalPending === 1 ? 'item pendente' : 'itens pendentes'}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {liveNow.map(live => (
+                <button key={live.id} onClick={() => navigate('/live')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 transition-colors text-left">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shrink-0" />
+                  <Wifi size={13} className="text-red-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-red-700 truncate">AO VIVO agora: {live.title}</p>
+                    <p className="text-[10px] text-red-500">Aula acontecendo agora!</p>
+                  </div>
+                  <ArrowRight size={12} className="text-red-400 shrink-0" />
+                </button>
+              ))}
+              {unwatchedLessons.slice(0, 3).map(l => (
+                <button key={l.id} onClick={() => navigate('/lessons')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
+                  <Circle size={13} className="text-purple-400 shrink-0" />
+                  <BookOpen size={13} className="text-purple-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-purple-700 truncate">{l.title}</p>
+                    <p className="text-[10px] text-purple-500">Aula não assistida</p>
+                  </div>
+                  <ArrowRight size={12} className="text-purple-400 shrink-0" />
+                </button>
+              ))}
+              {unwatchedLessons.length > 3 && (
+                <button onClick={() => navigate('/lessons')} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
+                  +{unwatchedLessons.length - 3} aulas não assistidas → Ver todas
+                </button>
+              )}
+              {pendingTasksList.map(t => (
+                <button key={t.id} onClick={() => navigate('/tasks')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
+                  <ClipboardList size={13} className="text-orange-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-orange-700 truncate">{t.title}</p>
+                    <p className="text-[10px] text-orange-500">
+                      Tarefa pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
+                    </p>
+                  </div>
+                  <ArrowRight size={12} className="text-orange-400 shrink-0" />
+                </button>
+              ))}
+              {pendingQuizzes.map(t => (
+                <button key={t.id} onClick={() => navigate('/tasks')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
+                  <GraduationCap size={13} className="text-violet-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-violet-700 truncate">{t.title}</p>
+                    <p className="text-[10px] text-violet-500">
+                      Prova pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
+                    </p>
+                  </div>
+                  <ArrowRight size={12} className="text-violet-400 shrink-0" />
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Serviços */}
+      {!isTeacher && <ServicosCard />}
+
+      {/* Lesson Comments Panel — teacher only */}
+      {isTeacher && <LessonCommentsPanel />}
 
       {/* Announcements */}
       {announcements.length > 0 && (

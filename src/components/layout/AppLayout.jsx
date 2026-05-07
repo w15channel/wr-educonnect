@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -9,6 +9,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import ServiceTermsModal from '../onboarding/ServiceTermsModal';
 import TutorialModal from '../onboarding/TutorialModal';
+import { useVersionCheck } from '@/hooks/useVersionCheck';
 
 const TERMS_KEY = 'wr_terms_accepted';
 const TUTORIAL_KEY = 'wr_tutorial_done';
@@ -24,6 +25,7 @@ const PTR_THRESHOLD = 72; // px to pull before triggering refresh
 export default function AppLayout() {
   const { session } = useCustomAuth();
   const location = useLocation();
+  useVersionCheck(60000); // checks every 60s for a new version
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -155,6 +157,15 @@ export default function AppLayout() {
             >
               <div className={location.pathname === '/certificadora' ? 'flex-1 min-h-0 flex flex-col' : ''}>
                 <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
+              </div>
+              {/* Institutional footer */}
+              <div className="hidden md:flex items-center justify-between gap-4 px-6 py-3 border-t border-border bg-card/60 text-[10px] text-muted-foreground flex-wrap">
+                <span>WR-EDU — Instituto de Desenvolvimento Humano · CNPJ: 62.213.790/0001-40 · Parceiros da ABED</span>
+                <div className="flex items-center gap-4">
+                  <Link to="/certificate-verification" className="hover:text-foreground transition-colors">Verificar Certificado</Link>
+                  <Link to="/terms" className="hover:text-foreground transition-colors">Termos de Serviço</Link>
+                  <Link to="/privacy" className="hover:text-foreground transition-colors">Política de Privacidade</Link>
+                </div>
               </div>
             </motion.div>
           </AnimatePresence>

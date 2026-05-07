@@ -80,27 +80,52 @@ export default function Tasks() {
     },
   });
 
+  const sendNotificationToTeacher = async (taskTitle, submissionType) => {
+    // Busca admin para notificar
+    const admins = await base44.entities.AccessCode.filter({ is_active: true }, '-created_date', 200);
+    // Notifica via entidade interna (não e-mail externo)
+    const studentName = user?.name || user?.full_name || user?.email || 'Aluno';
+    await base44.entities.Notification.create({
+      recipient_email: 'admin',
+      sender_email: user?.email || user?.code || '',
+      sender_name: studentName,
+      message: `${studentName} enviou um ${submissionType} para: "${taskTitle}"`,
+      task_title: taskTitle,
+      type: 'task_submission',
+      is_read: false,
+    });
+  };
+
   const handleGoogleDriveUpload = async (taskId) => {
     const file = uploadFiles[taskId];
     if (!file) { toast.error('Selecione um arquivo'); return; }
+    const task = tasks.find(t => t.id === taskId);
+    const taskTitle = task?.title || 'Tarefa';
+    const studentName = user?.name || user?.full_name || 'Aluno';
+    // Prefixo no nome do arquivo: TítuloDaTarefa_NomeDoAluno_arquivo.ext
+    const safeName = (str) => str.replace(/[^a-zA-Z0-9À-ÿ ]/g, '').trim().replace(/\s+/g, '_');
+    const renamedFileName = `${safeName(taskTitle)}_${safeName(studentName)}_${file.name}`;
+
     setUploadStatus(prev => ({ ...prev, [taskId]: 'sending' }));
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64Data = e.target.result.split(',')[1];
       const params = new URLSearchParams();
-      params.append('fileName', file.name);
+      params.append('fileName', renamedFileName);
       params.append('mimeType', file.type);
       params.append('fileData', base64Data);
       try {
         await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
-        // Also save to platform
+        // Salva na plataforma
         await base44.entities.TaskSubmission.create({
           task_id: taskId,
           student_email: user.email || user.code || '',
-          student_name: user.name || user.full_name || '',
-          file_name: file.name,
+          student_name: studentName,
+          file_name: renamedFileName,
           status: 'submitted',
         });
+        // Notificação interna ao professor
+        await sendNotificationToTeacher(taskTitle, 'arquivo');
         queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
         setUploadStatus(prev => ({ ...prev, [taskId]: 'success' }));
         setUploadFiles(prev => ({ ...prev, [taskId]: null }));
@@ -131,17 +156,33 @@ export default function Tasks() {
   const displayedTasks = activeTab === 'tasks' ? uploadTasks : quizTasks;
 
   const submitCommentMutation = useMutation({
-    mutationFn: ({ taskId, comment }) => base44.entities.TaskSubmission.create({
-      task_id: taskId,
-      student_email: user?.email || user?.code || '',
-      student_name: user?.name || user?.full_name || '',
-      comment,
-      status: 'submitted',
-    }),
+    mutationFn: async ({ taskId, comment }) => {
+      const sub = await base44.entities.TaskSubmission.create({
+        task_id: taskId,
+        student_email: user?.email || user?.code || '',
+        student_name: user?.name || user?.full_name || '',
+        comment,
+        status: 'submitted',
+      });
+      // Notificação interna ao professor
+      const task = tasks.find(t => t.id === taskId);
+      const taskTitle = task?.title || 'Tarefa';
+      const studentName = user?.name || user?.full_name || user?.email || 'Aluno';
+      await base44.entities.Notification.create({
+        recipient_email: 'admin',
+        sender_email: user?.email || user?.code || '',
+        sender_name: studentName,
+        message: `${studentName} enviou uma resposta para: "${taskTitle}"`,
+        task_title: taskTitle,
+        type: 'task_submission',
+        is_read: false,
+      });
+      return sub;
+    },
     onSuccess: (_, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
       setCommentInputs(prev => ({ ...prev, [taskId]: '' }));
-      toast.success('Comentário enviado!');
+      toast.success('Resposta enviada!');
     },
   });
 

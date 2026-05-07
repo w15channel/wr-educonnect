@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Trophy, Star, ChevronLeft, BookOpen, Video, FileText, MessageSquare, X, CheckCircle } from 'lucide-react';
+import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { format } from 'date-fns';
 
 const CATEGORY_CONFIG = {
@@ -188,9 +189,10 @@ export default function RankingGeral() {
 
                 {/* Name */}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-bold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
-                    {displayName} {isMe && <span className="text-xs font-normal text-primary/70">(você)</span>}
-                  </p>
+                 <p className={`text-sm font-bold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
+                   <ClickableStudent email={r.email}>{displayName}</ClickableStudent>
+                   {isMe && <span className="text-xs font-normal text-primary/70 ml-1">(você)</span>}
+                 </p>
                   <p className="text-xs text-muted-foreground">{r.count} atividade(s) pontuada(s)</p>
                 </div>
 

@@ -148,16 +148,28 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '24px auto 20px' }} />
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <SignatureSVG />
-            <div style={{ width: 160, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
+            <div style={{ fontFamily: 'Georgia, serif', fontSize: 26, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 4, letterSpacing: 1 }}>W.Ribeiro</div>
+            <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
               <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>Direção Geral</p>
               <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>WR — Instituto de Desenvolvimento Humano</p>
             </div>
           </div>
         </div>
 
+        {/* ABED + Legal */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, padding: '10px 14px', background: '#f0f4f8', borderRadius: 8, border: '1px solid #dde4ec' }}>
+          <div>
+            <p style={{ fontSize: 8, color: '#1e3a5f', margin: 0, fontWeight: 'bold' }}>CNPJ: 62.213.790/0001-40</p>
+            <p style={{ fontSize: 7, color: '#888', margin: '2px 0 0' }}>Parceiros da ABED — Associação Brasileira de Educação a Distância</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: 7, color: '#888', margin: 0 }}>Lei nº 9.394/96 (LDB) · Decreto nº 5.154/04</p>
+            <p style={{ fontSize: 7, color: '#888', margin: '1px 0 0' }}>Validade nacional · Formação Profissionalizante</p>
+          </div>
+        </div>
+
         {/* Footer */}
-        <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 20, paddingTop: 10, textAlign: 'center' }}>
+        <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 12, paddingTop: 8, textAlign: 'center' }}>
           <p style={{ fontSize: 8, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
             Documento emitido digitalmente pela plataforma WR-EDU · {emissionDate} às {emissionTime}
           </p>
