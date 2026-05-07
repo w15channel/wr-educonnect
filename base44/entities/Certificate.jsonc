@@ -1,0 +1,100 @@
+{
+  "name": "Certificate",
+  "type": "object",
+  "properties": {
+    "student_full_name": {
+      "type": "string",
+      "description": "Nome completo do aluno"
+    },
+    "student_cpf": {
+      "type": "string",
+      "description": "CPF do aluno (formato: 000.000.000-00)"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno (para vincula\u00e7\u00e3o)"
+    },
+    "student_code": {
+      "type": "string",
+      "description": "C\u00f3digo de acesso do aluno (vincula\u00e7\u00e3o ao AccessCode)"
+    },
+    "course_name": {
+      "type": "string",
+      "description": "Nome do curso conclu\u00eddo"
+    },
+    "course_description": {
+      "type": "string",
+      "description": "Breve descri\u00e7\u00e3o do conte\u00fado do curso"
+    },
+    "workload": {
+      "type": "string",
+      "description": "Carga hor\u00e1ria total do curso (ex: 80 horas)"
+    },
+    "completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de conclus\u00e3o do curso"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de emiss\u00e3o do certificado"
+    },
+    "authenticity_code": {
+      "type": "string",
+      "description": "C\u00f3digo \u00fanico de autenticidade do certificado (gerado automaticamente)"
+    },
+    "coordinator_name": {
+      "type": "string",
+      "default": "Prof. William Ribeiro",
+      "description": "Nome do coordenador signat\u00e1rio"
+    },
+    "coordinator_credentials": {
+      "type": "string",
+      "default": "Psicoterapeuta | Psicanalista | Logoterapeuta | Sex\u00f3logo Integrativo\nRegistro AHDE n\u00ba 5593 | Therapist University",
+      "description": "Credenciais e titula\u00e7\u00f5es do coordenador"
+    },
+    "institution_cnpj": {
+      "type": "string",
+      "default": "62.213.790/0001-40",
+      "description": "CNPJ da institui\u00e7\u00e3o"
+    },
+    "abed_affiliated": {
+      "type": "boolean",
+      "default": true,
+      "description": "Curso afiliado \u00e0 ABED"
+    },
+    "legal_basis": {
+      "type": "string",
+      "default": "Lei n\u00ba 9.394/96 (LDB) e Decreto n\u00ba 5.154/04",
+      "description": "Base legal para validade nacional do certificado"
+    },
+    "modality": {
+      "type": "string",
+      "enum": [
+        "EAD",
+        "Semipresencial",
+        "Presencial"
+      ],
+      "default": "EAD",
+      "description": "Modalidade do curso"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "default": "active",
+      "description": "Status do certificado"
+    }
+  },
+  "required": [
+    "student_full_name",
+    "student_cpf",
+    "course_name",
+    "workload",
+    "completion_date",
+    "authenticity_code"
+  ]
+}
