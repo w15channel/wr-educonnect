@@ -486,21 +486,21 @@ export default function LandingPage({ onLogin }) {
           </div>
 
           {/* Trajetória */}
-          <div className="mb-14 hidden">
-            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
-              <Award size={13} className="text-[#5b5ef4]" /> Trajetória Profissional
-            </p>
-            <div className="relative pl-6 border-l border-white/10 space-y-6">
-              {TIMELINE.map((t, i) =>
-              <div key={i} className="relative">
-                  <div className="absolute -left-[25px] w-3 h-3 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] mt-1" />
-                  <p className="text-[#1db89e] text-xs font-black uppercase tracking-widest mb-0.5">{t.period}</p>
-                  <p className="text-white font-bold text-sm">{t.role}</p>
-                  <p className="text-white/45 text-xs mt-1 leading-relaxed">{t.desc}</p>
-                </div>
-              )}
-            </div>
-          </div>
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
 
           {/* Atuação Atual */}
           <div>
