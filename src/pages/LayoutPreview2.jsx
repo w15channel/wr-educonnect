@@ -324,7 +324,7 @@ export default function LandingPage({ onLogin }) {
             </div>
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden">
-                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/3f509e94d_generated_image.png" alt="Turma estudando" className="w-full aspect-[4/5] object-cover object-center" />
+                <img src={HERO_IMAGES[3]} alt="Curso" className="w-full aspect-[4/5] object-cover object-top" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4">
@@ -357,7 +357,7 @@ export default function LandingPage({ onLogin }) {
               <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
             </div>
             <h2 className="text-4xl lg:text-5xl font-black text-white">Prof. William Ribeiro</h2>
-            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
+            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Logoterapeuta · Educador</p>
           </div>
 
           {/* Avatar + Bio */}
@@ -431,21 +431,21 @@ export default function LandingPage({ onLogin }) {
           </div>
 
           {/* Trajetória */}
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-          
+          <div className="mb-14">
+            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <Award size={13} className="text-[#5b5ef4]" /> Trajetória Profissional
+            </p>
+            <div className="relative pl-6 border-l border-white/10 space-y-6">
+              {TIMELINE.map((t, i) =>
+              <div key={i} className="relative">
+                  <div className="absolute -left-[25px] w-3 h-3 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] mt-1" />
+                  <p className="text-[#1db89e] text-xs font-black uppercase tracking-widest mb-0.5">{t.period}</p>
+                  <p className="text-white font-bold text-sm">{t.role}</p>
+                  <p className="text-white/45 text-xs mt-1 leading-relaxed">{t.desc}</p>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Atuação Atual */}
           <div>
