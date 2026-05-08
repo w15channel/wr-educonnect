@@ -98,18 +98,18 @@ const COURSES = [
   tag: 'Mais Vendido',
   tagColor: '#5b5ef4',
   imgs: [
-    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
-    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80',
-    'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=600&q=80',
-  ],
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
+  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80',
+  'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=600&q=80'],
+
   highlights: [
-    'Abordagem TCC completa e atualizada',
-    'Certificação verificable internacional',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Acesso a materiais exclusivos',
-    'Mentoria com Prof. William Ribeiro',
-    'Ingresso em Setembro/2026',
-  ]
+  'Abordagem TCC completa e atualizada',
+  'Certificação verificable internacional',
+  'Aulas ao vivo todas as segundas-feiras',
+  'Acesso a materiais exclusivos',
+  'Mentoria com Prof. William Ribeiro',
+  'Ingresso em Setembro/2026']
+
 },
 {
   title: 'Psicanalista Freudiano',
@@ -119,18 +119,18 @@ const COURSES = [
   tag: 'Novo',
   tagColor: '#1db89e',
   imgs: [
-    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
-    'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&q=80',
-    'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80',
-  ],
+  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
+  'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&q=80',
+  'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80'],
+
   highlights: [
-    'Método psicanalítico freudiano',
-    'Certificação verificavel internacional',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Supervisão de casos clínicos',
-    'Material didático exclusivo',
-    'Ingresso em Setembro/2026',
-  ]
+  'Método psicanalítico freudiano',
+  'Certificação verificavel internacional',
+  'Aulas ao vivo todas as segundas-feiras',
+  'Supervisão de casos clínicos',
+  'Material didático exclusivo',
+  'Ingresso em Setembro/2026']
+
 },
 {
   title: 'Sexólogo(a)',
@@ -140,18 +140,18 @@ const COURSES = [
   tag: 'Novo',
   tagColor: '#a855f7',
   imgs: [
-    'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=600&q=80',
-    'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80',
-    'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=600&q=80',
-  ],
+  'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=600&q=80',
+  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80',
+  'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=600&q=80'],
+
   highlights: [
-    '80h de conteúdo especializado',
-    'Sexualidade Geral e Integrativa',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Certificação verificavel',
-    'Abordagem clínica e integrativa',
-    'Ingresso em Setembro/2026',
-  ]
+  '80h de conteúdo especializado',
+  'Sexualidade Geral e Integrativa',
+  'Aulas ao vivo todas as segundas-feiras',
+  'Certificação verificavel',
+  'Abordagem clínica e integrativa',
+  'Ingresso em Setembro/2026']
+
 }];
 
 
@@ -486,7 +486,7 @@ export default function LandingPage({ onLogin }) {
           </div>
 
           {/* Trajetória */}
-          <div className="mb-14">
+          <div className="mb-14 hidden">
             <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
               <Award size={13} className="text-[#5b5ef4]" /> Trajetória Profissional
             </p>
@@ -561,19 +561,19 @@ export default function LandingPage({ onLogin }) {
             {COURSES.map((c, i) =>
             <div key={i} className={`bg-[#0d1120] border rounded-3xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:shadow-[#5b5ef4]/10 ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
                 <div className="relative h-44 overflow-hidden">
-                  {c.imgs.map((img, j) => (
-                    <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
-                  ))}
+                  {c.imgs.map((img, j) =>
+                <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
+                )}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/20 to-transparent" />
                   <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.tagColor }}>
                     {c.tag}
                   </div>
                   <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5">
-                    {c.imgs.map((_, j) => (
-                      <button key={j} onClick={() => setCourseImgs(prev => prev.map((v, idx) => idx === i ? j : v))}
-                        className={`h-1.5 rounded-full transition-all ${j === courseImgs[i] ? 'w-5' : 'bg-white/40 w-2'}`}
-                        style={j === courseImgs[i] ? { backgroundColor: c.tagColor } : {}} />
-                    ))}
+                    {c.imgs.map((_, j) =>
+                  <button key={j} onClick={() => setCourseImgs((prev) => prev.map((v, idx) => idx === i ? j : v))}
+                  className={`h-1.5 rounded-full transition-all ${j === courseImgs[i] ? 'w-5' : 'bg-white/40 w-2'}`}
+                  style={j === courseImgs[i] ? { backgroundColor: c.tagColor } : {}} />
+                  )}
                   </div>
                 </div>
                 <div className="p-5 flex flex-col flex-1">
@@ -594,9 +594,9 @@ export default function LandingPage({ onLogin }) {
                     </div>
                     <div className="group relative">
                       <button
-                        disabled
-                        className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white/40 bg-white/5 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2"
-                      >
+                      disabled
+                      className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white/40 bg-white/5 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2">
+                      
                         <Lock size={13} /> Quero Me Inscrever
                       </button>
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#1a1d2e] border border-white/15 rounded-xl p-3 text-center text-xs text-white/70 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
