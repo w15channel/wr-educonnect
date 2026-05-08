@@ -1,0 +1,460 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  GraduationCap, Lock, Key, Sparkles, Users, BookOpen, Video, Heart,
+  Star, ChevronRight, Shield, Award, CheckCircle, ExternalLink,
+  ArrowDown, Quote, Menu, X, Play, Zap
+} from 'lucide-react';
+
+const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
+
+const HERO_IMAGES = [
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
+  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
+  'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
+];
+
+const FEATURES = [
+  { icon: BookOpen, title: 'Videoaulas Gravadas', desc: 'Conteúdo terapêutico exclusivo' },
+  { icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
+  { icon: Users, title: 'Comunidade Ativa', desc: 'Fórum de dúvidas entre alunos' },
+  { icon: Heart, title: 'Prática Real', desc: 'Experiência terapêutica ao longo do curso' },
+];
+
+const CERTS = [
+  { title: 'Pós-Graduação em Psicoterapia Integrativa', institution: 'Universidade Estácio de Sá', year: '2018' },
+  { title: 'Certificação em TCC', institution: 'Instituto Beck Brasil', year: '2019' },
+  { title: 'Formação em Hipnoterapia Clínica', institution: 'Academia Brasileira de Hipnose', year: '2020' },
+  { title: 'Especialização em Neurociência Aplicada', institution: 'PUC-Rio', year: '2021' },
+  { title: 'Certificação Internacional em Coaching', institution: 'ICF — International Coaching Federation', year: '2022' },
+];
+
+const COURSES = [
+  {
+    title: 'Formação de Terapeutas',
+    desc: 'Formação completa e profissionalizante com prática real desde o início.',
+    price: 'R$ 1.497',
+    tag: 'Mais Vendido',
+    img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
+    highlights: ['Certificado verificável', '+ 200h de conteúdo', 'Mentoria inclusa'],
+  },
+  {
+    title: 'Mentoria Avançada em TCC',
+    desc: 'Aprofundamento em Terapia Cognitivo-Comportamental com supervisão clínica.',
+    price: 'R$ 897',
+    tag: 'Novo',
+    img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
+    highlights: ['Supervisão de casos', 'Material exclusivo', 'Acesso vitalício'],
+  },
+];
+
+const TESTIMONIALS = [
+  { name: 'Ana Paula M.', text: 'A formação mais completa que já fiz. O diferencial da prática desde o início foi transformador para mim.', stars: 5 },
+  { name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
+  { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 },
+];
+
+export default function LayoutPreview2() {
+  const [heroImg, setHeroImg] = useState(0);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [mode, setMode] = useState('code');
+  const [navScrolled, setNavScrolled] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => setHeroImg(i => (i + 1) % HERO_IMAGES.length), 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setNavScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#080b14] text-white">
+      {/* PREVIEW BADGE */}
+      <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3">
+        <div className="bg-[#5b5ef4]/90 text-white text-xs font-black px-4 py-1.5 rounded-full shadow-lg tracking-wide uppercase backdrop-blur-sm">
+          📐 Modelo 2 — Rolagem Imersiva
+        </div>
+        <Link to="/preview1" className="bg-white/10 border border-white/20 text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-white/20 transition-all backdrop-blur-sm">
+          ← Ver Modelo 1
+        </Link>
+      </div>
+
+      {/* STICKY NAVBAR */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={LOGO_URL} alt="WR" className="w-8 h-8 object-contain" />
+            <span className="text-lg font-black tracking-tight">WR-EDU</span>
+          </div>
+          <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
+            {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map(l => (
+              <a key={l} href="#" className="hover:text-white transition-colors">{l}</a>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium transition-colors">
+              <Lock size={13} /> Área do Aluno
+            </button>
+            <button className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hover:opacity-90 transition-all hidden md:block">
+              Inscreva-se
+            </button>
+            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden text-white/60 hover:text-white">
+              {mobileMenu ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+        {mobileMenu && (
+          <div className="md:hidden bg-[#0d1120] border-t border-white/8 px-6 py-4 space-y-3">
+            {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map(l => (
+              <a key={l} href="#" className="block text-white/60 hover:text-white py-2 text-sm transition-colors">{l}</a>
+            ))}
+            <button onClick={() => { setShowLoginModal(true); setMobileMenu(false); }} className="w-full text-center py-2 text-[#5b5ef4] font-semibold text-sm">
+              Área do Aluno
+            </button>
+            <button className="w-full bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm">
+              Inscreva-se
+            </button>
+          </div>
+        )}
+      </nav>
+
+      {/* HERO FULL-WIDTH */}
+      <div className="relative h-screen flex items-center justify-center overflow-hidden">
+        {HERO_IMAGES.map((src, i) => (
+          <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
+            <img src={src} alt="" className="w-full h-full object-cover object-center" />
+          </div>
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14]" />
+        <div className="absolute inset-0 bg-[#080b14]/30" />
+
+        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-5 py-2 mb-8">
+            <Sparkles size={13} className="text-yellow-400" />
+            <span className="text-sm font-semibold text-white/80">Escola de Formação de Terapeutas · Turma 2026</span>
+          </div>
+          <h1 className="text-6xl lg:text-8xl font-black leading-[0.95] mb-8 tracking-tight">
+            Transforme
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] via-[#a855f7] to-[#1db89e]">
+              vidas
+            </span>
+            <span className="block text-4xl lg:text-5xl text-white/80 font-bold mt-2">através da cura.</span>
+          </h1>
+          <p className="text-white/60 text-lg lg:text-xl leading-relaxed max-w-2xl mx-auto mb-12">
+            Uma formação completa e profissionalizante em terapia, com o diferencial da prática terapêutica ao longo de toda a jornada de aprendizado.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="#cursos" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
+              Ver Nossos Cursos <ChevronRight size={18} />
+            </a>
+            <a href="#professor" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base">
+              <Play size={15} className="fill-current" /> Sobre o Professor
+            </a>
+          </div>
+        </div>
+
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce">
+          <span className="text-xs tracking-widest uppercase">Role para baixo</span>
+          <ArrowDown size={16} />
+        </div>
+        <div className="absolute bottom-8 right-8 flex gap-2">
+          {HERO_IMAGES.map((_, i) => (
+            <button key={i} onClick={() => setHeroImg(i)}
+              className={`h-1.5 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`} />
+          ))}
+        </div>
+      </div>
+
+      {/* STATS BAR */}
+      <div className="bg-[#0d1120] border-y border-white/8 py-8 px-6">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { value: '500+', label: 'Terapeutas Formados' },
+            { value: '15+', label: 'Anos de Experiência' },
+            { value: '200h', label: 'Carga Horária' },
+            { value: '4.9★', label: 'Avaliação Média' },
+          ].map((s, i) => (
+            <div key={i}>
+              <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">{s.value}</p>
+              <p className="text-white/40 text-xs mt-1 uppercase tracking-wide">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* SOBRE O CURSO */}
+      <section id="sobre" className="py-28 px-6 lg:px-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-6">
+                <GraduationCap size={13} className="text-[#5b5ef4]" />
+                <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Sobre a Formação</span>
+              </div>
+              <h2 className="text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
+                Uma metodologia que transforma
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">teoria em prática real.</span>
+              </h2>
+              <p className="text-white/60 leading-relaxed mb-6 text-base">
+                Nossa formação foi desenvolvida para que você não apenas aprenda conceitos terapêuticos, mas os coloque em prática desde as primeiras semanas.
+              </p>
+              <p className="text-white/60 leading-relaxed mb-8 text-base">
+                Com currículo rigoroso abrangendo Psicoterapia Integrativa, TCC, Hipnoterapia e muito mais, você sairá preparado para atender pacientes com ética, técnica e profundidade.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {FEATURES.map(({ icon: Icon, title, desc }) => (
+                  <div key={title} className="flex items-start gap-3 bg-white/4 border border-white/8 rounded-2xl p-4">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/20 flex items-center justify-center shrink-0">
+                      <Icon size={14} className="text-[#1db89e]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-sm">{title}</p>
+                      <p className="text-white/40 text-xs mt-0.5">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="relative">
+              <div className="relative rounded-3xl overflow-hidden">
+                <img src={HERO_IMAGES[3]} alt="Curso" className="w-full aspect-[4/5] object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6">
+                  <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] rounded-full flex items-center justify-center">
+                        <Zap size={16} className="text-white" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-sm">Próxima turma</p>
+                        <p className="text-[#1db89e] text-xs font-semibold">Início em Julho 2026 · Vagas limitadas</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#5b5ef4]/20 rounded-full blur-2xl" />
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-[#1db89e]/15 rounded-full blur-2xl" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SOBRE O PROFESSOR */}
+      <section id="professor" className="py-28 px-6 lg:px-20 bg-[#0a0d1a]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-4">
+              <Award size={13} className="text-[#5b5ef4]" />
+              <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-black text-white">Prof. William Ribeiro</h2>
+            <p className="text-white/50 mt-2 text-lg">Terapeuta Clínico e Educador</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
+            <div className="lg:col-span-2">
+              <div className="relative">
+                <div className="w-full rounded-3xl overflow-hidden aspect-square bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/10 flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] mx-auto mb-4 flex items-center justify-center">
+                      <span className="text-5xl font-black text-white">WR</span>
+                    </div>
+                    <p className="text-white/60">Prof. William Ribeiro</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
+                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
+                  <p className="text-white font-black text-center text-sm">15+ anos de experiência clínica</p>
+                </div>
+              </div>
+            </div>
+            <div className="lg:col-span-3 pt-4">
+              <p className="text-white/60 text-base leading-relaxed mb-8">
+                Com mais de 15 anos de experiência clínica e formação continuada nas principais escolas de psicoterapia do Brasil e do mundo, o Professor William dedica sua carreira à formação de terapeutas completos, éticos e altamente qualificados.
+              </p>
+              <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
+                <CheckCircle size={13} className="text-[#1db89e]" /> Certificações Verificáveis
+              </p>
+              <div className="grid grid-cols-1 gap-3">
+                {CERTS.map((c, i) => (
+                  <div key={i} className="flex items-center gap-4 bg-white/4 border border-white/8 rounded-2xl px-5 py-4 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all group cursor-pointer">
+                    <div className="w-7 h-7 rounded-full bg-[#1db89e]/15 flex items-center justify-center shrink-0">
+                      <CheckCircle size={13} className="text-[#1db89e]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm truncate">{c.title}</p>
+                      <p className="text-white/40 text-xs">{c.institution} · {c.year}</p>
+                    </div>
+                    <ExternalLink size={13} className="text-white/15 group-hover:text-[#5b5ef4] transition-colors shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* NOSSOS CURSOS */}
+      <section id="cursos" className="py-28 px-6 lg:px-20 bg-[#080b14]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-[#1db89e]/10 border border-[#1db89e]/20 rounded-full px-4 py-1.5 mb-4">
+              <GraduationCap size={13} className="text-[#1db89e]" />
+              <span className="text-xs font-bold text-[#1db89e] uppercase tracking-widest">Formações</span>
+            </div>
+            <h2 className="text-4xl font-black text-white">Nossos Cursos Profissionalizantes</h2>
+            <p className="text-white/50 mt-3 max-w-lg mx-auto text-base">Certificados digitais verificáveis emitidos pelo WR-EDU.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {COURSES.map((c, i) => (
+              <div key={i} className={`bg-[#0d1120] border rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-[#5b5ef4]/15 transition-all group ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
+                <div className="relative h-52 overflow-hidden">
+                  <img src={c.img} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/30 to-transparent" />
+                  <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-black text-white ${i === 0 ? 'bg-[#5b5ef4]' : 'bg-[#1db89e]'}`}>
+                    {c.tag}
+                  </div>
+                </div>
+                <div className="p-7">
+                  <h3 className="font-black text-white text-xl mb-2">{c.title}</h3>
+                  <p className="text-white/50 text-sm leading-relaxed mb-5">{c.desc}</p>
+                  <div className="space-y-2 mb-6">
+                    {c.highlights.map((h, j) => (
+                      <div key={j} className="flex items-center gap-2 text-xs text-white/60">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
+                        {h}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-white/8">
+                    <div>
+                      <p className="text-xs text-white/30 mb-0.5">Investimento</p>
+                      <p className="text-2xl font-black text-white">{c.price}</p>
+                    </div>
+                    <button className={`px-6 py-3 rounded-2xl font-bold text-sm text-white transition-all hover:opacity-90 ${i === 0 ? 'bg-gradient-to-r from-[#5b5ef4] to-[#7c3aed] shadow-lg shadow-[#5b5ef4]/30' : 'bg-gradient-to-r from-[#1db89e] to-[#5b5ef4]'}`}>
+                      Quero Me Inscrever
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* DEPOIMENTOS */}
+      <section id="depoimentos" className="py-24 px-6 lg:px-20 bg-[#0a0d1a]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-white mb-2">O que dizem nossos alunos</h2>
+            <p className="text-white/40 text-sm">Mais de 500 terapeutas formados</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t, i) => (
+              <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all">
+                <Quote size={22} className="text-[#5b5ef4]/30 mb-3" />
+                <p className="text-white/70 text-sm leading-relaxed mb-5">"{t.text}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center text-xs font-black">{t.name[0]}</div>
+                  <div>
+                    <p className="text-white text-sm font-bold">{t.name}</p>
+                    <div className="flex gap-0.5 mt-0.5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={9} className="text-yellow-400 fill-yellow-400" />)}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA FINAL */}
+      <section className="py-24 px-6 lg:px-20 bg-gradient-to-br from-[#5b5ef4]/20 via-[#080b14] to-[#1db89e]/10 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(91,94,244,0.15)_0%,transparent_70%)]" />
+        <div className="max-w-3xl mx-auto text-center relative z-10">
+          <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">Pronto para começar sua jornada?</h2>
+          <p className="text-white/60 text-lg mb-10">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
+              Garantir Minha Vaga <ChevronRight size={18} />
+            </button>
+            <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/12 transition-all text-sm">
+              <Lock size={14} /> Já sou aluno
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-white/8 py-12 px-6 lg:px-20 bg-[#080b14]">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
+            <div className="flex items-center gap-3">
+              <img src={LOGO_URL} alt="WR" className="w-10 h-10 object-contain" />
+              <div>
+                <p className="text-white font-black text-base">WR-EDU</p>
+                <p className="text-white/30 text-xs">Escola de Formação de Terapeutas</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-6 text-white/30 text-sm">
+              {['Política de Trabalho', 'Termos de Uso', 'Privacidade', 'Contato'].map(l => (
+                <a key={l} href="#" className="hover:text-white/70 transition-colors">{l}</a>
+              ))}
+            </div>
+          </div>
+          <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+            <p className="text-white/20 text-xs">WR-EDU © 2026 — Todos os direitos reservados</p>
+            <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
+              <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-001-00</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* LOGIN MODAL */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
+          <div className="bg-[#0d1120] border border-white/15 rounded-3xl p-8 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-white font-black text-xl">Área do Aluno</h3>
+                <p className="text-white/40 text-xs mt-0.5">Acesso seguro à plataforma</p>
+              </div>
+              <button onClick={() => setShowLoginModal(false)} className="text-white/30 hover:text-white transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex gap-1.5 bg-white/4 rounded-2xl p-1.5 mb-5 border border-white/8">
+              {['code', 'admin'].map(m => (
+                <button key={m} onClick={() => setMode(m)}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${mode === m ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg' : 'text-white/35 hover:text-white/65'}`}>
+                  {m === 'code' ? <><Key size={12} /> Código</> : <><Shield size={12} /> Admin</>}
+                </button>
+              ))}
+            </div>
+            {mode === 'code' ? (
+              <div className="space-y-4">
+                <input placeholder="EDU-XXXX-XXXX" className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-12 text-center text-lg tracking-widest font-mono rounded-xl px-3 focus:outline-none focus:border-[#5b5ef4]/60" />
+                <button className="w-full h-12 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2">
+                  Entrar na Plataforma <ChevronRight size={15} />
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <input placeholder="seu@email.com" className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none" />
+                <input type="password" placeholder="••••••••" className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none" />
+                <button className="w-full h-10 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl">Entrar como Admin</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
