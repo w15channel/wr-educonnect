@@ -379,11 +379,23 @@ export default function LandingPage({ onLogin }) {
               </div>
             </div>
             <div className="lg:col-span-3 pt-4 space-y-4">
-              <p className="text-white/70 text-base leading-relaxed">
-                Psicoterapeuta, Psicanalista Diplomado e Logoterapeuta com formações certificadas e registradas internacionalmente. Profissional com trajetória multidisciplinar que integra saúde mental, educação social, tecnologia e mercado financeiro, construindo uma visão única e humanizada da terapia.
+              <p className="text-white/70 text-sm leading-relaxed">
+                A base do pensamento de William Ribeiro foi construída em um mergulho profundo nos processos organizacionais e corporativos entre 2007 e 2017. Essa década representou uma ascensão estratégica: iniciando como office boy e percorrendo setores vitais como auxiliar de finanças, assistente de departamento pessoal e, finalmente, gestor de pessoas à frente de recrutamentos e seleções.
               </p>
               <p className="text-white/60 text-sm leading-relaxed">
-                Hoje coordena o grupo <strong className="text-white">Sinapse Coletiva</strong>, formado por profissionais da saúde comportamental, gerencia o curso de formação na plataforma <strong className="text-white">WR-EDU</strong> — registrado junto à ABED — e atua como educador social no projeto <strong className="text-white">Vida Digital</strong>, da ADRA Internacional, levando temas socioeducacionais a comunidades em vulnerabilidade.
+                Foi com o ingresso na turma de Administração da <strong className="text-white">Universidade Federal do Paraná (UFPR)</strong> que William desenvolveu uma de suas principais teses: a <strong className="text-white">Teoria da Utilidade Comportamental</strong>. Originalmente inspirada em teorias do comportamento econômico e adaptada para o âmbito clínico, essa visão propõe uma análise profunda de como as escolhas e motivações moldam a existência humana.
+              </p>
+              <p className="text-white/60 text-sm leading-relaxed">
+                Também atuou profissionalmente no campo da tecnologia, atendendo a estruturas e processos junto ao <strong className="text-white">8° Registro de Imóveis de Curitiba</strong>, realizando transições entre sistemas tecnológicos, manutenção do ecossistema digital, controle de dados de pessoal e processos de treinamentos e capacitações internas.
+              </p>
+              <p className="text-white/60 text-sm leading-relaxed">
+                Dessa evolução natural, consolidou-se sua atuação como Psicoterapeuta, Psicanalista e Sexólogo Integrativo, com formações certificadas nacional e internacionalmente. Especialista em vícios e dinâmicas conjugais, William fundou o grupo <strong className="text-white">Sinapse Coletiva</strong>, um ecossistema que integra profissionais da saúde comportamental focados em uma técnica consciente, equilibrada e despida de amadorismos.
+              </p>
+              <p className="text-white/60 text-sm leading-relaxed">
+                Atualmente, essa trajetória culmina na coordenação da plataforma <strong className="text-white">WR-EDU</strong>. Como mantenedor associado à <strong className="text-white">ABED</strong>, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento. Esse compromisso expande-se como Educador Social no projeto <strong className="text-white">Vida Digital</strong> da <strong className="text-white">ADRA Paraná</strong>, onde reestrutura comunidades em vulnerabilidade.
+              </p>
+              <p className="text-white/50 text-sm leading-relaxed italic">
+                William Ribeiro não apenas ensina terapia; ele lidera uma formação que une o rigor da utilidade comportamental ao poder transformador do acolhimento humanizado.
               </p>
             </div>
           </div>
