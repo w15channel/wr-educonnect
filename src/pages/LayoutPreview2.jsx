@@ -240,7 +240,7 @@ export default function LandingPage({ onLogin }) {
         <div className="absolute inset-0 bg-[#080b14]/30" />
 
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-          <img src={LOGO_URL} alt="WR-EDU" className="h-16 lg:h-24 object-contain mx-auto mb-6 drop-shadow-2xl hidden" />
+          
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-5 py-2 mb-8">
             <Sparkles size={13} className="text-yellow-400" />
             <span className="text-sm font-semibold text-white/80">Escola de Formação de Terapeutas · Turma 2026</span>
