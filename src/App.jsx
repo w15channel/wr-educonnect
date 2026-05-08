@@ -4,9 +4,6 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
-// REQUIRED platform imports — do NOT remove or rename
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import LoginScreen from './components/auth/LoginScreen';
 import AppLayout from './components/layout/AppLayout';
@@ -34,8 +31,6 @@ import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
-import LayoutPreview1 from './pages/LayoutPreview1';
-import LayoutPreview2 from './pages/LayoutPreview2';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
@@ -52,13 +47,7 @@ const AuthenticatedApp = () => {
   }
 
   if (!session) {
-    return (
-      <Routes>
-        <Route path="/preview1" element={<LayoutPreview1 />} />
-        <Route path="/preview2" element={<LayoutPreview2 />} />
-        <Route path="*" element={<LoginScreen onLogin={login} />} />
-      </Routes>
-    );
+    return <LoginScreen onLogin={login} />;
   }
 
   return (
@@ -88,8 +77,6 @@ const AuthenticatedApp = () => {
         <Route path="/historico" element={<HistoricoAcademico />} />
         <Route path="/dm/:email" element={<DirectMessage />} />
         <Route path="/classe" element={<Classe />} />
-        <Route path="/preview1" element={<LayoutPreview1 />} />
-        <Route path="/preview2" element={<LayoutPreview2 />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -98,16 +85,14 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <CustomAuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
-      </CustomAuthProvider>
-    </AuthProvider>
+    <CustomAuthProvider>
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <AuthenticatedApp />
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    </CustomAuthProvider>
   )
 }
 
