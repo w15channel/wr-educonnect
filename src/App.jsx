@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import LandingPage from './pages/LayoutPreview2';
+import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
@@ -81,6 +82,7 @@ const AuthenticatedApp = () => {
         <Route path="/dm/:email" element={<DirectMessage />} />
         <Route path="/classe" element={<Classe />} />
       </Route>
+      <Route path="/politica" element={<PoliticaDeTrabalho />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

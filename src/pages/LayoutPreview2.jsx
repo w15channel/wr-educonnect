@@ -472,6 +472,27 @@ export default function LandingPage({ onLogin }) {
             </div>
             <h2 className="text-4xl font-black text-white">Nossos Cursos Profissionalizantes</h2>
             <p className="text-white/50 mt-3 max-w-lg mx-auto text-base">Certificados digitais verificáveis emitidos pelo WR-EDU.</p>
+            {/* Selos ABED + AHDE */}
+            <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
+              <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
+                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-10 object-contain" />
+                <ExternalLink size={11} className="text-white/20 group-hover:text-[#5b5ef4] transition-colors" />
+              </a>
+              <a href="https://ahde-global.org/?lang=pt-br" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
+                <div className="text-center">
+                  <p className="text-[#1db89e] font-black text-sm leading-none">AHDE</p>
+                  <p className="text-white/30 text-[9px] uppercase tracking-widest mt-0.5">International</p>
+                </div>
+                <div className="h-8 w-px bg-white/10" />
+                <div className="text-left">
+                  <p className="text-white/70 text-xs font-semibold leading-none">Membro Registrado</p>
+                  <p className="text-white/30 text-[10px] mt-0.5">ID: 00403THE</p>
+                </div>
+                <ExternalLink size={11} className="text-white/20 group-hover:text-[#1db89e] transition-colors" />
+              </a>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {COURSES.map((c, i) => (
@@ -564,16 +585,27 @@ export default function LandingPage({ onLogin }) {
               </div>
             </div>
             <div className="flex flex-wrap gap-6 text-white/30 text-sm">
-              {['Política de Trabalho', 'Termos de Uso', 'Privacidade', 'Contato'].map(l => (
-                <a key={l} href="#" className="hover:text-white/70 transition-colors">{l}</a>
+              {[
+                { label: 'Política de Trabalho', href: '/politica' },
+                { label: 'Termos de Uso', href: '#' },
+                { label: 'Privacidade', href: '#' },
+                { label: 'Contato', href: '#' },
+              ].map(l => (
+                <a key={l.label} href={l.href} className="hover:text-white/70 transition-colors">{l.label}</a>
               ))}
             </div>
           </div>
           <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
             <p className="text-white/20 text-xs">WR-EDU © 2026 — Todos os direitos reservados</p>
-            <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-              <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-001-00</span>
+            <div className="flex items-center gap-4">
+              <img
+                src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png"
+                alt="ABED" className="h-8 object-contain opacity-30 hover:opacity-70 transition-opacity"
+              />
+              <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
+                <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-002-00</span>
+              </div>
             </div>
           </div>
         </div>
