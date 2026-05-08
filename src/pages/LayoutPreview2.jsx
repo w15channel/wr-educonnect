@@ -373,7 +373,8 @@ export default function LandingPage({ onLogin }) {
                   <img
                     src="https://media.base44.com/images/public/69f55577840a3c93cee191be/3488805d0_17673765754883.jpg"
                     alt="Prof. William Ribeiro"
-                    className="w-full h-full object-cover object-top"
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: '50% 30%' }}
                   />
                 </div>
                 <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
