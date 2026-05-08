@@ -324,7 +324,7 @@ export default function LandingPage({ onLogin }) {
             </div>
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden">
-                <img src={HERO_IMAGES[3]} alt="Curso" className="w-full aspect-[4/5] object-cover object-top" />
+                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/aea71bbb8_generated_image.png" alt="Turma estudando" className="w-full aspect-[4/5] object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4">
