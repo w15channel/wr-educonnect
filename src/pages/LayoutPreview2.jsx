@@ -98,18 +98,18 @@ const COURSES = [
   tag: 'Mais Vendido',
   tagColor: '#5b5ef4',
   imgs: [
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
-  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80',
-  'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=600&q=80'],
-
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/1d898387b_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/7a4725dbb_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/a8496ad30_generated_image.png',
+  ],
   highlights: [
-  'Abordagem TCC completa e atualizada',
-  'Certificação verificable internacional',
-  'Aulas ao vivo todas as segundas-feiras',
-  'Acesso a materiais exclusivos',
-  'Mentoria com Prof. William Ribeiro',
-  'Ingresso em Setembro/2026']
-
+    'Técnicas cognitivo-comportamentais aplicadas',
+    'Prática clínica desde as primeiras semanas',
+    'Credenciamento internacional como terapeuta',
+    'Plataforma centralizada de conteúdos',
+    'Aulas ao vivo todas as segundas-feiras',
+    'Ingresso em Setembro/2026',
+  ]
 },
 {
   title: 'Psicanalista Freudiano',
@@ -119,18 +119,18 @@ const COURSES = [
   tag: 'Novo',
   tagColor: '#1db89e',
   imgs: [
-  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
-  'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&q=80',
-  'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80'],
-
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/f28c89ba7_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/919ebf5be_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/a8496ad30_generated_image.png',
+  ],
   highlights: [
-  'Método psicanalítico freudiano',
-  'Certificação verificavel internacional',
-  'Aulas ao vivo todas as segundas-feiras',
-  'Supervisão de casos clínicos',
-  'Material didático exclusivo',
-  'Ingresso em Setembro/2026']
-
+    'Estudos de casos reais supervisionados',
+    'Profundidade do método psicanalítico freudiano',
+    'Credenciamento internacional como terapeuta',
+    'Plataforma centralizada de conteúdos',
+    'Aulas ao vivo todas as segundas-feiras',
+    'Ingresso em Setembro/2026',
+  ]
 },
 {
   title: 'Sexólogo(a)',
@@ -140,18 +140,18 @@ const COURSES = [
   tag: 'Novo',
   tagColor: '#a855f7',
   imgs: [
-  'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=600&q=80',
-  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80',
-  'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=600&q=80'],
-
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/e9014c7ae_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/31339ba94_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/a8496ad30_generated_image.png',
+  ],
   highlights: [
-  '80h de conteúdo especializado',
-  'Sexualidade Geral e Integrativa',
-  'Aulas ao vivo todas as segundas-feiras',
-  'Certificação verificavel',
-  'Abordagem clínica e integrativa',
-  'Ingresso em Setembro/2026']
-
+    'Estudos de casos reais em sexualidade',
+    '80h de conteúdo especializado e integrativo',
+    'Credenciamento internacional como terapeuta',
+    'Plataforma centralizada de conteúdos',
+    'Aulas ao vivo todas as segundas-feiras',
+    'Ingresso em Setembro/2026',
+  ]
 }];
 
 
@@ -163,7 +163,16 @@ const TESTIMONIALS = [
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
-  const [courseImgs, setCourseImgs] = useState([0, 0]);
+  const [courseImgs, setCourseImgs] = useState([0, 0, 0]);
+
+  useEffect(() => {
+    const intervals = COURSES.map((_, i) => {
+      return setInterval(() => {
+        setCourseImgs(prev => prev.map((v, idx) => idx === i ? (v + 1) % COURSES[i].imgs.length : v));
+      }, 4000 + i * 1500);
+    });
+    return () => intervals.forEach(clearInterval);
+  }, []);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mode, setMode] = useState('code');
   const [navScrolled, setNavScrolled] = useState(false);
@@ -562,7 +571,7 @@ export default function LandingPage({ onLogin }) {
             <div key={i} className={`bg-[#0d1120] border rounded-3xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:shadow-[#5b5ef4]/10 ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
                 <div className="relative h-44 overflow-hidden">
                   {c.imgs.map((img, j) =>
-                <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
+                <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
                 )}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/20 to-transparent" />
                   <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.tagColor }}>
