@@ -95,7 +95,11 @@ const COURSES = [
   desc: 'Formação completa e profissionalizante com prática real desde o início.',
   price: 'R$ 1.497',
   tag: 'Mais Vendido',
-  img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
+  imgs: [
+    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80',
+    'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=600&q=80',
+  ],
   highlights: ['Certificado verificável', '+ 200h de conteúdo', 'Mentoria inclusa']
 },
 {
@@ -103,7 +107,11 @@ const COURSES = [
   desc: 'Aprofundamento em Terapia Cognitivo-Comportamental com supervisão clínica.',
   price: 'R$ 897',
   tag: 'Novo',
-  img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
+  imgs: [
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
+    'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&q=80',
+    'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80',
+  ],
   highlights: ['Supervisão de casos', 'Material exclusivo', 'Acesso vitalício']
 }];
 
@@ -116,6 +124,7 @@ const TESTIMONIALS = [
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
+  const [courseImgs, setCourseImgs] = useState([0, 0]);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mode, setMode] = useState('code');
   const [navScrolled, setNavScrolled] = useState(false);
@@ -502,14 +511,22 @@ export default function LandingPage({ onLogin }) {
               </a>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="flex flex-col items-center gap-8 max-w-xl mx-auto">
             {COURSES.map((c, i) =>
-            <div key={i} className={`bg-[#0d1120] border rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-[#5b5ef4]/15 transition-all group ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
-                <div className="relative h-52 overflow-hidden">
-                  <img src={c.img} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/30 to-transparent" />
+            <div key={i} className={`w-full bg-[#0d1120] border rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-[#5b5ef4]/15 transition-all ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
+                <div className="relative h-56 overflow-hidden">
+                  {c.imgs.map((img, j) => (
+                    <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
+                  ))}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/20 to-transparent" />
                   <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-black text-white ${i === 0 ? 'bg-[#5b5ef4]' : 'bg-[#1db89e]'}`}>
                     {c.tag}
+                  </div>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {c.imgs.map((_, j) => (
+                      <button key={j} onClick={() => setCourseImgs(prev => prev.map((v, idx) => idx === i ? j : v))}
+                        className={`h-1.5 rounded-full transition-all ${j === courseImgs[i] ? (i === 0 ? 'bg-[#5b5ef4] w-5' : 'bg-[#1db89e] w-5') : 'bg-white/40 w-2.5'}`} />
+                    ))}
                   </div>
                 </div>
                 <div className="p-7">
