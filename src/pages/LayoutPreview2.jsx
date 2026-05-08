@@ -431,7 +431,7 @@ export default function LandingPage({ onLogin }) {
           </div>
 
           {/* Trajetória */}
-          <div className="mb-14">
+          <div className="mb-14 hidden">
             <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
               <Award size={13} className="text-[#5b5ef4]" /> Trajetória Profissional
             </p>
