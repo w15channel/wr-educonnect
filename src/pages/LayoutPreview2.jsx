@@ -239,9 +239,12 @@ export default function LandingPage({ onLogin }) {
         <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14]" />
         <div className="absolute inset-0 bg-[#080b14]/30" />
 
-        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto pt-32 lg:pt-40">
+        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
           
-
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-5 py-2 mb-8">
+            <Sparkles size={13} className="text-yellow-400" />
+            <span className="text-sm font-semibold text-white/80">Escola de Formação de Terapeutas · Turma 2026</span>
+          </div>
           <h1 className="text-6xl lg:text-8xl font-black leading-[0.95] mb-8 tracking-tight">
             Transforme
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] via-[#a855f7] to-[#1db89e]">
@@ -250,7 +253,7 @@ export default function LandingPage({ onLogin }) {
             <span className="block text-4xl lg:text-5xl text-white/80 font-bold mt-2">através da cura.</span>
           </h1>
           <p className="text-white/60 text-lg lg:text-xl leading-relaxed max-w-2xl mx-auto mb-12">
-            Sua vocação merece o próximo passo. Nossa formação profissionalizante redefine o ensino da terapia ao integrar o acolhimento humanizado à prática terapêutica constante. Diferente de métodos puramente teóricos, nossa metodologia mergulha você na experiência real do atendimento desde o primeiro momento, formando profissionais prontos para atuar com sensibilidade, ética e maestria técnica.
+            Uma formação completa e profissionalizante em terapia, com o diferencial da prática terapêutica ao longo de toda a jornada de aprendizado.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="#cursos" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
