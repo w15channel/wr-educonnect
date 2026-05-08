@@ -8,7 +8,7 @@ import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
-import LoginScreen from './components/auth/LoginScreen';
+import LandingPage from './pages/LayoutPreview2';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
@@ -34,37 +34,27 @@ import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
-import LayoutPreview1 from './pages/LayoutPreview1';
-import LayoutPreview2 from './pages/LayoutPreview2';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-slate-900">
+      <div className="fixed inset-0 flex items-center justify-center bg-[#080b14]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-sm text-slate-400 font-medium">Carregando WR-EDU...</p>
+          <div className="w-10 h-10 border-4 border-[#5b5ef4]/30 border-t-[#5b5ef4] rounded-full animate-spin"></div>
+          <p className="text-sm text-white/40 font-medium">Carregando WR-EDU...</p>
         </div>
       </div>
     );
   }
 
-  // Allow preview pages without login
-  const path = window.location.pathname;
-  const isPreview = path === '/preview1' || path === '/preview2';
-
-  if (!session && !isPreview) {
-    return <LoginScreen onLogin={login} />;
+  if (!session) {
+    return <LandingPage onLogin={login} />;
   }
 
   return (
     <Routes>
-      {/* Public preview routes — no layout wrapper */}
-      <Route path="/preview1" element={<LayoutPreview1 />} />
-      <Route path="/preview2" element={<LayoutPreview2 />} />
-
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/lessons" element={<Lessons />} />

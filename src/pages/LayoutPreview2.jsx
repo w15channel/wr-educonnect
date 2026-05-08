@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
   GraduationCap, Lock, Key, Sparkles, Users, BookOpen, Video, Heart,
   Star, ChevronRight, Shield, Award, CheckCircle, ExternalLink,
-  ArrowDown, Quote, Menu, X, Play, Zap
+  ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle
 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
@@ -55,12 +56,19 @@ const TESTIMONIALS = [
   { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 },
 ];
 
-export default function LayoutPreview2() {
+export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mode, setMode] = useState('code');
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
+
+  // Login state
+  const [code, setCode] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setHeroImg(i => (i + 1) % HERO_IMAGES.length), 5000);
@@ -73,17 +81,56 @@ export default function LayoutPreview2() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const handleCodeLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const trimmed = code.trim().toUpperCase();
+    const results = await base44.entities.AccessCode.filter({ code: trimmed, is_active: true });
+    if (results.length === 0) {
+      setError('Código inválido ou desativado.');
+      setLoading(false);
+      return;
+    }
+    const record = results[0];
+    await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
+    setSession({
+      role: 'student',
+      codeId: record.id,
+      code: trimmed,
+      name: record.profile_name || record.student_name || 'Aluno',
+      email: record.student_email || '',
+      bio: record.profile_bio || '',
+      avatarColor: record.profile_avatar_color || '#5b5ef4',
+      photoUrl: record.profile_photo_url || '',
+    });
+    onLogin();
+    setLoading(false);
+  };
+
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const creds = await base44.entities.AdminCredential.list();
+    if (creds.length === 0) {
+      setError('Login admin não configurado.');
+      setLoading(false);
+      return;
+    }
+    const cred = creds[0];
+    if (adminEmail.trim() !== cred.email || !verifyPassword(adminPassword, cred.password_hash)) {
+      setError('Email ou senha incorretos.');
+      setLoading(false);
+      return;
+    }
+    setSession({ role: 'admin', name: 'Professor', email: cred.email });
+    onLogin();
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#080b14] text-white">
-      {/* PREVIEW BADGE */}
-      <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3">
-        <div className="bg-[#5b5ef4]/90 text-white text-xs font-black px-4 py-1.5 rounded-full shadow-lg tracking-wide uppercase backdrop-blur-sm">
-          📐 Modelo 2 — Rolagem Imersiva
-        </div>
-        <Link to="/preview1" className="bg-white/10 border border-white/20 text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-white/20 transition-all backdrop-blur-sm">
-          ← Ver Modelo 1
-        </Link>
-      </div>
 
       {/* STICKY NAVBAR */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
@@ -94,16 +141,16 @@ export default function LayoutPreview2() {
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
             {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map(l => (
-              <a key={l} href="#" className="hover:text-white transition-colors">{l}</a>
+              <a key={l} href={`#${l.toLowerCase().replace(' o ', '-').replace(' ', '-')}`} className="hover:text-white transition-colors">{l}</a>
             ))}
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium transition-colors">
               <Lock size={13} /> Área do Aluno
             </button>
-            <button className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hover:opacity-90 transition-all hidden md:block">
+            <a href="#cursos" className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hover:opacity-90 transition-all hidden md:block">
               Inscreva-se
-            </button>
+            </a>
             <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden text-white/60 hover:text-white">
               {mobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -112,14 +159,14 @@ export default function LayoutPreview2() {
         {mobileMenu && (
           <div className="md:hidden bg-[#0d1120] border-t border-white/8 px-6 py-4 space-y-3">
             {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map(l => (
-              <a key={l} href="#" className="block text-white/60 hover:text-white py-2 text-sm transition-colors">{l}</a>
+              <a key={l} href="#" onClick={() => setMobileMenu(false)} className="block text-white/60 hover:text-white py-2 text-sm transition-colors">{l}</a>
             ))}
             <button onClick={() => { setShowLoginModal(true); setMobileMenu(false); }} className="w-full text-center py-2 text-[#5b5ef4] font-semibold text-sm">
               Área do Aluno
             </button>
-            <button className="w-full bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm">
+            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm">
               Inscreva-se
-            </button>
+            </a>
           </div>
         )}
       </nav>
@@ -189,7 +236,7 @@ export default function LayoutPreview2() {
       </div>
 
       {/* SOBRE O CURSO */}
-      <section id="sobre" className="py-28 px-6 lg:px-20">
+      <section id="sobre-o-curso" className="py-28 px-6 lg:px-20">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -380,9 +427,9 @@ export default function LayoutPreview2() {
           <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">Pronto para começar sua jornada?</h2>
           <p className="text-white/60 text-lg mb-10">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
+            <a href="#cursos" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
               Garantir Minha Vaga <ChevronRight size={18} />
-            </button>
+            </a>
             <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/12 transition-all text-sm">
               <Lock size={14} /> Já sou aluno
             </button>
@@ -426,31 +473,67 @@ export default function LayoutPreview2() {
                 <h3 className="text-white font-black text-xl">Área do Aluno</h3>
                 <p className="text-white/40 text-xs mt-0.5">Acesso seguro à plataforma</p>
               </div>
-              <button onClick={() => setShowLoginModal(false)} className="text-white/30 hover:text-white transition-colors">
+              <button onClick={() => { setShowLoginModal(false); setError(''); }} className="text-white/30 hover:text-white transition-colors">
                 <X size={18} />
               </button>
             </div>
+
             <div className="flex gap-1.5 bg-white/4 rounded-2xl p-1.5 mb-5 border border-white/8">
               {['code', 'admin'].map(m => (
-                <button key={m} onClick={() => setMode(m)}
+                <button key={m} onClick={() => { setMode(m); setError(''); }}
                   className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${mode === m ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg' : 'text-white/35 hover:text-white/65'}`}>
                   {m === 'code' ? <><Key size={12} /> Código</> : <><Shield size={12} /> Admin</>}
                 </button>
               ))}
             </div>
+
+            {error && (
+              <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/25 text-red-300 text-xs p-3 rounded-xl mb-4">
+                <AlertCircle size={13} className="shrink-0" /> {error}
+              </div>
+            )}
+
             {mode === 'code' ? (
-              <div className="space-y-4">
-                <input placeholder="EDU-XXXX-XXXX" className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-12 text-center text-lg tracking-widest font-mono rounded-xl px-3 focus:outline-none focus:border-[#5b5ef4]/60" />
-                <button className="w-full h-12 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2">
-                  Entrar na Plataforma <ChevronRight size={15} />
+              <form onSubmit={handleCodeLogin} className="space-y-4">
+                <input
+                  placeholder="EDU-XXXX-XXXX"
+                  value={code}
+                  onChange={e => setCode(e.target.value.toUpperCase())}
+                  className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-12 text-center text-lg tracking-widest font-mono rounded-xl px-3 focus:outline-none focus:border-[#5b5ef4]/60"
+                  autoCapitalize="characters"
+                />
+                <button
+                  type="submit"
+                  disabled={code.length < 3 || loading}
+                  className="w-full h-12 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verificando...</> : <>Entrar na Plataforma <ChevronRight size={15} /></>}
                 </button>
-              </div>
+              </form>
             ) : (
-              <div className="space-y-3">
-                <input placeholder="seu@email.com" className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none" />
-                <input type="password" placeholder="••••••••" className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none" />
-                <button className="w-full h-10 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl">Entrar como Admin</button>
-              </div>
+              <form onSubmit={handleAdminLogin} className="space-y-3">
+                <input
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={adminEmail}
+                  onChange={e => setAdminEmail(e.target.value)}
+                  className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none focus:border-[#5b5ef4]/60"
+                />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={adminPassword}
+                  onChange={e => setAdminPassword(e.target.value)}
+                  className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none focus:border-[#5b5ef4]/60"
+                />
+                <button
+                  type="submit"
+                  disabled={!adminEmail || !adminPassword || loading}
+                  className="w-full h-10 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Entrando...</> : 'Entrar como Admin'}
+                </button>
+              </form>
             )}
           </div>
         </div>
