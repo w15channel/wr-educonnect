@@ -134,8 +134,8 @@ const COURSES = [
 },
 {
   title: 'Sexólogo(a)',
-  subtitle: 'Curso Profissionalizante na Formação de Terapeutas da Sexualidade Geral',
-  price: 'R$ 300',
+  subtitle: 'Curso Profissionalizante na Formação de Terapeutas da Sexualidade Humana',
+  price: 'R$ 350',
   period: '/mês · 4 meses',
   tag: 'Novo',
   tagColor: '#a855f7',
@@ -255,7 +255,7 @@ export default function LandingPage({ onLogin }) {
             <span className="text-2xl font-black tracking-tight">WR-EDU</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
-            {[['Metodologia', '#metodologia'], ['Professor', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
             <a key={label} href={href} className="hover:text-white transition-colors">{label}</a>
             )}
           </div>
@@ -263,7 +263,7 @@ export default function LandingPage({ onLogin }) {
             <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium transition-colors">
               <Lock size={13} /> Área do Aluno
             </button>
-            <a href="#cursos" className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hover:opacity-90 transition-all hidden md:block">
+            <a href="#cursos" className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hidden md:block animate-pulse hover:animate-none hover:opacity-90 transition-all shadow-lg shadow-[#5b5ef4]/40" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
               Inscreva-se
             </a>
             <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden text-white/60 hover:text-white">
@@ -273,13 +273,13 @@ export default function LandingPage({ onLogin }) {
         </div>
         {mobileMenu &&
         <div className="md:hidden bg-[#0d1120] border-t border-white/8 px-6 py-4 space-y-3">
-            {[['Metodologia', '#metodologia'], ['Professor', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
           <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/60 hover:text-white py-2 text-sm transition-colors">{label}</a>
           )}
             <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full text-center py-2 text-[#5b5ef4] font-semibold text-sm">
               Área do Aluno
             </button>
-            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm">
+            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-[#5b5ef4]/40" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
               Inscreva-se
             </a>
           </div>
@@ -364,13 +364,13 @@ export default function LandingPage({ onLogin }) {
                 <p className="text-[#5b5ef4] text-xs font-bold mt-2">— William Ribeiro</p>
               </blockquote>
               <p className="text-white/60 leading-relaxed mb-4 text-sm">
-                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a técnica da TCC, a profundidade da psicanálise e a complexidade da sexualidade humana em um método direto e sem rodeios.
+                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-white">técnica da TCC</strong>, a <strong className="text-white">profundidade da psicanálise</strong> e a <strong className="text-white">complexidade da sexualidade humana</strong> em um método direto e sem rodeios.
               </p>
               <p className="text-white/60 leading-relaxed mb-4 text-sm">
                 Diferente de cursos gravados e solitários, estarei com você em tempo real, guiando sua evolução técnica enquanto você interage com colegas e se conecta à comunidade profissional do grupo Sinapse Coletiva. O nosso compromisso é que você experimente a vivência do consultório ainda durante o curso, saindo preparado para atender com ética, segurança e a dignidade que cada paciente merece.
               </p>
               <p className="text-white/60 leading-relaxed mb-8 text-sm">
-                Se você busca transformar sua vocação em uma carreira de impacto e excelência, este é o caminho para dominar as ferramentas que realmente mudam vidas.
+                Se você busca transformar sua vocação em uma carreira de impacto e <strong className="text-white">excelência</strong>, este é o caminho para dominar as ferramentas que realmente <strong className="text-white">mudam vidas</strong>.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {FEATURES.map(({ icon: Icon, title, desc }) =>
@@ -398,7 +398,7 @@ export default function LandingPage({ onLogin }) {
                       </div>
                       <div>
                         <p className="text-white font-bold text-sm">Próxima turma</p>
-                        <p className="text-[#1db89e] text-xs font-semibold">Início em Julho 2026 · Vagas limitadas</p>
+                        <p className="text-[#1db89e] text-xs font-semibold">Início em Setembro/2026 · Vagas limitadas</p>
                       </div>
                     </div>
                   </div>
@@ -421,11 +421,11 @@ export default function LandingPage({ onLogin }) {
               <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
             </div>
             <h2 className="text-4xl lg:text-5xl font-black text-white">Prof. William Ribeiro</h2>
-            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Logoterapeuta · Educador</p>
+            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
           </div>
 
           {/* Avatar + Bio */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16" style={{alignItems:'start'}}>
             <div className="lg:col-span-2">
               <div className="relative">
                 <div className="w-full rounded-3xl overflow-hidden aspect-square">
@@ -442,7 +442,7 @@ export default function LandingPage({ onLogin }) {
                 </div>
               </div>
             </div>
-            <div className="lg:col-span-3 pt-4 space-y-4">
+            <div className="lg:col-span-3 space-y-4">
               <p className="text-white/70 text-sm leading-relaxed">
                 A base do pensamento de William Ribeiro foi construída em um mergulho profundo nos processos organizacionais e corporativos entre 2007 e 2017. Essa década representou uma ascensão estratégica: iniciando como office boy e percorrendo setores vitais como auxiliar de finanças, assistente de departamento pessoal e, finalmente, gestor de pessoas à frente de recrutamentos e seleções.
               </p>
@@ -604,7 +604,7 @@ export default function LandingPage({ onLogin }) {
                     <div className="group relative">
                       <button
                       disabled
-                      className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white/40 bg-white/5 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2">
+                      className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white/50 bg-gradient-to-r from-[#5b5ef4]/20 to-[#1db89e]/20 border border-[#5b5ef4]/30 cursor-not-allowed flex items-center justify-center gap-2" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
                       
                         <Lock size={13} /> Quero Me Inscrever
                       </button>
@@ -620,6 +620,13 @@ export default function LandingPage({ onLogin }) {
           </div>
         </div>
       </section>
+
+      <style>{`
+        @keyframes pulse-cta {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(91,94,244,0.5); }
+          50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(91,94,244,0); }
+        }
+      `}</style>
 
       {/* DEPOIMENTOS */}
       <section id="depoimentos" className="py-24 px-6 lg:px-20 bg-[#0a0d1a]">
@@ -653,7 +660,7 @@ export default function LandingPage({ onLogin }) {
           <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">Pronto para começar sua jornada?</h2>
           <p className="text-white/60 text-lg mb-10">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#cursos" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
+            <a href="#cursos" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
               Garantir Minha Vaga <ChevronRight size={18} />
             </a>
             <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/12 transition-all text-sm">
