@@ -91,28 +91,67 @@ const CURRENT = [
 
 const COURSES = [
 {
-  title: 'Formação de Terapeutas',
-  desc: 'Formação completa e profissionalizante com prática real desde o início.',
-  price: 'R$ 1.497',
+  title: 'Terapeuta TCC',
+  subtitle: 'Curso Profissionalizante na Formação de Terapeuta em Abordagem TCC',
+  price: 'R$ 250',
+  period: '/mês · 4 meses',
   tag: 'Mais Vendido',
+  tagColor: '#5b5ef4',
   imgs: [
     'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
     'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80',
     'https://images.unsplash.com/photo-1529390079861-591de354faf5?w=600&q=80',
   ],
-  highlights: ['Certificado verificável', '+ 200h de conteúdo', 'Mentoria inclusa']
+  highlights: [
+    'Abordagem TCC completa e atualizada',
+    'Certificação verificable internacional',
+    'Aulas ao vivo todas as segundas-feiras',
+    'Acesso a materiais exclusivos',
+    'Mentoria com Prof. William Ribeiro',
+    'Ingresso em Setembro/2026',
+  ]
 },
 {
-  title: 'Mentoria Avançada em TCC',
-  desc: 'Aprofundamento em Terapia Cognitivo-Comportamental com supervisão clínica.',
-  price: 'R$ 897',
+  title: 'Psicanalista Freudiano',
+  subtitle: 'Curso Profissionalizante na Formação de Terapeutas do Método Psicanalítico',
+  price: 'R$ 300',
+  period: '/mês · 4 meses',
   tag: 'Novo',
+  tagColor: '#1db89e',
   imgs: [
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
     'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&q=80',
     'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80',
   ],
-  highlights: ['Supervisão de casos', 'Material exclusivo', 'Acesso vitalício']
+  highlights: [
+    'Método psicanalítico freudiano',
+    'Certificação verificavel internacional',
+    'Aulas ao vivo todas as segundas-feiras',
+    'Supervisão de casos clínicos',
+    'Material didático exclusivo',
+    'Ingresso em Setembro/2026',
+  ]
+},
+{
+  title: 'Sexólogo(a)',
+  subtitle: 'Curso Profissionalizante na Formação de Terapeutas da Sexualidade Geral',
+  price: 'R$ 300',
+  period: '/mês · 4 meses',
+  tag: 'Novo',
+  tagColor: '#a855f7',
+  imgs: [
+    'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=600&q=80',
+    'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80',
+    'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=600&q=80',
+  ],
+  highlights: [
+    '80h de conteúdo especializado',
+    'Sexualidade Geral e Integrativa',
+    'Aulas ao vivo todas as segundas-feiras',
+    'Certificação verificavel',
+    'Abordagem clínica e integrativa',
+    'Ingresso em Setembro/2026',
+  ]
 }];
 
 
@@ -511,43 +550,53 @@ export default function LandingPage({ onLogin }) {
               </a>
             </div>
           </div>
-          <div className="flex flex-col items-center gap-8 max-w-xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {COURSES.map((c, i) =>
-            <div key={i} className={`w-full bg-[#0d1120] border rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-[#5b5ef4]/15 transition-all ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
-                <div className="relative h-56 overflow-hidden">
+            <div key={i} className={`bg-[#0d1120] border rounded-3xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:shadow-[#5b5ef4]/10 ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
+                <div className="relative h-44 overflow-hidden">
                   {c.imgs.map((img, j) => (
                     <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
                   ))}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/20 to-transparent" />
-                  <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-black text-white ${i === 0 ? 'bg-[#5b5ef4]' : 'bg-[#1db89e]'}`}>
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.tagColor }}>
                     {c.tag}
                   </div>
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {c.imgs.map((_, j) => (
                       <button key={j} onClick={() => setCourseImgs(prev => prev.map((v, idx) => idx === i ? j : v))}
-                        className={`h-1.5 rounded-full transition-all ${j === courseImgs[i] ? (i === 0 ? 'bg-[#5b5ef4] w-5' : 'bg-[#1db89e] w-5') : 'bg-white/40 w-2.5'}`} />
+                        className={`h-1.5 rounded-full transition-all ${j === courseImgs[i] ? 'w-5' : 'bg-white/40 w-2'}`}
+                        style={j === courseImgs[i] ? { backgroundColor: c.tagColor } : {}} />
                     ))}
                   </div>
                 </div>
-                <div className="p-7">
-                  <h3 className="font-black text-white text-xl mb-2">{c.title}</h3>
-                  <p className="text-white/50 text-sm leading-relaxed mb-5">{c.desc}</p>
-                  <div className="space-y-2 mb-6">
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="font-black text-white text-lg mb-1">{c.title}</h3>
+                  <p className="text-white/40 text-xs leading-relaxed mb-4">{c.subtitle}</p>
+                  <div className="space-y-1.5 mb-5 flex-1">
                     {c.highlights.map((h, j) =>
-                  <div key={j} className="flex items-center gap-2 text-xs text-white/60">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
+                  <div key={j} className="flex items-center gap-2 text-xs text-white/55">
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: c.tagColor }} />
                         {h}
                       </div>
                   )}
                   </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-white/8">
-                    <div>
+                  <div className="pt-4 border-t border-white/8">
+                    <div className="mb-3">
                       <p className="text-xs text-white/30 mb-0.5">Investimento</p>
-                      <p className="text-2xl font-black text-white">{c.price}</p>
+                      <p className="text-2xl font-black text-white">{c.price} <span className="text-sm font-normal text-white/40">{c.period}</span></p>
                     </div>
-                    <button className={`px-6 py-3 rounded-2xl font-bold text-sm text-white transition-all hover:opacity-90 ${i === 0 ? 'bg-gradient-to-r from-[#5b5ef4] to-[#7c3aed] shadow-lg shadow-[#5b5ef4]/30' : 'bg-gradient-to-r from-[#1db89e] to-[#5b5ef4]'}`}>
-                      Quero Me Inscrever
-                    </button>
+                    <div className="group relative">
+                      <button
+                        disabled
+                        className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white/40 bg-white/5 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        <Lock size={13} /> Quero Me Inscrever
+                      </button>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#1a1d2e] border border-white/15 rounded-xl p-3 text-center text-xs text-white/70 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                        <p className="font-bold text-white mb-0.5">Em breve!</p>
+                        <p>A próxima turma estará disponível em Setembro/2026. Fique ligado!</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
