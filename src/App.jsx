@@ -4,11 +4,8 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import LoginScreen from './components/auth/LoginScreen';
-import LandingPage from './pages/LandingPage';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
@@ -50,7 +47,7 @@ const AuthenticatedApp = () => {
   }
 
   if (!session) {
-    return <LandingPage onLogin={login} />;
+    return <LoginScreen onLogin={login} />;
   }
 
   return (
@@ -88,16 +85,14 @@ const AuthenticatedApp = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <CustomAuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
-      </CustomAuthProvider>
-    </AuthProvider>
+    <CustomAuthProvider>
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <AuthenticatedApp />
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    </CustomAuthProvider>
   )
 }
 
