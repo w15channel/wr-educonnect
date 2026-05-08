@@ -1,15 +1,11 @@
-import { useState } from 'react';
 import { Toaster } from "@/components/ui/sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
 
 import LoginScreen from './components/auth/LoginScreen';
-import LandingPage from './pages/LandingPage';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
@@ -38,22 +34,20 @@ import Classe from './pages/Classe';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
-  const [showLogin, setShowLogin] = useState(false);
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: '#111827' }}>
+      <div className="fixed inset-0 flex items-center justify-center bg-slate-900">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
-          <p className="text-sm text-gray-400 font-medium">Carregando WR-EDU...</p>
+          <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-sm text-slate-400 font-medium">Carregando WR-EDU...</p>
         </div>
       </div>
     );
   }
 
   if (!session) {
-    if (showLogin) return <LoginScreen onLogin={login} />;
-    return <LandingPage onLoginClick={() => setShowLogin(true)} />;
+    return <LoginScreen onLogin={login} />;
   }
 
   return (
@@ -89,7 +83,7 @@ const AuthenticatedApp = () => {
   );
 };
 
-const InnerApp = () => {
+function App() {
   return (
     <CustomAuthProvider>
       <QueryClientProvider client={queryClientInstance}>
@@ -99,15 +93,7 @@ const InnerApp = () => {
         <Toaster />
       </QueryClientProvider>
     </CustomAuthProvider>
-  );
-};
-
-function App() {
-  return (
-    <AuthProvider>
-      <InnerApp />
-    </AuthProvider>
-  );
+  )
 }
 
 export default App
