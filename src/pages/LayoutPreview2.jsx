@@ -2,117 +2,117 @@ import React, { useState, useEffect } from 'react';
 import {
   GraduationCap, Lock, Key, Sparkles, Users, BookOpen, Video, Heart,
   Star, ChevronRight, Shield, Award, CheckCircle, ExternalLink,
-  ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle
-} from 'lucide-react';
+  ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle } from
+'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
 const HERO_IMAGES = [
-  'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
-  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
-  'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
-];
+'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
+'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
+'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
+'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85'];
+
 
 const FEATURES = [
-  { icon: BookOpen, title: 'Videoaulas Gravadas', desc: 'Conteúdo terapêutico exclusivo' },
-  { icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
-  { icon: Users, title: 'Comunidade Ativa', desc: 'Fórum de dúvidas entre alunos' },
-  { icon: Heart, title: 'Prática Real', desc: 'Experiência terapêutica ao longo do curso' },
-];
+{ icon: BookOpen, title: 'Videoaulas Gravadas', desc: 'Conteúdo terapêutico exclusivo' },
+{ icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
+{ icon: Users, title: 'Comunidade Ativa', desc: 'Fórum de dúvidas entre alunos' },
+{ icon: Heart, title: 'Prática Real', desc: 'Experiência terapêutica ao longo do curso' }];
+
 
 const CERTS = [
-  {
-    title: 'Psicoterapeuta',
-    institution: 'Faculdade Unypública',
-    code: '267797-1-432-19012026071526',
-    link: null,
-    extra: 'Registrado internacionalmente pela AHDE · ID: 00403THE',
-    verifyLink: 'https://ahde-global.org/?lang=pt-br',
-    verifyLabel: 'Verificar via AHDE',
-  },
-  {
-    title: 'Psicanalista Diplomado',
-    institution: 'Faculdade Unifatec',
-    code: 'eeee6d19-0d18-46c5-a657-3e6f5bfdb515',
-    link: null,
-    extra: 'Registrado internacionalmente pela Therapist University · ID: CERT-1768040814293-CAZA86VTQ',
-    verifyLink: 'https://certificados.therapist.university/certificates/CERT-1768040814293-CAZA86VTQ',
-    verifyLabel: 'Verificar Certificado',
-  },
-  {
-    title: 'Logoterapeuta Diplomado',
-    institution: 'Faculdade Unypública',
-    code: '267797-1-405-13112025030416',
-    link: null,
-    extra: null,
-    verifyLink: null,
-    verifyLabel: null,
-  },
-  {
-    title: 'Sexólogo Integrativo',
-    institution: 'Unifast — School of Business Acceleration',
-    code: '000300950029868',
-    link: null,
-    extra: 'Especializações em sexualidade, infidelidade conjugal, vícios e outras áreas',
-    verifyLink: null,
-    verifyLabel: null,
-  },
-];
+{
+  title: 'Psicoterapeuta',
+  institution: 'Faculdade Unypública',
+  code: '267797-1-432-19012026071526',
+  link: null,
+  extra: 'Registrado internacionalmente pela AHDE · ID: 00403THE',
+  verifyLink: 'https://ahde-global.org/?lang=pt-br',
+  verifyLabel: 'Verificar via AHDE'
+},
+{
+  title: 'Psicanalista Diplomado',
+  institution: 'Faculdade Unifatec',
+  code: 'eeee6d19-0d18-46c5-a657-3e6f5bfdb515',
+  link: null,
+  extra: 'Registrado internacionalmente pela Therapist University · ID: CERT-1768040814293-CAZA86VTQ',
+  verifyLink: 'https://certificados.therapist.university/certificates/CERT-1768040814293-CAZA86VTQ',
+  verifyLabel: 'Verificar Certificado'
+},
+{
+  title: 'Logoterapeuta Diplomado',
+  institution: 'Faculdade Unypública',
+  code: '267797-1-405-13112025030416',
+  link: null,
+  extra: null,
+  verifyLink: null,
+  verifyLabel: null
+},
+{
+  title: 'Sexólogo Integrativo',
+  institution: 'Unifast — School of Business Acceleration',
+  code: '000300950029868',
+  link: null,
+  extra: 'Especializações em sexualidade, infidelidade conjugal, vícios e outras áreas',
+  verifyLink: null,
+  verifyLabel: null
+}];
+
 
 const TIMELINE = [
-  { period: '2009 – 2019', role: 'Atuação Administrativa', desc: 'Departamentos financeiro, RH, departamento pessoal e processos seletivos como Headhunter.' },
-  { period: '2019', role: 'Administração — UFPR', desc: 'Ingresso na turma de Administração da UFPR, com destaque nas matérias de Comportamento Organizacional.' },
-  { period: '2020', role: 'Operador no Mercado Financeiro e de Criptoativos', desc: 'Atuação ativa durante a crise da pandemia no mercado financeiro e de criptoativos.' },
-  { period: '2022', role: 'Tecnologia da Informação — 8° RI de Curitiba', desc: 'Profissional de TI no 8° Registro de Imóveis de Curitiba, participando da implementação de migração tecnológica.' },
-];
+{ period: '2009 – 2019', role: 'Atuação Administrativa', desc: 'Departamentos financeiro, RH, departamento pessoal e processos seletivos como Headhunter.' },
+{ period: '2019', role: 'Administração — UFPR', desc: 'Ingresso na turma de Administração da UFPR, com destaque nas matérias de Comportamento Organizacional.' },
+{ period: '2020', role: 'Operador no Mercado Financeiro e de Criptoativos', desc: 'Atuação ativa durante a crise da pandemia no mercado financeiro e de criptoativos.' },
+{ period: '2022', role: 'Tecnologia da Informação — 8° RI de Curitiba', desc: 'Profissional de TI no 8° Registro de Imóveis de Curitiba, participando da implementação de migração tecnológica.' }];
+
 
 const CURRENT = [
-  {
-    title: 'Dirigente — Sinapse Coletiva',
-    desc: 'Grupo formado por profissionais da saúde comportamental com o objetivo de construir um espaço consciente e equilibrado de técnicas e comunidade acadêmica.',
-    link: null,
-  },
-  {
-    title: 'Gestor — WR-EDU',
-    desc: 'Gerencia o Curso Profissionalizante para Formação de Terapeutas. Representado oficialmente junto à ABED (Associação Brasileira de Educação a Distância).',
-    link: 'https://www.abed.org.br/site/associados/consulta-associados-ativos/',
-    linkLabel: 'Consultar na ABED',
-  },
-  {
-    title: 'Educador Social — Projeto Vida Digital (ADRA)',
-    desc: 'Profissional de Educação Social para Crianças e Adolescentes em programa da instituição internacional ADRA. O projeto reestrutura grupos em vulnerabilidade social levando temas socioeducacionais e resgate de dignidade.',
-    link: 'https://adra.org.br/projetos/vida-digital/',
-    linkLabel: 'Conhecer o Projeto',
-  },
-];
+{
+  title: 'Dirigente — Sinapse Coletiva',
+  desc: 'Grupo formado por profissionais da saúde comportamental com o objetivo de construir um espaço consciente e equilibrado de técnicas e comunidade acadêmica.',
+  link: null
+},
+{
+  title: 'Gestor — WR-EDU',
+  desc: 'Gerencia o Curso Profissionalizante para Formação de Terapeutas. Representado oficialmente junto à ABED (Associação Brasileira de Educação a Distância).',
+  link: 'https://www.abed.org.br/site/associados/consulta-associados-ativos/',
+  linkLabel: 'Consultar na ABED'
+},
+{
+  title: 'Educador Social — Projeto Vida Digital (ADRA)',
+  desc: 'Profissional de Educação Social para Crianças e Adolescentes em programa da instituição internacional ADRA. O projeto reestrutura grupos em vulnerabilidade social levando temas socioeducacionais e resgate de dignidade.',
+  link: 'https://adra.org.br/projetos/vida-digital/',
+  linkLabel: 'Conhecer o Projeto'
+}];
+
 
 const COURSES = [
-  {
-    title: 'Formação de Terapeutas',
-    desc: 'Formação completa e profissionalizante com prática real desde o início.',
-    price: 'R$ 1.497',
-    tag: 'Mais Vendido',
-    img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
-    highlights: ['Certificado verificável', '+ 200h de conteúdo', 'Mentoria inclusa'],
-  },
-  {
-    title: 'Mentoria Avançada em TCC',
-    desc: 'Aprofundamento em Terapia Cognitivo-Comportamental com supervisão clínica.',
-    price: 'R$ 897',
-    tag: 'Novo',
-    img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
-    highlights: ['Supervisão de casos', 'Material exclusivo', 'Acesso vitalício'],
-  },
-];
+{
+  title: 'Formação de Terapeutas',
+  desc: 'Formação completa e profissionalizante com prática real desde o início.',
+  price: 'R$ 1.497',
+  tag: 'Mais Vendido',
+  img: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80',
+  highlights: ['Certificado verificável', '+ 200h de conteúdo', 'Mentoria inclusa']
+},
+{
+  title: 'Mentoria Avançada em TCC',
+  desc: 'Aprofundamento em Terapia Cognitivo-Comportamental com supervisão clínica.',
+  price: 'R$ 897',
+  tag: 'Novo',
+  img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
+  highlights: ['Supervisão de casos', 'Material exclusivo', 'Acesso vitalício']
+}];
+
 
 const TESTIMONIALS = [
-  { name: 'Ana Paula M.', text: 'A formação mais completa que já fiz. O diferencial da prática desde o início foi transformador para mim.', stars: 5 },
-  { name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
-  { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 },
-];
+{ name: 'Ana Paula M.', text: 'A formação mais completa que já fiz. O diferencial da prática desde o início foi transformador para mim.', stars: 5 },
+{ name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
+{ name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 }];
+
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
@@ -129,7 +129,7 @@ export default function LandingPage({ onLogin }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => setHeroImg(i => (i + 1) % HERO_IMAGES.length), 5000);
+    const interval = setInterval(() => setHeroImg((i) => (i + 1) % HERO_IMAGES.length), 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -160,7 +160,7 @@ export default function LandingPage({ onLogin }) {
       email: record.student_email || '',
       bio: record.profile_bio || '',
       avatarColor: record.profile_avatar_color || '#5b5ef4',
-      photoUrl: record.profile_photo_url || '',
+      photoUrl: record.profile_photo_url || ''
     });
     onLogin();
     setLoading(false);
@@ -198,9 +198,9 @@ export default function LandingPage({ onLogin }) {
             <span className="text-lg font-black tracking-tight">WR-EDU</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
-            {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map(l => (
-              <a key={l} href={`#${l.toLowerCase().replace(' o ', '-').replace(' ', '-')}`} className="hover:text-white transition-colors">{l}</a>
-            ))}
+            {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map((l) =>
+            <a key={l} href={`#${l.toLowerCase().replace(' o ', '-').replace(' ', '-')}`} className="hover:text-white transition-colors">{l}</a>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium transition-colors">
@@ -214,33 +214,33 @@ export default function LandingPage({ onLogin }) {
             </button>
           </div>
         </div>
-        {mobileMenu && (
-          <div className="md:hidden bg-[#0d1120] border-t border-white/8 px-6 py-4 space-y-3">
-            {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map(l => (
-              <a key={l} href="#" onClick={() => setMobileMenu(false)} className="block text-white/60 hover:text-white py-2 text-sm transition-colors">{l}</a>
-            ))}
-            <button onClick={() => { setShowLoginModal(true); setMobileMenu(false); }} className="w-full text-center py-2 text-[#5b5ef4] font-semibold text-sm">
+        {mobileMenu &&
+        <div className="md:hidden bg-[#0d1120] border-t border-white/8 px-6 py-4 space-y-3">
+            {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map((l) =>
+          <a key={l} href="#" onClick={() => setMobileMenu(false)} className="block text-white/60 hover:text-white py-2 text-sm transition-colors">{l}</a>
+          )}
+            <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full text-center py-2 text-[#5b5ef4] font-semibold text-sm">
               Área do Aluno
             </button>
             <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm">
               Inscreva-se
             </a>
           </div>
-        )}
+        }
       </nav>
 
       {/* HERO FULL-WIDTH */}
       <div className="relative h-screen flex items-center justify-center overflow-hidden">
-        {HERO_IMAGES.map((src, i) => (
-          <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
+        {HERO_IMAGES.map((src, i) =>
+        <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
             <img src={src} alt="" className="w-full h-full object-cover object-center" />
           </div>
-        ))}
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14]" />
         <div className="absolute inset-0 bg-[#080b14]/30" />
 
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-          <img src={LOGO_URL} alt="WR-EDU" className="h-16 lg:h-24 object-contain mx-auto mb-6 drop-shadow-2xl" />
+          <img src={LOGO_URL} alt="WR-EDU" className="h-16 lg:h-24 object-contain mx-auto mb-6 drop-shadow-2xl hidden" />
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-5 py-2 mb-8">
             <Sparkles size={13} className="text-yellow-400" />
             <span className="text-sm font-semibold text-white/80">Escola de Formação de Terapeutas · Turma 2026</span>
@@ -270,10 +270,10 @@ export default function LandingPage({ onLogin }) {
           <ArrowDown size={16} />
         </div>
         <div className="absolute bottom-8 right-8 flex gap-2">
-          {HERO_IMAGES.map((_, i) => (
-            <button key={i} onClick={() => setHeroImg(i)}
-              className={`h-1.5 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`} />
-          ))}
+          {HERO_IMAGES.map((_, i) =>
+          <button key={i} onClick={() => setHeroImg(i)}
+          className={`h-1.5 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`} />
+          )}
         </div>
       </div>
 
@@ -281,16 +281,16 @@ export default function LandingPage({ onLogin }) {
       <div className="bg-[#0d1120] border-y border-white/8 py-8 px-6">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
-            { value: '500+', label: 'Terapeutas Formados' },
-            { value: '15+', label: 'Anos de Experiência' },
-            { value: '200h', label: 'Carga Horária' },
-            { value: '4.9★', label: 'Avaliação Média' },
-          ].map((s, i) => (
-            <div key={i}>
+          { value: '500+', label: 'Terapeutas Formados' },
+          { value: '15+', label: 'Anos de Experiência' },
+          { value: '200h', label: 'Carga Horária' },
+          { value: '4.9★', label: 'Avaliação Média' }].
+          map((s, i) =>
+          <div key={i}>
               <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">{s.value}</p>
               <p className="text-white/40 text-xs mt-1 uppercase tracking-wide">{s.label}</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 
@@ -314,8 +314,8 @@ export default function LandingPage({ onLogin }) {
                 Com currículo rigoroso abrangendo Psicoterapia Integrativa, TCC, Hipnoterapia e muito mais, você sairá preparado para atender pacientes com ética, técnica e profundidade.
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {FEATURES.map(({ icon: Icon, title, desc }) => (
-                  <div key={title} className="flex items-start gap-3 bg-white/4 border border-white/8 rounded-2xl p-4">
+                {FEATURES.map(({ icon: Icon, title, desc }) =>
+                <div key={title} className="flex items-start gap-3 bg-white/4 border border-white/8 rounded-2xl p-4">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/20 flex items-center justify-center shrink-0">
                       <Icon size={14} className="text-[#1db89e]" />
                     </div>
@@ -324,7 +324,7 @@ export default function LandingPage({ onLogin }) {
                       <p className="text-white/40 text-xs mt-0.5">{desc}</p>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
             <div className="relative">
@@ -374,8 +374,8 @@ export default function LandingPage({ onLogin }) {
                     src="https://media.base44.com/images/public/69f55577840a3c93cee191be/3488805d0_17673765754883.jpg"
                     alt="Prof. William Ribeiro"
                     className="w-full h-full object-cover"
-                    style={{ objectPosition: '50% 30%' }}
-                  />
+                    style={{ objectPosition: '50% 30%' }} />
+                  
                 </div>
                 <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
                 <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
@@ -399,8 +399,8 @@ export default function LandingPage({ onLogin }) {
               <CheckCircle size={13} className="text-[#1db89e]" /> Credenciais e Certificações Verificáveis
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {CERTS.map((c, i) => (
-                <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all">
+              {CERTS.map((c, i) =>
+              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="w-7 h-7 rounded-full bg-[#1db89e]/15 flex items-center justify-center shrink-0 mt-0.5">
                       <CheckCircle size={13} className="text-[#1db89e]" />
@@ -412,14 +412,14 @@ export default function LandingPage({ onLogin }) {
                   </div>
                   <p className="text-white/25 text-[10px] font-mono bg-white/5 rounded-lg px-3 py-1.5 mb-2 truncate">Cód: {c.code}</p>
                   {c.extra && <p className="text-white/40 text-xs mb-2 leading-relaxed">{c.extra}</p>}
-                  {c.verifyLink && (
-                    <a href={c.verifyLink} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[#5b5ef4] text-xs font-semibold hover:text-[#7c7ef4] transition-colors">
+                  {c.verifyLink &&
+                <a href={c.verifyLink} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[#5b5ef4] text-xs font-semibold hover:text-[#7c7ef4] transition-colors">
                       <ExternalLink size={11} /> {c.verifyLabel}
                     </a>
-                  )}
+                }
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -429,14 +429,14 @@ export default function LandingPage({ onLogin }) {
               <Award size={13} className="text-[#5b5ef4]" /> Trajetória Profissional
             </p>
             <div className="relative pl-6 border-l border-white/10 space-y-6">
-              {TIMELINE.map((t, i) => (
-                <div key={i} className="relative">
+              {TIMELINE.map((t, i) =>
+              <div key={i} className="relative">
                   <div className="absolute -left-[25px] w-3 h-3 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] mt-1" />
                   <p className="text-[#1db89e] text-xs font-black uppercase tracking-widest mb-0.5">{t.period}</p>
                   <p className="text-white font-bold text-sm">{t.role}</p>
                   <p className="text-white/45 text-xs mt-1 leading-relaxed">{t.desc}</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -446,18 +446,18 @@ export default function LandingPage({ onLogin }) {
               <Sparkles size={13} className="text-yellow-400" /> Atuação Atual
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {CURRENT.map((item, i) => (
-                <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#1db89e]/30 transition-all">
+              {CURRENT.map((item, i) =>
+              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#1db89e]/30 transition-all">
                   <p className="text-white font-bold text-sm mb-2">{item.title}</p>
                   <p className="text-white/45 text-xs leading-relaxed mb-3">{item.desc}</p>
-                  {item.link && (
-                    <a href={item.link} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[#1db89e] text-xs font-semibold hover:opacity-80 transition-opacity">
+                  {item.link &&
+                <a href={item.link} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[#1db89e] text-xs font-semibold hover:opacity-80 transition-opacity">
                       <ExternalLink size={11} /> {item.linkLabel}
                     </a>
-                  )}
+                }
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -476,12 +476,12 @@ export default function LandingPage({ onLogin }) {
             {/* Selos ABED + AHDE */}
             <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
+              className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
                 <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-10 object-contain" />
                 <ExternalLink size={11} className="text-white/20 group-hover:text-[#5b5ef4] transition-colors" />
               </a>
               <a href="https://ahde-global.org/?lang=pt-br" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
+              className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
                 <div className="text-center">
                   <p className="text-[#1db89e] font-black text-sm leading-none">AHDE</p>
                   <p className="text-white/30 text-[9px] uppercase tracking-widest mt-0.5">International</p>
@@ -496,8 +496,8 @@ export default function LandingPage({ onLogin }) {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {COURSES.map((c, i) => (
-              <div key={i} className={`bg-[#0d1120] border rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-[#5b5ef4]/15 transition-all group ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
+            {COURSES.map((c, i) =>
+            <div key={i} className={`bg-[#0d1120] border rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-[#5b5ef4]/15 transition-all group ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
                 <div className="relative h-52 overflow-hidden">
                   <img src={c.img} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/30 to-transparent" />
@@ -509,12 +509,12 @@ export default function LandingPage({ onLogin }) {
                   <h3 className="font-black text-white text-xl mb-2">{c.title}</h3>
                   <p className="text-white/50 text-sm leading-relaxed mb-5">{c.desc}</p>
                   <div className="space-y-2 mb-6">
-                    {c.highlights.map((h, j) => (
-                      <div key={j} className="flex items-center gap-2 text-xs text-white/60">
+                    {c.highlights.map((h, j) =>
+                  <div key={j} className="flex items-center gap-2 text-xs text-white/60">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
                         {h}
                       </div>
-                    ))}
+                  )}
                   </div>
                   <div className="flex items-center justify-between pt-4 border-t border-white/8">
                     <div>
@@ -527,7 +527,7 @@ export default function LandingPage({ onLogin }) {
                   </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -540,8 +540,8 @@ export default function LandingPage({ onLogin }) {
             <p className="text-white/40 text-sm">Mais de 500 terapeutas formados</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) => (
-              <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all">
+            {TESTIMONIALS.map((t, i) =>
+            <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all">
                 <Quote size={22} className="text-[#5b5ef4]/30 mb-3" />
                 <p className="text-white/70 text-sm leading-relaxed mb-5">"{t.text}"</p>
                 <div className="flex items-center gap-3">
@@ -552,7 +552,7 @@ export default function LandingPage({ onLogin }) {
                   </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -587,13 +587,13 @@ export default function LandingPage({ onLogin }) {
             </div>
             <div className="flex flex-wrap gap-6 text-white/30 text-sm">
               {[
-                { label: 'Política de Trabalho', href: '/politica' },
-                { label: 'Termos de Uso', href: '#' },
-                { label: 'Privacidade', href: '#' },
-                { label: 'Contato', href: '#' },
-              ].map(l => (
-                <a key={l.label} href={l.href} className="hover:text-white/70 transition-colors">{l.label}</a>
-              ))}
+              { label: 'Política de Trabalho', href: '/politica' },
+              { label: 'Termos de Uso', href: '#' },
+              { label: 'Privacidade', href: '#' },
+              { label: 'Contato', href: '#' }].
+              map((l) =>
+              <a key={l.label} href={l.href} className="hover:text-white/70 transition-colors">{l.label}</a>
+              )}
             </div>
           </div>
           <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
@@ -601,8 +601,8 @@ export default function LandingPage({ onLogin }) {
             <div className="flex items-center gap-4">
               <img
                 src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png"
-                alt="ABED" className="h-8 object-contain opacity-30 hover:opacity-70 transition-opacity"
-              />
+                alt="ABED" className="h-8 object-contain opacity-30 hover:opacity-70 transition-opacity" />
+              
               <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
                 <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
@@ -613,79 +613,79 @@ export default function LandingPage({ onLogin }) {
       </footer>
 
       {/* LOGIN MODAL */}
-      {showLoginModal && (
-        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
-          <div className="bg-[#0d1120] border border-white/15 rounded-3xl p-8 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+      {showLoginModal &&
+      <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
+          <div className="bg-[#0d1120] border border-white/15 rounded-3xl p-8 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-white font-black text-xl">Área do Aluno</h3>
                 <p className="text-white/40 text-xs mt-0.5">Acesso seguro à plataforma</p>
               </div>
-              <button onClick={() => { setShowLoginModal(false); setError(''); }} className="text-white/30 hover:text-white transition-colors">
+              <button onClick={() => {setShowLoginModal(false);setError('');}} className="text-white/30 hover:text-white transition-colors">
                 <X size={18} />
               </button>
             </div>
 
             <div className="flex gap-1.5 bg-white/4 rounded-2xl p-1.5 mb-5 border border-white/8">
-              {['code', 'admin'].map(m => (
-                <button key={m} onClick={() => { setMode(m); setError(''); }}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${mode === m ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg' : 'text-white/35 hover:text-white/65'}`}>
+              {['code', 'admin'].map((m) =>
+            <button key={m} onClick={() => {setMode(m);setError('');}}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${mode === m ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg' : 'text-white/35 hover:text-white/65'}`}>
                   {m === 'code' ? <><Key size={12} /> Código</> : <><Shield size={12} /> Admin</>}
                 </button>
-              ))}
+            )}
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/25 text-red-300 text-xs p-3 rounded-xl mb-4">
+            {error &&
+          <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/25 text-red-300 text-xs p-3 rounded-xl mb-4">
                 <AlertCircle size={13} className="shrink-0" /> {error}
               </div>
-            )}
+          }
 
-            {mode === 'code' ? (
-              <form onSubmit={handleCodeLogin} className="space-y-4">
+            {mode === 'code' ?
+          <form onSubmit={handleCodeLogin} className="space-y-4">
                 <input
-                  placeholder="EDU-XXXX-XXXX"
-                  value={code}
-                  onChange={e => setCode(e.target.value.toUpperCase())}
-                  className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-12 text-center text-lg tracking-widest font-mono rounded-xl px-3 focus:outline-none focus:border-[#5b5ef4]/60"
-                  autoCapitalize="characters"
-                />
+              placeholder="EDU-XXXX-XXXX"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-12 text-center text-lg tracking-widest font-mono rounded-xl px-3 focus:outline-none focus:border-[#5b5ef4]/60"
+              autoCapitalize="characters" />
+            
                 <button
-                  type="submit"
-                  disabled={code.length < 3 || loading}
-                  className="w-full h-12 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
-                >
+              type="submit"
+              disabled={code.length < 3 || loading}
+              className="w-full h-12 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
+              
                   {loading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verificando...</> : <>Entrar na Plataforma <ChevronRight size={15} /></>}
                 </button>
-              </form>
-            ) : (
-              <form onSubmit={handleAdminLogin} className="space-y-3">
+              </form> :
+
+          <form onSubmit={handleAdminLogin} className="space-y-3">
                 <input
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={adminEmail}
-                  onChange={e => setAdminEmail(e.target.value)}
-                  className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none focus:border-[#5b5ef4]/60"
-                />
+              type="email"
+              placeholder="seu@email.com"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none focus:border-[#5b5ef4]/60" />
+            
                 <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={adminPassword}
-                  onChange={e => setAdminPassword(e.target.value)}
-                  className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none focus:border-[#5b5ef4]/60"
-                />
+              type="password"
+              placeholder="••••••••"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none focus:border-[#5b5ef4]/60" />
+            
                 <button
-                  type="submit"
-                  disabled={!adminEmail || !adminPassword || loading}
-                  className="w-full h-10 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
-                >
+              type="submit"
+              disabled={!adminEmail || !adminPassword || loading}
+              className="w-full h-10 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
+              
                   {loading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Entrando...</> : 'Entrar como Admin'}
                 </button>
               </form>
-            )}
+          }
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
