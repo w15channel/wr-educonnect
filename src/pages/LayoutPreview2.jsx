@@ -233,7 +233,7 @@ export default function LandingPage({ onLogin }) {
       <div className="relative h-screen flex items-center justify-center overflow-hidden">
         {HERO_IMAGES.map((src, i) =>
         <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
-            <img src={src} alt="" className="w-full h-full object-cover object-center" />
+            <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 20%' }} />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14]" />
