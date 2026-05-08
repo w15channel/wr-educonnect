@@ -357,7 +357,7 @@ export default function LandingPage({ onLogin }) {
               <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
             </div>
             <h2 className="text-4xl lg:text-5xl font-black text-white">Prof. William Ribeiro</h2>
-            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Logoterapeuta · Educador</p>
+            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
           </div>
 
           {/* Avatar + Bio */}
