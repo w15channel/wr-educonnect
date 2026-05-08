@@ -166,9 +166,23 @@ export default function PoliticaDeTrabalho() {
               <p className="text-white/30 text-xs">Escola de Formação de Terapeutas</p>
             </div>
           </div>
+          {/* Assinatura */}
+          <div className="text-center">
+            <span style={{
+              fontFamily: '"Dancing Script", "Brush Script MT", cursive',
+              fontSize: 28,
+              color: '#7b8fcc',
+              letterSpacing: 2,
+              display: 'block',
+              lineHeight: 1.2,
+            }}>William Ribeiro S.</span>
+            <div className="w-48 border-t border-white/15 pt-2 mx-auto">
+              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · WR-EDU</p>
+            </div>
+          </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
             <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-002-00</span>
+            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
           </div>
         </div>
       </div>

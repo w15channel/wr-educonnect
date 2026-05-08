@@ -18,10 +18,16 @@ const HOURS_MAP = { lesson: 2, live_attendance: 2, task: 1, quiz: 1.5, forum: 0.
 // ─── Assinatura SVG manual ────────────────────────────────────────────────────
 function SignatureSVG() {
   return (
-    <svg width="140" height="38" viewBox="0 0 140 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', margin: '0 auto 2px' }}>
-      <path d="M8 28 C12 18, 16 10, 20 20 C24 30, 28 10, 32 22 C34 28, 36 14, 40 24 C42 30, 44 20, 48 26 C50 30, 52 22, 56 26 C60 30, 62 20, 66 22 C68 24, 70 18, 74 20 C76 22, 78 18, 82 16 C86 14, 90 10, 96 14 C100 17, 102 22, 106 18 C108 16, 110 20, 114 22 C116 23, 118 20, 122 22 C126 24, 128 28, 132 28" stroke="#1e3a5f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <path d="M20 32 C30 30, 50 31, 70 30 C90 29, 110 31, 130 30" stroke="#1e3a5f" strokeWidth="0.8" strokeLinecap="round" strokeDasharray="1 3" fill="none"/>
-    </svg>
+    <div style={{ display: 'block', margin: '0 auto 2px', textAlign: 'center' }}>
+      <span style={{
+        fontFamily: '"Dancing Script", "Brush Script MT", cursive',
+        fontSize: 32,
+        color: '#7b8fcc',
+        letterSpacing: 2,
+        display: 'block',
+        lineHeight: 1.1,
+      }}>William Ribeiro S.</span>
+    </div>
   );
 }
 
@@ -148,7 +154,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '24px auto 20px' }} />
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: 'Georgia, serif', fontSize: 26, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 4, letterSpacing: 1 }}>W.Ribeiro</div>
+            <div style={{ fontFamily: '"Dancing Script", "Brush Script MT", cursive', fontSize: 28, color: '#7b8fcc', marginBottom: 4, letterSpacing: 1 }}>William Ribeiro S.</div>
             <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
               <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>Direção Geral</p>
               <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>WR — Instituto de Desenvolvimento Humano</p>

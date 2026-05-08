@@ -240,6 +240,7 @@ export default function LandingPage({ onLogin }) {
         <div className="absolute inset-0 bg-[#080b14]/30" />
 
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
+          <img src={LOGO_URL} alt="WR-EDU" className="h-16 lg:h-24 object-contain mx-auto mb-6 drop-shadow-2xl" />
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-5 py-2 mb-8">
             <Sparkles size={13} className="text-yellow-400" />
             <span className="text-sm font-semibold text-white/80">Escola de Formação de Terapeutas · Turma 2026</span>
@@ -328,7 +329,7 @@ export default function LandingPage({ onLogin }) {
             </div>
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden">
-                <img src={HERO_IMAGES[3]} alt="Curso" className="w-full aspect-[4/5] object-cover" />
+                <img src={HERO_IMAGES[3]} alt="Curso" className="w-full aspect-[4/5] object-cover object-top" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4">
@@ -368,17 +369,16 @@ export default function LandingPage({ onLogin }) {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16">
             <div className="lg:col-span-2">
               <div className="relative">
-                <div className="w-full rounded-3xl overflow-hidden aspect-square bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/10 flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] mx-auto mb-4 flex items-center justify-center">
-                      <span className="text-5xl font-black text-white">WR</span>
-                    </div>
-                    <p className="text-white/60 font-semibold">Prof. William Ribeiro</p>
-                  </div>
+                <div className="w-full rounded-3xl overflow-hidden aspect-square">
+                  <img
+                    src="https://media.base44.com/images/public/69f55577840a3c93cee191be/3488805d0_17673765754883.jpg"
+                    alt="Prof. William Ribeiro"
+                    className="w-full h-full object-cover object-top"
+                  />
                 </div>
                 <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
                 <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
-                  <p className="text-white font-black text-center text-sm">Múltiplas formações verificáveis</p>
+                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro · WR-EDU</p>
                 </div>
               </div>
             </div>
@@ -604,7 +604,7 @@ export default function LandingPage({ onLogin }) {
               />
               <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-                <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-002-00</span>
+                <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
               </div>
             </div>
           </div>
