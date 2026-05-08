@@ -246,7 +246,7 @@ export default function LandingPage({ onLogin }) {
             <span className="text-lg font-black tracking-tight">WR-EDU</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
-            {['Sobre o Curso', 'Professor', 'Cursos', 'Depoimentos'].map((l) =>
+            {['Metodologia', 'Professor', 'Cursos', 'Depoimentos'].map((l) =>
             <a key={l} href={`#${l.toLowerCase().replace(' o ', '-').replace(' ', '-')}`} className="hover:text-white transition-colors">{l}</a>
             )}
           </div>
@@ -337,26 +337,29 @@ export default function LandingPage({ onLogin }) {
         </div>
       </div>
 
-      {/* SOBRE O CURSO */}
-      <section id="sobre-o-curso" className="py-28 px-6 lg:px-20">
+      {/* METODOLOGIA */}
+      <section id="metodologia" className="py-28 px-6 lg:px-20">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-6">
                 <GraduationCap size={13} className="text-[#5b5ef4]" />
-                <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Sobre a Formação</span>
+                <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Nossa Metodologia</span>
               </div>
-              <h2 className="text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
-                Uma metodologia que transforma
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">teoria em prática real.</span>
-              </h2>
-              <p className="text-white/60 leading-relaxed mb-6 text-base">
-                Nossa formação foi desenvolvida para que você não apenas aprenda conceitos terapêuticos, mas os coloque em prática desde as primeiras semanas.
+              <blockquote className="border-l-2 border-[#5b5ef4]/40 pl-5 mb-8">
+                <p className="text-white/80 text-base italic leading-relaxed">&ldquo;Você pode fazer muitas coisas na sua vida, mas a excelência vai se apresentar somente quando encontrar o que realmente nasceu para fazer.&rdquo;</p>
+                <footer className="text-[#1db89e] text-xs font-bold mt-2">&mdash; William Ribeiro</footer>
+              </blockquote>
+              <p className="text-white/60 leading-relaxed mb-5 text-sm">
+                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criamos uma formação onde você não apenas estuda, mas <strong className="text-white">pratica a terapia desde as primeiras semanas</strong>. Aqui, unimos a técnica da TCC, a profundidade da psicanálise e a complexidade da sexualidade humana em um método direto e sem rodeios.
               </p>
-              <p className="text-white/60 leading-relaxed mb-8 text-base">
-                Com currículo rigoroso abrangendo Psicoterapia Integrativa, TCC, Hipnoterapia e muito mais, você sairá preparado para atender pacientes com ética, técnica e profundidade.
+              <p className="text-white/60 leading-relaxed mb-5 text-sm">
+                Diferente de cursos gravados e solitários, estarei com você em tempo real, guiando sua evolução técnica enquanto você interage com colegas e se conecta à comunidade profissional do grupo <strong className="text-white">Sinapse Coletiva</strong>. O nosso compromisso é que você experimente a vivência do consultório ainda durante o curso, saindo preparado para atender com ética, segurança e a dignidade que cada paciente merece.
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <p className="text-white/60 leading-relaxed text-sm">
+                Se você busca transformar sua vocação em uma carreira de impacto e excelência, este é o caminho para dominar as ferramentas que realmente mudam vidas.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mt-8">
                 {FEATURES.map(({ icon: Icon, title, desc }) =>
                 <div key={title} className="flex items-start gap-3 bg-white/4 border border-white/8 rounded-2xl p-4">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/20 flex items-center justify-center shrink-0">
@@ -372,7 +375,7 @@ export default function LandingPage({ onLogin }) {
             </div>
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden">
-                <img src={'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'} alt="Curso" className="w-full aspect-[4/5] object-cover object-center" />
+                <img src={'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'} alt="Metodologia" className="w-full aspect-[4/5] object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4">
@@ -382,7 +385,7 @@ export default function LandingPage({ onLogin }) {
                       </div>
                       <div>
                         <p className="text-white font-bold text-sm">Próxima turma</p>
-                        <p className="text-[#1db89e] text-xs font-semibold">Início em Julho 2026 · Vagas limitadas</p>
+                        <p className="text-[#1db89e] text-xs font-semibold">Início em Setembro 2026 · Vagas limitadas</p>
                       </div>
                     </div>
                   </div>
