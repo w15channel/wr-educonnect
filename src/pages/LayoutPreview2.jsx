@@ -324,7 +324,7 @@ export default function LandingPage({ onLogin }) {
             </div>
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden">
-                <img src={'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'} alt="Curso" className="w-full aspect-[4/5] object-cover object-center" />
+                <img src={HERO_IMAGES[3]} alt="Curso" className="w-full aspect-[4/5] object-cover object-top" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4">
