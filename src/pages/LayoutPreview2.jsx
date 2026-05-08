@@ -100,7 +100,7 @@ const COURSES = [
   imgs: [
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/1d898387b_generated_image.png',
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/7a4725dbb_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/a8496ad30_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/fa5959e53_generated_image.png',
   ],
   highlights: [
     'Técnicas cognitivo-comportamentais aplicadas',
@@ -121,7 +121,7 @@ const COURSES = [
   imgs: [
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/f28c89ba7_generated_image.png',
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/919ebf5be_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/a8496ad30_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/2ac899065_generated_image.png',
   ],
   highlights: [
     'Estudos de casos reais supervisionados',
@@ -142,7 +142,7 @@ const COURSES = [
   imgs: [
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/e9014c7ae_generated_image.png',
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/31339ba94_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/a8496ad30_generated_image.png',
+    'https://media.base44.com/images/public/69f55577840a3c93cee191be/f2d68446f_generated_image.png',
   ],
   highlights: [
     'Estudos de casos reais em sexualidade',
