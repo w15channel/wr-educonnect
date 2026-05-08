@@ -24,11 +24,69 @@ const FEATURES = [
 ];
 
 const CERTS = [
-  { title: 'Pós-Graduação em Psicoterapia Integrativa', institution: 'Universidade Estácio de Sá', year: '2018' },
-  { title: 'Certificação em TCC', institution: 'Instituto Beck Brasil', year: '2019' },
-  { title: 'Formação em Hipnoterapia Clínica', institution: 'Academia Brasileira de Hipnose', year: '2020' },
-  { title: 'Especialização em Neurociência Aplicada', institution: 'PUC-Rio', year: '2021' },
-  { title: 'Certificação Internacional em Coaching', institution: 'ICF — International Coaching Federation', year: '2022' },
+  {
+    title: 'Psicoterapeuta',
+    institution: 'Faculdade Unypública',
+    code: '267797-1-432-19012026071526',
+    link: null,
+    extra: 'Registrado internacionalmente pela AHDE · ID: 00403THE',
+    verifyLink: 'https://ahde-global.org/?lang=pt-br',
+    verifyLabel: 'Verificar via AHDE',
+  },
+  {
+    title: 'Psicanalista Diplomado',
+    institution: 'Faculdade Unifatec',
+    code: 'eeee6d19-0d18-46c5-a657-3e6f5bfdb515',
+    link: null,
+    extra: 'Registrado internacionalmente pela Therapist University · ID: CERT-1768040814293-CAZA86VTQ',
+    verifyLink: 'https://certificados.therapist.university/certificates/CERT-1768040814293-CAZA86VTQ',
+    verifyLabel: 'Verificar Certificado',
+  },
+  {
+    title: 'Logoterapeuta Diplomado',
+    institution: 'Faculdade Unypública',
+    code: '267797-1-405-13112025030416',
+    link: null,
+    extra: null,
+    verifyLink: null,
+    verifyLabel: null,
+  },
+  {
+    title: 'Sexólogo Integrativo',
+    institution: 'Unifast — School of Business Acceleration',
+    code: '000300950029868',
+    link: null,
+    extra: 'Especializações em sexualidade, infidelidade conjugal, vícios e outras áreas',
+    verifyLink: null,
+    verifyLabel: null,
+  },
+];
+
+const TIMELINE = [
+  { period: '2009 – 2019', role: 'Atuação Administrativa', desc: 'Departamentos financeiro, RH, departamento pessoal e processos seletivos como Headhunter.' },
+  { period: '2019', role: 'Administração — UFPR', desc: 'Ingresso na turma de Administração da UFPR, com destaque nas matérias de Comportamento Organizacional.' },
+  { period: '2020', role: 'Operador no Mercado Financeiro e de Criptoativos', desc: 'Atuação ativa durante a crise da pandemia no mercado financeiro e de criptoativos.' },
+  { period: '2022', role: 'Tecnologia da Informação — 8° RI de Curitiba', desc: 'Profissional de TI no 8° Registro de Imóveis de Curitiba, participando da implementação de migração tecnológica.' },
+];
+
+const CURRENT = [
+  {
+    title: 'Dirigente — Sinapse Coletiva',
+    desc: 'Grupo formado por profissionais da saúde comportamental com o objetivo de construir um espaço consciente e equilibrado de técnicas e comunidade acadêmica.',
+    link: null,
+  },
+  {
+    title: 'Gestor — WR-EDU',
+    desc: 'Gerencia o Curso Profissionalizante para Formação de Terapeutas. Representado oficialmente junto à ABED (Associação Brasileira de Educação a Distância).',
+    link: 'https://www.abed.org.br/site/associados/consulta-associados-ativos/',
+    linkLabel: 'Consultar na ABED',
+  },
+  {
+    title: 'Educador Social — Projeto Vida Digital (ADRA)',
+    desc: 'Profissional de Educação Social para Crianças e Adolescentes em programa da instituição internacional ADRA. O projeto reestrutura grupos em vulnerabilidade social levando temas socioeducacionais e resgate de dignidade.',
+    link: 'https://adra.org.br/projetos/vida-digital/',
+    linkLabel: 'Conhecer o Projeto',
+  },
 ];
 
 const COURSES = [
@@ -296,15 +354,18 @@ export default function LandingPage({ onLogin }) {
       {/* SOBRE O PROFESSOR */}
       <section id="professor" className="py-28 px-6 lg:px-20 bg-[#0a0d1a]">
         <div className="max-w-6xl mx-auto">
+              {/* Header */}
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-4">
               <Award size={13} className="text-[#5b5ef4]" />
               <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
             </div>
             <h2 className="text-4xl lg:text-5xl font-black text-white">Prof. William Ribeiro</h2>
-            <p className="text-white/50 mt-2 text-lg">Terapeuta Clínico e Educador</p>
+            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Logoterapeuta · Educador</p>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
+
+          {/* Avatar + Bio */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16">
             <div className="lg:col-span-2">
               <div className="relative">
                 <div className="w-full rounded-3xl overflow-hidden aspect-square bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/10 flex items-center justify-center">
@@ -312,36 +373,90 @@ export default function LandingPage({ onLogin }) {
                     <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] mx-auto mb-4 flex items-center justify-center">
                       <span className="text-5xl font-black text-white">WR</span>
                     </div>
-                    <p className="text-white/60">Prof. William Ribeiro</p>
+                    <p className="text-white/60 font-semibold">Prof. William Ribeiro</p>
                   </div>
                 </div>
                 <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
                 <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
-                  <p className="text-white font-black text-center text-sm">15+ anos de experiência clínica</p>
+                  <p className="text-white font-black text-center text-sm">Múltiplas formações verificáveis</p>
                 </div>
               </div>
             </div>
-            <div className="lg:col-span-3 pt-4">
-              <p className="text-white/60 text-base leading-relaxed mb-8">
-                Com mais de 15 anos de experiência clínica e formação continuada nas principais escolas de psicoterapia do Brasil e do mundo, o Professor William dedica sua carreira à formação de terapeutas completos, éticos e altamente qualificados.
+            <div className="lg:col-span-3 pt-4 space-y-4">
+              <p className="text-white/70 text-base leading-relaxed">
+                Psicoterapeuta, Psicanalista Diplomado e Logoterapeuta com formações certificadas e registradas internacionalmente. Profissional com trajetória multidisciplinar que integra saúde mental, educação social, tecnologia e mercado financeiro, construindo uma visão única e humanizada da terapia.
               </p>
-              <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
-                <CheckCircle size={13} className="text-[#1db89e]" /> Certificações Verificáveis
+              <p className="text-white/60 text-sm leading-relaxed">
+                Hoje coordena o grupo <strong className="text-white">Sinapse Coletiva</strong>, formado por profissionais da saúde comportamental, gerencia o curso de formação na plataforma <strong className="text-white">WR-EDU</strong> — registrado junto à ABED — e atua como educador social no projeto <strong className="text-white">Vida Digital</strong>, da ADRA Internacional, levando temas socioeducacionais a comunidades em vulnerabilidade.
               </p>
-              <div className="grid grid-cols-1 gap-3">
-                {CERTS.map((c, i) => (
-                  <div key={i} className="flex items-center gap-4 bg-white/4 border border-white/8 rounded-2xl px-5 py-4 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all group cursor-pointer">
-                    <div className="w-7 h-7 rounded-full bg-[#1db89e]/15 flex items-center justify-center shrink-0">
+            </div>
+          </div>
+
+          {/* Credenciais */}
+          <div className="mb-14">
+            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <CheckCircle size={13} className="text-[#1db89e]" /> Credenciais e Certificações Verificáveis
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {CERTS.map((c, i) => (
+                <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-7 h-7 rounded-full bg-[#1db89e]/15 flex items-center justify-center shrink-0 mt-0.5">
                       <CheckCircle size={13} className="text-[#1db89e]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-sm truncate">{c.title}</p>
-                      <p className="text-white/40 text-xs">{c.institution} · {c.year}</p>
+                      <p className="text-white font-bold text-sm">{c.title}</p>
+                      <p className="text-white/50 text-xs mt-0.5">{c.institution}</p>
                     </div>
-                    <ExternalLink size={13} className="text-white/15 group-hover:text-[#5b5ef4] transition-colors shrink-0" />
                   </div>
-                ))}
-              </div>
+                  <p className="text-white/25 text-[10px] font-mono bg-white/5 rounded-lg px-3 py-1.5 mb-2 truncate">Cód: {c.code}</p>
+                  {c.extra && <p className="text-white/40 text-xs mb-2 leading-relaxed">{c.extra}</p>}
+                  {c.verifyLink && (
+                    <a href={c.verifyLink} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[#5b5ef4] text-xs font-semibold hover:text-[#7c7ef4] transition-colors">
+                      <ExternalLink size={11} /> {c.verifyLabel}
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Trajetória */}
+          <div className="mb-14">
+            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <Award size={13} className="text-[#5b5ef4]" /> Trajetória Profissional
+            </p>
+            <div className="relative pl-6 border-l border-white/10 space-y-6">
+              {TIMELINE.map((t, i) => (
+                <div key={i} className="relative">
+                  <div className="absolute -left-[25px] w-3 h-3 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] mt-1" />
+                  <p className="text-[#1db89e] text-xs font-black uppercase tracking-widest mb-0.5">{t.period}</p>
+                  <p className="text-white font-bold text-sm">{t.role}</p>
+                  <p className="text-white/45 text-xs mt-1 leading-relaxed">{t.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Atuação Atual */}
+          <div>
+            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <Sparkles size={13} className="text-yellow-400" /> Atuação Atual
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {CURRENT.map((item, i) => (
+                <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#1db89e]/30 transition-all">
+                  <p className="text-white font-bold text-sm mb-2">{item.title}</p>
+                  <p className="text-white/45 text-xs leading-relaxed mb-3">{item.desc}</p>
+                  {item.link && (
+                    <a href={item.link} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[#1db89e] text-xs font-semibold hover:opacity-80 transition-opacity">
+                      <ExternalLink size={11} /> {item.linkLabel}
+                    </a>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
