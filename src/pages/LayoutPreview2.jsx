@@ -242,8 +242,8 @@ export default function LandingPage({ onLogin }) {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="WR" className="w-8 h-8 object-contain" />
-            <span className="text-lg font-black tracking-tight">WR-EDU</span>
+            <img src={LOGO_URL} alt="WR" className="w-12 h-12 object-contain" />
+            <span className="text-2xl font-black tracking-tight">WR-EDU</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
             {[['Metodologia', '#metodologia'], ['Professor', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
