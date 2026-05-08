@@ -89,19 +89,25 @@ const AuthenticatedApp = () => {
   );
 };
 
+const InnerApp = () => {
+  return (
+    <CustomAuthProvider>
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <AuthenticatedApp />
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    </CustomAuthProvider>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
-      <CustomAuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
-      </CustomAuthProvider>
+      <InnerApp />
     </AuthProvider>
-  )
+  );
 }
 
 export default App
