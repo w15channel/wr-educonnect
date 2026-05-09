@@ -380,7 +380,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-foreground">Ranking Geral</h3>
-                  <p className="text-xs text-muted-foreground">Pontuação acumulada</p>
+                  <p className="text-xs text-muted-foreground">Pontuação total pública (somatória de pontos)</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -442,7 +442,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-                <p className="text-xs text-muted-foreground">Pontuação dos alunos</p>
+                <p className="text-xs text-muted-foreground">Classificação pública por somatória total de pontos</p>
               </div>
             </div>
             {!monitorSelectMode ? (
