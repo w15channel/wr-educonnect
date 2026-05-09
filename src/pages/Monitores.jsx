@@ -92,55 +92,21 @@ export default function Monitores() {
     c => c.is_active !== false && c.course === activeCourse && c.student_email
   );
 
-  // Build multi-criteria ranking
+  // Build ranking igual ao Dashboard — baseado em ScoreItems verificados
   const buildRanking = () => {
-    // 1. Score totals
-    const scoreMap = {};
-    scoreItems.filter(s => s.verified).forEach(s => {
-      if (!s.student_email) return;
-      if (!scoreMap[s.student_email]) scoreMap[s.student_email] = 0;
-      scoreMap[s.student_email] += (s.score || 0);
+    const courseEmails = new Set(courseStudents.map(c => c.student_email).filter(Boolean));
+    const rankMap = {};
+    scoreItems.filter(s => s.verified && s.student_email && courseEmails.has(s.student_email)).forEach(s => {
+      if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0 };
+      rankMap[s.student_email].total += (s.score || 0);
     });
-
-    // 4. Task + forum activity count
-    const activityMap = {};
-    submissions.forEach(s => {
-      if (!s.student_email) return;
-      activityMap[s.student_email] = (activityMap[s.student_email] || 0) + 1;
-    });
-    forumPosts.forEach(p => {
-      if (!p.author_email) return;
-      activityMap[p.author_email] = (activityMap[p.author_email] || 0) + 1;
-    });
-    forumReplies.forEach(r => {
-      if (!r.author_email) return;
-      activityMap[r.author_email] = (activityMap[r.author_email] || 0) + 1;
-    });
-
-    return [...courseStudents].sort((a, b) => {
-      // 1. Points (descending)
-      const scoreA = scoreMap[a.student_email] || 0;
-      const scoreB = scoreMap[b.student_email] || 0;
-      if (scoreB !== scoreA) return scoreB - scoreA;
-
-      // 2. Ordem de matrícula (created_date ascending — quem matriculou primeiro tem prioridade)
-      const dateA = new Date(a.created_date || '9999-01-01').getTime();
-      const dateB = new Date(b.created_date || '9999-01-01').getTime();
-      if (dateA !== dateB) return dateA - dateB;
-
-      // 3. Alfabético
-      const nameA = (a.profile_name || a.student_name || '').toLowerCase();
-      const nameB = (b.profile_name || b.student_name || '').toLowerCase();
-      if (nameA < nameB) return -1;
-      if (nameA > nameB) return 1;
-
-      // 4. Participação (tarefas + fórum)
-      return (activityMap[b.student_email] || 0) - (activityMap[a.student_email] || 0);
-    });
+    return Object.values(rankMap).sort((a, b) => b.total - a.total);
   };
 
   const ranking = buildRanking();
   const topMonitors = ranking.slice(0, 3);
+
+  const getCodeByEmail = (email) => accessCodes.find(c => c.student_email === email);
 
   const handleDefineMonitors = async (forceReset = false) => {
     if (currentMonitors.length > 0 && !forceReset) {
@@ -160,10 +126,11 @@ export default function Monitores() {
         }
       }
       for (let i = 0; i < topMonitors.length; i++) {
-        const code = topMonitors[i];
+        const r = topMonitors[i];
+        const code = accessCodes.find(c => c.student_email === r.email);
         await base44.entities.MonitorHistory.create({
-          student_email: code.student_email,
-          student_name: code.profile_name || code.student_name || code.student_email,
+          student_email: r.email,
+          student_name: code?.profile_name || code?.student_name || r.email,
           period_start: periodStart,
           period_end: periodEnd,
           rank_position: i + 1,
@@ -255,26 +222,56 @@ export default function Monitores() {
         </div>
       )}
 
-      {/* Ranking preview */}
-      {isTeacher && ranking.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border p-4">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Ranking Atual da Turma {courseLabel}</p>
+      {/* Ranking de Desempenho */}
+      {ranking.length > 0 && (
+        <div className="bg-card rounded-2xl border border-border p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+              <Trophy size={16} className="text-yellow-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
+              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores do Período</p>
+            </div>
+          </div>
           <div className="space-y-2">
-            {ranking.slice(0, 5).map((code, i) => (
-              <div key={code.id} className="flex items-center gap-3 p-2 rounded-xl bg-secondary/30">
-                <span className="text-sm w-6 text-center shrink-0">
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">{code.profile_name || code.student_name || code.student_email}</p>
+            {ranking.map((r, i) => {
+              const code = getCodeByEmail(r.email);
+              const displayName = code?.profile_name || code?.student_name || r.email;
+              const avatarColor = code?.profile_avatar_color || '#5b5ef4';
+              const photoUrl = code?.profile_photo_url || '';
+              const isMonitor = i < 3;
+              const isMe = r.email === session?.email;
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+              return (
+                <div key={r.email} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+                  isMe ? 'bg-primary/8 border-primary/20' :
+                  isMonitor ? 'bg-yellow-50 border-yellow-200' :
+                  'bg-secondary/20 border-transparent'
+                }`}>
+                  <span className="w-6 text-center shrink-0">
+                    {medal || <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}
+                  </span>
+                  {photoUrl ? (
+                    <img src={photoUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
+                      {displayName}{isMe && <span className="ml-1 text-primary/60">(você)</span>}
+                    </p>
+                    {isMonitor && <MonitorBadge rank={i + 1} />}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Star size={11} className="text-yellow-400 fill-yellow-400" />
+                    <span className="text-xs font-bold text-foreground">{r.total}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                  <span className="text-xs font-bold">{scoreItems.filter(s => s.verified && s.student_email === code.student_email).reduce((sum, s) => sum + (s.score || 0), 0)}</span>
-                </div>
-              </div>
-            ))}
-            {ranking.length > 5 && <p className="text-xs text-muted-foreground text-center">{ranking.length - 5} alunos adicionais no ranking</p>}
+              );
+            })}
           </div>
         </div>
       )}
