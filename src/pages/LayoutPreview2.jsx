@@ -289,12 +289,12 @@ export default function LandingPage({ onLogin }) {
       {/* HERO FULL-WIDTH */}
       <div className="relative h-screen flex items-center justify-center overflow-hidden">
         {HERO_IMAGES.map((src, i) =>
-        <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
-            <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 35%' }} />
+        <div key={src} className={`absolute inset-0 transition-opacity duration-1500 hidden ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
+            <img src={src} alt="" className="w-full h-full object-cover hidden" style={{ objectPosition: '50% 35%' }} />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14]" />
-        <div className="absolute inset-0 bg-[#080b14]/30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14] hidden" />
+        <div className="absolute inset-0 bg-[#080b14]/30 hidden" />
 
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto pt-24 lg:pt-32">
           <h1 className="text-6xl lg:text-8xl font-black leading-[0.95] mb-8 tracking-tight hidden">
@@ -317,7 +317,7 @@ export default function LandingPage({ onLogin }) {
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce hidden">
           <span className="text-xs tracking-widest uppercase">Role para baixo</span>
           <ArrowDown size={16} />
         </div>
