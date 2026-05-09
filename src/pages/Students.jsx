@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap } from 'lucide-react';
@@ -11,8 +11,10 @@ import CodeManager from '@/components/admin/CodeManager';
 import { toast } from 'sonner';
 
 export default function Students() {
+  const { user: session } = useOutletContext();
   const location = useLocation();
   const navigate = useNavigate();
+  const activeCourse = session?.course || 'tcc';
   const defaultTab = location.search.includes('tab=codes') ? 'codes' : 'students';
   const [tab, setTab] = useState(defaultTab);
   const [search, setSearch] = useState('');
@@ -109,11 +111,12 @@ export default function Students() {
 
   const filtered = codes
     .filter(c =>
-      !search ||
+      (c.course === activeCourse) &&
+      (!search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
       (c.student_email || '').toLowerCase().includes(search.toLowerCase()) ||
       (c.profile_name || '').toLowerCase().includes(search.toLowerCase())
-    )
+    ))
     .sort((a, b) => {
       if (sortBy === 'alpha') return (a.profile_name || a.student_name || '').localeCompare(b.profile_name || b.student_name || '');
       if (sortBy === 'alpha_desc') return (b.profile_name || b.student_name || '').localeCompare(a.profile_name || a.student_name || '');
@@ -148,7 +151,7 @@ export default function Students() {
           onClick={() => setTab('students')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'students' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          <Users size={15} /> Alunos ({codes.length})
+          <Users size={15} /> Alunos ({codes.filter(c => c.course === activeCourse).length})
         </button>
         <button
           onClick={() => setTab('codes')}

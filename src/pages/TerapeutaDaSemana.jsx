@@ -62,9 +62,10 @@ export default function TerapeutaDaSemana() {
   const todayStr = format(today, 'yyyy-MM-dd');
   const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
 
-  // Filtro por curso: alunos veem apenas pareamentos da sua turma
-  const courseEmailSet = isTeacher ? null : new Set(
-    accessCodes.filter(c => c.course === session?.course && c.student_email).map(c => c.student_email)
+  // Filtro por curso: todos filtram pelo curso ativo da sessão
+  const activeCourse = session?.course || 'tcc';
+  const courseEmailSet = new Set(
+    accessCodes.filter(c => c.course === activeCourse && c.student_email).map(c => c.student_email)
   );
 
   const currentPairings = pairings.filter(p =>
