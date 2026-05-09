@@ -2,13 +2,13 @@ import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle } from 'lucide-react';
+import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 function StatCard({ title, value, icon: Icon, iconBg, to, subtitle, pulse }) {
@@ -44,6 +44,52 @@ export default function Dashboard() {
   const isTeacher = session?.role === 'admin';
   const userCourse = session?.course;
   const [refreshing, setRefreshing] = useState(false);
+  const [monitorSelectMode, setMonitorSelectMode] = useState(false);
+  const [selectedMonitorEmails, setSelectedMonitorEmails] = useState(new Set());
+  const [savingMonitors, setSavingMonitors] = useState(false);
+
+  const toggleMonitorEmail = (email) => {
+    setSelectedMonitorEmails(prev => {
+      const next = new Set(prev);
+      if (next.has(email)) { next.delete(email); return next; }
+      if (next.size >= 3) { return prev; }
+      next.add(email);
+      return next;
+    });
+  };
+
+  const handleSaveMonitors = async () => {
+    if (selectedMonitorEmails.size === 0) return;
+    setSavingMonitors(true);
+    const EPOCH = new Date('2024-01-01T00:00:00Z');
+    const CYCLE_DAYS = 5;
+    const today = new Date();
+    const daysSince = Math.floor((today - EPOCH) / (1000 * 60 * 60 * 24));
+    const cycleNum = Math.floor(daysSince / CYCLE_DAYS);
+    const cycleDate = new Date(EPOCH.getTime() + cycleNum * CYCLE_DAYS * 24 * 60 * 60 * 1000);
+    const periodStart = format(cycleDate, 'yyyy-MM-dd');
+    const periodEnd = format(addDays(cycleDate, CYCLE_DAYS - 1), 'yyyy-MM-dd');
+    const existing = await base44.entities.MonitorHistory.list('-period_start', 100);
+    const currentCycle = existing.filter(m => m.period_start === periodStart && (m.course === userCourse || !m.course));
+    for (const m of currentCycle) await base44.entities.MonitorHistory.delete(m.id);
+    const emailsArr = [...selectedMonitorEmails];
+    for (let i = 0; i < emailsArr.length; i++) {
+      const code = accessCodes.find(c => c.student_email === emailsArr[i]);
+      await base44.entities.MonitorHistory.create({
+        student_email: emailsArr[i],
+        student_name: code?.profile_name || code?.student_name || emailsArr[i],
+        period_start: periodStart,
+        period_end: periodEnd,
+        rank_position: i + 1,
+        course: userCourse || 'tcc',
+      });
+    }
+    await queryClient.invalidateQueries();
+    toast.success('✅ Monitores salvos com sucesso!');
+    setMonitorSelectMode(false);
+    setSelectedMonitorEmails(new Set());
+    setSavingMonitors(false);
+  };
 
   const handleRefreshAll = async () => {
     setRefreshing(true);
@@ -356,15 +402,44 @@ export default function Dashboard() {
       {/* Admin ranking */}
       {isTeacher && (
         <div className="bg-card rounded-2xl border border-border p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
-              <Trophy size={16} className="text-yellow-600" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+                <Trophy size={16} className="text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
+                <p className="text-xs text-muted-foreground">Pontuação dos alunos</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-              <p className="text-xs text-muted-foreground">Pontuação dos alunos</p>
-            </div>
+            {!monitorSelectMode ? (
+              <button
+                onClick={() => setMonitorSelectMode(true)}
+                className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors"
+              >
+                <Crown size={12} /> Selecionar Monitores
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{selectedMonitorEmails.size}/3 selecionados</span>
+                <button onClick={() => { setMonitorSelectMode(false); setSelectedMonitorEmails(new Set()); }} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border">
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveMonitors}
+                  disabled={selectedMonitorEmails.size === 0 || savingMonitors}
+                  className="flex items-center gap-1.5 text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity"
+                >
+                  {savingMonitors ? 'Salvando...' : 'Salvar Monitores'}
+                </button>
+              </div>
+            )}
           </div>
+          {monitorSelectMode && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800 mb-3">
+              Selecione até 3 alunos para serem os Monitores do período atual.
+            </div>
+          )}
           {ranking.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p>
           ) : (
@@ -374,8 +449,24 @@ export default function Dashboard() {
                 const displayName = code?.profile_name || code?.student_name || r.email;
                 const avatarColor = code?.profile_avatar_color || '#5b5ef4';
                 const photoUrl = code?.profile_photo_url || '';
+                const isSelected = selectedMonitorEmails.has(r.email);
                 return (
-                  <div key={r.email} className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-secondary/50">
+                  <div
+                    key={r.email}
+                    onClick={() => monitorSelectMode && toggleMonitorEmail(r.email)}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${
+                      monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''
+                    } ${
+                      isSelected ? 'bg-yellow-100 border border-yellow-300' : 'hover:bg-secondary/50'
+                    }`}
+                  >
+                    {monitorSelectMode && (
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-yellow-500 border-yellow-500' : 'border-muted-foreground/40'
+                      }`}>
+                        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                      </div>
+                    )}
                     <span className="text-sm w-5 text-center shrink-0">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground font-bold">{i+1}</span>}</span>
                     {photoUrl ? (
                       <img src={photoUrl} alt={displayName} className="w-6 h-6 rounded-full object-cover shrink-0" />
