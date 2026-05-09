@@ -311,8 +311,8 @@ export default function LandingPage({ onLogin }) {
             <a href="#cursos" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
               Ver Nossos Cursos <ChevronRight size={18} />
             </a>
-            <a href="#professor" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base">
-              <Play size={15} className="fill-current" /> Sobre o Professor
+            <a href="#metodologia" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base">
+              <Play size={15} className="fill-current" /> Nossa Metodologia
             </a>
           </div>
         </div>
