@@ -431,12 +431,18 @@ export default function HistoricoAcademico() {
   }
 
   // ── TEACHER: student list ────────────────────────────────────────────────
-  const filtered = codes.filter(c =>
-    !search ||
-    (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.student_email || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
+  const activeCourse = session?.course;
+  const expectedPrefix = COURSE_PREFIX[activeCourse];
+
+  const filtered = codes.filter(c => {
+    if (activeCourse && c.course !== activeCourse) return false;
+    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
+    return !search ||
+      (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.student_email || '').toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
