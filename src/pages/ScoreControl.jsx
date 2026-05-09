@@ -578,17 +578,17 @@ export default function ScoreControl() {
                 !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
               );
               const stats = getParticipationStats(code.student_email);
-              const total = getCourseScoreTotal(code.student_email);
+              const totalScore = getCourseScoreTotal(code.student_email);
               const participations = stats.count;
-              return { code, hasPending, total, participations };
+              return { code, hasPending, totalScore, participations };
             })
             .sort((a, b) => {
               if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
-              if (sortBy === 'points') return b.total - a.total;
+              if (sortBy === 'points') return b.totalScore - a.totalScore;
               if (sortBy === 'participations') return b.participations - a.participations;
               return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
             })
-            .map(({ code, hasPending, total, participations }) => {
+            .map(({ code, hasPending, totalScore, participations }) => {
               const displayName = code.profile_name || code.student_name || 'Sem nome';
               return (
                 <div
@@ -616,7 +616,7 @@ export default function ScoreControl() {
                     </div>
                     <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
                       <Star size={11} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm font-black text-yellow-700">{total.toFixed(1)}</span>
+                      <span className="text-sm font-black text-yellow-700">{totalScore.toFixed(1)}</span>
                     </div>
                     <ChevronLeft size={14} className="text-muted-foreground rotate-180" />
                   </div>
