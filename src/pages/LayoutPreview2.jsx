@@ -623,12 +623,7 @@ export default function LandingPage({ onLogin }) {
         </div>
       </section>
 
-      <style>{`
-        @keyframes pulse-cta {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(91,94,244,0.5); }
-          50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(91,94,244,0); }
-        }
-      `}</style>
+
 
       {/* DEPOIMENTOS */}
       <section id="depoimentos" className="py-24 px-6 lg:px-20 bg-[#0a0d1a]">
