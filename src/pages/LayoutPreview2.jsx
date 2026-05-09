@@ -287,7 +287,7 @@ export default function LandingPage({ onLogin }) {
       </nav>
 
       {/* HERO FULL-WIDTH */}
-      <div className="relative h-screen flex items-center justify-center overflow-hidden">
+      <div className="relative h-screen flex items-center justify-center overflow-hidden hidden">
         {HERO_IMAGES.map((src, i) =>
         <div key={src} className={`absolute inset-0 transition-opacity duration-1500 hidden ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
             <img src={src} alt="" className="w-full h-full object-cover hidden" style={{ objectPosition: '50% 35%' }} />
@@ -330,7 +330,7 @@ export default function LandingPage({ onLogin }) {
       </div>
 
       {/* STATS BAR */}
-      <div className="bg-[#0d1120] border-y border-white/8 py-8 px-6">
+      <div className="bg-[#0d1120] border-y border-white/8 py-8 px-6 hidden">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-center">
           {[
           { value: '4.8★', label: 'Avaliação Média' },
