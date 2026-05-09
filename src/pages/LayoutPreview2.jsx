@@ -331,15 +331,17 @@ export default function LandingPage({ onLogin }) {
 
       {/* STATS BAR */}
       <div className="bg-[#0d1120] border-y border-white/8 py-8 px-6">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-center">
           {[
-          { value: '500+', label: 'Terapeutas Formados' },
-          { value: '15+', label: 'Anos de Experiência' },
-          { value: '200h', label: 'Carga Horária' },
-          { value: '4.9★', label: 'Avaliação Média' }].
+          { value: '4.8★', label: 'Avaliação Média' },
+          { value: '80h', label: 'Carga Horária' },
+          { value: '4 meses', label: 'Duração' },
+          { value: 'Reais', label: 'Professores Reais' },
+          { value: 'Vivência', label: 'Consultório' },
+          { value: 'Exclusiva', label: 'Plataforma' }].
           map((s, i) =>
           <div key={i}>
-              <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">{s.value}</p>
+              <p className="text-2xl lg:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">{s.value}</p>
               <p className="text-white/40 text-xs mt-1 uppercase tracking-wide">{s.label}</p>
             </div>
           )}
