@@ -40,11 +40,8 @@ export default function Calendar() {
   });
 
   const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions', userCourse || 'all'],
-    queryFn: () => userCourse
-      ? base44.entities.LiveSession.filter({ course: userCourse }, '-scheduled_at', 50)
-      : base44.entities.LiveSession.list('-scheduled_at', 50),
-    enabled: !!userCourse || !isAdmin,
+    queryKey: ['live-sessions'],
+    queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 50),
   });
 
   const userCourse = session?.course;
