@@ -18,6 +18,7 @@ import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
 import LiveSessions from './pages/LiveSessions';
 import Tasks from './pages/Tasks';
+import Tests from './pages/Tests';
 import Forum from './pages/Forum';
 import Students from './pages/Students';
 import Announcements from './pages/Announcements';
@@ -59,7 +60,8 @@ function ScopedRoutesTree() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="lessons" element={<Lessons />} />
         <Route path="live" element={<LiveSessions />} />
-        <Route path="tasks" element={<Tasks />} />
+        <Route path="tasks" element={<Tasks mode="tasks" />} />
+        <Route path="tests" element={<Tests />} />
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
         <Route path="tasks/builder/:id" element={<TaskExamBuilder />} />
         <Route path="forum" element={<Forum />} />
@@ -138,6 +140,7 @@ const AuthenticatedApp = () => {
       <Route path="/lessons" element={redirectTo('/lessons')} />
       <Route path="/live" element={redirectTo('/live')} />
       <Route path="/tasks" element={redirectTo('/tasks')} />
+      <Route path="/tests" element={redirectTo('/tests')} />
       <Route path="/forum" element={redirectTo('/forum')} />
       <Route path="/chat" element={redirectTo('/chat')} />
       <Route path="/students" element={redirectTo('/students')} />

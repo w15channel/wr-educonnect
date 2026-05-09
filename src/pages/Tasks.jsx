@@ -18,7 +18,7 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTo
 
 const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 10, quiz_questions: [] };
 
-export default function Tasks() {
+export default function Tasks({ mode = 'all' }) {
   const { user: session } = useOutletContext();
   const user = session;
   const isTeacher = session?.role === 'admin';
@@ -29,7 +29,7 @@ export default function Tasks() {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [viewSubmissions, setViewSubmissions] = useState(null);
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeTab, setActiveTab] = useState(mode === 'tests' ? 'quizzes' : 'tasks');
   const [form, setForm] = useState(EMPTY_FORM);
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFiles, setUploadFiles] = useState({});
@@ -156,7 +156,7 @@ export default function Tasks() {
 
   const uploadTasks = tasks.filter(t => t.type === 'upload');
   const quizTasks = tasks.filter(t => t.type === 'quiz');
-  const displayedTasks = activeTab === 'tasks' ? uploadTasks : quizTasks;
+  const displayedTasks = mode === 'tasks' ? uploadTasks : mode === 'tests' ? quizTasks : (activeTab === 'tasks' ? uploadTasks : quizTasks);
 
   const submitCommentMutation = useMutation({
     mutationFn: async ({ taskId, comment }) => {
@@ -195,7 +195,7 @@ export default function Tasks() {
     <div className="p-4 lg:p-7 max-w-5xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Tarefas e Avaliações</h2>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">{mode === 'tests' ? 'Provas' : mode === 'tasks' ? 'Tarefas' : 'Tarefas e Avaliações'}</h2>
           <p className="text-muted-foreground text-sm mt-0.5">Gerencie trabalhos, provas e entregas</p>
         </div>
         {isTeacher && (
@@ -235,7 +235,7 @@ export default function Tasks() {
         )}
       </div>
 
-      {/* Tabs */}
+      {mode === 'all' && (<>{/* Tabs */}
       <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-5 w-full sm:w-fit">
         <button
           onClick={() => setActiveTab('tasks')}
@@ -251,7 +251,7 @@ export default function Tasks() {
           <GraduationCap size={14} /> Provas
           {quizTasks.length > 0 && <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">{quizTasks.length}</span>}
         </button>
-      </div>
+      </div></>)}
 
       {displayedTasks.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">

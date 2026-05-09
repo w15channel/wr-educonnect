@@ -42,6 +42,9 @@ export default function Lessons() {
     queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 200),
   });
 
+
+  const orderedLessons = [...lessons].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0)).map((l, idx) => ({ ...l, displayOrder: idx + 1 }));
+
   const { data: progresses = [] } = useQuery({
     queryKey: ['lesson-progress', session?.email],
     queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email }, '-created_date', 200),
@@ -126,7 +129,7 @@ export default function Lessons() {
   const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId);
 
   const watchedCount = progresses.filter(p => p.watched).length;
-  const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
+  const progressPct = orderedLessons.length > 0 ? Math.round((watchedCount / orderedLessons.length) * 100) : 0;
 
   // Abre link em nova aba do navegador (funciona em modo quiosque também)
   const openExternal = (url) => {
@@ -239,7 +242,7 @@ export default function Lessons() {
               </div>
               <div>
                 <p className="font-bold text-sm text-foreground">Progresso no Curso</p>
-                <p className="text-xs text-muted-foreground">{watchedCount} de {lessons.length} aulas assistidas</p>
+                <p className="text-xs text-muted-foreground">{watchedCount} de {orderedLessons.length} aulas assistidas</p>
               </div>
             </div>
             <span className="text-2xl font-black text-primary">{progressPct}%</span>
@@ -298,7 +301,7 @@ export default function Lessons() {
         </div>
       ) : (
         <div className="space-y-3">
-          {lessons.map((lesson, idx) => {
+          {orderedLessons.map((lesson, idx) => {
             const prog = getProgress(lesson.id);
             const isExpanded = expandedLesson === lesson.id;
             const isWatched = prog?.watched;

@@ -20,7 +20,8 @@ const adminGroups = [
       { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
       { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
       { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
-      { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
+      { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
+      { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
     ],
   },
   {
@@ -60,7 +61,8 @@ const studentGroups = [
       { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
       { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
       { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
-      { icon: FileText, label: 'Tarefas e Provas', path: '/tasks', color: 'text-orange-400' },
+      { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
+      { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
     ],
   },
   {

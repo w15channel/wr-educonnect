@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Send, Smile, Lock, Users, Search } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
@@ -72,7 +72,7 @@ function MSNBubble({ msg, isMe, name, color, time, email }) {
           }`}
           style={!isMe ? { fontFamily: 'Tahoma, Arial, sans-serif' } : {}}
         >
-          {msg.is_sticker ? (
+          {msg.is_hand_raised ? (
             <span className="text-base" title={msg.content}>{msg.content}</span>
           ) : (
             <span className="leading-relaxed">{msg.content}</span>
@@ -93,6 +93,7 @@ function formatBRT(dateStr) {
 export default function ClassChat() {
   const { user: session } = useOutletContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('geral'); // 'geral' | 'particular'
   const [text, setText] = useState('');
@@ -151,11 +152,15 @@ export default function ClassChat() {
     if (text.trim()) sendMessage(text);
   };
 
-  const getColor = (email) => {
+  const getProfile = (email) => {
     const code = codes.find(c => c.student_email === email);
-    if (code?.profile_avatar_color) return code.profile_avatar_color;
     const idx = Math.abs(email?.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 0) % MSN_COLORS.length;
-    return MSN_COLORS[idx];
+    return {
+      color: code?.profile_avatar_color || MSN_COLORS[idx],
+      emoji: code?.profile_emoji || '✨',
+      photo: code?.profile_photo_url || null,
+      name: code?.profile_name || null,
+    };
   };
 
   const groupedMessages = messages.reduce((acc, msg, i) => {
@@ -251,7 +256,7 @@ export default function ClassChat() {
               return (
                 <button
                   key={c.id}
-                  onClick={() => navigate(`/dm/${encodeURIComponent(c.student_email)}`)}
+                  onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)}
                   className="w-full flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 hover:bg-[#5b5ef4]/5 hover:border-[#5b5ef4]/30 transition-all text-left"
                 >
                   {photo ? (
@@ -287,14 +292,15 @@ export default function ClassChat() {
         )}
         {groupedMessages.map((msg) => {
           const isMe = msg.author_email === session?.email;
-          const color = getColor(msg.author_email);
+          const profile = getProfile(msg.author_email);
+          const color = profile.color;
           const time = formatBRT(msg.created_date);
           return (
             <MSNBubble
               key={msg.id}
               msg={msg}
               isMe={isMe}
-              name={msg.author_name}
+              name={`${profile.emoji} ${profile.name || msg.author_name}`}
               email={msg.author_email}
               color={color}
               time={time}
