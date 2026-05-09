@@ -9,32 +9,39 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
-export default function CodeManager() {
+export default function CodeManager({ course: lockedCourse }) {
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState('');
-  const [newCourse, setNewCourse] = useState('tcc');
+  const [newCourse, setNewCourse] = useState(lockedCourse || 'tcc');
   const [newEmail, setNewEmail] = useState('');
   const [editingEmailId, setEditingEmailId] = useState(null);
   const [editingEmailValue, setEditingEmailValue] = useState('');
 
-  const { data: codes = [], isLoading } = useQuery({
+  const { data: allCodes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
+  const codes = lockedCourse
+    ? allCodes.filter(c => c.course === lockedCourse || (lockedCourse === 'tcc' && !c.course))
+    : allCodes;
+
   const createMutation = useMutation({
-    mutationFn: () => base44.entities.AccessCode.create({
-      code: generateCode(newCourse),
-      student_name: newName.trim(),
-      student_email: newEmail.trim(),
-      course: newCourse,
-      is_active: true,
-    }),
+    mutationFn: () => {
+      const courseToUse = lockedCourse || newCourse;
+      return base44.entities.AccessCode.create({
+        code: generateCode(courseToUse),
+        student_name: newName.trim(),
+        student_email: newEmail.trim(),
+        course: courseToUse,
+        is_active: true,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       setNewName('');
       setNewEmail('');
-      setNewCourse('tcc');
+      if (!lockedCourse) setNewCourse('tcc');
       toast.success('Código gerado com sucesso!');
     },
   });
@@ -121,15 +128,17 @@ export default function CodeManager() {
             onChange={e => setNewEmail(e.target.value)}
             className="flex-1"
           />
-          <select
-            value={newCourse}
-            onChange={e => setNewCourse(e.target.value)}
-            className="h-10 rounded-xl border border-border bg-background text-foreground text-sm px-3 shrink-0"
-          >
-            <option value="tcc">Terapeuta TCC</option>
-            <option value="psicanalise">Psicanalista Freudiano</option>
-            <option value="sexologia">Sexólogo(a)</option>
-          </select>
+          {!lockedCourse && (
+            <select
+              value={newCourse}
+              onChange={e => setNewCourse(e.target.value)}
+              className="h-10 rounded-xl border border-border bg-background text-foreground text-sm px-3 shrink-0"
+            >
+              <option value="tcc">Terapeuta TCC</option>
+              <option value="psicanalise">Psicanalista Freudiano</option>
+              <option value="sexologia">Sexólogo(a)</option>
+            </select>
+          )}
           <Button
             onClick={() => createMutation.mutate()}
             disabled={!newName.trim() || createMutation.isPending}

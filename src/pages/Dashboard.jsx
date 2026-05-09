@@ -170,7 +170,12 @@ export default function Dashboard() {
 
   const nextLive = liveSessions.find(s => s.status === 'live' || s.status === 'scheduled');
   const isLiveNow = nextLive?.status === 'live';
-  const studentCount = accessCodes.filter(c => c.is_active).length;
+  // Count only students of the current course
+  const studentCount = accessCodes.filter(c => {
+    if (!c.is_active) return false;
+    if (!userCourse) return true;
+    return c.course === userCourse || (userCourse === 'tcc' && !c.course);
+  }).length;
 
   // Média do aluno por ScoreItems
   const myScoreItems = allScoreItems.filter(s => s.student_email === session?.email && s.verified);
@@ -182,10 +187,12 @@ export default function Dashboard() {
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
-  // Ranking por ScoreItems verificados — filtrado por curso para alunos
-  const courseEmails = isTeacher ? null : new Set(
-    accessCodes.filter(c => c.course === userCourse && c.student_email).map(c => c.student_email)
-  );
+  // Ranking por ScoreItems verificados — sempre filtrado pelo curso atual (admin e aluno)
+  const courseEmails = userCourse ? new Set(
+    accessCodes
+      .filter(c => (c.course === userCourse || (userCourse === 'tcc' && !c.course)) && c.student_email)
+      .map(c => c.student_email)
+  ) : null;
   const rankMap = {};
   allScoreItems.filter(s => s.verified).forEach(s => {
     if (!s.student_email) return;
@@ -199,13 +206,6 @@ export default function Dashboard() {
     .slice(0, 10);
 
   const myRank = ranking.findIndex(r => r.email === session?.email) + 1;
-
-  // Count active students per course (codes with no course default to 'tcc')
-  const courseStudentCounts = {
-    tcc: accessCodes.filter(c => c.is_active && (c.course === 'tcc' || !c.course)).length,
-    psicanalise: accessCodes.filter(c => c.is_active && c.course === 'psicanalise').length,
-    sexologia: accessCodes.filter(c => c.is_active && c.course === 'sexologia').length,
-  };
 
   const firstName = (session?.name || 'Usuário').split(' ')[0];
   const hour = new Date().getHours();
@@ -266,27 +266,6 @@ export default function Dashboard() {
           </div>
           <div className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl ${isLiveNow ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>
             Entrar <ArrowRight size={12} />
-          </div>
-        </div>
-      )}
-
-      {/* Course student counts — admin only */}
-      {isTeacher && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-card rounded-2xl border border-border p-4 text-center">
-            <p className="text-xs font-medium text-muted-foreground mb-1">TCC</p>
-            <p className="text-2xl font-black text-primary">{courseStudentCounts.tcc}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">alunos ativos</p>
-          </div>
-          <div className="bg-card rounded-2xl border border-border p-4 text-center">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Psicanálise</p>
-            <p className="text-2xl font-black text-teal-600">{courseStudentCounts.psicanalise}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">alunos ativos</p>
-          </div>
-          <div className="bg-card rounded-2xl border border-border p-4 text-center">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Sexologia</p>
-            <p className="text-2xl font-black text-purple-600">{courseStudentCounts.sexologia}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">alunos ativos</p>
           </div>
         </div>
       )}

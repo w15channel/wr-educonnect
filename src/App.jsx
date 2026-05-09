@@ -34,6 +34,7 @@ import MeuBestSeller from './pages/MeuBestSeller';
 import ClassChat from './pages/ClassChat';
 import HistoricoAcademico from './pages/HistoricoAcademico';
 import StudentDetail from './pages/StudentDetail';
+import Keys from './pages/Keys';
 import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
@@ -64,6 +65,7 @@ function ScopedRoutesTree() {
         <Route path="chat" element={<ClassChat />} />
         <Route path="students" element={<Students />} />
         <Route path="students/:id" element={<StudentDetail />} />
+        <Route path="keys" element={<Keys />} />
         <Route path="announcements" element={<Announcements />} />
         <Route path="profile" element={<Profile />} />
         <Route path="calendar" element={<Calendar />} />
@@ -136,6 +138,7 @@ const AuthenticatedApp = () => {
       <Route path="/forum" element={redirectTo('/forum')} />
       <Route path="/chat" element={redirectTo('/chat')} />
       <Route path="/students" element={redirectTo('/students')} />
+      <Route path="/keys" element={redirectTo('/keys')} />
       <Route path="/announcements" element={redirectTo('/announcements')} />
       <Route path="/profile" element={redirectTo('/profile')} />
       <Route path="/calendar" element={redirectTo('/calendar')} />

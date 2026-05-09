@@ -35,7 +35,7 @@ const adminGroups = [
     label: 'Gestão',
     items: [
       { icon: Users, label: 'Gestão de Alunos', path: '/students', color: 'text-indigo-400' },
-      { icon: Key, label: 'Códigos de Acesso', path: '/students?tab=codes', color: 'text-emerald-400' },
+      { icon: Key, label: 'Códigos de Acesso', path: '/keys', color: 'text-emerald-400' },
       { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
       { icon: Trophy, label: 'Controle de Pontuação', path: '/scores', color: 'text-yellow-400' },
       { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },

@@ -1,23 +1,18 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
-import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Plus, Trash2 } from 'lucide-react';
+import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import CodeManager from '@/components/admin/CodeManager';
 import { toast } from 'sonner';
 
 export default function Students() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user: session } = useOutletContext() || {};
-  const defaultTab = location.search.includes('tab=codes') ? 'codes' : 'students';
-  const [tab, setTab] = useState(defaultTab);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('date_desc');
   const [enrollingCode, setEnrollingCode] = useState(null);
@@ -227,26 +222,7 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5 w-full sm:w-fit">
-        <button
-          onClick={() => setTab('students')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'students' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          <Users size={15} /> Alunos ({codes.length})
-        </button>
-        <button
-          onClick={() => setTab('codes')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'codes' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          <Key size={15} /> Códigos de Acesso
-        </button>
-      </div>
-
-      {tab === 'codes' ? (
-        <CodeManager />
-      ) : (
-        <>
+      <>
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-72">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -297,7 +273,7 @@ export default function Students() {
             <div className="text-center py-16 text-muted-foreground">
               <Users size={48} className="mx-auto mb-4 opacity-20" />
               <p className="text-lg font-semibold">Nenhum aluno encontrado</p>
-              <p className="text-sm mt-1">Gere códigos na aba "Códigos de Acesso"</p>
+              <p className="text-sm mt-1">Gere códigos na página "Códigos de Acesso"</p>
             </div>
           ) : (
             <>
@@ -434,8 +410,7 @@ export default function Students() {
               </div>
             </>
           )}
-        </>
-      )}
+      </>
 
     </div>
   );
