@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart } from 'lucide-react';
+import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -339,6 +339,8 @@ export default function ScoreControl() {
   const location = useLocation();
   const [selectedCode, setSelectedCode] = useState(null);
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('pending'); // 'alpha' | 'points' | 'participations' | 'pending'
+  const [filterCourse, setFilterCourse] = useState('all');
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -371,12 +373,16 @@ export default function ScoreControl() {
 
   if (selectedCode) return <StudentScoreDetail code={selectedCode} onBack={() => setSelectedCode(null)} />;
 
-  const filtered = codes.filter(c =>
-    !search ||
-    (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.student_email || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const COURSE_LABELS = { all: 'Todos os Cursos', tcc: 'TCC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' };
+
+  const filtered = codes.filter(c => {
+    const matchSearch = !search ||
+      (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.student_email || '').toLowerCase().includes(search.toLowerCase());
+    const matchCourse = filterCourse === 'all' || c.course === filterCourse;
+    return matchSearch && matchCourse;
+  });
 
   const pendingCount = submissions.filter(s => s.status === 'submitted' && !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length;
 
@@ -400,9 +406,30 @@ export default function ScoreControl() {
         )}
       </div>
 
-      <div className="mb-4 relative w-full sm:w-80">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+      <div className="mb-4 flex flex-wrap gap-2 items-center">
+        <div className="relative w-full sm:w-64">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+        </div>
+        {/* Course filter */}
+        <div className="flex gap-1 flex-wrap">
+          {Object.entries(COURSE_LABELS).map(([val, label]) => (
+            <button key={val} onClick={() => setFilterCourse(val)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                filterCourse === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
+              }`}>{label}</button>
+          ))}
+        </div>
+        {/* Sort */}
+        <div className="flex items-center gap-1 ml-auto">
+          <ArrowUpDown size={13} className="text-muted-foreground" />
+          {[['alpha','A–Z'],['points','Pontos'],['participations','Participações'],['pending','Pendências']].map(([val, label]) => (
+            <button key={val} onClick={() => setSortBy(val)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                sortBy === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
+              }`}>{label}</button>
+          ))}
+        </div>
       </div>
 
       {isLoading ? (
@@ -421,12 +448,20 @@ export default function ScoreControl() {
                 s.student_email === code.student_email &&
                 !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
               );
-              return { code, hasPending };
-            })
-            .sort((a, b) => (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0))
-            .map(({ code, hasPending }) => {
               const studentScores = scoreItems.filter(s => s.student_email === code.student_email);
               const total = studentScores.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0);
+              const participations = studentScores.length; // cada ScoreItem = 1 participação
+              return { code, hasPending, total, participations };
+            })
+            .sort((a, b) => {
+              if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
+              if (sortBy === 'points') return b.total - a.total;
+              if (sortBy === 'participations') return b.participations - a.participations;
+              // pending: pendentes primeiro
+              return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
+            })
+            .map(({ code, hasPending, total, participations }) => {
+              const studentScores = scoreItems.filter(s => s.student_email === code.student_email);
               const verifiedCount = studentScores.filter(s => s.verified).length;
               const displayName = code.profile_name || code.student_name || 'Sem nome';
 
@@ -450,9 +485,10 @@ export default function ScoreControl() {
                     <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    {verifiedCount > 0 && (
-                      <span className="text-xs text-muted-foreground">{verifiedCount} verificado(s)</span>
-                    )}
+                    <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Participações">
+                      <Activity size={11} className="text-blue-500" />
+                      <span className="text-xs font-bold text-blue-700">{participations}</span>
+                    </div>
                     <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
                       <Star size={11} className="text-yellow-500 fill-yellow-500" />
                       <span className="text-sm font-black text-yellow-700">{total}</span>
