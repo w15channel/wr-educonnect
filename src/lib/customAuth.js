@@ -60,9 +60,10 @@ export function nowBRT() {
   return brt.toISOString().replace('Z', '-03:00');
 }
 
-// Generate a random access code like: EDU-XXXX-XXXX
-export function generateCode() {
+// Generate a random access code with course prefix: EDU/SEX/PSI-XXXX-XXXX
+export function generateCode(course = 'tcc') {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const seg = (n) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `EDU-${seg(4)}-${seg(4)}`;
+  const prefix = course === 'psicanalise' ? 'PSI' : course === 'sexologia' ? 'SEX' : 'EDU';
+  return `${prefix}-${seg(4)}-${seg(4)}`;
 }
