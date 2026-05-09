@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ export default function Students() {
   const queryClient = useQueryClient();
 
   const activeCourse = session?.course || 'tcc';
+  const { emails: courseEmails } = useCourseFilteredEmails();
 
   const { data: codes = [], isLoading: codesLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -142,11 +144,8 @@ export default function Students() {
     },
   });
 
-  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
-  const expectedPrefix = COURSE_PREFIX[activeCourse];
-
   const filtered = codes
-    .filter(c => c.course === activeCourse && (!expectedPrefix || (c.code || '').startsWith(expectedPrefix)))
+    .filter(c => courseEmails ? courseEmails.has(c.student_email || '') : true)
     .filter(c =>
       !search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||

@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Send, Smile, Lock, Users, Search } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 
 // MSN-style emoji/sticker sets
 const EMOJI_LIST = ['😊','😂','😍','🥰','😭','😤','🤔','😅','🙏','❤️','🔥','✨','👏','🎉','💪','🌟','😎','🤗','😢','😱','👍','💯','🥺','😏','🌈','🌸','💖','🎶','🤩','😜'];
@@ -164,10 +165,13 @@ export default function ClassChat() {
     return acc;
   }, []);
 
+  // Filter by course using hook
+  const { emails: courseEmails } = useCourseFilteredEmails();
+
   // Students list for DM tab
   const otherStudents = codes
     .filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
-    .filter(c => !session?.course || c.course === session.course)
+    .filter(c => courseEmails ? courseEmails.has(c.student_email) : !session?.course || c.course === session.course)
     .filter(c => {
       const name = (c.profile_name || c.student_name || c.student_email || '').toLowerCase();
       return name.includes(dmSearch.toLowerCase());
