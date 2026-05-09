@@ -631,7 +631,7 @@ export default function LandingPage({ onLogin }) {
       `}</style>
 
       {/* DEPOIMENTOS */}
-      <section id="depoimentos" className="py-24 px-6 lg:px-20 bg-[#0a0d1a]">
+      <section id="depoimentos" className="py-24 px-6 lg:px-20 bg-[#0a0d1a] hidden">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-white mb-2">O que dizem nossos alunos</h2>
