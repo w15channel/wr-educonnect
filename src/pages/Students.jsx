@@ -142,8 +142,11 @@ export default function Students() {
     },
   });
 
+  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
+  const expectedPrefix = COURSE_PREFIX[activeCourse];
+
   const filtered = codes
-    .filter(c => c.course === activeCourse || !c.course)
+    .filter(c => c.course === activeCourse && (!expectedPrefix || (c.code || '').startsWith(expectedPrefix)))
     .filter(c =>
       !search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
