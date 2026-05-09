@@ -79,8 +79,8 @@ const AuthenticatedApp = () => {
     return <LandingPage onLogin={handleLogin} />;
   }
 
-  // Lobby for student course selection
-  if (session?.role === 'student' && pathname === '/lobby') {
+  // Lobby for course selection (students and admin)
+  if (pathname === '/lobby') {
     return <CourseLobby />;
   }
 
