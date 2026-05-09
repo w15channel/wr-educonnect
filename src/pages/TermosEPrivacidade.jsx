@@ -66,61 +66,75 @@ export default function TermosEPrivacidade() {
         {/* ── POLÍTICA DE TRABALHO ── */}
         {activeTab === 'politica' && (
           <div className="space-y-1 animate-fade-in">
+            <DocSection number="1" title="Natureza dos Cursos">
+              <p>Os cursos oferecidos pela <strong className="text-white">WR-EDU</strong> são formações profissionalizantes de caráter complementar e extensivo, ministrados na modalidade <strong className="text-white">EAD (Ensino a Distância)</strong>, em conformidade com a Lei nº 9.394/1996 (Lei de Diretrizes e Bases da Educação Nacional) e as diretrizes aplicáveis a cursos livres.</p>
+              <p>As formações têm como objetivo capacitar profissionais para atuação nas áreas de Terapia Cognitivo-Comportamental, Psicanálise Freudiana e Sexologia Integrativa, com base em metodologias reconhecidas e conteúdo estruturado por profissionais habilitados.</p>
+            </DocSection>
 
-            {/* Intro */}
-            <div className="py-8 border-b border-white/6">
-              <p className="text-[#5b5ef4] text-xs font-bold uppercase tracking-widest mb-3">Política de Trabalho e Compromisso Ético</p>
-              <p className="text-white/70 text-sm leading-relaxed max-w-3xl">
-                Nossa Política de Trabalho reflete os valores que sustentam cada etapa da nossa formação. Acreditamos que a excelência não é um destino, mas um <strong className="text-white">padrão de conduta aplicado diariamente</strong> na relação entre professor, aluno e o futuro paciente.
-              </p>
-            </div>
-
-            <DocSection number="1" title="Natureza da Formação e Amparo Legal">
-              <p>A WR-EDU dedica-se à oferta de <strong className="text-white">Cursos de Formação Profissionalizante Livre</strong>, em conformidade com a <strong className="text-white">Lei nº 9.394 — Diretrizes e Bases da Educação Nacional</strong>. É importante ressaltar que nossas certificações são de caráter profissionalizante e de atualização técnica, não se configurando como cursos de graduação ou pós-graduação acadêmica.</p>
-              <p>Nosso objetivo é a capacitação prática para o exercício ético e técnico da terapia no âmbito das <strong className="text-white">terapias integrativas e comportamentais</strong>.</p>
+            <DocSection number="2" title="Vinculações e Credenciamento Institucional">
+              <p>A WR-EDU é mantenedora associada à <strong className="text-white">ABED — Associação Brasileira de Educação a Distância</strong>, entidade de referência nacional no setor de EAD. A verificação pode ser realizada diretamente no portal oficial:</p>
+              <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[#1db89e] text-sm font-semibold hover:opacity-80 transition-opacity mt-2">
+                <ExternalLink size={12} /> Consultar Associados ABED
+              </a>
+              <p className="mt-3">O coordenador da plataforma, <strong className="text-white">Prof. William Ribeiro</strong>, é membro registrado da <strong className="text-white">AHDE — Associação de Hipnose e Desenvolvimento Especializado Internacional</strong> (ID: 00403THE), entidade com reconhecimento internacional.</p>
               <Notice type="info">
-                Nossas formações são reconhecidas institucionalmente pela <strong>ABED</strong> e pelo credenciamento internacional <strong>AHDE (ID: 00403THE)</strong>, atestando a seriedade e o comprometimento da plataforma com padrões elevados de ensino a distância.
+                O credenciamento junto à ABED e AHDE atesta a seriedade institucional da WR-EDU, mas não substitui o registro em conselhos profissionais regulamentados (CFP, CFM etc.).
               </Notice>
             </DocSection>
 
-            <DocSection number="2" title="Metodologia e Interação Real-Time">
-              <p>Nosso compromisso é com o <strong className="text-white">aprendizado ativo</strong>. Diferente de modelos de ensino passivos, nossa política de trabalho prioriza a interação em tempo real. As aulas e mentorias são desenhadas para proporcionar o diálogo direto com o professor e a troca de experiências entre os membros da turma.</p>
-              <p>A participação nos grupos de integração é incentivada como ferramenta fundamental para o networking e o fortalecimento da comunidade acadêmica e profissional — especialmente dentro do ecossistema <strong className="text-white">Sinapse Coletiva</strong>.</p>
-            </DocSection>
-
-            <DocSection number="3" title="Prática Terapêutica Assistida">
-              <p>A excelência na terapia nasce da vivência. Nossa política garante que o aluno tenha contato com <strong className="text-white">simulações e práticas de consultório</strong> ainda durante o período de formação.</p>
-              <p>Essas atividades são conduzidas sob rigorosos critérios éticos, visando preparar o futuro terapeuta para lidar com a subjetividade humana nas áreas de <strong className="text-white">TCC, Psicanálise Freudiana e Sexualidade Humana</strong> com segurança, profundidade e responsabilidade clínica.</p>
-            </DocSection>
-
-            <DocSection number="4" title="Conduta Ética e Humanização">
-              <p>Pautamos nosso trabalho no resgate da dignidade e no acolhimento. Espera-se que todos os alunos e colaboradores mantenham um padrão de conduta baseado em:</p>
+            <DocSection number="3" title="Natureza Jurídica dos Certificados">
+              <p>Os certificados emitidos pela WR-EDU têm validade como <strong className="text-white">cursos livres profissionalizantes</strong>, sendo reconhecidos para fins de:</p>
               <ul>
-                <li>Respeito mútuo entre todos os membros da turma e da instituição</li>
-                <li>Sigilo absoluto das informações compartilhadas em aula e nas sessões práticas</li>
-                <li>Busca constante pela humanização do atendimento terapêutico</li>
-                <li>Uso da empatia como ferramenta central de trabalho</li>
+                <li>Atualização e capacitação profissional complementar</li>
+                <li>Composição de portfólio e currículo profissional</li>
+                <li>Comprovação de formação em instituição de ensino a distância</li>
+                <li>Credenciamento internacional como terapeuta junto à AHDE</li>
               </ul>
-              <p>Não formamos apenas técnicos. Formamos <strong className="text-white">agentes de transformação social</strong> que utilizam a escuta ativa e o acolhimento como diferenciais profissionais.</p>
-            </DocSection>
-
-            <DocSection number="5" title="Propriedade Intelectual e Direitos Autorais">
-              <p>Todo o material didático, metodologias exclusivas — incluindo a <strong className="text-white">Teoria da Utilidade Comportamental</strong> — e conteúdos disponibilizados na plataforma são de <strong className="text-white">propriedade intelectual da WR-EDU</strong> e de seu mantenedor, protegidos pela Lei 9.610/98.</p>
-              <p>O uso desse material é restrito ao aprendizado individual do aluno matriculado, sendo expressamente proibida a reprodução, gravação, redistribuição ou comercialização sem autorização prévia e formal da instituição.</p>
               <Notice type="warning">
-                A violação de direitos autorais sujeitará o infrator às sanções cíveis e penais previstas na legislação brasileira, independentemente de qualquer vínculo acadêmico com a WR-EDU.
+                <strong>Os cursos da WR-EDU NÃO são credenciados por:</strong>
+                <ul className="mt-1">
+                  <li>CFP — Conselho Federal de Psicologia</li>
+                  <li>CFM — Conselho Federal de Medicina</li>
+                  <li>CFO — Conselho Federal de Odontologia</li>
+                  <li>MEC (como curso técnico ou de graduação)</li>
+                </ul>
+                <p className="mt-2">Profissionais regulamentados por esses conselhos devem verificar as regras de atuação complementar junto aos seus órgãos.</p>
               </Notice>
             </DocSection>
 
-            {/* Closing quote */}
-            <div className="py-10 border-b border-white/6">
-              <blockquote className="border-l-2 border-[#5b5ef4]/40 pl-6 max-w-2xl">
-                <p className="text-white/60 text-base leading-relaxed italic">"Você pode fazer muitas coisas na sua vida, mas a excelência vai se apresentar somente quando encontrar o que realmente nasceu para fazer."</p>
-                <footer className="mt-3 text-[#5b5ef4] text-xs font-bold uppercase tracking-widest">— William Ribeiro</footer>
-              </blockquote>
-              <p className="text-white/25 text-xs mt-6 max-w-xl">Esta política visa assegurar que sua jornada conosco seja produtiva, segura e, acima de tudo, transformadora.</p>
-            </div>
+            <DocSection number="4" title="Requisitos para Certificação">
+              <p>Para obtenção do certificado de conclusão, o aluno deverá cumprir <strong className="text-white">obrigatoriamente</strong> todos os critérios abaixo:</p>
+              <ul>
+                <li>Frequência mínima de <strong className="text-white">75%</strong> nas aulas ao vivo</li>
+                <li>Conclusão de pelo menos <strong className="text-white">80%</strong> das aulas gravadas na plataforma</li>
+                <li>Entrega de todas as tarefas obrigatórias dentro dos prazos</li>
+                <li>Participação nas sessões de vivência de consultório supervisionadas</li>
+                <li>Aproveitamento mínimo de <strong className="text-white">60%</strong> nas avaliações e provas</li>
+                <li>Ausência de pendências financeiras no encerramento do curso</li>
+              </ul>
+              <p>O não cumprimento de qualquer requisito implica na impossibilidade de emissão do certificado, sem direito a reembolso proporcional já decorrido.</p>
+            </DocSection>
 
+            <DocSection number="5" title="Responsabilidade Ética e Legal do Aluno">
+              <p>A falsificação, adulteração ou uso indevido de certificados emitidos pela WR-EDU constitui crime tipificado no <strong className="text-white">Art. 297 do Código Penal Brasileiro</strong> (falsificação de documento público/particular), com penas de reclusão.</p>
+              <p>O aluno que apresentar certificado da WR-EDU como credencial regulamentada — de psicólogo, médico ou outra profissão registrada — sem possuir o devido registro em conselho profissional, estará sujeito ao crime de <strong className="text-white">exercício ilegal da profissão</strong> (Art. 282 do CP), de forma totalmente independente de qualquer responsabilidade da instituição.</p>
+              <Notice type="warning">
+                A WR-EDU não se responsabiliza pela atuação ética ou profissional do aluno após a formação. O uso das técnicas ensinadas é de inteira responsabilidade do profissional formado.
+              </Notice>
+            </DocSection>
+
+            <DocSection number="6" title="Compromisso da Instituição">
+              <p>A WR-EDU compromete-se a:</p>
+              <ul>
+                <li>Manter transparência sobre a natureza e limitações de cada formação</li>
+                <li>Garantir conteúdo ministrado por profissionais devidamente habilitados</li>
+                <li>Emitir certificados somente após cumprimento integral dos requisitos</li>
+                <li>Atualizar o conteúdo programático conforme avanços da área terapêutica</li>
+                <li>Oferecer suporte acadêmico e técnico durante toda a formação</li>
+                <li>Respeitar integralmente os dados e a privacidade dos alunos</li>
+              </ul>
+            </DocSection>
           </div>
         )}
 
@@ -147,7 +161,7 @@ export default function TermosEPrivacidade() {
             </DocSection>
 
             <DocSection number="3" title="Propriedade Intelectual e Uso do Conteúdo">
-              <p>Todo o conteúdo da plataforma WR-EDU — incluindo aulas gravadas, materiais didáticos, apostilas, apresentações, avaliações e design da plataforma — é protegido pela <strong className="text-white">Lei de Direitos Autorais (Lei 9.610/98)</strong> e é propriedade exclusiva da WR-EDU e de seus colaboradores.</p>
+              <p>Todo o conteúdo da plataforma WR-EDU — incluindo aulas gravadas, materiais didáticos, apostilas, apresentações, avaliações e design da plataforma — é protegido por <strong className="text-white">Lei de Direitos Autorais (Lei 9.610/98)</strong> e é propriedade exclusiva da WR-EDU e de seus colaboradores.</p>
               <p>É expressamente proibido:</p>
               <ul>
                 <li>Gravar, capturar tela ou reproduzir aulas em qualquer formato</li>
@@ -304,11 +318,12 @@ function DocSection({ number, title, children }) {
 
 function Notice({ type, children }) {
   const styles = {
-    info: 'bg-[#5b5ef4]/8 border-[#5b5ef4]/20',
-    warning: 'bg-yellow-500/8 border-yellow-500/20',
+    info: { bg: 'bg-[#5b5ef4]/8 border-[#5b5ef4]/20', icon: '𝒊', iconColor: 'text-[#5b5ef4]' },
+    warning: { bg: 'bg-yellow-500/8 border-yellow-500/20', icon: '!', iconColor: 'text-yellow-400' },
   };
+  const s = styles[type];
   return (
-    <div className={`mt-4 ${styles[type]} border rounded-xl p-4 text-sm text-white/55 leading-relaxed`}>
+    <div className={`mt-4 ${s.bg} border rounded-xl p-4 text-sm text-white/55 leading-relaxed`}>
       {children}
     </div>
   );
