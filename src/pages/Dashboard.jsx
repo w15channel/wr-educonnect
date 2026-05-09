@@ -133,7 +133,8 @@ export default function Dashboard() {
     queryKey: ['submissions'],
     queryFn: () => base44.entities.TaskSubmission.filter(
       isTeacher ? {} : { student_email: session?.email || '' },
-      '-created_date', 50
+      '-created_date',
+      isTeacher ? 1000 : 50
     ),
     enabled: !!session
   });
@@ -215,19 +216,29 @@ export default function Dashboard() {
     return true;
   });
   const scoreMap = publishedScoreMap;
+  const taskIds = new Set(tasks.map((t) => t.id));
+  const courseSubmissions = submissions.filter((s) => taskIds.has(s.task_id));
   const participationMap = {};
   allScoreItems.forEach((s) => {
     if (!s.student_email) return;
     participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
   });
-  const ranking = courseCodes.map((c) => ({
-    email: c.student_email,
-    total: scoreMap[c.student_email] || 0,
-    publishedRank: publishedRankMap[c.student_email] || Number.MAX_SAFE_INTEGER,
-    count: participationMap[c.student_email] || 0,
-    enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
-    name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase()
-  })).sort((a, b) => {
+  const rankingFull = courseCodes.map((c) => {
+    const hasPending = courseSubmissions.some((s) =>
+      s.status === 'submitted' &&
+      s.student_email === c.student_email &&
+      !allScoreItems.find((si) => si.ref_id === s.task_id && si.student_email === c.student_email && si.verified)
+    );
+    return {
+      email: c.student_email,
+      total: scoreMap[c.student_email] || 0,
+      publishedRank: publishedRankMap[c.student_email] || Number.MAX_SAFE_INTEGER,
+      count: participationMap[c.student_email] || 0,
+      enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
+      name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
+      hasPending
+    };
+  }).sort((a, b) => {
     if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
     if (b.total !== a.total) return b.total - a.total;
     if (a.count > 0 || b.count > 0) {
@@ -235,7 +246,8 @@ export default function Dashboard() {
     }
     if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
     return a.name.localeCompare(b.name);
-  }).slice(0, 10);
+  });
+  const ranking = rankingFull.slice(0, 10);
 
   const myRank = ranking.findIndex((r) => r.email === session?.email) + 1;
 
@@ -452,15 +464,15 @@ export default function Dashboard() {
 
       {/* Admin ranking */}
       {isTeacher &&
-      <div className="bg-card rounded-2xl border border-border p-5 hidden">
+      <div className="bg-card rounded-2xl border border-border p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Trophy size={16} className="text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-                <p className="text-xs text-muted-foreground">Classificação pelas pontuações publicadas no ScoreControl</p>
+                <h3 className="font-bold text-sm text-foreground">Controle de Pontuação</h3>
+                <p className="text-xs text-muted-foreground">Réplica da sequência publicada no ScoreControl</p>
               </div>
             </div>
             {!monitorSelectMode ?
@@ -501,11 +513,11 @@ export default function Dashboard() {
               Selecione até 3 alunos para serem os Monitores do período atual.
             </div>
         }
-          {ranking.length === 0 ?
+          {rankingFull.length === 0 ?
         <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p> :
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {ranking.map((r, i) => {
+        <div className="space-y-2">
+              {rankingFull.map((r, i) => {
             const code = accessCodes.find((c) => c.student_email === r.email);
             const displayName = code?.profile_name || code?.student_name || r.email;
             const avatarColor = code?.profile_avatar_color || '#5b5ef4';
@@ -528,18 +540,30 @@ export default function Dashboard() {
                         {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
                 }
-                    <span className="text-sm w-5 text-center shrink-0">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}</span>
+                    <span className="text-sm w-7 text-center shrink-0">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground font-bold">#{i + 1}</span>}</span>
                     {photoUrl ?
-                <img src={photoUrl} alt={displayName} className="w-6 h-6 rounded-full object-cover shrink-0" /> :
+                <img src={photoUrl} alt={displayName} className="w-10 h-10 rounded-full object-cover shrink-0" /> :
 
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
-                        {displayName?.charAt(0)?.toUpperCase()}
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                        {displayName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                       </div>
                 }
-                    <span className="flex-1 text-xs font-semibold text-foreground truncate">{displayName}</span>
-                    <div className="flex items-center gap-1">
-                      <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                      <span className="text-xs font-bold">{r.total}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-foreground truncate">{displayName}</span>
+                        {r.hasPending && <AlertTriangle size={14} className="text-red-500 shrink-0" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{r.email || '—'}</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Participações">
+                        <BarChart3 size={11} className="text-blue-500" />
+                        <span className="text-xs font-bold text-blue-700">{r.count}</span>
+                      </div>
+                      <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
+                        <Star size={11} className="text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-black text-yellow-700">{Number(r.total || 0).toFixed(1)}</span>
+                      </div>
                     </div>
                   </div>);
 
