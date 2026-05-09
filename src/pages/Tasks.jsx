@@ -261,10 +261,25 @@ export default function Tasks() {
         </div>
       ) : (
         <div className="space-y-3">
-          {displayedTasks.map(task => {
+          {displayedTasks.map((task, idx) => {
             const submission = getSubmission(task.id);
             const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
             const status = uploadStatus[task.id];
+            const isLocked = !isTeacher && idx >= 1;
+
+            if (isLocked) return (
+              <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm opacity-60 select-none">
+                <div className="flex items-start gap-3 p-4 sm:p-5">
+                  <div className="p-2.5 rounded-xl shrink-0 bg-muted text-muted-foreground">
+                    <span className="text-lg">🔒</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-foreground text-sm leading-snug">{task.title}</h3>
+                    <p className="text-xs text-amber-600 font-semibold mt-1 flex items-center gap-1">⏳ Em breve — será liberado pelo professor</p>
+                  </div>
+                </div>
+              </div>
+            );
 
             return (
               <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow">

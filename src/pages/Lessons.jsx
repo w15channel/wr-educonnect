@@ -304,6 +304,24 @@ export default function Lessons() {
             const isWatched = prog?.watched;
             const status = uploadStatus[lesson.id];
             const materialLinks = lesson.material_links ? lesson.material_links.split(',').map(l => l.trim()).filter(Boolean) : [];
+            const isLocked = !isTeacher && idx >= 1;
+
+            if (isLocked) return (
+              <div key={lesson.id} className="bg-card rounded-2xl border border-border shadow-sm opacity-60 select-none">
+                <div className="flex items-center gap-3 p-3 sm:p-4">
+                  <div className="w-18 h-12 sm:w-24 sm:h-16 bg-muted rounded-xl flex items-center justify-center shrink-0" style={{ minWidth: '4.5rem' }}>
+                    <span className="text-2xl">🔒</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground shrink-0">#{String(idx + 1).padStart(2, '0')}</span>
+                      <h3 className="font-bold text-foreground text-sm leading-tight truncate">{lesson.title}</h3>
+                    </div>
+                    <p className="text-xs text-amber-600 font-semibold mt-1 flex items-center gap-1">⏳ Em breve — será liberado pelo professor</p>
+                  </div>
+                </div>
+              </div>
+            );
 
             return (
               <div key={lesson.id} className={`bg-card rounded-2xl border shadow-sm transition-all ${isWatched ? 'border-green-200' : 'border-border'}`}>
