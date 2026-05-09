@@ -19,6 +19,16 @@
       "default": true,
       "description": "Whether this code is active"
     },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso vinculado ao aluno"
+    },
     "profile_name": {
       "type": "string",
       "description": "Student's display name after login"

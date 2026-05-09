@@ -22,10 +22,29 @@
       "type": "string",
       "description": "Post content"
     },
+    "topic": {
+      "type": "string",
+      "description": "Topic/category of the post"
+    },
     "reply_count": {
       "type": "number",
       "default": 0,
       "description": "Number of replies"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Turma/curso onde o post foi publicado"
+    },
+    "bot_replied": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o bot j\u00e1 respondeu automaticamente"
     }
   },
   "required": [

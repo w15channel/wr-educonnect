@@ -10,6 +10,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import LandingPage from './pages/LayoutPreview2';
 import WRTec from './pages/WRTec';
+import CourseLobby from './pages/CourseLobby';
 import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import TermosDeUso from './pages/TermosDeUso';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade';
@@ -41,6 +42,12 @@ import Classe from './pages/Classe';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
+  const handleLogin = (redirect) => {
+    login();
+    if (redirect && window.location.pathname !== '/' + redirect) {
+      window.location.href = '/' + redirect;
+    }
+  };
 
   if (loading) {
     return (
@@ -53,6 +60,7 @@ const AuthenticatedApp = () => {
     );
   }
 
+  // Show CourseLobby right after login if student hasn't chosen platform access yet
   if (!session) {
     if (window.location.pathname === '/politica') {
       return <PoliticaDeTrabalho />;
@@ -66,7 +74,12 @@ const AuthenticatedApp = () => {
     if (window.location.pathname === '/wr-tec') {
       return <WRTec />;
     }
-    return <LandingPage onLogin={login} />;
+    return <LandingPage onLogin={handleLogin} />;
+  }
+
+  // Lobby for student course selection
+  if (session?.role === 'student' && window.location.pathname === '/lobby') {
+    return <CourseLobby />;
   }
 
   return (

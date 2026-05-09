@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
-import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X } from 'lucide-react';
+import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 export default function CodeManager() {
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState('');
+  const [newCourse, setNewCourse] = useState('tcc');
   const [newEmail, setNewEmail] = useState('');
   const [editingEmailId, setEditingEmailId] = useState(null);
   const [editingEmailValue, setEditingEmailValue] = useState('');
@@ -26,12 +27,14 @@ export default function CodeManager() {
       code: generateCode(),
       student_name: newName.trim(),
       student_email: newEmail.trim(),
+      course: newCourse,
       is_active: true,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       setNewName('');
       setNewEmail('');
+      setNewCourse('tcc');
       toast.success('Código gerado com sucesso!');
     },
   });
@@ -115,6 +118,15 @@ export default function CodeManager() {
             onChange={e => setNewEmail(e.target.value)}
             className="flex-1"
           />
+          <select
+            value={newCourse}
+            onChange={e => setNewCourse(e.target.value)}
+            className="h-10 rounded-xl border border-border bg-background text-foreground text-sm px-3 shrink-0"
+          >
+            <option value="tcc">Terapeuta TCC</option>
+            <option value="psicanalise">Psicanalista Freudiano</option>
+            <option value="sexologia">Sexólogo(a)</option>
+          </select>
           <Button
             onClick={() => createMutation.mutate()}
             disabled={!newName.trim() || createMutation.isPending}
@@ -143,6 +155,9 @@ export default function CodeManager() {
                 <div className="flex items-center gap-3 min-w-0">
                   <div>
                     <p className="font-medium text-foreground text-sm">{c.student_name || 'Sem nome'}</p>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: c.course === 'psicanalise' ? '#1db89e20' : c.course === 'sexologia' ? '#a855f720' : '#5b5ef420', color: c.course === 'psicanalise' ? '#1db89e' : c.course === 'sexologia' ? '#a855f7' : '#5b5ef4' }}>
+                        {c.course === 'psicanalise' ? 'Psicanalista' : c.course === 'sexologia' ? 'Sexólogo(a)' : 'TCC'}
+                      </span>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <code className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                         {c.code}

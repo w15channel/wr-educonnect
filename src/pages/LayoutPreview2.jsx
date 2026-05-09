@@ -217,9 +217,10 @@ export default function LandingPage({ onLogin }) {
       email: record.student_email || '',
       bio: record.profile_bio || '',
       avatarColor: record.profile_avatar_color || '#5b5ef4',
-      photoUrl: record.profile_photo_url || ''
+      photoUrl: record.profile_photo_url || '',
+      course: record.course || 'tcc',
     });
-    onLogin();
+    onLogin('lobby');
     setLoading(false);
   };
 
@@ -251,7 +252,7 @@ export default function LandingPage({ onLogin }) {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="WR" className="w-12 h-12 object-contain" />
+          <img src={LOGO_URL} alt="WR" className="w-14 h-14 object-contain" />
             <span className="text-2xl font-black tracking-tight">WR-EDU</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
@@ -677,7 +678,7 @@ export default function LandingPage({ onLogin }) {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
             <div className="flex items-center gap-3">
-              <img src={LOGO_URL} alt="WR" className="w-10 h-10 object-contain" />
+              <img src={LOGO_URL} alt="WR" className="w-12 h-12 object-contain" />
               <div>
                 <p className="text-white font-black text-base">WR-EDU</p>
                 <p className="text-white/30 text-xs">Escola de Formação de Terapeutas</p>

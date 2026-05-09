@@ -1,0 +1,188 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
+import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles } from 'lucide-react';
+
+const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
+
+const COURSES = [
+  {
+    id: 'tcc',
+    title: 'Terapeuta TCC',
+    subtitle: 'Abordagem Cognitivo-Comportamental',
+    desc: 'Técnicas cognitivo-comportamentais aplicadas à prática clínica, com suporte em tempo real e mentoria ao vivo todas as segundas-feiras.',
+    icon: Brain,
+    color: '#5b5ef4',
+    img: 'https://media.base44.com/images/public/69f55577840a3c93cee191be/1d898387b_generated_image.png',
+    tag: 'Turma Ativa',
+    tagColor: '#5b5ef4',
+  },
+  {
+    id: 'psicanalise',
+    title: 'Psicanalista Freudiano',
+    subtitle: 'Método Psicanalítico',
+    desc: 'Profundidade do método psicanalítico freudiano com casos clínicos supervisionados, credenciamento internacional e plataforma exclusiva.',
+    icon: Sparkles,
+    color: '#1db89e',
+    img: 'https://media.base44.com/images/public/69f55577840a3c93cee191be/f28c89ba7_generated_image.png',
+    tag: 'Em breve',
+    tagColor: '#1db89e',
+  },
+  {
+    id: 'sexologia',
+    title: 'Sexólogo(a)',
+    subtitle: 'Sexualidade Humana Integrativa',
+    desc: '80h de conteúdo especializado em sexualidade humana, com abordagem integrativa, multidisciplinar e credenciamento como terapeuta.',
+    icon: Heart,
+    color: '#a855f7',
+    img: 'https://media.base44.com/images/public/69f55577840a3c93cee191be/e9014c7ae_generated_image.png',
+    tag: 'Em breve',
+    tagColor: '#a855f7',
+  },
+];
+
+export default function CourseLobby() {
+  const navigate = useNavigate();
+  const { session, logout, isAdmin } = useCustomAuth();
+  const userCourse = session?.course || 'tcc';
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#080b14] text-white flex items-center justify-center px-6">
+        <div className="text-center">
+          <img src={LOGO_URL} alt="WR-EDU" className="w-20 h-20 object-contain mx-auto mb-6" />
+          <h1 className="text-3xl font-black mb-2">Bem-vindo, Professor!</h1>
+          <p className="text-white/50 mb-8">Acesse o painel administrativo da plataforma.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-lg hover:opacity-90 transition-all inline-flex items-center gap-2"
+          >
+            Entrar no Painel <ChevronRight size={18} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#080b14] text-white">
+      {/* Header */}
+      <div className="border-b border-white/8 px-6 py-5">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={LOGO_URL} alt="WR-EDU" className="w-10 h-10 object-contain" />
+            <span className="font-black text-lg">WR-EDU</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm font-semibold text-white">{session?.name}</p>
+              <p className="text-xs text-white/40">Aluno(a)</p>
+            </div>
+            <button
+              onClick={logout}
+              className="text-white/40 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/8"
+              title="Sair"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 py-16">
+        {/* Title */}
+        <div className="text-center mb-14">
+          <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-5">
+            <GraduationCap size={13} className="text-[#5b5ef4]" />
+            <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Área do Aluno</span>
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-black text-white mb-3">
+            Olá,{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">
+              {session?.name?.split(' ')[0]}!
+            </span>
+          </h1>
+          <p className="text-white/50 max-w-md mx-auto text-base">
+            Selecione sua formação para acessar o conteúdo da sua turma.
+          </p>
+        </div>
+
+        {/* Course Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {COURSES.map((c) => {
+            const isActive = userCourse === c.id;
+            const isLocked = !isActive;
+            const Icon = c.icon;
+
+            return (
+              <div
+                key={c.id}
+                className={`relative bg-[#0d1120] border rounded-3xl overflow-hidden flex flex-col transition-all ${
+                  isActive
+                    ? 'border-[#5b5ef4]/50 ring-2 ring-[#5b5ef4]/20 shadow-2xl shadow-[#5b5ef4]/10'
+                    : 'border-white/10'
+                }`}
+              >
+                {/* Image */}
+                <div className="relative h-44 overflow-hidden">
+                  <img
+                    src={c.img}
+                    alt={c.title}
+                    className={`w-full h-full object-cover object-center transition-all ${isLocked ? 'grayscale brightness-40' : ''}`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/20 to-transparent" />
+                  <div
+                    className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black text-white"
+                    style={{ backgroundColor: isActive ? c.color : '#444' }}
+                  >
+                    {isActive ? `✓ ${c.tag}` : c.tag}
+                  </div>
+                  {isLocked && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-black/70 rounded-full p-4 border border-white/10">
+                        <Lock size={26} className="text-white/50" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: c.color + '20' }}>
+                      <Icon size={13} style={{ color: c.color }} />
+                    </div>
+                    <h3 className={`font-black text-lg ${isLocked ? 'text-white/50' : 'text-white'}`}>{c.title}</h3>
+                  </div>
+                  <p className="text-white/30 text-xs mb-3">{c.subtitle}</p>
+                  <p className={`text-sm leading-relaxed flex-1 mb-5 ${isLocked ? 'text-white/30' : 'text-white/55'}`}>{c.desc}</p>
+
+                  {isActive ? (
+                    <button
+                      onClick={() => navigate('/')}
+                      className="w-full py-3 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90"
+                      style={{ background: `linear-gradient(135deg, ${c.color}, #1db89e)` }}
+                    >
+                      Entrar na Plataforma <ChevronRight size={16} />
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full py-3 rounded-2xl font-bold text-sm text-white/25 bg-white/5 border border-white/8 cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <Lock size={13} /> Próxima turma: Setembro/2026
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-center text-white/20 text-xs mt-10">
+          Você está matriculado(a) no curso <strong className="text-white/40">{COURSES.find(c => c.id === userCourse)?.title}</strong>. Em caso de dúvidas, entre em contato com a coordenação.
+        </p>
+      </div>
+    </div>
+  );
+}

@@ -33,9 +33,13 @@ export default function Forum() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
+  const userCourse = isTeacher ? null : (session?.course || 'tcc');
+
   const { data: posts = [] } = useQuery({
-    queryKey: ['forum-posts'],
-    queryFn: () => base44.entities.ForumPost.list('-created_date', 100),
+    queryKey: ['forum-posts', userCourse],
+    queryFn: () => isTeacher
+      ? base44.entities.ForumPost.list('-created_date', 100)
+      : base44.entities.ForumPost.filter({ course: userCourse }, '-created_date', 100),
   });
 
   const { data: replies = [] } = useQuery({
@@ -51,6 +55,7 @@ export default function Forum() {
       author_name: session?.name || 'Anônimo',
       author_email: session?.email || '',
       author_role: isTeacher ? 'teacher' : 'student',
+      course: isTeacher ? 'tcc' : (session?.course || 'tcc'),
       reply_count: 0,
     }),
     onMutate: async (data) => {
