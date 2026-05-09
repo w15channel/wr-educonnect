@@ -110,9 +110,13 @@ export default function Students() {
     return 'paid';
   };
 
+  const coursePrefix = { tcc: 'EDU', psicanalise: 'PSI', sexologia: 'SEX' };
+  const prefix = coursePrefix[activeCourse] || 'EDU';
+
   const filtered = codes
     .filter(c => {
-      const matchCourse = c.course === activeCourse;
+      const codeStr = (c.code || '').toUpperCase();
+      const matchCourse = codeStr.startsWith(prefix) || (c.course === activeCourse);
       const matchSearch = !search ||
         (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
         (c.student_email || '').toLowerCase().includes(search.toLowerCase()) ||
