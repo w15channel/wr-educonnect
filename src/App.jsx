@@ -39,7 +39,6 @@ import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
-import Ring from './pages/Ring';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 
@@ -81,7 +80,6 @@ function ScopedRoutesTree() {
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="dm/:email" element={<DirectMessage />} />
         <Route path="classe" element={<Classe />} />
-        <Route path="ring" element={<Ring />} />
       </Route>
     </Routes>
   );
@@ -154,7 +152,6 @@ const AuthenticatedApp = () => {
       <Route path="/bestseller" element={redirectTo('/bestseller')} />
       <Route path="/historico" element={redirectTo('/historico')} />
       <Route path="/classe" element={redirectTo('/classe')} />
-      <Route path="/ring" element={redirectTo('/ring')} />
 
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
       <Route path="/wr-tec" element={<WRTec />} />
