@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap } from 'lucide-react';
+import { generateCode } from '@/lib/customAuth';
+import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,11 +15,16 @@ import { toast } from 'sonner';
 export default function Students() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user: session } = useOutletContext() || {};
   const defaultTab = location.search.includes('tab=codes') ? 'codes' : 'students';
   const [tab, setTab] = useState(defaultTab);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('date_desc');
+  const [enrollingCode, setEnrollingCode] = useState(null);
+  const [enrollNewCourse, setEnrollNewCourse] = useState('');
   const queryClient = useQueryClient();
+
+  const activeCourse = session?.course || 'tcc';
 
   const { data: codes = [], isLoading: codesLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -107,7 +114,32 @@ export default function Students() {
     return 'paid';
   };
 
+  const enrollMutation = useMutation({
+    mutationFn: async ({ sourceCode, targetCourse }) => {
+      const newCode = generateCode(targetCourse);
+      const newAccessCode = await base44.entities.AccessCode.create({
+        code: newCode,
+        student_name: sourceCode.student_name,
+        student_email: sourceCode.student_email,
+        profile_name: sourceCode.profile_name,
+        profile_bio: sourceCode.profile_bio,
+        profile_avatar_color: sourceCode.profile_avatar_color,
+        profile_photo_url: sourceCode.profile_photo_url,
+        course: targetCourse,
+        is_active: true,
+      });
+      return newAccessCode;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      setEnrollingCode(null);
+      setEnrollNewCourse('');
+      toast.success('Aluno matriculado em novo curso!');
+    },
+  });
+
   const filtered = codes
+    .filter(c => c.course === activeCourse || !c.course)
     .filter(c =>
       !search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -125,6 +157,18 @@ export default function Students() {
         const order = { overdue: 0, pending: 1, paid: 2, '': 3 };
         return (order[ta] ?? 3) - (order[tb] ?? 3);
       }
+      if (sortBy === 'submissions_desc') return getStudentStats(b).submissions - getStudentStats(a).submissions;
+      if (sortBy === 'submissions_asc') return getStudentStats(a).submissions - getStudentStats(b).submissions;
+      if (sortBy === 'avg_desc') {
+        const avgA = parseFloat(getStudentStats(a).avg) || 0;
+        const avgB = parseFloat(getStudentStats(b).avg) || 0;
+        return avgB - avgA;
+      }
+      if (sortBy === 'avg_asc') {
+        const avgA = parseFloat(getStudentStats(a).avg) || 0;
+        const avgB = parseFloat(getStudentStats(b).avg) || 0;
+        return avgA - avgB;
+      }
       // date_desc default
       return new Date(b.created_date) - new Date(a.created_date);
     });
@@ -135,12 +179,44 @@ export default function Students() {
     overdue: { label: 'Inadimplente', class: 'text-red-700 bg-red-100 border-red-200', icon: XCircle },
   };
 
+  const courseLabel = { tcc: 'TCC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' }[activeCourse] || activeCourse;
+
   return (
     <div className="p-4 lg:p-7 max-w-6xl mx-auto animate-fade-in-up">
       <div className="mb-5">
-        <h2 className="text-xl lg:text-2xl font-bold text-foreground">Gestão de Alunos</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Gerencie alunos e códigos de acesso</p>
+        <h2 className="text-xl lg:text-2xl font-bold text-foreground">Gestão de Alunos — {courseLabel}</h2>
+        <p className="text-muted-foreground text-sm mt-0.5">Gerencie alunos e códigos de acesso da turma ativa</p>
       </div>
+
+      {/* Dialog para matricular em outro curso */}
+      <Dialog open={!!enrollingCode} onOpenChange={() => { setEnrollingCode(null); setEnrollNewCourse(''); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Matricular em Outro Curso</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Aluno: <strong>{enrollingCode?.student_name || enrollingCode?.profile_name}</strong></p>
+            <p className="text-sm">Selecione o novo curso:</p>
+            <select
+              value={enrollNewCourse}
+              onChange={e => setEnrollNewCourse(e.target.value)}
+              className="w-full h-10 rounded-xl border border-border bg-background text-foreground text-sm px-3"
+            >
+              <option value="">Escolher curso...</option>
+              <option value="tcc" disabled={enrollingCode?.course === 'tcc'}>Terapeuta TCC</option>
+              <option value="psicanalise" disabled={enrollingCode?.course === 'psicanalise'}>Psicanalista Freudiano</option>
+              <option value="sexologia" disabled={enrollingCode?.course === 'sexologia'}>Sexólogo(a)</option>
+            </select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEnrollingCode(null); setEnrollNewCourse(''); }}>Cancelar</Button>
+            <Button
+              onClick={() => enrollMutation.mutate({ sourceCode: enrollingCode, targetCourse: enrollNewCourse })}
+              disabled={!enrollNewCourse || enrollMutation.isPending}
+            >
+              {enrollMutation.isPending ? 'Matriculando...' : 'Matricular'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-secondary rounded-xl p-1 mb-5 w-full sm:w-fit">
@@ -180,6 +256,10 @@ export default function Students() {
                   <SelectItem value="alpha_desc">Z-A (nome)</SelectItem>
                   <SelectItem value="status_active">Ativos primeiro</SelectItem>
                   <SelectItem value="tuition_overdue">Inadimplentes primeiro</SelectItem>
+                  <SelectItem value="submissions_desc">Mais entregas primeiro</SelectItem>
+                  <SelectItem value="submissions_asc">Menos entregas primeiro</SelectItem>
+                  <SelectItem value="avg_desc">Maior média primeiro</SelectItem>
+                  <SelectItem value="avg_asc">Menor média primeiro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -243,9 +323,14 @@ export default function Students() {
                           </span>
                         </div>
                       </div>
-                      <button onClick={() => navigate(`/students/${code.id}`)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors">
-                       <Eye size={15} />
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => setEnrollingCode(code)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors" title="Matricular em outro curso">
+                          <Plus size={15} />
+                        </button>
+                        <button onClick={() => navigate(`/students/${code.id}`)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors">
+                          <Eye size={15} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -316,9 +401,14 @@ export default function Students() {
                               </Select>
                             </td>
                             <td className="p-4">
-                              <button onClick={() => navigate(`/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
-                                <Eye size={13} /> Detalhes
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button onClick={() => setEnrollingCode(code)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold" title="Matricular em outro curso">
+                                  <Plus size={13} /> Matricular
+                                </button>
+                                <button onClick={() => navigate(`/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
+                                  <Eye size={13} /> Detalhes
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

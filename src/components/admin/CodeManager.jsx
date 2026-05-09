@@ -24,7 +24,7 @@ export default function CodeManager() {
 
   const createMutation = useMutation({
     mutationFn: () => base44.entities.AccessCode.create({
-      code: generateCode(),
+      code: generateCode(newCourse),
       student_name: newName.trim(),
       student_email: newEmail.trim(),
       course: newCourse,
@@ -88,7 +88,7 @@ export default function CodeManager() {
   });
 
   const regenerateMutation = useMutation({
-    mutationFn: (id) => base44.entities.AccessCode.update(id, { code: generateCode() }),
+    mutationFn: ({ id, course }) => base44.entities.AccessCode.update(id, { code: generateCode(course) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       toast.success('Código regenerado!');
@@ -203,7 +203,7 @@ export default function CodeManager() {
                   <button onClick={() => copyCode(c.code)} title="Copiar código" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                     <Copy size={15} />
                   </button>
-                  <button onClick={() => regenerateMutation.mutate(c.id)} title="Regenerar código" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                  <button onClick={() => regenerateMutation.mutate({ id: c.id, course: c.course })} title="Regenerar código" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                     <RefreshCw size={15} />
                   </button>
                   <button
