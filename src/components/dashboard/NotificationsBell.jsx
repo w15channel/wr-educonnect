@@ -46,7 +46,7 @@ export default function NotificationsBell({ session }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-50 w-80 bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+          <div className="absolute left-0 top-11 z-50 w-80 bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-fade-in">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <Bell size={15} className="text-orange-500" />

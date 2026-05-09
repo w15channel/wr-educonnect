@@ -15,7 +15,7 @@ import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import TermosDeUso from './pages/TermosDeUso';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade';
 import AppLayout from './components/layout/AppLayout';
-import Dashboard from './pages/Dashboard';
+import DashboardPage from './pages/Dashboard';
 import Lessons from './pages/Lessons';
 import LiveSessions from './pages/LiveSessions';
 import Tasks from './pages/Tasks';
@@ -87,7 +87,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/lessons" element={<Lessons />} />
         <Route path="/live" element={<LiveSessions />} />
         <Route path="/tasks" element={<Tasks />} />
