@@ -31,6 +31,11 @@ export default function TerapeutaDaSemana() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
+  const { data: scoreItems = [] } = useQuery({
+    queryKey: ['score-items-terapeuta'],
+    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
+  });
+
   const createPairingMutation = useMutation({
     mutationFn: (data) => base44.entities.TherapistPairing.create(data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] }),
@@ -92,16 +97,31 @@ export default function TerapeutaDaSemana() {
       toast.error('São necessários pelo menos 2 alunos para criar pareamentos.');
       return;
     }
-    // Embaralha alunos
-    const shuffled = [...activeStudents].sort(() => Math.random() - 0.5);
+
+    // Balancear: top 10 pontuados ficam juntos, demais são sorteados aleatoriamente
+    const freshScores = await base44.entities.ScoreItem.list('-created_date', 2000);
+    const scoreMap = {};
+    freshScores.filter(s => s.verified).forEach(s => {
+      if (s.student_email) scoreMap[s.student_email] = (scoreMap[s.student_email] || 0) + (s.score || 0);
+    });
+    const sorted = [...activeStudents].sort((a, b) => (scoreMap[b.student_email] || 0) - (scoreMap[a.student_email] || 0));
+    const top = sorted.slice(0, Math.min(10, Math.floor(sorted.length / 2) * 2)); // top 10 (par)
+    const rest = sorted.slice(top.length);
+
+    // Embaralha dentro de cada grupo
+    const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+    const topShuffled = shuffle(top);
+    const restShuffled = shuffle(rest);
+    const allOrdered = [...topShuffled, ...restShuffled];
+
     const date = todayStr;
     const endDate = format(addDays(today, 4), 'yyyy-MM-dd');
     const pairs = [];
-    for (let i = 0; i < shuffled.length - 1; i += 2) {
-      pairs.push({ therapist: shuffled[i], patient: shuffled[i + 1] });
+    for (let i = 0; i < allOrdered.length - 1; i += 2) {
+      pairs.push({ therapist: allOrdered[i], patient: allOrdered[i + 1] });
     }
-    if (shuffled.length % 2 !== 0) {
-      pairs.push({ therapist: shuffled[shuffled.length - 1], patient: shuffled[0] });
+    if (allOrdered.length % 2 !== 0) {
+      pairs.push({ therapist: allOrdered[allOrdered.length - 1], patient: allOrdered[0] });
     }
     for (const { therapist, patient } of pairs) {
       await createPairingMutation.mutateAsync({
@@ -113,7 +133,7 @@ export default function TerapeutaDaSemana() {
         period_end: endDate,
       });
     }
-    toast.success(`✅ ${pairs.length} pareamento(s) gerado(s) com ${activeStudents.length} alunos!`);
+    toast.success(`✅ ${pairs.length} pareamento(s) gerado(s) — top pontuados pareados entre si!`);
   };
 
   const handleSubmitEval = () => {

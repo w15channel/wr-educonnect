@@ -79,6 +79,20 @@ export default function Forum() {
       if (context?.previous) queryClient.setQueryData(['forum-posts'], context.previous);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['forum-posts'] }),
+    onSuccess: (post) => {
+      // +0.1 ponto por publicar pergunta no fórum
+      if (post?.id && !post.id.startsWith('optimistic-')) {
+        base44.entities.ScoreItem.create({
+          student_email: session?.email || '',
+          category: 'forum',
+          ref_id: post.id,
+          ref_title: 'Pergunta no Fórum',
+          score: 0.1,
+          max_score: 0.1,
+          verified: true,
+        });
+      }
+    },
   });
 
   const createReplyMutation = useMutation({
@@ -93,10 +107,20 @@ export default function Forum() {
         author_role: isTeacher ? 'teacher' : 'student',
       });
     },
-    onSuccess: () => {
+    onSuccess: (reply) => {
       queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] });
       queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
       setReplyText('');
+      // +1 ponto por resposta no fórum
+      base44.entities.ScoreItem.create({
+        student_email: session?.email || '',
+        category: 'forum',
+        ref_id: reply?.id || `reply-${Date.now()}`,
+        ref_title: 'Resposta no Fórum',
+        score: 1,
+        max_score: 1,
+        verified: true,
+      });
       toast.success('Resposta enviada! +1 ponto de participação');
     },
   });

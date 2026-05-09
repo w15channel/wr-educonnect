@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-const MONITOR_BONUS = 0.2;
+const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
 const CYCLE_DAYS = 5;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 
@@ -215,9 +215,7 @@ export default function Monitores() {
           <p className="font-bold mb-1">Critérios de seleção dos Monitores:</p>
           <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
             <li>Maior pontuação total (ScoreItems verificados)</li>
-            <li>Ordem de matrícula (aluno mais antigo tem prioridade em caso de empate)</li>
-            <li>Ordem alfabética do nome</li>
-            <li>Maior participação (tarefas entregues + posts no fórum)</li>
+            <li>1º Monitor: +0.5pts / 2º Monitor: +0.3pts / 3º Monitor: +0.2pts por atividade</li>
           </ol>
         </div>
       )}
@@ -304,7 +302,7 @@ export default function Monitores() {
                   <MonitorBadge rank={m.rank_position} />
                   <p className="text-xs text-muted-foreground mt-1.5 flex items-center justify-center gap-1">
                     <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                    Bônus: +{MONITOR_BONUS} por atividade
+                    Bônus: +{MONITOR_BONUSES[m.rank_position] || 0.2} por atividade
                   </p>
                 </div>
                 {(isMe || isTeacher) && (
