@@ -59,6 +59,7 @@ export default function Dashboard() {
   const [monitorSelectMode, setMonitorSelectMode] = useState(false);
   const [selectedMonitorEmails, setSelectedMonitorEmails] = useState(new Set());
   const [savingMonitors, setSavingMonitors] = useState(false);
+  const [importingPoints, setImportingPoints] = useState(false);
 
   const toggleMonitorEmail = (email) => {
     setSelectedMonitorEmails(prev => {
@@ -110,6 +111,15 @@ export default function Dashboard() {
       setRefreshing(false);
       toast.success('Todos os dados atualizados!');
     }, 800);
+  };
+
+  const handleImportScoreControlPoints = async () => {
+    setImportingPoints(true);
+    await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+    setTimeout(() => {
+      setImportingPoints(false);
+      toast.success('Pontuações do ScoreControl importadas!');
+    }, 600);
   };
 
   const { data: tasks = [] } = useQuery({
@@ -450,12 +460,22 @@ export default function Dashboard() {
               </div>
             </div>
             {!monitorSelectMode ? (
-              <button
-                onClick={() => setMonitorSelectMode(true)}
-                className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors"
-              >
-                <Crown size={12} /> Selecionar Monitores
-              </button>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  onClick={handleImportScoreControlPoints}
+                  disabled={importingPoints}
+                  className="flex items-center gap-1.5 text-xs font-bold bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-xl hover:bg-primary/15 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw size={12} className={importingPoints ? 'animate-spin' : ''} />
+                  {importingPoints ? 'Importando...' : 'Importar pontos'}
+                </button>
+                <button
+                  onClick={() => setMonitorSelectMode(true)}
+                  className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors"
+                >
+                  <Crown size={12} /> Selecionar Monitores
+                </button>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">{selectedMonitorEmails.size}/3 selecionados</span>
