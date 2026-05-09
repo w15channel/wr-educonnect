@@ -10,7 +10,8 @@ import {
   ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, Globe, UsersRound
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import NotificationsBell from '@/components/dashboard/NotificationsBell';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 const adminGroups = [
   {
@@ -179,6 +180,40 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
   const groups = isAdmin ? adminGroups : studentGroups;
 
+  function NotificationsLink({ scoped, isActive, onNav }) {
+    const { data: notifications = [] } = useQuery({
+      queryKey: ['notifications-admin'],
+      queryFn: () => base44.entities.Notification.filter({ recipient_email: 'admin' }, '-created_date', 50),
+      refetchInterval: 15000,
+    });
+    const unread = notifications.filter(n => !n.is_read).length;
+    const active = isActive('/ring');
+    return (
+      <div className="px-3 py-2 border-t border-white/8">
+        <Link
+          to={scoped('/ring')}
+          onClick={onNav}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+            active ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/6 hover:text-white/85'
+          }`}
+        >
+          <div className="relative">
+            <Bell size={17} className={unread > 0 ? 'text-orange-400' : ''} />
+            {unread > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] px-0.5 rounded-full flex items-center justify-center">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </div>
+          <span className="font-medium text-[13px] flex-1">Notificações</span>
+          {unread > 0 && !active && (
+            <span className="text-[10px] font-bold text-orange-300">{unread} nova{unread > 1 ? 's' : ''}</span>
+          )}
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <>
       {isOpen && (
@@ -224,15 +259,8 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
           ))}
         </nav>
 
-        {/* Admin notifications */}
-        {isAdmin && (
-          <div className="px-3 py-2 border-t border-white/8 flex items-center gap-2">
-            <div className="[&_button]:text-white/60 [&_button:hover]:bg-white/10 [&_button]:rounded-xl">
-              <NotificationsBell session={session} />
-            </div>
-            <span className="text-xs text-white/40 font-medium">Notificações</span>
-          </div>
-        )}
+        {/* Admin notifications link */}
+        {isAdmin && <NotificationsLink scoped={scoped} isActive={isActive} onNav={handleClose} />}
 
         {/* Course badge for admin */}
         {isAdmin && activeCourse && (
