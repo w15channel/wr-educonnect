@@ -188,6 +188,13 @@ export default function Dashboard() {
 
   const myRank = ranking.findIndex(r => r.email === session?.email) + 1;
 
+  // Count active students per course
+  const courseStudentCounts = {
+    tcc: accessCodes.filter(c => c.is_active && c.course === 'tcc').length,
+    psicanalise: accessCodes.filter(c => c.is_active && c.course === 'psicanalise').length,
+    sexologia: accessCodes.filter(c => c.is_active && c.course === 'sexologia').length,
+  };
+
   const firstName = (session?.name || 'Usuário').split(' ')[0];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
@@ -247,6 +254,27 @@ export default function Dashboard() {
           </div>
           <div className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl ${isLiveNow ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>
             Entrar <ArrowRight size={12} />
+          </div>
+        </div>
+      )}
+
+      {/* Course student counts — admin only */}
+      {isTeacher && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-card rounded-2xl border border-border p-4 text-center">
+            <p className="text-xs font-medium text-muted-foreground mb-1">TCC</p>
+            <p className="text-2xl font-black text-primary">{courseStudentCounts.tcc}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">alunos ativos</p>
+          </div>
+          <div className="bg-card rounded-2xl border border-border p-4 text-center">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Psicanálise</p>
+            <p className="text-2xl font-black text-teal-600">{courseStudentCounts.psicanalise}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">alunos ativos</p>
+          </div>
+          <div className="bg-card rounded-2xl border border-border p-4 text-center">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Sexologia</p>
+            <p className="text-2xl font-black text-purple-600">{courseStudentCounts.sexologia}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">alunos ativos</p>
           </div>
         </div>
       )}

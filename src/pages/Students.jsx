@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
-import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Plus } from 'lucide-react';
+import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,15 @@ export default function Students() {
   const updateCodeMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.AccessCode.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['access-codes'] }),
+  });
+
+  const deleteCodeMutation = useMutation({
+    mutationFn: (id) => base44.entities.AccessCode.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      toast.success('Aluno removido com sucesso!');
+    },
+    onError: () => toast.error('Erro ao remover aluno.'),
   });
 
   const [syncing, setSyncing] = useState(false);
@@ -325,11 +334,14 @@ export default function Students() {
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => setEnrollingCode(code)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors" title="Matricular em outro curso">
-                          <Plus size={15} />
-                        </button>
-                        <button onClick={() => navigate(`/students/${code.id}`)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors">
-                          <Eye size={15} />
-                        </button>
+                           <Plus size={15} />
+                         </button>
+                         <button onClick={() => navigate(`/students/${code.id}`)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors">
+                           <Eye size={15} />
+                         </button>
+                         <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="p-2 text-red-500 hover:bg-red-100 rounded-xl transition-colors" title="Remover aluno">
+                           <Trash2 size={15} />
+                         </button>
                       </div>
                     </div>
                   );
@@ -407,6 +419,9 @@ export default function Students() {
                                 </button>
                                 <button onClick={() => navigate(`/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
                                   <Eye size={13} /> Detalhes
+                                </button>
+                                <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="flex items-center gap-1 text-xs text-red-500 hover:underline font-semibold">
+                                  <Trash2 size={13} /> Remover
                                 </button>
                               </div>
                             </td>
