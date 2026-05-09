@@ -188,9 +188,9 @@ export default function Dashboard() {
 
   const myRank = ranking.findIndex(r => r.email === session?.email) + 1;
 
-  // Count active students per course
+  // Count active students per course (codes with no course default to 'tcc')
   const courseStudentCounts = {
-    tcc: accessCodes.filter(c => c.is_active && c.course === 'tcc').length,
+    tcc: accessCodes.filter(c => c.is_active && (c.course === 'tcc' || !c.course)).length,
     psicanalise: accessCodes.filter(c => c.is_active && c.course === 'psicanalise').length,
     sexologia: accessCodes.filter(c => c.is_active && c.course === 'sexologia').length,
   };
