@@ -72,7 +72,8 @@ function ScopedRoutesTree() {
         <Route path="calendar" element={<Calendar />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="tutor" element={<TutorDigital />} />
-        <Route path="scores" element={<ScoreControl />} />
+        <Route path="scorecontrol" element={<ScoreControl />} />
+        <Route path="scores" element={<Navigate to="../scorecontrol" replace />} />
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="ranking" element={<RankingGeral />} />
         <Route path="monitores" element={<Monitores />} />
@@ -146,7 +147,7 @@ const AuthenticatedApp = () => {
       <Route path="/calendar" element={redirectTo('/calendar')} />
       <Route path="/tuitions" element={redirectTo('/tuitions')} />
       <Route path="/tutor" element={redirectTo('/tutor')} />
-      <Route path="/scores" element={redirectTo('/scores')} />
+      <Route path="/scores" element={redirectTo('/scorecontrol')} />
       <Route path="/certificadora" element={redirectTo('/certificadora')} />
       <Route path="/ranking" element={redirectTo('/ranking')} />
       <Route path="/monitores" element={redirectTo('/monitores')} />

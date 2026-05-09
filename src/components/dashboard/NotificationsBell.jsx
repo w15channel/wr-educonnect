@@ -85,7 +85,7 @@ export default function NotificationsBell({ session }) {
                 notifications.map(n => (
                   <div
                     key={n.id}
-                    onClick={() => { navigate(`${prefix}/scores`); setOpen(false); }}
+                    onClick={() => { navigate(`${prefix}/scorecontrol`); setOpen(false); }}
                     className={`flex gap-3 px-4 py-3 border-b border-border/50 cursor-pointer hover:bg-secondary/30 transition-colors ${!n.is_read ? 'bg-orange-50/50' : ''}`}
                   >
                     <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0 text-[11px] font-bold text-orange-700">
@@ -103,7 +103,7 @@ export default function NotificationsBell({ session }) {
 
             {notifications.length > 0 && (
               <button
-                onClick={() => { navigate(`${prefix}/scores`); setOpen(false); }}
+                onClick={() => { navigate(`${prefix}/scorecontrol`); setOpen(false); }}
                 className="w-full py-2.5 text-xs text-primary font-semibold hover:bg-secondary/30 transition-colors border-t border-border"
               >
                 Ver todas as entregas →

@@ -17,7 +17,7 @@ const routeLabels = {
   '/calendar': 'Calendário',
   '/tuitions': 'Mensalidades',
   '/tutor': 'Tutor Digital EDU',
-  '/scores': 'Controle de Pontuação',
+  '/scorecontrol': 'Controle de Pontuação',
   '/certificadora': 'Certificação',
   '/ranking': 'Ranking Geral',
   '/monitores': 'Monitores',
