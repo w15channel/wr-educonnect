@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { DollarSign, Plus, CheckCircle, XCircle, AlertCircle, Trash2, CreditCard, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ export default function Tuitions() {
   const { user: session } = useOutletContext();
   const isAdmin = session?.role === 'admin';
   const queryClient = useQueryClient();
+  const { emails: courseEmails } = useCourseFilteredEmails();
   const [showForm, setShowForm] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [form, setForm] = useState({ student_email: '', student_name: '', month_ref: '', amount: '', due_date: '', status: 'pending', notes: '' });
@@ -44,6 +46,7 @@ export default function Tuitions() {
   // Todos os alunos ativos: com ou sem e-mail, usando e-mail ou código como chave única
   const allStudents = codes
     .filter(c => c.is_active !== false)
+    .filter(c => courseEmails ? courseEmails.has(c.student_email || '') : true)
     .map(c => ({
       key: c.student_email || c.code,
       email: c.student_email || '',

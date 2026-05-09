@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { CalendarDays, Plus, Trash2, ChevronLeft, ChevronRight, Clock, Video, FileText, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,7 @@ export default function Calendar() {
   });
 
   const userCourse = session?.course;
+  const { emails: courseEmails } = useCourseFilteredEmails();
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks-calendar', isAdmin ? 'all' : userCourse],
