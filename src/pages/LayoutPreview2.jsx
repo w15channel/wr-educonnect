@@ -686,7 +686,7 @@ export default function LandingPage({ onLogin }) {
             <div className="flex flex-wrap gap-6 text-white/30 text-sm">
               {[
               { label: 'Política de Trabalho', href: '/politica' },
-              { label: 'Termos de Uso', href: '/termos' },
+              { label: 'Termos de Uso', href: '/documentos?tab=termos' },
               { label: 'Privacidade', href: '/documentos?tab=privacidade' }].
               map((l) =>
               <a key={l.label} href={l.href} className="hover:text-white/70 transition-colors">{l.label}</a>
