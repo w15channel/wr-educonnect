@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
@@ -137,10 +137,12 @@ export default function CourseLobby() {
   const userCourse = session?.course || 'tcc';
 
   const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
-  const musicEnabled = typeof window !== 'undefined' && localStorage.getItem(LOBBY_MUSIC_KEY) !== 'off';
+  const [musicEnabled, setMusicEnabled] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     localStorage.setItem(LOBBY_MUSIC_KEY, 'on');
+    setMusicEnabled(localStorage.getItem(LOBBY_MUSIC_KEY) !== 'off');
   }, []);
 
 
