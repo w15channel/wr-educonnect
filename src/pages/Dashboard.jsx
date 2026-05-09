@@ -133,6 +133,11 @@ export default function Dashboard() {
     queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
   });
 
+  const { data: publishedScores = [] } = useQuery({
+    queryKey: ['student-profiles-score-overview'],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000),
+  });
+
   const { data: liveSessions = [] } = useQuery({
     queryKey: ['live-sessions'],
     queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 5),
@@ -177,10 +182,13 @@ export default function Dashboard() {
     return c.course === userCourse || (userCourse === 'tcc' && !c.course);
   }).length;
 
-  // Total de pontos do aluno por ScoreItems verificados
-  const myScoreItems = allScoreItems.filter(s => s.student_email === session?.email && s.verified);
+  // Total de pontos publicado pelo ScoreControl
+  const publishedScoreMap = {};
+  publishedScores.forEach(p => {
+    if (p.student_email && typeof p.points === 'number') publishedScoreMap[p.student_email] = p.points;
+  });
   const myGrades = submissions.filter(s => s.grade !== undefined && s.grade !== null);
-  const totalPoints = myScoreItems.reduce((sum, s) => sum + (s.score || 0), 0);
+  const totalPoints = publishedScoreMap[session?.email] || 0;
 
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
@@ -194,11 +202,7 @@ export default function Dashboard() {
     if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
     return true;
   });
-  const scoreMap = {};
-  allScoreItems.filter(s => s.verified).forEach(s => {
-    if (!s.student_email) return;
-    scoreMap[s.student_email] = (scoreMap[s.student_email] || 0) + (s.score || 0);
-  });
+  const scoreMap = publishedScoreMap;
   const participationMap = {};
   allScoreItems.forEach(s => {
     if (!s.student_email) return;
@@ -380,7 +384,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-foreground">Ranking Geral</h3>
-                  <p className="text-xs text-muted-foreground">Pontuação total pública (somatória de pontos)</p>
+                  <p className="text-xs text-muted-foreground">Pontuação publicada no ScoreControl</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -442,7 +446,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-                <p className="text-xs text-muted-foreground">Classificação pública por somatória total de pontos</p>
+                <p className="text-xs text-muted-foreground">Classificação pelas pontuações publicadas no ScoreControl</p>
               </div>
             </div>
             {!monitorSelectMode ? (
