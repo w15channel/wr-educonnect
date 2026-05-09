@@ -694,7 +694,11 @@ export default function LandingPage({ onLogin }) {
             </div>
           </div>
           <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-            <p className="text-white/20 text-xs">WR-EDU © 2026 — Todos os direitos reservados</p>
+            <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
+              <p className="text-white/20 text-xs">WR-EDU © 2026 — Todos os direitos reservados</p>
+              <span className="text-white/10 hidden sm:inline">·</span>
+              <p className="text-white/20 text-xs">Feito com <span className="text-red-500">♥</span> pela <span className="text-white/30 font-semibold">WR-TEC®</span> © 2026</p>
+            </div>
             <div className="flex items-center gap-4">
               <img
                 src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png"
