@@ -687,7 +687,7 @@ export default function LandingPage({ onLogin }) {
               {[
               { label: 'Política de Trabalho', href: '/politica' },
               { label: 'Termos de Uso', href: '/termos' },
-              { label: 'Privacidade', href: '/documentos?tab=privacidade' }].
+              { label: 'Privacidade', href: '/privacidade' }].
               map((l) =>
               <a key={l.label} href={l.href} className="hover:text-white/70 transition-colors">{l.label}</a>
               )}

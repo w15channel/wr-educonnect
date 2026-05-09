@@ -11,6 +11,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import LandingPage from './pages/LayoutPreview2';
 import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import TermosDeUso from './pages/TermosDeUso';
+import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
@@ -58,6 +59,9 @@ const AuthenticatedApp = () => {
     if (window.location.pathname === '/termos') {
       return <TermosDeUso />;
     }
+    if (window.location.pathname === '/privacidade') {
+      return <PoliticaDePrivacidade />;
+    }
     return <LandingPage onLogin={login} />;
   }
 
@@ -92,6 +96,7 @@ const AuthenticatedApp = () => {
 
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
       <Route path="/termos" element={<TermosDeUso />} />
+      <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
