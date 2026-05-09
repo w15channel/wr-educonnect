@@ -521,8 +521,6 @@ export default function ScoreControl() {
     }
   };
 
-  if (selectedCode) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} onBack={() => setSelectedCode(null)} />;
-
   const filtered = codes.filter(c => {
     if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
     if (courseEmails && !courseEmails.has(c.student_email || '')) return false;
@@ -582,6 +580,42 @@ export default function ScoreControl() {
     return { count };
   };
 
+  const sendRankingToDashboardMutation = useMutation({
+    mutationFn: async () => {
+      const rankedStudents = filtered
+        .map(code => {
+          const savedProfile = studentProfiles.find(p => p.student_email === code.student_email && typeof p.points === 'number');
+          const totalScore = savedProfile ? savedProfile.points : getCourseScoreTotal(code.student_email);
+          const participations = getParticipationStats(code.student_email).count;
+          return { code, totalScore, participations };
+        })
+        .sort((a, b) => {
+          if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+          if (b.participations !== a.participations) return b.participations - a.participations;
+          return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
+        });
+
+      for (const item of rankedStudents) {
+        const code = item.code;
+        const existing = studentProfiles.find(p => p.student_email === code.student_email);
+        const data = {
+          student_email: code.student_email,
+          full_name: code.profile_name || code.student_name || code.student_email,
+          points: Number(item.totalScore.toFixed(1)),
+        };
+        if (existing) await base44.entities.StudentProfile.update(existing.id, data);
+        else await base44.entities.StudentProfile.create(data);
+      }
+      return rankedStudents.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+      toast.success(`${count} pontuações enviadas para a Dashboard!`);
+    },
+  });
+
+  if (selectedCode) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} onBack={() => setSelectedCode(null)} />;
+
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
       <div className="mb-5">
@@ -600,7 +634,17 @@ export default function ScoreControl() {
             <p className="text-xs text-orange-800 font-semibold">{pendingCount} atividade(s) aguardando verificação e pontuação</p>
           </div>
         )}
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex flex-wrap justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-xs border-primary/30 text-primary hover:bg-primary/10"
+            onClick={() => sendRankingToDashboardMutation.mutate()}
+            disabled={sendRankingToDashboardMutation.isPending}
+          >
+            <Trophy size={13} />
+            {sendRankingToDashboardMutation.isPending ? 'Enviando...' : 'Enviar pontuações para Dashboard'}
+          </Button>
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleRetro} disabled={retroLoading}>
             <RefreshCw size={13} className={retroLoading ? 'animate-spin' : ''} />
             {retroLoading ? 'Aplicando...' : 'Aplicar Pontos Retroativos do Fórum'}
