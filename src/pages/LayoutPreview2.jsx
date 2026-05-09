@@ -30,7 +30,7 @@ const CERTS = [
   code: '267797-1-432-19012026071526',
   link: null,
   extra: 'Registrado internacionalmente pela AHDE · ID: 00403THE',
-  verifyLink: 'https://ahde-global.org/?lang=pt-br',
+  verifyLink: 'https://www.ahde-global.org/lang/ptbr/terapeuta.php?search=00403THE',
   verifyLabel: 'Verificar via AHDE'
 },
 {
