@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { setSession, getSession } from '@/lib/customAuth';
+
+const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
@@ -98,6 +100,27 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   const [mobileOpen, setMobileOpen] = useState(false);
   const { logout, login } = useCustomAuth();
 
+  // Compute current scoped prefix from URL (e.g. /student/tcc or /adm/psi)
+  const prefix = useMemo(() => {
+    const parts = location.pathname.split('/').filter(Boolean);
+    if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
+      return `/${parts[0]}/${parts[1]}`;
+    }
+    // Fallback from session
+    if (session?.course) {
+      const r = session.role === 'admin' ? 'adm' : 'student';
+      const slug = COURSE_TO_SLUG[session.course] || 'tcc';
+      return `/${r}/${slug}`;
+    }
+    return '';
+  }, [location.pathname, session]);
+
+  const scoped = (path) => {
+    if (!prefix) return path;
+    if (path.startsWith('/')) return prefix + path;
+    return `${prefix}/${path}`;
+  };
+
   const isOpen = mobileOpenProp !== undefined ? mobileOpenProp : mobileOpen;
   const handleClose = () => {
     if (onMobileClose) onMobileClose();
@@ -121,17 +144,24 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   const avatarBg = session?.avatarColor || (isAdmin ? '#5b5ef4' : '#7c3aed');
 
   const isActive = (path) => {
+    const target = scoped(path);
     if (path.includes('?')) {
-      return location.pathname === path.split('?')[0] && location.search.includes(path.split('?')[1]);
+      const [base, query] = target.split('?');
+      return location.pathname === base && location.search.includes(query);
     }
-    return location.pathname === path;
+    // Treat /<prefix>/dashboard as active when path is '/'
+    if (path === '/') {
+      return location.pathname === `${prefix}/dashboard` || location.pathname === prefix || location.pathname === `${prefix}/`;
+    }
+    return location.pathname === target;
   };
 
   const NavLink = ({ item }) => {
     const active = isActive(item.path);
+    const targetPath = item.path === '/' ? scoped('/dashboard') : scoped(item.path);
     return (
       <Link
-        to={item.path}
+        to={targetPath}
         onClick={handleClose}
         className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative ${
           active

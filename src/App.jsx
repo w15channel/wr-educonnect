@@ -1,12 +1,11 @@
 import { Toaster } from "@/components/ui/sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
 // REQUIRED platform imports — do NOT remove
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { AuthProvider } from '@/lib/AuthContext';
 
 import LandingPage from './pages/LayoutPreview2';
 import WRTec from './pages/WRTec';
@@ -40,6 +39,50 @@ import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
 
+const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
+
+function buildScopedRedirect(session, sub) {
+  if (!session?.course) return '/lobby';
+  const r = session.role === 'admin' ? 'adm' : 'student';
+  const slug = COURSE_TO_SLUG[session.course] || 'tcc';
+  return `/${r}/${slug}${sub}`;
+}
+
+// All scoped routes used by both /student/:slug/* and /adm/:slug/*
+function ScopedRoutesTree() {
+  return (
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="lessons" element={<Lessons />} />
+        <Route path="live" element={<LiveSessions />} />
+        <Route path="tasks" element={<Tasks />} />
+        <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
+        <Route path="tasks/builder/:id" element={<TaskExamBuilder />} />
+        <Route path="forum" element={<Forum />} />
+        <Route path="chat" element={<ClassChat />} />
+        <Route path="students" element={<Students />} />
+        <Route path="students/:id" element={<StudentDetail />} />
+        <Route path="announcements" element={<Announcements />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="calendar" element={<Calendar />} />
+        <Route path="tuitions" element={<Tuitions />} />
+        <Route path="tutor" element={<TutorDigital />} />
+        <Route path="scores" element={<ScoreControl />} />
+        <Route path="certificadora" element={<Certificadora />} />
+        <Route path="ranking" element={<RankingGeral />} />
+        <Route path="monitores" element={<Monitores />} />
+        <Route path="terapeuta" element={<TerapeutaDaSemana />} />
+        <Route path="bestseller" element={<MeuBestSeller />} />
+        <Route path="historico" element={<HistoricoAcademico />} />
+        <Route path="dm/:email" element={<DirectMessage />} />
+        <Route path="classe" element={<Classe />} />
+      </Route>
+    </Routes>
+  );
+}
+
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
   const location = useLocation();
@@ -62,57 +105,50 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Show CourseLobby right after login if student hasn't chosen platform access yet
   if (!session) {
-    if (pathname === '/politica') {
-      return <PoliticaDeTrabalho />;
-    }
-    if (pathname === '/termos') {
-      return <TermosDeUso />;
-    }
-    if (pathname === '/privacidade') {
-      return <PoliticaDePrivacidade />;
-    }
-    if (pathname === '/wr-tec') {
-      return <WRTec />;
-    }
+    if (pathname === '/politica') return <PoliticaDeTrabalho />;
+    if (pathname === '/termos') return <TermosDeUso />;
+    if (pathname === '/privacidade') return <PoliticaDePrivacidade />;
+    if (pathname === '/wr-tec') return <WRTec />;
     return <LandingPage onLogin={handleLogin} />;
   }
 
-  // Lobby for course selection (students and admin)
-  if (pathname === '/lobby') {
+  // Lobby for course selection (legacy + scoped)
+  if (pathname === '/lobby' || pathname === '/student/lobby' || pathname === '/adm/lobby') {
     return <CourseLobby />;
   }
 
+  const redirectTo = (sub) => <Navigate to={buildScopedRedirect(session, sub)} replace />;
+
   return (
     <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/lessons" element={<Lessons />} />
-        <Route path="/live" element={<LiveSessions />} />
-        <Route path="/tasks" element={<Tasks />} />
-        <Route path="/tasks/quiz/:id" element={<TaskQuizView />} />
-        <Route path="/tasks/builder/:id" element={<TaskExamBuilder />} />
-        <Route path="/forum" element={<Forum />} />
-        <Route path="/chat" element={<ClassChat />} />
-        <Route path="/students" element={<Students />} />
-        <Route path="/students/:id" element={<StudentDetail />} />
-        <Route path="/announcements" element={<Announcements />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/calendar" element={<Calendar />} />
-        <Route path="/tuitions" element={<Tuitions />} />
-        <Route path="/tutor" element={<TutorDigital />} />
-        <Route path="/scores" element={<ScoreControl />} />
-        <Route path="/certificadora" element={<Certificadora />} />
-        <Route path="/ranking" element={<RankingGeral />} />
-        <Route path="/monitores" element={<Monitores />} />
-        <Route path="/terapeuta" element={<TerapeutaDaSemana />} />
-        <Route path="/bestseller" element={<MeuBestSeller />} />
-        <Route path="/historico" element={<HistoricoAcademico />} />
-        <Route path="/dm/:email" element={<DirectMessage />} />
-        <Route path="/classe" element={<Classe />} />
-      </Route>
+      {/* Scoped student routes */}
+      <Route path="/student/:courseSlug/*" element={<ScopedRoutesTree />} />
+      {/* Scoped admin routes */}
+      <Route path="/adm/:courseSlug/*" element={<ScopedRoutesTree />} />
+
+      {/* Legacy/root paths redirect to scoped layout */}
+      <Route path="/" element={redirectTo('/dashboard')} />
+      <Route path="/dashboard" element={redirectTo('/dashboard')} />
+      <Route path="/lessons" element={redirectTo('/lessons')} />
+      <Route path="/live" element={redirectTo('/live')} />
+      <Route path="/tasks" element={redirectTo('/tasks')} />
+      <Route path="/forum" element={redirectTo('/forum')} />
+      <Route path="/chat" element={redirectTo('/chat')} />
+      <Route path="/students" element={redirectTo('/students')} />
+      <Route path="/announcements" element={redirectTo('/announcements')} />
+      <Route path="/profile" element={redirectTo('/profile')} />
+      <Route path="/calendar" element={redirectTo('/calendar')} />
+      <Route path="/tuitions" element={redirectTo('/tuitions')} />
+      <Route path="/tutor" element={redirectTo('/tutor')} />
+      <Route path="/scores" element={redirectTo('/scores')} />
+      <Route path="/certificadora" element={redirectTo('/certificadora')} />
+      <Route path="/ranking" element={redirectTo('/ranking')} />
+      <Route path="/monitores" element={redirectTo('/monitores')} />
+      <Route path="/terapeuta" element={redirectTo('/terapeuta')} />
+      <Route path="/bestseller" element={redirectTo('/bestseller')} />
+      <Route path="/historico" element={redirectTo('/historico')} />
+      <Route path="/classe" element={redirectTo('/classe')} />
 
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
       <Route path="/wr-tec" element={<WRTec />} />

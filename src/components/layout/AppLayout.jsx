@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import { setSession as persistSession, getSession } from '@/lib/customAuth';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import MobileHeader from './MobileHeader';
@@ -22,17 +23,42 @@ const pageVariants = {
 
 const PTR_THRESHOLD = 72; // px to pull before triggering refresh
 
+const SLUG_TO_COURSE = { tcc: 'tcc', psi: 'psicanalise', sex: 'sexologia' };
+const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
+
 export default function AppLayout() {
-  const { session } = useCustomAuth();
+  const { session, login } = useCustomAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
   const queryClient = useQueryClient();
 
-  // Guard: students AND admins without a course go to lobby
+  // Determine role/course from URL
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const urlRole = pathParts[0]; // 'student' or 'adm'
+  const urlCourseSlug = params.courseSlug || pathParts[1];
+  const urlCourse = SLUG_TO_COURSE[urlCourseSlug] || null;
+
+  // Guard: no session course → lobby. URL course != session course → sync session to URL course.
   useEffect(() => {
-    if (session && !session?.course) {
+    if (!session) return;
+    if (!session.course && !urlCourse) {
       navigate('/lobby');
+      return;
     }
-  }, [session, navigate]);
+    // If URL has a valid course and it differs from session, update session to match URL
+    if (urlCourse && urlCourse !== session.course) {
+      const current = getSession();
+      persistSession({ ...current, course: urlCourse });
+      login();
+    }
+    // Role mismatch protection: if URL says /adm but user is student (or vice versa), redirect
+    const expectedRole = session.role === 'admin' ? 'adm' : 'student';
+    if (urlRole && (urlRole === 'adm' || urlRole === 'student') && urlRole !== expectedRole) {
+      const slug = COURSE_TO_SLUG[session.course] || 'tcc';
+      navigate(`/${expectedRole}/${slug}/dashboard`, { replace: true });
+    }
+  }, [session, urlCourse, urlRole, navigate, login]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isStudent = session?.role === 'student';

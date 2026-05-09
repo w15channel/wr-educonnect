@@ -3,11 +3,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Bell, CheckCheck, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+function useScopedPrefix() {
+  const location = useLocation();
+  const parts = location.pathname.split('/').filter(Boolean);
+  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
+    return `/${parts[0]}/${parts[1]}`;
+  }
+  return '';
+}
 
 export default function NotificationsBell({ session }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const prefix = useScopedPrefix();
   const [open, setOpen] = useState(false);
   const isAdmin = session?.role === 'admin';
 
@@ -75,7 +85,7 @@ export default function NotificationsBell({ session }) {
                 notifications.map(n => (
                   <div
                     key={n.id}
-                    onClick={() => { navigate('/scores'); setOpen(false); }}
+                    onClick={() => { navigate(`${prefix}/scores`); setOpen(false); }}
                     className={`flex gap-3 px-4 py-3 border-b border-border/50 cursor-pointer hover:bg-secondary/30 transition-colors ${!n.is_read ? 'bg-orange-50/50' : ''}`}
                   >
                     <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0 text-[11px] font-bold text-orange-700">
@@ -93,7 +103,7 @@ export default function NotificationsBell({ session }) {
 
             {notifications.length > 0 && (
               <button
-                onClick={() => { navigate('/scores'); setOpen(false); }}
+                onClick={() => { navigate(`${prefix}/scores`); setOpen(false); }}
                 className="w-full py-2.5 text-xs text-primary font-semibold hover:bg-secondary/30 transition-colors border-t border-border"
               >
                 Ver todas as entregas →

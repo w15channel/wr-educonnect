@@ -124,7 +124,7 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect }) {
           </button>
         ) : isActive ? (
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(`/student/${ ({tcc:'tcc',psicanalise:'psi',sexologia:'sex'})[course.id] || 'tcc'}/dashboard`)}
             className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95"
             style={{ background: `linear-gradient(135deg, ${course.color}, #1db89e)` }}
           >
@@ -148,11 +148,19 @@ export default function CourseLobby() {
   const { session, logout, login, isAdmin } = useCustomAuth();
   const userCourse = session?.course || 'tcc';
 
+  const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
+
   const handleAdminSelectCourse = (courseId) => {
     const current = getSession();
     setSession({ ...current, course: courseId });
     login(); // refresh context
-    navigate('/');
+    const slug = COURSE_TO_SLUG[courseId] || 'tcc';
+    navigate(`/adm/${slug}/dashboard`);
+  };
+
+  const handleStudentEnter = () => {
+    const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
+    navigate(`/student/${slug}/dashboard`);
   };
 
   if (isAdmin) {

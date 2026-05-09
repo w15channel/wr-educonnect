@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown } from 'lucide-react';
@@ -11,11 +11,21 @@ import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+function useScopedPrefix() {
+  const location = useLocation();
+  const parts = location.pathname.split('/').filter(Boolean);
+  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
+    return `/${parts[0]}/${parts[1]}`;
+  }
+  return '';
+}
+
 function StatCard({ title, value, icon: Icon, iconBg, to, subtitle, pulse }) {
   const navigate = useNavigate();
+  const prefix = useScopedPrefix();
   return (
     <button
-      onClick={() => navigate(to)}
+      onClick={() => navigate(prefix + to)}
       className="group bg-card rounded-2xl border border-border p-4 sm:p-5 text-left hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 w-full"
     >
       <div className="flex items-start justify-between mb-3">
@@ -40,6 +50,8 @@ function StatCard({ title, value, icon: Icon, iconBg, to, subtitle, pulse }) {
 export default function Dashboard() {
   const { user: session } = useOutletContext();
   const navigate = useNavigate();
+  const prefix = useScopedPrefix();
+  const scoped = (p) => prefix + p;
   const queryClient = useQueryClient();
   const isTeacher = session?.role === 'admin';
   const userCourse = session?.course;
@@ -231,7 +243,7 @@ export default function Dashboard() {
       {/* Live Banner */}
       {nextLive && (
         <div
-          onClick={() => navigate('/live')}
+          onClick={() => navigate(scoped('/live'))}
           className={`cursor-pointer rounded-2xl p-4 flex items-center gap-4 border transition-all hover:shadow-lg ${
             isLiveNow
               ? 'bg-gradient-to-r from-red-50 to-red-50/50 border-red-200 hover:border-red-300'
@@ -321,7 +333,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Progress */}
           <button
-            onClick={() => navigate('/lessons')}
+            onClick={() => navigate(scoped('/lessons'))}
             className="bg-card rounded-2xl border border-border p-5 text-left hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all group"
           >
             <div className="flex items-center justify-between mb-4">
@@ -365,7 +377,7 @@ export default function Dashboard() {
 
           {/* Ranking */}
           <button
-            onClick={() => navigate('/ranking')}
+            onClick={() => navigate(scoped('/ranking'))}
             className="bg-card rounded-2xl border border-border p-5 text-left hover:border-primary/30 hover:shadow-lg transition-all group"
           >
             <div className="flex items-center justify-between mb-4">
@@ -539,7 +551,7 @@ export default function Dashboard() {
             </div>
             <div className="space-y-2">
               {liveNow.map(live => (
-                <button key={live.id} onClick={() => navigate('/live')}
+                <button key={live.id} onClick={() => navigate(scoped('/live'))}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 transition-colors text-left">
                   <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shrink-0" />
                   <Wifi size={13} className="text-red-600 shrink-0" />
@@ -551,7 +563,7 @@ export default function Dashboard() {
                 </button>
               ))}
               {unwatchedLessons.slice(0, 3).map(l => (
-                <button key={l.id} onClick={() => navigate('/lessons')}
+                <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
                   <Circle size={13} className="text-purple-400 shrink-0" />
                   <BookOpen size={13} className="text-purple-600 shrink-0" />
@@ -563,12 +575,12 @@ export default function Dashboard() {
                 </button>
               ))}
               {unwatchedLessons.length > 3 && (
-                <button onClick={() => navigate('/lessons')} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
+                <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
                   +{unwatchedLessons.length - 3} aulas não assistidas → Ver todas
                 </button>
               )}
               {pendingTasksList.map(t => (
-                <button key={t.id} onClick={() => navigate('/tasks')}
+                <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
                   <ClipboardList size={13} className="text-orange-500 shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -581,7 +593,7 @@ export default function Dashboard() {
                 </button>
               ))}
               {pendingQuizzes.map(t => (
-                <button key={t.id} onClick={() => navigate('/tasks')}
+                <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
                   <GraduationCap size={13} className="text-violet-500 shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -614,7 +626,7 @@ export default function Dashboard() {
               </div>
               <h3 className="font-bold text-sm text-foreground">Avisos Recentes</h3>
             </div>
-            <button onClick={() => navigate('/announcements')} className="text-xs text-primary hover:underline flex items-center gap-1">
+            <button onClick={() => navigate(scoped('/announcements'))} className="text-xs text-primary hover:underline flex items-center gap-1">
               Ver todos <ArrowRight size={11} />
             </button>
           </div>

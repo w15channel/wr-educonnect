@@ -5,7 +5,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import NotificationsBell from '@/components/dashboard/NotificationsBell';
 
 const routeLabels = {
-  '/': 'Dashboard',
+  '/dashboard': 'Dashboard',
   '/lessons': 'Aulas',
   '/chat': 'Chat da Turma',
   '/live': 'Sala ao Vivo',
@@ -17,12 +17,29 @@ const routeLabels = {
   '/calendar': 'Calendário',
   '/tuitions': 'Mensalidades',
   '/tutor': 'Tutor Digital EDU',
+  '/scores': 'Controle de Pontuação',
+  '/certificadora': 'Certificação',
+  '/ranking': 'Ranking Geral',
+  '/monitores': 'Monitores',
+  '/terapeuta': 'Terapeuta da Semana',
+  '/bestseller': 'Meu Best Seller',
+  '/historico': 'Histórico Acadêmico',
+  '/classe': 'Classe',
 };
+
+function stripScopedPrefix(pathname) {
+  const parts = pathname.split('/').filter(Boolean);
+  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
+    return '/' + parts.slice(2).join('/');
+  }
+  return pathname;
+}
 
 export default function MobileHeader() {
   const location = useLocation();
   const { session } = useCustomAuth();
-  const label = routeLabels[location.pathname] || 'WR-EDU';
+  const sub = stripScopedPrefix(location.pathname);
+  const label = routeLabels[sub] || 'WR-EDU';
 
   return (
     <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border shrink-0">
