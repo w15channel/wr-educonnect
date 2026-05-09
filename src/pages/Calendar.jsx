@@ -45,13 +45,12 @@ export default function Calendar() {
   });
 
   const userCourse = session?.course;
-  const { emails: courseEmails } = useCourseFilteredEmails();
+  const { course: routeCourse } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || userCourse || 'tcc';
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks-calendar', isAdmin ? 'all' : userCourse],
-    queryFn: () => isAdmin
-      ? base44.entities.Task.list('-created_date', 200)
-      : base44.entities.Task.filter({ course: userCourse || 'tcc' }, '-created_date', 200),
+    queryKey: ['tasks-calendar', activeCourse],
+    queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 200),
   });
 
   const createMutation = useMutation({
