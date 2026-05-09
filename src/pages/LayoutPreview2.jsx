@@ -255,8 +255,8 @@ export default function LandingPage({ onLogin }) {
             <span className="text-2xl font-black tracking-tight">WR-EDU</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
-            <a key={label} href={href} className="hover:text-white transition-colors hidden">{label}</a>
+            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) => null
+
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -287,66 +287,66 @@ export default function LandingPage({ onLogin }) {
       </nav>
 
       {/* HERO FULL-WIDTH */}
-      <div className="relative h-screen flex items-center justify-center overflow-hidden hidden">
-        {HERO_IMAGES.map((src, i) =>
-        <div key={src} className={`absolute inset-0 transition-opacity duration-1500 hidden ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
-            <img src={src} alt="" className="w-full h-full object-cover hidden" style={{ objectPosition: '50% 35%' }} />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14] hidden" />
-        <div className="absolute inset-0 bg-[#080b14]/30 hidden" />
+      
 
-        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto pt-24 lg:pt-32">
-          <h1 className="text-6xl lg:text-8xl font-black leading-[0.95] mb-8 tracking-tight hidden">
-            Transforme
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] via-[#a855f7] to-[#1db89e]">
-              vidas
-            </span>
-            <span className="block text-4xl lg:text-5xl text-white/80 font-bold mt-2">através da cura.</span>
-          </h1>
-          <p className="text-white/60 text-lg lg:text-xl leading-relaxed max-w-2xl mx-auto mb-12 hidden">
-            Sua vocação merece o próximo passo. Nossa formação profissionalizante redefine o ensino da terapia ao integrar o acolhimento humanizado à prática terapêutica constante.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="#cursos" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base hidden">
-              Ver Nossos Cursos <ChevronRight size={18} />
-            </a>
-            <a href="#professor" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base hidden">
-              <Play size={15} className="fill-current" /> Sobre o Professor
-            </a>
-          </div>
-        </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce hidden">
-          <span className="text-xs tracking-widest uppercase">Role para baixo</span>
-          <ArrowDown size={16} />
-        </div>
-        <div className="absolute bottom-8 right-8 flex gap-2">
-          {HERO_IMAGES.map((_, i) =>
-          <button key={i} onClick={() => setHeroImg(i)}
-          className={`h-1.5 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`} />
-          )}
-        </div>
-      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* STATS BAR */}
-      <div className="bg-[#0d1120] border-y border-white/8 py-8 px-6 hidden">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-center">
-          {[
-          { value: '4.8★', label: 'Avaliação Média' },
-          { value: '80h', label: 'Carga Horária' },
-          { value: '4 meses', label: 'Duração' },
-          { value: 'Reais', label: 'Professores Reais' },
-          { value: 'Vivência', label: 'Consultório' },
-          { value: 'Exclusiva', label: 'Plataforma' }].
-          map((s, i) =>
-          <div key={i}>
-              <p className="text-2xl lg:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">{s.value}</p>
-              <p className="text-white/40 text-xs mt-1 uppercase tracking-wide">{s.label}</p>
-            </div>
-          )}
-        </div>
-      </div>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* METODOLOGIA */}
       <section id="metodologia" className="py-28 px-6 lg:px-20">
@@ -391,19 +391,19 @@ export default function LandingPage({ onLogin }) {
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden">
                 <img src={'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'} alt="Curso" className="w-full aspect-[4/5] object-cover object-center" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent hidden" />
+                
                 <div className="absolute bottom-6 left-6 right-6">
-                  <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4 hidden">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] rounded-full flex items-center justify-center">
-                        <Zap size={16} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="text-white font-bold text-sm">Próxima turma</p>
-                        <p className="text-[#1db89e] text-xs font-semibold">Início em Setembro/2026 · Vagas limitadas</p>
-                      </div>
-                    </div>
-                  </div>
+                  
+
+
+
+
+
+
+
+
+
+                  
                 </div>
               </div>
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#5b5ef4]/20 rounded-full blur-2xl" />
@@ -414,90 +414,7 @@ export default function LandingPage({ onLogin }) {
       </section>
 
       {/* SOBRE O PROFESSOR */}
-      <section id="professor" className="py-28 px-6 lg:px-20 bg-[#0a0d1a] hidden">
-        <div className="max-w-6xl mx-auto hidden">
-              {/* Header */}
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-4">
-              <Award size={13} className="text-[#5b5ef4]" />
-              <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-white hidden">Prof. William Ribeiro</h2>
-            <p className="text-white/50 mt-2 text-lg hidden">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
-          </div>
-
-          {/* Avatar + Bio */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16 hidden" style={{ alignItems: 'start' }}>
-            <div className="lg:col-span-2">
-              <div className="relative">
-                <div className="w-full rounded-3xl overflow-hidden aspect-square">
-                  <img
-                    src="https://media.base44.com/images/public/69f55577840a3c93cee191be/3488805d0_17673765754883.jpg"
-                    alt="Prof. William Ribeiro"
-                    className="w-full h-full object-cover"
-                    style={{ objectPosition: '50% 30%' }} />
-                  
-                </div>
-                <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
-                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
-                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro · WR-EDU</p>
-                </div>
-              </div>
-            </div>
-            <div className="lg:col-span-3 space-y-4">
-              <p className="text-white/70 text-sm leading-relaxed">
-                A base do pensamento de William Ribeiro foi construída em um mergulho profundo nos processos organizacionais e corporativos entre 2007 e 2017. Essa década representou uma ascensão estratégica: iniciando como office boy e percorrendo setores vitais como auxiliar de finanças, assistente de departamento pessoal e, finalmente, gestor de pessoas à frente de recrutamentos e seleções.
-              </p>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Foi com o ingresso na turma de Administração da <strong className="text-white">Universidade Federal do Paraná (UFPR)</strong> que William desenvolveu uma de suas principais teses: a <strong className="text-white">Teoria da Utilidade Comportamental</strong>. Originalmente inspirada em teorias do comportamento econômico e adaptada para o âmbito clínico, essa visão propõe uma análise profunda de como as escolhas e motivações moldam a existência humana.
-              </p>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Também atuou profissionalmente no campo da tecnologia, atendendo a estruturas e processos junto ao <strong className="text-white">8° Registro de Imóveis de Curitiba</strong>, realizando transições entre sistemas tecnológicos, manutenção do ecossistema digital, controle de dados de pessoal e processos de treinamentos e capacitações internas.
-              </p>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Dessa evolução natural, consolidou-se sua atuação como Psicoterapeuta, Psicanalista e Sexólogo Integrativo, com formações certificadas nacional e internacionalmente. Especialista em vícios e dinâmicas conjugais, William fundou o grupo <strong className="text-white">Sinapse Coletiva</strong>, um ecossistema que integra profissionais da saúde comportamental focados em uma técnica consciente, equilibrada e despida de amadorismos.
-              </p>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Atualmente, essa trajetória culmina na coordenação da plataforma <strong className="text-white">WR-EDU</strong>. Como mantenedor associado à <strong className="text-white">ABED</strong>, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento. Esse compromisso expande-se como Educador Social no projeto <strong className="text-white">Vida Digital</strong> da <strong className="text-white">ADRA Paraná</strong>, onde reestrutura comunidades em vulnerabilidade.
-              </p>
-              <p className="text-white/50 text-sm leading-relaxed italic">
-                William Ribeiro não apenas ensina terapia; ele lidera uma formação que une o rigor da utilidade comportamental ao poder transformador do acolhimento humanizado.
-              </p>
-            </div>
-          </div>
-
-          {/* Credenciais */}
-          <div className="mb-14">
-            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2 hidden">
-              <CheckCircle size={13} className="text-[#1db89e]" /> Credenciais e Certificações Verificáveis
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {CERTS.map((c, i) =>
-              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all hidden">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-7 h-7 rounded-full bg-[#1db89e]/15 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle size={13} className="text-[#1db89e]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-bold text-sm">{c.title}</p>
-                      <p className="text-white/50 text-xs mt-0.5">{c.institution}</p>
-                    </div>
-                  </div>
-                  <p className="text-white/25 text-[10px] font-mono bg-white/5 rounded-lg px-3 py-1.5 mb-2 truncate">Cód: {c.code}</p>
-                  {c.extra && <p className="text-white/40 text-xs mb-2 leading-relaxed">{c.extra}</p>}
-                  {c.verifyLink &&
-                <a href={c.verifyLink} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[#5b5ef4] text-xs font-semibold hover:text-[#7c7ef4] transition-colors">
-                      <ExternalLink size={11} /> {c.verifyLabel}
-                    </a>
-                }
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Trajetória */}
-          
+      
 
 
 
@@ -511,30 +428,113 @@ export default function LandingPage({ onLogin }) {
 
 
 
-          
 
-          {/* Atuação Atual */}
-          <div>
-            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2 hidden">
-              <Sparkles size={13} className="text-yellow-400" /> Atuação Atual
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {CURRENT.map((item, i) =>
-              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#1db89e]/30 transition-all hidden">
-                  <p className="text-white font-bold text-sm mb-2">{item.title}</p>
-                  <p className="text-white/45 text-xs leading-relaxed mb-3">{item.desc}</p>
-                  {item.link &&
-                <a href={item.link} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[#1db89e] text-xs font-semibold hover:opacity-80 transition-opacity">
-                      <ExternalLink size={11} /> {item.linkLabel}
-                    </a>
-                }
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* NOSSOS CURSOS */}
       <section id="cursos" className="py-28 px-6 lg:px-20 bg-[#080b14]">
@@ -631,29 +631,29 @@ export default function LandingPage({ onLogin }) {
       `}</style>
 
       {/* DEPOIMENTOS */}
-      <section id="depoimentos" className="py-24 px-6 lg:px-20 bg-[#0a0d1a] hidden">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-white mb-2">O que dizem nossos alunos</h2>
-            <p className="text-white/40 text-sm">Mais de 500 terapeutas formados</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) =>
-            <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all">
-                <Quote size={22} className="text-[#5b5ef4]/30 mb-3" />
-                <p className="text-white/70 text-sm leading-relaxed mb-5">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center text-xs font-black">{t.name[0]}</div>
-                  <div>
-                    <p className="text-white text-sm font-bold">{t.name}</p>
-                    <div className="flex gap-0.5 mt-0.5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={9} className="text-yellow-400 fill-yellow-400" />)}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* CTA FINAL */}
       <section className="py-24 px-6 lg:px-20 bg-gradient-to-br from-[#5b5ef4]/20 via-[#080b14] to-[#1db89e]/10 relative overflow-hidden">
