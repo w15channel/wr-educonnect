@@ -40,6 +40,7 @@ const adminGroups = [
       { icon: Trophy, label: 'Controle de Pontuação', path: '/scores', color: 'text-yellow-400' },
       { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
+      { icon: Bell, label: 'Notificações', path: '/ring', color: 'text-orange-400' },
     ],
   },
   {
@@ -224,15 +225,6 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
           ))}
         </nav>
 
-        {/* Admin notifications */}
-        {isAdmin && (
-          <div className="px-3 py-2 border-t border-white/8 flex items-center gap-2">
-            <div className="[&_button]:text-white/60 [&_button:hover]:bg-white/10 [&_button]:rounded-xl">
-              <NotificationsBell session={session} />
-            </div>
-            <span className="text-xs text-white/40 font-medium">Notificações</span>
-          </div>
-        )}
 
         {/* Course badge for admin */}
         {isAdmin && activeCourse && (
