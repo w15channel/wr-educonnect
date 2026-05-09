@@ -47,6 +47,10 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
   const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies', email], queryFn: () => base44.entities.ForumReply.filter({ author_email: email }, '-created_date', 100) });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items', email], queryFn: () => base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 500) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-score', email], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
+  const { data: studentProfiles = [] } = useQuery({
+    queryKey: ['student-profile-score', email],
+    queryFn: () => base44.entities.StudentProfile.filter({ student_email: email }, '-created_date', 1),
+  });
 
   const [activeSection, setActiveSection] = useState('lessons');
 
@@ -105,6 +109,20 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
     ))
     .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
 
+  const sendTotalMutation = useMutation({
+    mutationFn: async () => {
+      const profile = studentProfiles[0];
+      const data = { student_email: email, full_name: displayName, points: Number(totalScore.toFixed(1)) };
+      if (profile) return base44.entities.StudentProfile.update(profile.id, data);
+      return base44.entities.StudentProfile.create(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-profile-score', email] });
+      queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+      toast.success('Pontuação enviada para o controle!');
+    },
+  });
+
   const sections = [
     { key: 'lessons', label: 'Aulas', icon: BookOpen },
     { key: 'lives', label: 'Presenças', icon: Video },
@@ -151,9 +169,20 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
           <h2 className="text-xl font-bold text-foreground truncate">{displayName}</h2>
           <p className="text-xs text-muted-foreground">{email}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl px-4 py-2 text-center shrink-0">
-          <p className="text-lg font-black text-primary">{totalScore.toFixed(1)}</p>
-          <p className="text-[10px] text-muted-foreground">pts totais</p>
+        <div className="bg-card border border-border rounded-xl px-4 py-2 text-center shrink-0 space-y-2">
+          <div>
+            <p className="text-lg font-black text-primary">{totalScore.toFixed(1)}</p>
+            <p className="text-[10px] text-muted-foreground">pts totais</p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-[10px] whitespace-normal leading-tight"
+            onClick={() => sendTotalMutation.mutate()}
+            disabled={sendTotalMutation.isPending}
+          >
+            {sendTotalMutation.isPending ? 'Enviando...' : 'Enviar para controle de pontuação'}
+          </Button>
         </div>
       </div>
 
@@ -461,6 +490,11 @@ export default function ScoreControl() {
     queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500),
   });
 
+  const { data: studentProfiles = [] } = useQuery({
+    queryKey: ['student-profiles-score-overview'],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000),
+  });
+
   useEffect(() => {
     if (!location.search.includes('filter=pending')) return;
     if (selectedCode || codes.length === 0 || submissions.length === 0) return;
@@ -608,7 +642,8 @@ export default function ScoreControl() {
                 !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
               );
               const stats = getParticipationStats(code.student_email);
-              const totalScore = getCourseScoreTotal(code.student_email);
+              const savedProfile = studentProfiles.find(p => p.student_email === code.student_email && typeof p.points === 'number');
+              const totalScore = savedProfile ? savedProfile.points : getCourseScoreTotal(code.student_email);
               const participations = stats.count;
               return { code, hasPending, totalScore, participations };
             })
