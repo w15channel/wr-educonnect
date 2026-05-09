@@ -26,17 +26,17 @@ export default function TerapeutaDaSemana() {
 
   const { data: pairings = [] } = useQuery({
     queryKey: ['therapist-pairings'],
-    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 100),
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 1000),
   });
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 10000),
   });
 
   const { data: scoreItems = [] } = useQuery({
     queryKey: ['score-items-terapeuta'],
-    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
+    queryFn: () => base44.entities.ScoreItem.list('-created_date', 10000),
   });
 
   const createPairingMutation = useMutation({
@@ -66,15 +66,25 @@ export default function TerapeutaDaSemana() {
   const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
 
   // Filtro por curso: /sex/ exibe apenas alunos SEX-
+  const isCodeInActiveDomain = (code) => {
+    const email = code.student_email || '';
+    if (!code.is_active || !email) return false;
+    if (courseEmails && courseEmails.size > 0) return courseEmails.has(email);
+    return code.course === activeCourse && (!codePrefix || (code.code || '').startsWith(codePrefix));
+  };
+
+  const getStudentTotalScore = (email, items = scoreItems) => items
+    .filter(s => s.student_email === email && s.verified)
+    .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+
   const courseEmailSet = courseEmails || new Set(
     accessCodes
-      .filter(c =>
-        c.course === activeCourse &&
-        c.student_email &&
-        (!codePrefix || (c.code || '').startsWith(codePrefix))
-      )
+      .filter(isCodeInActiveDomain)
       .map(c => c.student_email)
   );
+
+  const activeDomainStudents = accessCodes.filter(isCodeInActiveDomain);
+  const rankedDomainStudents = [...activeDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
 
   const currentPairings = pairings.filter(p =>
     p.pairing_date >= periodStart &&
@@ -100,33 +110,27 @@ export default function TerapeutaDaSemana() {
 
   const handleGeneratePairings = async () => {
     await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-    const freshCodes = await base44.entities.AccessCode.list('-created_date', 200);
-    const activeStudents = freshCodes.filter(c =>
-      c.is_active &&
-      c.student_email &&
-      c.course === activeCourse &&
-      (!codePrefix || (c.code || '').startsWith(codePrefix))
-    );
+    const freshCodes = await base44.entities.AccessCode.list('-created_date', 10000);
+    const activeStudents = freshCodes.filter(isCodeInActiveDomain);
     if (activeStudents.length < 2) {
       toast.error('São necessários pelo menos 2 alunos para criar pareamentos.');
       return;
     }
 
-    // Balancear: top 10 pontuados ficam juntos, demais são sorteados aleatoriamente
-    const freshScores = await base44.entities.ScoreItem.list('-created_date', 2000);
+    const freshScores = await base44.entities.ScoreItem.list('-created_date', 10000);
     const scoreMap = {};
     freshScores.filter(s => s.verified).forEach(s => {
-      if (s.student_email) scoreMap[s.student_email] = (scoreMap[s.student_email] || 0) + (s.score || 0);
+      if (s.student_email) scoreMap[s.student_email] = (scoreMap[s.student_email] || 0) + (Number(s.score) || 0);
     });
-    const sorted = [...activeStudents].sort((a, b) => (scoreMap[b.student_email] || 0) - (scoreMap[a.student_email] || 0));
-    const top = sorted.slice(0, Math.min(10, Math.floor(sorted.length / 2) * 2)); // top 10 (par)
-    const rest = sorted.slice(top.length);
 
-    // Embaralha dentro de cada grupo
+    const sorted = [...activeStudents].sort((a, b) => (scoreMap[b.student_email] || 0) - (scoreMap[a.student_email] || 0));
     const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
-    const topShuffled = shuffle(top);
-    const restShuffled = shuffle(rest);
-    const allOrdered = [...topShuffled, ...restShuffled];
+    const randomPoolSize = Math.min(10, Math.max(0, sorted.length - 2));
+    const activeGroupSize = sorted.length - randomPoolSize;
+    const activePairCount = Math.floor(activeGroupSize / 2) * 2;
+    const mostActiveGroup = sorted.slice(0, activePairCount);
+    const randomPool = shuffle(sorted.slice(activePairCount));
+    const allOrdered = [...mostActiveGroup, ...randomPool];
 
     const date = todayStr;
     const endDate = format(addDays(today, 4), 'yyyy-MM-dd');
@@ -147,7 +151,7 @@ export default function TerapeutaDaSemana() {
         period_end: endDate,
       });
     }
-    toast.success(`✅ ${pairs.length} pareamento(s) gerado(s) — top pontuados pareados entre si!`);
+    toast.success(`✅ ${pairs.length} pareamento(s) gerado(s) com ${activeStudents.length} aluno(s) do domínio.`);
   };
 
   const handleSubmitEval = () => {
@@ -182,6 +186,39 @@ export default function TerapeutaDaSemana() {
           </Button>
         )}
       </div>
+
+      {isTeacher && (
+        <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-sm text-foreground">Alunos elegíveis deste domínio</h3>
+              <p className="text-xs text-muted-foreground">Mais ativos ficam em dupla; até 10 menos ativos entram no sorteio aleatório.</p>
+            </div>
+            <Badge variant="secondary">{activeDomainStudents.length} alunos</Badge>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
+            {rankedDomainStudents.map((student, index) => {
+              const randomPoolSize = Math.min(10, Math.max(0, rankedDomainStudents.length - 2));
+              const activePairCount = Math.floor((rankedDomainStudents.length - randomPoolSize) / 2) * 2;
+              const inRandomPool = index >= activePairCount;
+              return (
+                <div key={student.id} className="flex items-center justify-between gap-2 bg-secondary/40 rounded-xl px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{student.profile_name || student.student_name || 'Sem nome'}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{student.student_email}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge className={`text-[9px] ${inRandomPool ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-pink-100 text-pink-700 border-pink-200'}`}>
+                      {inRandomPool ? 'Sorteio' : 'Mais ativo'}
+                    </Badge>
+                    <span className="text-[10px] font-bold text-muted-foreground">{getStudentTotalScore(student.student_email).toFixed(1)} pts</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Meus pareamentos */}
       {!isTeacher && (
