@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
-import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X, GraduationCap } from 'lucide-react';
+import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,9 @@ export default function CodeManager() {
   const [newEmail, setNewEmail] = useState('');
   const [editingEmailId, setEditingEmailId] = useState(null);
   const [editingEmailValue, setEditingEmailValue] = useState('');
+  const [editingCourseId, setEditingCourseId] = useState(null);
+  const [editingCourseValue, setEditingCourseValue] = useState('');
+  const [syncing, setSyncing] = useState(false);
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -47,7 +50,6 @@ export default function CodeManager() {
   const deleteMutation = useMutation({
     mutationFn: async (code) => {
       const email = code.student_email;
-      // Cascade delete all student data
       const [profiles, submissions, progresses, tuitions, attendances, scoreItems, chatMessages, forumPosts, forumReplies] = await Promise.all([
         email ? base44.entities.StudentProfile.filter({ student_email: email }, '-created_date', 200) : [],
         email ? base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 500) : [],
@@ -87,6 +89,41 @@ export default function CodeManager() {
     },
   });
 
+  const updateCourseMutation = useMutation({
+    mutationFn: ({ id, course }) => base44.entities.AccessCode.update(id, { course }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      setEditingCourseId(null);
+      toast.success('Curso atualizado!');
+    },
+  });
+
+  const createAdditionalCodeMutation = useMutation({
+    mutationFn: ({ name, email, newCourse }) => base44.entities.AccessCode.create({
+      code: generateCode(),
+      student_name: name,
+      student_email: email,
+      course: newCourse,
+      is_active: true,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      toast.success('Novo código criado para outro curso!');
+    },
+  });
+
+  const syncAllMutation = useMutation({
+    mutationFn: async () => {
+      setSyncing(true);
+      try {
+        await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+        toast.success('Cadastros atualizados! Os painéis serão filtrados pelo novo curso.');
+      } finally {
+        setSyncing(false);
+      }
+    },
+  });
+
   const regenerateMutation = useMutation({
     mutationFn: (id) => base44.entities.AccessCode.update(id, { code: generateCode() }),
     onSuccess: () => {
@@ -103,8 +140,20 @@ export default function CodeManager() {
   return (
     <div className="space-y-6">
       {/* Generator */}
-      <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
-        <h3 className="font-semibold text-foreground mb-4">Gerar Novo Código</h3>
+      <div className="bg-card p-5 rounded-2xl border border-border shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-foreground">Gerar Novo Código</h3>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={() => syncAllMutation.mutate()}
+            disabled={syncing}
+          >
+            <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Atualizando...' : 'Atualizar Cadastros'}
+          </Button>
+        </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
             placeholder="Nome do aluno"
@@ -155,9 +204,31 @@ export default function CodeManager() {
                 <div className="flex items-center gap-3 min-w-0">
                   <div>
                     <p className="font-medium text-foreground text-sm">{c.student_name || 'Sem nome'}</p>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: c.course === 'psicanalise' ? '#1db89e20' : c.course === 'sexologia' ? '#a855f720' : '#5b5ef420', color: c.course === 'psicanalise' ? '#1db89e' : c.course === 'sexologia' ? '#a855f7' : '#5b5ef4' }}>
-                        {c.course === 'psicanalise' ? 'Psicanalista' : c.course === 'sexologia' ? 'Sexólogo(a)' : 'TCC'}
-                      </span>
+                    {editingCourseId === c.id ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <select
+                          value={editingCourseValue}
+                          onChange={e => setEditingCourseValue(e.target.value)}
+                          className="h-7 rounded-md border border-border bg-background text-foreground text-xs px-2"
+                        >
+                          <option value="tcc">TCC</option>
+                          <option value="psicanalise">Psicanalista</option>
+                          <option value="sexologia">Sexólogo(a)</option>
+                        </select>
+                        <button onClick={() => updateCourseMutation.mutate({ id: c.id, course: editingCourseValue })} className="p-0.5 text-green-600 hover:text-green-700"><Check size={13} /></button>
+                        <button onClick={() => setEditingCourseId(null)} className="p-0.5 text-muted-foreground hover:text-destructive"><X size={13} /></button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setEditingCourseId(c.id); setEditingCourseValue(c.course || 'tcc'); }}
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground group mt-1"
+                      >
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: c.course === 'psicanalise' ? '#1db89e20' : c.course === 'sexologia' ? '#a855f720' : '#5b5ef420', color: c.course === 'psicanalise' ? '#1db89e' : c.course === 'sexologia' ? '#a855f7' : '#5b5ef4' }}>
+                          {c.course === 'psicanalise' ? 'Psicanalista' : c.course === 'sexologia' ? 'Sexólogo(a)' : 'TCC'}
+                        </span>
+                        <Pencil size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    )}
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <code className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                         {c.code}
@@ -196,10 +267,34 @@ export default function CodeManager() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                   <Badge className={c.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                     {c.is_active ? 'Ativo' : 'Inativo'}
                   </Badge>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="font-mono text-primary/70 px-1.5 py-0.5 rounded text-[9px] bg-primary/5">+</span>
+                    <select
+                      onChange={e => {
+                        if (e.target.value) {
+                          createAdditionalCodeMutation.mutate({
+                            name: c.student_name,
+                            email: c.student_email,
+                            newCourse: e.target.value,
+                          });
+                          e.target.value = '';
+                        }
+                      }}
+                      className="h-6 rounded-md border border-border bg-background text-foreground text-xs px-2"
+                      defaultValue=""
+                    >
+                      <option value="">Novo código...</option>
+                      {['tcc', 'psicanalise', 'sexologia'].filter(c2 => c2 !== c.course).map(course => (
+                        <option key={course} value={course}>
+                          {course === 'tcc' ? 'TCC' : course === 'psicanalise' ? 'Psicanalista' : 'Sexólogo(a)'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <button onClick={() => copyCode(c.code)} title="Copiar código" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                     <Copy size={15} />
                   </button>
