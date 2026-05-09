@@ -63,11 +63,11 @@ export default function WRTec() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#060810]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 overflow-hidden rounded-xl flex items-center justify-center bg-transparent">
+            <div className="w-12 h-12 overflow-hidden rounded-xl flex items-center justify-center bg-transparent">
               <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/703f48075_Code_Generated_Image1.png" alt="WR-TEC" className="w-full h-full object-contain" style={{ mixBlendMode: 'screen' }} />
             </div>
             <div>
-              <span className="text-xl font-black tracking-tight">WR-TEC</span>
+              <span className="text-2xl font-black tracking-tight">WR-TEC</span>
               <span className="text-[#5b5ef4] text-xs font-bold ml-1">®</span>
             </div>
           </div>
@@ -378,11 +378,11 @@ export default function WRTec() {
       <footer className="border-t border-white/8 py-10 px-6 lg:px-20 bg-[#060810]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 overflow-hidden rounded-lg flex items-center justify-center bg-transparent">
+            <div className="w-12 h-12 overflow-hidden rounded-lg flex items-center justify-center bg-transparent">
               <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/703f48075_Code_Generated_Image1.png" alt="WR-TEC" className="w-full h-full object-contain" style={{ mixBlendMode: 'screen' }} />
             </div>
             <div>
-              <p className="text-white font-black text-sm">WR-TEC®</p>
+              <p className="text-white font-black text-base">WR-TEC®</p>
               <p className="text-white/30 text-xs">Tecnologia e Desenvolvimento</p>
             </div>
           </div>
