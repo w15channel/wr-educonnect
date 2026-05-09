@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { MessageSquare, Send, ChevronDown, ChevronUp, Trash2, Star, BookOpen } from 'lucide-react';
+import { MessageSquare, Send, ChevronDown, ChevronUp, Trash2, Star, BookOpen, Pencil, Check, X } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,8 @@ export default function Forum() {
   const [filterTopic, setFilterTopic] = useState('Todos');
   const [expandedPost, setExpandedPost] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [editingReply, setEditingReply] = useState(null); // { id, content }
+  const [editingPost, setEditingPost] = useState(null); // { id, content }
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
@@ -102,6 +104,21 @@ export default function Forum() {
   const deletePostMutation = useMutation({
     mutationFn: (id) => base44.entities.ForumPost.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['forum-posts'] }),
+  });
+
+  const updatePostMutation = useMutation({
+    mutationFn: ({ id, content }) => base44.entities.ForumPost.update(id, { content }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['forum-posts'] }); setEditingPost(null); },
+  });
+
+  const deleteReplyMutation = useMutation({
+    mutationFn: (id) => base44.entities.ForumReply.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] }),
+  });
+
+  const updateReplyMutation = useMutation({
+    mutationFn: ({ id, content }) => base44.entities.ForumReply.update(id, { content }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] }); setEditingReply(null); },
   });
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
@@ -226,15 +243,27 @@ export default function Forum() {
                         )}
                         <span className="text-[10px] text-muted-foreground ml-auto">{format(new Date(post.created_date), 'dd/MM HH:mm')}</span>
                       </div>
-                      <p className="text-sm text-foreground/80 leading-relaxed">{post.content}</p>
+                      {editingPost?.id === post.id ? (
+                        <div className="flex gap-2 mt-1">
+                          <Textarea value={editingPost.content} onChange={e => setEditingPost({ ...editingPost, content: e.target.value })} className="resize-none text-sm flex-1" rows={2} />
+                          <div className="flex flex-col gap-1">
+                            <button onClick={() => updatePostMutation.mutate({ id: post.id, content: editingPost.content })} className="text-green-600 hover:text-green-700 p-1"><Check size={14} /></button>
+                            <button onClick={() => setEditingPost(null)} className="text-muted-foreground hover:text-foreground p-1"><X size={14} /></button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-foreground/80 leading-relaxed">{post.content}</p>
+                      )}
                     </div>
                     {(isTeacher || post.author_email === session?.email) && (
-                      <button
-                        onClick={() => deletePostMutation.mutate(post.id)}
-                        className="text-muted-foreground hover:text-destructive min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg transition-colors shrink-0"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => setEditingPost({ id: post.id, content: post.content })} className="text-muted-foreground hover:text-primary min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg transition-colors">
+                          <Pencil size={12} />
+                        </button>
+                        <button onClick={() => deletePostMutation.mutate(post.id)} className="text-muted-foreground hover:text-destructive min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg transition-colors">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -272,9 +301,25 @@ export default function Forum() {
                             <div className="flex items-center gap-2 mb-1">
                               <ClickableStudent email={reply.author_email} className="font-bold text-xs text-foreground">{reply.author_name}</ClickableStudent>
                               {reply.author_role === 'teacher' && <Badge className="bg-primary/10 text-primary text-[9px] py-0 px-1">Prof.</Badge>}
-                              <span className="text-[10px] text-muted-foreground ml-auto">{format(new Date(reply.created_date), 'dd/MM HH:mm')}</span>
+                              <span className="text-[10px] text-muted-foreground ml-auto flex items-center gap-1">
+                                {format(new Date(reply.created_date), 'dd/MM HH:mm')}
+                                {(isTeacher || reply.author_email === session?.email) && (
+                                  <>
+                                    <button onClick={() => setEditingReply({ id: reply.id, content: reply.content })} className="text-muted-foreground hover:text-primary ml-1"><Pencil size={10} /></button>
+                                    <button onClick={() => deleteReplyMutation.mutate(reply.id)} className="text-muted-foreground hover:text-destructive"><Trash2 size={10} /></button>
+                                  </>
+                                )}
+                              </span>
                             </div>
-                            <p className="text-sm text-foreground/80">{reply.content}</p>
+                            {editingReply?.id === reply.id ? (
+                              <div className="flex gap-2 mt-1">
+                                <Input value={editingReply.content} onChange={e => setEditingReply({ ...editingReply, content: e.target.value })} className="flex-1 h-8 text-sm" />
+                                <button onClick={() => updateReplyMutation.mutate({ id: reply.id, content: editingReply.content })} className="text-green-600 hover:text-green-700"><Check size={14} /></button>
+                                <button onClick={() => setEditingReply(null)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-foreground/80">{reply.content}</p>
+                            )}
                           </div>
                         </div>
                       );
