@@ -10,6 +10,16 @@
       "type": "string",
       "description": "Brief description of the lesson"
     },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso ao qual a aula pertence"
+    },
     "lesson_type": {
       "type": "string",
       "enum": [
@@ -18,7 +28,7 @@
         "content_external"
       ],
       "default": "video_external",
-      "description": "Tipo de aula: v\u00eddeo externo, texto escrito na plataforma, ou material externo"
+      "description": "Tipo de aula"
     },
     "video_url": {
       "type": "string",

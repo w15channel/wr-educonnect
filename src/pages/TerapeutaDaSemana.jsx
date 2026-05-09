@@ -57,8 +57,19 @@ export default function TerapeutaDaSemana() {
   const todayStr = format(today, 'yyyy-MM-dd');
   const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
 
-  const currentPairings = pairings.filter(p => p.pairing_date >= periodStart);
-  const pastPairings = pairings.filter(p => p.pairing_date < periodStart);
+  // Filtro por curso: alunos veem apenas pareamentos da sua turma
+  const courseEmailSet = isTeacher ? null : new Set(
+    accessCodes.filter(c => c.course === session?.course && c.student_email).map(c => c.student_email)
+  );
+
+  const currentPairings = pairings.filter(p =>
+    p.pairing_date >= periodStart &&
+    (!courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email)))
+  );
+  const pastPairings = pairings.filter(p =>
+    p.pairing_date < periodStart &&
+    (!courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email)))
+  );
 
   // Pairings do aluno logado
   const myTherapistPairing = currentPairings.find(p => p.therapist_email === session?.email);

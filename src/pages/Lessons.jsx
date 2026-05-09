@@ -33,9 +33,13 @@ export default function Lessons() {
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFile, setUploadFile] = useState({});
 
+  const userCourse = session?.course || 'tcc';
+
   const { data: lessons = [], isLoading } = useQuery({
-    queryKey: ['lessons'],
-    queryFn: () => base44.entities.RecordedLesson.list('order', 100),
+    queryKey: ['lessons', isTeacher ? 'all' : userCourse],
+    queryFn: () => isTeacher
+      ? base44.entities.RecordedLesson.list('order', 100)
+      : base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 100),
   });
 
   const { data: progresses = [] } = useQuery({

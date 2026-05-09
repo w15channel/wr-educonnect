@@ -21,6 +21,7 @@ export default function Tasks() {
   const { user: session } = useOutletContext();
   const user = session;
   const isTeacher = session?.role === 'admin';
+  const userCourse = session?.course || 'tcc';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -33,8 +34,10 @@ export default function Tasks() {
   const [commentInputs, setCommentInputs] = useState({});
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('-created_date', 100),
+    queryKey: ['tasks', isTeacher ? 'all' : userCourse],
+    queryFn: () => isTeacher
+      ? base44.entities.Task.list('-created_date', 200)
+      : base44.entities.Task.filter({ course: userCourse }, '-created_date', 200),
   });
 
   const { data: submissions = [] } = useQuery({

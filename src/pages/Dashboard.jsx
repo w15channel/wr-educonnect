@@ -42,6 +42,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isTeacher = session?.role === 'admin';
+  const userCourse = session?.course;
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefreshAll = async () => {
@@ -119,10 +120,14 @@ export default function Dashboard() {
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
-  // Ranking por ScoreItems verificados
+  // Ranking por ScoreItems verificados — filtrado por curso para alunos
+  const courseEmails = isTeacher ? null : new Set(
+    accessCodes.filter(c => c.course === userCourse && c.student_email).map(c => c.student_email)
+  );
   const rankMap = {};
   allScoreItems.filter(s => s.verified).forEach(s => {
     if (!s.student_email) return;
+    if (courseEmails && !courseEmails.has(s.student_email)) return;
     if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0, count: 0 };
     rankMap[s.student_email].total += (s.score || 0);
     rankMap[s.student_email].count += 1;

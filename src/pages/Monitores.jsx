@@ -51,10 +51,14 @@ export default function Monitores() {
     queryFn: () => base44.entities.MonitorHistory.list('-period_start', 50),
   });
 
-  // Calcula ranking a partir de ScoreItems verificados
+  // Calcula ranking filtrado por curso para alunos
+  const courseEmailsSet = isTeacher ? null : new Set(
+    accessCodes.filter(c => c.course === session?.course && c.student_email).map(c => c.student_email)
+  );
   const rankMap = {};
   scoreItems.filter(s => s.verified).forEach(s => {
     if (!s.student_email) return;
+    if (courseEmailsSet && !courseEmailsSet.has(s.student_email)) return;
     if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0 };
     rankMap[s.student_email].total += (s.score || 0);
   });

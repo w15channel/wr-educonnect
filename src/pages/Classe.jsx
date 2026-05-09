@@ -185,8 +185,11 @@ export default function Classe() {
   const topTaskEntry = Object.entries(rankMap).sort((a, b) => b[1].taskTotal - a[1].taskTotal)[0];
   const topTaskEmail = topTaskEntry?.[0];
 
-  // Active students (from access codes, active only)
-  const activeStudents = codes.filter(c => c.is_active !== false);
+  // Active students filtered by same course as logged-in student
+  const activeStudents = codes.filter(c =>
+    c.is_active !== false &&
+    (session?.role === 'admin' || !session?.course || c.course === session.course)
+  );
 
   // Merge profile data
   const students = activeStudents.map(code => {

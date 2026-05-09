@@ -18,6 +18,16 @@
       ],
       "description": "Type of task: file upload or quiz"
     },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso ao qual a tarefa pertence"
+    },
     "deadline": {
       "type": "string",
       "format": "date-time",

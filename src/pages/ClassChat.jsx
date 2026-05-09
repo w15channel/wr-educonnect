@@ -101,8 +101,9 @@ export default function ClassChat() {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Use ChatMessage with session_id='class_chat' as the class chat room
-  const CHAT_SESSION = 'class_chat';
+  // Per-course chat room
+  const userCourse = session?.course || 'tcc';
+  const CHAT_SESSION = `class_chat_${userCourse}`;
 
   const { data: messages = [] } = useQuery({
     queryKey: ['class-chat'],
@@ -166,6 +167,7 @@ export default function ClassChat() {
   // Students list for DM tab
   const otherStudents = codes
     .filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
+    .filter(c => !session?.course || c.course === session.course)
     .filter(c => {
       const name = (c.profile_name || c.student_name || c.student_email || '').toLowerCase();
       return name.includes(dmSearch.toLowerCase());
