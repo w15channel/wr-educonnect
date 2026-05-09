@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Shield, FileText, Lock, CheckCircle, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Shield, FileText, Lock, CheckCircle, AlertTriangle, ExternalLink, ChevronRight, ArrowLeft } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png';
 
@@ -15,286 +15,316 @@ export default function TermosEPrivacidade() {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   return (
-    <div className="min-h-screen bg-[#080b14] text-white font-jakarta">
-      {/* Header */}
-      <header className="border-b border-white/8 py-5 px-6 lg:px-20 sticky top-0 z-50 bg-[#080b14]/95 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="WR-EDU" className="w-9 h-9 object-contain" />
-            <span className="text-white font-black text-lg">WR-EDU</span>
-          </a>
-          <a href="/" className="text-white/40 hover:text-white text-sm transition-colors flex items-center gap-1.5">
-            ← Voltar ao site
-          </a>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#07090f] text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
 
-      {/* Hero */}
-      <div className="py-16 px-6 lg:px-20 border-b border-white/5">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-5">
-            <Shield size={12} className="text-[#5b5ef4]" />
-            <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Documentos Institucionais</span>
+      {/* Top bar */}
+      <div className="border-b border-white/6 bg-[#07090f]/95 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={LOGO_URL} alt="WR-EDU" className="w-8 h-8 object-contain opacity-90" />
+            <div className="h-5 w-px bg-white/10" />
+            <span className="text-white/50 text-xs uppercase tracking-widest font-semibold">Documentos Institucionais</span>
           </div>
-          <h1 className="text-4xl lg:text-5xl font-black text-white mb-4">Transparência e Compromisso</h1>
-          <p className="text-white/50 text-lg max-w-2xl mx-auto">Conheça nossas políticas, termos de uso e práticas de privacidade. Atualizados em Janeiro de 2026.</p>
+          <a href="/" className="flex items-center gap-1.5 text-white/30 hover:text-white/70 text-xs font-medium transition-colors">
+            <ArrowLeft size={13} /> Voltar ao site
+          </a>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="sticky top-[73px] z-40 bg-[#080b14]/95 backdrop-blur-xl border-b border-white/8 px-6 lg:px-20">
-        <div className="max-w-4xl mx-auto flex gap-1 overflow-x-auto py-3">
+      <div className="max-w-5xl mx-auto px-6 py-12">
+
+        {/* Page heading */}
+        <div className="mb-10">
+          <p className="text-[#5b5ef4] text-xs font-bold uppercase tracking-widest mb-2">WR-EDU · Instituto de Desenvolvimento Humano</p>
+          <h1 className="text-3xl lg:text-4xl font-black text-white leading-tight">
+            Documentos Legais e<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">Compromissos Institucionais</span>
+          </h1>
+          <p className="text-white/35 text-sm mt-3 max-w-xl">Leia com atenção antes de iniciar sua formação. Estes documentos regulam a relação entre o aluno e a WR-EDU.</p>
+          <p className="text-white/20 text-xs mt-2 font-mono">Última atualização: Janeiro de 2026 · Curitiba, PR</p>
+        </div>
+
+        {/* Tab navigation */}
+        <div className="flex gap-1 mb-8 border-b border-white/6 pb-0">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${activeTab === id ? 'bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white shadow-lg' : 'text-white/40 hover:text-white/70 hover:bg-white/5'}`}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px ${
+                activeTab === id
+                  ? 'border-[#5b5ef4] text-white'
+                  : 'border-transparent text-white/30 hover:text-white/60'
+              }`}
             >
-              <Icon size={14} />
-              {label}
+              <Icon size={13} />
+              <span className="hidden sm:inline">{label}</span>
+              <span className="sm:hidden">{label.split(' ')[0]}</span>
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="py-16 px-6 lg:px-20">
-        <div className="max-w-4xl mx-auto">
+        {/* ── POLÍTICA DE TRABALHO ── */}
+        {activeTab === 'politica' && (
+          <div className="space-y-1 animate-fade-in">
+            <DocSection number="1" title="Natureza dos Cursos">
+              <p>Os cursos oferecidos pela <strong className="text-white">WR-EDU</strong> são formações profissionalizantes de caráter complementar e extensivo, ministrados na modalidade <strong className="text-white">EAD (Ensino a Distância)</strong>, em conformidade com a Lei nº 9.394/1996 (Lei de Diretrizes e Bases da Educação Nacional) e as diretrizes aplicáveis a cursos livres.</p>
+              <p>As formações têm como objetivo capacitar profissionais para atuação nas áreas de Terapia Cognitivo-Comportamental, Psicanálise Freudiana e Sexologia Integrativa, com base em metodologias reconhecidas e conteúdo estruturado por profissionais habilitados.</p>
+            </DocSection>
 
-          {/* ── POLÍTICA DE TRABALHO ── */}
-          {activeTab === 'politica' && (
-            <div className="space-y-10 animate-fade-in">
-              <Section title="1. Natureza e Finalidade dos Cursos" icon={FileText}>
-                <p>Os cursos oferecidos pela <strong>WR-EDU</strong> são formações profissionalizantes de caráter complementar e extensivo, ministrados na modalidade <strong>EAD (Ensino a Distância)</strong>, em conformidade com a Lei nº 9.394/1996 (LDB) e as diretrizes do Ministério da Educação para cursos livres.</p>
-                <p>As formações têm como objetivo capacitar profissionais para atuação nas áreas de Terapia, Psicanálise e Sexologia, com base em metodologias reconhecidas e conteúdo estruturado por profissionais habilitados.</p>
-              </Section>
+            <DocSection number="2" title="Vinculações e Credenciamento Institucional">
+              <p>A WR-EDU é mantenedora associada à <strong className="text-white">ABED — Associação Brasileira de Educação a Distância</strong>, entidade de referência nacional no setor de EAD. A verificação pode ser realizada diretamente no portal oficial:</p>
+              <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[#1db89e] text-sm font-semibold hover:opacity-80 transition-opacity mt-2">
+                <ExternalLink size={12} /> Consultar Associados ABED
+              </a>
+              <p className="mt-3">O coordenador da plataforma, <strong className="text-white">Prof. William Ribeiro</strong>, é membro registrado da <strong className="text-white">AHDE — Associação de Hipnose e Desenvolvimento Especializado Internacional</strong> (ID: 00403THE), entidade com reconhecimento internacional.</p>
+              <Notice type="info">
+                O credenciamento junto à ABED e AHDE atesta a seriedade institucional da WR-EDU, mas não substitui o registro em conselhos profissionais regulamentados (CFP, CFM etc.).
+              </Notice>
+            </DocSection>
 
-              <Section title="2. Vinculações Institucionais" icon={CheckCircle} color="teal">
-                <p>A WR-EDU é mantenedora associada à <strong>ABED — Associação Brasileira de Educação a Distância</strong>, entidade de referência nacional no setor de EAD. A verificação da associação pode ser feita diretamente no portal:</p>
-                <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[#1db89e] text-sm font-semibold hover:opacity-80 transition-opacity mt-1">
-                  <ExternalLink size={13} /> Consultar Associados ABED
-                </a>
-                <p className="mt-4">Adicionalmente, o coordenador da plataforma, <strong>Prof. William Ribeiro</strong>, é membro registrado da <strong>AHDE — Associação de Hipnose e Desenvolvimento Especializado</strong> (ID: 00403THE), entidade com reconhecimento internacional.</p>
-              </Section>
-
-              <Section title="3. Validade dos Certificados" icon={Shield}>
-                <p>Os certificados emitidos pela WR-EDU têm validade como <strong>cursos livres profissionalizantes</strong>, sendo aceitos para fins de atualização profissional, portfólio e comprovação de capacitação complementar.</p>
-                <AlertBox title="Importantes Esclarecimentos">
-                  <p>Os cursos da WR-EDU <strong>não são</strong> credenciados pelos seguintes conselhos e órgãos regulatórios:</p>
-                  <ul className="list-disc list-inside space-y-1 mt-2 text-white/60">
-                    <li>CFP — Conselho Federal de Psicologia</li>
-                    <li>CFM — Conselho Federal de Medicina</li>
-                    <li>CFO — Conselho Federal de Odontologia</li>
-                    <li>MEC (como curso técnico ou superior)</li>
-                  </ul>
-                  <p className="mt-3">Profissionais regulamentados por esses conselhos devem verificar as regras de atuação em complementação terapêutica junto aos seus respectivos órgãos.</p>
-                </AlertBox>
-              </Section>
-
-              <Section title="4. Requisitos para Certificação" icon={CheckCircle} color="teal">
-                <p>Para obter o certificado de conclusão, o aluno deverá cumprir <strong>obrigatoriamente</strong>:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li>Frequência mínima de 75% nas aulas ao vivo</li>
-                  <li>Assistir a pelo menos 80% das aulas gravadas</li>
-                  <li>Entregar todas as tarefas obrigatórias nos prazos estipulados</li>
-                  <li>Participar da vivência de consultório (sessões práticas supervisionadas)</li>
-                  <li>Atingir aproveitamento mínimo de 60% nas avaliações</li>
+            <DocSection number="3" title="Natureza Jurídica dos Certificados">
+              <p>Os certificados emitidos pela WR-EDU têm validade como <strong className="text-white">cursos livres profissionalizantes</strong>, sendo reconhecidos para fins de:</p>
+              <ul>
+                <li>Atualização e capacitação profissional complementar</li>
+                <li>Composição de portfólio e currículo profissional</li>
+                <li>Comprovação de formação em instituição de ensino a distância</li>
+                <li>Credenciamento internacional como terapeuta junto à AHDE</li>
+              </ul>
+              <Notice type="warning">
+                <strong>Os cursos da WR-EDU NÃO são credenciados por:</strong>
+                <ul className="mt-1">
+                  <li>CFP — Conselho Federal de Psicologia</li>
+                  <li>CFM — Conselho Federal de Medicina</li>
+                  <li>CFO — Conselho Federal de Odontologia</li>
+                  <li>MEC (como curso técnico ou de graduação)</li>
                 </ul>
-                <p className="mt-4">O não cumprimento de qualquer um desses requisitos implica na impossibilidade de emissão do certificado, sem direito a reembolso proporcional.</p>
-              </Section>
+                <p className="mt-2">Profissionais regulamentados por esses conselhos devem verificar as regras de atuação complementar junto aos seus órgãos.</p>
+              </Notice>
+            </DocSection>
 
-              <Section title="5. Responsabilidade Legal e Ética" icon={AlertTriangle} color="red">
-                <p>A falsificação, adulteração ou uso indevido dos certificados emitidos pela WR-EDU constitui crime previsto no <strong>Art. 297 do Código Penal Brasileiro</strong> (falsificação de documento público/particular), sujeitando o infrator a penas de reclusão.</p>
-                <p className="mt-3">O aluno que apresentar certificado da WR-EDU como credencial de psicólogo, médico ou qualquer outra profissão regulamentada, sem possuir o devido registro profissional, estará sujeito a responder pelo crime de <strong>exercício ilegal da profissão</strong> (Art. 282 do CP), de forma totalmente independente de qualquer responsabilidade da instituição.</p>
-              </Section>
+            <DocSection number="4" title="Requisitos para Certificação">
+              <p>Para obtenção do certificado de conclusão, o aluno deverá cumprir <strong className="text-white">obrigatoriamente</strong> todos os critérios abaixo:</p>
+              <ul>
+                <li>Frequência mínima de <strong className="text-white">75%</strong> nas aulas ao vivo</li>
+                <li>Conclusão de pelo menos <strong className="text-white">80%</strong> das aulas gravadas na plataforma</li>
+                <li>Entrega de todas as tarefas obrigatórias dentro dos prazos</li>
+                <li>Participação nas sessões de vivência de consultório supervisionadas</li>
+                <li>Aproveitamento mínimo de <strong className="text-white">60%</strong> nas avaliações e provas</li>
+                <li>Ausência de pendências financeiras no encerramento do curso</li>
+              </ul>
+              <p>O não cumprimento de qualquer requisito implica na impossibilidade de emissão do certificado, sem direito a reembolso proporcional já decorrido.</p>
+            </DocSection>
 
-              <Section title="6. Compromisso Ético da Instituição" icon={Shield}>
-                <p>A WR-EDU se compromete a:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li>Manter a transparência sobre a natureza e limitações dos cursos oferecidos</li>
-                  <li>Garantir a qualidade do conteúdo ministrado por profissionais habilitados</li>
-                  <li>Emitir certificados apenas mediante cumprimento integral dos requisitos</li>
-                  <li>Atualizar constantemente o conteúdo programático conforme avanços da área</li>
-                  <li>Respeitar a confidencialidade dos dados dos alunos</li>
-                </ul>
-              </Section>
-            </div>
-          )}
+            <DocSection number="5" title="Responsabilidade Ética e Legal do Aluno">
+              <p>A falsificação, adulteração ou uso indevido de certificados emitidos pela WR-EDU constitui crime tipificado no <strong className="text-white">Art. 297 do Código Penal Brasileiro</strong> (falsificação de documento público/particular), com penas de reclusão.</p>
+              <p>O aluno que apresentar certificado da WR-EDU como credencial regulamentada — de psicólogo, médico ou outra profissão registrada — sem possuir o devido registro em conselho profissional, estará sujeito ao crime de <strong className="text-white">exercício ilegal da profissão</strong> (Art. 282 do CP), de forma totalmente independente de qualquer responsabilidade da instituição.</p>
+              <Notice type="warning">
+                A WR-EDU não se responsabiliza pela atuação ética ou profissional do aluno após a formação. O uso das técnicas ensinadas é de inteira responsabilidade do profissional formado.
+              </Notice>
+            </DocSection>
 
-          {/* ── TERMOS DE USO ── */}
-          {activeTab === 'termos' && (
-            <div className="space-y-10 animate-fade-in">
-              <Section title="1. Aceitação dos Termos" icon={FileText}>
-                <p>Ao acessar e utilizar a plataforma WR-EDU, você concorda com estes Termos de Uso em sua totalidade. Caso não concorde com qualquer disposição, recomendamos que não utilize nossos serviços.</p>
-                <p className="mt-3">Estes termos podem ser atualizados a qualquer momento. Alterações relevantes serão comunicadas por e-mail e notificadas na plataforma.</p>
-              </Section>
-
-              <Section title="2. Cadastro e Acesso" icon={Shield}>
-                <p>O acesso à plataforma é realizado por meio de <strong>código de acesso individual e intransferível</strong>, fornecido exclusivamente ao aluno matriculado. É expressamente proibido:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li>Compartilhar o código de acesso com terceiros</li>
-                  <li>Utilizar o acesso de outro aluno</li>
-                  <li>Tentar contornar os mecanismos de segurança da plataforma</li>
-                  <li>Realizar engenharia reversa do sistema</li>
-                </ul>
-                <p className="mt-3">O descumprimento dessas regras resultará no cancelamento imediato do acesso, sem reembolso.</p>
-              </Section>
-
-              <Section title="3. Uso do Conteúdo" icon={Lock}>
-                <p>Todo o conteúdo disponibilizado na plataforma WR-EDU — incluindo aulas gravadas, materiais didáticos, apresentações e textos — é protegido por direitos autorais e propriedade intelectual.</p>
-                <AlertBox title="É expressamente proibido:">
-                  <ul className="list-disc list-inside space-y-1 mt-1 text-white/60">
-                    <li>Gravar, reproduzir ou redistribuir as aulas</li>
-                    <li>Compartilhar materiais da plataforma em redes sociais ou grupos</li>
-                    <li>Utilizar o conteúdo para fins comerciais sem autorização</li>
-                    <li>Criar materiais derivados sem crédito expresso à WR-EDU</li>
-                  </ul>
-                </AlertBox>
-              </Section>
-
-              <Section title="4. Conduta na Plataforma" icon={CheckCircle} color="teal">
-                <p>Esperamos que todos os alunos mantenham conduta ética e respeitosa. São consideradas violações graves:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li>Assédio, discriminação ou ataques a outros alunos ou professores</li>
-                  <li>Publicação de conteúdo ofensivo, difamatório ou ilegal</li>
-                  <li>Desinformação intencional sobre a plataforma ou seus cursos</li>
-                  <li>Qualquer comportamento que prejudique o ambiente de aprendizado</li>
-                </ul>
-              </Section>
-
-              <Section title="5. Pagamentos e Reembolsos" icon={FileText}>
-                <p>Os valores das mensalidades e matrículas são definidos no momento da inscrição. A WR-EDU adota a seguinte política:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li>Cancelamento com reembolso integral: até 7 dias após a matrícula (direito do consumidor — Lei 8.078/90)</li>
-                  <li>Cancelamento após 7 dias: sem reembolso das mensalidades já pagas</li>
-                  <li>Inadimplência superior a 30 dias: suspensão temporária do acesso</li>
-                  <li>Inadimplência superior a 60 dias: cancelamento definitivo da matrícula</li>
-                </ul>
-              </Section>
-
-              <Section title="6. Limitação de Responsabilidade" icon={AlertTriangle} color="red">
-                <p>A WR-EDU não se responsabiliza por:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li>Uso inadequado das técnicas ensinadas fora do contexto ético e profissional</li>
-                  <li>Resultados profissionais individuais após a conclusão do curso</li>
-                  <li>Indisponibilidade temporária da plataforma por manutenção ou falhas técnicas</li>
-                  <li>Perda de dados causada por uso inadequado do aluno</li>
-                </ul>
-              </Section>
-            </div>
-          )}
-
-          {/* ── PRIVACIDADE ── */}
-          {activeTab === 'privacidade' && (
-            <div className="space-y-10 animate-fade-in">
-              <Section title="1. Dados que Coletamos" icon={Lock}>
-                <p>Para oferecer nossos serviços, coletamos as seguintes informações dos alunos:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li><strong className="text-white">Dados de identificação:</strong> nome completo, e-mail, data de nascimento, WhatsApp</li>
-                  <li><strong className="text-white">Dados de acesso:</strong> código de acesso, registros de login e atividade</li>
-                  <li><strong className="text-white">Dados acadêmicos:</strong> progresso nas aulas, notas, submissões e participação</li>
-                  <li><strong className="text-white">Dados de pagamento:</strong> histórico de mensalidades (não armazenamos dados de cartão)</li>
-                </ul>
-              </Section>
-
-              <Section title="2. Como Utilizamos seus Dados" icon={CheckCircle} color="teal">
-                <p>Seus dados são utilizados exclusivamente para:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li>Gerenciar sua matrícula e acesso à plataforma</li>
-                  <li>Acompanhar seu progresso acadêmico</li>
-                  <li>Emitir certificados e históricos acadêmicos</li>
-                  <li>Enviar comunicados institucionais e avisos de aula</li>
-                  <li>Melhorar a qualidade dos nossos cursos e serviços</li>
-                </ul>
-                <p className="mt-3"><strong>Nunca vendemos ou compartilhamos seus dados com terceiros para fins comerciais.</strong></p>
-              </Section>
-
-              <Section title="3. Armazenamento e Segurança" icon={Shield}>
-                <p>Todos os dados são armazenados em servidores seguros com criptografia em trânsito (TLS/HTTPS) e em repouso. Adotamos as melhores práticas de segurança da informação para proteger seus dados contra acesso não autorizado.</p>
-                <p className="mt-3">A plataforma WR-EDU é construída sobre infraestrutura cloud com backups automáticos e monitoramento contínuo.</p>
-              </Section>
-
-              <Section title="4. Seus Direitos (LGPD)" icon={FileText}>
-                <p>Em conformidade com a <strong>Lei Geral de Proteção de Dados (Lei 13.709/2018)</strong>, você tem direito a:</p>
-                <ul className="list-disc list-inside space-y-2 text-white/60 mt-2">
-                  <li>Acessar todos os dados que temos sobre você</li>
-                  <li>Solicitar a correção de dados incorretos</li>
-                  <li>Solicitar a exclusão dos seus dados após encerramento do vínculo</li>
-                  <li>Revogar o consentimento para uso dos seus dados a qualquer momento</li>
-                  <li>Portabilidade dos seus dados acadêmicos</li>
-                </ul>
-                <p className="mt-3">Para exercer qualquer desses direitos, entre em contato conosco pelo WhatsApp ou e-mail institucional.</p>
-              </Section>
-
-              <Section title="5. Cookies e Tecnologias de Rastreamento" icon={Lock}>
-                <p>A plataforma utiliza cookies essenciais para manter sua sessão ativa e garantir o funcionamento correto do sistema. Não utilizamos cookies de rastreamento para fins publicitários.</p>
-                <p className="mt-3">Você pode desativar os cookies no seu navegador, mas isso pode afetar o funcionamento da plataforma.</p>
-              </Section>
-
-              <Section title="6. Retenção de Dados" icon={Shield}>
-                <p>Seus dados acadêmicos são mantidos por um período mínimo de <strong>5 anos</strong> após a conclusão ou cancelamento do curso, para fins de emissão de históricos e certificados. Após este período, os dados são anonimizados ou excluídos.</p>
-              </Section>
-
-              <Section title="7. Contato e DPO" icon={CheckCircle} color="teal">
-                <p>Para questões relacionadas à privacidade e proteção de dados, entre em contato com nosso responsável pela proteção de dados:</p>
-                <div className="mt-3 bg-white/4 border border-white/8 rounded-2xl p-5">
-                  <p className="text-white font-bold">WR-EDU — Instituto de Desenvolvimento Humano</p>
-                  <p className="text-white/50 text-sm mt-1">Responsável: Prof. William Ribeiro</p>
-                  <p className="text-white/50 text-sm">Curitiba — PR, Brasil</p>
-                  <p className="text-white/40 text-xs mt-3">Política atualizada em Janeiro de 2026</p>
-                </div>
-              </Section>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="border-t border-white/8 py-8 px-6 lg:px-20 bg-[#080b14]">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="WR-EDU" className="w-8 h-8 object-contain" />
-            <span className="text-white/40 text-sm">WR-EDU © 2026 — Todos os direitos reservados</span>
+            <DocSection number="6" title="Compromisso da Instituição">
+              <p>A WR-EDU compromete-se a:</p>
+              <ul>
+                <li>Manter transparência sobre a natureza e limitações de cada formação</li>
+                <li>Garantir conteúdo ministrado por profissionais devidamente habilitados</li>
+                <li>Emitir certificados somente após cumprimento integral dos requisitos</li>
+                <li>Atualizar o conteúdo programático conforme avanços da área terapêutica</li>
+                <li>Oferecer suporte acadêmico e técnico durante toda a formação</li>
+                <li>Respeitar integralmente os dados e a privacidade dos alunos</li>
+              </ul>
+            </DocSection>
           </div>
-          <a href="/" className="text-[#5b5ef4] text-sm font-semibold hover:opacity-80 transition-opacity flex items-center gap-1">
-            Voltar ao site <ChevronRight size={14} />
+        )}
+
+        {/* ── TERMOS DE USO ── */}
+        {activeTab === 'termos' && (
+          <div className="space-y-1 animate-fade-in">
+            <DocSection number="1" title="Aceitação e Vigência">
+              <p>Ao acessar e utilizar a plataforma WR-EDU, o usuário declara ter lido, compreendido e concordado integralmente com estes Termos de Uso. Caso não concorde com qualquer disposição, não utilize os serviços.</p>
+              <p>Estes termos entram em vigor na data de matrícula e permanecem válidos até o encerramento definitivo do vínculo acadêmico. Alterações relevantes serão comunicadas com antecedência mínima de 15 dias via e-mail ou notificação na plataforma.</p>
+            </DocSection>
+
+            <DocSection number="2" title="Acesso e Código de Usuário">
+              <p>O acesso à plataforma WR-EDU é realizado exclusivamente por meio de <strong className="text-white">código de acesso individual e intransferível</strong>, emitido no ato da matrícula. São expressamente vedados:</p>
+              <ul>
+                <li>Compartilhamento do código de acesso com qualquer terceiro</li>
+                <li>Utilização do acesso de outro aluno, mesmo com consentimento</li>
+                <li>Tentativa de contornar ou burlar os mecanismos de autenticação</li>
+                <li>Acesso simultâneo ao mesmo código em múltiplos dispositivos</li>
+                <li>Engenharia reversa ou exploração de vulnerabilidades do sistema</li>
+              </ul>
+              <Notice type="warning">
+                O descumprimento resulta no cancelamento imediato e permanente do acesso, sem reembolso e sem prejuízo de medidas legais cabíveis.
+              </Notice>
+            </DocSection>
+
+            <DocSection number="3" title="Propriedade Intelectual e Uso do Conteúdo">
+              <p>Todo o conteúdo da plataforma WR-EDU — incluindo aulas gravadas, materiais didáticos, apostilas, apresentações, avaliações e design da plataforma — é protegido por <strong className="text-white">Lei de Direitos Autorais (Lei 9.610/98)</strong> e é propriedade exclusiva da WR-EDU e de seus colaboradores.</p>
+              <p>É expressamente proibido:</p>
+              <ul>
+                <li>Gravar, capturar tela ou reproduzir aulas em qualquer formato</li>
+                <li>Redistribuir materiais da plataforma em grupos, redes sociais ou outros meios</li>
+                <li>Utilizar o conteúdo para fins comerciais sem autorização formal por escrito</li>
+                <li>Criar materiais derivados sem crédito expresso e autorização da WR-EDU</li>
+              </ul>
+            </DocSection>
+
+            <DocSection number="4" title="Conduta e Convivência">
+              <p>A WR-EDU preza por um ambiente de aprendizado ético, respeitoso e profissional. Constituem violações graves:</p>
+              <ul>
+                <li>Assédio, discriminação ou desrespeito a colegas, professores ou staff</li>
+                <li>Publicação de conteúdo ofensivo, difamatório, racista ou ilegal em qualquer canal da plataforma</li>
+                <li>Desinformação intencional sobre a WR-EDU, seus cursos ou certificados</li>
+                <li>Comportamento que prejudique a experiência de outros alunos</li>
+                <li>Uso da plataforma para fins alheios ao aprendizado</li>
+              </ul>
+              <p>Violações resultam em advertência formal, suspensão temporária ou desligamento definitivo, a critério da coordenação.</p>
+            </DocSection>
+
+            <DocSection number="5" title="Mensalidades, Pagamentos e Cancelamentos">
+              <p>Os valores são definidos no contrato de matrícula. A WR-EDU adota a seguinte política financeira:</p>
+              <ul>
+                <li><strong className="text-white">Direito de arrependimento:</strong> cancelamento com reembolso integral em até 7 dias corridos após a matrícula (Lei 8.078/90 — CDC)</li>
+                <li><strong className="text-white">Após 7 dias:</strong> não há reembolso de mensalidades já pagas</li>
+                <li><strong className="text-white">Inadimplência até 30 dias:</strong> notificação e suspensão preventiva do acesso</li>
+                <li><strong className="text-white">Inadimplência acima de 60 dias:</strong> cancelamento definitivo da matrícula sem reabilitação do curso</li>
+                <li><strong className="text-white">Renegociação:</strong> sujeita à análise da coordenação financeira, sem garantia de aprovação</li>
+              </ul>
+            </DocSection>
+
+            <DocSection number="6" title="Limitação de Responsabilidade">
+              <p>A WR-EDU não se responsabiliza por:</p>
+              <ul>
+                <li>Resultados profissionais ou financeiros individuais após a formação</li>
+                <li>Uso inadequado das técnicas terapêuticas fora do contexto ético e supervisionado</li>
+                <li>Indisponibilidade temporária da plataforma por manutenção programada ou falhas técnicas externas</li>
+                <li>Perda de progresso causada por uso inadequado, limpeza de cache ou problemas no dispositivo do aluno</li>
+              </ul>
+            </DocSection>
+          </div>
+        )}
+
+        {/* ── PRIVACIDADE ── */}
+        {activeTab === 'privacidade' && (
+          <div className="space-y-1 animate-fade-in">
+            <DocSection number="1" title="Base Legal e Conformidade">
+              <p>Esta Política de Privacidade está em conformidade com a <strong className="text-white">Lei Geral de Proteção de Dados — LGPD (Lei 13.709/2018)</strong> e com o Código de Defesa do Consumidor (Lei 8.078/90).</p>
+              <p>A WR-EDU atua como <strong className="text-white">controladora dos dados</strong> dos alunos, sendo responsável por definir as finalidades e os meios de tratamento das informações coletadas durante a formação.</p>
+            </DocSection>
+
+            <DocSection number="2" title="Dados Coletados">
+              <p>Para prestação adequada dos serviços educacionais, coletamos:</p>
+              <ul>
+                <li><strong className="text-white">Identificação:</strong> nome completo, data de nascimento, e-mail, WhatsApp</li>
+                <li><strong className="text-white">Acesso:</strong> código de matrícula, registros de login, dispositivos utilizados</li>
+                <li><strong className="text-white">Acadêmicos:</strong> progresso em aulas, notas em tarefas e avaliações, participação em fórum e aulas ao vivo</li>
+                <li><strong className="text-white">Financeiros:</strong> histórico de mensalidades e status de pagamento (não armazenamos dados de cartão)</li>
+                <li><strong className="text-white">Comportamentais:</strong> tempo de acesso, conteúdos acessados e interações na plataforma</li>
+              </ul>
+            </DocSection>
+
+            <DocSection number="3" title="Finalidade do Tratamento">
+              <p>Os dados são utilizados exclusivamente para:</p>
+              <ul>
+                <li>Gerenciar matrícula, acesso e progresso acadêmico</li>
+                <li>Emitir certificados, históricos e boletins de desempenho</li>
+                <li>Enviar comunicados institucionais, avisos de aula e materiais didáticos</li>
+                <li>Calcular pontuação e participação no sistema gamificado da plataforma</li>
+                <li>Gerar análises agregadas para melhoria dos cursos</li>
+                <li>Cumprir obrigações legais e contratuais</li>
+              </ul>
+              <Notice type="info">
+                Jamais vendemos, alugamos ou compartilhamos seus dados pessoais com terceiros para fins comerciais ou publicitários.
+              </Notice>
+            </DocSection>
+
+            <DocSection number="4" title="Armazenamento e Segurança">
+              <p>Todos os dados são armazenados em infraestrutura cloud com:</p>
+              <ul>
+                <li>Criptografia em trânsito via <strong className="text-white">TLS/HTTPS</strong></li>
+                <li>Criptografia em repouso nos bancos de dados</li>
+                <li>Backups automáticos diários com retenção de 30 dias</li>
+                <li>Controle de acesso por perfil e autenticação em dois fatores para administradores</li>
+                <li>Monitoramento contínuo contra tentativas de acesso não autorizado</li>
+              </ul>
+            </DocSection>
+
+            <DocSection number="5" title="Seus Direitos como Titular">
+              <p>Em conformidade com a LGPD, você possui os seguintes direitos:</p>
+              <ul>
+                <li><strong className="text-white">Acesso:</strong> solicitar relatório completo dos seus dados armazenados</li>
+                <li><strong className="text-white">Correção:</strong> atualizar dados incorretos ou desatualizados</li>
+                <li><strong className="text-white">Exclusão:</strong> solicitar remoção dos dados após encerramento do vínculo</li>
+                <li><strong className="text-white">Portabilidade:</strong> receber seus dados em formato estruturado</li>
+                <li><strong className="text-white">Revogação:</strong> retirar o consentimento para usos específicos</li>
+                <li><strong className="text-white">Oposição:</strong> contestar tratamentos considerados inadequados</li>
+              </ul>
+              <p>Para exercer qualquer desses direitos, entre em contato com a coordenação via WhatsApp institucional ou e-mail.</p>
+            </DocSection>
+
+            <DocSection number="6" title="Retenção de Dados">
+              <p>Os dados acadêmicos são mantidos por <strong className="text-white">mínimo de 5 anos</strong> após a conclusão ou cancelamento do curso, para fins de emissão de históricos e certificados mediante solicitação.</p>
+              <p>Dados de acesso e logs de segurança são mantidos por <strong className="text-white">2 anos</strong>. Após os prazos de retenção, as informações são anonimizadas ou excluídas definitivamente.</p>
+            </DocSection>
+
+            <DocSection number="7" title="Cookies e Rastreamento">
+              <p>A plataforma WR-EDU utiliza apenas <strong className="text-white">cookies essenciais</strong> para manter a sessão ativa e garantir o funcionamento correto do sistema. Não utilizamos cookies de rastreamento publicitário, pixels de conversão ou tecnologias de fingerprinting.</p>
+              <p>A desativação de cookies no navegador pode comprometer funcionalidades da plataforma, como manutenção do login e progresso das aulas.</p>
+            </DocSection>
+
+            <DocSection number="8" title="Responsável pela Proteção de Dados">
+              <div className="bg-white/3 border border-white/8 rounded-xl p-5 mt-2">
+                <p className="text-white font-bold text-sm mb-1">WR-EDU — Instituto de Desenvolvimento Humano</p>
+                <p className="text-white/50 text-xs">Responsável (DPO): Prof. William Ribeiro</p>
+                <p className="text-white/50 text-xs">Curitiba — PR, Brasil</p>
+                <p className="text-white/30 text-xs mt-3 font-mono">Política vigente desde: Janeiro de 2026</p>
+              </div>
+            </DocSection>
+          </div>
+        )}
+
+        {/* Bottom nav */}
+        <div className="mt-14 pt-8 border-t border-white/6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 opacity-50">
+            <img src={LOGO_URL} alt="WR" className="w-6 h-6 object-contain" />
+            <span className="text-white/40 text-xs">WR-EDU © 2026 — Todos os direitos reservados</span>
+          </div>
+          <a href="/" className="text-[#5b5ef4] text-xs font-semibold hover:opacity-80 transition-opacity flex items-center gap-1">
+            Voltar ao site <ChevronRight size={12} />
           </a>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
 
-function Section({ title, icon: Icon, color = 'indigo', children }) {
-  const colors = {
-    indigo: 'from-[#5b5ef4]/20 to-[#5b5ef4]/10 text-[#5b5ef4]',
-    teal: 'from-[#1db89e]/20 to-[#1db89e]/10 text-[#1db89e]',
-    red: 'from-red-500/20 to-red-500/10 text-red-400',
-  };
+function DocSection({ number, title, children }) {
   return (
-    <div className="bg-white/3 border border-white/8 rounded-2xl p-7 hover:border-white/12 transition-all">
-      <div className="flex items-center gap-3 mb-5">
-        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${colors[color]} flex items-center justify-center shrink-0`}>
-          <Icon size={16} className={colors[color].split(' ').find(c => c.startsWith('text-'))} />
+    <div className="py-7 border-b border-white/6 last:border-0">
+      <div className="flex items-start gap-4">
+        <span className="text-[#5b5ef4]/40 font-mono text-xs font-bold mt-1 shrink-0 w-5">{number}.</span>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-white font-bold text-base mb-4">{title}</h2>
+          <div className="space-y-3 text-white/55 text-sm leading-relaxed [&_ul]:list-none [&_ul]:space-y-2 [&_ul>li]:flex [&_ul>li]:items-start [&_ul>li]:gap-2 [&_ul>li]:before:content-['—'] [&_ul>li]:before:text-[#5b5ef4]/40 [&_ul>li]:before:shrink-0 [&_ul>li]:before:text-xs [&_ul>li]:before:mt-0.5">
+            {children}
+          </div>
         </div>
-        <h2 className="text-white font-black text-lg">{title}</h2>
-      </div>
-      <div className="space-y-3 text-white/60 text-sm leading-relaxed">
-        {children}
       </div>
     </div>
   );
 }
 
-function AlertBox({ title, children }) {
+function Notice({ type, children }) {
+  const styles = {
+    info: { bg: 'bg-[#5b5ef4]/8 border-[#5b5ef4]/20', icon: '𝒊', iconColor: 'text-[#5b5ef4]' },
+    warning: { bg: 'bg-yellow-500/8 border-yellow-500/20', icon: '!', iconColor: 'text-yellow-400' },
+  };
+  const s = styles[type];
   return (
-    <div className="mt-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-      <p className="text-yellow-400 font-bold text-xs uppercase tracking-widest mb-2 flex items-center gap-1.5">
-        <AlertTriangle size={12} /> {title}
-      </p>
-      <div className="text-white/60 text-sm">
-        {children}
-      </div>
+    <div className={`mt-4 ${s.bg} border rounded-xl p-4 text-sm text-white/55 leading-relaxed`}>
+      {children}
     </div>
   );
 }
