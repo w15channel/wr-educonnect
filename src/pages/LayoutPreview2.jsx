@@ -423,11 +423,11 @@ export default function LandingPage({ onLogin }) {
               <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
             </div>
             <h2 className="text-4xl lg:text-5xl font-black text-white">Prof. William Ribeiro</h2>
-            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
+            <p className="text-white/50 mt-2 text-lg hidden">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
           </div>
 
           {/* Avatar + Bio */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16" style={{ alignItems: 'start' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16 hidden" style={{ alignItems: 'start' }}>
             <div className="lg:col-span-2">
               <div className="relative">
                 <div className="w-full rounded-3xl overflow-hidden aspect-square">
@@ -473,7 +473,7 @@ export default function LandingPage({ onLogin }) {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {CERTS.map((c, i) =>
-              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all">
+              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all hidden">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="w-7 h-7 rounded-full bg-[#1db89e]/15 flex items-center justify-center shrink-0 mt-0.5">
                       <CheckCircle size={13} className="text-[#1db89e]" />
@@ -515,12 +515,12 @@ export default function LandingPage({ onLogin }) {
 
           {/* Atuação Atual */}
           <div>
-            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
+            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2 hidden">
               <Sparkles size={13} className="text-yellow-400" /> Atuação Atual
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {CURRENT.map((item, i) =>
-              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#1db89e]/30 transition-all">
+              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#1db89e]/30 transition-all hidden">
                   <p className="text-white font-bold text-sm mb-2">{item.title}</p>
                   <p className="text-white/45 text-xs leading-relaxed mb-3">{item.desc}</p>
                   {item.link &&
