@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Send, Brain, Sparkles, RefreshCw, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Input } from '@/components/ui/input';
 
 const QUICK_ACTIONS = [
@@ -48,10 +49,12 @@ export default function TutorDigital() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
+  const { course: routeCourse } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('-created_date', 20),
+    queryKey: ['tasks-tutor', activeCourse],
+    queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 20),
   });
 
   const { data: submissions = [] } = useQuery({
@@ -61,8 +64,8 @@ export default function TutorDigital() {
   });
 
   const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions'],
-    queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 5),
+    queryKey: ['live-sessions-tutor', activeCourse],
+    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 5),
   });
 
   useEffect(() => {

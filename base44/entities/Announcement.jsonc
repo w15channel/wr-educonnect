@@ -19,6 +19,16 @@
       ],
       "default": "info",
       "description": "Type of announcement"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso ao qual o aviso pertence"
     }
   },
   "required": [

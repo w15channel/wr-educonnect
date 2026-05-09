@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { ptBR } from 'date-fns/locale';
 
 const EMPTY_FORM = { title: '', content: '', type: 'info' };
@@ -54,14 +55,18 @@ export default function Announcements() {
     const stored = localStorage.getItem('wr-edu-read-announcements');
     return stored ? JSON.parse(stored) : [];
   });
+  const { course: routeCourse } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
 
-  const { data: announcements = [] } = useQuery({
+  const { data: allAnnouncements = [] } = useQuery({
     queryKey: ['announcements-all'],
     queryFn: () => base44.entities.Announcement.list('-created_date', 100),
   });
 
+  const announcements = allAnnouncements.filter(a => a.course === activeCourse || (!a.course && activeCourse === 'tcc'));
+
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Announcement.create(data),
+    mutationFn: (data) => base44.entities.Announcement.create({ ...data, course: activeCourse }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['announcements-all'] });
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
@@ -92,7 +97,7 @@ export default function Announcements() {
   };
 
   const handleSave = () => {
-    if (editingItem) updateMutation.mutate({ id: editingItem.id, data: form });
+    if (editingItem) updateMutation.mutate({ id: editingItem.id, data: { ...form, course: activeCourse } });
     else createMutation.mutate(form);
   };
 

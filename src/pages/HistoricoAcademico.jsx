@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -200,21 +201,22 @@ export default function HistoricoAcademico() {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showDocument, setShowDocument] = useState(false);
 
-  const studentCourse = isTeacher ? null : (session?.course || 'tcc');
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
+  const studentCourse = activeCourse;
 
   const { data: codes = [] } = useQuery({ queryKey: ['access-codes'], queryFn: () => base44.entities.AccessCode.list('-created_date', 200) });
   const { data: lessons = [] } = useQuery({
-    queryKey: ['lessons', studentCourse || 'all'],
-    queryFn: () => isTeacher
-      ? base44.entities.RecordedLesson.list('order', 200)
-      : base44.entities.RecordedLesson.filter({ course: studentCourse }, 'order', 200),
+    queryKey: ['lessons', studentCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: studentCourse }, 'order', 200),
   });
-  const { data: liveSessions = [] } = useQuery({ queryKey: ['live-sessions'], queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 50) });
+  const { data: liveSessions = [] } = useQuery({
+    queryKey: ['live-sessions-historico', studentCourse],
+    queryFn: () => base44.entities.LiveSession.filter({ course: studentCourse }, '-scheduled_at', 50),
+  });
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks', studentCourse || 'all'],
-    queryFn: () => isTeacher
-      ? base44.entities.Task.list('-created_date', 200)
-      : base44.entities.Task.filter({ course: studentCourse }, '-created_date', 200),
+    queryKey: ['tasks', studentCourse],
+    queryFn: () => base44.entities.Task.filter({ course: studentCourse }, '-created_date', 200),
   });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
@@ -431,13 +433,10 @@ export default function HistoricoAcademico() {
   }
 
   // ── TEACHER: student list ────────────────────────────────────────────────
-  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
-  const activeCourse = session?.course;
-  const expectedPrefix = COURSE_PREFIX[activeCourse];
-
   const filtered = codes.filter(c => {
     if (activeCourse && c.course !== activeCourse) return false;
-    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
+    if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
+    if (courseEmails && !courseEmails.has(c.student_email || '')) return false;
     return !search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
       (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||

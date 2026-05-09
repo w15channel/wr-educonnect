@@ -102,12 +102,13 @@ export default function ClassChat() {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Per-course chat room
-  const userCourse = session?.course || 'tcc';
+  // Per-course chat room based on route (/tcc => EDU only)
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
+  const userCourse = routeCourse || session?.course || 'tcc';
   const CHAT_SESSION = `class_chat_${userCourse}`;
 
   const { data: messages = [] } = useQuery({
-    queryKey: ['class-chat'],
+    queryKey: ['class-chat', userCourse],
     queryFn: () => base44.entities.ChatMessage.filter({ session_id: CHAT_SESSION }, 'created_date', 200),
     refetchInterval: 3000,
   });
@@ -125,7 +126,7 @@ export default function ClassChat() {
   useEffect(() => {
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
       if (event.data?.session_id === CHAT_SESSION) {
-        queryClient.invalidateQueries({ queryKey: ['class-chat'] });
+        queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
       }
     });
     return unsub;
@@ -165,13 +166,11 @@ export default function ClassChat() {
     return acc;
   }, []);
 
-  // Filter by course using hook
-  const { emails: courseEmails } = useCourseFilteredEmails();
-
   // Students list for DM tab
   const otherStudents = codes
     .filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
-    .filter(c => courseEmails ? courseEmails.has(c.student_email) : !session?.course || c.course === session.course)
+    .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
+    .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse)
     .filter(c => {
       const name = (c.profile_name || c.student_name || c.student_email || '').toLowerCase();
       return name.includes(dmSearch.toLowerCase());

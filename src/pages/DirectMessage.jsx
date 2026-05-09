@@ -3,6 +3,7 @@ import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Send, ArrowLeft } from 'lucide-react';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 
 const DM_PREFIX = 'dm_';
 
@@ -31,6 +32,7 @@ export default function DirectMessage() {
   const queryClient = useQueryClient();
   const [text, setText] = useState('');
   const bottomRef = useRef(null);
+  const { emails: courseEmails, codePrefix } = useCourseFilteredEmails();
 
   const { data: codes = [] } = useQuery({
     queryKey: ['access-codes'],
@@ -71,6 +73,8 @@ export default function DirectMessage() {
   };
 
   const target = getTargetInfo();
+  const targetCode = codes.find(c => c.student_email === decodeURIComponent(targetEmail));
+  const canMessageTarget = targetCode && (!codePrefix || (targetCode.code || '').startsWith(codePrefix)) && (!courseEmails || courseEmails.has(targetCode.student_email));
 
   const sendMessage = async () => {
     if (!text.trim() || !sessionId) return;
@@ -89,6 +93,15 @@ export default function DirectMessage() {
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
+
+  if (!canMessageTarget) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        <button onClick={() => navigate(-1)} className="text-primary text-sm hover:underline mb-4">← Voltar</button>
+        <p>Este aluno não pertence à turma atual.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-[calc(100vh-32px)] max-w-2xl mx-auto">

@@ -2,12 +2,14 @@ import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Key } from 'lucide-react';
 import CodeManager from '@/components/admin/CodeManager';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 
 const COURSE_LABEL = { tcc: 'TCC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' };
 
 export default function Keys() {
   const { user: session } = useOutletContext() || {};
-  const activeCourse = session?.course || 'tcc';
+  const { course: routeCourse } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
   const label = COURSE_LABEL[activeCourse] || activeCourse;
 
   return (

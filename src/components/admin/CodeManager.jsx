@@ -22,8 +22,13 @@ export default function CodeManager({ course: lockedCourse }) {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
+  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
+  const lockedPrefix = lockedCourse ? COURSE_PREFIX[lockedCourse] : null;
   const codes = lockedCourse
-    ? allCodes.filter(c => c.course === lockedCourse || (lockedCourse === 'tcc' && !c.course))
+    ? allCodes.filter(c =>
+        (c.course === lockedCourse || (lockedCourse === 'tcc' && !c.course)) &&
+        (!lockedPrefix || (c.code || '').startsWith(lockedPrefix))
+      )
     : allCodes;
 
   const createMutation = useMutation({

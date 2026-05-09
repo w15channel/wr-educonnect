@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { MessageCircle, Trophy, Crown, Star, Search, Phone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { startOfWeek, format } from 'date-fns';
 
 function getBrTime() {
@@ -140,6 +141,8 @@ export default function Classe() {
   const { user: session } = useOutletContext();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
 
   const { data: codes = [], isLoading: loadingCodes } = useQuery({
     queryKey: ['access-codes'],
@@ -164,13 +167,17 @@ export default function Classe() {
   // Current week monitors
   const today = new Date();
   const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-  const currentMonitors = monitorHistory.filter(m => m.period_start === weekStart);
+  const currentMonitors = monitorHistory.filter(m =>
+    m.period_start === weekStart && (m.course === activeCourse || (!m.course && activeCourse === 'tcc'))
+  );
   const monitorEmails = new Set(currentMonitors.map(m => m.student_email));
 
-  // Filter emails by course for students
-  const courseEmailSet = session?.role === 'admin'
-    ? null
-    : new Set(codes.filter(c => c.course === session?.course && c.student_email).map(c => c.student_email));
+  // Filter emails by route course (/tcc => only EDU- students)
+  const courseEmailSet = courseEmails || new Set(
+    codes
+      .filter(c => c.course === activeCourse && c.student_email && (!codePrefix || (c.code || '').startsWith(codePrefix)))
+      .map(c => c.student_email)
+  );
 
   // Ranking filtrado por curso
   const rankMap = {};
@@ -194,7 +201,9 @@ export default function Classe() {
   // Active students filtered by same course as logged-in student
   const activeStudents = codes.filter(c =>
     c.is_active !== false &&
-    (session?.role === 'admin' || !session?.course || c.course === session.course)
+    c.student_email &&
+    (!codePrefix || (c.code || '').startsWith(codePrefix)) &&
+    (!courseEmailSet || courseEmailSet.has(c.student_email))
   );
 
   // Merge profile data
