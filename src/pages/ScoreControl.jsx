@@ -49,7 +49,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-score', email], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
   const { data: studentProfiles = [] } = useQuery({
     queryKey: ['student-profile-score', email],
-    queryFn: () => base44.entities.StudentProfile.filter({ student_email: email }, '-created_date', 1),
+    queryFn: () => base44.entities.StudentProfile.filter({ student_email: email, dashboard_course: activeCourse }, '-updated_date', 1),
   });
 
   const [activeSection, setActiveSection] = useState('lessons');
@@ -602,7 +602,7 @@ export default function ScoreControl() {
 
       for (const [index, item] of rankedStudents.entries()) {
         const code = item.code;
-        const existing = studentProfiles.find(p => p.student_email === code.student_email);
+        const existing = studentProfiles.find(p => p.student_email === code.student_email && p.dashboard_course === activeCourse);
         const data = {
           student_email: code.student_email,
           full_name: code.profile_name || code.student_name || code.student_email,
