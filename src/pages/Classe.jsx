@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { MessageCircle, Trophy, Crown, Star, Search, Phone } from 'lucide-react';
+import { MessageCircle, Trophy, Crown, Star, Search, Phone, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { startOfWeek, format } from 'date-fns';
@@ -37,7 +37,7 @@ function StudentAvatar({ name, photoUrl, avatarColor, avatarEmoji, size = 56 }) 
   );
 }
 
-function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, session, navigate }) {
+function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, session, navigate, onOpenDetails }) {
   const name = profile?.full_name || code?.profile_name || code?.student_name || code?.student_email || 'Aluno';
   const nickname = profile?.nickname || '';
   const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
@@ -64,7 +64,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
   };
 
   return (
-    <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-3 text-center shadow-sm hover:shadow-lg hover:border-white/20 transition-all duration-200">
+    <div role="button" tabIndex={0} onClick={() => onOpenDetails?.({ profile, code })} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenDetails?.({ profile, code }); }} className="relative w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-3 text-center shadow-sm hover:shadow-lg hover:border-white/20 transition-all duration-200 cursor-pointer">
       {/* Destaques/badges */}
       <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
         {isMonitor && (
@@ -137,10 +137,24 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
   );
 }
 
+
+
+function getAge(birthDate) {
+  if (!birthDate) return null;
+  const birth = new Date(`${birthDate}T12:00:00`);
+  if (Number.isNaN(birth.getTime())) return null;
+  const now = getBrTime();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age -= 1;
+  return age >= 0 ? age : null;
+}
+
 export default function Classe() {
   const { user: session } = useOutletContext();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
 
@@ -194,9 +208,8 @@ export default function Classe() {
   const rankPosition = {};
   rankingList.forEach(([email], idx) => { rankPosition[email] = idx + 1; });
 
-  // Top task scorer
-  const topTaskEntry = Object.entries(rankMap).sort((a, b) => b[1].taskTotal - a[1].taskTotal)[0];
-  const topTaskEmail = topTaskEntry?.[0];
+  // Maior pontuador da semana (1º lugar do ranking)
+  const weeklyTopEmail = rankingList[0]?.[0];
 
   // Active students filtered by same course as logged-in student
   const activeStudents = codes.filter(c =>
@@ -236,7 +249,7 @@ export default function Classe() {
       </div>
 
       {/* Destaques da semana */}
-      {(currentMonitors.length > 0 || topTaskEmail) && (
+      {(currentMonitors.length > 0 || weeklyTopEmail) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           {currentMonitors.length > 0 && (
             <div className="bg-yellow-500/5 backdrop-blur-md border border-yellow-400/20 rounded-2xl p-4 flex items-center gap-3">
@@ -253,19 +266,19 @@ export default function Classe() {
               </div>
             </div>
           )}
-          {topTaskEmail && (
+          {weeklyTopEmail && (
             <div className="bg-emerald-500/5 backdrop-blur-md border border-emerald-400/20 rounded-2xl p-4 flex items-center gap-3">
               <Star size={28} className="text-emerald-400 shrink-0" />
               <div>
-                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Maior Pontuador em Tarefas</p>
+                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Maior Pontuador da Semana</p>
                 <p className="text-sm font-bold text-foreground mt-0.5">
                   {(() => {
-                    const c = codes.find(c => c.student_email === topTaskEmail);
-                    const p = profiles.find(p => p.student_email === topTaskEmail);
-                    return p?.full_name || c?.profile_name || c?.student_name || topTaskEmail;
+                    const c = codes.find(c => c.student_email === weeklyTopEmail);
+                    const p = profiles.find(p => p.student_email === weeklyTopEmail);
+                    return p?.full_name || c?.profile_name || c?.student_name || weeklyTopEmail;
                   })()}
                 </p>
-                <p className="text-xs text-muted-foreground">{rankMap[topTaskEmail]?.taskTotal || 0} pontos em tarefas</p>
+                <p className="text-xs text-muted-foreground">1º lugar no ranking geral da turma</p>
               </div>
             </div>
           )}
@@ -304,7 +317,8 @@ export default function Classe() {
               rank={rankPosition[code.student_email]}
               isMonitor={monitorEmails.has(code.student_email)}
               monitorRank={currentMonitors.find(m => m.student_email === code.student_email)?.rank_position}
-              isTopTask={code.student_email === topTaskEmail}
+              isTopTask={code.student_email === weeklyTopEmail}
+              onOpenDetails={setSelectedStudent}
               session={session}
               navigate={navigate}
             />
@@ -313,6 +327,55 @@ export default function Classe() {
       )}
 
       <p className="text-center text-xs text-muted-foreground mt-6">{filtered.length} aluno{filtered.length !== 1 ? 's' : ''} na turma</p>
+
+      {selectedStudent && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-slate-950 border border-white/15 rounded-3xl p-5 relative" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setSelectedStudent(null)} className="absolute right-3 top-3 text-white/70 hover:text-white">
+              <X size={18} />
+            </button>
+            {(() => {
+              const code = selectedStudent.code;
+              const profile = selectedStudent.profile;
+              const name = profile?.full_name || code?.profile_name || code?.student_name || code?.student_email || 'Aluno';
+              const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
+              const avatarColor = profile?.avatar_color || code?.profile_avatar_color || '#5b5ef4';
+              const avatarEmoji = profile?.avatar_emoji || '';
+              const bio = profile?.bio || code?.profile_bio || '';
+              const nickname = profile?.nickname || '';
+              const age = getAge(profile?.birth_date);
+              return (
+                <div className="text-white">
+                  <div className="mx-auto w-fit mb-4">
+                    <StudentAvatar name={name} photoUrl={photoUrl} avatarColor={avatarColor} avatarEmoji={avatarEmoji} size={132} />
+                  </div>
+                  <h3 className="text-xl font-bold text-center">{name}</h3>
+                  {nickname && <p className="text-center text-sm text-white/70 mt-0.5">"{nickname}"</p>}
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                      <p className="text-white/60">Idade</p>
+                      <p className="font-semibold">{age !== null ? `${age} anos` : 'Não informado'}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                      <p className="text-white/60">Cor do perfil</p>
+                      <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full border border-white/30" style={{ backgroundColor: avatarColor }} /> <p className="font-semibold">{avatarColor}</p></div>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 col-span-2">
+                      <p className="text-white/60">Mini avatar escolhido</p>
+                      <p className="font-semibold text-base">{avatarEmoji || 'Não informado'}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 bg-white/5 border border-white/10 rounded-xl p-3">
+                    <p className="text-xs text-white/60 mb-1">Apresentação pessoal / descrição completa</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{bio || 'Este colega ainda não adicionou descrição no perfil.'}</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
