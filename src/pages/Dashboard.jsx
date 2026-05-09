@@ -177,12 +177,10 @@ export default function Dashboard() {
     return c.course === userCourse || (userCourse === 'tcc' && !c.course);
   }).length;
 
-  // Média do aluno por ScoreItems
+  // Total de pontos do aluno por ScoreItems verificados
   const myScoreItems = allScoreItems.filter(s => s.student_email === session?.email && s.verified);
   const myGrades = submissions.filter(s => s.grade !== undefined && s.grade !== null);
-  const avgGrade = myScoreItems.length > 0
-    ? (myScoreItems.reduce((sum, s) => sum + (s.score || 0), 0) / myScoreItems.length).toFixed(1)
-    : '—';
+  const totalPoints = myScoreItems.reduce((sum, s) => sum + (s.score || 0), 0);
 
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
@@ -306,12 +304,12 @@ export default function Dashboard() {
           subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Ir para Tarefas'}
         />
         <StatCard
-          title={isTeacher ? 'Alunos Ativos' : 'Sua Média'}
-          value={isTeacher ? studentCount : avgGrade}
-          icon={isTeacher ? Users : BarChart3}
-          iconBg={isTeacher ? 'bg-emerald-500' : 'bg-primary'}
-          to={isTeacher ? '/students' : '/tasks'}
-          subtitle={isTeacher ? 'Ver alunos' : 'Ver notas'}
+          title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}
+          value={isTeacher ? studentCount : totalPoints}
+          icon={isTeacher ? Users : Star}
+          iconBg={isTeacher ? 'bg-emerald-500' : 'bg-yellow-500'}
+          to={isTeacher ? '/students' : '/ranking'}
+          subtitle={isTeacher ? 'Ver alunos' : 'Ver ranking'}
         />
         <StatCard
           title={isTeacher ? 'Total de Aulas' : 'Aulas Assistidas'}
