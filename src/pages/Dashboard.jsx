@@ -118,7 +118,7 @@ export default function Dashboard() {
     await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
     setTimeout(() => {
       setImportingPoints(false);
-      toast.success('Pontuações do ScoreControl importadas!');
+      toast.success('Sequência exata do ScoreControl importada!');
     }, 600);
   };
 
@@ -194,8 +194,10 @@ export default function Dashboard() {
 
   // Total de pontos publicado pelo ScoreControl
   const publishedScoreMap = {};
+  const publishedRankMap = {};
   publishedScores.forEach(p => {
     if (p.student_email && typeof p.points === 'number') publishedScoreMap[p.student_email] = p.points;
+    if (p.student_email && typeof p.dashboard_rank === 'number' && (!p.dashboard_course || p.dashboard_course === userCourse)) publishedRankMap[p.student_email] = p.dashboard_rank;
   });
   const myGrades = submissions.filter(s => s.grade !== undefined && s.grade !== null);
   const totalPoints = publishedScoreMap[session?.email] || 0;
@@ -221,10 +223,12 @@ export default function Dashboard() {
   const ranking = courseCodes.map(c => ({
     email: c.student_email,
     total: scoreMap[c.student_email] || 0,
+    publishedRank: publishedRankMap[c.student_email] || Number.MAX_SAFE_INTEGER,
     count: participationMap[c.student_email] || 0,
     enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
     name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
   })).sort((a, b) => {
+    if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
     if (b.total !== a.total) return b.total - a.total;
     if (a.count > 0 || b.count > 0) {
       if (b.count !== a.count) return b.count - a.count;

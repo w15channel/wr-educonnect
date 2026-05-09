@@ -584,24 +584,31 @@ export default function ScoreControl() {
     mutationFn: async () => {
       const rankedStudents = filtered
         .map(code => {
-          const savedProfile = studentProfiles.find(p => p.student_email === code.student_email && typeof p.points === 'number');
-          const totalScore = savedProfile ? savedProfile.points : getCourseScoreTotal(code.student_email);
+          const hasPending = courseSubmissions.some(s =>
+            s.status === 'submitted' &&
+            s.student_email === code.student_email &&
+            !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
+          );
+          const totalScore = getCourseScoreTotal(code.student_email);
           const participations = getParticipationStats(code.student_email).count;
-          return { code, totalScore, participations };
+          return { code, hasPending, totalScore, participations };
         })
         .sort((a, b) => {
-          if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-          if (b.participations !== a.participations) return b.participations - a.participations;
-          return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
+          if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
+          if (sortBy === 'points') return b.totalScore - a.totalScore;
+          if (sortBy === 'participations') return b.participations - a.participations;
+          return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
         });
 
-      for (const item of rankedStudents) {
+      for (const [index, item] of rankedStudents.entries()) {
         const code = item.code;
         const existing = studentProfiles.find(p => p.student_email === code.student_email);
         const data = {
           student_email: code.student_email,
           full_name: code.profile_name || code.student_name || code.student_email,
           points: Number(item.totalScore.toFixed(1)),
+          dashboard_rank: index + 1,
+          dashboard_course: activeCourse,
         };
         if (existing) await base44.entities.StudentProfile.update(existing.id, data);
         else await base44.entities.StudentProfile.create(data);
