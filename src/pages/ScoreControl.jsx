@@ -81,7 +81,20 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
 
   const getScoreItem = (category, ref_id) => scoreItems.find(s => s.category === category && s.ref_id === ref_id);
 
-  const totalScore = scoreItems.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0);
+  const lessonIds = new Set(lessons.map(l => l.id));
+  const taskIds = new Set(tasks.map(t => t.id));
+  const liveSessionIds = new Set(liveSessions.map(l => l.id));
+  const forumPostIds = new Set(forumPosts.map(p => p.id));
+  const forumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
+  const totalScore = scoreItems
+    .filter(s => s.verified && (
+      (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
+      (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
+      ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
+      (s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id))) ||
+      s.category === 'therapist'
+    ))
+    .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
 
   const sections = [
     { key: 'lessons', label: 'Aulas', icon: BookOpen },
@@ -482,6 +495,18 @@ export default function ScoreControl() {
   const courseSubmissions = submissions.filter(s => allowedEmails.has(s.student_email) && taskIds.has(s.task_id));
   const pendingCount = courseSubmissions.filter(s => s.status === 'submitted' && !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length;
 
+  const courseForumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
+
+  const getCourseScoreTotal = (email) => scoreItems
+    .filter(s => s.student_email === email && s.verified && (
+      (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
+      (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
+      ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
+      (s.category === 'forum' && (forumPostIds.has(s.ref_id) || courseForumReplyIds.has(s.ref_id))) ||
+      s.category === 'therapist'
+    ))
+    .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+
   const getParticipationStats = (email) => {
     const lessonCount = lessonProgresses.filter(p => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched).length;
     const liveCount = attendances.filter(a => a.student_email === email && liveSessionIds.has(a.session_id)).length;
@@ -490,10 +515,7 @@ export default function ScoreControl() {
     const replyCount = forumReplies.filter(r => r.author_email === email && (!r.post_id || forumPostIds.has(r.post_id))).length;
     const monitorCount = monitorHistory.filter(m => m.student_email === email).length;
     const count = lessonCount + liveCount + taskCount + postCount + replyCount + monitorCount;
-    const monitorBonus = monitorHistory
-      .filter(m => m.student_email === email)
-      .reduce((sum, m) => sum + ({ 1: 0.5, 2: 0.3, 3: 0.2 }[m.rank_position] || 0), 0);
-    return { count, monitorBonus };
+    return { count };
   };
 
   return (
@@ -529,7 +551,7 @@ export default function ScoreControl() {
         </div>
         <div className="flex items-center gap-1 ml-auto">
           <ArrowUpDown size={13} className="text-muted-foreground" />
-          {[['alpha','A–Z'],['participations','Participações'],['pending','Pendências']].map(([val, label]) => (
+          {[['alpha','A–Z'],['points','Pontuação'],['participations','Participações'],['pending','Pendências']].map(([val, label]) => (
 
             <button key={val} onClick={() => setSortBy(val)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${sortBy === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
@@ -555,9 +577,8 @@ export default function ScoreControl() {
                 s.student_email === code.student_email &&
                 !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
               );
-              const studentScores = scoreItems.filter(s => s.student_email === code.student_email);
               const stats = getParticipationStats(code.student_email);
-              const total = studentScores.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0) + stats.monitorBonus;
+              const total = getCourseScoreTotal(code.student_email);
               const participations = stats.count;
               return { code, hasPending, total, participations };
             })
