@@ -478,14 +478,6 @@ export default function Dashboard() {
             {!monitorSelectMode ?
           <div className="flex flex-wrap items-center justify-end gap-2">
                 <button
-              onClick={handleImportScoreControlPoints}
-              disabled={importingPoints}
-              className="flex items-center gap-1.5 text-xs font-bold bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-xl hover:bg-primary/15 transition-colors disabled:opacity-50">
-              
-                  <RefreshCw size={12} className={importingPoints ? 'animate-spin' : ''} />
-                  {importingPoints ? 'Importando...' : 'Importar pontos'}
-                </button>
-                <button
               onClick={() => setMonitorSelectMode(true)}
               className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors">
               
@@ -513,11 +505,11 @@ export default function Dashboard() {
               Selecione até 3 alunos para serem os Monitores do período atual.
             </div>
         }
-          {rankingFull.length === 0 ?
+          {ranking.length === 0 ?
         <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p> :
 
-        <div className="space-y-2">
-              {rankingFull.map((r, i) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {ranking.map((r, i) => {
             const code = accessCodes.find((c) => c.student_email === r.email);
             const displayName = code?.profile_name || code?.student_name || r.email;
             const avatarColor = code?.profile_avatar_color || '#5b5ef4';
@@ -527,10 +519,10 @@ export default function Dashboard() {
               <div
                 key={r.email}
                 onClick={() => monitorSelectMode && toggleMonitorEmail(r.email)}
-                className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${
+                className={`relative flex flex-col items-center text-center gap-1.5 p-3 rounded-xl border transition-colors ${
                 monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''} ${
 
-                isSelected ? 'bg-yellow-100 border border-yellow-300' : 'hover:bg-secondary/50'}`
+                isSelected ? 'bg-yellow-100 border-yellow-300' : 'border-border hover:bg-secondary/50'}`
                 }>
                 
                     {monitorSelectMode &&
@@ -540,30 +532,23 @@ export default function Dashboard() {
                         {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
                 }
-                    <span className="text-sm w-7 text-center shrink-0">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground font-bold">#{i + 1}</span>}</span>
+                    <span className="absolute top-2 left-2 text-sm font-black">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground">#{i + 1}</span>}</span>
                     {photoUrl ?
-                <img src={photoUrl} alt={displayName} className="w-10 h-10 rounded-full object-cover shrink-0" /> :
+                <img src={photoUrl} alt={displayName} className="w-12 h-12 rounded-full object-cover shrink-0" /> :
 
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
                         {displayName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                       </div>
                 }
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-foreground truncate">{displayName}</span>
-                        {r.hasPending && <AlertTriangle size={14} className="text-red-500 shrink-0" />}
+                    <div className="w-full min-w-0">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="text-xs font-bold text-foreground truncate max-w-full">{displayName}</span>
+                        {r.hasPending && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{r.email || '—'}</p>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Participações">
-                        <BarChart3 size={11} className="text-blue-500" />
-                        <span className="text-xs font-bold text-blue-700">{r.count}</span>
-                      </div>
-                      <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
-                        <Star size={11} className="text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm font-black text-yellow-700">{Number(r.total || 0).toFixed(1)}</span>
-                      </div>
+                    <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-xl">
+                      <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                      <span className="text-xs font-black text-yellow-700">{Number(r.total || 0).toFixed(1)}</span>
                     </div>
                   </div>);
 
