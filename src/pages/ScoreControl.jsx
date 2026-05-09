@@ -112,14 +112,14 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
   const sendTotalMutation = useMutation({
     mutationFn: async () => {
       const profile = studentProfiles[0];
-      const data = { student_email: email, full_name: displayName, points: Number(totalScore.toFixed(1)) };
+      const data = { student_email: email, full_name: displayName, points: Number(totalScore.toFixed(1)), dashboard_course: activeCourse };
       if (profile) return base44.entities.StudentProfile.update(profile.id, data);
       return base44.entities.StudentProfile.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student-profile-score', email] });
       queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
-      toast.success('Pontuação enviada para o controle!');
+      toast.success('Pontuação enviada para o controle e Dashboard!');
     },
   });
 
@@ -181,7 +181,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
             onClick={() => sendTotalMutation.mutate()}
             disabled={sendTotalMutation.isPending}
           >
-            {sendTotalMutation.isPending ? 'Enviando...' : 'Enviar para controle de pontuação'}
+            {sendTotalMutation.isPending ? 'Enviando...' : 'Enviar para controle e Dashboard'}
           </Button>
         </div>
       </div>
