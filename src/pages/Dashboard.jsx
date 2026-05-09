@@ -197,8 +197,16 @@ export default function Dashboard() {
   const publishedScoreMap = {};
   const publishedRankMap = {};
   publishedScores.forEach((p) => {
-    if (p.student_email && typeof p.points === 'number') publishedScoreMap[p.student_email] = p.points;
-    if (p.student_email && typeof p.dashboard_rank === 'number' && (!p.dashboard_course || p.dashboard_course === userCourse)) publishedRankMap[p.student_email] = p.dashboard_rank;
+    const isSameCourse = !p.dashboard_course || p.dashboard_course === userCourse;
+    if (!isSameCourse || !p.student_email) return;
+
+    if (typeof p.points === 'number' && publishedScoreMap[p.student_email] === undefined) {
+      publishedScoreMap[p.student_email] = p.points;
+    }
+
+    if (typeof p.dashboard_rank === 'number' && publishedRankMap[p.student_email] === undefined) {
+      publishedRankMap[p.student_email] = p.dashboard_rank;
+    }
   });
   const myGrades = submissions.filter((s) => s.grade !== undefined && s.grade !== null);
   const totalPoints = publishedScoreMap[session?.email] || 0;
