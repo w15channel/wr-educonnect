@@ -62,10 +62,18 @@ export default function TerapeutaDaSemana() {
   const todayStr = format(today, 'yyyy-MM-dd');
   const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
 
-  // Filtro por curso: alunos veem apenas pareamentos da sua turma
-  const courseEmailSet = isTeacher ? null : new Set(
-    accessCodes.filter(c => c.course === session?.course && c.student_email).map(c => c.student_email)
-  );
+  // Filtro por curso: tanto alunos quanto admin veem apenas pareamentos da turma atual
+  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
+  const expectedPrefix = COURSE_PREFIX[session?.course];
+  const courseEmailSet = session?.course ? new Set(
+    accessCodes
+      .filter(c =>
+        c.course === session.course &&
+        c.student_email &&
+        (!expectedPrefix || (c.code || '').startsWith(expectedPrefix))
+      )
+      .map(c => c.student_email)
+  ) : null;
 
   const currentPairings = pairings.filter(p =>
     p.pairing_date >= periodStart &&
@@ -92,7 +100,12 @@ export default function TerapeutaDaSemana() {
   const handleGeneratePairings = async () => {
     await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
     const freshCodes = await base44.entities.AccessCode.list('-created_date', 200);
-    const activeStudents = freshCodes.filter(c => c.is_active && c.student_email);
+    const activeStudents = freshCodes.filter(c =>
+      c.is_active &&
+      c.student_email &&
+      c.course === session?.course &&
+      (!expectedPrefix || (c.code || '').startsWith(expectedPrefix))
+    );
     if (activeStudents.length < 2) {
       toast.error('São necessários pelo menos 2 alunos para criar pareamentos.');
       return;
