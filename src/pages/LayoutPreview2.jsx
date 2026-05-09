@@ -414,15 +414,15 @@ export default function LandingPage({ onLogin }) {
       </section>
 
       {/* SOBRE O PROFESSOR */}
-      <section id="professor" className="py-28 px-6 lg:px-20 bg-[#0a0d1a]">
-        <div className="max-w-6xl mx-auto">
+      <section id="professor" className="py-28 px-6 lg:px-20 bg-[#0a0d1a] hidden">
+        <div className="max-w-6xl mx-auto hidden">
               {/* Header */}
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-4">
               <Award size={13} className="text-[#5b5ef4]" />
               <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
             </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-white">Prof. William Ribeiro</h2>
+            <h2 className="text-4xl lg:text-5xl font-black text-white hidden">Prof. William Ribeiro</h2>
             <p className="text-white/50 mt-2 text-lg hidden">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
           </div>
 
