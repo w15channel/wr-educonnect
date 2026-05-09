@@ -134,7 +134,7 @@ export default function Notifications() {
               key={n.id}
               onClick={() => {
                 if (!n.is_read) markOneRead.mutate(n.id);
-                navigate(`${prefix}/scores`);
+                navigate(`${prefix}/scorecontrol`);
               }}
               className={`flex gap-3 p-4 rounded-2xl border cursor-pointer transition-all hover:shadow-md ${
                 !n.is_read
