@@ -3,6 +3,7 @@ import { useLocation, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
+import ScoreRow from '@/components/scores/ScoreRow';
 import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -47,8 +48,6 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items', email], queryFn: () => base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 500) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-score', email], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
 
-  const [scores, setScores] = useState({});
-  const [notes, setNotes] = useState({});
   const [activeSection, setActiveSection] = useState('lessons');
 
   const updateScoreMutation = useMutation({
@@ -121,58 +120,6 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
       .map(s => s.task_id)
   );
 
-  const ScoreRow = ({ category, ref_id, ref_title, max_score = 10, children }) => {
-    const item = getScoreItem(category, ref_id);
-    const key = `${category}_${ref_id}`;
-    const currentScore = scores[key] !== undefined ? scores[key] : (item?.score ?? '');
-    const currentNotes = notes[key] !== undefined ? notes[key] : (item?.notes ?? '');
-    const needsCorrection = (category === 'task' || category === 'quiz') && uncorrectedTaskIds.has(ref_id);
-
-    return (
-      <div className={`p-4 rounded-xl border transition-all ${needsCorrection ? 'border-red-300 bg-red-50/40' : item?.verified ? 'border-green-200 bg-green-50/30' : 'border-border bg-card'}`}>
-        <div className="flex items-start gap-3 mb-3">
-          <div className={`p-1.5 rounded-lg shrink-0 ${CATEGORY_CONFIG[category].color}`}>
-            {React.createElement(CATEGORY_CONFIG[category].icon, { size: 13 })}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="text-sm font-semibold text-foreground leading-snug">{ref_title}</p>
-              {needsCorrection && <AlertCircle size={13} className="text-red-500 shrink-0" />}
-            </div>
-            {children}
-          </div>
-          {item?.verified && <CheckCircle size={15} className="text-green-600 shrink-0 mt-0.5" />}
-        </div>
-        <div className="flex items-center gap-2 flex-wrap mt-2">
-          <Input
-            type="number"
-            min={0}
-            max={max_score}
-            step={0.1}
-            placeholder={`0–${max_score}`}
-            value={currentScore}
-            onChange={e => setScores(prev => ({ ...prev, [key]: e.target.value }))}
-            className="w-20 h-8 text-xs"
-          />
-          <span className="text-xs text-muted-foreground">/ {max_score}</span>
-          <Input
-            placeholder="Observação"
-            value={currentNotes}
-            onChange={e => setNotes(prev => ({ ...prev, [key]: e.target.value }))}
-            className="flex-1 h-8 text-xs min-w-[120px]"
-          />
-          <Button
-            size="sm"
-            className="h-8 text-xs px-3"
-            onClick={() => updateScoreMutation.mutate({ category, ref_id, ref_title, score: currentScore || 0, max_score, notes: currentNotes })}
-            disabled={updateScoreMutation.isPending}
-          >
-            {item?.verified ? 'Atualizar' : 'Verificar'}
-          </Button>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
@@ -212,7 +159,17 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
             {lessons.map(lesson => {
               const progress = progresses.find(p => p.lesson_id === lesson.id);
               return (
-                <ScoreRow key={lesson.id} category="lesson" ref_id={lesson.id} ref_title={lesson.title} max_score={10}>
+                <ScoreRow
+                  key={lesson.id}
+                  category="lesson"
+                  icon={CATEGORY_CONFIG.lesson.icon}
+                  refId={lesson.id}
+                  refTitle={lesson.title}
+                  maxScore={10}
+                  item={getScoreItem('lesson', lesson.id)}
+                  onSave={(data) => updateScoreMutation.mutate(data)}
+                  saving={updateScoreMutation.isPending}
+                >
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${progress?.watched ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                       {progress?.watched ? '✅ Marcada como assistida' : '⏳ Não assistida'}
@@ -242,7 +199,17 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
             {liveSessions.map(sess => {
               const att = attendances.find(a => a.session_id === sess.id);
               return (
-                <ScoreRow key={sess.id} category="live_attendance" ref_id={sess.id} ref_title={sess.title} max_score={5}>
+                <ScoreRow
+                  key={sess.id}
+                  category="live_attendance"
+                  icon={CATEGORY_CONFIG.live_attendance.icon}
+                  refId={sess.id}
+                  refTitle={sess.title}
+                  maxScore={5}
+                  item={getScoreItem('live_attendance', sess.id)}
+                  onSave={(data) => updateScoreMutation.mutate(data)}
+                  saving={updateScoreMutation.isPending}
+                >
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${att ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                       {att ? `✅ Presença confirmada — ${format(new Date(att.confirmed_at || att.created_date), 'dd/MM HH:mm')}` : '❌ Não confirmou presença'}
@@ -260,7 +227,18 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
             {tasks.map(task => {
               const sub = submissions.find(s => s.task_id === task.id);
               return (
-                <ScoreRow key={task.id} category={task.type === 'quiz' ? 'quiz' : 'task'} ref_id={task.id} ref_title={task.title} max_score={task.max_grade || 10}>
+                <ScoreRow
+                  key={task.id}
+                  category={task.type === 'quiz' ? 'quiz' : 'task'}
+                  icon={task.type === 'quiz' ? CATEGORY_CONFIG.quiz.icon : CATEGORY_CONFIG.task.icon}
+                  refId={task.id}
+                  refTitle={task.title}
+                  maxScore={task.max_grade || 10}
+                  item={getScoreItem(task.type === 'quiz' ? 'quiz' : 'task', task.id)}
+                  needsCorrection={uncorrectedTaskIds.has(task.id)}
+                  onSave={(data) => updateScoreMutation.mutate(data)}
+                  saving={updateScoreMutation.isPending}
+                >
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     <Badge variant="secondary" className="text-[10px]">{task.type === 'quiz' ? 'Prova' : 'Tarefa'}</Badge>
                     {sub ? (
@@ -309,14 +287,34 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
               <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação no fórum.</p>
             )}
             {forumPosts.map(post => (
-              <ScoreRow key={post.id} category="forum" ref_id={post.id} ref_title={`Pergunta no Fórum: ${post.content?.slice(0, 60)}...`} max_score={0.1}>
+              <ScoreRow
+                key={post.id}
+                category="forum"
+                icon={CATEGORY_CONFIG.forum.icon}
+                refId={post.id}
+                refTitle={`Pergunta no Fórum: ${post.content?.slice(0, 60)}...`}
+                maxScore={0.1}
+                item={getScoreItem('forum', post.id)}
+                onSave={(data) => updateScoreMutation.mutate(data)}
+                saving={updateScoreMutation.isPending}
+              >
                 <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">Publicação: </span>{post.content}
                 </div>
               </ScoreRow>
             ))}
             {forumReplies.map(reply => (
-              <ScoreRow key={reply.id} category="forum" ref_id={reply.id} ref_title="Resposta no Fórum" max_score={1}>
+              <ScoreRow
+                key={reply.id}
+                category="forum"
+                icon={CATEGORY_CONFIG.forum.icon}
+                refId={reply.id}
+                refTitle="Resposta no Fórum"
+                maxScore={1}
+                item={getScoreItem('forum', reply.id)}
+                onSave={(data) => updateScoreMutation.mutate(data)}
+                saving={updateScoreMutation.isPending}
+              >
                 <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">Resposta: </span>{reply.content}
                 </div>
@@ -337,7 +335,17 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
               const partnerScore = p.therapist_email === email ? p.therapist_score : p.patient_score;
               const comment = p.therapist_email === email ? p.therapist_comment : p.patient_comment;
               return (
-                <ScoreRow key={p.id} category="therapist" ref_id={p.id} ref_title={`Sessão ${i + 1} — ${role} de ${partner}`} max_score={10}>
+                <ScoreRow
+                  key={p.id}
+                  category="therapist"
+                  icon={CATEGORY_CONFIG.therapist.icon}
+                  refId={p.id}
+                  refTitle={`Sessão ${i + 1} — ${role} de ${partner}`}
+                  maxScore={10}
+                  item={getScoreItem('therapist', p.id)}
+                  onSave={(data) => updateScoreMutation.mutate(data)}
+                  saving={updateScoreMutation.isPending}
+                >
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${role === 'Terapeuta' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>{role}</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${submitted ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
