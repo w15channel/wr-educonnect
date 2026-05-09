@@ -425,7 +425,7 @@ export default function ScoreControl() {
   const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState(null);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('alpha');
+  const [sortBy, setSortBy] = useState('points');
   const [retroLoading, setRetroLoading] = useState(false);
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
@@ -653,14 +653,18 @@ export default function ScoreControl() {
               if (sortBy === 'participations') return b.participations - a.participations;
               return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
             })
-            .map(({ code, hasPending, totalScore, participations }) => {
+            .map(({ code, hasPending, totalScore, participations }, index) => {
               const displayName = code.profile_name || code.student_name || 'Sem nome';
+              const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
               return (
                 <div
                   key={code.id}
                   onClick={() => setSelectedCode(code)}
                   className={`bg-card rounded-2xl border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}
                 >
+                  <div className="w-7 text-center shrink-0">
+                    {medal || <span className="text-xs font-black text-muted-foreground">#{index + 1}</span>}
+                  </div>
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
                     style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}
