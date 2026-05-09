@@ -92,13 +92,7 @@ export default function TerapeutaDaSemana() {
   const handleGeneratePairings = async () => {
     await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
     const freshCodes = await base44.entities.AccessCode.list('-created_date', 200);
-    const coursePrefix = { tcc: 'EDU', psicanalise: 'PSI', sexologia: 'SEX' };
-    const prefix = coursePrefix[session?.course || 'tcc'] || 'EDU';
-    const activeStudents = freshCodes.filter(c => {
-      if (!c.is_active || !c.student_email) return false;
-      const codeStr = (c.code || '').toUpperCase();
-      return codeStr.startsWith(prefix) || c.course === (session?.course || 'tcc');
-    });
+    const activeStudents = freshCodes.filter(c => c.is_active && c.student_email);
     if (activeStudents.length < 2) {
       toast.error('São necessários pelo menos 2 alunos para criar pareamentos.');
       return;
