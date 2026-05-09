@@ -427,6 +427,8 @@ export default function ScoreControl() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('points');
   const [retroLoading, setRetroLoading] = useState(false);
+  const [draggedEmail, setDraggedEmail] = useState(null);
+  const [customOrder, setCustomOrder] = useState([]);
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
 
@@ -580,25 +582,33 @@ export default function ScoreControl() {
     return { count };
   };
 
+  const sortedRows = filtered
+    .map(code => {
+      const hasPending = courseSubmissions.some(s =>
+        s.status === 'submitted' &&
+        s.student_email === code.student_email &&
+        !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
+      );
+      const stats = getParticipationStats(code.student_email);
+      const savedProfile = studentProfiles.find(p => p.student_email === code.student_email && typeof p.points === 'number');
+      const totalScore = savedProfile ? savedProfile.points : getCourseScoreTotal(code.student_email);
+      const participations = stats.count;
+      return { code, hasPending, totalScore, participations };
+    })
+    .sort((a, b) => {
+      if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
+      if (sortBy === 'points') return b.totalScore - a.totalScore;
+      if (sortBy === 'participations') return b.participations - a.participations;
+      return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
+    });
+
+  useEffect(() => {
+    setCustomOrder(sortedRows);
+  }, [sortedRows.map((r) => r.code.student_email).join('|')]);
+
   const sendRankingToDashboardMutation = useMutation({
     mutationFn: async () => {
-      const rankedStudents = filtered
-        .map(code => {
-          const hasPending = courseSubmissions.some(s =>
-            s.status === 'submitted' &&
-            s.student_email === code.student_email &&
-            !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
-          );
-          const totalScore = getCourseScoreTotal(code.student_email);
-          const participations = getParticipationStats(code.student_email).count;
-          return { code, hasPending, totalScore, participations };
-        })
-        .sort((a, b) => {
-          if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
-          if (sortBy === 'points') return b.totalScore - a.totalScore;
-          if (sortBy === 'participations') return b.participations - a.participations;
-          return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
-        });
+      const rankedStudents = customOrder.length ? customOrder : sortedRows;
 
       for (const [index, item] of rankedStudents.entries()) {
         const code = item.code;
@@ -618,6 +628,28 @@ export default function ScoreControl() {
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
       toast.success(`${count} pontuações enviadas para a Dashboard!`);
+    },
+  });
+
+  const saveOrderMutation = useMutation({
+    mutationFn: async () => {
+      for (const [index, item] of customOrder.entries()) {
+        const code = item.code;
+        const existing = studentProfiles.find(p => p.student_email === code.student_email && p.dashboard_course === activeCourse);
+        const data = {
+          student_email: code.student_email,
+          full_name: code.profile_name || code.student_name || code.student_email,
+          points: Number(item.totalScore.toFixed(1)),
+          dashboard_rank: index + 1,
+          dashboard_course: activeCourse,
+        };
+        if (existing) await base44.entities.StudentProfile.update(existing.id, data);
+        else await base44.entities.StudentProfile.create(data);
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+      toast.success('Sequência salva com sucesso!');
     },
   });
 
@@ -673,6 +705,9 @@ export default function ScoreControl() {
               {label}
             </button>
           ))}
+          <Button size="sm" variant="outline" className="text-xs" onClick={() => saveOrderMutation.mutate()} disabled={saveOrderMutation.isPending || customOrder.length === 0}>
+            {saveOrderMutation.isPending ? 'Salvando...' : 'Salvar sequência'}
+          </Button>
         </div>
       </div>
 
@@ -685,31 +720,25 @@ export default function ScoreControl() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered
-            .map(code => {
-              const hasPending = courseSubmissions.some(s =>
-                s.status === 'submitted' &&
-                s.student_email === code.student_email &&
-                !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
-              );
-              const stats = getParticipationStats(code.student_email);
-              const savedProfile = studentProfiles.find(p => p.student_email === code.student_email && typeof p.points === 'number');
-              const totalScore = savedProfile ? savedProfile.points : getCourseScoreTotal(code.student_email);
-              const participations = stats.count;
-              return { code, hasPending, totalScore, participations };
-            })
-            .sort((a, b) => {
-              if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
-              if (sortBy === 'points') return b.totalScore - a.totalScore;
-              if (sortBy === 'participations') return b.participations - a.participations;
-              return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
-            })
-            .map(({ code, hasPending, totalScore, participations }, index) => {
+          {customOrder.map(({ code, hasPending, totalScore, participations }, index) => {
               const displayName = code.profile_name || code.student_name || 'Sem nome';
               const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
               return (
                 <div
                   key={code.id}
+                  draggable
+                  onDragStart={() => setDraggedEmail(code.student_email)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (!draggedEmail || draggedEmail === code.student_email) return;
+                    const from = customOrder.findIndex((x) => x.code.student_email === draggedEmail);
+                    const to = customOrder.findIndex((x) => x.code.student_email === code.student_email);
+                    if (from < 0 || to < 0) return;
+                    const next = [...customOrder];
+                    const [moved] = next.splice(from, 1);
+                    next.splice(to, 0, moved);
+                    setCustomOrder(next);
+                  }}
                   onClick={() => setSelectedCode(code)}
                   className={`bg-card rounded-2xl border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}
                 >
