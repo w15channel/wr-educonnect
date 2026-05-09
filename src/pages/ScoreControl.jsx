@@ -507,23 +507,35 @@ export default function ScoreControl() {
   const courseSubmissions = submissions.filter(s => allowedEmails.has(s.student_email) && taskIds.has(s.task_id));
   const pendingCount = courseSubmissions.filter(s => s.status === 'submitted' && !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length;
 
-  const courseForumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
-
   const coursePairingIds = new Set(
     therapistPairings
       .filter(p => (!courseEmails || courseEmails.size === 0) || (courseEmails.has(p.therapist_email || '') && courseEmails.has(p.patient_email || '')))
       .map(p => p.id)
   );
 
-  const getCourseScoreTotal = (email) => scoreItems
-    .filter(s => s.student_email === email && s.verified && (
-      (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
-      (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
-      ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
-      (s.category === 'forum' && (forumPostIds.has(s.ref_id) || courseForumReplyIds.has(s.ref_id))) ||
-      (s.category === 'therapist' && coursePairingIds.has(s.ref_id))
-    ))
-    .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+  const getCourseScoreTotal = (email) => {
+    const studentSpecificForumPosts = forumPosts.filter(
+      p => p.author_email === email && p.course === activeCourse
+    );
+    const studentForumPostIds = new Set(studentSpecificForumPosts.map(p => p.id));
+
+    const studentSpecificForumReplies = forumReplies.filter(r => r.author_email === email);
+    const studentForumReplyIds = new Set(
+      studentSpecificForumReplies
+        .filter(r => !r.post_id || studentForumPostIds.has(r.post_id))
+        .map(r => r.id)
+    );
+
+    return scoreItems
+      .filter(s => s.student_email === email && s.verified && (
+        (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
+        (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
+        ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
+        (s.category === 'forum' && (studentForumPostIds.has(s.ref_id) || studentForumReplyIds.has(s.ref_id))) ||
+        (s.category === 'therapist' && coursePairingIds.has(s.ref_id))
+      ))
+      .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+  };
 
   const getParticipationStats = (email) => {
     const lessonCount = lessonProgresses.filter(p => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched).length;
