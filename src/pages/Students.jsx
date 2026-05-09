@@ -20,8 +20,8 @@ export default function Students() {
   const [enrollNewCourse, setEnrollNewCourse] = useState('');
   const queryClient = useQueryClient();
 
-  const activeCourse = session?.course || 'tcc';
-  const { emails: courseEmails } = useCourseFilteredEmails();
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
 
   const { data: codes = [], isLoading: codesLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -71,6 +71,8 @@ export default function Students() {
       let created = 0;
       for (const code of codes) {
         if (!code.student_email || !code.is_active) continue;
+        if (codePrefix && !(code.code || '').startsWith(codePrefix)) continue;
+        if (courseEmails && !courseEmails.has(code.student_email)) continue;
         const email = code.student_email;
         const existingScores = scoreItems.filter(s => s.student_email === email);
         const toCreate = [];
@@ -145,6 +147,7 @@ export default function Students() {
   });
 
   const filtered = codes
+    .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
     .filter(c => courseEmails ? courseEmails.has(c.student_email || '') : true)
     .filter(c =>
       !search ||
