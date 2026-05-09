@@ -98,18 +98,18 @@ const COURSES = [
   tag: 'Mais Vendido',
   tagColor: '#5b5ef4',
   imgs: [
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/1d898387b_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/7a4725dbb_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/fa5959e53_generated_image.png',
-  ],
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/1d898387b_generated_image.png',
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/7a4725dbb_generated_image.png',
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/fa5959e53_generated_image.png'],
+
   highlights: [
-    'Técnicas cognitivo-comportamentais aplicadas',
-    'Prática clínica desde as primeiras semanas',
-    'Credenciamento internacional como terapeuta',
-    'Plataforma centralizada de conteúdos',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Ingresso em Setembro/2026',
-  ]
+  'Técnicas cognitivo-comportamentais aplicadas',
+  'Prática clínica desde as primeiras semanas',
+  'Credenciamento internacional como terapeuta',
+  'Plataforma centralizada de conteúdos',
+  'Aulas ao vivo todas as segundas-feiras',
+  'Ingresso em Setembro/2026']
+
 },
 {
   title: 'Psicanalista Freudiano',
@@ -119,18 +119,18 @@ const COURSES = [
   tag: 'Novo',
   tagColor: '#1db89e',
   imgs: [
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/f28c89ba7_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/919ebf5be_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/2ac899065_generated_image.png',
-  ],
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/f28c89ba7_generated_image.png',
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/919ebf5be_generated_image.png',
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/2ac899065_generated_image.png'],
+
   highlights: [
-    'Estudos de casos reais supervisionados',
-    'Profundidade do método psicanalítico freudiano',
-    'Credenciamento internacional como terapeuta',
-    'Plataforma centralizada de conteúdos',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Ingresso em Setembro/2026',
-  ]
+  'Estudos de casos reais supervisionados',
+  'Profundidade do método psicanalítico freudiano',
+  'Credenciamento internacional como terapeuta',
+  'Plataforma centralizada de conteúdos',
+  'Aulas ao vivo todas as segundas-feiras',
+  'Ingresso em Setembro/2026']
+
 },
 {
   title: 'Sexólogo(a)',
@@ -140,18 +140,18 @@ const COURSES = [
   tag: 'Novo',
   tagColor: '#a855f7',
   imgs: [
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/e9014c7ae_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/31339ba94_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/f2d68446f_generated_image.png',
-  ],
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/e9014c7ae_generated_image.png',
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/31339ba94_generated_image.png',
+  'https://media.base44.com/images/public/69f55577840a3c93cee191be/f2d68446f_generated_image.png'],
+
   highlights: [
-    'Estudos de casos reais em sexualidade',
-    '80h de conteúdo especializado e integrativo',
-    'Credenciamento internacional como terapeuta',
-    'Plataforma centralizada de conteúdos',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Ingresso em Setembro/2026',
-  ]
+  'Estudos de casos reais em sexualidade',
+  '80h de conteúdo especializado e integrativo',
+  'Credenciamento internacional como terapeuta',
+  'Plataforma centralizada de conteúdos',
+  'Aulas ao vivo todas as segundas-feiras',
+  'Ingresso em Setembro/2026']
+
 }];
 
 
@@ -168,7 +168,7 @@ export default function LandingPage({ onLogin }) {
   useEffect(() => {
     const intervals = COURSES.map((_, i) => {
       return setInterval(() => {
-        setCourseImgs(prev => prev.map((v, idx) => idx === i ? (v + 1) % COURSES[i].imgs.length : v));
+        setCourseImgs((prev) => prev.map((v, idx) => idx === i ? (v + 1) % COURSES[i].imgs.length : v));
       }, 4000 + i * 1500);
     });
     return () => intervals.forEach(clearInterval);
@@ -256,14 +256,14 @@ export default function LandingPage({ onLogin }) {
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
             {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
-            <a key={label} href={href} className="hover:text-white transition-colors">{label}</a>
+            <a key={label} href={href} className="hover:text-white transition-colors hidden">{label}</a>
             )}
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium transition-colors">
               <Lock size={13} /> Área do Aluno
             </button>
-            <a href="#cursos" className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hidden md:block animate-pulse hover:animate-none hover:opacity-90 transition-all shadow-lg shadow-[#5b5ef4]/40" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+            <a href="#cursos" className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hidden md:block animate-pulse hover:animate-none hover:opacity-90 transition-all shadow-lg shadow-[#5b5ef4]/40" style={{ animation: 'pulse-cta 2s ease-in-out infinite' }}>
               Inscreva-se
             </a>
             <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden text-white/60 hover:text-white">
@@ -279,7 +279,7 @@ export default function LandingPage({ onLogin }) {
             <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full text-center py-2 text-[#5b5ef4] font-semibold text-sm">
               Área do Aluno
             </button>
-            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-[#5b5ef4]/40" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-[#5b5ef4]/40" style={{ animation: 'pulse-cta 2s ease-in-out infinite' }}>
               Inscreva-se
             </a>
           </div>
@@ -297,21 +297,21 @@ export default function LandingPage({ onLogin }) {
         <div className="absolute inset-0 bg-[#080b14]/30" />
 
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto pt-24 lg:pt-32">
-          <h1 className="text-6xl lg:text-8xl font-black leading-[0.95] mb-8 tracking-tight">
+          <h1 className="text-6xl lg:text-8xl font-black leading-[0.95] mb-8 tracking-tight hidden">
             Transforme
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] via-[#a855f7] to-[#1db89e]">
               vidas
             </span>
             <span className="block text-4xl lg:text-5xl text-white/80 font-bold mt-2">através da cura.</span>
           </h1>
-          <p className="text-white/60 text-lg lg:text-xl leading-relaxed max-w-2xl mx-auto mb-12">
+          <p className="text-white/60 text-lg lg:text-xl leading-relaxed max-w-2xl mx-auto mb-12 hidden">
             Sua vocação merece o próximo passo. Nossa formação profissionalizante redefine o ensino da terapia ao integrar o acolhimento humanizado à prática terapêutica constante.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="#cursos" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
+            <a href="#cursos" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base hidden">
               Ver Nossos Cursos <ChevronRight size={18} />
             </a>
-            <a href="#professor" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base">
+            <a href="#professor" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base hidden">
               <Play size={15} className="fill-current" /> Sobre o Professor
             </a>
           </div>
@@ -427,7 +427,7 @@ export default function LandingPage({ onLogin }) {
           </div>
 
           {/* Avatar + Bio */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16" style={{alignItems:'start'}}>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16" style={{ alignItems: 'start' }}>
             <div className="lg:col-span-2">
               <div className="relative">
                 <div className="w-full rounded-3xl overflow-hidden aspect-square">
@@ -606,7 +606,7 @@ export default function LandingPage({ onLogin }) {
                     <div className="group relative">
                       <button
                       disabled
-                      className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white/50 bg-gradient-to-r from-[#5b5ef4]/20 to-[#1db89e]/20 border border-[#5b5ef4]/30 cursor-not-allowed flex items-center justify-center gap-2" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+                      className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white/50 bg-gradient-to-r from-[#5b5ef4]/20 to-[#1db89e]/20 border border-[#5b5ef4]/30 cursor-not-allowed flex items-center justify-center gap-2" style={{ animation: 'pulse-cta 2s ease-in-out infinite' }}>
                       
                         <Lock size={13} /> Quero Me Inscrever
                       </button>
@@ -662,7 +662,7 @@ export default function LandingPage({ onLogin }) {
           <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">Pronto para começar sua jornada?</h2>
           <p className="text-white/60 text-lg mb-10">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#cursos" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+            <a href="#cursos" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base" style={{ animation: 'pulse-cta 2s ease-in-out infinite' }}>
               Garantir Minha Vaga <ChevronRight size={18} />
             </a>
             <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/12 transition-all text-sm">
