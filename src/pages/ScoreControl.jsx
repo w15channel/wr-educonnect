@@ -354,8 +354,7 @@ export default function ScoreControl() {
   const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState(null);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('pending');
-  const [filterCourse, setFilterCourse] = useState('all');
+  const [sortBy, setSortBy] = useState('alpha');
   const [retroLoading, setRetroLoading] = useState(false);
 
   const { data: codes = [], isLoading } = useQuery({
@@ -401,15 +400,12 @@ export default function ScoreControl() {
 
   if (selectedCode) return <StudentScoreDetail code={selectedCode} onBack={() => setSelectedCode(null)} />;
 
-  const COURSE_LABELS = { all: 'Todos os Cursos', tcc: 'TCC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' };
-
   const filtered = codes.filter(c => {
     const matchSearch = !search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
       (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
       (c.student_email || '').toLowerCase().includes(search.toLowerCase());
-    const matchCourse = filterCourse === 'all' || c.course === filterCourse;
-    return matchSearch && matchCourse;
+    return matchSearch;
   });
 
   const pendingCount = submissions.filter(s => s.status === 'submitted' && !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length;
@@ -445,17 +441,10 @@ export default function ScoreControl() {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
         </div>
-        <div className="flex gap-1 flex-wrap">
-          {Object.entries(COURSE_LABELS).map(([val, label]) => (
-            <button key={val} onClick={() => setFilterCourse(val)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${filterCourse === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
         <div className="flex items-center gap-1 ml-auto">
           <ArrowUpDown size={13} className="text-muted-foreground" />
-          {[['alpha','A–Z'],['points','Pontos'],['participations','Participações'],['pending','Pendências']].map(([val, label]) => (
+          {[['alpha','A–Z'],['participations','Participações'],['pending','Pendências']].map(([val, label]) => (
+
             <button key={val} onClick={() => setSortBy(val)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${sortBy === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
               {label}
