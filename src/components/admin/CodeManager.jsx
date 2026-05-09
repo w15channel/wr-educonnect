@@ -76,6 +76,9 @@ export default function CodeManager() {
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       toast.success('Aluno e todos os dados excluídos.');
     },
+    onError: (err) => {
+      toast.error(`Erro ao excluir: ${err.message}`);
+    },
   });
 
   const updateEmailMutation = useMutation({
@@ -213,8 +216,8 @@ export default function CodeManager() {
                   >
                     {c.is_active ? <ToggleRight size={18} className="text-green-600" /> : <ToggleLeft size={18} />}
                   </button>
-                  <button onClick={() => { if (confirm(`Excluir "${c.student_name}" permanentemente? Todos os dados do aluno serão apagados.`)) deleteMutation.mutate(c); }} title="Excluir" className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-destructive transition-colors">
-                    <Trash2 size={15} />
+                  <button onClick={() => { if (confirm(`Excluir "${c.student_name}" permanentemente? Todos os dados do aluno serão apagados.`)) deleteMutation.mutate(c); }} title="Excluir" disabled={deleteMutation.isPending} className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Trash2 size={15} className={deleteMutation.isPending ? 'animate-spin' : ''} />
                   </button>
                 </div>
               </div>
