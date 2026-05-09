@@ -27,7 +27,6 @@ const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 export default function Calendar() {
   const { user: session } = useOutletContext();
   const isAdmin = session?.role === 'admin';
-  const userCourse = session?.course;
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
@@ -48,6 +47,7 @@ export default function Calendar() {
     enabled: !!userCourse || !isAdmin,
   });
 
+  const userCourse = session?.course;
   const { emails: courseEmails } = useCourseFilteredEmails();
 
   const { data: tasks = [] } = useQuery({
