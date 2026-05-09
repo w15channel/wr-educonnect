@@ -6,8 +6,6 @@ import {
   ExternalLink, Menu, X, Play, Sparkles, Palette
 } from 'lucide-react';
 
-const LOGO_WRTEC = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/e748afa8c_Capturadetela2026-05-08232955.png';
-
 const SERVICES = [
   { icon: Globe, color: '#5b5ef4', title: 'Plataformas Web', desc: 'Desenvolvemos plataformas web sob medida, escaláveis e de alto desempenho. Do MVP ao produto final, com tecnologia de ponta.' },
   { icon: Smartphone, color: '#1db89e', title: 'Apps Mobile', desc: 'Aplicativos nativos e híbridos para iOS e Android. Experiências fluidas que encantam seus usuários e impulsionam seu negócio.' },
@@ -65,12 +63,9 @@ export default function WRTec() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#060810]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img
-              src={LOGO_WRTEC}
-              alt="WR-TEC"
-              className="w-12 h-12 object-contain"
-              style={{ mixBlendMode: 'screen' }}
-            />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center">
+              <Code2 size={18} className="text-white" />
+            </div>
             <div>
               <span className="text-xl font-black tracking-tight">WR-TEC</span>
               <span className="text-[#5b5ef4] text-xs font-bold ml-1">®</span>
@@ -113,14 +108,6 @@ export default function WRTec() {
         <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-[#1db89e]/15 rounded-full blur-3xl" />
 
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-          <div className="flex justify-center mb-6">
-            <img
-              src={LOGO_WRTEC}
-              alt="WR-TEC Logo"
-              className="w-32 h-32 object-contain"
-              style={{ mixBlendMode: 'screen' }}
-            />
-          </div>
           <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/25 rounded-full px-5 py-2 mb-8">
             <Sparkles size={13} className="text-[#5b5ef4]" />
             <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Tecnologia que transforma negócios</span>
@@ -391,8 +378,8 @@ export default function WRTec() {
       <footer className="border-t border-white/8 py-10 px-6 lg:px-20 bg-[#060810]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center">
-              <img src={LOGO_WRTEC} alt="WR-TEC" className="w-10 h-10 object-contain" style={{ mixBlendMode: 'screen' }} />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center">
+              <Code2 size={15} className="text-white" />
             </div>
             <div>
               <p className="text-white font-black text-sm">WR-TEC®</p>

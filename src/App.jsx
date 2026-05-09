@@ -63,9 +63,6 @@ const AuthenticatedApp = () => {
     if (window.location.pathname === '/privacidade') {
       return <PoliticaDePrivacidade />;
     }
-    if (window.location.pathname === '/wr-tec') {
-      return <WRTec />;
-    }
     return <LandingPage onLogin={login} />;
   }
 
