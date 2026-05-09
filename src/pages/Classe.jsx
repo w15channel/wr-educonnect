@@ -167,10 +167,16 @@ export default function Classe() {
   const currentMonitors = monitorHistory.filter(m => m.period_start === weekStart);
   const monitorEmails = new Set(currentMonitors.map(m => m.student_email));
 
-  // Ranking geral por score
+  // Filter emails by course for students
+  const courseEmailSet = session?.role === 'admin'
+    ? null
+    : new Set(codes.filter(c => c.course === session?.course && c.student_email).map(c => c.student_email));
+
+  // Ranking filtrado por curso
   const rankMap = {};
   scoreItems.filter(s => s.verified).forEach(s => {
     if (!s.student_email) return;
+    if (courseEmailSet && !courseEmailSet.has(s.student_email)) return;
     if (!rankMap[s.student_email]) rankMap[s.student_email] = { total: 0, taskTotal: 0 };
     rankMap[s.student_email].total += (s.score || 0);
     if (s.category === 'task' || s.category === 'quiz') {

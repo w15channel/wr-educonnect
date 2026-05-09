@@ -43,9 +43,13 @@ export default function Calendar() {
     queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 50),
   });
 
+  const userCourse = session?.course;
+
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('-created_date', 100),
+    queryKey: ['tasks-calendar', isAdmin ? 'all' : userCourse],
+    queryFn: () => isAdmin
+      ? base44.entities.Task.list('-created_date', 200)
+      : base44.entities.Task.filter({ course: userCourse || 'tcc' }, '-created_date', 200),
   });
 
   const createMutation = useMutation({

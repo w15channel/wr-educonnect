@@ -55,8 +55,10 @@ export default function Dashboard() {
   };
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('-created_date', 50),
+    queryKey: ['tasks', isTeacher ? 'all' : userCourse],
+    queryFn: () => isTeacher
+      ? base44.entities.Task.list('-created_date', 200)
+      : base44.entities.Task.filter({ course: userCourse || 'tcc' }, '-created_date', 200),
   });
 
   const { data: submissions = [] } = useQuery({
@@ -84,8 +86,10 @@ export default function Dashboard() {
   });
 
   const { data: lessons = [] } = useQuery({
-    queryKey: ['lessons'],
-    queryFn: () => base44.entities.RecordedLesson.list('order', 100),
+    queryKey: ['lessons', isTeacher ? 'all' : userCourse],
+    queryFn: () => isTeacher
+      ? base44.entities.RecordedLesson.list('order', 200)
+      : base44.entities.RecordedLesson.filter({ course: userCourse || 'tcc' }, 'order', 200),
   });
 
   const { data: progresses = [] } = useQuery({

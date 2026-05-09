@@ -200,10 +200,22 @@ export default function HistoricoAcademico() {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showDocument, setShowDocument] = useState(false);
 
+  const studentCourse = isTeacher ? null : (session?.course || 'tcc');
+
   const { data: codes = [] } = useQuery({ queryKey: ['access-codes'], queryFn: () => base44.entities.AccessCode.list('-created_date', 200) });
-  const { data: lessons = [] } = useQuery({ queryKey: ['lessons'], queryFn: () => base44.entities.RecordedLesson.list('order', 100) });
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['lessons', studentCourse || 'all'],
+    queryFn: () => isTeacher
+      ? base44.entities.RecordedLesson.list('order', 200)
+      : base44.entities.RecordedLesson.filter({ course: studentCourse }, 'order', 200),
+  });
   const { data: liveSessions = [] } = useQuery({ queryKey: ['live-sessions'], queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 50) });
-  const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: () => base44.entities.Task.list('-created_date', 100) });
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', studentCourse || 'all'],
+    queryFn: () => isTeacher
+      ? base44.entities.Task.list('-created_date', 200)
+      : base44.entities.Task.filter({ course: studentCourse }, '-created_date', 200),
+  });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
 
