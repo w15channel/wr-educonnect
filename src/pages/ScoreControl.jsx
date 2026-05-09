@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
-import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, RefreshCw } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,7 @@ const CATEGORY_CONFIG = {
   therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' },
 };
 
-function StudentScoreDetail({ code, onBack, activeCourse }) {
+function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
   const queryClient = useQueryClient();
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || 'Sem nome';
@@ -92,7 +92,7 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
       (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
       ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
       (s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id))) ||
-      s.category === 'therapist'
+      (s.category === 'therapist' && myPairings.some(p => p.id === s.ref_id))
     ))
     .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
 
@@ -104,7 +104,14 @@ function StudentScoreDetail({ code, onBack, activeCourse }) {
     { key: 'therapist', label: 'Terapeutas', icon: Heart },
   ];
 
-  const myPairings = pairings.filter(p => p.therapist_email === email || p.patient_email === email);
+  const isPairingFromActiveCourse = (pairing) => {
+    if (!courseEmails || courseEmails.size === 0) return true;
+    return courseEmails.has(pairing.therapist_email || '') && courseEmails.has(pairing.patient_email || '');
+  };
+
+  const myPairings = pairings.filter(p =>
+    (p.therapist_email === email || p.patient_email === email) && isPairingFromActiveCourse(p)
+  );
 
   const sectionPending = {
     lessons: lessons.some(l => {
@@ -449,6 +456,11 @@ export default function ScoreControl() {
     queryFn: () => base44.entities.MonitorHistory.filter({ course: activeCourse }, '-period_start', 500),
   });
 
+  const { data: therapistPairings = [] } = useQuery({
+    queryKey: ['therapist-pairings-score-overview'],
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500),
+  });
+
   useEffect(() => {
     if (!location.search.includes('filter=pending')) return;
     if (selectedCode || codes.length === 0 || submissions.length === 0) return;
@@ -475,7 +487,7 @@ export default function ScoreControl() {
     }
   };
 
-  if (selectedCode) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} onBack={() => setSelectedCode(null)} />;
+  if (selectedCode) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} onBack={() => setSelectedCode(null)} />;
 
   const filtered = codes.filter(c => {
     if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
@@ -497,13 +509,19 @@ export default function ScoreControl() {
 
   const courseForumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
 
+  const coursePairingIds = new Set(
+    therapistPairings
+      .filter(p => (!courseEmails || courseEmails.size === 0) || (courseEmails.has(p.therapist_email || '') && courseEmails.has(p.patient_email || '')))
+      .map(p => p.id)
+  );
+
   const getCourseScoreTotal = (email) => scoreItems
     .filter(s => s.student_email === email && s.verified && (
       (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
       (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
       ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
       (s.category === 'forum' && (forumPostIds.has(s.ref_id) || courseForumReplyIds.has(s.ref_id))) ||
-      s.category === 'therapist'
+      (s.category === 'therapist' && coursePairingIds.has(s.ref_id))
     ))
     .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
 
