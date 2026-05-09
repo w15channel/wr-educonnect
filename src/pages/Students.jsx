@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Users, Search, Key, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +12,8 @@ import CodeManager from '@/components/admin/CodeManager';
 import { toast } from 'sonner';
 
 export default function Students() {
+  const { user: session } = useOutletContext();
+  const activeCourse = session?.course || 'tcc';
   const location = useLocation();
   const navigate = useNavigate();
   const defaultTab = location.search.includes('tab=codes') ? 'codes' : 'students';
@@ -108,12 +111,14 @@ export default function Students() {
   };
 
   const filtered = codes
-    .filter(c =>
-      !search ||
-      (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (c.student_email || '').toLowerCase().includes(search.toLowerCase()) ||
-      (c.profile_name || '').toLowerCase().includes(search.toLowerCase())
-    )
+    .filter(c => {
+      const matchCourse = c.course === activeCourse;
+      const matchSearch = !search ||
+        (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (c.student_email || '').toLowerCase().includes(search.toLowerCase()) ||
+        (c.profile_name || '').toLowerCase().includes(search.toLowerCase());
+      return matchCourse && matchSearch;
+    })
     .sort((a, b) => {
       if (sortBy === 'alpha') return (a.profile_name || a.student_name || '').localeCompare(b.profile_name || b.student_name || '');
       if (sortBy === 'alpha_desc') return (b.profile_name || b.student_name || '').localeCompare(a.profile_name || a.student_name || '');
