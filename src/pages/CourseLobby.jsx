@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
+import { setSession, getSession } from '@/lib/customAuth';
 import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
@@ -38,7 +39,7 @@ const COURSES = [
   },
 ];
 
-function CourseVideoCard({ course, isActive }) {
+function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect }) {
   const videoRef = useRef(null);
   const navigate = useNavigate();
   const Icon = course.icon;
@@ -113,7 +114,15 @@ function CourseVideoCard({ course, isActive }) {
         <p className="text-white/30 text-xs mb-3">{course.subtitle}</p>
         <p className={`text-sm leading-relaxed flex-1 mb-5 ${!isActive ? 'text-white/25' : 'text-white/55'}`}>{course.desc}</p>
 
-        {isActive ? (
+        {isAdmin ? (
+          <button
+            onClick={() => onAdminSelect(course.id)}
+            className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95"
+            style={{ background: `linear-gradient(135deg, ${course.color}, #1db89e)` }}
+          >
+            Gerenciar esta Turma <ChevronRight size={16} />
+          </button>
+        ) : isActive ? (
           <button
             onClick={() => navigate('/')}
             className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95"
@@ -136,22 +145,52 @@ function CourseVideoCard({ course, isActive }) {
 
 export default function CourseLobby() {
   const navigate = useNavigate();
-  const { session, logout, isAdmin } = useCustomAuth();
+  const { session, logout, login, isAdmin } = useCustomAuth();
   const userCourse = session?.course || 'tcc';
+
+  const handleAdminSelectCourse = (courseId) => {
+    const current = getSession();
+    setSession({ ...current, course: courseId });
+    login(); // refresh context
+    navigate('/');
+  };
 
   if (isAdmin) {
     return (
-      <div className="min-h-screen bg-[#080b14] text-white flex items-center justify-center px-6">
-        <div className="text-center">
-          <img src={LOGO_URL} alt="WR-EDU" className="w-20 h-20 object-contain mx-auto mb-6" />
-          <h1 className="text-3xl font-black mb-2">Bem-vindo, Professor!</h1>
-          <p className="text-white/50 mb-8">Acesse o painel administrativo da plataforma.</p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-lg hover:opacity-90 transition-all inline-flex items-center gap-2"
-          >
-            Entrar no Painel <ChevronRight size={18} />
-          </button>
+      <div className="min-h-screen bg-[#080b14] text-white">
+        <div className="border-b border-white/8 px-6 py-5">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={LOGO_URL} alt="WR-EDU" className="w-10 h-10 object-contain" />
+              <span className="font-black text-lg">WR-EDU</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <p className="text-sm font-semibold text-white">{session?.name}</p>
+              <button onClick={logout} className="text-white/40 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/8" title="Sair">
+                <LogOut size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-5xl mx-auto px-6 py-14">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-5">
+              <GraduationCap size={13} className="text-[#5b5ef4]" />
+              <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Painel do Professor</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-black text-white mb-3">
+              Escolha a{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">Turma</span>
+            </h1>
+            <p className="text-white/50 max-w-md mx-auto text-base">
+              Selecione o curso que deseja gerenciar. Cada turma tem seu painel isolado.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {COURSES.map((c) => (
+              <CourseVideoCard key={c.id} course={c} isActive={true} isAdmin={true} onAdminSelect={handleAdminSelectCourse} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -203,7 +242,7 @@ export default function CourseLobby() {
         {/* Course Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {COURSES.map((c) => (
-            <CourseVideoCard key={c.id} course={c} isActive={userCourse === c.id} />
+            <CourseVideoCard key={c.id} course={c} isActive={userCourse === c.id} isAdmin={false} onAdminSelect={() => {}} />
           ))}
         </div>
 

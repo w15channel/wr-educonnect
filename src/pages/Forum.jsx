@@ -33,13 +33,11 @@ export default function Forum() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
-  const userCourse = isTeacher ? null : (session?.course || 'tcc');
+  const userCourse = session?.course || 'tcc';
 
   const { data: posts = [] } = useQuery({
     queryKey: ['forum-posts', userCourse],
-    queryFn: () => isTeacher
-      ? base44.entities.ForumPost.list('-created_date', 100)
-      : base44.entities.ForumPost.filter({ course: userCourse }, '-created_date', 100),
+    queryFn: () => base44.entities.ForumPost.filter({ course: userCourse }, '-created_date', 100),
   });
 
   const { data: replies = [] } = useQuery({

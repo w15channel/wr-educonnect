@@ -36,10 +36,10 @@ export default function Lessons() {
   const userCourse = session?.course || 'tcc';
 
   const { data: lessons = [], isLoading } = useQuery({
-    queryKey: ['lessons', isTeacher ? 'all' : userCourse],
-    queryFn: () => isTeacher
-      ? base44.entities.RecordedLesson.list('order', 100)
-      : base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 100),
+    queryKey: ['lessons', userCourse || 'all'],
+    queryFn: () => userCourse
+      ? base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 200)
+      : base44.entities.RecordedLesson.list('order', 200),
   });
 
   const { data: progresses = [] } = useQuery({

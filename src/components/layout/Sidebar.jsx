@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { setSession, getSession } from '@/lib/customAuth';
 import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
@@ -89,10 +90,13 @@ const studentGroups = [
   },
 ];
 
+const COURSE_LABELS = { tcc: '🧠 TCC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
+
 export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { logout } = useCustomAuth();
+  const { logout, login } = useCustomAuth();
 
   const isOpen = mobileOpenProp !== undefined ? mobileOpenProp : mobileOpen;
   const handleClose = () => {
@@ -100,6 +104,16 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     else setMobileOpen(false);
   };
   const isAdmin = session?.role === 'admin';
+  const activeCourse = session?.course;
+
+  const handleChangeCourse = () => {
+    // Keep session but clear course so lobby shows again
+    const current = getSession();
+    setSession({ ...current, course: null });
+    login();
+    navigate('/lobby');
+    handleClose();
+  };
 
   const initials = session?.name
     ? session.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
@@ -187,6 +201,24 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               <NotificationsBell session={session} />
             </div>
             <span className="text-xs text-white/40 font-medium">Notificações</span>
+          </div>
+        )}
+
+        {/* Course badge for admin */}
+        {isAdmin && activeCourse && (
+          <div className="px-3 py-2 border-t border-white/8">
+            <div className="flex items-center justify-between bg-white/6 rounded-xl px-3 py-2">
+              <div>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest">Turma ativa</p>
+                <p className="text-xs font-bold text-white/80">{COURSE_LABELS[activeCourse] || activeCourse}</p>
+              </div>
+              <button
+                onClick={handleChangeCourse}
+                className="text-[10px] text-primary font-semibold hover:text-accent transition-colors underline"
+              >
+                Trocar
+              </button>
+            </div>
           </div>
         )}
 

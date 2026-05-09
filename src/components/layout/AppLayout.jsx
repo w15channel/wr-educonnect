@@ -27,9 +27,9 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Guard: students without a course set go back to lobby
+  // Guard: students AND admins without a course go to lobby
   useEffect(() => {
-    if (session?.role === 'student' && !session?.course) {
+    if (session && !session?.course) {
       navigate('/lobby');
     }
   }, [session, navigate]);

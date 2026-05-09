@@ -240,8 +240,8 @@ export default function LandingPage({ onLogin }) {
       setLoading(false);
       return;
     }
-    setSession({ role: 'admin', name: 'Professor', email: cred.email });
-    onLogin();
+    setSession({ role: 'admin', name: 'Professor', email: cred.email, course: null });
+    onLogin('lobby');
     setLoading(false);
   };
 

@@ -34,10 +34,10 @@ export default function Tasks() {
   const [commentInputs, setCommentInputs] = useState({});
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks', isTeacher ? 'all' : userCourse],
-    queryFn: () => isTeacher
-      ? base44.entities.Task.list('-created_date', 200)
-      : base44.entities.Task.filter({ course: userCourse }, '-created_date', 200),
+    queryKey: ['tasks', userCourse || 'all'],
+    queryFn: () => userCourse
+      ? base44.entities.Task.filter({ course: userCourse }, '-created_date', 200)
+      : base44.entities.Task.list('-created_date', 200),
   });
 
   const { data: submissions = [] } = useQuery({
