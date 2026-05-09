@@ -19,18 +19,30 @@ const CATEGORY_CONFIG = {
   therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' },
 };
 
-function StudentScoreDetail({ code, onBack }) {
+function StudentScoreDetail({ code, onBack, activeCourse }) {
   const queryClient = useQueryClient();
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || 'Sem nome';
 
-  const { data: lessons = [] } = useQuery({ queryKey: ['lessons'], queryFn: () => base44.entities.RecordedLesson.list('order', 100) });
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['lessons-score-detail', activeCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 100),
+  });
   const { data: progresses = [] } = useQuery({ queryKey: ['lesson-progress', email], queryFn: () => base44.entities.LessonProgress.filter({ student_email: email }, '-created_date', 200) });
-  const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: () => base44.entities.Task.list('-created_date', 100) });
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks-score-detail', activeCourse],
+    queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 100),
+  });
   const { data: submissions = [] } = useQuery({ queryKey: ['submissions-student', email], queryFn: () => base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 200) });
   const { data: attendances = [] } = useQuery({ queryKey: ['attendances', email], queryFn: () => base44.entities.LiveAttendance.filter({ student_email: email }, '-created_date', 100) });
-  const { data: liveSessions = [] } = useQuery({ queryKey: ['live-sessions'], queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 50) });
-  const { data: forumPosts = [] } = useQuery({ queryKey: ['forum-posts', email], queryFn: () => base44.entities.ForumPost.filter({ author_email: email }, '-created_date', 100) });
+  const { data: liveSessions = [] } = useQuery({
+    queryKey: ['live-sessions-score-detail', activeCourse],
+    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 50),
+  });
+  const { data: forumPosts = [] } = useQuery({
+    queryKey: ['forum-posts-score-detail', email, activeCourse],
+    queryFn: () => base44.entities.ForumPost.filter({ author_email: email, course: activeCourse }, '-created_date', 100),
+  });
   const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies', email], queryFn: () => base44.entities.ForumReply.filter({ author_email: email }, '-created_date', 100) });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items', email], queryFn: () => base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 500) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-score', email], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
@@ -358,7 +370,8 @@ export default function ScoreControl() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('alpha');
   const [retroLoading, setRetroLoading] = useState(false);
-  const { emails: courseEmails } = useCourseFilteredEmails();
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -372,7 +385,47 @@ export default function ScoreControl() {
 
   const { data: submissions = [] } = useQuery({
     queryKey: ['all-submissions'],
-    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 500),
+    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 1000),
+  });
+
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['lessons-score-overview', activeCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 500),
+  });
+
+  const { data: lessonProgresses = [] } = useQuery({
+    queryKey: ['lesson-progress-score-overview'],
+    queryFn: () => base44.entities.LessonProgress.list('-created_date', 3000),
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks-score-overview', activeCourse],
+    queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 500),
+  });
+
+  const { data: liveSessions = [] } = useQuery({
+    queryKey: ['live-sessions-score-overview', activeCourse],
+    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 500),
+  });
+
+  const { data: attendances = [] } = useQuery({
+    queryKey: ['live-attendances-score-overview'],
+    queryFn: () => base44.entities.LiveAttendance.list('-created_date', 3000),
+  });
+
+  const { data: forumPosts = [] } = useQuery({
+    queryKey: ['forum-posts-score-overview', activeCourse],
+    queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 2000),
+  });
+
+  const { data: forumReplies = [] } = useQuery({
+    queryKey: ['forum-replies-score-overview'],
+    queryFn: () => base44.entities.ForumReply.list('-created_date', 3000),
+  });
+
+  const { data: monitorHistory = [] } = useQuery({
+    queryKey: ['monitor-history-score-overview', activeCourse],
+    queryFn: () => base44.entities.MonitorHistory.filter({ course: activeCourse }, '-period_start', 500),
   });
 
   useEffect(() => {
@@ -401,9 +454,10 @@ export default function ScoreControl() {
     }
   };
 
-  if (selectedCode) return <StudentScoreDetail code={selectedCode} onBack={() => setSelectedCode(null)} />;
+  if (selectedCode) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} onBack={() => setSelectedCode(null)} />;
 
   const filtered = codes.filter(c => {
+    if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
     if (courseEmails && !courseEmails.has(c.student_email || '')) return false;
     const matchSearch = !search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -412,7 +466,27 @@ export default function ScoreControl() {
     return matchSearch;
   });
 
-  const pendingCount = submissions.filter(s => s.status === 'submitted' && !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length;
+  const lessonIds = new Set(lessons.map(l => l.id));
+  const taskIds = new Set(tasks.map(t => t.id));
+  const liveSessionIds = new Set(liveSessions.map(l => l.id));
+  const forumPostIds = new Set(forumPosts.map(p => p.id));
+  const allowedEmails = new Set(filtered.map(c => c.student_email).filter(Boolean));
+  const courseSubmissions = submissions.filter(s => allowedEmails.has(s.student_email) && taskIds.has(s.task_id));
+  const pendingCount = courseSubmissions.filter(s => s.status === 'submitted' && !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length;
+
+  const getParticipationStats = (email) => {
+    const lessonCount = lessonProgresses.filter(p => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched).length;
+    const liveCount = attendances.filter(a => a.student_email === email && liveSessionIds.has(a.session_id)).length;
+    const taskCount = submissions.filter(s => s.student_email === email && taskIds.has(s.task_id)).length;
+    const postCount = forumPosts.filter(p => p.author_email === email).length;
+    const replyCount = forumReplies.filter(r => r.author_email === email && (!r.post_id || forumPostIds.has(r.post_id))).length;
+    const monitorCount = monitorHistory.filter(m => m.student_email === email).length;
+    const count = lessonCount + liveCount + taskCount + postCount + replyCount + monitorCount;
+    const monitorBonus = monitorHistory
+      .filter(m => m.student_email === email)
+      .reduce((sum, m) => sum + ({ 1: 0.5, 2: 0.3, 3: 0.2 }[m.rank_position] || 0), 0);
+    return { count, monitorBonus };
+  };
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
@@ -468,14 +542,15 @@ export default function ScoreControl() {
         <div className="space-y-2">
           {filtered
             .map(code => {
-              const hasPending = submissions.some(s =>
+              const hasPending = courseSubmissions.some(s =>
                 s.status === 'submitted' &&
                 s.student_email === code.student_email &&
                 !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
               );
               const studentScores = scoreItems.filter(s => s.student_email === code.student_email);
-              const total = studentScores.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0);
-              const participations = studentScores.length;
+              const stats = getParticipationStats(code.student_email);
+              const total = studentScores.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0) + stats.monitorBonus;
+              const participations = stats.count;
               return { code, hasPending, total, participations };
             })
             .sort((a, b) => {
@@ -506,7 +581,7 @@ export default function ScoreControl() {
                     <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Participações">
+                    <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Aulas assistidas + lives + entregas + fórum + monitoria">
                       <Activity size={11} className="text-blue-500" />
                       <span className="text-xs font-bold text-blue-700">{participations}</span>
                     </div>
