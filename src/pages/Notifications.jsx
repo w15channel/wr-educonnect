@@ -16,19 +16,51 @@ function useScopedPrefix() {
   return '';
 }
 
+function useCourseSlug() {
+  const location = useLocation();
+  const parts = location.pathname.split('/').filter(Boolean);
+  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return parts[1];
+  return null;
+}
+
+const SLUG_TO_PREFIX = { sex: 'SEX-', tcc: 'EDU-', psi: 'PSI-' };
+
 export default function Notifications() {
   const { user: session } = useOutletContext() || {};
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const prefix = useScopedPrefix();
+  const courseSlug = useCourseSlug();
+  const codePrefix = courseSlug ? SLUG_TO_PREFIX[courseSlug] : null;
   const isAdmin = session?.role === 'admin';
 
-  const { data: notifications = [] } = useQuery({
+  const { data: allNotifications = [] } = useQuery({
     queryKey: ['notifications-admin'],
-    queryFn: () => base44.entities.Notification.filter({ recipient_email: 'admin' }, '-created_date', 100),
+    queryFn: () => base44.entities.Notification.filter({ recipient_email: 'admin' }, '-created_date', 200),
     enabled: isAdmin,
     refetchInterval: 15000,
   });
+
+  const { data: accessCodes = [] } = useQuery({
+    queryKey: ['access-codes-notif'],
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 500),
+    enabled: isAdmin,
+  });
+
+  // Build set of emails that belong to the current course (by code prefix)
+  const courseEmails = React.useMemo(() => {
+    if (!codePrefix) return null;
+    const set = new Set();
+    accessCodes.forEach(c => {
+      if ((c.code || '').startsWith(codePrefix) && c.student_email) set.add(c.student_email);
+    });
+    return set;
+  }, [accessCodes, codePrefix]);
+
+  const notifications = React.useMemo(() => {
+    if (!courseEmails) return allNotifications;
+    return allNotifications.filter(n => n.sender_email && courseEmails.has(n.sender_email));
+  }, [allNotifications, courseEmails]);
 
   const unread = notifications.filter(n => !n.is_read);
 
