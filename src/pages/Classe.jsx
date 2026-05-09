@@ -52,7 +52,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
 
   const handleDM = (e) => {
     e.stopPropagation();
-    if (email && !isMe) navigate(`/dm/${encodeURIComponent(email)}`);
+    if (email && !isMe) navigate(`../dm/${encodeURIComponent(email)}`);
   };
 
   const handleWhatsapp = (e) => {
@@ -330,7 +330,7 @@ export default function Classe() {
 
       {selectedStudent && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-slate-950 border border-white/15 rounded-3xl p-5 relative" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-white/15 rounded-3xl p-5 relative" style={{ backgroundColor: (selectedStudent?.profile?.avatar_color || selectedStudent?.code?.profile_avatar_color || '#0f172a') }} onClick={(e) => e.stopPropagation()}>
             <button type="button" onClick={() => setSelectedStudent(null)} className="absolute right-3 top-3 text-white/70 hover:text-white">
               <X size={18} />
             </button>
@@ -344,6 +344,7 @@ export default function Classe() {
               const bio = profile?.bio || code?.profile_bio || '';
               const nickname = profile?.nickname || '';
               const age = getAge(profile?.birth_date);
+              const whatsapp = profile?.whatsapp || '';
               return (
                 <div className="text-white">
                   <div className="mx-auto w-fit mb-4">
@@ -357,12 +358,8 @@ export default function Classe() {
                       <p className="font-semibold">{age !== null ? `${age} anos` : 'Não informado'}</p>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-                      <p className="text-white/60">Cor do perfil</p>
-                      <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full border border-white/30" style={{ backgroundColor: avatarColor }} /> <p className="font-semibold">{avatarColor}</p></div>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 col-span-2">
-                      <p className="text-white/60">Mini avatar escolhido</p>
-                      <p className="font-semibold text-base">{avatarEmoji || 'Não informado'}</p>
+                      <p className="text-white/60">WhatsApp</p>
+                      <p className="font-semibold">{whatsapp || 'Não informado'}</p>
                     </div>
                   </div>
                   <div className="mt-4 bg-white/5 border border-white/10 rounded-xl p-3">

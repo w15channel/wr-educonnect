@@ -94,7 +94,7 @@ export default function StudentDetail() {
             <Button
               size="sm"
               className="gap-1.5 text-xs shrink-0"
-              onClick={() => navigate(`/dm/${encodeURIComponent(code.student_email)}`)}
+              onClick={() => navigate(`../dm/${encodeURIComponent(code.student_email)}`)}
             >
               <MessageCircle size={13} /> Mensagem
             </Button>

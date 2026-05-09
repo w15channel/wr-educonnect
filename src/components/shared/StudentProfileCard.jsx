@@ -110,7 +110,7 @@ export default function StudentProfileCard({ email, onClose }) {
           <div className="flex gap-2 mt-4 w-full">
             <Button
               className="flex-1 h-9 text-xs gap-1.5"
-              onClick={() => { navigate(`/dm/${encodeURIComponent(email)}`); onClose(); }}
+              onClick={() => { navigate(`../dm/${encodeURIComponent(email)}`); onClose(); }}
             >
               <MessageCircle size={13} /> Mensagem
             </Button>
