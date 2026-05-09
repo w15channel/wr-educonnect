@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity } from 'lucide-react';
+import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -70,7 +70,6 @@ function StudentScoreDetail({ code, onBack }) {
   const getScoreItem = (category, ref_id) => scoreItems.find(s => s.category === category && s.ref_id === ref_id);
 
   const totalScore = scoreItems.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0);
-  const maxScore = scoreItems.filter(s => s.verified).reduce((sum, s) => sum + (s.max_score || 10), 0);
 
   const sections = [
     { key: 'lessons', label: 'Aulas', icon: BookOpen },
@@ -82,7 +81,27 @@ function StudentScoreDetail({ code, onBack }) {
 
   const myPairings = pairings.filter(p => p.therapist_email === email || p.patient_email === email);
 
-  // Detect uncorrected submissions for this student
+  const sectionPending = {
+    lessons: lessons.some(l => {
+      const p = progresses.find(pr => pr.lesson_id === l.id);
+      return p && (p.watched || p.comment || p.summary) && !scoreItems.find(s => s.category === 'lesson' && s.ref_id === l.id && s.verified);
+    }),
+    lives: liveSessions.some(sess => {
+      const att = attendances.find(a => a.session_id === sess.id);
+      return att && !scoreItems.find(s => s.category === 'live_attendance' && s.ref_id === sess.id && s.verified);
+    }),
+    tasks: tasks.some(task => {
+      const sub = submissions.find(s => s.task_id === task.id);
+      return sub && !scoreItems.find(s => (s.category === 'task' || s.category === 'quiz') && s.ref_id === task.id && s.verified);
+    }),
+    forum: [...forumPosts, ...forumReplies].some(item =>
+      !scoreItems.find(s => s.category === 'forum' && s.ref_id === item.id && s.verified)
+    ),
+    therapist: myPairings.some(p =>
+      !scoreItems.find(s => s.category === 'therapist' && s.ref_id === p.id && s.verified)
+    ),
+  };
+
   const uncorrectedTaskIds = new Set(
     submissions
       .filter(s => s.status === 'submitted' && !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === email && si.verified))
@@ -116,6 +135,7 @@ function StudentScoreDetail({ code, onBack }) {
             type="number"
             min={0}
             max={max_score}
+            step={0.1}
             placeholder={`0–${max_score}`}
             value={currentScore}
             onChange={e => setScores(prev => ({ ...prev, [key]: e.target.value }))}
@@ -152,20 +172,22 @@ function StudentScoreDetail({ code, onBack }) {
           <p className="text-xs text-muted-foreground">{email}</p>
         </div>
         <div className="bg-card border border-border rounded-xl px-4 py-2 text-center shrink-0">
-          <p className="text-lg font-black text-primary">{totalScore}</p>
+          <p className="text-lg font-black text-primary">{totalScore.toFixed(1)}</p>
           <p className="text-[10px] text-muted-foreground">pts totais</p>
         </div>
       </div>
 
-      {/* Section tabs */}
       <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-5 overflow-x-auto">
         {sections.map(s => (
           <button
             key={s.key}
             onClick={() => setActiveSection(s.key)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeSection === s.key ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeSection === s.key ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
           >
             {React.createElement(s.icon, { size: 13 })} {s.label}
+            {sectionPending[s.key] && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
+            )}
           </button>
         ))}
       </div>
@@ -182,12 +204,8 @@ function StudentScoreDetail({ code, onBack }) {
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${progress?.watched ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                       {progress?.watched ? '✅ Marcada como assistida' : '⏳ Não assistida'}
                     </span>
-                    {progress?.comment && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">💬 Comentou</span>
-                    )}
-                    {progress?.summary && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold">📝 Resumo enviado</span>
-                    )}
+                    {progress?.comment && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">💬 Comentou</span>}
+                    {progress?.summary && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold">📝 Resumo enviado</span>}
                   </div>
                   {progress?.comment && (
                     <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
@@ -278,14 +296,14 @@ function StudentScoreDetail({ code, onBack }) {
               <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação no fórum.</p>
             )}
             {forumPosts.map(post => (
-              <ScoreRow key={post.id} category="forum" ref_id={post.id} ref_title={`Post: ${post.content?.slice(0, 60)}...`} max_score={5}>
+              <ScoreRow key={post.id} category="forum" ref_id={post.id} ref_title={`Pergunta no Fórum: ${post.content?.slice(0, 60)}...`} max_score={0.1}>
                 <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">Publicação: </span>{post.content}
                 </div>
               </ScoreRow>
             ))}
             {forumReplies.map(reply => (
-              <ScoreRow key={reply.id} category="forum" ref_id={reply.id} ref_title={`Resposta no fórum`} max_score={5}>
+              <ScoreRow key={reply.id} category="forum" ref_id={reply.id} ref_title="Resposta no Fórum" max_score={1}>
                 <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">Resposta: </span>{reply.content}
                 </div>
@@ -308,16 +326,12 @@ function StudentScoreDetail({ code, onBack }) {
               return (
                 <ScoreRow key={p.id} category="therapist" ref_id={p.id} ref_title={`Sessão ${i + 1} — ${role} de ${partner}`} max_score={10}>
                   <div className="flex flex-wrap gap-2 mt-1.5">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${role === 'Terapeuta' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {role}
-                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${role === 'Terapeuta' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>{role}</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${submitted ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                       {submitted ? '✅ Avaliação enviada' : '⏳ Sem avaliação'}
                     </span>
                     {partnerScore !== undefined && partnerScore !== null && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">
-                        Nota do par: {partnerScore}/10
-                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota do par: {partnerScore}/10</span>
                     )}
                   </div>
                   {comment && (
@@ -337,10 +351,12 @@ function StudentScoreDetail({ code, onBack }) {
 
 export default function ScoreControl() {
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState(null);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('pending'); // 'alpha' | 'points' | 'participations' | 'pending'
+  const [sortBy, setSortBy] = useState('pending');
   const [filterCourse, setFilterCourse] = useState('all');
+  const [retroLoading, setRetroLoading] = useState(false);
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -357,7 +373,6 @@ export default function ScoreControl() {
     queryFn: () => base44.entities.TaskSubmission.list('-created_date', 500),
   });
 
-  // Auto-select first student with pending submissions when coming from dashboard shortcut
   useEffect(() => {
     if (!location.search.includes('filter=pending')) return;
     if (selectedCode || codes.length === 0 || submissions.length === 0) return;
@@ -370,6 +385,19 @@ export default function ScoreControl() {
     );
     if (firstPending) setSelectedCode(firstPending);
   }, [codes, submissions, scoreItems, location.search]);
+
+  const handleRetro = async () => {
+    setRetroLoading(true);
+    try {
+      const res = await base44.functions.invoke('retroForumScores', {});
+      await queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
+      toast.success(`Retroativo concluído! ${res.data?.created || 0} pontuações criadas.`);
+    } catch (e) {
+      toast.error('Erro: ' + (e?.message || 'tente novamente'));
+    } finally {
+      setRetroLoading(false);
+    }
+  };
 
   if (selectedCode) return <StudentScoreDetail code={selectedCode} onBack={() => setSelectedCode(null)} />;
 
@@ -404,6 +432,12 @@ export default function ScoreControl() {
             <p className="text-xs text-orange-800 font-semibold">{pendingCount} atividade(s) aguardando verificação e pontuação</p>
           </div>
         )}
+        <div className="mt-3 flex justify-end">
+          <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleRetro} disabled={retroLoading}>
+            <RefreshCw size={13} className={retroLoading ? 'animate-spin' : ''} />
+            {retroLoading ? 'Aplicando...' : 'Aplicar Pontos Retroativos do Fórum'}
+          </Button>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2 items-center">
@@ -411,23 +445,21 @@ export default function ScoreControl() {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
         </div>
-        {/* Course filter */}
         <div className="flex gap-1 flex-wrap">
           {Object.entries(COURSE_LABELS).map(([val, label]) => (
             <button key={val} onClick={() => setFilterCourse(val)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                filterCourse === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
-              }`}>{label}</button>
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${filterCourse === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+              {label}
+            </button>
           ))}
         </div>
-        {/* Sort */}
         <div className="flex items-center gap-1 ml-auto">
           <ArrowUpDown size={13} className="text-muted-foreground" />
           {[['alpha','A–Z'],['points','Pontos'],['participations','Participações'],['pending','Pendências']].map(([val, label]) => (
             <button key={val} onClick={() => setSortBy(val)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                sortBy === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
-              }`}>{label}</button>
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${sortBy === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+              {label}
+            </button>
           ))}
         </div>
       </div>
@@ -450,21 +482,17 @@ export default function ScoreControl() {
               );
               const studentScores = scoreItems.filter(s => s.student_email === code.student_email);
               const total = studentScores.filter(s => s.verified).reduce((sum, s) => sum + (s.score || 0), 0);
-              const participations = studentScores.length; // cada ScoreItem = 1 participação
+              const participations = studentScores.length;
               return { code, hasPending, total, participations };
             })
             .sort((a, b) => {
               if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
               if (sortBy === 'points') return b.total - a.total;
               if (sortBy === 'participations') return b.participations - a.participations;
-              // pending: pendentes primeiro
               return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
             })
             .map(({ code, hasPending, total, participations }) => {
-              const studentScores = scoreItems.filter(s => s.student_email === code.student_email);
-              const verifiedCount = studentScores.filter(s => s.verified).length;
               const displayName = code.profile_name || code.student_name || 'Sem nome';
-
               return (
                 <div
                   key={code.id}
@@ -491,13 +519,13 @@ export default function ScoreControl() {
                     </div>
                     <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
                       <Star size={11} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm font-black text-yellow-700">{total}</span>
+                      <span className="text-sm font-black text-yellow-700">{total.toFixed(1)}</span>
                     </div>
                     <ChevronLeft size={14} className="text-muted-foreground rotate-180" />
                   </div>
                 </div>
               );
-          })}
+            })}
         </div>
       )}
     </div>
