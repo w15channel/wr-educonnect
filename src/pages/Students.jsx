@@ -139,7 +139,7 @@ export default function Students() {
   });
 
   const filtered = codes
-    .filter(c => c.course === activeCourse)
+    .filter(c => c.course === activeCourse || !c.course)
     .filter(c =>
       !search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -156,6 +156,18 @@ export default function Students() {
         const tb = getStudentTuitionStatus(b) || '';
         const order = { overdue: 0, pending: 1, paid: 2, '': 3 };
         return (order[ta] ?? 3) - (order[tb] ?? 3);
+      }
+      if (sortBy === 'submissions_desc') return getStudentStats(b).submissions - getStudentStats(a).submissions;
+      if (sortBy === 'submissions_asc') return getStudentStats(a).submissions - getStudentStats(b).submissions;
+      if (sortBy === 'avg_desc') {
+        const avgA = parseFloat(getStudentStats(a).avg) || 0;
+        const avgB = parseFloat(getStudentStats(b).avg) || 0;
+        return avgB - avgA;
+      }
+      if (sortBy === 'avg_asc') {
+        const avgA = parseFloat(getStudentStats(a).avg) || 0;
+        const avgB = parseFloat(getStudentStats(b).avg) || 0;
+        return avgA - avgB;
       }
       // date_desc default
       return new Date(b.created_date) - new Date(a.created_date);
@@ -244,6 +256,10 @@ export default function Students() {
                   <SelectItem value="alpha_desc">Z-A (nome)</SelectItem>
                   <SelectItem value="status_active">Ativos primeiro</SelectItem>
                   <SelectItem value="tuition_overdue">Inadimplentes primeiro</SelectItem>
+                  <SelectItem value="submissions_desc">Mais entregas primeiro</SelectItem>
+                  <SelectItem value="submissions_asc">Menos entregas primeiro</SelectItem>
+                  <SelectItem value="avg_desc">Maior média primeiro</SelectItem>
+                  <SelectItem value="avg_asc">Menor média primeiro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
