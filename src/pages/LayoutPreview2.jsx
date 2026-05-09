@@ -393,7 +393,7 @@ export default function LandingPage({ onLogin }) {
                 <img src={'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'} alt="Curso" className="w-full aspect-[4/5] object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
-                  <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4">
+                  <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4 hidden">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] rounded-full flex items-center justify-center">
                         <Zap size={16} className="text-white" />
@@ -468,7 +468,7 @@ export default function LandingPage({ onLogin }) {
 
           {/* Credenciais */}
           <div className="mb-14">
-            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
+            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2 hidden">
               <CheckCircle size={13} className="text-[#1db89e]" /> Credenciais e Certificações Verificáveis
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
