@@ -27,36 +27,23 @@ const STICKERS = [
 const MSN_COLORS = ['#5b5ef4','#e94f8b','#f4a23d','#1db89e','#a855f7','#ef4444','#3b82f6','#10b981'];
 
 // MSN Live Messenger avatar SVGs (orange for "me", blue for others)
-function MSNAvatar({ isMe, size = 32 }) {
-  if (isMe) {
-    // Orange MSN figure
-    return (
-      <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="9" r="5" fill="#f97316"/>
-        <ellipse cx="16" cy="23" rx="8" ry="6" fill="#f97316"/>
-        <ellipse cx="10" cy="20" rx="3" ry="5" fill="#f97316" transform="rotate(-20 10 20)"/>
-        <ellipse cx="22" cy="20" rx="3" ry="5" fill="#f97316" transform="rotate(20 22 20)"/>
-        <circle cx="14" cy="8" r="1.2" fill="#fff" opacity="0.7"/>
-      </svg>
-    );
-  }
-  // Blue MSN figure
+function MSNAvatar({ color = '#3b82f6', size = 32 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="16" cy="9" r="5" fill="#3b82f6"/>
-      <ellipse cx="16" cy="23" rx="8" ry="6" fill="#3b82f6"/>
-      <ellipse cx="10" cy="20" rx="3" ry="5" fill="#3b82f6" transform="rotate(-20 10 20)"/>
-      <ellipse cx="22" cy="20" rx="3" ry="5" fill="#3b82f6" transform="rotate(20 22 20)"/>
+      <circle cx="16" cy="9" r="5" fill={color}/>
+      <ellipse cx="16" cy="23" rx="8" ry="6" fill={color}/>
+      <ellipse cx="10" cy="20" rx="3" ry="5" fill={color} transform="rotate(-20 10 20)"/>
+      <ellipse cx="22" cy="20" rx="3" ry="5" fill={color} transform="rotate(20 22 20)"/>
       <circle cx="14" cy="8" r="1.2" fill="#fff" opacity="0.7"/>
     </svg>
   );
 }
 
-function MSNBubble({ msg, isMe, name, color, time, email }) {
+function MSNBubble({ msg, isMe, name, color, time, email, avatarColor }) {
   return (
     <div className={`flex items-end gap-2 mb-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
       <div className="shrink-0">
-        <MSNAvatar isMe={isMe} size={32} />
+        <MSNAvatar color={avatarColor || color || (isMe ? '#f97316' : '#3b82f6')} size={32} />
       </div>
       <div className={`max-w-[72%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
         {!isMe && (
@@ -234,7 +221,7 @@ export default function ClassChat() {
 
       {/* Particular tab — student picker */}
       {activeTab === 'particular' && (
-        <div className="flex-1 overflow-y-auto bg-[#f0f4fb] p-4">
+        <div className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top_left,_#e9efff,_#f7f9ff_45%,_#ecf3ff)] p-4">
           <p className="text-xs text-gray-500 font-semibold mb-3 flex items-center gap-1.5">
             <Lock size={11} /> Selecione um colega para iniciar uma conversa privada
           </p>

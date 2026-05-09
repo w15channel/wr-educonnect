@@ -154,8 +154,22 @@ export default function Tasks({ mode = 'all' }) {
     else createTaskMutation.mutate({ ...form, course: userCourse });
   };
 
-  const uploadTasks = tasks.filter(t => t.type === 'upload');
-  const quizTasks = tasks.filter(t => t.type === 'quiz');
+  const extractTaskNumber = (title = '') => {
+    const m = title.match(/tarefa\s*(\d+)/i);
+    return m ? Number(m[1]) : null;
+  };
+
+  const taskSorter = (a, b) => {
+    const na = extractTaskNumber(a.title);
+    const nb = extractTaskNumber(b.title);
+    if (na !== null && nb !== null && na !== nb) return na - nb;
+    if (na !== null && nb === null) return -1;
+    if (na === null && nb !== null) return 1;
+    return (a.created_date || '').localeCompare(b.created_date || '');
+  };
+
+  const uploadTasks = tasks.filter(t => t.type === 'upload').sort(taskSorter);
+  const quizTasks = tasks.filter(t => t.type === 'quiz').sort(taskSorter);
   const displayedTasks = mode === 'tasks' ? uploadTasks : mode === 'tests' ? quizTasks : (activeTab === 'tasks' ? uploadTasks : quizTasks);
 
   const submitCommentMutation = useMutation({
@@ -265,7 +279,8 @@ export default function Tasks({ mode = 'all' }) {
             const submission = getSubmission(task.id);
             const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
             const status = uploadStatus[task.id];
-            const isLocked = !isTeacher && idx >= 1;
+            const sequentialNumber = idx + 1;
+            const isLocked = !isTeacher && sequentialNumber >= 2;
 
             if (isLocked) return (
               <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm opacity-60 select-none">
@@ -274,7 +289,7 @@ export default function Tasks({ mode = 'all' }) {
                     <span className="text-lg">🔒</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-sm leading-snug">{task.title}</h3>
+                    <h3 className="font-bold text-foreground text-sm leading-snug">Tarefa {sequentialNumber} · {task.title}</h3>
                     <p className="text-xs text-amber-600 font-semibold mt-1 flex items-center gap-1">⏳ Em breve — será liberado pelo professor</p>
                   </div>
                 </div>
@@ -288,7 +303,7 @@ export default function Tasks({ mode = 'all' }) {
                     <FileText size={17} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-sm leading-snug">{task.title}</h3>
+                    <h3 className="font-bold text-foreground text-sm leading-snug">Tarefa {sequentialNumber} · {task.title}</h3>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1">
                       <Badge variant="secondary" className="text-[10px]">{task.type === 'quiz' ? 'Prova' : 'Tarefa'}</Badge>
                       {task.deadline && (
