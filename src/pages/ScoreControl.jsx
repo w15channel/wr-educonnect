@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Trophy, ChevronLeft, CheckCircle, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, RefreshCw } from 'lucide-react';
@@ -351,11 +351,16 @@ function StudentScoreDetail({ code, onBack }) {
 
 export default function ScoreControl() {
   const location = useLocation();
+  const { user: session } = useOutletContext() || {};
   const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState(null);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('alpha');
   const [retroLoading, setRetroLoading] = useState(false);
+
+  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
+  const activeCourse = session?.course;
+  const expectedPrefix = COURSE_PREFIX[activeCourse];
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -401,6 +406,8 @@ export default function ScoreControl() {
   if (selectedCode) return <StudentScoreDetail code={selectedCode} onBack={() => setSelectedCode(null)} />;
 
   const filtered = codes.filter(c => {
+    if (activeCourse && c.course !== activeCourse) return false;
+    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
     const matchSearch = !search ||
       (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
       (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
