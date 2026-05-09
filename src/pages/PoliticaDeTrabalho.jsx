@@ -1,6 +1,5 @@
 import React from 'react';
 import { Shield, CheckCircle, AlertTriangle, ExternalLink, ArrowLeft, Scale, Award } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 const ABED_WHITE = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png';
@@ -41,13 +40,8 @@ export default function PoliticaDeTrabalho() {
             <Award size={13} className="text-yellow-400" /> Associações e Reconhecimentos Institucionais
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* ABED */}
             <div className="bg-white/6 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-4">
-              <img
-                src={ABED_WHITE}
-                alt="Somos Associados ABED"
-                className="h-28 object-contain"
-              />
+              <img src={ABED_WHITE} alt="Somos Associados ABED" className="h-28 object-contain" />
               <div>
                 <p className="text-white font-bold text-sm mb-1">Associação Brasileira de Educação a Distância</p>
                 <p className="text-white/50 text-xs leading-relaxed">
@@ -60,7 +54,6 @@ export default function PoliticaDeTrabalho() {
               </a>
             </div>
 
-            {/* AHDE */}
             <div className="bg-white/6 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-4">
               <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#1db89e]/20 to-[#5b5ef4]/20 border border-[#1db89e]/30 flex items-center justify-center">
                 <div className="text-center">
@@ -71,7 +64,7 @@ export default function PoliticaDeTrabalho() {
               <div>
                 <p className="text-white font-bold text-sm mb-1">Association for Human Development and Evolution</p>
                 <p className="text-white/50 text-xs leading-relaxed">
-                  Órgão internacional que registra e fiscaliza a atuação de profissionais inseridos em métodos terapêuticos comportamentais. Prof. William Ribeiro registrado sob o <strong className="text-white/70">ID: 00403THE</strong>.
+                  Órgão internacional que registra e fiscaliza a atuação de profissionais em métodos terapêuticos comportamentais. Prof. William Ribeiro registrado sob o <strong className="text-white/70">ID: 00403THE</strong>.
                 </p>
               </div>
               <a href="https://ahde-global.org/?lang=pt-br" target="_blank" rel="noopener noreferrer"
@@ -81,7 +74,6 @@ export default function PoliticaDeTrabalho() {
             </div>
           </div>
 
-          {/* MP-PR */}
           <div className="mt-5 bg-white/4 border border-white/8 rounded-2xl px-6 py-4 flex items-start gap-3">
             <CheckCircle size={15} className="text-[#1db89e] mt-0.5 shrink-0" />
             <p className="text-white/60 text-sm">
@@ -144,6 +136,79 @@ export default function PoliticaDeTrabalho() {
           </div>
         </div>
 
+        {/* ─── Seções complementares ─────────────────────────────── */}
+
+        <div className="mb-10">
+          <h2 className="text-2xl font-black text-white mb-3">Política de Trabalho e Compromisso Ético</h2>
+          <p className="text-white/55 text-sm leading-relaxed">
+            Nossa Política de Trabalho reflete os valores que sustentam cada etapa da nossa formação. Acreditamos que a excelência não é um destino, mas um padrão de conduta aplicado diariamente na relação entre professor, aluno e o futuro paciente.
+          </p>
+        </div>
+
+        <div className="space-y-4 mb-8">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <CheckCircle size={16} className="text-[#5b5ef4]" /> 1. Natureza da Formação e Amparo Legal
+          </h2>
+          <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
+            <p>
+              A WR-EDU dedica-se à oferta de <strong className="text-white">Cursos de Formação Profissionalizante Livre</strong>, em conformidade com a <strong className="text-white">Lei nº 9.394 (Diretrizes e Bases da Educação Nacional)</strong>. Nossas certificações são de caráter profissionalizante e de atualização técnica, não se configurando como cursos de graduação ou pós-graduação acadêmica. Nosso objetivo é a capacitação prática para o exercício ético e técnico da terapia no âmbito das terapias integrativas e comportamentais.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 mb-8">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <CheckCircle size={16} className="text-[#1db89e]" /> 2. Metodologia e Interação Real-Time
+          </h2>
+          <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
+            <p>
+              Nosso compromisso é com o <strong className="text-white">aprendizado ativo</strong>. Diferente de modelos de ensino passivos, nossa política de trabalho prioriza a <strong className="text-white">interação em tempo real</strong>. As aulas e mentorias são desenhadas para proporcionar o diálogo direto com o professor e a troca de experiências entre os membros da classe. A participação nos grupos de integração é incentivada como ferramenta fundamental para o networking e o fortalecimento da comunidade acadêmica e profissional.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 mb-8">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <CheckCircle size={16} className="text-[#1db89e]" /> 3. Prática Terapêutica Assistida
+          </h2>
+          <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
+            <p>
+              A excelência na terapia nasce da vivência. Nossa política garante que o aluno tenha contato com <strong className="text-white">simulações e práticas de consultório</strong> ainda durante o período de formação. Essas atividades são conduzidas sob rigorosos critérios éticos, preparando o futuro terapeuta para lidar com a subjetividade humana em áreas como <strong className="text-white">TCC, Psicanálise e Sexualidade Humana</strong> com segurança e profundidade.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 mb-8">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <CheckCircle size={16} className="text-[#5b5ef4]" /> 4. Conduta Ética e Humanização
+          </h2>
+          <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
+            <p>
+              Pautamos nosso trabalho no resgate da dignidade e no acolhimento. Espera-se que todos os alunos e colaboradores mantenham conduta baseada no <strong className="text-white">respeito mútuo</strong>, no <strong className="text-white">sigilo das informações compartilhadas em aula</strong> e na busca constante pela humanização do atendimento. Não formamos apenas técnicos; formamos <strong className="text-white">agentes de transformação social</strong> que utilizam a empatia como ferramenta de trabalho.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 mb-10">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <Shield size={16} className="text-[#5b5ef4]" /> 5. Propriedade Intelectual e Direitos
+          </h2>
+          <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
+            <p>
+              Todo o material didático, metodologias exclusivas (como a <strong className="text-white">Teoria da Utilidade Comportamental</strong>) e conteúdos disponibilizados na plataforma são de <strong className="text-white">propriedade intelectual da WR-EDU e de seu mantenedor</strong>. O uso desse material é restrito ao aprendizado individual, sendo proibida a reprodução ou distribuição sem autorização prévia.
+            </p>
+          </div>
+        </div>
+
+        {/* Citação */}
+        <div className="bg-gradient-to-r from-[#5b5ef4]/10 via-white/4 to-[#1db89e]/10 border border-white/10 rounded-3xl p-8 mb-10 text-center">
+          <p className="text-white/80 text-lg italic leading-relaxed mb-3">
+            "Você pode fazer muitas coisas na sua vida, mas a excelência vai se apresentar somente quando encontrar o que realmente nasceu para fazer."
+          </p>
+          <p className="text-[#5b5ef4] text-sm font-bold">— William Ribeiro</p>
+          <p className="text-white/40 text-xs mt-4">Esta política visa assegurar que sua jornada conosco seja produtiva, segura e, acima de tudo, transformadora.</p>
+        </div>
+
         {/* Aviso Penal */}
         <div className="space-y-4 mb-14">
           <h2 className="text-lg font-black text-white flex items-center gap-2">
@@ -166,7 +231,6 @@ export default function PoliticaDeTrabalho() {
               <p className="text-white/30 text-xs">Escola de Formação de Terapeutas</p>
             </div>
           </div>
-          {/* Assinatura */}
           <div className="text-center">
             <span style={{
               fontFamily: '"Dancing Script", "Brush Script MT", cursive',
