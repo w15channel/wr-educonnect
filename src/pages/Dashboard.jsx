@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
@@ -55,13 +54,20 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const isTeacher = session?.role === 'admin';
   const userCourse = session?.course;
-  const [refreshing, setRefreshing] = useState(false);
-  const [monitorSelectMode, setMonitorSelectMode] = useState(false);
-  const [selectedMonitorEmails, setSelectedMonitorEmails] = useState(new Set());
-  const [savingMonitors, setSavingMonitors] = useState(false);
-  const [importingPoints, setImportingPoints] = useState(false);
-  const [draggedEmail, setDraggedEmail] = useState(null);
-  const [customRanking, setCustomRanking] = useState([]);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [monitorSelectMode, setMonitorSelectMode] = React.useState(false);
+  const [selectedMonitorEmails, setSelectedMonitorEmails] = React.useState(new Set());
+  const [savingMonitors, setSavingMonitors] = React.useState(false);
+  const [importingPoints, setImportingPoints] = React.useState(false);
+  const [draggedEmail, setDraggedEmail] = React.useState(null);
+  const [customRanking, setCustomRanking] = React.useState([]);
+
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wr_lobby_music_enabled', 'off');
+    }
+  }, []);
 
   const toggleMonitorEmail = (email) => {
     setSelectedMonitorEmails((prev) => {

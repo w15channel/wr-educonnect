@@ -1,10 +1,13 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
 import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
+
+const LOBBY_MUSIC_KEY = 'wr_lobby_music_enabled';
+const LOBBY_MUSIC_EMBED = 'https://www.youtube.com/embed/Cg0dAc4-UCY?autoplay=1&start=545&controls=0&disablekb=1&modestbranding=1&rel=0&loop=1&playlist=Cg0dAc4-UCY';
 
 const COURSES = [
   {
@@ -45,12 +48,6 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect }) {
   const Icon = course.icon;
 
   const handleMouseEnter = () => videoRef.current?.play();
-  const handleMouseLeave = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-  };
 
   return (
     <div
@@ -60,7 +57,6 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect }) {
           : 'border-white/10 opacity-70'
       }`}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       {/* Video / thumbnail area */}
       <div className="relative h-48 overflow-hidden bg-black">
@@ -72,7 +68,7 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect }) {
           loop
           playsInline
           preload="metadata"
-          autoPlay={isActive}
+          autoPlay
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-transparent to-transparent" />
 
@@ -93,14 +89,6 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect }) {
           </div>
         )}
 
-        {/* Active: play hint */}
-        {isActive && (
-          <div className="absolute bottom-3 right-3">
-            <div className="bg-black/50 backdrop-blur-sm border border-white/10 rounded-full px-2.5 py-1 text-[9px] text-white/50 font-medium">
-              ▶ Passe o mouse
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Content */}
@@ -149,6 +137,12 @@ export default function CourseLobby() {
   const userCourse = session?.course || 'tcc';
 
   const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
+  const musicEnabled = typeof window !== 'undefined' && localStorage.getItem(LOBBY_MUSIC_KEY) !== 'off';
+
+  useEffect(() => {
+    localStorage.setItem(LOBBY_MUSIC_KEY, 'on');
+  }, []);
+
 
   const handleAdminSelectCourse = (courseId) => {
     const current = getSession();
@@ -166,7 +160,7 @@ export default function CourseLobby() {
   if (isAdmin) {
     return (
       <div className="min-h-screen bg-[#080b14] text-white">
-        <div className="border-b border-white/8 px-6 py-5">
+        <div className="relative z-10 border-b border-white/8 px-6 py-5">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img src={LOGO_URL} alt="WR-EDU" className="w-10 h-10 object-contain" />
@@ -180,7 +174,7 @@ export default function CourseLobby() {
             </div>
           </div>
         </div>
-        <div className="max-w-5xl mx-auto px-6 py-14">
+        <div className="relative z-10 max-w-5xl mx-auto px-6 py-14">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-5">
               <GraduationCap size={13} className="text-[#5b5ef4]" />
@@ -205,7 +199,18 @@ export default function CourseLobby() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080b14] text-white">
+    <div className="relative min-h-screen bg-[#080b14] text-white overflow-hidden">
+      {musicEnabled && (
+        <iframe
+          className="absolute w-0 h-0 opacity-0 pointer-events-none"
+          src={LOBBY_MUSIC_EMBED}
+          title="Lobby ambience audio"
+          allow="autoplay"
+        />
+      )}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(91,94,244,0.25),transparent_45%),radial-gradient(circle_at_82%_8%,rgba(29,184,158,0.2),transparent_42%),radial-gradient(circle_at_50%_85%,rgba(168,85,247,0.12),transparent_45%)]" />
+      </div>
       {/* Header */}
       <div className="border-b border-white/8 px-6 py-5">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
