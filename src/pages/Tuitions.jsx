@@ -21,7 +21,7 @@ export default function Tuitions() {
   const { user: session } = useOutletContext();
   const isAdmin = session?.role === 'admin';
   const queryClient = useQueryClient();
-  const { emails: courseEmails } = useCourseFilteredEmails();
+  const { emails: courseEmails, codePrefix } = useCourseFilteredEmails();
   const [showForm, setShowForm] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [form, setForm] = useState({ student_email: '', student_name: '', month_ref: '', amount: '', due_date: '', status: 'pending', notes: '' });
@@ -43,16 +43,20 @@ export default function Tuitions() {
     enabled: isAdmin,
   });
 
-  // Todos os alunos ativos: com ou sem e-mail, usando e-mail ou código como chave única
+  // Todos os alunos ativos da turma atual: /sex/ exibe apenas códigos SEX-
   const allStudents = codes
     .filter(c => c.is_active !== false)
-    .filter(c => courseEmails ? courseEmails.has(c.student_email || '') : true)
+    .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
+    .filter(c => courseEmails ? courseEmails.has(c.student_email || '') || !c.student_email : true)
     .map(c => ({
       key: c.student_email || c.code,
       email: c.student_email || '',
       name: c.profile_name || c.student_name || c.code || 'Sem nome',
     }))
     .filter((s, i, arr) => arr.findIndex(x => x.key === s.key) === i); // dedup
+
+  const allowedStudentKeys = new Set(allStudents.flatMap(s => [s.key, s.email]).filter(Boolean));
+  const visibleTuitions = isAdmin ? tuitions.filter(t => allowedStudentKeys.has(t.student_email)) : tuitions;
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Tuition.create(data),
@@ -109,7 +113,7 @@ export default function Tuitions() {
     }));
   };
 
-  const filtered = selectedStudent === 'all' ? tuitions : tuitions.filter(t => t.student_email === selectedStudent);
+  const filtered = selectedStudent === 'all' ? visibleTuitions : visibleTuitions.filter(t => t.student_email === selectedStudent);
 
   const overallStatus = !isAdmin && tuitions.length > 0
     ? (tuitions.some(t => t.status === 'overdue') ? 'overdue' : tuitions.some(t => t.status === 'pending') ? 'pending' : 'paid')

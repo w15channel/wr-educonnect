@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2 } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,8 @@ export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
   const [evalDialog, setEvalDialog] = useState(null); // { pairing, role: 'therapist'|'patient' }
   const [comment, setComment] = useState('');
   const [score, setScore] = useState([7]);
@@ -62,18 +65,16 @@ export default function TerapeutaDaSemana() {
   const todayStr = format(today, 'yyyy-MM-dd');
   const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
 
-  // Filtro por curso: tanto alunos quanto admin veem apenas pareamentos da turma atual
-  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
-  const expectedPrefix = COURSE_PREFIX[session?.course];
-  const courseEmailSet = session?.course ? new Set(
+  // Filtro por curso: /sex/ exibe apenas alunos SEX-
+  const courseEmailSet = courseEmails || new Set(
     accessCodes
       .filter(c =>
-        c.course === session.course &&
+        c.course === activeCourse &&
         c.student_email &&
-        (!expectedPrefix || (c.code || '').startsWith(expectedPrefix))
+        (!codePrefix || (c.code || '').startsWith(codePrefix))
       )
       .map(c => c.student_email)
-  ) : null;
+  );
 
   const currentPairings = pairings.filter(p =>
     p.pairing_date >= periodStart &&
@@ -103,8 +104,8 @@ export default function TerapeutaDaSemana() {
     const activeStudents = freshCodes.filter(c =>
       c.is_active &&
       c.student_email &&
-      c.course === session?.course &&
-      (!expectedPrefix || (c.code || '').startsWith(expectedPrefix))
+      c.course === activeCourse &&
+      (!codePrefix || (c.code || '').startsWith(codePrefix))
     );
     if (activeStudents.length < 2) {
       toast.error('São necessários pelo menos 2 alunos para criar pareamentos.');

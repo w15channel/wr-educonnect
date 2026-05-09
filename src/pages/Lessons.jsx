@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Play, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil, Upload, Link, Clock, FileDown, FileText, Globe, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,13 +34,12 @@ export default function Lessons() {
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFile, setUploadFile] = useState({});
 
-  const userCourse = session?.course || 'tcc';
+  const { course: routeCourse } = useCourseFilteredEmails();
+  const userCourse = routeCourse || session?.course || 'tcc';
 
   const { data: lessons = [], isLoading } = useQuery({
-    queryKey: ['lessons', userCourse || 'all'],
-    queryFn: () => userCourse
-      ? base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 200)
-      : base44.entities.RecordedLesson.list('order', 200),
+    queryKey: ['lessons', userCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 200),
   });
 
   const { data: progresses = [] } = useQuery({
@@ -159,8 +159,8 @@ export default function Lessons() {
   };
 
   const handleSave = () => {
-    if (editingLesson) updateMutation.mutate({ id: editingLesson.id, data: form });
-    else createMutation.mutate({ ...form, order: lessons.length + 1 });
+    if (editingLesson) updateMutation.mutate({ id: editingLesson.id, data: { ...form, course: userCourse } });
+    else createMutation.mutate({ ...form, course: userCourse, order: lessons.length + 1 });
   };
 
   return (

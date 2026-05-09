@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Trophy, Star, Crown, Download, RefreshCw, Calendar, RotateCcw, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -46,8 +47,9 @@ export default function Monitores() {
   const [defining, setDefining] = useState(false);
   const certRef = useRef(null);
 
-  // Current course for filtering
-  const activeCourse = session?.course || 'tcc';
+  // Current course for filtering based on route (/adm/sex => SEX- / sexologia)
+  const { emails: courseEmails, course: routeCourse } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
 
   const { data: scoreItems = [] } = useQuery({
     queryKey: ['score-items-monitores'],
@@ -84,12 +86,12 @@ export default function Monitores() {
 
   // Current monitors for this course and this cycle
   const currentMonitors = monitorHistory.filter(
-    m => m.period_start === periodStart && (m.course === activeCourse || !m.course)
+    m => m.period_start === periodStart && (m.course === activeCourse || (!m.course && activeCourse === 'tcc'))
   );
 
   // Course students
   const courseStudents = accessCodes.filter(
-    c => c.is_active !== false && c.course === activeCourse && c.student_email
+    c => c.is_active !== false && c.course === activeCourse && c.student_email && (!courseEmails || courseEmails.has(c.student_email))
   );
 
   // Build ranking igual ao Dashboard — baseado em ScoreItems verificados

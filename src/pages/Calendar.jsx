@@ -39,14 +39,14 @@ export default function Calendar() {
     enabled: !!session?.email,
   });
 
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions'],
-    queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 50),
-  });
-
   const userCourse = session?.course;
   const { course: routeCourse } = useCourseFilteredEmails();
   const activeCourse = routeCourse || userCourse || 'tcc';
+
+  const { data: liveSessions = [] } = useQuery({
+    queryKey: ['live-sessions-calendar', activeCourse],
+    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 50),
+  });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks-calendar', activeCourse],

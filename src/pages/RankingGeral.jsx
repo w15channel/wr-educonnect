@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Trophy, Star, ChevronLeft, BookOpen, Video, FileText, MessageSquare, X, CheckCircle } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { format } from 'date-fns';
@@ -98,6 +99,7 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
 export default function RankingGeral() {
   const { user: session } = useOutletContext();
   const [selected, setSelected] = useState(null);
+  const { course: routeCourse, codePrefix } = useCourseFilteredEmails();
 
   const { data: allScoreItems = [] } = useQuery({
     queryKey: ['all-score-items-rank'],
@@ -109,13 +111,11 @@ export default function RankingGeral() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
-  // Course isolation: only students of the current course (with the right code prefix)
-  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
-  const activeCourse = session?.course;
-  const expectedPrefix = COURSE_PREFIX[activeCourse];
+  // Course isolation: /sex/ exibe somente alunos SEX-
+  const activeCourse = routeCourse || session?.course;
   const courseCodes = accessCodes.filter(c => {
     if (activeCourse && c.course !== activeCourse) return false;
-    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
+    if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
     return !!c.student_email;
   });
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { ChevronLeft, CalendarDays, Phone, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ export default function StudentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: session } = useOutletContext() || {};
+  const { emails: courseEmails, codePrefix } = useCourseFilteredEmails();
 
   const { data: codes = [] } = useQuery({
     queryKey: ['access-codes'],
@@ -38,8 +40,9 @@ export default function StudentDetail() {
   });
 
   const code = codes.find(c => c.id === id);
+  const canViewCode = code && (!codePrefix || ((code.code || '').startsWith(codePrefix) && (!courseEmails || courseEmails.has(code.student_email || ''))));
 
-  if (!code) {
+  if (!code || !canViewCode) {
     return (
       <div className="p-6 flex flex-col items-center justify-center min-h-64 gap-4">
         <p className="text-muted-foreground">Aluno não encontrado.</p>

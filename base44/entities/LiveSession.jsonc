@@ -10,6 +10,16 @@
       "type": "string",
       "description": "Description of the session"
     },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso ao qual a sess\u00e3o ao vivo pertence"
+    },
     "scheduled_at": {
       "type": "string",
       "format": "date-time",

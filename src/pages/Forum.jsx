@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { MessageSquare, Send, ChevronDown, ChevronUp, Trash2, Star, BookOpen, Pencil, Check, X } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,8 @@ export default function Forum() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
-  const userCourse = session?.course || 'tcc';
+  const { course: routeCourse } = useCourseFilteredEmails();
+  const userCourse = routeCourse || session?.course || 'tcc';
 
   const { data: posts = [] } = useQuery({
     queryKey: ['forum-posts', userCourse],
@@ -55,7 +57,7 @@ export default function Forum() {
       author_name: session?.name || 'Anônimo',
       author_email: session?.email || '',
       author_role: isTeacher ? 'teacher' : 'student',
-      course: isTeacher ? 'tcc' : (session?.course || 'tcc'),
+      course: userCourse,
       reply_count: 0,
     }),
     onMutate: async (data) => {

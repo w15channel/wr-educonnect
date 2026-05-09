@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { FileText, Clock, CheckCircle, Plus, Play, Trash2, Pencil, GraduationCap, ClipboardList, Send, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +22,8 @@ export default function Tasks() {
   const { user: session } = useOutletContext();
   const user = session;
   const isTeacher = session?.role === 'admin';
-  const userCourse = session?.course || 'tcc';
+  const { course: routeCourse } = useCourseFilteredEmails();
+  const userCourse = routeCourse || session?.course || 'tcc';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -34,10 +36,8 @@ export default function Tasks() {
   const [commentInputs, setCommentInputs] = useState({});
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks', userCourse || 'all'],
-    queryFn: () => userCourse
-      ? base44.entities.Task.filter({ course: userCourse }, '-created_date', 200)
-      : base44.entities.Task.list('-created_date', 200),
+    queryKey: ['tasks', userCourse],
+    queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 200),
   });
 
   const { data: submissions = [] } = useQuery({
@@ -150,8 +150,8 @@ export default function Tasks() {
   };
 
   const handleSave = () => {
-    if (editingTask) updateTaskMutation.mutate({ id: editingTask.id, data: form });
-    else createTaskMutation.mutate(form);
+    if (editingTask) updateTaskMutation.mutate({ id: editingTask.id, data: { ...form, course: userCourse } });
+    else createTaskMutation.mutate({ ...form, course: userCourse });
   };
 
   const uploadTasks = tasks.filter(t => t.type === 'upload');

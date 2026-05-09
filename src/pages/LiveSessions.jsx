@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Video, MessageSquare, Send, Plus, Youtube, Wifi, WifiOff, Trash2, ExternalLink, ChevronLeft, Clock, Calendar, CheckCircle, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,10 +42,12 @@ export default function LiveSessions() {
   const [form, setForm] = useState({
     title: '', description: '', stream_url: '', scheduled_at: '', status: 'scheduled', platform: 'youtube'
   });
+  const { course: routeCourse } = useCourseFilteredEmails();
+  const activeCourse = routeCourse || session?.course || 'tcc';
 
   const { data: sessions = [] } = useQuery({
-    queryKey: ['live-sessions'],
-    queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 50),
+    queryKey: ['live-sessions', activeCourse],
+    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 50),
   });
 
   const { data: chatMessages = [] } = useQuery({
@@ -55,7 +58,7 @@ export default function LiveSessions() {
   });
 
   const createSessionMutation = useMutation({
-    mutationFn: (data) => base44.entities.LiveSession.create(data),
+    mutationFn: (data) => base44.entities.LiveSession.create({ ...data, course: activeCourse }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['live-sessions'] });
       setShowForm(false);
