@@ -209,7 +209,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           title="Próxima Live"
-          value={nextLive ? (isLiveNow ? 'Ao Vivo!' : format(new Date(nextLive.scheduled_at || Date.now()), 'dd/MM HH:mm')) : 'Nenhuma'}
+          value={nextLive ? (isLiveNow ? 'Ao Vivo!' : nextLive.scheduled_at ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Agendada') : 'Nenhuma'}
           icon={Video}
           iconBg={isLiveNow ? 'bg-red-500' : 'bg-slate-500'}
           to="/live"
@@ -507,7 +507,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2">
                     {a.type === 'urgent' && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
                     <p className="font-semibold text-foreground truncate">{a.title || a.content}</p>
-                    <span className="ml-auto text-muted-foreground shrink-0">{format(new Date(a.created_date), 'dd/MM')}</span>
+                    <span className="ml-auto text-muted-foreground shrink-0">{a.created_date ? format(new Date(a.created_date), 'dd/MM') : ''}</span>
                   </div>
                 </div>
               );

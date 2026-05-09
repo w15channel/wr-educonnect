@@ -135,7 +135,7 @@ export default function Lessons() {
   };
 
   const getEmbedUrl = (url) => {
-    if (!url) return null;
+    if (!url || typeof url !== 'string') return null;
     const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/);
     if (ytMatch) return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
     const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
