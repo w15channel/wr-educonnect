@@ -114,7 +114,7 @@ export default function RankingGeral() {
   // Course isolation: /sex/ exibe somente alunos SEX-
   const activeCourse = routeCourse || session?.course;
   const courseCodes = accessCodes.filter(c => {
-    if (activeCourse && c.course !== activeCourse) return false;
+    if (activeCourse && c.course !== activeCourse && !(activeCourse === 'tcc' && !c.course)) return false;
     if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
     return !!c.student_email;
   });
@@ -162,7 +162,7 @@ export default function RankingGeral() {
         </div>
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Ranking Geral</h2>
-          <p className="text-sm text-muted-foreground">Pontuação acumulada — clique para ver o perfil</p>
+          <p className="text-sm text-muted-foreground">Classificação pública por somatória de pontos — clique para ver o perfil</p>
         </div>
         {myPos > 0 && (
           <span className="ml-auto text-sm font-bold bg-primary/10 text-primary px-3 py-1.5 rounded-full border border-primary/20">
