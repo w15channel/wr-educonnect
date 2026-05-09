@@ -616,7 +616,7 @@ export default function ScoreControl() {
                     </div>
                     <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
                       <Star size={11} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm font-black text-yellow-700">{totaltotalScore.toFixed(1)}</span>
+                      <span className="text-sm font-black text-yellow-700">{total.toFixed(1)}</span>
                     </div>
                     <ChevronLeft size={14} className="text-muted-foreground rotate-180" />
                   </div>
