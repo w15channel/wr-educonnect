@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Video, FileText, BarChart3, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
@@ -60,6 +60,8 @@ export default function Dashboard() {
   const [selectedMonitorEmails, setSelectedMonitorEmails] = useState(new Set());
   const [savingMonitors, setSavingMonitors] = useState(false);
   const [importingPoints, setImportingPoints] = useState(false);
+  const [draggedEmail, setDraggedEmail] = useState(null);
+  const [customRanking, setCustomRanking] = useState([]);
 
   const toggleMonitorEmail = (email) => {
     setSelectedMonitorEmails((prev) => {
@@ -256,6 +258,31 @@ export default function Dashboard() {
     return a.name.localeCompare(b.name);
   });
   const ranking = rankingFull.slice(0, 10);
+  React.useEffect(() => {
+    setCustomRanking(ranking);
+  }, [ranking.map((r) => r.email).join('|')]);
+
+  const saveDashboardOrderMutation = useMutation({
+    mutationFn: async () => {
+      for (const [index, item] of customRanking.entries()) {
+        const profile = publishedScores.find((p) => p.student_email === item.email && (!p.dashboard_course || p.dashboard_course === userCourse));
+        const code = accessCodes.find((c) => c.student_email === item.email);
+        const payload = {
+          student_email: item.email,
+          full_name: code?.profile_name || code?.student_name || item.email,
+          points: Number(item.total || 0),
+          dashboard_rank: index + 1,
+          dashboard_course: userCourse,
+        };
+        if (profile) await base44.entities.StudentProfile.update(profile.id, payload);
+        else await base44.entities.StudentProfile.create(payload);
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+      toast.success('Sequência do ranking salva com sucesso!');
+    },
+  });
 
   const myRank = ranking.findIndex((r) => r.email === session?.email) + 1;
 
@@ -513,11 +540,11 @@ export default function Dashboard() {
               Selecione até 3 alunos para serem os Monitores do período atual.
             </div>
         }
-          {ranking.length === 0 ?
+          {customRanking.length === 0 ?
         <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p> :
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              {ranking.map((r, i) => {
+              {customRanking.map((r, i) => {
             const code = accessCodes.find((c) => c.student_email === r.email);
             const displayName = code?.profile_name || code?.student_name || r.email;
             const avatarColor = code?.profile_avatar_color || '#5b5ef4';
@@ -526,6 +553,19 @@ export default function Dashboard() {
             return (
               <div
                 key={r.email}
+                draggable
+                onDragStart={() => setDraggedEmail(r.email)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => {
+                  if (!draggedEmail || draggedEmail === r.email) return;
+                  const from = customRanking.findIndex((x) => x.email === draggedEmail);
+                  const to = customRanking.findIndex((x) => x.email === r.email);
+                  if (from < 0 || to < 0) return;
+                  const next = [...customRanking];
+                  const [moved] = next.splice(from, 1);
+                  next.splice(to, 0, moved);
+                  setCustomRanking(next);
+                }}
                 onClick={() => monitorSelectMode && toggleMonitorEmail(r.email)}
                 className={`relative flex flex-col items-center text-center gap-1.5 p-3 rounded-xl border transition-colors ${
                 monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''} ${
@@ -558,11 +598,16 @@ export default function Dashboard() {
                       <Star size={10} className="text-yellow-500 fill-yellow-500" />
                       <span className="text-xs font-black text-yellow-700">{Number(r.total || 0).toFixed(1)}</span>
                     </div>
-                  </div>);
+              </div>);
 
           })}
             </div>
         }
+          <div className="mt-3 flex justify-end">
+            <Button size="sm" variant="outline" onClick={() => saveDashboardOrderMutation.mutate()} disabled={saveDashboardOrderMutation.isPending || customRanking.length === 0}>
+              {saveDashboardOrderMutation.isPending ? 'Salvando ordem...' : 'Salvar sequência do ranking'}
+            </Button>
+          </div>
         </div>
       }
 
