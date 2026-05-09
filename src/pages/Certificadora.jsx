@@ -7,7 +7,7 @@ import { base44 } from '@/api/base44Client';
 const TOTAL_LESSONS = 60;
 const TOTAL_TASKS = 60;
 const TOTAL_PRACTICE_H = 10;
-const TOTAL_LIVES_H = 5;
+const TOTAL_LIVES_H = 10;
 const REMINDER_KEY = 'cert_last_reminder';
 
 const COURSE_NAMES = {
@@ -211,6 +211,21 @@ export default function Certificadora() {
         />
       </div>
 
+
+      <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="font-bold text-sm text-foreground">Emissão de certificado</p>
+          <p className="text-xs text-muted-foreground">Disponível ao atingir 80% do progresso geral.</p>
+        </div>
+        <button
+          disabled={totalPct < 80}
+          onClick={() => alert('Solicitação enviada! O professor irá analisar e emitir seu certificado em breve.')}
+          className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Solicitar emissão
+        </button>
+      </div>
+
       {/* Info box */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
         <p className="font-bold mb-1">Como funciona a certificação?</p>
@@ -218,8 +233,8 @@ export default function Certificadora() {
           <li>Assista às 60 aulas e marque-as como concluídas (com resumo e comentário)</li>
           <li>Entregue os 60 trabalhos e atividades do curso</li>
           <li>Complete 10 horas de prática terapêutica (Terapeuta da Semana)</li>
-          <li>Confirme presença em pelo menos 5 horas de aulas ao vivo</li>
-          <li>Após concluir, comunique ao professor para emissão do certificado</li>
+          <li>Confirme presença em pelo menos 10 horas de aulas ao vivo</li>
+          <li>Quando atingir 80% dos requisitos, solicite a emissão do certificado pelo botão abaixo</li>
         </ol>
       </div>
     </div>

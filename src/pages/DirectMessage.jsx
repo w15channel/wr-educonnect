@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, Smile } from 'lucide-react';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 
 const DM_PREFIX = 'dm_';
@@ -12,8 +12,7 @@ function getDMSessionId(emailA, emailB) {
   return `${DM_PREFIX}${sorted[0]}_${sorted[1]}`;
 }
 
-function MSNAvatar({ isMe, size = 28 }) {
-  const color = isMe ? '#f97316' : '#3b82f6';
+function MSNAvatar({ color = '#3b82f6', size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
       <circle cx="16" cy="9" r="5" fill={color}/>
@@ -73,6 +72,9 @@ export default function DirectMessage() {
   };
 
   const target = getTargetInfo();
+  const myCode = codes.find(c => c.student_email === session?.email);
+  const myColor = myCode?.profile_avatar_color || '#f97316';
+  const CHAT_EMOJIS = ['😊','😂','😍','🥰','😭','😤','🤔','😅','🙏','❤️','🔥','✨','👏','🎉','💪','😎'];
   const targetCode = codes.find(c => c.student_email === decodeURIComponent(targetEmail));
   const canMessageTarget = targetCode && (!codePrefix || (targetCode.code || '').startsWith(codePrefix)) && (!courseEmails || courseEmails.has(targetCode.student_email));
 
@@ -110,7 +112,7 @@ export default function DirectMessage() {
         <button onClick={() => navigate(-1)} className="text-white/70 hover:text-white p-1 rounded-lg transition-colors">
           <ArrowLeft size={18} />
         </button>
-        <MSNAvatar isMe={false} size={36} />
+        <MSNAvatar color={target.color} size={36} />
         <div className="flex-1">
           <p className="text-white font-bold text-sm">{target.name}</p>
           <p className="text-white/50 text-[10px]">Mensagem Privada · WR-EDU</p>
@@ -118,10 +120,10 @@ export default function DirectMessage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-[#f0f4fb] space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 bg-[radial-gradient(circle_at_top_left,_#e9efff,_#f7f9ff_45%,_#ecf3ff)] space-y-3">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-center">
-            <MSNAvatar isMe={false} size={48} />
+            <MSNAvatar color={target.color} size={48} />
             <p className="text-[#5b5ef4] font-bold">Inicie a conversa com {target.name}!</p>
             <p className="text-gray-400 text-sm">Suas mensagens são privadas.</p>
           </div>
@@ -132,7 +134,7 @@ export default function DirectMessage() {
           const time = rawDate ? rawDate.toISOString().slice(11, 16) : '';
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-              <MSNAvatar isMe={isMe} size={28} />
+              <MSNAvatar color={isMe ? myColor : target.color} size={28} />
               <div className={`max-w-[72%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                 {!isMe && <span className="text-[10px] font-bold mb-0.5 ml-1 text-[#3b82f6]">{msg.author_name}</span>}
                 <div className={`px-3 py-2 rounded-2xl text-sm shadow-sm ${isMe ? 'rounded-br-sm bg-gradient-to-br from-[#5b5ef4] to-[#7c5ef4] text-white' : 'rounded-bl-sm bg-white border border-gray-200 text-gray-800'}`}>
@@ -147,7 +149,7 @@ export default function DirectMessage() {
       </div>
 
       {/* Input */}
-      <div className="shrink-0 bg-white border-t border-border p-3">
+      <div className="shrink-0 bg-white/90 backdrop-blur border-t border-border p-3">
         <div className="flex gap-2 items-center">
           <input
             className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-[#5b5ef4]/50 focus:bg-white transition-all"
@@ -157,6 +159,14 @@ export default function DirectMessage() {
             onKeyDown={handleKey}
             style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}
           />
+          <div className="flex items-center gap-1 px-2 py-1 rounded-xl border border-gray-200 bg-gray-50">
+            <Smile size={14} className="text-gray-400" />
+            <div className="flex gap-1">
+              {CHAT_EMOJIS.slice(0, 6).map(e => (
+                <button key={e} type="button" onClick={() => setText(prev => `${prev}${e}`)} className="text-sm hover:scale-110 transition-transform">{e}</button>
+              ))}
+            </div>
+          </div>
           <button
             onClick={sendMessage}
             disabled={!text.trim()}
