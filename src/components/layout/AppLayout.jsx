@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -24,9 +24,15 @@ const PTR_THRESHOLD = 72; // px to pull before triggering refresh
 
 export default function AppLayout() {
   const { session } = useCustomAuth();
-  const location = useLocation();
-  useVersionCheck(60000); // checks every 60s for a new version
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Guard: students without a course set go back to lobby
+  useEffect(() => {
+    if (session?.role === 'student' && !session?.course) {
+      navigate('/lobby');
+    }
+  }, [session, navigate]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isStudent = session?.role === 'student';

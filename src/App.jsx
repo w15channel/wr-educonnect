@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
 // REQUIRED platform imports — do NOT remove
@@ -42,6 +42,8 @@ import Classe from './pages/Classe';
 
 const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
+  const location = useLocation();
+  const pathname = location.pathname;
   const handleLogin = (redirect) => {
     login();
     if (redirect && window.location.pathname !== '/' + redirect) {
@@ -62,23 +64,23 @@ const AuthenticatedApp = () => {
 
   // Show CourseLobby right after login if student hasn't chosen platform access yet
   if (!session) {
-    if (window.location.pathname === '/politica') {
+    if (pathname === '/politica') {
       return <PoliticaDeTrabalho />;
     }
-    if (window.location.pathname === '/termos') {
+    if (pathname === '/termos') {
       return <TermosDeUso />;
     }
-    if (window.location.pathname === '/privacidade') {
+    if (pathname === '/privacidade') {
       return <PoliticaDePrivacidade />;
     }
-    if (window.location.pathname === '/wr-tec') {
+    if (pathname === '/wr-tec') {
       return <WRTec />;
     }
     return <LandingPage onLogin={handleLogin} />;
   }
 
   // Lobby for student course selection
-  if (session?.role === 'student' && window.location.pathname === '/lobby') {
+  if (session?.role === 'student' && pathname === '/lobby') {
     return <CourseLobby />;
   }
 
