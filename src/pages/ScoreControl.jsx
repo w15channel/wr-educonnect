@@ -81,6 +81,15 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
 
   const getScoreItem = (category, ref_id) => scoreItems.find(s => s.category === category && s.ref_id === ref_id);
 
+  const isPairingFromActiveCourse = (pairing) => {
+    if (!courseEmails || courseEmails.size === 0) return true;
+    return courseEmails.has(pairing.therapist_email || '') && courseEmails.has(pairing.patient_email || '');
+  };
+
+  const myPairings = pairings.filter(p =>
+    (p.therapist_email === email || p.patient_email === email) && isPairingFromActiveCourse(p)
+  );
+
   const lessonIds = new Set(lessons.map(l => l.id));
   const taskIds = new Set(tasks.map(t => t.id));
   const liveSessionIds = new Set(liveSessions.map(l => l.id));
@@ -103,15 +112,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
     { key: 'forum', label: 'Fórum', icon: MessageSquare },
     { key: 'therapist', label: 'Terapeutas', icon: Heart },
   ];
-
-  const isPairingFromActiveCourse = (pairing) => {
-    if (!courseEmails || courseEmails.size === 0) return true;
-    return courseEmails.has(pairing.therapist_email || '') && courseEmails.has(pairing.patient_email || '');
-  };
-
-  const myPairings = pairings.filter(p =>
-    (p.therapist_email === email || p.patient_email === email) && isPairingFromActiveCourse(p)
-  );
 
   const sectionPending = {
     lessons: lessons.some(l => {
@@ -408,7 +408,7 @@ export default function ScoreControl() {
 
   const { data: scoreItems = [] } = useQuery({
     queryKey: ['score-items-all'],
-    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
+    queryFn: () => base44.entities.ScoreItem.list('-created_date', 10000),
   });
 
   const { data: submissions = [] } = useQuery({
