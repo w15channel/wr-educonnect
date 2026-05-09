@@ -187,23 +187,39 @@ export default function Dashboard() {
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
-  // Ranking por ScoreItems verificados — sempre filtrado pelo curso atual (admin e aluno)
-  const courseEmails = userCourse ? new Set(
-    accessCodes
-      .filter(c => (c.course === userCourse || (userCourse === 'tcc' && !c.course)) && c.student_email)
-      .map(c => c.student_email)
-  ) : null;
-  const rankMap = {};
+  // Ranking — isolated by course + code prefix (matches /ranking page logic)
+  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
+  const expectedPrefix = COURSE_PREFIX[userCourse];
+  const courseCodes = accessCodes.filter(c => {
+    if (!c.student_email) return false;
+    if (userCourse && c.course !== userCourse && !(userCourse === 'tcc' && !c.course)) return false;
+    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
+    return true;
+  });
+  const scoreMap = {};
   allScoreItems.filter(s => s.verified).forEach(s => {
     if (!s.student_email) return;
-    if (courseEmails && !courseEmails.has(s.student_email)) return;
-    if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0, count: 0 };
-    rankMap[s.student_email].total += (s.score || 0);
-    rankMap[s.student_email].count += 1;
+    scoreMap[s.student_email] = (scoreMap[s.student_email] || 0) + (s.score || 0);
   });
-  const ranking = Object.values(rankMap)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10);
+  const participationMap = {};
+  allScoreItems.forEach(s => {
+    if (!s.student_email) return;
+    participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
+  });
+  const ranking = courseCodes.map(c => ({
+    email: c.student_email,
+    total: scoreMap[c.student_email] || 0,
+    count: participationMap[c.student_email] || 0,
+    enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
+    name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
+  })).sort((a, b) => {
+    if (b.total !== a.total) return b.total - a.total;
+    if (a.count > 0 || b.count > 0) {
+      if (b.count !== a.count) return b.count - a.count;
+    }
+    if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
+    return a.name.localeCompare(b.name);
+  }).slice(0, 10);
 
   const myRank = ranking.findIndex(r => r.email === session?.email) + 1;
 
