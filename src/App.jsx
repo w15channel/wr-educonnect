@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import LandingPage from './pages/LayoutPreview2';
+import WRTec from './pages/WRTec';
 import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import TermosDeUso from './pages/TermosDeUso';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade';
@@ -95,6 +96,7 @@ const AuthenticatedApp = () => {
       </Route>
 
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
+      <Route path="/wr-tec" element={<WRTec />} />
       <Route path="/termos" element={<TermosDeUso />} />
       <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
       <Route path="*" element={<PageNotFound />} />

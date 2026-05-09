@@ -697,7 +697,7 @@ export default function LandingPage({ onLogin }) {
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
               <p className="text-white/20 text-xs">WR-EDU © 2026 — Todos os direitos reservados</p>
               <span className="text-white/10 hidden sm:inline">·</span>
-              <p className="text-white/20 text-xs">Feito com <span className="text-red-500">♥</span> pela <span className="text-white/30 font-semibold">WR-TEC®</span> © 2026</p>
+              <p className="text-white/20 text-xs">Feito com <span className="text-red-500">♥</span> pela <a href="/wr-tec" className="text-white/40 font-semibold hover:text-[#5b5ef4] transition-colors">WR-TEC®</a> © 2026</p>
             </div>
             <div className="flex items-center gap-4">
               <img
