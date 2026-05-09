@@ -109,16 +109,48 @@ export default function RankingGeral() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
-  // Build ranking from verified ScoreItems
-  const rankMap = {};
-  allScoreItems.filter(s => s.verified).forEach(s => {
-    if (!s.student_email) return;
-    if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0, count: 0 };
-    rankMap[s.student_email].total += (s.score || 0);
-    rankMap[s.student_email].count += 1;
+  // Course isolation: only students of the current course (with the right code prefix)
+  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
+  const activeCourse = session?.course;
+  const expectedPrefix = COURSE_PREFIX[activeCourse];
+  const courseCodes = accessCodes.filter(c => {
+    if (activeCourse && c.course !== activeCourse) return false;
+    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
+    return !!c.student_email;
   });
 
-  const ranking = Object.values(rankMap).sort((a, b) => b.total - a.total);
+  // Aggregate verified scores (points) and total participations (any score item) per email
+  const scoreMap = {};
+  allScoreItems.filter(s => s.verified).forEach(s => {
+    if (!s.student_email) return;
+    if (!scoreMap[s.student_email]) scoreMap[s.student_email] = 0;
+    scoreMap[s.student_email] += (s.score || 0);
+  });
+  const participationMap = {};
+  allScoreItems.forEach(s => {
+    if (!s.student_email) return;
+    participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
+  });
+
+  // Build ranking from all course students (so even zero-score students show up)
+  const ranking = courseCodes.map(c => ({
+    email: c.student_email,
+    total: scoreMap[c.student_email] || 0,
+    count: participationMap[c.student_email] || 0,
+    enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
+    name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
+  })).sort((a, b) => {
+    // 1) Points desc
+    if (b.total !== a.total) return b.total - a.total;
+    // 2) When there are participations, tie-break by participation count desc
+    if (a.count > 0 || b.count > 0) {
+      if (b.count !== a.count) return b.count - a.count;
+    }
+    // 3) Enrollment order (earlier first)
+    if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
+    // 4) Alphabetical
+    return a.name.localeCompare(b.name);
+  });
   const myPos = ranking.findIndex(r => r.email === session?.email) + 1;
 
   return (
