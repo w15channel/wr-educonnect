@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 export default function QuizView({ task, user, onBack }) {
   const [answers, setAnswers] = useState({});
@@ -31,7 +32,7 @@ export default function QuizView({ task, user, onBack }) {
     });
 
     const grade = choiceQuestions.length > 0
-      ? ((correct / choiceQuestions.length) * (task.max_grade || 10)).toFixed(1)
+      ? roundScore((correct / choiceQuestions.length) * (task.max_grade || 10))
       : null;
 
     const hasTextQuestions = questions.some(q => q.answer_type === 'text');
@@ -45,13 +46,13 @@ export default function QuizView({ task, user, onBack }) {
         if (q.answer_type === 'text') return ans?.text ?? '';
         return ans !== undefined ? String(ans) : '';
       }),
-      grade: grade !== null ? Number(grade) : undefined,
+      grade: grade !== null ? grade : undefined,
       status: hasTextQuestions ? 'submitted' : 'graded',
     });
 
     setScore(grade);
     setSubmitted(true);
-    toast.success(grade !== null ? `Prova enviada! Nota parcial: ${grade}` : 'Prova enviada! O professor irá corrigir as respostas escritas.');
+    toast.success(grade !== null ? `Prova enviada! Nota parcial: ${formatScore(grade)}` : 'Prova enviada! O professor irá corrigir as respostas escritas.');
   };
 
   const allAnswered = questions.every((q, i) =>
@@ -84,7 +85,7 @@ export default function QuizView({ task, user, onBack }) {
           {score !== null ? (
             <>
               <p className="text-muted-foreground text-sm mt-2">Nota nas questões objetivas:</p>
-              <p className="text-3xl font-bold text-primary mt-1">{score} / {task.max_grade || 10}</p>
+              <p className="text-3xl font-bold text-primary mt-1">{formatScore(score)} / {formatScore(task.max_grade || 10)}</p>
               {questions.some(q => q.answer_type === 'text') && (
                 <p className="text-xs text-muted-foreground mt-3">As questões dissertativas serão corrigidas pelo professor.</p>
               )}

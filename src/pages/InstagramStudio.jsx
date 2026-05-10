@@ -7,6 +7,7 @@ import { Instagram, Star, MessageSquare, TrendingUp, Copy, CheckCircle, Award, B
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const COURSE_LABELS = { tcc: 'TCC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' };
 
@@ -16,7 +17,7 @@ function getStudentName(code, fallbackEmail) {
 
 function buildCaption(item, courseLabel) {
   const intro = item.type === 'ranking'
-    ? `Resultado de destaque no ranking da turma ${courseLabel}: ${item.studentName} alcançou ${item.points} pontos na plataforma WR-EDU.`
+    ? `Resultado de destaque no ranking da turma ${courseLabel}: ${item.studentName} alcançou ${formatScore(item.points)} pontos na plataforma WR-EDU.`
     : item.type === 'lesson'
     ? `${item.studentName} registrou um progresso positivo nas aulas da turma ${courseLabel}.`
     : `${item.studentName} compartilhou uma participação positiva na comunidade da turma ${courseLabel}.`;
@@ -43,7 +44,7 @@ function SuggestionCard({ item, selected, onSelect }) {
           <p className="text-xs text-muted-foreground line-clamp-2">“{item.quote}”</p>
           {item.points !== undefined && (
             <div className="flex items-center gap-1 mt-2 text-xs font-bold text-yellow-700">
-              <Star size={12} className="fill-yellow-500 text-yellow-500" /> {item.points} pontos
+              <Star size={12} className="fill-yellow-500 text-yellow-500" /> {formatScore(item.points)} pontos
             </div>
           )}
         </div>
@@ -80,7 +81,7 @@ function PostPreview({ item, courseLabel }) {
 
       <div className="relative flex items-center justify-between text-xs text-white/80">
         <span>Instituto WR</span>
-        {item.points !== undefined && <span className="font-black">{item.points} pts</span>}
+        {item.points !== undefined && <span className="font-black">{formatScore(item.points)} pts</span>}
       </div>
     </div>
   );
@@ -125,7 +126,7 @@ export default function InstagramStudio() {
 
   const suggestions = useMemo(() => {
     const rankingItems = profiles
-      .filter((profile) => profile.dashboard_course === activeCourse && (profile.points || 0) > 0)
+      .filter((profile) => profile.dashboard_course === activeCourse && roundScore(codeByEmail.get(profile.student_email)?.pontuacao_total ?? profile.pontuacao_total ?? profile.points ?? 0) > 0)
       .sort((a, b) => (a.dashboard_rank || 9999) - (b.dashboard_rank || 9999))
       .slice(0, 6)
       .map((profile) => ({
@@ -133,8 +134,8 @@ export default function InstagramStudio() {
         type: 'ranking',
         label: `Ranking #${profile.dashboard_rank || '—'}`,
         studentName: profile.full_name || getStudentName(codeByEmail.get(profile.student_email), profile.student_email),
-        quote: `Com dedicação constante, alcançou ${profile.points || 0} pontos no ranking acadêmico.`,
-        points: Number(profile.points || 0).toFixed(1),
+        quote: `Com dedicação constante, alcançou ${formatScore(codeByEmail.get(profile.student_email)?.pontuacao_total ?? profile.pontuacao_total ?? profile.points ?? 0)} pontos no ranking acadêmico.`,
+        points: roundScore(codeByEmail.get(profile.student_email)?.pontuacao_total ?? profile.pontuacao_total ?? profile.points ?? 0),
       }));
 
     const progressItems = progresses

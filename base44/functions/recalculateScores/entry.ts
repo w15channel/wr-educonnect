@@ -31,7 +31,9 @@ function scoreKey(studentEmail, category, refId) {
 }
 
 function roundScore(value) {
-  return Math.round((Number(value) || 0) * 10) / 10;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.round((numeric + Number.EPSILON) * 1000) / 1000;
 }
 
 Deno.serve(async (req) => {
@@ -57,6 +59,7 @@ Deno.serve(async (req) => {
       forumReplies,
       scoreItems,
       studentProfiles,
+      users,
       monitorHistory,
     ] = await Promise.all([
       base44.asServiceRole.entities.AccessCode.list('-created_date', 5000),
@@ -70,6 +73,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.ForumReply.list('-created_date', 10000),
       base44.asServiceRole.entities.ScoreItem.list('-created_date', 20000),
       base44.asServiceRole.entities.StudentProfile.list('-updated_date', 10000),
+      base44.asServiceRole.entities.User.list('-created_date', 10000).catch(() => []),
       base44.asServiceRole.entities.MonitorHistory.list('-period_start', 1000),
     ]);
 
@@ -81,6 +85,7 @@ Deno.serve(async (req) => {
     let correctedSubmissions = 0;
     let monitorsDefined = 0;
     let profilesUpdated = 0;
+    let scoreCachesUpdated = 0;
 
     const upsertScore = async ({ studentEmail, category, refId, refTitle, score, maxScore, notes }) => {
       if (!studentEmail || !refId) return;
@@ -125,7 +130,7 @@ Deno.serve(async (req) => {
       const liveMap = new Map(courseLives.map((live) => [live.id, live]));
       const coursePostIds = new Set(coursePosts.map((post) => post.id));
       const baseTotals = new Map(courseCodes.map((code) => [code.student_email, 0]));
-      const addBase = (email, points) => baseTotals.set(email, roundScore((baseTotals.get(email) || 0) + points));
+      const addBase = (email, points) => baseTotals.set(email, roundScore(roundScore(baseTotals.get(email) || 0) + roundScore(points)));
 
       progresses.forEach((progress) => {
         if (progress.watched && courseEmails.has(progress.student_email) && lessonMap.has(progress.lesson_id)) addBase(progress.student_email, 10);
@@ -176,7 +181,7 @@ Deno.serve(async (req) => {
       }
 
       const calculatedTotals = new Map(courseCodes.map((code) => [code.student_email, 0]));
-      const addCalculated = (email, points) => calculatedTotals.set(email, roundScore((calculatedTotals.get(email) || 0) + points));
+      const addCalculated = (email, points) => calculatedTotals.set(email, roundScore(roundScore(calculatedTotals.get(email) || 0) + roundScore(points)));
 
       for (const progress of progresses) {
         const lesson = lessonMap.get(progress.lesson_id);
@@ -199,7 +204,7 @@ Deno.serve(async (req) => {
         const score = 10 + bonus;
         const category = task.type === 'quiz' ? 'quiz' : 'task';
         const feedback = bonus > 0
-          ? `Entrega recebida e pontuada: 10 pontos + ${bonus.toFixed(1)} de bônus de monitor/ranking.`
+          ? `Entrega recebida e pontuada: 10 pontos + ${String(roundScore(bonus)).replace('.', ',')} de bônus de monitor/ranking.`
           : 'Entrega recebida e pontuada conforme a regra universal: +10 pontos.';
         await upsertScore({ studentEmail: submission.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
         addCalculated(submission.student_email, score);
@@ -237,12 +242,25 @@ Deno.serve(async (req) => {
           student_email: item.code.student_email,
           full_name: displayName(item.code),
           points: roundScore(item.total),
+          pontuacao_total: roundScore(item.total),
           dashboard_rank: index + 1,
           dashboard_course: course,
         };
         if (existingProfile) await base44.asServiceRole.entities.StudentProfile.update(existingProfile.id, profilePayload);
         else await base44.asServiceRole.entities.StudentProfile.create(profilePayload);
         profilesUpdated++;
+
+        if (roundScore(item.code.pontuacao_total) !== roundScore(item.total)) {
+          await base44.asServiceRole.entities.AccessCode.update(item.code.id, { pontuacao_total: roundScore(item.total) });
+          scoreCachesUpdated++;
+        }
+
+        for (const cachedUser of users.filter((cached) => cached.email === item.code.student_email)) {
+          if (roundScore(cachedUser.pontuacao_total) !== roundScore(item.total)) {
+            await base44.asServiceRole.entities.User.update(cachedUser.id, { pontuacao_total: roundScore(item.total) });
+            scoreCachesUpdated++;
+          }
+        }
       }
     }
 
@@ -262,6 +280,7 @@ Deno.serve(async (req) => {
       correctedSubmissions,
       monitorsDefined,
       profilesUpdated,
+      scoreCachesUpdated,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

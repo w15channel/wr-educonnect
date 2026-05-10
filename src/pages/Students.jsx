@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 export default function Students() {
   const navigate = useNavigate();
@@ -110,8 +111,9 @@ export default function Students() {
   const getStudentStats = (code) => {
     const subs = allSubmissions.filter(s => s.student_email === code.student_email);
     const graded = subs.filter(s => s.grade !== undefined && s.grade !== null);
-    const avg = graded.length > 0 ? (graded.reduce((sum, s) => sum + s.grade, 0) / graded.length).toFixed(1) : '—';
-    return { avg, submissions: subs.length, total: graded.reduce((sum, s) => sum + s.grade, 0) };
+    const total = graded.reduce((sum, item) => roundScore(sum + roundScore(item.grade)), 0);
+    const avg = graded.length > 0 ? roundScore(total / graded.length) : null;
+    return { avg, avgDisplay: avg !== null ? formatScore(avg) : '—', submissions: subs.length, total };
   };
 
   const getStudentTuitionStatus = (code) => {
@@ -169,13 +171,13 @@ export default function Students() {
       if (sortBy === 'submissions_desc') return getStudentStats(b).submissions - getStudentStats(a).submissions;
       if (sortBy === 'submissions_asc') return getStudentStats(a).submissions - getStudentStats(b).submissions;
       if (sortBy === 'avg_desc') {
-        const avgA = parseFloat(getStudentStats(a).avg) || 0;
-        const avgB = parseFloat(getStudentStats(b).avg) || 0;
+        const avgA = Number(getStudentStats(a).avg) || 0;
+        const avgB = Number(getStudentStats(b).avg) || 0;
         return avgB - avgA;
       }
       if (sortBy === 'avg_asc') {
-        const avgA = parseFloat(getStudentStats(a).avg) || 0;
-        const avgB = parseFloat(getStudentStats(b).avg) || 0;
+        const avgA = Number(getStudentStats(a).avg) || 0;
+        const avgB = Number(getStudentStats(b).avg) || 0;
         return avgA - avgB;
       }
       // date_desc default
@@ -371,7 +373,7 @@ export default function Students() {
                               <code className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded-lg">{code.code}</code>
                             </td>
                             <td className="p-4 font-semibold text-foreground text-sm">{stats.submissions}</td>
-                            <td className="p-4 font-bold text-foreground">{stats.avg}</td>
+                            <td className="p-4 font-bold text-foreground">{stats.avgDisplay}</td>
                             <td className="p-4">
                               {tCfg ? (
                                 <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border font-semibold ${tCfg.class}`}>

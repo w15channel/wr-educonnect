@@ -14,6 +14,7 @@ Deno.serve(async (req) => {
 
     const existingSet = new Set(existingScores.map(s => s.ref_id));
     let created = 0;
+    const affectedEmails = new Set();
 
     // Posts: 0.1 pts each
     for (const post of posts) {
@@ -29,6 +30,7 @@ Deno.serve(async (req) => {
         verified: true,
       });
       created++;
+      affectedEmails.add(post.author_email);
     }
 
     // Replies: 0.5 pt each, only when answering a colleague
@@ -47,6 +49,30 @@ Deno.serve(async (req) => {
         verified: true,
       });
       created++;
+      affectedEmails.add(reply.author_email);
+    }
+
+    if (affectedEmails.size > 0) {
+      const [scoreItems, accessCodes, profiles, users] = await Promise.all([
+        base44.asServiceRole.entities.ScoreItem.list('-created_date', 50000),
+        base44.asServiceRole.entities.AccessCode.list('-created_date', 20000),
+        base44.asServiceRole.entities.StudentProfile.list('-updated_date', 20000),
+        base44.asServiceRole.entities.User.list('-created_date', 20000).catch(() => []),
+      ]);
+      for (const email of affectedEmails) {
+        const total = scoreItems
+          .filter((item) => item.verified && item.student_email === email)
+          .reduce((sum, item) => Math.round((sum + Math.round((Number(item.score) || 0) * 1000) / 1000) * 1000) / 1000, 0);
+        for (const code of accessCodes.filter((item) => item.student_email === email)) {
+          await base44.asServiceRole.entities.AccessCode.update(code.id, { pontuacao_total: total });
+        }
+        for (const profile of profiles.filter((item) => item.student_email === email)) {
+          await base44.asServiceRole.entities.StudentProfile.update(profile.id, { pontuacao_total: total, points: total });
+        }
+        for (const cachedUser of users.filter((item) => item.email === email)) {
+          await base44.asServiceRole.entities.User.update(cachedUser.id, { pontuacao_total: total });
+        }
+      }
     }
 
     return Response.json({ success: true, created, posts: posts.length, replies: replies.length });

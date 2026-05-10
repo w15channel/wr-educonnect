@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const CATEGORY_CONFIG = {
   lesson: { iconColor: 'bg-purple-100 text-purple-700' },
@@ -13,11 +14,11 @@ const CATEGORY_CONFIG = {
 };
 
 export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxScore = 10, item, needsCorrection, onSave, saving, children }) {
-  const [score, setScore] = useState(item?.score ?? '');
+  const [score, setScore] = useState(item?.score !== undefined && item?.score !== null ? formatScore(item.score) : '');
   const [notes, setNotes] = useState(item?.notes ?? '');
 
   useEffect(() => {
-    setScore(item?.score ?? '');
+    setScore(item?.score !== undefined && item?.score !== null ? formatScore(item.score) : '');
     setNotes(item?.notes ?? '');
   }, [item?.id, item?.score, item?.notes]);
 
@@ -40,16 +41,14 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
       </div>
       <div className="flex items-center gap-2 flex-wrap mt-2">
         <Input
-          type="number"
-          min={0}
-          max={maxScore}
-          step={0.1}
-          placeholder={`0–${maxScore}`}
+          type="text"
+          inputMode="decimal"
+          placeholder={`0–${formatScore(maxScore)}`}
           value={score}
           onChange={e => setScore(e.target.value)}
           className="w-20 h-8 text-xs"
         />
-        <span className="text-xs text-muted-foreground">/ {maxScore}</span>
+        <span className="text-xs text-muted-foreground">/ {formatScore(maxScore)}</span>
         <Input
           placeholder="Observação"
           value={notes}
@@ -59,7 +58,7 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
         <Button
           size="sm"
           className="h-8 text-xs px-3"
-          onClick={() => onSave({ category, ref_id: refId, ref_title: refTitle, score: score || 0, max_score: maxScore, notes })}
+          onClick={() => onSave({ category, ref_id: refId, ref_title: refTitle, score: roundScore(String(score || 0).replace(',', '.')), max_score: roundScore(maxScore), notes })}
           disabled={saving}
         >
           {item?.verified ? 'Atualizar' : 'Verificar'}

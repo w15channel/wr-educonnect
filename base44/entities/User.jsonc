@@ -37,6 +37,11 @@
       ],
       "default": "active",
       "description": "Student status"
+    },
+    "pontuacao_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Cache DECIMAL(10,3) da pontuação total do aluno; fonte única para rankings e exibição de pontos."
     }
   },
   "required": []

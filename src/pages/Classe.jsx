@@ -6,6 +6,7 @@ import { MessageCircle, Trophy, Crown, Star, Search, Phone, X } from 'lucide-rea
 import { Input } from '@/components/ui/input';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { startOfWeek, format } from 'date-fns';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 function getBrTime() {
   // GMT-3
@@ -46,7 +47,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
   const bio = profile?.bio || '';
   const whatsapp = profile?.whatsapp || '';
   const email = code?.student_email || '';
-  const points = profile?.points || 0;
+  const points = roundScore(code?.pontuacao_total ?? profile?.pontuacao_total ?? profile?.points ?? 0);
 
   const isMe = session?.email === email;
 
@@ -106,7 +107,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
         {points > 0 && (
           <div className="flex items-center justify-center gap-1 mt-1.5">
             <Trophy size={11} className="text-yellow-500" />
-            <span className="text-[11px] font-bold text-yellow-600">{points} pts</span>
+            <span className="text-[11px] font-bold text-yellow-600">{formatScore(points)} pts</span>
           </div>
         )}
       </div>

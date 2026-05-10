@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { GraduationCap, Download, Search, Settings2, Save, CheckSquare, Square } from 'lucide-react';
+import { GraduationCap, Download, Search, Settings2, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const WR_LOGO = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png';
 
@@ -99,7 +100,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', background: '#f8fafc', border: '1px solid #dde4ec', borderRadius: 8, padding: '14px 18px', marginBottom: 24, fontSize: 11 }}>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aluno(a)</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{student.name}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aproveitamento</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{approvalRate}%</p></div>
-          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Total de Pontos</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalScore} / {totalMaxScore}</p></div>
+          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Total de Pontos</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} / {formatScore(totalMaxScore)}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Carga Horária</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours}h</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Data de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionDate}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Horário de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionTime}</p></div>
@@ -126,7 +127,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
                 <td style={{ padding: '5px 8px', color: '#1e3a5f', maxWidth: 200 }}>{r.title}</td>
                 <td style={{ padding: '5px 8px', color: '#555' }}>{r.category}</td>
                 <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 'bold', color: r.score !== '—' ? '#1e3a5f' : '#aaa' }}>
-                  {r.score !== '—' ? `${r.score}/${r.max}` : '—'}
+                  {r.score !== '—' ? `${formatScore(r.score)}/${formatScore(r.max)}` : '—'}
                 </td>
                 <td style={{ padding: '5px 8px', textAlign: 'center', color: '#555' }}>{r.hours}h</td>
                 <td style={{ padding: '5px 8px', textAlign: 'center' }}>
@@ -147,7 +148,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
           </div>
           <div style={{ textAlign: 'right' }}>
             <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Pontuação Final</span>
-            <p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalScore} pts</p>
+            <p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} pts</p>
           </div>
         </div>
 
@@ -282,10 +283,10 @@ export default function HistoricoAcademico() {
 
   const selectedRows = allRows.filter(r => selectedItems.has(r.key));
   const selectedScoreRows = selectedRows.filter(r => r.status === 'Avaliado');
-  const totalScore = selectedScoreRows.reduce((sum, r) => sum + (typeof r.score === 'number' ? r.score : 0), 0);
-  const totalMaxScore = selectedScoreRows.reduce((sum, r) => sum + r.max, 0);
+  const totalScore = selectedScoreRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0);
+  const totalMaxScore = selectedScoreRows.reduce((sum, r) => roundScore(sum + roundScore(r.max)), 0);
   const totalHours = selectedRows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + r.hours, 0);
-  const approvalRate = totalMaxScore > 0 ? ((totalScore / totalMaxScore) * 100).toFixed(1) : 0;
+  const approvalRate = totalMaxScore > 0 ? formatScore((totalScore / totalMaxScore) * 100) : 0;
 
   const toggleItem = (key) => {
     setSelectedItems(prev => {
@@ -347,7 +348,7 @@ export default function HistoricoAcademico() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Itens selecionados', value: selectedItems.size },
-            { label: 'Pontuação', value: `${totalScore}/${totalMaxScore}` },
+            { label: 'Pontuação', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` },
             { label: 'Aproveitamento', value: `${approvalRate}%` },
             { label: 'Carga Horária', value: `${totalHours}h` },
           ].map(item => (
@@ -375,7 +376,7 @@ export default function HistoricoAcademico() {
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {items.map(r => (
-                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${r.score}/${r.max} pts` : 'Sem nota'}`} />
+                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}`} />
               ))}
             </div>
           </div>
@@ -407,7 +408,7 @@ export default function HistoricoAcademico() {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Pontuação', value: `${totalScore}/${totalMaxScore}` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: `${totalHours}h` }].map(item => (
+          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Pontuação', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: `${totalHours}h` }].map(item => (
             <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground">{item.label}</p>
               <p className="text-base font-black text-primary">{item.value}</p>
@@ -423,7 +424,7 @@ export default function HistoricoAcademico() {
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${r.score}/${r.max} pts` : 'Sem nota'}`} />)}
+              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}`} />)}
             </div>
           </div>
         ))}
@@ -465,9 +466,9 @@ export default function HistoricoAcademico() {
           const email = code.student_email || '';
           const name = code.profile_name || code.student_name || 'Sem nome';
           const studentScores = scoreItems.filter(s => s.student_email === email && s.verified);
-          const total = studentScores.reduce((sum, s) => sum + (s.score || 0), 0);
-          const max = studentScores.reduce((sum, s) => sum + (s.max_score || 10), 0);
-          const rate = max > 0 ? ((total / max) * 100).toFixed(0) : 0;
+          const total = roundScore(code.pontuacao_total ?? studentScores.reduce((sum, item) => roundScore(sum + roundScore(item.score)), 0));
+          const max = studentScores.reduce((sum, item) => roundScore(sum + roundScore(item.max_score || 10)), 0);
+          const rate = max > 0 ? Math.round((total / max) * 100) : 0;
           return (
             <div key={code.id} onClick={() => openSelector({ name, email, code })} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
