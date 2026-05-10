@@ -15,6 +15,13 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
+const POINT_RULES = {
+  lesson: 10,
+  task: 10,
+  forumPost: 0.1,
+  forumReply: 0.5,
+  liveAttendance: 1,
+};
 const CYCLE_DAYS = 4;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 
@@ -121,30 +128,58 @@ export default function Monitores() {
     c => c.is_active !== false && c.course === activeCourse && c.student_email && (!courseEmails || courseEmails.has(c.student_email))
   );
 
-  // Build ranking igual ao Dashboard — baseado em ScoreItems verificados
+  // Build ranking automatizado pelas regras oficiais de pontuação da turma
   const buildRanking = () => {
-    const courseEmails = new Set(courseStudents.map(c => c.student_email).filter(Boolean));
-    const lessonIds = new Set(lessons.map(l => l.id));
-    const taskIds = new Set(tasks.map(t => t.id));
-    const liveSessionIds = new Set(liveSessions.map(l => l.id));
-    const forumPostIds = new Set(forumPosts.filter(p => p.course === activeCourse).map(p => p.id));
-    const forumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
-    const isPairingFromCourse = (p) => !courseEmails.size || (courseEmails.has(p.therapist_email || '') && courseEmails.has(p.patient_email || ''));
-    const pairingIds = new Set(pairings.filter(isPairingFromCourse).map(p => p.id));
-    const rankMap = {};
-    scoreItems.filter(s =>
-      s.verified && s.student_email && courseEmails.has(s.student_email) && (
-        (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
-        (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
-        ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
-        (s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id))) ||
-        (s.category === 'therapist' && pairingIds.has(s.ref_id))
-      )
-    ).forEach(s => {
-      if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0 };
-      rankMap[s.student_email].total += (s.score || 0);
+    const studentEmails = courseStudents.map(c => c.student_email).filter(Boolean);
+    const emailSet = new Set(studentEmails);
+    const rankMap = Object.fromEntries(studentEmails.map(email => [email, {
+      email,
+      lessonCount: 0,
+      taskCount: 0,
+      forumPostCount: 0,
+      forumReplyCount: 0,
+      liveAttendanceCount: 0,
+      baseTotal: 0,
+      bonusTotal: 0,
+      total: 0,
+    }]));
+
+    scoreItems.forEach((s) => {
+      if (!s?.verified || !s?.student_email || !emailSet.has(s.student_email)) return;
+      const row = rankMap[s.student_email];
+      if (!row) return;
+      if (s.category === 'lesson') row.lessonCount += 1;
+      if (s.category === 'task' || s.category === 'quiz') row.taskCount += 1;
+      if (s.category === 'live_attendance') row.liveAttendanceCount += 1;
     });
-    return Object.values(rankMap).sort((a, b) => b.total - a.total);
+
+    forumPosts.filter((p) => p.course === activeCourse && emailSet.has(p.author_email)).forEach((p) => {
+      rankMap[p.author_email].forumPostCount += 1;
+    });
+
+    forumReplies.filter((r) => emailSet.has(r.author_email)).forEach((r) => {
+      rankMap[r.author_email].forumReplyCount += 1;
+    });
+
+    const firstPass = Object.values(rankMap).map((row) => {
+      const baseTotal =
+        row.lessonCount * POINT_RULES.lesson +
+        row.taskCount * POINT_RULES.task +
+        row.forumPostCount * POINT_RULES.forumPost +
+        row.forumReplyCount * POINT_RULES.forumReply +
+        row.liveAttendanceCount * POINT_RULES.liveAttendance;
+      return { ...row, baseTotal, total: Number(baseTotal.toFixed(2)) };
+    }).sort((a, b) => b.total - a.total);
+
+    firstPass.slice(0, 3).forEach((row, idx) => {
+      const rank = idx + 1;
+      const bonusPerTask = MONITOR_BONUSES[rank] || 0;
+      const bonusTotal = row.taskCount * bonusPerTask;
+      row.bonusTotal = Number(bonusTotal.toFixed(2));
+      row.total = Number((row.baseTotal + row.bonusTotal).toFixed(2));
+    });
+
+    return [...firstPass].sort((a, b) => b.total - a.total);
   };
 
   const ranking = buildRanking();
@@ -292,8 +327,8 @@ export default function Monitores() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
           <p className="font-bold mb-1">Critérios de seleção dos Monitores:</p>
           <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
-            <li>Ranking recalculado pelas regras universais da plataforma</li>
-            <li>1º Monitor: +0.5pts / 2º Monitor: +0.3pts / 3º Monitor: +0.2pts em entregas de atividades e trabalhos</li>
+            <li>Aula completa: +10,0 · Entrega de atividade/trabalho: +10,0 · Comentário no fórum: +0,1 · Resposta no fórum: +0,5 · Presença em live: +1,0</li>
+            <li>Monitores da semana: 1º +0,5 / 2º +0,3 / 3º +0,2 por entrega de atividade/trabalho</li>
           </ol>
         </div>
       )}
@@ -481,9 +516,8 @@ export default function Monitores() {
             <p style={{ fontSize: 13, color: '#444', margin: '0 0 10px' }}>Certificamos que</p>
             <h2 style={{ fontSize: 30, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 20px', fontStyle: 'italic' }}>{certStudent?.student_name}</h2>
             <p style={{ fontSize: 13, color: '#444', lineHeight: 1.9, maxWidth: 480, margin: '0 auto 24px', textAlign: 'justify' }}>
-              foi reconhecido(a) como <strong>Monitor de Classe por Mérito Acadêmico</strong>, alcançando a{' '}
-              <strong>{certStudent?.rank_position === 1 ? '1ª' : certStudent?.rank_position === 2 ? '2ª' : '3ª'} posição</strong>{' '}
-              no Ranking Geral de Desempenho, demonstrando excelência e dedicação, durante o período de{' '}
+              foi reconhecido(a) como <strong>Monitor de Classe por Mérito Acadêmico</strong>, estando em destaque no
+              Ranking Geral de Desempenho da turma, demonstrando excelência e dedicação, durante o período de{' '}
               <strong>{certStudent?.period_start ? format(new Date(certStudent.period_start + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>{' '}
               a <strong>{certStudent?.period_end ? format(new Date(certStudent.period_end + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>.
             </p>
@@ -492,7 +526,7 @@ export default function Monitores() {
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 2, letterSpacing: 1 }}>W.Ribeiro</div>
                 <div style={{ width: 160, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
-                  <p style={{ fontSize: 10, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>DIREÇÃO GERAL</p>
+                  <p style={{ fontSize: 10, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>COORDENAÇÃO DO CURSO</p>
                   <p style={{ fontSize: 9, color: '#888', margin: 0 }}>WR — Instituto de Desenvolvimento Humano</p>
                 </div>
               </div>
