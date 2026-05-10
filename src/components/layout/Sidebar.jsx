@@ -7,7 +7,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, Globe, UsersRound
+  ChevronRight, Award, Heart, BookOpen, Hash, Globe, UsersRound
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -30,7 +30,6 @@ const adminGroups = [
       { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
-      { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
     ],
   },
   {
@@ -39,7 +38,6 @@ const adminGroups = [
       { icon: Users, label: 'Gestão de Alunos', path: '/students', color: 'text-indigo-400' },
       { icon: Key, label: 'Códigos de Acesso', path: '/keys', color: 'text-emerald-400' },
       { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
-      { icon: Trophy, label: 'Controle de Pontuação', path: '/scorecontrol', color: 'text-yellow-400' },
       { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
     ],
@@ -71,7 +69,6 @@ const studentGroups = [
       { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
-      { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
       { icon: UsersRound, label: 'Classe', path: '/classe', color: 'text-sky-400' },
     ],
   },
