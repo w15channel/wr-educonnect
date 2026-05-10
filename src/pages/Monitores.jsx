@@ -75,6 +75,22 @@ export default function Monitores() {
     queryKey: ['forum-replies-monitores'],
     queryFn: () => base44.entities.ForumReply.list('-created_date', 1000),
   });
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['monitores-lessons', activeCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 500),
+  });
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['monitores-tasks', activeCourse],
+    queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 500),
+  });
+  const { data: liveSessions = [] } = useQuery({
+    queryKey: ['monitores-live-sessions', activeCourse],
+    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 500),
+  });
+  const { data: pairings = [] } = useQuery({
+    queryKey: ['monitores-pairings'],
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 3000),
+  });
 
   const { data: monitorHistory = [] } = useQuery({
     queryKey: ['monitor-history'],
@@ -97,8 +113,23 @@ export default function Monitores() {
   // Build ranking igual ao Dashboard — baseado em ScoreItems verificados
   const buildRanking = () => {
     const courseEmails = new Set(courseStudents.map(c => c.student_email).filter(Boolean));
+    const lessonIds = new Set(lessons.map(l => l.id));
+    const taskIds = new Set(tasks.map(t => t.id));
+    const liveSessionIds = new Set(liveSessions.map(l => l.id));
+    const forumPostIds = new Set(forumPosts.filter(p => p.course === activeCourse).map(p => p.id));
+    const forumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
+    const isPairingFromCourse = (p) => !courseEmails.size || (courseEmails.has(p.therapist_email || '') && courseEmails.has(p.patient_email || ''));
+    const pairingIds = new Set(pairings.filter(isPairingFromCourse).map(p => p.id));
     const rankMap = {};
-    scoreItems.filter(s => s.verified && s.student_email && courseEmails.has(s.student_email)).forEach(s => {
+    scoreItems.filter(s =>
+      s.verified && s.student_email && courseEmails.has(s.student_email) && (
+        (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
+        (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
+        ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
+        (s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id))) ||
+        (s.category === 'therapist' && pairingIds.has(s.ref_id))
+      )
+    ).forEach(s => {
       if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0 };
       rankMap[s.student_email].total += (s.score || 0);
     });
