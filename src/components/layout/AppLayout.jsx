@@ -152,47 +152,47 @@ export default function AppLayout() {
         {/* Mobile top header */}
         <MobileHeader />
 
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative hidden">
-          {/* Pull-to-refresh indicator */}
-          {showIndicator &&
-          <div
-            className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all pointer-events-none md:hidden"
-            style={{ height: pullY, overflow: 'hidden' }}>
-            
-              <div className={`w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary flex items-center justify-center ${refreshing ? 'animate-spin' : ''}`}
-            style={{ transform: !refreshing ? `rotate(${pullY / PTR_THRESHOLD * 270}deg)` : undefined }}>
-              
-                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-              </div>
-            </div>
-          }
+        
 
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={location.pathname}
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              ref={scrollRef}
-              data-scroll-container
-              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden hidden"
-              style={{
-                paddingBottom: location.pathname !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
-                transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
-                transition: isPulling.current ? 'none' : 'transform 0.3s ease'
-              }}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}>
-              
-              <div className={location.pathname === '/certificadora' ? "flex-1 min-h-0 flex flex-col hidden" : ''}>
-                <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
         {/* Mobile bottom nav */}
         <BottomNav onMenuOpen={() => setSidebarOpen(true)} />
