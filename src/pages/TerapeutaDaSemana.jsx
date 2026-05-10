@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { sortBySequence } from '@/lib/sequenceUtils';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -81,14 +82,14 @@ export default function TerapeutaDaSemana() {
   const activeDomainStudents = accessCodes.filter(isCodeInActiveDomain);
   const rankedDomainStudents = [...activeDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
 
-  const currentPairings = pairings.filter(p =>
+  const currentPairings = sortBySequence(pairings.filter(p =>
     p.pairing_date >= periodStart &&
     (!courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email)))
-  );
-  const pastPairings = pairings.filter(p =>
+  ));
+  const pastPairings = sortBySequence(pairings.filter(p =>
     p.pairing_date < periodStart &&
     (!courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email)))
-  );
+  ));
 
   // Pairings do aluno logado
   const myTherapistPairing = currentPairings.find(p => p.therapist_email === session?.email);

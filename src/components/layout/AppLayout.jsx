@@ -8,11 +8,8 @@ import BottomNav from './BottomNav';
 import MobileHeader from './MobileHeader';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
-import ServiceTermsModal from '../onboarding/ServiceTermsModal';
 import TutorialModal from '../onboarding/TutorialModal';
-import { useVersionCheck } from '@/hooks/useVersionCheck';
 
-const TERMS_KEY = 'wr_terms_accepted';
 const TUTORIAL_KEY = 'wr_tutorial_done';
 
 const pageVariants = {
@@ -63,26 +60,15 @@ export default function AppLayout() {
 
   const isStudent = session?.role === 'student';
   const sessionKey = session?.email || session?.code || '';
-  const [showTerms, setShowTerms] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     if (!isStudent || !sessionKey) return;
-    const termsKey = `${TERMS_KEY}_${sessionKey}`;
     const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
-    const termsAccepted = localStorage.getItem(termsKey);
     const tutDone = localStorage.getItem(tutKey);
-    if (!termsAccepted) { setShowTerms(true); return; }
     if (!tutDone) { setShowTutorial(true); }
   }, [isStudent, sessionKey]);
 
-  const handleTermsAccept = () => {
-    const termsKey = `${TERMS_KEY}_${sessionKey}`;
-    localStorage.setItem(termsKey, '1');
-    setShowTerms(false);
-    const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
-    if (!localStorage.getItem(tutKey)) setShowTutorial(true);
-  };
 
   const handleTutorialFinish = () => {
     const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
@@ -132,10 +118,7 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {showTerms && isStudent && (
-        <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />
-      )}
-      {showTutorial && isStudent && !showTerms && (
+      {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
       )}
       {/* Desktop sidebar */}

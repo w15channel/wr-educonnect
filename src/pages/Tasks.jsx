@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { sortBySequence } from '@/lib/sequenceUtils';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
@@ -207,8 +208,8 @@ export default function Tasks({ mode = 'all' }) {
     return (a.created_date || '').localeCompare(b.created_date || '');
   };
 
-  const uploadTasks = tasks.filter(t => t.type === 'upload').sort(taskSorter);
-  const quizTasks = tasks.filter(t => t.type === 'quiz').sort(taskSorter);
+  const uploadTasks = sortBySequence(tasks.filter(t => t.type === 'upload')).sort(taskSorter);
+  const quizTasks = sortBySequence(tasks.filter(t => t.type === 'quiz')).sort(taskSorter);
   const displayedTasks = mode === 'tasks' ? uploadTasks : mode === 'tests' ? quizTasks : (activeTab === 'tasks' ? uploadTasks : quizTasks);
 
   const submitCommentMutation = useMutation({

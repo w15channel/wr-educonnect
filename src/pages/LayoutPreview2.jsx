@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   GraduationCap, Lock, Key, Sparkles, Users, BookOpen, Video, Heart,
   Star, ChevronRight, Shield, Award, CheckCircle, ExternalLink,
-  ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle } from
+  ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle, MessageCircle, Send } from
 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
-import { toast } from 'sonner';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
@@ -186,8 +185,11 @@ export default function LandingPage({ onLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [testimonials, setTestimonials] = useState(TESTIMONIALS);
-  const [testimonialForm, setTestimonialForm] = useState({ name: '', stars: 5, comment: '' });
-  const [sendingTestimonial, setSendingTestimonial] = useState(false);
+  const [reserveOpen, setReserveOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [leadMessages, setLeadMessages] = useState([]);
+  const [leadInput, setLeadInput] = useState('');
+  const [leadLoading, setLeadLoading] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setHeroImg((i) => (i + 1) % HERO_IMAGES.length), 5000);
@@ -263,24 +265,49 @@ export default function LandingPage({ onLogin }) {
     setLoading(false);
   };
 
-  const handleSubmitTestimonial = async (e) => {
-    e.preventDefault();
-    if (!testimonialForm.name || !testimonialForm.comment) return;
-    setSendingTestimonial(true);
-    try {
-      await base44.entities.Testimonial.create({
-        student_name: testimonialForm.name,
-        stars: Number(testimonialForm.stars),
-        comment: testimonialForm.comment,
-        approved: false,
-      });
-      setTestimonialForm({ name: '', stars: 5, comment: '' });
-      toast.success('Depoimento enviado! Após aprovação, ele será exibido na homepage.');
-    } catch (error) {
-      toast.error('Não foi possível enviar o depoimento. Tente novamente.');
-    } finally {
-      setSendingTestimonial(false);
-    }
+  const openCourseReservation = (course) => {
+    setSelectedCourse(course);
+    setLeadMessages([
+      {
+        role: 'assistant',
+        content: `Olá! Sou a IA da WR-EDU 😊 Vou registrar sua reserva antecipada para ${course.title}. Para começar: qual é seu nome completo e melhor WhatsApp?`
+      }
+    ]);
+    setLeadInput('');
+    setReserveOpen(true);
+  };
+
+  const sendReserveChatMessage = async () => {
+    if (!leadInput.trim() || leadLoading) return;
+    const userMessage = { role: 'user', content: leadInput.trim() };
+    const nextMessages = [...leadMessages, userMessage];
+    setLeadMessages(nextMessages);
+    setLeadInput('');
+    setLeadLoading(true);
+
+    const prompt = `Você é a IA de pré-reserva da WR-EDU. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.
+Faça uma pergunta por vez até coletar: nome completo, WhatsApp, curso de interesse, objetivo profissional e melhor horário de contato.
+Quando os dados principais já estiverem presentes, confirme que a pessoa pode enviar a reserva ao WhatsApp oficial. Seja acolhedor, objetivo e use português do Brasil.
+
+Histórico:
+${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}
+
+IA:`;
+
+    const response = await base44.integrations.Core.InvokeLLM({ prompt });
+    setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]);
+    setLeadLoading(false);
+  };
+
+  const sendReserveToWhatsApp = () => {
+    const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA WR-EDU'}: ${m.content}`).join('\n');
+    const summary = encodeURIComponent(`Olá! Quero reservar vaga antecipada.
+Curso: ${selectedCourse?.title}
+
+Questionário em chat:
+${transcript}`);
+    window.open(`https://wa.me/5541992531598?text=${summary}`, '_blank');
+    setReserveOpen(false);
   };
 
   return (
@@ -642,18 +669,11 @@ export default function LandingPage({ onLogin }) {
                       <p className="text-xs text-white/30 mb-0.5">Investimento</p>
                       <p className="text-2xl font-black text-white">{c.price} <span className="text-sm font-normal text-white/40">{c.period}</span></p>
                     </div>
-                    <div className="group relative">
-                      <button
-                      disabled
-                      className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white/50 bg-gradient-to-r from-[#5b5ef4]/20 to-[#1db89e]/20 border border-[#5b5ef4]/30 cursor-not-allowed flex items-center justify-center gap-2" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
-                      
-                        <Lock size={13} /> Quero Me Inscrever
-                      </button>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#1a1d2e] border border-white/15 rounded-xl p-3 text-center text-xs text-white/70 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                        <p className="font-bold text-white mb-0.5">Em breve!</p>
-                        <p>A próxima turma estará disponível em Setembro/2026. Fique ligado!</p>
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => openCourseReservation(c)}
+                      className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] border border-[#5b5ef4]/30 flex items-center justify-center gap-2 hover:opacity-90 transition-all" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+                      <MessageCircle size={13} /> Quero Me Inscrever
+                    </button>
                   </div>
                 </div>
               </div>
@@ -691,14 +711,6 @@ export default function LandingPage({ onLogin }) {
               </div>
             )}
           </div>
-          <form onSubmit={handleSubmitTestimonial} className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#0d1120] border border-white/10 rounded-2xl p-4">
-            <input className="md:col-span-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Seu nome" value={testimonialForm.name} onChange={(e) => setTestimonialForm({ ...testimonialForm, name: e.target.value })} />
-            <select className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" value={testimonialForm.stars} onChange={(e) => setTestimonialForm({ ...testimonialForm, stars: e.target.value })}>
-              {[5,4,3,2,1].map(s => <option key={s} value={s}>{s} estrelas</option>)}
-            </select>
-            <input className="md:col-span-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Seu comentário" value={testimonialForm.comment} onChange={(e) => setTestimonialForm({ ...testimonialForm, comment: e.target.value })} />
-            <button disabled={sendingTestimonial} className="md:col-span-4 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-xl py-2.5 font-bold text-sm">{sendingTestimonial ? 'Enviando...' : 'Enviar depoimento para aprovação'}</button>
-          </form>
         </div>
       </section>
 
@@ -759,6 +771,44 @@ export default function LandingPage({ onLogin }) {
           </div>
         </div>
       </footer>
+
+      {/* RESERVA ANTECIPADA EM CHAT */}
+      {reserveOpen &&
+      <div className="fixed inset-0 z-[190] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
+          <div className="bg-[#0d1120] border border-white/15 rounded-3xl w-full max-w-lg max-h-[88dvh] shadow-2xl overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-white font-black text-lg flex items-center gap-2"><MessageCircle size={18} className="text-[#1db89e]" /> Reserva Antecipada</h3>
+                <p className="text-white/40 text-xs mt-1">{selectedCourse?.title} · questionário guiado por IA</p>
+              </div>
+              <button onClick={() => setReserveOpen(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#080b14]">
+              {leadMessages.map((message, index) => (
+                <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${message.role === 'user' ? 'bg-[#5b5ef4] text-white' : 'bg-white/8 border border-white/10 text-white/80'}`}>
+                    {message.content}
+                  </div>
+                </div>
+              ))}
+              {leadLoading && <div className="text-xs text-white/35">IA digitando...</div>}
+            </div>
+            <div className="p-4 border-t border-white/10 bg-[#0d1120] space-y-3">
+              <div className="flex gap-2">
+                <input
+                  value={leadInput}
+                  onChange={(e) => setLeadInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') sendReserveChatMessage(); }}
+                  placeholder="Responda aqui..."
+                  className="flex-1 bg-white/6 border border-white/10 text-white placeholder:text-white/25 h-11 rounded-xl px-3 text-sm focus:outline-none focus:border-[#1db89e]/60"
+                />
+                <button onClick={sendReserveChatMessage} disabled={!leadInput.trim() || leadLoading} className="h-11 w-11 rounded-xl bg-[#1db89e] text-white flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
+              </div>
+              <button onClick={sendReserveToWhatsApp} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold text-sm">Enviar reserva para WhatsApp oficial</button>
+            </div>
+          </div>
+        </div>
+      }
 
       {/* LOGIN MODAL */}
       {showLoginModal &&

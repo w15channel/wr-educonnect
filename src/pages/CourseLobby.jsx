@@ -2,10 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
-import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles, MessageCircle, Send } from 'lucide-react';
+import ServiceTermsModal from '@/components/onboarding/ServiceTermsModal';
+import { base44 } from '@/api/base44Client';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
@@ -45,9 +44,8 @@ const COURSES = [
   },
 ];
 
-function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect, onReserve }) {
+function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStudentEnter }) {
   const videoRef = useRef(null);
-  const navigate = useNavigate();
   const Icon = course.icon;
 
   const handleMouseEnter = () => videoRef.current?.play();
@@ -115,7 +113,7 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect, onReserve }
           </button>
         ) : isActive ? (
           <button
-            onClick={() => navigate(`/student/${ ({tcc:'tcc',psicanalise:'psi',sexologia:'sex'})[course.id] || 'tcc'}/dashboard`)}
+            onClick={onStudentEnter}
             className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95"
             style={{ background: `linear-gradient(135deg, ${course.color}, #1db89e)` }}
           >
@@ -127,7 +125,7 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect, onReserve }
               onClick={() => onReserve(course)}
               className="w-full py-3 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-emerald-500 to-cyan-500 border border-white/10 flex items-center justify-center gap-2"
             >
-              Reservar Vaga Antecipadamente
+              Reserva Antecipada em Chat
             </button>
           </div>
         )}
@@ -146,7 +144,9 @@ export default function CourseLobby() {
   const [termsAccepted, setTermsAccepted] = useState(localStorage.getItem('wr_terms_lobby_accepted') === 'yes');
   const [reserveOpen, setReserveOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [lead, setLead] = useState({ name: '', contactType: 'WhatsApp', phone: '' });
+  const [leadMessages, setLeadMessages] = useState([]);
+  const [leadInput, setLeadInput] = useState('');
+  const [leadLoading, setLeadLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -163,14 +163,40 @@ export default function CourseLobby() {
     navigate(`/adm/${slug}/dashboard`);
   };
 
+  const handleTermsAccept = () => {
+    localStorage.setItem('wr_terms_lobby_accepted', 'yes');
+    setTermsAccepted(true);
+  };
+
   const handleStudentEnter = () => {
     if (!termsAccepted) return;
     const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
     navigate(`/student/${slug}/dashboard`);
   };
-  const openReserve = (course) => { setSelectedCourse(course); setReserveOpen(true); };
+
+  const openReserve = (course) => {
+    setSelectedCourse(course);
+    setLeadMessages([{ role: 'assistant', content: `Olá! Sou a IA da WR-EDU 😊 Vamos fazer sua reserva antecipada para ${course.title}. Qual é seu nome completo e melhor WhatsApp?` }]);
+    setLeadInput('');
+    setReserveOpen(true);
+  };
+
+  const sendLeadMessage = async () => {
+    if (!leadInput.trim() || leadLoading) return;
+    const userMessage = { role: 'user', content: leadInput.trim() };
+    const nextMessages = [...leadMessages, userMessage];
+    setLeadMessages(nextMessages);
+    setLeadInput('');
+    setLeadLoading(true);
+    const prompt = `Você é a IA de pré-reserva da WR-EDU. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, objetivo profissional e melhor horário de contato. Faça uma pergunta por vez e confirme quando puder enviar ao WhatsApp oficial.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
+    const response = await base44.integrations.Core.InvokeLLM({ prompt });
+    setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]);
+    setLeadLoading(false);
+  };
+
   const sendLead = () => {
-    const summary = `Olá! Quero reservar vaga antecipada.%0ACurso: ${selectedCourse?.title}%0ANome: ${lead.name}%0AContato preferencial: ${lead.contactType}%0ATelefone/WhatsApp: ${lead.phone}%0A`;
+    const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA WR-EDU'}: ${m.content}`).join('\n');
+    const summary = encodeURIComponent(`Olá! Quero reservar vaga antecipada.\nCurso: ${selectedCourse?.title}\n\nQuestionário em chat:\n${transcript}`);
     window.open(`https://wa.me/5541992531598?text=${summary}`, '_blank');
     setReserveOpen(false);
   };
@@ -218,6 +244,7 @@ export default function CourseLobby() {
 
   return (
     <div className="relative min-h-screen bg-[#080b14] text-white overflow-hidden">
+      {!termsAccepted && <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />}
       {musicEnabled && (
         <iframe
           className="absolute w-0 h-0 opacity-0 pointer-events-none"
@@ -273,14 +300,11 @@ export default function CourseLobby() {
         {/* Course Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {COURSES.map((c) => (
-            <CourseVideoCard key={c.id} course={c} isActive={userCourse === c.id} isAdmin={false} onAdminSelect={() => {}} onReserve={openReserve} />
+            <CourseVideoCard key={c.id} course={c} isActive={userCourse === c.id} isAdmin={false} onAdminSelect={() => {}} onReserve={openReserve} onStudentEnter={handleStudentEnter} />
           ))}
         </div>
         <div className="max-w-xl mx-auto mt-8 rounded-2xl border border-white/10 p-4 bg-white/5">
-          <label className="flex items-start gap-3 text-sm text-white/80">
-            <input type="checkbox" checked={termsAccepted} onChange={(e) => { setTermsAccepted(e.target.checked); localStorage.setItem('wr_terms_lobby_accepted', e.target.checked ? 'yes' : 'no'); }} />
-            <span>Li e aceito os Termos de Uso e Política de Privacidade para continuar.</span>
-          </label>
+          <p className="text-sm text-white/70">O Termo de Prestação de Serviços abre aqui no lobby antes do acesso ao portal.</p>
           <button onClick={handleStudentEnter} disabled={!termsAccepted} className="mt-3 w-full py-3 rounded-xl font-bold bg-[#5b5ef4] disabled:opacity-40">Entrar no Portal do Aluno</button>
         </div>
 
@@ -289,17 +313,34 @@ export default function CourseLobby() {
           <strong className="text-white/40">{COURSES.find(c => c.id === userCourse)?.title}</strong>. Em caso de dúvidas, entre em contato com a coordenação.
         </p>
       </div>
-      <Dialog open={reserveOpen} onOpenChange={setReserveOpen}>
-        <DialogContent className="bg-[#0d1120] text-white border-white/10">
-          <DialogHeader><DialogTitle>Reserva Antecipada • {selectedCourse?.title}</DialogTitle></DialogHeader>
-          <p className="text-sm text-white/70">Que alegria te ver aqui! Vamos garantir sua prioridade e te manter por perto das próximas turmas 🚀</p>
-          <Input placeholder="Nome completo" value={lead.name} onChange={(e) => setLead({ ...lead, name: e.target.value })} />
-          <Input placeholder="Melhor contato (WhatsApp)" value={lead.contactType} onChange={(e) => setLead({ ...lead, contactType: e.target.value })} />
-          <Input placeholder="Telefone / WhatsApp" value={lead.phone} onChange={(e) => setLead({ ...lead, phone: e.target.value })} />
-          <Textarea value={`Resumo: ${selectedCourse?.desc || ''}\nBenefícios: metodologia prática, comunidade ativa, suporte contínuo e certificação reconhecida.`} readOnly />
-          <button onClick={sendLead} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold">Enviar para WhatsApp oficial</button>
-        </DialogContent>
-      </Dialog>
+      {reserveOpen && (
+        <div className="fixed inset-0 z-[120] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
+          <div className="bg-[#0d1120] text-white border border-white/10 rounded-3xl w-full max-w-lg max-h-[88dvh] overflow-hidden flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-black text-lg flex items-center gap-2"><MessageCircle size={18} className="text-emerald-400" /> Reserva Antecipada</h3>
+                <p className="text-white/40 text-xs mt-1">{selectedCourse?.title} · atendimento guiado por IA</p>
+              </div>
+              <button onClick={() => setReserveOpen(false)} className="text-white/35 hover:text-white">×</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#080b14]">
+              {leadMessages.map((message, index) => (
+                <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${message.role === 'user' ? 'bg-[#5b5ef4]' : 'bg-white/8 border border-white/10 text-white/80'}`}>{message.content}</div>
+                </div>
+              ))}
+              {leadLoading && <p className="text-xs text-white/35">IA digitando...</p>}
+            </div>
+            <div className="p-4 border-t border-white/10 space-y-3">
+              <div className="flex gap-2">
+                <input value={leadInput} onChange={(e) => setLeadInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendLeadMessage(); }} placeholder="Responda aqui..." className="flex-1 h-11 rounded-xl bg-white/6 border border-white/10 px-3 text-sm outline-none focus:border-emerald-400/60" />
+                <button onClick={sendLeadMessage} disabled={!leadInput.trim() || leadLoading} className="h-11 w-11 rounded-xl bg-emerald-500 flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
+              </div>
+              <button onClick={sendLead} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold">Enviar para WhatsApp oficial</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

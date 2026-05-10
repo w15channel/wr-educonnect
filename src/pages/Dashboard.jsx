@@ -505,7 +505,7 @@ export default function Dashboard() {
                       <span className={`flex-1 text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{displayName}</span>
                       <div className="flex items-center gap-1 shrink-0">
                         <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                        <span className="text-xs font-bold text-foreground">{r.total}</span>
+                        <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
                       </div>
                     </div>);
 

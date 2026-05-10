@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { sortBySequence } from '@/lib/sequenceUtils';
 
 const CATEGORY_CONFIG = {
   lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
@@ -109,6 +110,13 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     return parentPost && parentPost.author_email !== email;
   });
   const forumReplyIds = new Set(scorableForumReplies.map(r => r.id));
+  const sequencedLessons = sortBySequence(lessons);
+  const sequencedTasks = sortBySequence(tasks);
+  const sequencedLiveSessions = sortBySequence(liveSessions);
+  const sequencedForumPosts = sortBySequence(studentForumPosts);
+  const sequencedForumReplies = sortBySequence(scorableForumReplies);
+  const sequencedPairings = sortBySequence(myPairings);
+
   const totalScore = scoreItems
     .filter(s => s.verified && (
       (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
@@ -142,22 +150,22 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   ];
 
   const sectionPending = {
-    lessons: lessons.some(l => {
+    lessons: sequencedLessons.some(l => {
       const p = progresses.find(pr => pr.lesson_id === l.id);
       return p && (p.watched || p.comment || p.summary) && !scoreItems.find(s => s.category === 'lesson' && s.ref_id === l.id && s.verified);
     }),
-    lives: liveSessions.some(sess => {
+    lives: sequencedLiveSessions.some(sess => {
       const att = attendances.find(a => a.session_id === sess.id);
       return att && !scoreItems.find(s => s.category === 'live_attendance' && s.ref_id === sess.id && s.verified);
     }),
-    tasks: tasks.some(task => {
+    tasks: sequencedTasks.some(task => {
       const sub = submissions.find(s => s.task_id === task.id);
       return sub && !scoreItems.find(s => (s.category === 'task' || s.category === 'quiz') && s.ref_id === task.id && s.verified);
     }),
     forum: [...studentForumPosts, ...scorableForumReplies].some(item =>
       !scoreItems.find(s => s.category === 'forum' && s.ref_id === item.id && s.verified)
     ),
-    therapist: myPairings.some(p =>
+    therapist: sequencedPairings.some(p =>
       !scoreItems.find(s => s.category === 'therapist' && s.ref_id === p.id && s.verified)
     ),
   };
@@ -187,8 +195,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
             </div>
           ) : (
             <div>
-              <p className="text-sm font-black text-primary">Resumo detalhado</p>
-              <p className="text-[10px] text-muted-foreground">atribuições por atividade</p>
+              <p className="text-lg font-black text-primary">{formatScore(totalScore)}</p>
+              <p className="text-[10px] text-muted-foreground">pts atribuídos a você</p>
             </div>
           )}
           {isTeacher && (
@@ -223,8 +231,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       <div className="space-y-3">
         {activeSection === 'lessons' && (
           <>
-            {lessons.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma aula gravada.</p>}
-            {lessons.map(lesson => {
+            {sequencedLessons.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma aula gravada.</p>}
+            {sequencedLessons.map(lesson => {
               const progress = progresses.find(p => p.lesson_id === lesson.id);
               return (
                 <ScoreRow
@@ -237,6 +245,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                   item={getScoreItem('lesson', lesson.id)}
                   onSave={(data) => updateScoreMutation.mutate(data)}
                   saving={updateScoreMutation.isPending}
+                  readOnly={!isTeacher}
                 >
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${progress?.watched ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
@@ -263,8 +272,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
         {activeSection === 'lives' && (
           <>
-            {liveSessions.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma live registrada.</p>}
-            {liveSessions.map(sess => {
+            {sequencedLiveSessions.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma live registrada.</p>}
+            {sequencedLiveSessions.map(sess => {
               const att = attendances.find(a => a.session_id === sess.id);
               return (
                 <ScoreRow
@@ -277,6 +286,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                   item={getScoreItem('live_attendance', sess.id)}
                   onSave={(data) => updateScoreMutation.mutate(data)}
                   saving={updateScoreMutation.isPending}
+                  readOnly={!isTeacher}
                 >
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${att ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
@@ -291,8 +301,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
         {activeSection === 'tasks' && (
           <>
-            {tasks.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa/prova criada.</p>}
-            {tasks.map(task => {
+            {sequencedTasks.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa/prova criada.</p>}
+            {sequencedTasks.map(task => {
               const sub = submissions.find(s => s.task_id === task.id);
               return (
                 <ScoreRow
@@ -306,6 +316,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                   needsCorrection={uncorrectedTaskIds.has(task.id)}
                   onSave={(data) => updateScoreMutation.mutate(data)}
                   saving={updateScoreMutation.isPending}
+                  readOnly={!isTeacher}
                 >
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     <Badge variant="secondary" className="text-[10px]">{task.type === 'quiz' ? 'Prova' : 'Tarefa'}</Badge>
@@ -354,7 +365,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
             {studentForumPosts.length === 0 && scorableForumReplies.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação no fórum.</p>
             )}
-            {studentForumPosts.map(post => (
+            {sequencedForumPosts.map(post => (
               <ScoreRow
                 key={post.id}
                 category="forum"
@@ -365,13 +376,14 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 item={getScoreItem('forum', post.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
+                readOnly={!isTeacher}
               >
                 <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">Publicação: </span>{post.content}
                 </div>
               </ScoreRow>
             ))}
-            {scorableForumReplies.map(reply => (
+            {sequencedForumReplies.map(reply => (
               <ScoreRow
                 key={reply.id}
                 category="forum"
@@ -382,6 +394,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 item={getScoreItem('forum', reply.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
+                readOnly={!isTeacher}
               >
                 <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">Resposta: </span>{reply.content}
@@ -396,7 +409,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
             {myPairings.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação em Terapeuta da Semana.</p>
             )}
-            {myPairings.map((p, i) => {
+            {sequencedPairings.map((p, i) => {
               const role = p.therapist_email === email ? 'Terapeuta' : 'Paciente';
               const partner = p.therapist_email === email ? p.patient_name || p.patient_email : p.therapist_name || p.therapist_email;
               const submitted = p.therapist_email === email ? p.therapist_submitted : p.patient_submitted;
@@ -413,6 +426,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                   item={getScoreItem('therapist', p.id)}
                   onSave={(data) => updateScoreMutation.mutate(data)}
                   saving={updateScoreMutation.isPending}
+                  readOnly={!isTeacher}
                 >
                   <div className="flex flex-wrap gap-2 mt-1.5">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${role === 'Terapeuta' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>{role}</span>
@@ -683,7 +697,7 @@ export default function ScoreControl() {
     },
   });
 
-  if (selectedCode && isTeacher) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} onBack={() => setSelectedCode(null)} />;
+  if (selectedCode && (isTeacher || selectedCode.student_email === session?.email)) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} onBack={() => setSelectedCode(null)} />;
 
   const sortOptions = isTeacher
     ? [['alpha','A–Z'],['points','Classificação'],['participations','Participações'],['pending','Pendências']]
@@ -775,8 +789,8 @@ export default function ScoreControl() {
                     next.splice(to, 0, moved);
                     setCustomOrder(next);
                   }}
-                  onClick={() => isTeacher && setSelectedCode(code)}
-                  className={`bg-card rounded-2xl border p-4 flex items-center gap-3 ${isTeacher ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}
+                  onClick={() => (isTeacher || code.student_email === session?.email) && setSelectedCode(code)}
+                  className={`bg-card rounded-2xl border p-4 flex items-center gap-3 ${(isTeacher || code.student_email === session?.email) ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}
                 >
                   <div className="w-7 text-center shrink-0">
                     {medal || <span className="text-xs font-black text-muted-foreground">#{index + 1}</span>}
@@ -807,9 +821,15 @@ export default function ScoreControl() {
                         <span className="text-sm font-black text-yellow-700">{formatScore(totalScore)}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl" title="Posição na classificação">
-                        <Trophy size={11} className="text-yellow-600" />
-                        <span className="text-sm font-black text-yellow-700">#{index + 1}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl" title="Pontos publicados">
+                          <Star size={11} className="text-yellow-500 fill-yellow-500" />
+                          <span className="text-sm font-black text-yellow-700">{formatScore(totalScore)}</span>
+                        </div>
+                        <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl" title="Posição na classificação">
+                          <Trophy size={11} className="text-primary" />
+                          <span className="text-sm font-black text-primary">#{index + 1}</span>
+                        </div>
                       </div>
                     )}
                     {isTeacher && <ChevronLeft size={14} className="text-muted-foreground rotate-180" />}

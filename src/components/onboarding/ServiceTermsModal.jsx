@@ -14,11 +14,11 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
       {/* Modal container */}
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden" style={{ height: 'calc(100dvh - 80px)', maxHeight: '90vh' }}>
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden" style={{ height: 'min(92dvh, 760px)', maxHeight: 'calc(100dvh - 24px)' }}>
         {/* Header */}
-        <div className="bg-gradient-to-br from-[#1e3a8a] to-[#5b5ef4] p-6 text-white shrink-0">
+        <div className="bg-gradient-to-br from-[#1e3a8a] to-[#5b5ef4] p-4 sm:p-6 text-white shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-11 h-11 bg-white/15 rounded-2xl flex items-center justify-center">
               <Shield size={22} className="text-white" />
@@ -33,8 +33,8 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
 
         {/* Scrollable content — with extra bottom padding so content isn't hidden behind floating footer */}
         <div
-          className="flex-1 overflow-y-auto p-6 space-y-5 text-sm text-gray-700"
-          style={{ paddingBottom: '7rem' }}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-sm text-gray-700"
+          style={{ paddingBottom: 'clamp(8rem, 22dvh, 10rem)' }}
           onScroll={handleScroll}
         >
           {/* LGPD */}
@@ -111,7 +111,7 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
       </div>
 
       {/* Floating footer — always visible at bottom, centered */}
-      <div className="fixed bottom-0 left-0 right-0 z-[101] flex justify-center px-4 pb-4 pt-3 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-[101] flex justify-center px-3 sm:px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg">
         <div className="w-full max-w-xl space-y-3">
           <label className="flex items-start gap-3 cursor-pointer">
             <input
