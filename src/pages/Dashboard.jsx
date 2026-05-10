@@ -7,6 +7,7 @@ import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -227,7 +228,8 @@ export default function Dashboard() {
     }
   });
   const myGrades = submissions.filter((s) => s.grade !== undefined && s.grade !== null);
-  const totalPoints = publishedScoreMap[session?.email] || 0;
+  const currentAccessCode = accessCodes.find((code) => code.student_email === session?.email);
+  const totalPoints = roundScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
 
   const watchedCount = progresses.filter((p) => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round(watchedCount / lessons.length * 100) : 0;
@@ -241,7 +243,7 @@ export default function Dashboard() {
     if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
     return true;
   });
-  const scoreMap = publishedScoreMap;
+  const scoreMap = Object.fromEntries(courseCodes.map((code) => [code.student_email, roundScore(code.pontuacao_total ?? publishedScoreMap[code.student_email] ?? 0)]));
   const taskIds = new Set(tasks.map((t) => t.id));
   const courseSubmissions = submissions.filter((s) => taskIds.has(s.task_id));
   const participationMap = {};
@@ -286,7 +288,8 @@ export default function Dashboard() {
         const payload = {
           student_email: item.email,
           full_name: code?.profile_name || code?.student_name || item.email,
-          points: Number(item.total || 0),
+          points: roundScore(item.total || 0),
+          pontuacao_total: roundScore(item.total || 0),
           dashboard_rank: index + 1,
           dashboard_course: userCourse,
         };
@@ -386,7 +389,7 @@ export default function Dashboard() {
         
         <StatCard
           title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}
-          value={isTeacher ? studentCount : totalPoints}
+          value={isTeacher ? studentCount : formatScore(totalPoints)}
           icon={isTeacher ? Users : Star}
           iconBg={isTeacher ? 'bg-emerald-500' : 'bg-yellow-500'}
           to={isTeacher ? '/students' : '/ranking'}
@@ -435,7 +438,7 @@ export default function Dashboard() {
               const task = tasks.find((t) => t.id === s.task_id);
               return (
                 <div key={i} className="bg-secondary/60 rounded-xl p-2.5 text-center">
-                      <p className="text-lg font-black text-foreground">{s.grade}</p>
+                      <p className="text-lg font-black text-foreground">{formatScore(s.grade)}</p>
                       <p className="text-[10px] text-muted-foreground truncate">{task?.title || 'Tarefa'}</p>
                     </div>);
 
@@ -612,7 +615,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-xl">
                       <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-xs font-black text-yellow-700">{Number(r.total || 0).toFixed(1)}</span>
+                      <span className="text-xs font-black text-yellow-700">{formatScore(r.total)}</span>
                     </div>
               </div>);
 

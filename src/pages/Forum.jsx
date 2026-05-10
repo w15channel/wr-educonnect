@@ -81,10 +81,10 @@ export default function Forum() {
       if (context?.previous) queryClient.setQueryData(['forum-posts'], context.previous);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['forum-posts'] }),
-    onSuccess: (post) => {
-      // +0.1 ponto por publicar pergunta no fórum
+    onSuccess: async (post) => {
+      // +0,100 ponto por publicar pergunta no fórum
       if (post?.id && !post.id.startsWith('optimistic-')) {
-        base44.entities.ScoreItem.create({
+        await base44.entities.ScoreItem.create({
           student_email: session?.email || '',
           category: 'forum',
           ref_id: post.id,
@@ -93,6 +93,8 @@ export default function Forum() {
           max_score: 0.1,
           verified: true,
         });
+        await base44.functions.invoke('populateScoreCache', { student_email: session?.email || '' });
+        queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       }
     },
   });
@@ -109,7 +111,7 @@ export default function Forum() {
         author_role: isTeacher ? 'teacher' : 'student',
       });
     },
-    onSuccess: (reply) => {
+    onSuccess: async (reply) => {
       queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] });
       queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
       setReplyText('');
@@ -117,7 +119,7 @@ export default function Forum() {
       const isReplyToColleague = parentPost?.author_email && parentPost.author_email !== (session?.email || '');
       if (isReplyToColleague) {
         // +0,5 ponto por resposta em pergunta aberta por colega no fórum
-        base44.entities.ScoreItem.create({
+        await base44.entities.ScoreItem.create({
           student_email: session?.email || '',
           category: 'forum',
           ref_id: reply?.id || `reply-${Date.now()}`,
@@ -127,7 +129,9 @@ export default function Forum() {
           verified: true,
           notes: 'Resposta em pergunta aberta por colega no fórum: +0,5 ponto.',
         });
-        toast.success('Resposta enviada! +0,5 ponto de participação');
+        await base44.functions.invoke('populateScoreCache', { student_email: session?.email || '' });
+        queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+        toast.success('Resposta enviada! +0,500 ponto de participação');
       } else {
         toast.success('Resposta enviada!');
       }
@@ -176,7 +180,7 @@ export default function Forum() {
     <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
       <div className="mb-5">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Fórum de Dúvidas</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Faça perguntas e compartilhe conhecimento (+0,5 ponto por resposta em dúvida de colega)</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Faça perguntas e compartilhe conhecimento (+0,500 ponto por resposta em dúvida de colega)</p>
       </div>
 
       {/* New Post */}
@@ -312,7 +316,7 @@ export default function Forum() {
                   </button>
                   {(post.reply_count || 0) > 0 && (
                     <span className="flex items-center gap-1 text-[10px] text-yellow-500 font-semibold">
-                      <Star size={10} className="fill-yellow-400" /> {post.reply_count} pts distribuídos
+                      <Star size={10} className="fill-yellow-400" /> {post.reply_count} respostas
                     </span>
                   )}
                 </div>

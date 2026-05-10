@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { ChevronLeft, CalendarDays, Phone, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { Button } from '@/components/ui/button';
 
 const tuitionConfig = {
@@ -56,8 +57,8 @@ export default function StudentDetail() {
   const profile = studentProfiles.find(p => p.student_email === code.student_email);
   const subs = allSubmissions.filter(s => s.student_email === code.student_email);
   const graded = subs.filter(s => s.grade !== undefined && s.grade !== null);
-  const avg = graded.length > 0 ? (graded.reduce((sum, s) => sum + s.grade, 0) / graded.length).toFixed(1) : '—';
-  const total = graded.reduce((sum, s) => sum + s.grade, 0);
+  const total = graded.reduce((sum, item) => roundScore(sum + roundScore(item.grade)), 0);
+  const avg = graded.length > 0 ? formatScore(total / graded.length) : '—';
   const studentTuitions = tuitions.filter(t => t.student_email === code.student_email);
 
   const displayName = code.profile_name || code.student_name || 'Sem nome';
@@ -142,7 +143,7 @@ export default function StudentDetail() {
               <p className="text-[10px] text-muted-foreground font-semibold">Média</p>
             </div>
             <div className="bg-yellow-50 rounded-xl p-3 text-center border border-yellow-200">
-              <p className="text-2xl font-black text-yellow-600">{total}</p>
+              <p className="text-2xl font-black text-yellow-600">{formatScore(total)}</p>
               <p className="text-[10px] text-muted-foreground font-semibold">Pontos</p>
             </div>
           </div>

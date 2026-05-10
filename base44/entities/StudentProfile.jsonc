@@ -4,7 +4,7 @@
   "properties": {
     "code_id": {
       "type": "string",
-      "description": "ID do c\u00f3digo de acesso vinculado"
+      "description": "ID do código de acesso vinculado"
     },
     "student_email": {
       "type": "string",
@@ -45,16 +45,16 @@
     },
     "bio": {
       "type": "string",
-      "description": "Apresenta\u00e7\u00e3o pessoal"
+      "description": "Apresentação pessoal"
     },
     "points": {
       "type": "number",
       "default": 0,
-      "description": "Pontua\u00e7\u00e3o total gamificada"
+      "description": "Pontuação total gamificada"
     },
     "dashboard_rank": {
       "type": "number",
-      "description": "Posi\u00e7\u00e3o publicada para o ranking da Dashboard"
+      "description": "Posição publicada para o ranking da Dashboard"
     },
     "dashboard_course": {
       "type": "string",
@@ -63,7 +63,12 @@
         "psicanalise",
         "sexologia"
       ],
-      "description": "Curso da posi\u00e7\u00e3o publicada na Dashboard"
+      "description": "Curso da posição publicada na Dashboard"
+    },
+    "pontuacao_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Cache DECIMAL(10,3) da pontuação total do aluno; fonte única para rankings e exibição de pontos."
     }
   },
   "required": [

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -34,10 +35,6 @@ export default function TerapeutaDaSemana() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 10000),
   });
 
-  const { data: scoreItems = [] } = useQuery({
-    queryKey: ['score-items-terapeuta'],
-    queryFn: () => base44.entities.ScoreItem.list('-created_date', 10000),
-  });
 
   const createPairingMutation = useMutation({
     mutationFn: (data) => base44.entities.TherapistPairing.create(data),
@@ -73,9 +70,7 @@ export default function TerapeutaDaSemana() {
     return code.course === activeCourse && (!codePrefix || (code.code || '').startsWith(codePrefix));
   };
 
-  const getStudentTotalScore = (email, items = scoreItems) => items
-    .filter(s => s.student_email === email && s.verified)
-    .reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+  const getStudentTotalScore = (email, items = accessCodes) => roundScore(items.find((code) => code.student_email === email)?.pontuacao_total || 0);
 
   const courseEmailSet = courseEmails || new Set(
     accessCodes
@@ -117,13 +112,7 @@ export default function TerapeutaDaSemana() {
       return;
     }
 
-    const freshScores = await base44.entities.ScoreItem.list('-created_date', 10000);
-    const scoreMap = {};
-    freshScores.filter(s => s.verified).forEach(s => {
-      if (s.student_email) scoreMap[s.student_email] = (scoreMap[s.student_email] || 0) + (Number(s.score) || 0);
-    });
-
-    const sorted = [...activeStudents].sort((a, b) => (scoreMap[b.student_email] || 0) - (scoreMap[a.student_email] || 0));
+    const sorted = [...activeStudents].sort((a, b) => roundScore(b.pontuacao_total || 0) - roundScore(a.pontuacao_total || 0));
     const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
     const randomPoolSize = Math.min(10, Math.max(0, sorted.length - 2));
     const activeGroupSize = sorted.length - randomPoolSize;
@@ -158,8 +147,8 @@ export default function TerapeutaDaSemana() {
     if (!evalDialog) return;
     const { pairing, role } = evalDialog;
     const updateData = role === 'therapist'
-      ? { therapist_comment: comment, therapist_score: score[0], therapist_submitted: true }
-      : { patient_comment: comment, patient_score: score[0], patient_submitted: true };
+      ? { therapist_comment: comment, therapist_score: roundScore(score[0]), therapist_submitted: true }
+      : { patient_comment: comment, patient_score: roundScore(score[0]), patient_submitted: true };
     updatePairingMutation.mutate({ id: pairing.id, data: updateData });
   };
 
@@ -211,7 +200,7 @@ export default function TerapeutaDaSemana() {
                     <Badge className={`text-[9px] ${inRandomPool ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-pink-100 text-pink-700 border-pink-200'}`}>
                       {inRandomPool ? 'Sorteio' : 'Mais ativo'}
                     </Badge>
-                    <span className="text-[10px] font-bold text-muted-foreground">{getStudentTotalScore(student.student_email).toFixed(1)} pts</span>
+                    <span className="text-[10px] font-bold text-muted-foreground">{formatScore(getStudentTotalScore(student.student_email))} pts</span>
                   </div>
                 </div>
               );
@@ -363,10 +352,10 @@ export default function TerapeutaDaSemana() {
             </div>
             <div>
               <label className="text-sm font-semibold text-foreground block mb-3">
-                Nota: <span className="text-primary font-bold text-lg">{score[0]}</span>/10
+                Nota: <span className="text-primary font-bold text-lg">{formatScore(score[0])}</span>/10,000
               </label>
               <Slider min={0} max={10} step={0.5} value={score} onValueChange={setScore} className="w-full" />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1"><span>0</span><span>10</span></div>
+              <div className="flex justify-between text-xs text-muted-foreground mt-1"><span>0,000</span><span>10,000</span></div>
             </div>
             <Button
               className="w-full"
@@ -427,7 +416,7 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
               <p className="text-xs text-foreground">{pairing.therapist_comment}</p>
               <div className="flex items-center gap-1 mt-1.5">
                 <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                <span className="text-xs font-bold">{pairing.therapist_score}/10</span>
+                <span className="text-xs font-bold">{formatScore(pairing.therapist_score)}/10,000</span>
               </div>
             </div>
           )}
@@ -437,7 +426,7 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
               <p className="text-xs text-foreground">{pairing.patient_comment}</p>
               <div className="flex items-center gap-1 mt-1.5">
                 <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                <span className="text-xs font-bold">{pairing.patient_score}/10</span>
+                <span className="text-xs font-bold">{formatScore(pairing.patient_score)}/10,000</span>
               </div>
             </div>
           )}

@@ -8,22 +8,43 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ExternalLink, CheckCircle, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 // Componente isolado por submissão — evita re-render geral e bug de perda de foco
-function SubmissionRow({ sub, taskMaxGrade }) {
+function SubmissionRow({ sub, task }) {
   const queryClient = useQueryClient();
-  const [grade, setGrade] = useState(sub.grade !== undefined && sub.grade !== null ? String(sub.grade) : '');
+  const [grade, setGrade] = useState(sub.grade !== undefined && sub.grade !== null ? formatScore(sub.grade) : '');
   const [feedback, setFeedback] = useState(sub.feedback || '');
 
   const gradeMutation = useMutation({
-    mutationFn: () => base44.entities.TaskSubmission.update(sub.id, {
-      grade: Number(grade),
-      feedback,
-      status: 'graded',
-    }),
+    mutationFn: async () => {
+      const normalizedGrade = roundScore(String(grade).replace(',', '.'));
+      const updated = await base44.entities.TaskSubmission.update(sub.id, {
+        grade: normalizedGrade,
+        feedback,
+        status: 'graded',
+      });
+      const category = task.type === 'quiz' ? 'quiz' : 'task';
+      const existing = await base44.entities.ScoreItem.filter({ student_email: sub.student_email, category, ref_id: sub.task_id }, '-created_date', 1);
+      const scorePayload = {
+        student_email: sub.student_email,
+        category,
+        ref_id: sub.task_id,
+        ref_title: task.title,
+        score: normalizedGrade,
+        max_score: roundScore(task.max_grade || 10),
+        verified: true,
+        notes: feedback || '',
+      };
+      if (existing[0]) await base44.entities.ScoreItem.update(existing[0].id, scorePayload);
+      else await base44.entities.ScoreItem.create(scorePayload);
+      await base44.functions.invoke('populateScoreCache', { student_email: sub.student_email });
+      return updated;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-submissions', sub.task_id] });
-      toast.success('Nota atribuída com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      toast.success('Nota atribuída e cache atualizado!');
     },
   });
 
@@ -39,7 +60,7 @@ function SubmissionRow({ sub, taskMaxGrade }) {
         </div>
         {isGraded && (
           <Badge className="bg-green-100 text-green-700 gap-1 shrink-0">
-            <CheckCircle size={12} /> Corrigido · {sub.grade} pts
+            <CheckCircle size={12} /> Corrigido · {formatScore(sub.grade)} pts
           </Badge>
         )}
       </div>
@@ -82,9 +103,10 @@ function SubmissionRow({ sub, taskMaxGrade }) {
         <p className="text-xs font-bold text-foreground mb-2">{isGraded ? 'Atualizar avaliação' : 'Avaliar entrega'}</p>
         <div className="flex items-center gap-2">
           <div className="shrink-0">
-            <label className="text-[10px] text-muted-foreground font-semibold block mb-1">Nota {taskMaxGrade ? `(máx. ${taskMaxGrade})` : ''}</label>
+            <label className="text-[10px] text-muted-foreground font-semibold block mb-1">Nota {task?.max_grade ? `(máx. ${formatScore(task.max_grade)})` : ''}</label>
             <Input
-              type="number"
+              type="text"
+              inputMode="decimal"
               placeholder="0"
               className="w-24 h-9"
               value={grade}
@@ -138,7 +160,7 @@ export default function SubmissionsList({ task, onBack }) {
       ) : (
         <div className="space-y-4">
           {submissions.map(sub => (
-            <SubmissionRow key={sub.id} sub={sub} taskMaxGrade={task.max_grade} />
+            <SubmissionRow key={sub.id} sub={sub} task={task} />
           ))}
         </div>
       )}

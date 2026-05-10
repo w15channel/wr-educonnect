@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
 const CYCLE_DAYS = 7;
@@ -62,36 +63,8 @@ export default function Monitores() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
-  const { data: submissions = [] } = useQuery({
-    queryKey: ['submissions-monitores'],
-    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 2000),
-  });
 
-  const { data: forumPosts = [] } = useQuery({
-    queryKey: ['forum-posts-monitores'],
-    queryFn: () => base44.entities.ForumPost.list('-created_date', 1000),
-  });
 
-  const { data: forumReplies = [] } = useQuery({
-    queryKey: ['forum-replies-monitores'],
-    queryFn: () => base44.entities.ForumReply.list('-created_date', 1000),
-  });
-  const { data: lessons = [] } = useQuery({
-    queryKey: ['monitores-lessons', activeCourse],
-    queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 500),
-  });
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['monitores-tasks', activeCourse],
-    queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 500),
-  });
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['monitores-live-sessions', activeCourse],
-    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 500),
-  });
-  const { data: pairings = [] } = useQuery({
-    queryKey: ['monitores-pairings'],
-    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 3000),
-  });
 
   const { data: monitorHistory = [] } = useQuery({
     queryKey: ['monitor-history'],
@@ -120,37 +93,19 @@ export default function Monitores() {
     c => c.is_active !== false && c.course === activeCourse && c.student_email && (!courseEmails || courseEmails.has(c.student_email))
   );
 
-  // Build ranking igual ao Dashboard — baseado em ScoreItems verificados
-  const buildRanking = () => {
-    const courseEmails = new Set(courseStudents.map(c => c.student_email).filter(Boolean));
-    const lessonIds = new Set(lessons.map(l => l.id));
-    const taskIds = new Set(tasks.map(t => t.id));
-    const liveSessionIds = new Set(liveSessions.map(l => l.id));
-    const forumPostIds = new Set(forumPosts.filter(p => p.course === activeCourse).map(p => p.id));
-    const forumParentById = new Map(forumPosts.map(p => [p.id, p]));
-    const forumReplyIds = new Set(forumReplies.filter(r => {
-      const parentPost = forumParentById.get(r.post_id);
-      return parentPost && forumPostIds.has(parentPost.id) && parentPost.author_email !== r.author_email;
-    }).map(r => r.id));
-    const isPairingFromCourse = (p) => !courseEmails.size || (courseEmails.has(p.therapist_email || '') && courseEmails.has(p.patient_email || ''));
-    const pairingIds = new Set(pairings.filter(isPairingFromCourse).map(p => p.id));
-    const rankMap = {};
-    scoreItems.filter(s =>
-      s.verified && s.student_email && courseEmails.has(s.student_email) && (
-        (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
-        (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
-        ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
-        (s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id))) ||
-        (s.category === 'therapist' && pairingIds.has(s.ref_id))
-      )
-    ).forEach(s => {
-      if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0 };
-      rankMap[s.student_email].total += (s.score || 0);
+  // Ranking instantâneo: usa exclusivamente o cache AccessCode.pontuacao_total.
+  const ranking = courseStudents
+    .map((code) => ({
+      email: code.student_email,
+      total: roundScore(code.pontuacao_total || 0),
+      name: (code.profile_name || code.student_name || code.student_email || '').toLowerCase(),
+      createdAt: code.created_date ? new Date(code.created_date).getTime() : Number.MAX_SAFE_INTEGER,
+    }))
+    .sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      if (a.createdAt !== b.createdAt) return a.createdAt - b.createdAt;
+      return a.name.localeCompare(b.name, 'pt-BR');
     });
-    return Object.values(rankMap).sort((a, b) => b.total - a.total);
-  };
-
-  const ranking = buildRanking();
   const topMonitors = ranking.slice(0, 3);
 
   const currentMonitorEmails = new Set(currentMonitors.map(m => m.student_email));
@@ -295,8 +250,8 @@ export default function Monitores() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
           <p className="font-bold mb-1">Critérios de seleção dos Monitores:</p>
           <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
-            <li>Ranking recalculado pelas regras universais da plataforma</li>
-            <li>1º Monitor: +0.5pts / 2º Monitor: +0.3pts / 3º Monitor: +0.2pts em entregas de atividades e trabalhos</li>
+            <li>Ranking lido diretamente do cache pontuacao_total, sem recalcular a cada acesso</li>
+            <li>1º Monitor: +0,500pts / 2º Monitor: +0,300pts / 3º Monitor: +0,200pts em entregas de atividades e trabalhos</li>
           </ol>
         </div>
       )}
@@ -346,7 +301,7 @@ export default function Monitores() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-xs font-bold text-foreground">{r.total}</span>
+                    <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
                   </div>
                 </div>
               );
@@ -383,7 +338,7 @@ export default function Monitores() {
                   <MonitorBadge rank={m.rank_position} />
                   <p className="text-xs text-muted-foreground mt-1.5 flex items-center justify-center gap-1">
                     <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                    Bônus: +{MONITOR_BONUSES[m.rank_position] || 0.2} por atividade
+                    Bônus: +{formatScore(MONITOR_BONUSES[m.rank_position] || 0.2)} por atividade
                   </p>
                 </div>
                 {(isMe || isTeacher) && (

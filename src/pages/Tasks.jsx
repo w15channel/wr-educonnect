@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
@@ -187,8 +188,9 @@ export default function Tasks({ mode = 'all' }) {
   };
 
   const handleSave = () => {
-    if (editingTask) updateTaskMutation.mutate({ id: editingTask.id, data: { ...form, course: userCourse } });
-    else createTaskMutation.mutate({ ...form, course: userCourse });
+    const payload = { ...form, max_grade: roundScore(form.max_grade), course: userCourse };
+    if (editingTask) updateTaskMutation.mutate({ id: editingTask.id, data: payload });
+    else createTaskMutation.mutate(payload);
   };
 
   const extractTaskNumber = (title = '') => {
@@ -353,7 +355,7 @@ export default function Tasks({ mode = 'all' }) {
                           {isPastDeadline && ' (Expirou)'}
                         </span>
                       )}
-                      {task.max_grade && <span className="text-[10px] text-muted-foreground">Valor: {task.max_grade} pts</span>}
+                      {task.max_grade && <span className="text-[10px] text-muted-foreground">Valor: {formatScore(task.max_grade)} pts</span>}
                     </div>
                     {task.description && <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{task.description}</p>}
                   </div>
@@ -431,7 +433,7 @@ export default function Tasks({ mode = 'all' }) {
                         </span>
                         {submission.grade !== undefined && submission.grade !== null && (
                           <span className="text-sm font-black text-foreground bg-secondary px-3 py-1.5 rounded-xl border border-border">
-                            Nota: {submission.grade}
+                            Nota: {formatScore(submission.grade)}
                           </span>
                         )}
                       </div>

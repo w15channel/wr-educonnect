@@ -48,6 +48,11 @@
     "last_login": {
       "type": "string",
       "description": "Last login timestamp"
+    },
+    "pontuacao_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Cache DECIMAL(10,3) da pontuação total do aluno; fonte única para rankings e exibição de pontos."
     }
   },
   "required": [

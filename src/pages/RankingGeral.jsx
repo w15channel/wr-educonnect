@@ -3,9 +3,9 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Trophy, Star, ChevronLeft, BookOpen, Video, FileText, MessageSquare, X, CheckCircle } from 'lucide-react';
+import { Trophy, Star, BookOpen, Video, FileText, MessageSquare, X, CheckCircle } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { format } from 'date-fns';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const CATEGORY_CONFIG = {
   lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
@@ -21,7 +21,7 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
   const photoUrl = code.profile_photo_url || '';
   const avatarColor = code.profile_avatar_color || '#5b5ef4';
   const myItems = scoreItems.filter(s => s.student_email === email && s.verified);
-  const total = myItems.reduce((sum, s) => sum + (s.score || 0), 0);
+  const total = roundScore(code.pontuacao_total ?? myItems.reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
 
   const byCategory = {};
   myItems.forEach(item => {
@@ -49,7 +49,7 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
             <p className="text-xs text-muted-foreground truncate">{email}</p>
             <div className="flex items-center gap-1.5 mt-1.5">
               <Star size={14} className="text-yellow-400 fill-yellow-400" />
-              <span className="text-base font-black text-yellow-600">{total} pts</span>
+              <span className="text-base font-black text-yellow-600">{formatScore(total)} pts</span>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary transition-colors shrink-0">
@@ -63,7 +63,7 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
             const items = byCategory[cat] || [];
             if (items.length === 0) return null;
             const cfg = CATEGORY_CONFIG[cat];
-            const catTotal = items.reduce((sum, s) => sum + (s.score || 0), 0);
+            const catTotal = items.reduce((sum, item) => roundScore(sum + roundScore(item.score)), 0);
             return (
               <div key={cat}>
                 <div className="flex items-center gap-2 mb-2">
@@ -72,7 +72,7 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
                   </div>
                   <span className="text-xs font-bold text-foreground">{cfg.label}</span>
                   <span className="ml-auto text-xs font-bold text-yellow-600 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
-                    {catTotal} pts
+                    {formatScore(catTotal)} pts
                   </span>
                 </div>
                 <div className="space-y-1.5">
@@ -80,7 +80,7 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
                     <div key={item.id} className="flex items-center gap-2 bg-secondary/40 rounded-xl px-3 py-2">
                       <CheckCircle size={12} className="text-green-500 shrink-0" />
                       <span className="text-xs text-foreground flex-1 truncate">{item.ref_title}</span>
-                      <span className="text-xs font-bold text-foreground shrink-0">{item.score}/{item.max_score}</span>
+                      <span className="text-xs font-bold text-foreground shrink-0">{formatScore(item.score)}/{formatScore(item.max_score)}</span>
                     </div>
                   ))}
                 </div>
@@ -119,13 +119,7 @@ export default function RankingGeral() {
     return !!c.student_email;
   });
 
-  // Aggregate verified scores (points) and total participations (any score item) per email
-  const scoreMap = {};
-  allScoreItems.filter(s => s.verified).forEach(s => {
-    if (!s.student_email) return;
-    if (!scoreMap[s.student_email]) scoreMap[s.student_email] = 0;
-    scoreMap[s.student_email] += (s.score || 0);
-  });
+  // Ranking usa exclusivamente o cache persistido em AccessCode.pontuacao_total.
   const participationMap = {};
   allScoreItems.forEach(s => {
     if (!s.student_email) return;
@@ -135,7 +129,7 @@ export default function RankingGeral() {
   // Build ranking from all course students (so even zero-score students show up)
   const ranking = courseCodes.map(c => ({
     email: c.student_email,
-    total: scoreMap[c.student_email] || 0,
+    total: roundScore(c.pontuacao_total || 0),
     count: participationMap[c.student_email] || 0,
     enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
     name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
@@ -231,7 +225,7 @@ export default function RankingGeral() {
                 {/* Score */}
                 <div className="flex items-center gap-1.5 shrink-0 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
                   <Star size={12} className="text-yellow-500 fill-yellow-500" />
-                  <span className="text-sm font-black text-yellow-700">{r.total}</span>
+                  <span className="text-sm font-black text-yellow-700">{formatScore(r.total)}</span>
                 </div>
               </button>
             );

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const CATEGORY_CONFIG = {
   lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
@@ -57,7 +58,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const updateScoreMutation = useMutation({
     mutationFn: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
       const existing = scoreItems.find(s => s.category === category && s.ref_id === ref_id);
-      const data = { student_email: email, category, ref_id, ref_title, score: Number(score), max_score, verified: true, notes: itemNotes || '' };
+      const data = { student_email: email, category, ref_id, ref_title, score: roundScore(String(score).replace(',', '.')), max_score: roundScore(max_score), verified: true, notes: itemNotes || '' };
       if (existing) return base44.entities.ScoreItem.update(existing.id, data);
       return base44.entities.ScoreItem.create(data);
     },
@@ -76,10 +77,13 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       if (ctx?.previous) queryClient.setQueryData(['score-items', email], ctx.previous);
       toast.error('Erro ao salvar pontuação.');
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await base44.functions.invoke('populateScoreCache', { student_email: email });
       queryClient.invalidateQueries({ queryKey: ['score-items', email] });
       queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
-      toast.success('Pontuação salva!');
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+      toast.success('Pontuação salva e cache atualizado!');
     },
   });
 
@@ -118,7 +122,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const sendTotalMutation = useMutation({
     mutationFn: async () => {
       const profile = studentProfiles[0];
-      const data = { student_email: email, full_name: displayName, points: Number(totalScore.toFixed(1)), dashboard_course: activeCourse };
+      const data = { student_email: email, full_name: displayName, points: roundScore(totalScore), pontuacao_total: roundScore(totalScore), dashboard_course: activeCourse };
       if (profile) return base44.entities.StudentProfile.update(profile.id, data);
       return base44.entities.StudentProfile.create(data);
     },
@@ -178,7 +182,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
         <div className="bg-card border border-border rounded-xl px-4 py-2 text-center shrink-0 space-y-2">
           {isTeacher ? (
             <div>
-              <p className="text-lg font-black text-primary">{totalScore.toFixed(1)}</p>
+              <p className="text-lg font-black text-primary">{formatScore(totalScore)}</p>
               <p className="text-[10px] text-muted-foreground">pts totais</p>
             </div>
           ) : (
@@ -315,7 +319,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold">❌ Não entregue</span>
                     )}
                     {sub?.grade !== undefined && sub?.grade !== null && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota prévia: {sub.grade}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota prévia: {formatScore(sub.grade)}</span>
                     )}
                   </div>
                   {sub?.comment && (
@@ -416,7 +420,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                       {submitted ? '✅ Avaliação enviada' : '⏳ Sem avaliação'}
                     </span>
                     {partnerScore !== undefined && partnerScore !== null && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota do par: {partnerScore}/10</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota do par: {formatScore(partnerScore)}/10,000</span>
                     )}
                   </div>
                   {comment && (
@@ -615,7 +619,7 @@ export default function ScoreControl() {
       );
       const stats = getParticipationStats(code.student_email);
       const savedProfile = studentProfiles.find(p => p.student_email === code.student_email && p.dashboard_course === activeCourse && typeof p.points === 'number');
-      const totalScore = savedProfile ? savedProfile.points : getCourseScoreTotal(code.student_email);
+      const totalScore = roundScore(code.pontuacao_total ?? savedProfile?.pontuacao_total ?? savedProfile?.points ?? 0);
       const participations = stats.count;
       return { code, hasPending, totalScore, participations };
     })
@@ -640,7 +644,8 @@ export default function ScoreControl() {
         const data = {
           student_email: code.student_email,
           full_name: code.profile_name || code.student_name || code.student_email,
-          points: Number(item.totalScore.toFixed(1)),
+          points: roundScore(item.totalScore),
+          pontuacao_total: roundScore(item.totalScore),
           dashboard_rank: index + 1,
           dashboard_course: activeCourse,
         };
@@ -663,7 +668,8 @@ export default function ScoreControl() {
         const data = {
           student_email: code.student_email,
           full_name: code.profile_name || code.student_name || code.student_email,
-          points: Number(item.totalScore.toFixed(1)),
+          points: roundScore(item.totalScore),
+          pontuacao_total: roundScore(item.totalScore),
           dashboard_rank: index + 1,
           dashboard_course: activeCourse,
         };
@@ -677,7 +683,7 @@ export default function ScoreControl() {
     },
   });
 
-  if (selectedCode) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} onBack={() => setSelectedCode(null)} />;
+  if (selectedCode && isTeacher) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} onBack={() => setSelectedCode(null)} />;
 
   const sortOptions = isTeacher
     ? [['alpha','A–Z'],['points','Classificação'],['participations','Participações'],['pending','Pendências']]
@@ -692,16 +698,16 @@ export default function ScoreControl() {
           </div>
           <div>
             <h2 className="text-xl lg:text-2xl font-bold text-foreground">Controle de Pontuação</h2>
-            <p className="text-muted-foreground text-sm mt-0.5">Verifique e pontue as atividades de cada aluno</p>
+            <p className="text-muted-foreground text-sm mt-0.5">{isTeacher ? 'Verifique e pontue as atividades de cada aluno' : 'Classificação dos alunos por posição'}</p>
           </div>
         </div>
-        {pendingCount > 0 && (
+        {isTeacher && pendingCount > 0 && (
           <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-center gap-2">
             <Clock size={14} className="text-orange-500 shrink-0" />
             <p className="text-xs text-orange-800 font-semibold">{pendingCount} atividade(s) aguardando verificação e pontuação</p>
           </div>
         )}
-        <div className="mt-3 flex flex-wrap justify-end gap-2">
+        {isTeacher && <div className="mt-3 flex flex-wrap justify-end gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -716,7 +722,7 @@ export default function ScoreControl() {
             <RefreshCw size={13} className={retroLoading ? 'animate-spin' : ''} />
             {retroLoading ? 'Recalculando...' : 'Recalcular ranking e feedbacks'}
           </Button>
-        </div>
+        </div>}
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2 items-center">
@@ -733,9 +739,11 @@ export default function ScoreControl() {
               {label}
             </button>
           ))}
-          <Button size="sm" variant="outline" className="text-xs" onClick={() => saveOrderMutation.mutate()} disabled={saveOrderMutation.isPending || customOrder.length === 0}>
-            {saveOrderMutation.isPending ? 'Salvando...' : 'Salvar sequência'}
-          </Button>
+          {isTeacher && (
+            <Button size="sm" variant="outline" className="text-xs" onClick={() => saveOrderMutation.mutate()} disabled={saveOrderMutation.isPending || customOrder.length === 0}>
+              {saveOrderMutation.isPending ? 'Salvando...' : 'Salvar sequência'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -754,7 +762,7 @@ export default function ScoreControl() {
               return (
                 <div
                   key={code.id}
-                  draggable
+                  draggable={isTeacher}
                   onDragStart={() => setDraggedEmail(code.student_email)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => {
@@ -767,8 +775,8 @@ export default function ScoreControl() {
                     next.splice(to, 0, moved);
                     setCustomOrder(next);
                   }}
-                  onClick={() => setSelectedCode(code)}
-                  className={`bg-card rounded-2xl border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}
+                  onClick={() => isTeacher && setSelectedCode(code)}
+                  className={`bg-card rounded-2xl border p-4 flex items-center gap-3 ${isTeacher ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}
                 >
                   <div className="w-7 text-center shrink-0">
                     {medal || <span className="text-xs font-black text-muted-foreground">#{index + 1}</span>}
@@ -782,9 +790,9 @@ export default function ScoreControl() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="font-bold text-sm text-foreground truncate">{displayName}</p>
-                      {hasPending && <AlertCircle size={14} className="text-red-500 shrink-0" />}
+                      {isTeacher && hasPending && <AlertCircle size={14} className="text-red-500 shrink-0" />}
                     </div>
-                    <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>
+                    {isTeacher && <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     {isTeacher && (
@@ -796,7 +804,7 @@ export default function ScoreControl() {
                     {isTeacher ? (
                       <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
                         <Star size={11} className="text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm font-black text-yellow-700">{totalScore.toFixed(1)}</span>
+                        <span className="text-sm font-black text-yellow-700">{formatScore(totalScore)}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl" title="Posição na classificação">
@@ -804,7 +812,7 @@ export default function ScoreControl() {
                         <span className="text-sm font-black text-yellow-700">#{index + 1}</span>
                       </div>
                     )}
-                    <ChevronLeft size={14} className="text-muted-foreground rotate-180" />
+                    {isTeacher && <ChevronLeft size={14} className="text-muted-foreground rotate-180" />}
                   </div>
                 </div>
               );
