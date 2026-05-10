@@ -156,11 +156,39 @@ export default function Lessons() {
 
   const getEmbedUrl = (url) => {
     if (!url || typeof url !== 'string') return null;
-    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?\s]+)/);
-    if (ytMatch) return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
-    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-    return url;
+
+    try {
+      const parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+      const host = parsedUrl.hostname.replace('www.', '').toLowerCase();
+
+      if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be') {
+        let videoId = '';
+
+        if (host === 'youtu.be') {
+          videoId = parsedUrl.pathname.split('/').filter(Boolean)[0] || '';
+        } else if (parsedUrl.pathname.startsWith('/watch')) {
+          videoId = parsedUrl.searchParams.get('v') || '';
+        } else if (parsedUrl.pathname.startsWith('/embed/')) {
+          videoId = parsedUrl.pathname.split('/embed/')[1]?.split('/')[0] || '';
+        } else if (parsedUrl.pathname.startsWith('/shorts/') || parsedUrl.pathname.startsWith('/live/')) {
+          videoId = parsedUrl.pathname.split('/')[2] || '';
+        }
+
+        if (videoId) {
+          return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
+        }
+      }
+
+      if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+        const vimeoId = parsedUrl.pathname.split('/').find(part => /^\d+$/.test(part));
+        if (vimeoId) return `https://player.vimeo.com/video/${vimeoId}`;
+      }
+
+      if (parsedUrl.pathname.includes('/embed/')) return parsedUrl.toString();
+      return null;
+    } catch {
+      return null;
+    }
   };
 
   const handleCoverUpload = async (file) => {
