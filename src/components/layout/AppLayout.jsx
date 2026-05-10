@@ -18,7 +18,7 @@ const TUTORIAL_KEY = 'wr_tutorial_done';
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 }
+  exit: { opacity: 0, y: -8 },
 };
 
 const PTR_THRESHOLD = 72; // px to pull before triggering refresh
@@ -72,8 +72,8 @@ export default function AppLayout() {
     const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
     const termsAccepted = localStorage.getItem(termsKey);
     const tutDone = localStorage.getItem(tutKey);
-    if (!termsAccepted) {setShowTerms(true);return;}
-    if (!tutDone) {setShowTutorial(true);}
+    if (!termsAccepted) { setShowTerms(true); return; }
+    if (!tutDone) { setShowTutorial(true); }
   }, [isStudent, sessionKey]);
 
   const handleTermsAccept = () => {
@@ -132,12 +132,12 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {showTerms && isStudent &&
-      <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />
-      }
-      {showTutorial && isStudent && !showTerms &&
-      <TutorialModal onFinish={handleTutorialFinish} />
-      }
+      {showTerms && isStudent && (
+        <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />
+      )}
+      {showTutorial && isStudent && !showTerms && (
+        <TutorialModal onFinish={handleTutorialFinish} />
+      )}
       {/* Desktop sidebar */}
       <div className="hidden md:block shrink-0">
         <Sidebar session={session} />
@@ -152,51 +152,51 @@ export default function AppLayout() {
         {/* Mobile top header */}
         <MobileHeader />
 
-        
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
+          {/* Pull-to-refresh indicator */}
+          {showIndicator && (
+            <div
+              className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all pointer-events-none md:hidden"
+              style={{ height: pullY, overflow: 'hidden' }}
+            >
+              <div className={`w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary flex items-center justify-center ${refreshing ? 'animate-spin' : ''}`}
+                style={{ transform: !refreshing ? `rotate(${(pullY / PTR_THRESHOLD) * 270}deg)` : undefined }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              </div>
+            </div>
+          )}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              ref={scrollRef}
+              data-scroll-container
+              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
+              style={{
+                paddingBottom: location.pathname !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
+                transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
+                transition: isPulling.current ? 'none' : 'transform 0.3s ease',
+              }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div className={location.pathname === '/certificadora' ? 'flex-1 min-h-0 flex flex-col' : ''}>
+                <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {/* Mobile bottom nav */}
         <BottomNav onMenuOpen={() => setSidebarOpen(true)} />
       </main>
-    </div>);
-
+    </div>
+  );
 }
