@@ -113,17 +113,24 @@ export default function Forum() {
       queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] });
       queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
       setReplyText('');
-      // +0,5 ponto por resposta em pergunta de colega no fórum
-      base44.entities.ScoreItem.create({
-        student_email: session?.email || '',
-        category: 'forum',
-        ref_id: reply?.id || `reply-${Date.now()}`,
-        ref_title: 'Resposta no Fórum',
-        score: 0.5,
-        max_score: 0.5,
-        verified: true,
-      });
-      toast.success('Resposta enviada! +0,5 ponto de participação');
+      const parentPost = posts.find(p => p.id === reply?.post_id);
+      const isReplyToColleague = parentPost?.author_email && parentPost.author_email !== (session?.email || '');
+      if (isReplyToColleague) {
+        // +0,5 ponto por resposta em pergunta aberta por colega no fórum
+        base44.entities.ScoreItem.create({
+          student_email: session?.email || '',
+          category: 'forum',
+          ref_id: reply?.id || `reply-${Date.now()}`,
+          ref_title: 'Resposta em pergunta de colega',
+          score: 0.5,
+          max_score: 0.5,
+          verified: true,
+          notes: 'Resposta em pergunta aberta por colega no fórum: +0,5 ponto.',
+        });
+        toast.success('Resposta enviada! +0,5 ponto de participação');
+      } else {
+        toast.success('Resposta enviada!');
+      }
     },
   });
 

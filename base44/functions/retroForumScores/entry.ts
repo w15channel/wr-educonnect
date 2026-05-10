@@ -31,17 +31,19 @@ Deno.serve(async (req) => {
       created++;
     }
 
-    // Replies: 1 pt each
+    // Replies: 0.5 pt each, only when answering a colleague
     for (const reply of replies) {
       if (!reply.author_email || !reply.id) continue;
       if (existingSet.has(reply.id)) continue;
+      const parentPost = posts.find(post => post.id === reply.post_id);
+      if (!parentPost || parentPost.author_email === reply.author_email) continue;
       await base44.asServiceRole.entities.ScoreItem.create({
         student_email: reply.author_email,
         category: 'forum',
         ref_id: reply.id,
-        ref_title: 'Resposta no Fórum',
-        score: 1,
-        max_score: 1,
+        ref_title: 'Resposta em pergunta de colega',
+        score: 0.5,
+        max_score: 0.5,
         verified: true,
       });
       created++;

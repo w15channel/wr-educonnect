@@ -20,7 +20,7 @@ const CATEGORY_CONFIG = {
   therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' },
 };
 
-function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
+function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeacher }) {
   const queryClient = useQueryClient();
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || 'Sem nome';
@@ -42,7 +42,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
   });
   const { data: forumPosts = [] } = useQuery({
     queryKey: ['forum-posts-score-detail', email, activeCourse],
-    queryFn: () => base44.entities.ForumPost.filter({ author_email: email, course: activeCourse }, '-created_date', 100),
+    queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 500),
   });
   const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies', email], queryFn: () => base44.entities.ForumReply.filter({ author_email: email }, '-created_date', 100) });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items', email], queryFn: () => base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 500) });
@@ -97,8 +97,14 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
   const lessonIds = new Set(lessons.map(l => l.id));
   const taskIds = new Set(tasks.map(t => t.id));
   const liveSessionIds = new Set(liveSessions.map(l => l.id));
-  const forumPostIds = new Set(forumPosts.map(p => p.id));
-  const forumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
+  const studentForumPosts = forumPosts.filter(p => p.author_email === email);
+  const forumPostIds = new Set(studentForumPosts.map(p => p.id));
+  const forumParentById = new Map(forumPosts.map(p => [p.id, p]));
+  const scorableForumReplies = forumReplies.filter(r => {
+    const parentPost = forumParentById.get(r.post_id);
+    return parentPost && parentPost.author_email !== email;
+  });
+  const forumReplyIds = new Set(scorableForumReplies.map(r => r.id));
   const totalScore = scoreItems
     .filter(s => s.verified && (
       (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
@@ -144,7 +150,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
       const sub = submissions.find(s => s.task_id === task.id);
       return sub && !scoreItems.find(s => (s.category === 'task' || s.category === 'quiz') && s.ref_id === task.id && s.verified);
     }),
-    forum: [...forumPosts, ...forumReplies].some(item =>
+    forum: [...studentForumPosts, ...scorableForumReplies].some(item =>
       !scoreItems.find(s => s.category === 'forum' && s.ref_id === item.id && s.verified)
     ),
     therapist: myPairings.some(p =>
@@ -170,19 +176,28 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
           <p className="text-xs text-muted-foreground">{email}</p>
         </div>
         <div className="bg-card border border-border rounded-xl px-4 py-2 text-center shrink-0 space-y-2">
-          <div>
-            <p className="text-lg font-black text-primary">{totalScore.toFixed(1)}</p>
-            <p className="text-[10px] text-muted-foreground">pts totais</p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 px-2 text-[10px] whitespace-normal leading-tight"
-            onClick={() => sendTotalMutation.mutate()}
-            disabled={sendTotalMutation.isPending}
-          >
-            {sendTotalMutation.isPending ? 'Enviando...' : 'Enviar para controle e Dashboard'}
-          </Button>
+          {isTeacher ? (
+            <div>
+              <p className="text-lg font-black text-primary">{totalScore.toFixed(1)}</p>
+              <p className="text-[10px] text-muted-foreground">pts totais</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm font-black text-primary">Resumo detalhado</p>
+              <p className="text-[10px] text-muted-foreground">atribuições por atividade</p>
+            </div>
+          )}
+          {isTeacher && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-[10px] whitespace-normal leading-tight"
+              onClick={() => sendTotalMutation.mutate()}
+              disabled={sendTotalMutation.isPending}
+            >
+              {sendTotalMutation.isPending ? 'Enviando...' : 'Enviar para controle e Dashboard'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -332,10 +347,10 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
 
         {activeSection === 'forum' && (
           <>
-            {forumPosts.length === 0 && forumReplies.length === 0 && (
+            {studentForumPosts.length === 0 && scorableForumReplies.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação no fórum.</p>
             )}
-            {forumPosts.map(post => (
+            {studentForumPosts.map(post => (
               <ScoreRow
                 key={post.id}
                 category="forum"
@@ -352,13 +367,13 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
                 </div>
               </ScoreRow>
             ))}
-            {forumReplies.map(reply => (
+            {scorableForumReplies.map(reply => (
               <ScoreRow
                 key={reply.id}
                 category="forum"
                 icon={CATEGORY_CONFIG.forum.icon}
                 refId={reply.id}
-                refTitle="Resposta no Fórum"
+                refTitle="Resposta em pergunta de colega"
                 maxScore={0.5}
                 item={getScoreItem('forum', reply.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
@@ -431,6 +446,7 @@ export default function ScoreControl() {
   const [customOrder, setCustomOrder] = useState([]);
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
+  const isTeacher = session?.role === 'admin';
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -552,11 +568,15 @@ export default function ScoreControl() {
       p => p.author_email === email && p.course === activeCourse
     );
     const studentForumPostIds = new Set(studentSpecificForumPosts.map(p => p.id));
+    const forumParentById = new Map(forumPosts.map(p => [p.id, p]));
 
     const studentSpecificForumReplies = forumReplies.filter(r => r.author_email === email);
     const studentForumReplyIds = new Set(
       studentSpecificForumReplies
-        .filter(r => !r.post_id || studentForumPostIds.has(r.post_id))
+        .filter(r => {
+          const parentPost = forumParentById.get(r.post_id);
+          return parentPost && parentPost.course === activeCourse && parentPost.author_email !== email;
+        })
         .map(r => r.id)
     );
 
@@ -576,7 +596,11 @@ export default function ScoreControl() {
     const liveCount = attendances.filter(a => a.student_email === email && liveSessionIds.has(a.session_id)).length;
     const taskCount = submissions.filter(s => s.student_email === email && taskIds.has(s.task_id)).length;
     const postCount = forumPosts.filter(p => p.author_email === email).length;
-    const replyCount = forumReplies.filter(r => r.author_email === email && (!r.post_id || forumPostIds.has(r.post_id))).length;
+    const forumParentById = new Map(forumPosts.map(p => [p.id, p]));
+    const replyCount = forumReplies.filter(r => {
+      const parentPost = forumParentById.get(r.post_id);
+      return r.author_email === email && parentPost && parentPost.author_email !== email;
+    }).length;
     const monitorCount = monitorHistory.filter(m => m.student_email === email).length;
     const count = lessonCount + liveCount + taskCount + postCount + replyCount + monitorCount;
     return { count };
@@ -653,7 +677,11 @@ export default function ScoreControl() {
     },
   });
 
-  if (selectedCode) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} onBack={() => setSelectedCode(null)} />;
+  if (selectedCode) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} onBack={() => setSelectedCode(null)} />;
+
+  const sortOptions = isTeacher
+    ? [['alpha','A–Z'],['points','Classificação'],['participations','Participações'],['pending','Pendências']]
+    : [['alpha','A–Z'],['points','Classificação']];
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
@@ -682,7 +710,7 @@ export default function ScoreControl() {
             disabled={sendRankingToDashboardMutation.isPending}
           >
             <Trophy size={13} />
-            {sendRankingToDashboardMutation.isPending ? 'Enviando...' : 'Enviar pontuações para Dashboard'}
+            {sendRankingToDashboardMutation.isPending ? 'Enviando...' : 'Publicar classificação na Dashboard'}
           </Button>
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleRetro} disabled={retroLoading}>
             <RefreshCw size={13} className={retroLoading ? 'animate-spin' : ''} />
@@ -698,7 +726,7 @@ export default function ScoreControl() {
         </div>
         <div className="flex items-center gap-1 ml-auto">
           <ArrowUpDown size={13} className="text-muted-foreground" />
-          {[['alpha','A–Z'],['points','Pontuação'],['participations','Participações'],['pending','Pendências']].map(([val, label]) => (
+          {sortOptions.map(([val, label]) => (
 
             <button key={val} onClick={() => setSortBy(val)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${sortBy === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
@@ -759,14 +787,23 @@ export default function ScoreControl() {
                     <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Aulas assistidas + lives + entregas + fórum + monitoria">
-                      <Activity size={11} className="text-blue-500" />
-                      <span className="text-xs font-bold text-blue-700">{participations}</span>
-                    </div>
-                    <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
-                      <Star size={11} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm font-black text-yellow-700">{totalScore.toFixed(1)}</span>
-                    </div>
+                    {isTeacher && (
+                      <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Aulas assistidas + lives + entregas + fórum + monitoria">
+                        <Activity size={11} className="text-blue-500" />
+                        <span className="text-xs font-bold text-blue-700">{participations}</span>
+                      </div>
+                    )}
+                    {isTeacher ? (
+                      <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
+                        <Star size={11} className="text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-black text-yellow-700">{totalScore.toFixed(1)}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl" title="Posição na classificação">
+                        <Trophy size={11} className="text-yellow-600" />
+                        <span className="text-sm font-black text-yellow-700">#{index + 1}</span>
+                      </div>
+                    )}
                     <ChevronLeft size={14} className="text-muted-foreground rotate-180" />
                   </div>
                 </div>

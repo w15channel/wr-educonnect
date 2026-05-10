@@ -83,7 +83,7 @@ export default function Students() {
         }
         for (const session of liveSessions) {
           if (!existingScores.find(s => s.category === 'live_attendance' && s.ref_id === session.id)) {
-            toCreate.push({ student_email: email, category: 'live_attendance', ref_id: session.id, ref_title: session.title, score: 0, max_score: 5, verified: false });
+            toCreate.push({ student_email: email, category: 'live_attendance', ref_id: session.id, ref_title: session.title, score: 0, max_score: 1, verified: false });
           }
         }
         for (const task of tasks) {

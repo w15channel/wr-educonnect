@@ -6,7 +6,6 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Trophy, Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Star, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -15,7 +14,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
-const CYCLE_DAYS = 4;
+const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 
 function getCycleStart() {
@@ -128,7 +127,11 @@ export default function Monitores() {
     const taskIds = new Set(tasks.map(t => t.id));
     const liveSessionIds = new Set(liveSessions.map(l => l.id));
     const forumPostIds = new Set(forumPosts.filter(p => p.course === activeCourse).map(p => p.id));
-    const forumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
+    const forumParentById = new Map(forumPosts.map(p => [p.id, p]));
+    const forumReplyIds = new Set(forumReplies.filter(r => {
+      const parentPost = forumParentById.get(r.post_id);
+      return parentPost && forumPostIds.has(parentPost.id) && parentPost.author_email !== r.author_email;
+    }).map(r => r.id));
     const isPairingFromCourse = (p) => !courseEmails.size || (courseEmails.has(p.therapist_email || '') && courseEmails.has(p.patient_email || ''));
     const pairingIds = new Set(pairings.filter(isPairingFromCourse).map(p => p.id));
     const rankMap = {};
@@ -268,7 +271,7 @@ export default function Monitores() {
             <Crown size={22} className="text-yellow-500" /> Monitores do Período
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Turma {courseLabel} · Ciclo de {CYCLE_DAYS} dias · {format(new Date(periodStart + 'T00:00:00'), 'dd/MM', { locale: ptBR })} a {format(new Date(periodEnd + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
+            Turma {courseLabel} · Semana de destaque · {format(new Date(periodStart + 'T00:00:00'), 'dd/MM', { locale: ptBR })} a {format(new Date(periodEnd + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
           </p>
         </div>
         {isTeacher && (
@@ -307,7 +310,7 @@ export default function Monitores() {
             </div>
             <div>
               <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores do Período</p>
+              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores da Semana</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -481,9 +484,7 @@ export default function Monitores() {
             <p style={{ fontSize: 13, color: '#444', margin: '0 0 10px' }}>Certificamos que</p>
             <h2 style={{ fontSize: 30, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 20px', fontStyle: 'italic' }}>{certStudent?.student_name}</h2>
             <p style={{ fontSize: 13, color: '#444', lineHeight: 1.9, maxWidth: 480, margin: '0 auto 24px', textAlign: 'justify' }}>
-              foi reconhecido(a) como <strong>Monitor de Classe por Mérito Acadêmico</strong>, alcançando a{' '}
-              <strong>{certStudent?.rank_position === 1 ? '1ª' : certStudent?.rank_position === 2 ? '2ª' : '3ª'} posição</strong>{' '}
-              no Ranking Geral de Desempenho, demonstrando excelência e dedicação, durante o período de{' '}
+              foi reconhecido(a) como <strong>Monitor de Classe por Mérito Acadêmico</strong>, integrando o grupo de destaque da turma entre as melhores notas da semana, demonstrando excelência e dedicação, durante o período de{' '}
               <strong>{certStudent?.period_start ? format(new Date(certStudent.period_start + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>{' '}
               a <strong>{certStudent?.period_end ? format(new Date(certStudent.period_end + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>.
             </p>
