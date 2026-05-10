@@ -6,7 +6,6 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Trophy, Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Star, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,7 +21,7 @@ const POINT_RULES = {
   forumReply: 0.5,
   liveAttendance: 1,
 };
-const CYCLE_DAYS = 4;
+const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 
 function getCycleStart() {
@@ -118,7 +117,7 @@ export default function Monitores() {
   const periodStart = getCycleStart();
   const periodEnd = getCycleEnd(periodStart);
 
-  // Current monitors for this course and this cycle
+  // Current monitors for this course and this weekly cycle
   const currentMonitors = monitorHistory.filter(
     m => m.period_start === periodStart && (m.course === activeCourse || (!m.course && activeCourse === 'tcc'))
   );
@@ -157,8 +156,11 @@ export default function Monitores() {
       rankMap[p.author_email].forumPostCount += 1;
     });
 
-    forumReplies.filter((r) => emailSet.has(r.author_email)).forEach((r) => {
-      rankMap[r.author_email].forumReplyCount += 1;
+    const postById = new Map(forumPosts.map((post) => [post.id, post]));
+    forumReplies.forEach((reply) => {
+      const parentPost = postById.get(reply.post_id);
+      if (!parentPost || parentPost.course !== activeCourse || !emailSet.has(reply.author_email) || parentPost.author_email === reply.author_email) return;
+      rankMap[reply.author_email].forumReplyCount += 1;
     });
 
     const firstPass = Object.values(rankMap).map((row) => {
@@ -200,7 +202,7 @@ export default function Monitores() {
 
   const handleDefineMonitors = async (forceReset = false) => {
     if (currentMonitors.length > 0 && !forceReset) {
-      toast.info('Monitores deste período já foram definidos. Use "Resetar" para redefinir.');
+      toast.info('Monitores desta semana já foram definidos. Use "Resetar" para recalcular.');
       return;
     }
     if (topMonitors.length === 0) {
@@ -300,10 +302,10 @@ export default function Monitores() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Crown size={22} className="text-yellow-500" /> Monitores do Período
+            <Crown size={22} className="text-yellow-500" /> Monitores da Semana
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Turma {courseLabel} · Ciclo de {CYCLE_DAYS} dias · {format(new Date(periodStart + 'T00:00:00'), 'dd/MM', { locale: ptBR })} a {format(new Date(periodEnd + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
+            Turma {courseLabel} · Ciclo semanal ({CYCLE_DAYS} dias) · {format(new Date(periodStart + 'T00:00:00'), 'dd/MM', { locale: ptBR })} a {format(new Date(periodEnd + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
           </p>
         </div>
         {isTeacher && (
@@ -342,7 +344,7 @@ export default function Monitores() {
             </div>
             <div>
               <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores do Período</p>
+              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores da Semana</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -504,7 +506,7 @@ export default function Monitores() {
       {/* Dialog Certificado */}
       <Dialog open={!!certStudent} onOpenChange={() => setCertStudent(null)}>
         <DialogContent className="max-w-3xl">
-          <DialogHeader><DialogTitle>Certificado de Monitor</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Certificado de Destaque Semanal</DialogTitle></DialogHeader>
           <div ref={certRef} className="bg-white text-center" style={{ fontFamily: 'Georgia, "Times New Roman", serif', minHeight: 480, padding: '48px 56px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
               <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png" alt="WR" style={{ width: 60, height: 60, objectFit: 'contain' }} crossOrigin="anonymous" />
@@ -512,12 +514,12 @@ export default function Monitores() {
               <div style={{ width: 60 }} />
             </div>
             <p style={{ fontSize: 11, letterSpacing: 5, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 8px' }}>Certificado de Reconhecimento Acadêmico</p>
-            <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 28px', letterSpacing: 2, textTransform: 'uppercase' }}>Monitor de Excelência</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 28px', letterSpacing: 2, textTransform: 'uppercase' }}>Destaque Acadêmico Semanal</h1>
             <p style={{ fontSize: 13, color: '#444', margin: '0 0 10px' }}>Certificamos que</p>
             <h2 style={{ fontSize: 30, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 20px', fontStyle: 'italic' }}>{certStudent?.student_name}</h2>
             <p style={{ fontSize: 13, color: '#444', lineHeight: 1.9, maxWidth: 480, margin: '0 auto 24px', textAlign: 'justify' }}>
-              foi reconhecido(a) como <strong>Monitor de Classe por Mérito Acadêmico</strong>, estando em destaque no
-              Ranking Geral de Desempenho da turma, demonstrando excelência e dedicação, durante o período de{' '}
+              esteve em destaque à frente da turma, compondo o grupo de melhores notas semanais por sua dedicação, constância
+              e participação acadêmica, durante o período de{' '}
               <strong>{certStudent?.period_start ? format(new Date(certStudent.period_start + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>{' '}
               a <strong>{certStudent?.period_end ? format(new Date(certStudent.period_end + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>.
             </p>

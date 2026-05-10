@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const COURSES = ['tcc', 'psicanalise', 'sexologia'];
-const CYCLE_DAYS = 4;
+const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 const BONUS_BY_RANK = { 1: 0.5, 2: 0.3, 3: 0.2 };
 
@@ -81,6 +81,8 @@ Deno.serve(async (req) => {
     let correctedSubmissions = 0;
     let monitorsDefined = 0;
     let profilesUpdated = 0;
+    let removedScores = 0;
+    let currentValidScoreKeys = null;
 
     const upsertScore = async ({ studentEmail, category, refId, refTitle, score, maxScore, notes }) => {
       if (!studentEmail || !refId) return;
@@ -95,6 +97,7 @@ Deno.serve(async (req) => {
         notes: notes || '',
       };
       const key = scoreKey(studentEmail, category, refId);
+      if (currentValidScoreKeys) currentValidScoreKeys.add(key);
       const existing = existingScores.get(key);
       if (existing) {
         const changed = roundScore(existing.score) !== payload.score || roundScore(existing.max_score) !== payload.max_score || existing.verified !== true || existing.notes !== payload.notes;
@@ -175,20 +178,21 @@ Deno.serve(async (req) => {
         monitorsDefined++;
       }
 
+      currentValidScoreKeys = new Set();
       const calculatedTotals = new Map(courseCodes.map((code) => [code.student_email, 0]));
       const addCalculated = (email, points) => calculatedTotals.set(email, roundScore((calculatedTotals.get(email) || 0) + points));
 
       for (const progress of progresses) {
         const lesson = lessonMap.get(progress.lesson_id);
         if (!progress.watched || !courseEmails.has(progress.student_email) || !lesson) continue;
-        await upsertScore({ studentEmail: progress.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: 10, maxScore: 10, notes: 'Aula assistida por completo: +10 pontos.' });
+        await upsertScore({ studentEmail: progress.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: 10, maxScore: 10, notes: 'Aula completa assistida: +10,00 pontos.' });
         addCalculated(progress.student_email, 10);
       }
 
       for (const attendance of attendances) {
         const live = liveMap.get(attendance.session_id);
         if (!courseEmails.has(attendance.student_email) || !live) continue;
-        await upsertScore({ studentEmail: attendance.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || attendance.session_title || 'Presença em live', score: 1, maxScore: 1, notes: 'Presença confirmada em live: +1 ponto.' });
+        await upsertScore({ studentEmail: attendance.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || attendance.session_title || 'Presença em live', score: 1, maxScore: 1, notes: 'Presença confirmada em live: +1,0 ponto.' });
         addCalculated(attendance.student_email, 1);
       }
 
@@ -199,8 +203,8 @@ Deno.serve(async (req) => {
         const score = 10 + bonus;
         const category = task.type === 'quiz' ? 'quiz' : 'task';
         const feedback = bonus > 0
-          ? `Entrega recebida e pontuada: 10 pontos + ${bonus.toFixed(1)} de bônus de monitor/ranking.`
-          : 'Entrega recebida e pontuada conforme a regra universal: +10 pontos.';
+          ? `Entrega recebida: 10,00 pontos + ${bonus.toFixed(1)} ponto(s) extras pelo destaque semanal no ranking.`
+          : 'Entrega de atividade/trabalho recebida: +10,00 pontos.';
         await upsertScore({ studentEmail: submission.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
         addCalculated(submission.student_email, score);
         if (submission.status !== 'graded' || roundScore(submission.grade) !== roundScore(score) || submission.feedback !== feedback) {
@@ -211,7 +215,7 @@ Deno.serve(async (req) => {
 
       for (const post of coursePosts) {
         if (!courseEmails.has(post.author_email)) continue;
-        await upsertScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: 'Comentário/Pergunta no Fórum', score: 0.1, maxScore: 0.1, notes: 'Comentário ou pergunta criada no fórum: +0,1 ponto.' });
+        await upsertScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: 'Comentário/Pergunta no Fórum', score: 0.1, maxScore: 0.1, notes: 'Comentário criado no fórum: +0,1 ponto.' });
         addCalculated(post.author_email, 0.1);
       }
 
@@ -220,6 +224,16 @@ Deno.serve(async (req) => {
         if (!parentPost || !coursePostIds.has(parentPost.id) || !courseEmails.has(reply.author_email) || parentPost.author_email === reply.author_email) continue;
         await upsertScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: 'Resposta em pergunta de colega', score: 0.5, maxScore: 0.5, notes: 'Resposta em pergunta aberta por colega no fórum: +0,5 ponto.' });
         addCalculated(reply.author_email, 0.5);
+      }
+
+      const managedCategories = new Set(['lesson', 'live_attendance', 'task', 'quiz', 'forum']);
+      for (const item of Array.from(existingScores.values())) {
+        const key = scoreKey(item.student_email, item.category, item.ref_id);
+        if (item.verified === true && courseEmails.has(item.student_email) && managedCategories.has(item.category) && !currentValidScoreKeys.has(key)) {
+          await base44.asServiceRole.entities.ScoreItem.delete(item.id);
+          existingScores.delete(key);
+          removedScores++;
+        }
       }
 
       const finalRanking = courseCodes.map((code) => ({
@@ -256,10 +270,12 @@ Deno.serve(async (req) => {
         live_attendance: 1,
         monitor_bonus_by_rank: BONUS_BY_RANK,
         monitor_cycle_days: CYCLE_DAYS,
+        monitor_period: 'weekly',
       },
       createdScores,
       updatedScores,
       correctedSubmissions,
+      removedScores,
       monitorsDefined,
       profilesUpdated,
     });

@@ -7,7 +7,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Award, Heart, BookOpen, Hash, Globe, UsersRound
+  ChevronRight, Award, Heart, BookOpen, Hash, UsersRound, Crown
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -30,6 +30,7 @@ const adminGroups = [
       { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
+      { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
     ],
   },
   {
@@ -70,6 +71,7 @@ const studentGroups = [
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
       { icon: UsersRound, label: 'Classe', path: '/classe', color: 'text-sky-400' },
+      { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
     ],
   },
   {
