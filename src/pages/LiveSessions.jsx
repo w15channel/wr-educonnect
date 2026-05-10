@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Video, MessageSquare, Send, Plus, Youtube, Wifi, WifiOff, Trash2, ExternalLink, ChevronLeft, Clock, Calendar, CheckCircle, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -287,9 +288,10 @@ export default function LiveSessions() {
   }
 
   // ── Sessions list ──
-  const liveNow = sessions.filter(s => s.status === 'live');
-  const upcoming = sessions.filter(s => s.status === 'scheduled');
-  const past = sessions.filter(s => s.status === 'ended');
+  const orderedSessions = sortBySequence(sessions);
+  const liveNow = orderedSessions.filter(s => s.status === 'live');
+  const upcoming = orderedSessions.filter(s => s.status === 'scheduled');
+  const past = orderedSessions.filter(s => s.status === 'ended');
 
   return (
     <div className="p-4 lg:p-7 max-w-5xl mx-auto space-y-5 animate-fade-in-up">

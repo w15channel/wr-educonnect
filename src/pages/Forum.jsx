@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { MessageSquare, Send, ChevronDown, ChevronUp, Trash2, Star, BookOpen, Pencil, Check, X } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
@@ -174,7 +175,8 @@ export default function Forum() {
     createPostMutation.mutate({ content: newPost, topic });
   };
 
-  const filteredPosts = filterTopic === 'Todos' ? posts : posts.filter(p => p.topic === filterTopic);
+  const sequencedPosts = sortBySequence(posts);
+  const filteredPosts = filterTopic === 'Todos' ? sequencedPosts : sequencedPosts.filter(p => p.topic === filterTopic);
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">

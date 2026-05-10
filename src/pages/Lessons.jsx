@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Play, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil, Upload, Link, Clock, FileDown, FileText, Globe, Video } from 'lucide-react';
+import { Play, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil, Link, Clock, FileDown, FileText, Globe, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,7 +48,7 @@ export default function Lessons() {
   });
 
 
-  const orderedLessons = [...lessons].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0)).map((l, idx) => ({ ...l, displayOrder: idx + 1 }));
+  const orderedLessons = sortBySequence(lessons).map((l, idx) => ({ ...l, displayOrder: idx + 1 }));
   const lessonUnlockRule = unlockRules.find(r => r.scope === 'lessons');
   const unlockedLessonCount = Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
 
