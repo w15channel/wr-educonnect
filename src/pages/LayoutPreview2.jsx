@@ -6,6 +6,7 @@ import {
 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
+import { toast } from 'sonner';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
@@ -184,6 +185,9 @@ export default function LandingPage({ onLogin }) {
   const [adminPassword, setAdminPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [testimonials, setTestimonials] = useState(TESTIMONIALS);
+  const [testimonialForm, setTestimonialForm] = useState({ name: '', stars: 5, comment: '' });
+  const [sendingTestimonial, setSendingTestimonial] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setHeroImg((i) => (i + 1) % HERO_IMAGES.length), 5000);
@@ -194,6 +198,20 @@ export default function LandingPage({ onLogin }) {
     const onScroll = () => setNavScrolled(window.scrollY > 60);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const loadTestimonials = async () => {
+      try {
+        const approved = await base44.entities.Testimonial.filter({ approved: true }, '-created_date', 20);
+        if (approved?.length) {
+          setTestimonials(approved.map(t => ({ name: t.student_name || 'Aluno(a)', stars: Number(t.stars || 5), text: t.comment || '' })));
+        }
+      } catch (error) {
+        console.error('Falha ao carregar depoimentos aprovados', error);
+      }
+    };
+    loadTestimonials();
   }, []);
 
   const handleCodeLogin = async (e) => {
@@ -243,6 +261,26 @@ export default function LandingPage({ onLogin }) {
     setSession({ role: 'admin', name: 'Professor', email: cred.email, course: null });
     onLogin('lobby');
     setLoading(false);
+  };
+
+  const handleSubmitTestimonial = async (e) => {
+    e.preventDefault();
+    if (!testimonialForm.name || !testimonialForm.comment) return;
+    setSendingTestimonial(true);
+    try {
+      await base44.entities.Testimonial.create({
+        student_name: testimonialForm.name,
+        stars: Number(testimonialForm.stars),
+        comment: testimonialForm.comment,
+        approved: false,
+      });
+      setTestimonialForm({ name: '', stars: 5, comment: '' });
+      toast.success('Depoimento enviado! Após aprovação, ele será exibido na homepage.');
+    } catch (error) {
+      toast.error('Não foi possível enviar o depoimento. Tente novamente.');
+    } finally {
+      setSendingTestimonial(false);
+    }
   };
 
   return (
@@ -639,7 +677,7 @@ export default function LandingPage({ onLogin }) {
             <p className="text-white/40 text-sm">Mais de 500 terapeutas formados</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) =>
+            {testimonials.map((t, i) =>
             <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all">
                 <Quote size={22} className="text-[#5b5ef4]/30 mb-3" />
                 <p className="text-white/70 text-sm leading-relaxed mb-5">"{t.text}"</p>
@@ -653,6 +691,14 @@ export default function LandingPage({ onLogin }) {
               </div>
             )}
           </div>
+          <form onSubmit={handleSubmitTestimonial} className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-3 bg-[#0d1120] border border-white/10 rounded-2xl p-4">
+            <input className="md:col-span-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Seu nome" value={testimonialForm.name} onChange={(e) => setTestimonialForm({ ...testimonialForm, name: e.target.value })} />
+            <select className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" value={testimonialForm.stars} onChange={(e) => setTestimonialForm({ ...testimonialForm, stars: e.target.value })}>
+              {[5,4,3,2,1].map(s => <option key={s} value={s}>{s} estrelas</option>)}
+            </select>
+            <input className="md:col-span-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Seu comentário" value={testimonialForm.comment} onChange={(e) => setTestimonialForm({ ...testimonialForm, comment: e.target.value })} />
+            <button disabled={sendingTestimonial} className="md:col-span-4 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-xl py-2.5 font-bold text-sm">{sendingTestimonial ? 'Enviando...' : 'Enviar depoimento para aprovação'}</button>
+          </form>
         </div>
       </section>
 

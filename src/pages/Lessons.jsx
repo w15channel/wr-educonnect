@@ -49,7 +49,7 @@ export default function Lessons() {
 
   const orderedLessons = [...lessons].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0)).map((l, idx) => ({ ...l, displayOrder: idx + 1 }));
   const lessonUnlockRule = unlockRules.find(r => r.scope === 'lessons');
-  const unlockedLessonCount = Number(lessonUnlockRule?.unlock_until || 1);
+  const unlockedLessonCount = Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
 
   const { data: progresses = [] } = useQuery({
     queryKey: ['lesson-progress', session?.email],

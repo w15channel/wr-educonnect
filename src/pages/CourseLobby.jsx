@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
 import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
@@ -42,7 +45,7 @@ const COURSES = [
   },
 ];
 
-function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect }) {
+function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect, onReserve }) {
   const videoRef = useRef(null);
   const navigate = useNavigate();
   const Icon = course.icon;
@@ -119,12 +122,14 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect }) {
             Entrar na Plataforma <ChevronRight size={16} />
           </button>
         ) : (
-          <button
-            disabled
-            className="w-full py-3 rounded-2xl font-bold text-sm text-white/20 bg-white/4 border border-white/6 cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <Lock size={13} /> Próxima turma: Setembro/2026
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => onReserve(course)}
+              className="w-full py-3 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-emerald-500 to-cyan-500 border border-white/10 flex items-center justify-center gap-2"
+            >
+              Reservar Vaga Antecipadamente
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -138,6 +143,10 @@ export default function CourseLobby() {
 
   const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
   const [musicEnabled, setMusicEnabled] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(localStorage.getItem('wr_terms_lobby_accepted') === 'yes');
+  const [reserveOpen, setReserveOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [lead, setLead] = useState({ name: '', contactType: 'WhatsApp', phone: '' });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -155,8 +164,15 @@ export default function CourseLobby() {
   };
 
   const handleStudentEnter = () => {
+    if (!termsAccepted) return;
     const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
     navigate(`/student/${slug}/dashboard`);
+  };
+  const openReserve = (course) => { setSelectedCourse(course); setReserveOpen(true); };
+  const sendLead = () => {
+    const summary = `Olá! Quero reservar vaga antecipada.%0ACurso: ${selectedCourse?.title}%0ANome: ${lead.name}%0AContato preferencial: ${lead.contactType}%0ATelefone/WhatsApp: ${lead.phone}%0A`;
+    window.open(`https://wa.me/5541992531598?text=${summary}`, '_blank');
+    setReserveOpen(false);
   };
 
   if (isAdmin) {
@@ -257,8 +273,15 @@ export default function CourseLobby() {
         {/* Course Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {COURSES.map((c) => (
-            <CourseVideoCard key={c.id} course={c} isActive={userCourse === c.id} isAdmin={false} onAdminSelect={() => {}} />
+            <CourseVideoCard key={c.id} course={c} isActive={userCourse === c.id} isAdmin={false} onAdminSelect={() => {}} onReserve={openReserve} />
           ))}
+        </div>
+        <div className="max-w-xl mx-auto mt-8 rounded-2xl border border-white/10 p-4 bg-white/5">
+          <label className="flex items-start gap-3 text-sm text-white/80">
+            <input type="checkbox" checked={termsAccepted} onChange={(e) => { setTermsAccepted(e.target.checked); localStorage.setItem('wr_terms_lobby_accepted', e.target.checked ? 'yes' : 'no'); }} />
+            <span>Li e aceito os Termos de Uso e Política de Privacidade para continuar.</span>
+          </label>
+          <button onClick={handleStudentEnter} disabled={!termsAccepted} className="mt-3 w-full py-3 rounded-xl font-bold bg-[#5b5ef4] disabled:opacity-40">Entrar no Portal do Aluno</button>
         </div>
 
         <p className="text-center text-white/20 text-xs mt-10">
@@ -266,6 +289,17 @@ export default function CourseLobby() {
           <strong className="text-white/40">{COURSES.find(c => c.id === userCourse)?.title}</strong>. Em caso de dúvidas, entre em contato com a coordenação.
         </p>
       </div>
+      <Dialog open={reserveOpen} onOpenChange={setReserveOpen}>
+        <DialogContent className="bg-[#0d1120] text-white border-white/10">
+          <DialogHeader><DialogTitle>Reserva Antecipada • {selectedCourse?.title}</DialogTitle></DialogHeader>
+          <p className="text-sm text-white/70">Que alegria te ver aqui! Vamos garantir sua prioridade e te manter por perto das próximas turmas 🚀</p>
+          <Input placeholder="Nome completo" value={lead.name} onChange={(e) => setLead({ ...lead, name: e.target.value })} />
+          <Input placeholder="Melhor contato (WhatsApp)" value={lead.contactType} onChange={(e) => setLead({ ...lead, contactType: e.target.value })} />
+          <Input placeholder="Telefone / WhatsApp" value={lead.phone} onChange={(e) => setLead({ ...lead, phone: e.target.value })} />
+          <Textarea value={`Resumo: ${selectedCourse?.desc || ''}\nBenefícios: metodologia prática, comunidade ativa, suporte contínuo e certificação reconhecida.`} readOnly />
+          <button onClick={sendLead} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold">Enviar para WhatsApp oficial</button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

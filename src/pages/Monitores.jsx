@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Trophy, Star, Crown, Download, Calendar, RotateCcw, UserPlus, Send, MessageCircle, BarChart3 } from 'lucide-react';
+import { Trophy, Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Star, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -99,10 +99,6 @@ export default function Monitores() {
     queryFn: () => base44.entities.MonitorHistory.list('-period_start', 100),
   });
 
-  const { data: feedbacks = [] } = useQuery({
-    queryKey: ['monitor-feedbacks', activeCourse],
-    queryFn: () => base44.entities.MonitorFeedback.filter({ course: activeCourse }, '-created_date', 1000),
-  });
 
   const { data: monitorChat = [] } = useQuery({
     queryKey: ['monitor-chat', activeCourse],
@@ -110,7 +106,6 @@ export default function Monitores() {
     refetchInterval: 5000,
   });
 
-  const [feedbackForm, setFeedbackForm] = useState({ monitor_email: '', rating: 5, comment: '' });
   const [chatMessage, setChatMessage] = useState('');
 
   const periodStart = getCycleStart();
@@ -161,12 +156,10 @@ export default function Monitores() {
   const weeklyReport = useMemo(() => {
     const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
     return currentMonitors.map(m => {
-      const monitorFeedbacks = feedbacks.filter(f => f.monitor_email === m.student_email);
-      const avgRating = monitorFeedbacks.length ? (monitorFeedbacks.reduce((acc, f) => acc + (f.rating || 0), 0) / monitorFeedbacks.length) : 0;
       const interactions = scoreItems.filter(s => s.student_email === m.student_email && new Date(s.created_date || 0).getTime() >= weekAgo).length;
-      return { ...m, avgRating, feedbackCount: monitorFeedbacks.length, interactions };
+      return { ...m, interactions };
     });
-  }, [currentMonitors, feedbacks, scoreItems]);
+  }, [currentMonitors, scoreItems]);
 
   const getCodeByEmail = (email) => accessCodes.find(c => c.student_email === email);
 
@@ -237,24 +230,11 @@ export default function Monitores() {
     toast.success('Certificado gerado!');
   };
 
-  const handleSubmitFeedback = async () => {
-    if (!feedbackForm.monitor_email) return toast.error('Selecione um monitor para avaliar.');
-    try {
-      await base44.entities.MonitorFeedback.create({
-        monitor_email: feedbackForm.monitor_email,
-        monitor_name: currentMonitors.find(m => m.student_email === feedbackForm.monitor_email)?.student_name || feedbackForm.monitor_email,
-        student_email: session?.email || 'anonimo',
-        student_name: session?.full_name || session?.name || session?.email || 'Aluno',
-        course: activeCourse,
-        rating: Number(feedbackForm.rating),
-        comment: feedbackForm.comment,
-      });
-      setFeedbackForm({ monitor_email: '', rating: 5, comment: '' });
-      await queryClient.invalidateQueries({ queryKey: ['monitor-feedbacks', activeCourse] });
-      toast.success('Feedback enviado com sucesso.');
-    } catch (e) {
-      toast.error('Não foi possível enviar seu feedback.');
-    }
+  const handleDeleteHistory = async (id) => {
+    if (!isTeacher) return;
+    await base44.entities.MonitorHistory.delete(id);
+    await queryClient.invalidateQueries({ queryKey: ['monitor-history'] });
+    toast.success('Entrada do histórico removida.');
   };
 
   const handleSendChat = async () => {
@@ -437,6 +417,11 @@ export default function Monitores() {
                         <Crown size={10} className="text-yellow-500" />
                         <span className="font-semibold">{m.student_name}</span>
                         <span className="text-muted-foreground">#{m.rank_position}</span>
+                        {isTeacher && (
+                          <button onClick={() => handleDeleteHistory(m.id)} className="text-red-500 hover:text-red-700">
+                            <Trash2 size={12} />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -448,18 +433,6 @@ export default function Monitores() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
-          <h3 className="font-bold text-sm flex items-center gap-2"><Star size={14} className="text-primary" /> Feedback dos Alunos</h3>
-          <p className="text-xs text-muted-foreground">Avalie o suporte dos monitores para melhorar o acompanhamento do TCC.</p>
-          <select className="w-full border rounded-md px-3 py-2 text-sm bg-background" value={feedbackForm.monitor_email} onChange={(e) => setFeedbackForm(prev => ({ ...prev, monitor_email: e.target.value }))}>
-            <option value="">Selecione um monitor</option>
-            {currentMonitors.map(m => <option key={m.student_email} value={m.student_email}>{m.student_name}</option>)}
-          </select>
-          <Input type="number" min={1} max={5} value={feedbackForm.rating} onChange={(e) => setFeedbackForm(prev => ({ ...prev, rating: e.target.value }))} placeholder="Nota de 1 a 5" />
-          <Textarea value={feedbackForm.comment} onChange={(e) => setFeedbackForm(prev => ({ ...prev, comment: e.target.value }))} placeholder="Comentário (opcional)" />
-          <Button onClick={handleSubmitFeedback} className="w-full gap-2"><Send size={14} /> Enviar feedback</Button>
-        </div>
-
         <div className="bg-card rounded-2xl border border-border p-5">
           <h3 className="font-bold text-sm flex items-center gap-2 mb-3"><BarChart3 size={14} className="text-primary" /> Relatório Semanal dos Monitores</h3>
           <div className="space-y-2">
@@ -467,7 +440,6 @@ export default function Monitores() {
             {weeklyReport.map(item => (
               <div key={item.student_email} className="rounded-xl border border-border p-3 bg-secondary/20">
                 <p className="text-sm font-semibold">{item.student_name}</p>
-                <p className="text-xs text-muted-foreground">Feedback médio: {item.avgRating ? item.avgRating.toFixed(1) : '-'} ({item.feedbackCount} avaliações)</p>
                 <p className="text-xs text-muted-foreground">Frequência de interações (7 dias): {item.interactions}</p>
               </div>
             ))}
