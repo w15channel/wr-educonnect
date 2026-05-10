@@ -34,6 +34,7 @@ export default function Tasks({ mode = 'all' }) {
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFiles, setUploadFiles] = useState({});
   const [commentInputs, setCommentInputs] = useState({});
+  const [submissionDetails, setSubmissionDetails] = useState({});
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', userCourse],
@@ -119,9 +120,12 @@ export default function Tasks({ mode = 'all' }) {
   const handleGoogleDriveUpload = async (taskId) => {
     const file = uploadFiles[taskId];
     if (!file) { toast.error('Selecione um arquivo'); return; }
+
+    const description = getSubmissionDescription(taskId);
+    if (!description) { toast.error('Preencha seu nome e selecione a turma antes de enviar.'); return; }
     const task = tasks.find(t => t.id === taskId);
     const taskTitle = task?.title || 'Tarefa';
-    const studentName = user?.name || user?.full_name || 'Aluno';
+    const studentName = getSubmissionDetail(taskId).studentName || user?.name || user?.full_name || 'Aluno';
     // Prefixo no nome do arquivo: TítuloDaTarefa_NomeDoAluno_arquivo.ext
     const safeName = (str) => str.replace(/[^a-zA-Z0-9À-ÿ ]/g, '').trim().replace(/\s+/g, '_');
     const renamedFileName = `${safeName(taskTitle)}_${safeName(studentName)}_${file.name}`;
@@ -134,6 +138,7 @@ export default function Tasks({ mode = 'all' }) {
       params.append('fileName', renamedFileName);
       params.append('mimeType', file.type);
       params.append('fileData', base64Data);
+      params.append('description', description);
       try {
         await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
         // Salva na plataforma
@@ -142,6 +147,7 @@ export default function Tasks({ mode = 'all' }) {
           student_email: user.email || user.code || '',
           student_name: studentName,
           file_name: renamedFileName,
+          comment: description,
           status: 'submitted',
         });
         // Notificação interna ao professor
@@ -158,6 +164,20 @@ export default function Tasks({ mode = 'all' }) {
     reader.readAsDataURL(file);
   };
 
+
+  const getSubmissionDetail = (taskId) => {
+    const current = submissionDetails[taskId] || {};
+    return {
+      studentName: current.studentName || user?.name || user?.full_name || '',
+      className: current.className || userCourse || '',
+    };
+  };
+
+  const getSubmissionDescription = (taskId) => {
+    const detail = getSubmissionDetail(taskId);
+    if (!detail.studentName?.trim() || !detail.className?.trim()) return '';
+    return `Aluno: ${detail.studentName.trim()} | Turma: ${detail.className.trim()}`;
+  };
   const getSubmission = (taskId) => submissions.find(s => s.task_id === taskId);
 
   const openEdit = (task) => {
@@ -344,6 +364,25 @@ export default function Tasks({ mode = 'all' }) {
                   <div className="px-4 sm:px-5 pb-4 border-t border-border pt-3 bg-secondary/20 space-y-3">
                     <div>
                       <p className="text-xs font-bold text-foreground mb-2">📎 Enviar Arquivo</p>
+                      <div className="grid sm:grid-cols-2 gap-2 mb-2">
+                        <Input
+                          placeholder="Seu nome"
+                          value={getSubmissionDetail(task.id).studentName}
+                          onChange={e => setSubmissionDetails(prev => ({ ...prev, [task.id]: { ...getSubmissionDetail(task.id), studentName: e.target.value } }))}
+                          className="h-9 text-xs"
+                        />
+                        <Select
+                          value={getSubmissionDetail(task.id).className}
+                          onValueChange={value => setSubmissionDetails(prev => ({ ...prev, [task.id]: { ...getSubmissionDetail(task.id), className: value } }))}
+                        >
+                          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Selecione a turma" /></SelectTrigger>
+                          <SelectContent>
+                            {[userCourse, 'tcc', 'concursos', 'enem'].filter((v, i, arr) => v && arr.indexOf(v) === i).map(course => (
+                              <SelectItem key={course} value={course}>{course.toUpperCase()}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <input
                         type="file"
                         onChange={e => setUploadFiles(prev => ({ ...prev, [task.id]: e.target.files[0] }))}
@@ -352,7 +391,7 @@ export default function Tasks({ mode = 'all' }) {
                       <Button
                         size="sm"
                         className="w-full h-9 text-xs gap-1.5"
-                        disabled={!uploadFiles[task.id] || status === 'sending'}
+                        disabled={!uploadFiles[task.id] || status === 'sending' || !getSubmissionDescription(task.id)}
                         onClick={() => handleGoogleDriveUpload(task.id)}
                       >
                         <Send size={13} />
