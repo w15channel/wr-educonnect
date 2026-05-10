@@ -13,7 +13,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
-const CYCLE_DAYS = 5;
+const CYCLE_DAYS = 4;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 
 function getCycleStart() {
@@ -247,8 +247,8 @@ export default function Monitores() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
           <p className="font-bold mb-1">Critérios de seleção dos Monitores:</p>
           <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
-            <li>Maior pontuação total (ScoreItems verificados)</li>
-            <li>1º Monitor: +0.5pts / 2º Monitor: +0.3pts / 3º Monitor: +0.2pts por atividade</li>
+            <li>Ranking recalculado pelas regras universais da plataforma</li>
+            <li>1º Monitor: +0.5pts / 2º Monitor: +0.3pts / 3º Monitor: +0.2pts em entregas de atividades e trabalhos</li>
           </ol>
         </div>
       )}

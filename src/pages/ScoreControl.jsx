@@ -254,7 +254,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
                   icon={CATEGORY_CONFIG.live_attendance.icon}
                   refId={sess.id}
                   refTitle={sess.title}
-                  maxScore={5}
+                  maxScore={1}
                   item={getScoreItem('live_attendance', sess.id)}
                   onSave={(data) => updateScoreMutation.mutate(data)}
                   saving={updateScoreMutation.isPending}
@@ -359,7 +359,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails }) {
                 icon={CATEGORY_CONFIG.forum.icon}
                 refId={reply.id}
                 refTitle="Resposta no Fórum"
-                maxScore={1}
+                maxScore={0.5}
                 item={getScoreItem('forum', reply.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
@@ -513,9 +513,9 @@ export default function ScoreControl() {
   const handleRetro = async () => {
     setRetroLoading(true);
     try {
-      const res = await base44.functions.invoke('retroForumScores', {});
-      await queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
-      toast.success(`Retroativo concluído! ${res.data?.created || 0} pontuações criadas.`);
+      const res = await base44.functions.invoke('recalculateScores', {});
+      await queryClient.invalidateQueries();
+      toast.success(`Pontuação recalculada! ${res.data?.createdScores || 0} itens criados e ${res.data?.updatedScores || 0} atualizados.`);
     } catch (e) {
       toast.error('Erro: ' + (e?.message || 'tente novamente'));
     } finally {
@@ -590,7 +590,7 @@ export default function ScoreControl() {
         !scoreItems.find(si => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
       );
       const stats = getParticipationStats(code.student_email);
-      const savedProfile = studentProfiles.find(p => p.student_email === code.student_email && typeof p.points === 'number');
+      const savedProfile = studentProfiles.find(p => p.student_email === code.student_email && p.dashboard_course === activeCourse && typeof p.points === 'number');
       const totalScore = savedProfile ? savedProfile.points : getCourseScoreTotal(code.student_email);
       const participations = stats.count;
       return { code, hasPending, totalScore, participations };
@@ -686,7 +686,7 @@ export default function ScoreControl() {
           </Button>
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleRetro} disabled={retroLoading}>
             <RefreshCw size={13} className={retroLoading ? 'animate-spin' : ''} />
-            {retroLoading ? 'Aplicando...' : 'Aplicar Pontos Retroativos do Fórum'}
+            {retroLoading ? 'Recalculando...' : 'Recalcular ranking e feedbacks'}
           </Button>
         </div>
       </div>

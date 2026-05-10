@@ -83,7 +83,7 @@ export default function Dashboard() {
     if (selectedMonitorEmails.size === 0) return;
     setSavingMonitors(true);
     const EPOCH = new Date('2024-01-01T00:00:00Z');
-    const CYCLE_DAYS = 5;
+    const CYCLE_DAYS = 4;
     const today = new Date();
     const daysSince = Math.floor((today - EPOCH) / (1000 * 60 * 60 * 24));
     const cycleNum = Math.floor(daysSince / CYCLE_DAYS);
