@@ -42,6 +42,7 @@ import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
 import Notifications from './pages/Notifications';
 import InstagramStudio from './pages/InstagramStudio';
+import SiteEditorAgent from './pages/SiteEditorAgent';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 
@@ -87,6 +88,7 @@ function ScopedRoutesTree() {
         <Route path="classe" element={<Classe />} />
         <Route path="ring" element={<Notifications />} />
         <Route path="instagram" element={<InstagramStudio />} />
+        <Route path="site-editor" element={<SiteEditorAgent />} />
       </Route>
     </Routes>
   );
@@ -161,6 +163,7 @@ const AuthenticatedApp = () => {
       <Route path="/historico" element={redirectTo('/historico')} />
       <Route path="/classe" element={redirectTo('/classe')} />
       <Route path="/instagram" element={redirectTo('/instagram')} />
+      <Route path="/site-editor" element={redirectTo('/site-editor')} />
 
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
       <Route path="/wr-tec" element={<WRTec />} />

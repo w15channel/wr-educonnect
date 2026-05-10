@@ -1,0 +1,36 @@
+{
+  "name": "SiteImprovementRequest",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da melhoria solicitada"
+    },
+    "area": {
+      "type": "string",
+      "description": "\u00c1rea ou ferramenta do site relacionada"
+    },
+    "request_text": {
+      "type": "string",
+      "description": "Pedido original ou descri\u00e7\u00e3o da melhoria"
+    },
+    "ai_response": {
+      "type": "string",
+      "description": "Resposta, plano ou sugest\u00e3o gerada pela IA"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "applied"
+      ],
+      "default": "draft",
+      "description": "Status da proposta"
+    }
+  },
+  "required": [
+    "title",
+    "request_text"
+  ]
+}
