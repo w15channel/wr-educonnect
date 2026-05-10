@@ -113,17 +113,17 @@ export default function Forum() {
       queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] });
       queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
       setReplyText('');
-      // +1 ponto por resposta no fórum
+      // +0,5 ponto por resposta em pergunta de colega no fórum
       base44.entities.ScoreItem.create({
         student_email: session?.email || '',
         category: 'forum',
         ref_id: reply?.id || `reply-${Date.now()}`,
         ref_title: 'Resposta no Fórum',
-        score: 1,
-        max_score: 1,
+        score: 0.5,
+        max_score: 0.5,
         verified: true,
       });
-      toast.success('Resposta enviada! +1 ponto de participação');
+      toast.success('Resposta enviada! +0,5 ponto de participação');
     },
   });
 
@@ -169,7 +169,7 @@ export default function Forum() {
     <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
       <div className="mb-5">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Fórum de Dúvidas</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Faça perguntas e compartilhe conhecimento (+1 ponto por resposta)</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Faça perguntas e compartilhe conhecimento (+0,5 ponto por resposta em dúvida de colega)</p>
       </div>
 
       {/* New Post */}
