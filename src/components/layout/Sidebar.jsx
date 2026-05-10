@@ -7,7 +7,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, Globe, UsersRound
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, Globe, UsersRound, Instagram
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -42,6 +42,7 @@ const adminGroups = [
       { icon: Trophy, label: 'Controle de Pontuação', path: '/scorecontrol', color: 'text-yellow-400' },
       { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
+      { icon: Instagram, label: 'Instagram Institucional', path: '/instagram', color: 'text-pink-400' },
     ],
   },
   {
