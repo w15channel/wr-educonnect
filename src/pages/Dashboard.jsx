@@ -381,16 +381,16 @@ export default function Dashboard() {
           value={pendingTasks}
           icon={FileText}
           iconBg="bg-orange-500"
-          to="/tasks"
-          subtitle="Ir para Tarefas" />
+          to={isTeacher ? '/scorecontrol?filter=pending' : '/tasks'}
+          subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Ir para Tarefas'} />
         
         <StatCard
-          title="Alunos Ativos"
-          value={studentCount}
-          icon={Users}
-          iconBg="bg-emerald-500"
-          to="/students"
-          subtitle="Ver alunos" />
+          title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}
+          value={isTeacher ? studentCount : totalPoints}
+          icon={isTeacher ? Users : Star}
+          iconBg={isTeacher ? 'bg-emerald-500' : 'bg-yellow-500'}
+          to={isTeacher ? '/students' : '/ranking'}
+          subtitle={isTeacher ? 'Ver alunos' : 'Ver ranking'} />
         
         <StatCard
           title={isTeacher ? 'Total de Aulas' : 'Aulas Assistidas'}
@@ -449,10 +449,184 @@ export default function Dashboard() {
           }
           </button>
 
+          {/* Ranking */}
+          <button
+          onClick={() => navigate(scoped('/ranking'))}
+          className="bg-card rounded-2xl border border-border p-5 text-left hover:border-primary/30 hover:shadow-lg transition-all group">
+          
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+                  <Trophy size={16} className="text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">Ranking Geral</h3>
+                  <p className="text-xs text-muted-foreground">Pontuação publicada no ScoreControl</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {myRank > 0 &&
+              <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full">#{myRank}</span>
+              }
+                <ArrowRight size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
+            {ranking.length === 0 ?
+          <p className="text-sm text-muted-foreground text-center py-6">O ranking será exibido após as primeiras notas</p> :
+
+          <div className="space-y-1.5">
+                {ranking.map((r, i) => {
+              const isMe = r.email === session?.email;
+              const code = accessCodes.find((c) => c.student_email === r.email);
+              const displayName = code?.profile_name || code?.student_name || r.email;
+              const avatarColor = code?.profile_avatar_color || '#5b5ef4';
+              const photoUrl = code?.profile_photo_url || '';
+              const avatarEmoji = code?.profile_avatar_emoji || '';
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+              return (
+                <div key={r.email} className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/8 border border-primary/15' : 'hover:bg-secondary/50'}`}>
+                      <span className="w-5 text-center text-sm shrink-0">
+                        {medal || <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}
+                      </span>
+                      {photoUrl ?
+                  <img src={photoUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover shrink-0" /> :
+                  avatarEmoji ?
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ backgroundColor: avatarColor }}>
+                          {avatarEmoji}
+                        </div> :
+
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                          {displayName?.charAt(0)?.toUpperCase()}
+                        </div>
+                  }
+                      <span className={`flex-1 text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{displayName}</span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Star size={11} className="text-yellow-400 fill-yellow-400" />
+                        <span className="text-xs font-bold text-foreground">{r.total}</span>
+                      </div>
+                    </div>);
+
+            })}
+              </div>
+          }
+          </button>
         </div>
       }
 
       {/* Admin ranking */}
+      {isTeacher &&
+      <div className="bg-card rounded-2xl border border-border p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+                <Trophy size={16} className="text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Controle de Pontuação</h3>
+                <p className="text-xs text-muted-foreground">Réplica da sequência publicada no ScoreControl</p>
+              </div>
+            </div>
+            {!monitorSelectMode ?
+          <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+              onClick={() => setMonitorSelectMode(true)}
+              className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors">
+              
+                  <Crown size={12} /> Selecionar Monitores
+                </button>
+              </div> :
+
+          <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{selectedMonitorEmails.size}/3 selecionados</span>
+                <button onClick={() => {setMonitorSelectMode(false);setSelectedMonitorEmails(new Set());}} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border">
+                  Cancelar
+                </button>
+                <button
+              onClick={handleSaveMonitors}
+              disabled={selectedMonitorEmails.size === 0 || savingMonitors}
+              className="flex items-center gap-1.5 text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity">
+              
+                  {savingMonitors ? 'Salvando...' : 'Salvar Monitores'}
+                </button>
+              </div>
+          }
+          </div>
+          {monitorSelectMode &&
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800 mb-3">
+              Selecione até 3 alunos para serem os Monitores do período atual.
+            </div>
+        }
+          {customRanking.length === 0 ?
+        <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p> :
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {customRanking.map((r, i) => {
+            const code = accessCodes.find((c) => c.student_email === r.email);
+            const displayName = code?.profile_name || code?.student_name || r.email;
+            const avatarColor = code?.profile_avatar_color || '#5b5ef4';
+            const photoUrl = code?.profile_photo_url || '';
+            const isSelected = selectedMonitorEmails.has(r.email);
+            return (
+              <div
+                key={r.email}
+                draggable
+                onDragStart={() => setDraggedEmail(r.email)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => {
+                  if (!draggedEmail || draggedEmail === r.email) return;
+                  const from = customRanking.findIndex((x) => x.email === draggedEmail);
+                  const to = customRanking.findIndex((x) => x.email === r.email);
+                  if (from < 0 || to < 0) return;
+                  const next = [...customRanking];
+                  const [moved] = next.splice(from, 1);
+                  next.splice(to, 0, moved);
+                  setCustomRanking(next);
+                }}
+                onClick={() => monitorSelectMode && toggleMonitorEmail(r.email)}
+                className={`relative flex flex-col items-center text-center gap-1.5 p-3 rounded-xl border transition-colors ${
+                monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''} ${
+
+                isSelected ? 'bg-yellow-100 border-yellow-300' : 'border-border hover:bg-secondary/50'}`
+                }>
+                
+                    {monitorSelectMode &&
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                isSelected ? 'bg-yellow-500 border-yellow-500' : 'border-muted-foreground/40'}`
+                }>
+                        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                      </div>
+                }
+                    <span className="absolute top-2 left-2 text-sm font-black">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground">#{i + 1}</span>}</span>
+                    {photoUrl ?
+                <img src={photoUrl} alt={displayName} className="w-12 h-12 rounded-full object-cover shrink-0" /> :
+
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                        {displayName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                }
+                    <div className="w-full min-w-0">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="text-xs font-bold text-foreground truncate max-w-full">{displayName}</span>
+                        {r.hasPending && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-xl">
+                      <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                      <span className="text-xs font-black text-yellow-700">{Number(r.total || 0).toFixed(1)}</span>
+                    </div>
+              </div>);
+
+          })}
+            </div>
+        }
+          <div className="mt-3 flex justify-end">
+            <Button size="sm" variant="outline" onClick={() => saveDashboardOrderMutation.mutate()} disabled={saveDashboardOrderMutation.isPending || customRanking.length === 0}>
+              {saveDashboardOrderMutation.isPending ? 'Salvando ordem...' : 'Salvar sequência do ranking'}
+            </Button>
+          </div>
+        </div>
+      }
+
       {/* Pendências do Aluno */}
       {!isTeacher && (() => {
         const today = new Date();
