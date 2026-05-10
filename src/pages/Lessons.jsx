@@ -41,9 +41,15 @@ export default function Lessons() {
     queryKey: ['lessons', userCourse],
     queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 200),
   });
+  const { data: unlockRules = [] } = useQuery({
+    queryKey: ['unlock-rules-lessons', userCourse],
+    queryFn: () => base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20),
+  });
 
 
   const orderedLessons = [...lessons].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0)).map((l, idx) => ({ ...l, displayOrder: idx + 1 }));
+  const lessonUnlockRule = unlockRules.find(r => r.scope === 'lessons');
+  const unlockedLessonCount = Number(lessonUnlockRule?.unlock_until || 1);
 
   const { data: progresses = [] } = useQuery({
     queryKey: ['lesson-progress', session?.email],
@@ -64,6 +70,17 @@ export default function Lessons() {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.RecordedLesson.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lessons'] }),
+  });
+  const updateUnlockMutation = useMutation({
+    mutationFn: async (unlockUntil) => {
+      const payload = { course: userCourse, type: 'unlock_rule', scope: 'lessons', title: `Unlock lessons ${userCourse}`, unlock_until: Number(unlockUntil) };
+      if (lessonUnlockRule?.id) return base44.entities.Announcement.update(lessonUnlockRule.id, payload);
+      return base44.entities.Announcement.create(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unlock-rules-lessons', userCourse] });
+      toast.success('Desbloqueio de aulas atualizado!');
+    },
   });
 
   const upsertProgress = async (lessonId, patch) => {
@@ -174,7 +191,11 @@ export default function Lessons() {
           <p className="text-muted-foreground text-sm mt-0.5">Assista, leia e estude no seu ritmo</p>
         </div>
         {isTeacher && (
-          <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingLesson(null); setForm(EMPTY_FORM); } }}>
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-9 text-sm" onClick={() => updateUnlockMutation.mutate(unlockedLessonCount + 1)} disabled={updateUnlockMutation.isPending}>
+              Liberar próxima aula
+            </Button>
+            <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingLesson(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
               <Button className="gap-2 h-9 text-sm"><Plus size={15} /> Nova Aula</Button>
             </DialogTrigger>
@@ -228,9 +249,11 @@ export default function Lessons() {
               </Button>
             </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         )}
       </div>
+      {isTeacher && <p className="text-xs text-muted-foreground mb-3">Aulas liberadas para a turma: <strong>{unlockedLessonCount}</strong>.</p>}
 
       {/* Progress bar */}
       {!isTeacher && lessons.length > 0 && (
@@ -307,7 +330,7 @@ export default function Lessons() {
             const isWatched = prog?.watched;
             const status = uploadStatus[lesson.id];
             const materialLinks = lesson.material_links ? lesson.material_links.split(',').map(l => l.trim()).filter(Boolean) : [];
-            const isLocked = !isTeacher && idx >= 1;
+            const isLocked = !isTeacher && (idx + 1) > unlockedLessonCount;
 
             if (isLocked) return (
               <div key={lesson.id} className="bg-card rounded-2xl border border-border shadow-sm opacity-60 select-none">

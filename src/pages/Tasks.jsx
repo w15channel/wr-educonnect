@@ -39,6 +39,12 @@ export default function Tasks({ mode = 'all' }) {
     queryKey: ['tasks', userCourse],
     queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 200),
   });
+  const { data: unlockRules = [] } = useQuery({
+    queryKey: ['unlock-rules-tasks', userCourse],
+    queryFn: () => base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20),
+  });
+  const taskUnlockRule = unlockRules.find(r => r.scope === 'tasks');
+  const unlockedTaskCount = Number(taskUnlockRule?.unlock_until || 1);
 
   const { data: submissions = [] } = useQuery({
     queryKey: ['submissions-mine'],
@@ -62,6 +68,17 @@ export default function Tasks({ mode = 'all' }) {
   const deleteTaskMutation = useMutation({
     mutationFn: (id) => base44.entities.Task.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+  });
+  const updateUnlockMutation = useMutation({
+    mutationFn: async (unlockUntil) => {
+      const payload = { course: userCourse, type: 'unlock_rule', scope: 'tasks', title: `Unlock tasks ${userCourse}`, unlock_until: Number(unlockUntil) };
+      if (taskUnlockRule?.id) return base44.entities.Announcement.update(taskUnlockRule.id, payload);
+      return base44.entities.Announcement.create(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unlock-rules-tasks', userCourse] });
+      toast.success('Desbloqueio de tarefas atualizado!');
+    },
   });
 
   const submitFileMutation = useMutation({
@@ -214,6 +231,9 @@ export default function Tasks({ mode = 'all' }) {
         </div>
         {isTeacher && (
           <div className="flex gap-2">
+            <Button variant="outline" className="h-9 text-sm" onClick={() => updateUnlockMutation.mutate(unlockedTaskCount + 1)} disabled={updateUnlockMutation.isPending}>
+              Liberar próximo trabalho
+            </Button>
             <Button variant="outline" className="gap-2 h-9 text-sm border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => navigate('/tasks/builder/new')}>
               <GraduationCap size={15} /> Nova Prova
             </Button>
@@ -248,6 +268,7 @@ export default function Tasks({ mode = 'all' }) {
           </div>
         )}
       </div>
+      {isTeacher && <p className="text-xs text-muted-foreground mb-3">Trabalhos/provas liberados para a turma: <strong>{unlockedTaskCount}</strong>.</p>}
 
       {mode === 'all' && (<>{/* Tabs */}
       <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-5 w-full sm:w-fit">
@@ -280,7 +301,7 @@ export default function Tasks({ mode = 'all' }) {
             const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
             const status = uploadStatus[task.id];
             const sequentialNumber = idx + 1;
-            const isLocked = !isTeacher && sequentialNumber >= 2;
+            const isLocked = !isTeacher && sequentialNumber > unlockedTaskCount;
 
             if (isLocked) return (
               <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm opacity-60 select-none">
