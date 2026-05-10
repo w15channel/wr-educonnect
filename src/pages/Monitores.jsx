@@ -6,6 +6,7 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Trophy, Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Star, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -14,14 +15,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
-const POINT_RULES = {
-  lesson: 10,
-  task: 10,
-  forumPost: 0.1,
-  forumReply: 0.5,
-  liveAttendance: 1,
-};
-const CYCLE_DAYS = 7;
+const CYCLE_DAYS = 4;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 
 function getCycleStart() {
@@ -117,7 +111,7 @@ export default function Monitores() {
   const periodStart = getCycleStart();
   const periodEnd = getCycleEnd(periodStart);
 
-  // Current monitors for this course and this weekly cycle
+  // Current monitors for this course and this cycle
   const currentMonitors = monitorHistory.filter(
     m => m.period_start === periodStart && (m.course === activeCourse || (!m.course && activeCourse === 'tcc'))
   );
@@ -127,61 +121,30 @@ export default function Monitores() {
     c => c.is_active !== false && c.course === activeCourse && c.student_email && (!courseEmails || courseEmails.has(c.student_email))
   );
 
-  // Build ranking automatizado pelas regras oficiais de pontuação da turma
+  // Build ranking igual ao Dashboard — baseado em ScoreItems verificados
   const buildRanking = () => {
-    const studentEmails = courseStudents.map(c => c.student_email).filter(Boolean);
-    const emailSet = new Set(studentEmails);
-    const rankMap = Object.fromEntries(studentEmails.map(email => [email, {
-      email,
-      lessonCount: 0,
-      taskCount: 0,
-      forumPostCount: 0,
-      forumReplyCount: 0,
-      liveAttendanceCount: 0,
-      baseTotal: 0,
-      bonusTotal: 0,
-      total: 0,
-    }]));
-
-    scoreItems.forEach((s) => {
-      if (!s?.verified || !s?.student_email || !emailSet.has(s.student_email)) return;
-      const row = rankMap[s.student_email];
-      if (!row) return;
-      if (s.category === 'lesson') row.lessonCount += 1;
-      if (s.category === 'task' || s.category === 'quiz') row.taskCount += 1;
-      if (s.category === 'live_attendance') row.liveAttendanceCount += 1;
+    const courseEmails = new Set(courseStudents.map(c => c.student_email).filter(Boolean));
+    const lessonIds = new Set(lessons.map(l => l.id));
+    const taskIds = new Set(tasks.map(t => t.id));
+    const liveSessionIds = new Set(liveSessions.map(l => l.id));
+    const forumPostIds = new Set(forumPosts.filter(p => p.course === activeCourse).map(p => p.id));
+    const forumReplyIds = new Set(forumReplies.filter(r => !r.post_id || forumPostIds.has(r.post_id)).map(r => r.id));
+    const isPairingFromCourse = (p) => !courseEmails.size || (courseEmails.has(p.therapist_email || '') && courseEmails.has(p.patient_email || ''));
+    const pairingIds = new Set(pairings.filter(isPairingFromCourse).map(p => p.id));
+    const rankMap = {};
+    scoreItems.filter(s =>
+      s.verified && s.student_email && courseEmails.has(s.student_email) && (
+        (s.category === 'lesson' && lessonIds.has(s.ref_id)) ||
+        (s.category === 'live_attendance' && liveSessionIds.has(s.ref_id)) ||
+        ((s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id)) ||
+        (s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id))) ||
+        (s.category === 'therapist' && pairingIds.has(s.ref_id))
+      )
+    ).forEach(s => {
+      if (!rankMap[s.student_email]) rankMap[s.student_email] = { email: s.student_email, total: 0 };
+      rankMap[s.student_email].total += (s.score || 0);
     });
-
-    forumPosts.filter((p) => p.course === activeCourse && emailSet.has(p.author_email)).forEach((p) => {
-      rankMap[p.author_email].forumPostCount += 1;
-    });
-
-    const postById = new Map(forumPosts.map((post) => [post.id, post]));
-    forumReplies.forEach((reply) => {
-      const parentPost = postById.get(reply.post_id);
-      if (!parentPost || parentPost.course !== activeCourse || !emailSet.has(reply.author_email) || parentPost.author_email === reply.author_email) return;
-      rankMap[reply.author_email].forumReplyCount += 1;
-    });
-
-    const firstPass = Object.values(rankMap).map((row) => {
-      const baseTotal =
-        row.lessonCount * POINT_RULES.lesson +
-        row.taskCount * POINT_RULES.task +
-        row.forumPostCount * POINT_RULES.forumPost +
-        row.forumReplyCount * POINT_RULES.forumReply +
-        row.liveAttendanceCount * POINT_RULES.liveAttendance;
-      return { ...row, baseTotal, total: Number(baseTotal.toFixed(2)) };
-    }).sort((a, b) => b.total - a.total);
-
-    firstPass.slice(0, 3).forEach((row, idx) => {
-      const rank = idx + 1;
-      const bonusPerTask = MONITOR_BONUSES[rank] || 0;
-      const bonusTotal = row.taskCount * bonusPerTask;
-      row.bonusTotal = Number(bonusTotal.toFixed(2));
-      row.total = Number((row.baseTotal + row.bonusTotal).toFixed(2));
-    });
-
-    return [...firstPass].sort((a, b) => b.total - a.total);
+    return Object.values(rankMap).sort((a, b) => b.total - a.total);
   };
 
   const ranking = buildRanking();
@@ -202,7 +165,7 @@ export default function Monitores() {
 
   const handleDefineMonitors = async (forceReset = false) => {
     if (currentMonitors.length > 0 && !forceReset) {
-      toast.info('Monitores desta semana já foram definidos. Use "Resetar" para recalcular.');
+      toast.info('Monitores deste período já foram definidos. Use "Resetar" para redefinir.');
       return;
     }
     if (topMonitors.length === 0) {
@@ -302,10 +265,10 @@ export default function Monitores() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Crown size={22} className="text-yellow-500" /> Monitores da Semana
+            <Crown size={22} className="text-yellow-500" /> Monitores do Período
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Turma {courseLabel} · Ciclo semanal ({CYCLE_DAYS} dias) · {format(new Date(periodStart + 'T00:00:00'), 'dd/MM', { locale: ptBR })} a {format(new Date(periodEnd + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
+            Turma {courseLabel} · Ciclo de {CYCLE_DAYS} dias · {format(new Date(periodStart + 'T00:00:00'), 'dd/MM', { locale: ptBR })} a {format(new Date(periodEnd + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
           </p>
         </div>
         {isTeacher && (
@@ -329,8 +292,8 @@ export default function Monitores() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
           <p className="font-bold mb-1">Critérios de seleção dos Monitores:</p>
           <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
-            <li>Aula completa: +10,0 · Entrega de atividade/trabalho: +10,0 · Comentário no fórum: +0,1 · Resposta no fórum: +0,5 · Presença em live: +1,0</li>
-            <li>Monitores da semana: 1º +0,5 / 2º +0,3 / 3º +0,2 por entrega de atividade/trabalho</li>
+            <li>Ranking recalculado pelas regras universais da plataforma</li>
+            <li>1º Monitor: +0.5pts / 2º Monitor: +0.3pts / 3º Monitor: +0.2pts em entregas de atividades e trabalhos</li>
           </ol>
         </div>
       )}
@@ -344,7 +307,7 @@ export default function Monitores() {
             </div>
             <div>
               <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores da Semana</p>
+              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores do Período</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -506,7 +469,7 @@ export default function Monitores() {
       {/* Dialog Certificado */}
       <Dialog open={!!certStudent} onOpenChange={() => setCertStudent(null)}>
         <DialogContent className="max-w-3xl">
-          <DialogHeader><DialogTitle>Certificado de Destaque Semanal</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Certificado de Monitor</DialogTitle></DialogHeader>
           <div ref={certRef} className="bg-white text-center" style={{ fontFamily: 'Georgia, "Times New Roman", serif', minHeight: 480, padding: '48px 56px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
               <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png" alt="WR" style={{ width: 60, height: 60, objectFit: 'contain' }} crossOrigin="anonymous" />
@@ -514,12 +477,13 @@ export default function Monitores() {
               <div style={{ width: 60 }} />
             </div>
             <p style={{ fontSize: 11, letterSpacing: 5, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 8px' }}>Certificado de Reconhecimento Acadêmico</p>
-            <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 28px', letterSpacing: 2, textTransform: 'uppercase' }}>Destaque Acadêmico Semanal</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 28px', letterSpacing: 2, textTransform: 'uppercase' }}>Monitor de Excelência</h1>
             <p style={{ fontSize: 13, color: '#444', margin: '0 0 10px' }}>Certificamos que</p>
             <h2 style={{ fontSize: 30, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 20px', fontStyle: 'italic' }}>{certStudent?.student_name}</h2>
             <p style={{ fontSize: 13, color: '#444', lineHeight: 1.9, maxWidth: 480, margin: '0 auto 24px', textAlign: 'justify' }}>
-              esteve em destaque à frente da turma, compondo o grupo de melhores notas semanais por sua dedicação, constância
-              e participação acadêmica, durante o período de{' '}
+              foi reconhecido(a) como <strong>Monitor de Classe por Mérito Acadêmico</strong>, alcançando a{' '}
+              <strong>{certStudent?.rank_position === 1 ? '1ª' : certStudent?.rank_position === 2 ? '2ª' : '3ª'} posição</strong>{' '}
+              no Ranking Geral de Desempenho, demonstrando excelência e dedicação, durante o período de{' '}
               <strong>{certStudent?.period_start ? format(new Date(certStudent.period_start + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>{' '}
               a <strong>{certStudent?.period_end ? format(new Date(certStudent.period_end + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>.
             </p>
@@ -528,7 +492,7 @@ export default function Monitores() {
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 2, letterSpacing: 1 }}>W.Ribeiro</div>
                 <div style={{ width: 160, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
-                  <p style={{ fontSize: 10, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>COORDENAÇÃO DO CURSO</p>
+                  <p style={{ fontSize: 10, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>DIREÇÃO GERAL</p>
                   <p style={{ fontSize: 9, color: '#888', margin: 0 }}>WR — Instituto de Desenvolvimento Humano</p>
                 </div>
               </div>

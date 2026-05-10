@@ -26,7 +26,10 @@ import Profile from './pages/Profile';
 import Calendar from './pages/Calendar';
 import Tuitions from './pages/Tuitions';
 import TutorDigital from './pages/TutorDigital';
+import ScoreControl from './pages/ScoreControl';
 import Certificadora from './pages/Certificadora';
+import RankingGeral from './pages/RankingGeral';
+import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
 import MeuBestSeller from './pages/MeuBestSeller';
 import ClassChat from './pages/ClassChat';
@@ -37,7 +40,6 @@ import TaskQuizView from './pages/TaskQuizView';
 import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
-import Monitores from './pages/Monitores';
 import Notifications from './pages/Notifications';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
@@ -72,13 +74,16 @@ function ScopedRoutesTree() {
         <Route path="calendar" element={<Calendar />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="tutor" element={<TutorDigital />} />
+        <Route path="scorecontrol" element={<ScoreControl />} />
+        <Route path="scores" element={<Navigate to="../scorecontrol" replace />} />
         <Route path="certificadora" element={<Certificadora />} />
+        <Route path="ranking" element={<RankingGeral />} />
+        <Route path="monitores" element={<Monitores />} />
         <Route path="terapeuta" element={<TerapeutaDaSemana />} />
         <Route path="bestseller" element={<MeuBestSeller />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="dm/:email" element={<DirectMessage />} />
         <Route path="classe" element={<Classe />} />
-        <Route path="monitores" element={<Monitores />} />
         <Route path="ring" element={<Notifications />} />
       </Route>
     </Routes>
@@ -145,12 +150,14 @@ const AuthenticatedApp = () => {
       <Route path="/calendar" element={redirectTo('/calendar')} />
       <Route path="/tuitions" element={redirectTo('/tuitions')} />
       <Route path="/tutor" element={redirectTo('/tutor')} />
+      <Route path="/scores" element={redirectTo('/scorecontrol')} />
       <Route path="/certificadora" element={redirectTo('/certificadora')} />
+      <Route path="/ranking" element={redirectTo('/ranking')} />
+      <Route path="/monitores" element={redirectTo('/monitores')} />
       <Route path="/terapeuta" element={redirectTo('/terapeuta')} />
       <Route path="/bestseller" element={redirectTo('/bestseller')} />
       <Route path="/historico" element={redirectTo('/historico')} />
       <Route path="/classe" element={redirectTo('/classe')} />
-      <Route path="/monitores" element={redirectTo('/monitores')} />
 
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
       <Route path="/wr-tec" element={<WRTec />} />
