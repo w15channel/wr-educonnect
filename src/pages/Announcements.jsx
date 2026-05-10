@@ -64,6 +64,11 @@ export default function Announcements() {
   });
 
   const announcements = allAnnouncements.filter(a => a.course === activeCourse || (!a.course && activeCourse === 'tcc'));
+  const { data: testimonialQueue = [] } = useQuery({
+    queryKey: ['testimonial-queue'],
+    queryFn: () => base44.entities.Testimonial.filter({ approved: false }, '-created_date', 100),
+    enabled: isTeacher,
+  });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Announcement.create({ ...data, course: activeCourse }),
@@ -88,6 +93,14 @@ export default function Announcements() {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Announcement.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['announcements-all'] }),
+  });
+  const approveTestimonialMutation = useMutation({
+    mutationFn: ({ id, approved }) => base44.entities.Testimonial.update(id, { approved }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['testimonial-queue'] }),
+  });
+  const deleteTestimonialMutation = useMutation({
+    mutationFn: (id) => base44.entities.Testimonial.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['testimonial-queue'] }),
   });
 
   const openEdit = (a) => {
@@ -208,6 +221,27 @@ export default function Announcements() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {isTeacher && (
+        <div className="mt-8 bg-card rounded-2xl border border-border p-5">
+          <h3 className="font-bold text-sm mb-3">Elogios e Depoimentos (aprovação)</h3>
+          <div className="space-y-2">
+            {testimonialQueue.length === 0 && <p className="text-xs text-muted-foreground">Nenhum depoimento pendente.</p>}
+            {testimonialQueue.map((t) => (
+              <div key={t.id} className="rounded-xl border border-border p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">{t.student_name} · {t.stars}★</p>
+                  <p className="text-xs text-muted-foreground">{t.comment}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => approveTestimonialMutation.mutate({ id: t.id, approved: true })}>Aprovar</Button>
+                  <Button size="sm" variant="destructive" onClick={() => deleteTestimonialMutation.mutate(t.id)}>Excluir</Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

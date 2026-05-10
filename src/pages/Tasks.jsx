@@ -44,7 +44,7 @@ export default function Tasks({ mode = 'all' }) {
     queryFn: () => base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20),
   });
   const taskUnlockRule = unlockRules.find(r => r.scope === 'tasks');
-  const unlockedTaskCount = Number(taskUnlockRule?.unlock_until || 1);
+  const unlockedTaskCount = Math.max(10, Number(taskUnlockRule?.unlock_until || 10));
 
   const { data: submissions = [] } = useQuery({
     queryKey: ['submissions-mine'],
