@@ -43,7 +43,6 @@
     "content"
   ],
   "rls": {
-    "read": true,
     "update": true,
     "delete": true,
     "write": true
