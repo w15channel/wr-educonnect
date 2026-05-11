@@ -41,6 +41,7 @@ import TaskExamBuilder from './pages/TaskExamBuilder';
 import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
 import Notifications from './pages/Notifications';
+import MonitorCertificate from './pages/MonitorCertificate';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 
@@ -52,6 +53,19 @@ function buildScopedRedirect(session, sub) {
 }
 
 // All scoped routes used by both /student/:slug/* and /adm/:slug/*
+function AdminOnly({ children }) {
+  const { session } = useCustomAuth();
+  const location = useLocation();
+  const parts = location.pathname.split('/').filter(Boolean);
+  const prefix = parts[0] && parts[1] ? `/${parts[0]}/${parts[1]}` : buildScopedRedirect(session, '');
+
+  if (session?.role !== 'admin') {
+    return <Navigate to={`${prefix}/dashboard`} replace />;
+  }
+
+  return children;
+}
+
 function ScopedRoutesTree() {
   return (
     <Routes>
@@ -77,8 +91,9 @@ function ScopedRoutesTree() {
         <Route path="scorecontrol" element={<ScoreControl />} />
         <Route path="scores" element={<Navigate to="../scorecontrol" replace />} />
         <Route path="certificadora" element={<Certificadora />} />
-        <Route path="ranking" element={<RankingGeral />} />
-        <Route path="monitores" element={<Monitores />} />
+        <Route path="ranking" element={<AdminOnly><RankingGeral /></AdminOnly>} />
+        <Route path="monitores" element={<AdminOnly><Monitores /></AdminOnly>} />
+        <Route path="monitor-certificate/:id" element={<MonitorCertificate />} />
         <Route path="terapeuta" element={<TerapeutaDaSemana />} />
         <Route path="bestseller" element={<MeuBestSeller />} />
         <Route path="historico" element={<HistoricoAcademico />} />
