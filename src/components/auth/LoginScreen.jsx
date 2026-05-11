@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
-import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
+import { setSession, hashPassword, nowBRT } from '@/lib/customAuth';
 import SetupAdminModal from './SetupAdminModal';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
@@ -53,13 +53,13 @@ export default function LoginScreen({ onLogin }) {
     setError('');
     setLoading(true);
     const trimmed = code.trim().toUpperCase();
-    const results = await base44.entities.AccessCode.filter({ code: trimmed, is_active: true });
-    if (results.length === 0) {
+    const results = await base44.entities.AccessCode.filter({ code: trimmed });
+    const record = results.find((item) => item.is_active !== false);
+    if (!record) {
       setError('Código inválido ou desativado.');
       setLoading(false);
       return;
     }
-    const record = results[0];
     if (rememberCode) {
       localStorage.setItem('wr_remember_student_code', 'yes');
       localStorage.setItem('wr_saved_student_code', trimmed);
@@ -87,18 +87,18 @@ export default function LoginScreen({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const creds = await base44.entities.AdminCredential.list();
+    const normalizedEmail = adminEmail.trim().toLowerCase();
+    const passwordHash = hashPassword(adminPassword);
+    const creds = await base44.entities.AdminCredential.filter({
+      email: normalizedEmail,
+      password_hash: passwordHash,
+    });
     if (creds.length === 0) {
-      setError('Login admin não configurado.');
-      setLoading(false);
-      return;
-    }
-    const cred = creds[0];
-    if (adminEmail.trim() !== cred.email || !verifyPassword(adminPassword, cred.password_hash)) {
       setError('Email ou senha incorretos.');
       setLoading(false);
       return;
     }
+    const cred = creds[0];
     setSession({ role: 'admin', name: 'Professor', email: cred.email });
     onLogin();
     setLoading(false);

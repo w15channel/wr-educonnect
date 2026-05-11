@@ -20,7 +20,7 @@ export default function SetupAdminModal({ onClose, onConfigured }) {
     if (password !== confirm) { setError('As senhas não coincidem.'); return; }
     setLoading(true);
     await base44.entities.AdminCredential.create({
-      email: email.trim(),
+      email: email.trim().toLowerCase(),
       password_hash: hashPassword(password),
       is_configured: true,
     });
