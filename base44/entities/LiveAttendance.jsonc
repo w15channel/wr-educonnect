@@ -29,17 +29,26 @@
   ],
   "rls": {
     "create": {
-      "data.student_email": "{{user.email}}"
-    },
-    "read": {
       "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
         {
           "user_condition": {
             "role": "admin"
           }
-        },
+        }
+      ]
+    },
+    "read": {
+      "$or": [
         {
           "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
