@@ -52,6 +52,11 @@
       "default": 0,
       "description": "Pontua\u00e7\u00e3o total gamificada"
     },
+    "pontuacao_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Pontua\u00e7\u00e3o total sincronizada"
+    },
     "dashboard_rank": {
       "type": "number",
       "description": "Posi\u00e7\u00e3o publicada para o ranking da Dashboard"
@@ -71,36 +76,48 @@
   ],
   "rls": {
     "create": {
-      "data.student_email": "{{user.email}}"
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "read": {
-      "user_condition": {
-        "isAuthenticated": true
-      }
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "data.dashboard_course": "{{user.course}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "update": {
       "$or": [
         {
+          "data.student_email": "{{user.email}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "data.student_email": "{{user.email}}"
         }
       ]
     },
     "delete": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.student_email": "{{user.email}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

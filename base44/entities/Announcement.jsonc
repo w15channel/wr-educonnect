@@ -29,6 +29,14 @@
       ],
       "default": "tcc",
       "description": "Curso ao qual o aviso pertence"
+    },
+    "recipient_email": {
+      "type": "string",
+      "description": "Email do destinat\u00e1rio espec\u00edfico, quando o aviso for individual"
+    },
+    "certificate_monitor_id": {
+      "type": "string",
+      "description": "ID do certificado de monitor vinculado"
     }
   },
   "required": [

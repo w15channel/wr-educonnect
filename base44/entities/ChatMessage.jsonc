@@ -30,18 +30,26 @@
   ],
   "rls": {
     "create": {
-      "data.author_email": "{{user.email}}"
-    },
-    "read": {
       "$or": [
-        {
-          "data.session_id": "class_chat_{{user.course}}"
-        },
         {
           "data.author_email": "{{user.email}}"
         },
         {
-          "data.recipient_email": "{{user.email}}"
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
         },
         {
           "user_condition": {
