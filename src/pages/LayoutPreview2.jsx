@@ -6,11 +6,10 @@ import {
 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
 const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
-
-const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
 const HERO_IMAGES = [
 'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
@@ -79,8 +78,8 @@ const CURRENT = [
   link: null
 },
 {
-  title: 'Gestor — WR-EDU',
-  desc: 'Gerencia o Curso Profissionalizante para Formação de Terapeutas. Representado oficialmente junto à ABED (Associação Brasileira de Educação a Distância).',
+  title: `Gestor — ${BRAND_LEGAL_NAME}`,
+  desc: `Gerencia o Curso Profissionalizante para Formação de Terapeutas pela ${BRAND_LEGAL_NAME}. Representado oficialmente junto à ABED (Associação Brasileira de Educação a Distância).`,
   link: 'https://www.abed.org.br/site/associados/consulta-associados-ativos/',
   linkLabel: 'Consultar na ABED'
 },
@@ -273,7 +272,7 @@ export default function LandingPage({ onLogin }) {
     setLeadMessages([
       {
         role: 'assistant',
-        content: `Olá! Sou a IA da WR-EDU 😊 Vou registrar sua reserva antecipada para ${course.title}. Para começar: qual é seu nome completo e melhor WhatsApp?`
+        content: `Olá! Sou a IA da ${BRAND_LEGAL_NAME} 😊 Vou registrar sua reserva antecipada para ${course.title}. Para começar: qual é seu nome completo e melhor WhatsApp?`
       }
     ]);
     setLeadInput('');
@@ -295,7 +294,7 @@ export default function LandingPage({ onLogin }) {
 
     setLeadLoading(true);
 
-    const prompt = `Você é a IA de pré-reserva da WR-EDU. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.
+    const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.
 Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez, até coletar: nome completo, WhatsApp, curso de interesse, objetivo profissional e melhor horário de contato.
 Quando os dados principais já estiverem presentes, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre o diálogo pedindo para a pessoa selecionar a opção de enviar a reserva ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598. Seja acolhedor, objetivo e use português do Brasil.
 
@@ -310,7 +309,7 @@ IA:`;
   };
 
   const sendReserveToWhatsApp = () => {
-    const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA WR-EDU'}: ${m.content}`).join('\n');
+    const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : `IA ${BRAND_SHORT_NAME}`}: ${m.content}`).join('\n');
     const summary = encodeURIComponent(`Olá! Quero reservar vaga antecipada.
 Curso: ${selectedCourse?.title}
 
@@ -327,8 +326,8 @@ ${transcript}`);
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-          <img src={LOGO_URL} alt="WR" className="w-14 h-14 object-contain" />
-            <span className="text-2xl font-black tracking-tight">WR-EDU</span>
+          <img src={WR_PRIMARY_LOGO} alt="WR" className="w-14 h-14 object-contain" />
+            <span className="text-xl sm:text-2xl font-black tracking-tight">{BRAND_LEGAL_NAME}</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
             {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
@@ -516,7 +515,7 @@ ${transcript}`);
                 </div>
                 <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
                 <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
-                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro · WR-EDU</p>
+                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro · {BRAND_LEGAL_NAME}</p>
                 </div>
               </div>
             </div>
@@ -534,7 +533,7 @@ ${transcript}`);
                 Dessa evolução natural, consolidou-se sua atuação como Psicoterapeuta, Psicanalista e Sexólogo Integrativo, com formações certificadas nacional e internacionalmente. Especialista em vícios e dinâmicas conjugais, William fundou o grupo <strong className="text-white">Sinapse Coletiva</strong>, um ecossistema que integra profissionais da saúde comportamental focados em uma técnica consciente, equilibrada e despida de amadorismos.
               </p>
               <p className="text-white/60 text-sm leading-relaxed">
-                Atualmente, essa trajetória culmina na coordenação da plataforma <strong className="text-white">WR-EDU</strong>. Como mantenedor associado à <strong className="text-white">ABED</strong>, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento. Esse compromisso expande-se como Educador Social no projeto <strong className="text-white">Vida Digital</strong> da <strong className="text-white">ADRA Paraná</strong>, onde reestrutura comunidades em vulnerabilidade.
+                Atualmente, essa trajetória culmina na coordenação da plataforma <strong className="text-white">{BRAND_LEGAL_NAME}</strong>. Como mantenedor associado à <strong className="text-white">ABED</strong>, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento. Esse compromisso expande-se como Educador Social no projeto <strong className="text-white">Vida Digital</strong> da <strong className="text-white">ADRA Paraná</strong>, onde reestrutura comunidades em vulnerabilidade.
               </p>
               <p className="text-white/50 text-sm leading-relaxed italic">
                 William Ribeiro não apenas ensina terapia; ele lidera uma formação que une o rigor da utilidade comportamental ao poder transformador do acolhimento humanizado.
@@ -621,7 +620,7 @@ ${transcript}`);
               <span className="text-xs font-bold text-[#1db89e] uppercase tracking-widest">Formações</span>
             </div>
             <h2 className="text-4xl font-black text-white">Nossos Cursos Profissionalizantes</h2>
-            <p className="text-white/50 mt-3 max-w-lg mx-auto text-base">Certificados digitais verificáveis emitidos pelo WR-EDU.</p>
+            <p className="text-white/50 mt-3 max-w-lg mx-auto text-base">Certificados digitais verificáveis emitidos pela {BRAND_LEGAL_NAME}.</p>
             {/* Selos ABED + AHDE */}
             <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
@@ -746,10 +745,10 @@ ${transcript}`);
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
             <div className="flex items-center gap-3">
-              <img src={LOGO_URL} alt="WR" className="w-12 h-12 object-contain" />
+              <img src={WR_PRIMARY_LOGO} alt="WR" className="w-12 h-12 object-contain" />
               <div>
-                <p className="text-white font-black text-base">WR-EDU</p>
-                <p className="text-white/30 text-xs">Escola de Formação de Terapeutas</p>
+                <p className="text-white font-black text-base">{BRAND_LEGAL_NAME}</p>
+                <p className="text-white/30 text-xs">CNPJ {BRAND_CNPJ}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-6 text-white/30 text-sm">
@@ -764,7 +763,7 @@ ${transcript}`);
           </div>
           <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
-              <p className="text-white/20 text-xs">WR-EDU © 2026 — Todos os direitos reservados</p>
+              <p className="text-white/20 text-xs">{BRAND_LEGAL_NAME} © 2026 · CNPJ {BRAND_CNPJ}</p>
               <span className="text-white/10 hidden sm:inline">·</span>
               <p className="text-white/20 text-xs">Feito com <span className="text-red-500">♥</span> pela <a href="/wr-tec" className="text-white/40 font-semibold hover:text-[#5b5ef4] transition-colors">WR-TEC®</a> © 2026</p>
             </div>

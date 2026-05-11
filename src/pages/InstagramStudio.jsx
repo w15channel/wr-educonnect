@@ -8,16 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 
 const COURSE_LABELS = { tcc: 'TCC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' };
 
 function getStudentName(code, fallbackEmail) {
-  return code?.profile_name || code?.student_name || fallbackEmail || 'Aluno WR-EDU';
+  return code?.profile_name || code?.student_name || fallbackEmail || `Aluno ${BRAND_SHORT_NAME}`;
 }
 
 function buildCaption(item, courseLabel) {
   const intro = item.type === 'ranking'
-    ? `Resultado de destaque no ranking da turma ${courseLabel}: ${item.studentName} alcançou ${formatScore(item.points)} pontos na plataforma WR-EDU.`
+    ? `Resultado de destaque no ranking da turma ${courseLabel}: ${item.studentName} alcançou ${formatScore(item.points)} pontos na plataforma ${BRAND_LEGAL_NAME}.`
     : item.type === 'lesson'
     ? `${item.studentName} registrou um progresso positivo nas aulas da turma ${courseLabel}.`
     : `${item.studentName} compartilhou uma participação positiva na comunidade da turma ${courseLabel}.`;
@@ -59,7 +60,7 @@ function PostPreview({ item, courseLabel }) {
       <div className="absolute -top-16 -right-16 w-44 h-44 bg-white/10 rounded-full blur-2xl" />
       <div className="relative flex items-center justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.25em] text-white/70 font-bold">WR-EDU</p>
+          <p className="text-[9px] uppercase tracking-[0.12em] text-white/70 font-bold leading-tight max-w-[75%]">{BRAND_LEGAL_NAME}</p>
           <p className="text-xs text-white/70">Turma {courseLabel}</p>
         </div>
         <Instagram size={24} className="text-white/80" />

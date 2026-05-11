@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME } from '@/lib/brand';
 
 // Large curated set of Unsplash covers
 const ALL_COVERS = [
@@ -226,7 +227,7 @@ export default function MeuBestSeller() {
   <p class="author">${author}</p>
   <p class="title">${bookTitle}</p>
   ${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}
-  <p class="publisher">WR — Instituto de Desenvolvimento Humano<br/>${year}</p>
+  <p class="publisher">${BRAND_LEGAL_NAME}<br/>CNPJ ${BRAND_CNPJ}<br/>${year}</p>
 </div>`;
 
     // 2. PÁGINA DE ROSTO (Half title)
@@ -239,9 +240,10 @@ export default function MeuBestSeller() {
     html += `<div class="credits page-break">
   <p class="noindent">© ${year} ${author}</p>
   <p class="noindent">Todos os direitos reservados.</p>
-  <p class="noindent" style="margin-top:1cm;">Publicado em parceria com WR — Instituto de Desenvolvimento Humano.</p>
+  <p class="noindent" style="margin-top:1cm;">Publicado em parceria com ${BRAND_LEGAL_NAME}.</p>
+  <p class="noindent">CNPJ ${BRAND_CNPJ}.</p>
   <p class="noindent" style="margin-top:0.5cm;">Formato: ${selectedBook?.page_format || 'A4'}</p>
-  <p class="noindent" style="margin-top:0.5cm;font-style:italic">Esta obra foi produzida na plataforma WR-EDU.</p>
+  <p class="noindent" style="margin-top:0.5cm;font-style:italic">Esta obra foi produzida na plataforma ${BRAND_LEGAL_NAME}.</p>
 </div>`;
 
     // 4. DEDICATÓRIA
@@ -291,13 +293,13 @@ export default function MeuBestSeller() {
 
     // 9. SOBRE O AUTOR
     html += `<div class="page-break"><p class="section-heading">Sobre o Autor</p>
-  <p class="author-bio">${author} é autor(a) desta obra produzida pela plataforma WR-EDU. Para mais informações, entre em contato pelo Instituto WR.</p>
+  <p class="author-bio">${author} é autor(a) desta obra produzida pela plataforma ${BRAND_LEGAL_NAME}. Para mais informações, entre em contato com a instituição.</p>
 </div>`;
 
     // 10. CONTRACAPA
     html += `<div class="back-cover">
   <p>${bookTitle}${subtitle ? ` — ${subtitle}` : ''}</p>
-  <p style="font-size:9pt;color:#555;margin-top:2cm;font-style:normal;">WR — Instituto de Desenvolvimento Humano · ${year}</p>
+  <p style="font-size:9pt;color:#555;margin-top:2cm;font-style:normal;">${BRAND_LEGAL_NAME} · CNPJ ${BRAND_CNPJ} · ${year}</p>
 </div>`;
 
     html += `</div></body></html>`;

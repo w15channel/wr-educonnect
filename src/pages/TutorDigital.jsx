@@ -6,6 +6,7 @@ import { Send, Brain, Sparkles, RefreshCw, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Input } from '@/components/ui/input';
+import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
 const QUICK_ACTIONS = [
   'Como usar a plataforma?',
@@ -16,7 +17,7 @@ const QUICK_ACTIONS = [
   'Como acesso a Unidade Certificadora?',
 ];
 
-const SYSTEM_CONTEXT = `Você é EDU, o tutor digital da plataforma WR-EDU — uma escola de formação de terapeutas.
+const SYSTEM_CONTEXT = `Você é EDU, o tutor digital da plataforma ${BRAND_LEGAL_NAME}.
 Você ajuda alunos a:
 - Navegar e usar a plataforma (videoaulas, sala ao vivo, tarefas, fórum, calendário, mensalidades, perfil)
 - Entender dinâmicas como datas, prazos, ranking e presença
@@ -26,7 +27,7 @@ Você ajuda alunos a:
 
 UNIDADE CERTIFICADORA (portal VENES):
 Quando o aluno perguntar sobre a certificadora, diploma ou sobre como estudar a apostila, explique:
-1. Acesse a Unidade Certificadora pelo menu lateral da plataforma WR-EDU (ícone de medalha).
+1. Acesse a Unidade Certificadora pelo menu lateral da plataforma ${BRAND_LEGAL_NAME} (ícone de medalha).
 2. Faça login no portal VENES com seu e-mail e senha. Você pode salvar a senha no navegador para facilitar.
 3. No menu superior esquerdo, clique em "Meus Cursos".
 4. Abra o curso: "Psicoterapia E Terapia Cognitivo Comportamental".
@@ -43,7 +44,7 @@ export default function TutorDigital() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: `Olá, ${session?.name?.split(' ')[0] || 'aluno(a)'}! 😊 Sou o EDU, seu tutor digital da WR-EDU.\n\nEstou aqui para te ajudar a navegar pela plataforma, tirar dúvidas sobre a formação em terapia, e também oferecer apoio emocional quando precisar.\n\nComo posso te ajudar hoje?`
+      content: `Olá, ${session?.name?.split(' ')[0] || 'aluno(a)'}! 😊 Sou o EDU, seu tutor digital da ${BRAND_LEGAL_NAME}.\n\nEstou aqui para te ajudar a navegar pela plataforma, tirar dúvidas sobre a formação em terapia, e também oferecer apoio emocional quando precisar.\n\nComo posso te ajudar hoje?`
     }
   ]);
   const [input, setInput] = useState('');

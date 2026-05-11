@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
 const STEPS = [
   {
     icon: '🎓',
-    title: 'Bem-vindo à WR-EDU!',
+    title: `Bem-vindo à ${BRAND_LEGAL_NAME}!`,
     subtitle: 'Sua jornada de formação começa aqui',
     color: 'from-[#5b5ef4] to-[#7c5ef4]',
     content: (
       <div className="space-y-3 text-sm text-gray-600">
-        <p>Olá! Esta é a plataforma de formação do <strong>WR — Instituto de Desenvolvimento Humano</strong>.</p>
+        <p>Olá! Esta é a plataforma de formação da <strong>{BRAND_LEGAL_NAME}</strong>.</p>
         <p>Aqui você encontrará tudo que precisa para sua formação como terapeuta. Vamos conhecer as principais seções!</p>
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
           💡 <strong>Dica:</strong> Use o menu lateral (no computador) ou o menu inferior (no celular) para navegar entre as seções.

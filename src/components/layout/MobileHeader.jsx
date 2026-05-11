@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import NotificationsBell from '@/components/dashboard/NotificationsBell';
 import { Moon, Sun } from 'lucide-react';
+import { BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const routeLabels = {
   '/dashboard': 'Dashboard',
@@ -39,7 +40,7 @@ export default function MobileHeader() {
   const location = useLocation();
   const { session } = useCustomAuth();
   const sub = stripScopedPrefix(location.pathname);
-  const label = routeLabels[sub] || 'WR-EDU';
+  const label = routeLabels[sub] || BRAND_LEGAL_NAME;
 
   const [theme, setTheme] = useState(() => localStorage.getItem('wr_theme') || 'light');
 
@@ -55,7 +56,7 @@ export default function MobileHeader() {
   return (
     <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border shrink-0">
       <div className="w-7 h-7 flex items-center justify-center">
-        <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png" alt="WR" className="w-full h-full object-contain" />
+        <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
       </div>
       <h1 className="text-sm font-bold text-white tracking-tight">{label}</h1>
       <div className="ml-auto flex items-center gap-2">
@@ -72,7 +73,7 @@ export default function MobileHeader() {
             <NotificationsBell session={session} />
           </div>
         )}
-        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">WR-EDU</span>
+        <span className="hidden sm:inline text-[9px] font-bold text-white/30 uppercase tracking-widest">{BRAND_LEGAL_NAME}</span>
       </div>
     </header>
   );
