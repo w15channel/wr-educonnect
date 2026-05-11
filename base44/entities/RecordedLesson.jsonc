@@ -67,10 +67,15 @@
     "title"
   ],
   "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "read": {
       "$or": [
         {
-          "data.course": "{{user.course}}"
+          "data.course": "{{user.data.course}}"
         },
         {
           "user_condition": {
@@ -85,11 +90,6 @@
       }
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "write": {
       "user_condition": {
         "role": "admin"
       }
