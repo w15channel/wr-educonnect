@@ -43,9 +43,9 @@
     "content"
   ],
   "rls": {
-    "create": true,
     "read": true,
     "update": true,
-    "delete": true
+    "delete": true,
+    "write": true
   }
 }
