@@ -74,18 +74,7 @@
     "update": {
       "$or": [
         {
-          "data.student_email": {
-            "$ne": "*"
-          },
-          "data.code": {
-            "$ne": "*"
-          },
-          "data.course": {
-            "$ne": "*"
-          },
-          "data.is_active": {
-            "$ne": "*"
-          }
+          "data.student_email": "{{user.email}}"
         },
         {
           "user_condition": {
