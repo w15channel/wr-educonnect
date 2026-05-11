@@ -113,7 +113,15 @@ export default function Lessons() {
         return;
       }
     }
-    await upsertProgress(lessonId, { watched: !existing?.watched });
+    if (!existing?.watched) {
+      await upsertProgress(lessonId, {
+        summary: summaryDraft[lessonId] ?? existing?.summary ?? '',
+        comment: commentDraft[lessonId] ?? existing?.comment ?? '',
+        watched: true,
+      });
+    } else {
+      await upsertProgress(lessonId, { watched: false });
+    }
     toast.success(!existing?.watched ? '✅ Aula marcada como assistida!' : 'Marcação removida.');
   };
 

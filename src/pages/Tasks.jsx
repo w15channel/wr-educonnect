@@ -95,14 +95,19 @@ export default function Tasks({ mode = 'all' }) {
   const submitFileMutation = useMutation({
     mutationFn: async ({ taskId, file }) => {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      return base44.entities.TaskSubmission.create({
-        task_id: taskId,
-        student_email: user.email || user.code || '',
-        student_name: user.name || user.full_name || '',
-        file_url,
-        status: 'submitted',
-        course: submissionCourseCode,
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'TaskSubmission',
+        data: {
+          task_id: taskId,
+          student_email: user.email || user.code || '',
+          student_name: user.name || user.full_name || '',
+          file_url,
+          status: 'submitted',
+          course: submissionCourseCode,
+        },
       });
+      return res.data.record;
     },
     onSuccess: (_, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
