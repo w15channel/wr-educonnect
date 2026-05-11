@@ -20,6 +20,7 @@ import LiveSessions from './pages/LiveSessions';
 import Tasks from './pages/Tasks';
 import Tests from './pages/Tests';
 import Forum from './pages/Forum';
+import SalaDebates from './pages/SalaDebates';
 import Students from './pages/Students';
 import Announcements from './pages/Announcements';
 import Profile from './pages/Profile';
@@ -79,6 +80,7 @@ function ScopedRoutesTree() {
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
         <Route path="tasks/builder/:id" element={<TaskExamBuilder />} />
         <Route path="forum" element={<Forum />} />
+        <Route path="debates" element={<SalaDebates />} />
         <Route path="chat" element={<ClassChat />} />
         <Route path="students" element={<Students />} />
         <Route path="students/:id" element={<StudentDetail />} />
@@ -157,6 +159,7 @@ const AuthenticatedApp = () => {
       <Route path="/tasks" element={redirectTo('/tasks')} />
       <Route path="/tests" element={redirectTo('/tests')} />
       <Route path="/forum" element={redirectTo('/forum')} />
+      <Route path="/debates" element={redirectTo('/debates')} />
       <Route path="/chat" element={redirectTo('/chat')} />
       <Route path="/students" element={redirectTo('/students')} />
       <Route path="/keys" element={redirectTo('/keys')} />
