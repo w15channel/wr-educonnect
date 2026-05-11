@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json().catch(() => ({}));
-    const isAutomation = payload?.automation?.type === 'scheduled';
+    const isAutomation = ['scheduled', 'entity'].includes(payload?.automation?.type);
     const user = await base44.auth.me().catch(() => null);
 
     if (!isAutomation && user?.role !== 'admin') {

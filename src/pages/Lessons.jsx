@@ -93,7 +93,7 @@ export default function Lessons() {
   });
 
   const upsertProgress = async (lessonId, patch) => {
-    const existing = progresses.find(p => p.lesson_id === lessonId);
+    const existing = progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeStudentId(p.student_email)));
     if (existing) {
       await base44.entities.LessonProgress.update(existing.id, patch);
     } else {
@@ -103,7 +103,7 @@ export default function Lessons() {
   };
 
   const toggleWatched = async (lessonId) => {
-    const existing = progresses.find(p => p.lesson_id === lessonId);
+    const existing = progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeStudentId(p.student_email)));
     if (!existing?.watched) {
       // Validação: precisa ter comentário e resumo para marcar como assistida
       const comment = commentDraft[lessonId] ?? existing?.comment ?? '';
@@ -155,7 +155,7 @@ export default function Lessons() {
   const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeStudentId(p.student_email)));
   const getLessonProgressEntries = (lessonId) => progresses.filter(p => p.lesson_id === lessonId && (p.comment || p.summary || p.watched));
 
-  const watchedCount = progresses.filter(p => p.watched).length;
+  const watchedCount = progresses.filter(p => p.watched && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
   const progressPct = orderedLessons.length > 0 ? Math.round((watchedCount / orderedLessons.length) * 100) : 0;
 
   // Abre link em nova aba do navegador (funciona em modo quiosque também)
