@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
 import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
 import SetupAdminModal from './SetupAdminModal';
@@ -68,6 +69,7 @@ export default function LoginScreen({ onLogin }) {
       localStorage.setItem('wr_remember_student_code', 'no');
     }
     await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
+    localStorage.setItem('wr_remember_student_code', rememberCode ? 'yes' : 'no');
     setSession({
       role: 'student',
       codeId: record.id,
@@ -77,7 +79,7 @@ export default function LoginScreen({ onLogin }) {
       bio: record.profile_bio || '',
       avatarColor: record.profile_avatar_color || '#5b5ef4',
       photoUrl: record.profile_photo_url || '',
-    });
+    }, { remember: rememberCode });
     onLogin();
     setLoading(false);
   };
@@ -276,6 +278,12 @@ export default function LoginScreen({ onLogin }) {
                         : <><span>Entrar na Plataforma</span> <ChevronRight size={16} /></>
                       }
                     </Button>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="remember-code" checked={rememberCode} onCheckedChange={(checked) => setRememberCode(Boolean(checked))} />
+                      <label htmlFor="remember-code" className="text-xs text-white/55 cursor-pointer">
+                        Lembrar meu código neste dispositivo
+                      </label>
+                    </div>
                   </form>
                 ) : (
                   <form onSubmit={handleAdminLogin} className="space-y-4">
