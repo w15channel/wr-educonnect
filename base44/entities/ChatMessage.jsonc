@@ -30,55 +30,27 @@
   ],
   "rls": {
     "create": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.author_email": "{{user.email}}"
     },
     "read": {
       "$or": [
         {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
           "data.author_email": "{{user.email}}"
         },
         {
-          "data.session_id": {
+          "session_id": {
             "$regex": ".*{{user.email}}.*"
           }
         },
         {
-          "data.session_id": {
-            "$regex": "class_chat_{{user.course}}"
-          }
-        },
-        {
-          "data.session_id": {
-            "$regex": "monitor-room_{{user.course}}"
+          "user_condition": {
+            "role": "admin"
           }
         }
       ]
     },
     "update": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.author_email": "{{user.email}}"
     },
     "delete": {
       "$or": [
