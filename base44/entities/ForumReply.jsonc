@@ -38,15 +38,12 @@
     "read": {
       "$or": [
         {
-          "data.author_email": "{{user.email}}"
+          "data.course": "{{user.course}}"
         },
         {
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "data.course": "{{user.course}}"
         }
       ]
     },
