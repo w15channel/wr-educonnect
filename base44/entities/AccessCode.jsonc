@@ -48,14 +48,56 @@
     "last_login": {
       "type": "string",
       "description": "Last login timestamp"
-    },
-    "pontuacao_total": {
-      "type": "number",
-      "default": 0,
-      "description": "Cache DECIMAL(10,3) da pontuação total do aluno; fonte única para rankings e exibição de pontos."
     }
   },
   "required": [
     "code"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.student_email": {
+            "$ne": "*"
+          },
+          "data.code": {
+            "$ne": "*"
+          },
+          "data.course": {
+            "$ne": "*"
+          },
+          "data.is_active": {
+            "$ne": "*"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
