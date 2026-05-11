@@ -30,49 +30,18 @@
   ],
   "rls": {
     "create": {
-      "data.author_email": "{{user.email}}"
-    },
-    "read": {
       "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
         {
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "$and": [
-            {
-              "data.session_id": {
-                "$regex": "^class_chat_"
-              }
-            },
-            {
-              "data.session_id": {
-                "$regex": "{{user.course}}"
-              }
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "data.session_id": {
-                "$regex": "^dm_"
-              }
-            },
-            {
-              "$or": [
-                {
-                  "data.session_id": {
-                    "$regex": "{{user.email}}"
-                  }
-                }
-              ]
-            }
-          ]
         }
       ]
     },
+    "read": null,
     "update": {
       "$or": [
         {
