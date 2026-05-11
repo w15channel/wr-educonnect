@@ -43,6 +43,11 @@
     "read": {
       "$or": [
         {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
           "data.recipient_email": "{{user.email}}"
         },
         {
@@ -51,9 +56,10 @@
           }
         },
         {
-          "user_condition": {
-            "role": "admin"
-          }
+          "data.recipient_email": ""
+        },
+        {
+          "data.course": "{{user.course}}"
         }
       ]
     },
