@@ -63,8 +63,8 @@ export default function SalaDebates() {
       space: 'debates',
     }),
     onMutate: async (data) => {
-      await queryClient.cancelQueries({ queryKey: ['debate-posts'] });
-      const previous = queryClient.getQueryData(['debate-posts']);
+      await queryClient.cancelQueries({ queryKey: ['debate-posts', userCourse] });
+      const previous = queryClient.getQueryData(['debate-posts', userCourse]);
       const optimistic = {
         id: `optimistic-${Date.now()}`,
         content: data.content,
@@ -76,12 +76,12 @@ export default function SalaDebates() {
       space: 'debates',
         created_date: new Date().toISOString(),
       };
-      queryClient.setQueryData(['debate-posts'], old => [optimistic, ...(old || [])]);
+      queryClient.setQueryData(['debate-posts', userCourse], old => [optimistic, ...(old || [])]);
       setNewPost('');
       return { previous };
     },
     onError: (_err, _data, context) => {
-      if (context?.previous) queryClient.setQueryData(['debate-posts'], context.previous);
+      if (context?.previous) queryClient.setQueryData(['debate-posts', userCourse], context.previous);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['debate-posts'] }),
     onSuccess: async (post) => {

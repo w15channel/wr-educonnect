@@ -63,8 +63,8 @@ export default function Forum() {
       reply_count: 0,
     }),
     onMutate: async (data) => {
-      await queryClient.cancelQueries({ queryKey: ['forum-posts'] });
-      const previous = queryClient.getQueryData(['forum-posts']);
+      await queryClient.cancelQueries({ queryKey: ['forum-posts', userCourse] });
+      const previous = queryClient.getQueryData(['forum-posts', userCourse]);
       const optimistic = {
         id: `optimistic-${Date.now()}`,
         content: data.content,
@@ -76,12 +76,12 @@ export default function Forum() {
         space: 'forum',
         created_date: new Date().toISOString(),
       };
-      queryClient.setQueryData(['forum-posts'], old => [optimistic, ...(old || [])]);
+      queryClient.setQueryData(['forum-posts', userCourse], old => [optimistic, ...(old || [])]);
       setNewPost('');
       return { previous };
     },
     onError: (_err, _data, context) => {
-      if (context?.previous) queryClient.setQueryData(['forum-posts'], context.previous);
+      if (context?.previous) queryClient.setQueryData(['forum-posts', userCourse], context.previous);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['forum-posts'] }),
     onSuccess: async (post) => {
