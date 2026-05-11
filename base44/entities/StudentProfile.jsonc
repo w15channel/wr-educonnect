@@ -93,9 +93,6 @@
           "data.student_email": "{{user.email}}"
         },
         {
-          "data.dashboard_course": "{{user.course}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
