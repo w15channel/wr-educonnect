@@ -37,6 +37,8 @@ export default function LoginScreen({ onLogin }) {
   const [rememberCode, setRememberCode] = useState(localStorage.getItem('wr_remember_student_code') === 'yes');
 
   useEffect(() => {
+    const savedCode = localStorage.getItem('wr_saved_student_code') || '';
+    if (savedCode) setCode(savedCode);
     checkAdminSetup();
     const interval = setInterval(() => setHeroImg(i => (i + 1) % HERO_IMAGES.length), 6000);
     return () => clearInterval(interval);
@@ -59,6 +61,13 @@ export default function LoginScreen({ onLogin }) {
       return;
     }
     const record = results[0];
+    if (rememberCode) {
+      localStorage.setItem('wr_remember_student_code', 'yes');
+      localStorage.setItem('wr_saved_student_code', trimmed);
+    } else {
+      localStorage.removeItem('wr_saved_student_code');
+      localStorage.setItem('wr_remember_student_code', 'no');
+    }
     await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
     localStorage.setItem('wr_remember_student_code', rememberCode ? 'yes' : 'no');
     setSession({
@@ -254,6 +263,10 @@ export default function LoginScreen({ onLogin }) {
                       <p className="text-white/25 text-xs mt-2.5 text-center flex items-center justify-center gap-1">
                         <Lock size={9} /> Código fornecido pelo seu professor
                       </p>
+                      <label className="mt-3 flex items-center justify-center gap-2 text-xs text-white/60">
+                        <input type="checkbox" checked={rememberCode} onChange={(e) => setRememberCode(e.target.checked)} className="accent-[#5b5ef4]" />
+                        Lembrar meu código neste dispositivo
+                      </label>
                     </div>
                     <Button
                       type="submit"
