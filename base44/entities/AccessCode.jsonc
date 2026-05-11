@@ -62,6 +62,9 @@
     "read": {
       "$or": [
         {
+          "created_by": "{{user.email}}"
+        },
+        {
           "data.student_email": "{{user.email}}"
         },
         {
@@ -74,12 +77,12 @@
     "update": {
       "$or": [
         {
-          "data.student_email": "{{user.email}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.student_email": "{{user.email}}"
         }
       ]
     },
