@@ -43,25 +43,20 @@
     "read": {
       "$or": [
         {
-          "data.course": "{{user.course}}",
-          "$or": [
-            {
-              "data.recipient_email": {
-                "$exists": false
-              }
-            },
-            {
-              "data.recipient_email": null
-            },
-            {
-              "data.recipient_email": "{{user.email}}"
-            }
-          ]
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.recipient_email": {
+            "$in": [
+              null,
+              "{{user.email}}"
+            ]
+          }
+        },
+        {
+          "data.course": "{{user.course}}"
         }
       ]
     },
