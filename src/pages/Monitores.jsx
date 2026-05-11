@@ -14,6 +14,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
+import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
 const CYCLE_DAYS = 7;
@@ -192,18 +193,32 @@ export default function Monitores() {
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
     pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
-    pdf.save(`${getCertificateFileBase()}.pdf`);
-    toast.success('Certificado em PDF baixado com sucesso.');
+    const blob = pdf.output('blob');
+    await saveBlobWithPicker(blob, `${getCertificateFileBase()}.pdf`, 'application/pdf');
+    toast.success('Certificado salvo em PDF.');
   };
 
   const handleDownloadPNG = async () => {
     const canvas = await getCertificateCanvas();
     if (!canvas) return;
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = `${getCertificateFileBase()}.png`;
-    link.click();
-    toast.success('Certificado em PNG baixado com sucesso.');
+    const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!pngBlob) return;
+    await saveBlobWithPicker(pngBlob, `${getCertificateFileBase()}.png`, 'image/png');
+    toast.success('Certificado salvo em PNG.');
+  };
+
+  const handleShare = async () => {
+    const canvas = await getCertificateCanvas();
+    if (!canvas) return;
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+    const blob = pdf.output('blob');
+    const shared = await shareBlob(blob, `${getCertificateFileBase()}.pdf`, 'application/pdf', 'Certificado de Monitor');
+    if (shared) toast.success('Compartilhamento aberto.');
+    else toast.error('Compartilhamento não suportado neste dispositivo.');
   };
 
   const handleDeleteHistory = async (id) => {
@@ -392,7 +407,7 @@ export default function Monitores() {
       <Dialog open={!!certStudent} onOpenChange={() => setCertStudent(null)}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Certificado de Monitor</DialogTitle></DialogHeader>
-          <div className="overflow-x-auto rounded-2xl border border-border bg-secondary/20 p-3">
+          <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3 scroll-smooth">
           <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 820, minHeight: 520, padding: '48px 56px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
               <img src={WR_CERTIFICATE_LOGO} alt="WR" style={{ width: 60, height: 60, objectFit: 'contain' }} crossOrigin="anonymous" />
@@ -426,12 +441,15 @@ export default function Monitores() {
             </div>
           </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
             <Button onClick={handleDownloadPDF} className="gap-2 w-full">
-              <Download size={15} /> Baixar PDF
+              <Download size={15} /> Salvar PDF
             </Button>
             <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2 w-full">
-              <Download size={15} /> Baixar PNG
+              <Download size={15} /> Salvar PNG
+            </Button>
+            <Button variant="outline" onClick={handleShare} className="gap-2 w-full">
+              Compartilhar
             </Button>
           </div>
         </DialogContent>

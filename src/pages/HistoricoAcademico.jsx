@@ -13,6 +13,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
+import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 
 const HOURS_MAP = { lesson: 2, live_attendance: 2, task: 1, quiz: 1.5, forum: 0.5, therapist: 1 };
 
@@ -65,18 +66,42 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
       heightLeft -= pageH;
     }
 
-    pdf.save(`${fileBase}.pdf`);
-    toast.success('Histórico exportado em PDF!');
+    const blob = pdf.output('blob');
+    await saveBlobWithPicker(blob, `${fileBase}.pdf`, 'application/pdf');
+    toast.success('Histórico salvo em PDF.');
   };
 
   const handleDownloadPNG = async () => {
     const canvas = await getDocumentCanvas();
     if (!canvas) return;
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = `${fileBase}.png`;
-    link.click();
-    toast.success('Histórico exportado em PNG!');
+    const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!pngBlob) return;
+    await saveBlobWithPicker(pngBlob, `${fileBase}.png`, 'image/png');
+    toast.success('Histórico salvo em PNG.');
+  };
+
+  const handleShare = async () => {
+    const canvas = await getDocumentCanvas();
+    if (!canvas) return;
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgH = (canvas.height * pdfW) / canvas.width;
+    let heightLeft = imgH;
+    let position = 0;
+    pdf.addImage(imgData, 'PNG', 0, position, pdfW, imgH);
+    heightLeft -= pageH;
+    while (heightLeft > 0) {
+      position -= pageH;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, pdfW, imgH);
+      heightLeft -= pageH;
+    }
+    const blob = pdf.output('blob');
+    const shared = await shareBlob(blob, `${fileBase}.pdf`, 'application/pdf', 'Histórico Acadêmico');
+    if (shared) toast.success('Compartilhamento aberto.');
+    else toast.error('Compartilhamento não suportado neste dispositivo.');
   };
 
   return (
@@ -87,10 +112,13 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         )}
         <div className="flex gap-2 flex-wrap ml-auto">
           <Button onClick={handleDownloadPDF} className="gap-2">
-            <Download size={15} /> Exportar PDF
+            <Download size={15} /> Salvar PDF
           </Button>
           <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2">
-            <Download size={15} /> Exportar PNG
+            <Download size={15} /> Salvar PNG
+          </Button>
+          <Button variant="outline" onClick={handleShare} className="gap-2">
+            Compartilhar
           </Button>
         </div>
       </div>
