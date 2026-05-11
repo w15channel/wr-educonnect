@@ -4,7 +4,7 @@
   "properties": {
     "code_id": {
       "type": "string",
-      "description": "ID do código de acesso vinculado"
+      "description": "ID do c\u00f3digo de acesso vinculado"
     },
     "student_email": {
       "type": "string",
@@ -45,16 +45,16 @@
     },
     "bio": {
       "type": "string",
-      "description": "Apresentação pessoal"
+      "description": "Apresenta\u00e7\u00e3o pessoal"
     },
     "points": {
       "type": "number",
       "default": 0,
-      "description": "Pontuação total gamificada"
+      "description": "Pontua\u00e7\u00e3o total gamificada"
     },
     "dashboard_rank": {
       "type": "number",
-      "description": "Posição publicada para o ranking da Dashboard"
+      "description": "Posi\u00e7\u00e3o publicada para o ranking da Dashboard"
     },
     "dashboard_course": {
       "type": "string",
@@ -63,15 +63,33 @@
         "psicanalise",
         "sexologia"
       ],
-      "description": "Curso da posição publicada na Dashboard"
-    },
-    "pontuacao_total": {
-      "type": "number",
-      "default": 0,
-      "description": "Cache DECIMAL(10,3) da pontuação total do aluno; fonte única para rankings e exibição de pontos."
+      "description": "Curso da posi\u00e7\u00e3o publicada na Dashboard"
     }
   },
   "required": [
     "student_email"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "data.student_email": "{{user.email}}"
+    },
+    "read": {},
+    "update": {
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
