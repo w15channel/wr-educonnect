@@ -9,6 +9,7 @@ import MobileHeader from './MobileHeader';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import TutorialModal from '../onboarding/TutorialModal';
+import MobileSplash from './MobileSplash';
 
 const TUTORIAL_KEY = 'wr_tutorial_done';
 
@@ -118,6 +119,7 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
+      <MobileSplash />
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
       )}
