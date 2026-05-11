@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import NotificationsBell from '@/components/dashboard/NotificationsBell';
+import { Moon, Sun } from 'lucide-react';
 
 const routeLabels = {
   '/dashboard': 'Dashboard',
@@ -40,6 +41,17 @@ export default function MobileHeader() {
   const sub = stripScopedPrefix(location.pathname);
   const label = routeLabels[sub] || 'WR-EDU';
 
+  const [theme, setTheme] = useState(() => localStorage.getItem('wr_theme') || 'light');
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
+    root.classList.toggle('light', theme === 'light');
+    localStorage.setItem('wr_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((prev) => prev === 'dark' ? 'light' : 'dark');
+
   return (
     <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border shrink-0">
       <div className="w-7 h-7 flex items-center justify-center">
@@ -47,6 +59,7 @@ export default function MobileHeader() {
       </div>
       <h1 className="text-sm font-bold text-white tracking-tight">{label}</h1>
       <div className="ml-auto flex items-center gap-2">
+        <button onClick={toggleTheme} className="p-1.5 rounded-lg text-white/80 hover:bg-white/10" title="Alternar tema">{theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}</button>
         {session?.role === 'admin' && (
           <div className="[&_button]:text-white/70 [&_button:hover]:bg-white/10">
             <NotificationsBell session={session} />
