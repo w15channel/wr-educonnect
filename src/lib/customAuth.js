@@ -5,6 +5,8 @@ const SESSION_KEY = 'educonnect_session';
 
 export function getSession() {
   try {
+    const remembered = localStorage.getItem(SESSION_KEY);
+    if (remembered) return JSON.parse(remembered);
     // sessionStorage is tab-isolated — prevents cross-user contamination
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (raw) return JSON.parse(raw);
@@ -21,7 +23,13 @@ export function getSession() {
   }
 }
 
-export function setSession(session) {
+export function setSession(session, options = {}) {
+  const { remember = false } = options;
+  if (remember) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    sessionStorage.removeItem(SESSION_KEY);
+    return;
+  }
   // Use sessionStorage so each browser tab has its own independent session
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   // Remove any leftover localStorage entry to avoid confusion

@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Trophy, Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Star, Send } from 'lucide-react';
+import { Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Star, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -253,60 +253,6 @@ export default function Monitores() {
             <li>Ranking lido diretamente do cache pontuacao_total, sem recalcular a cada acesso</li>
             <li>1º Monitor: +0,500pts / 2º Monitor: +0,300pts / 3º Monitor: +0,200pts em entregas de atividades e trabalhos</li>
           </ol>
-        </div>
-      )}
-
-      {/* Ranking de Desempenho */}
-      {ranking.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
-              <Trophy size={16} className="text-yellow-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores da Semana</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {ranking.map((r, i) => {
-              const code = getCodeByEmail(r.email);
-              const displayName = code?.profile_name || code?.student_name || r.email;
-              const avatarColor = code?.profile_avatar_color || '#5b5ef4';
-              const photoUrl = code?.profile_photo_url || '';
-              const isMonitor = i < 3;
-              const isMe = r.email === session?.email;
-              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
-              return (
-                <div key={r.email} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                  isMe ? 'bg-primary/8 border-primary/20' :
-                  isMonitor ? 'bg-yellow-50 border-yellow-200' :
-                  'bg-secondary/20 border-transparent'
-                }`}>
-                  <span className="w-6 text-center shrink-0">
-                    {medal || <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}
-                  </span>
-                  {photoUrl ? (
-                    <img src={photoUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
-                      {displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
-                      {displayName}{isMe && <span className="ml-1 text-primary/60">(você)</span>}
-                    </p>
-                    {isMonitor && <MonitorBadge rank={i + 1} />}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
 

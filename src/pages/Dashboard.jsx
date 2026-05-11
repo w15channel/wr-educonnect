@@ -138,6 +138,14 @@ export default function Dashboard() {
     const existing = await base44.entities.MonitorHistory.list('-period_start', 100);
     const currentCycle = existing.filter((m) => m.period_start === periodStart && (m.course === userCourse || !m.course));
     for (const m of currentCycle) await base44.entities.MonitorHistory.delete(m.id);
+    const monitorAnnouncements = await base44.entities.Announcement.filter(
+      { course: userCourse || 'tcc', title: '🏅 Você é Monitor(a) da Semana!' },
+      '-created_date',
+      500
+    );
+    for (const announcement of monitorAnnouncements) {
+      await base44.entities.Announcement.delete(announcement.id);
+    }
     const emailsArr = [...selectedMonitorEmails];
     for (let i = 0; i < emailsArr.length; i++) {
       const email = emailsArr[i];
