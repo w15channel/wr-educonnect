@@ -323,38 +323,45 @@ ${transcript}`);
     <div className="min-h-screen bg-[#080b14] text-white">
 
       {/* STICKY NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-          <img src={WR_PRIMARY_LOGO} alt="WR" className="w-14 h-14 object-contain" />
-            <span className="text-xl sm:text-2xl font-black tracking-tight">{BRAND_LEGAL_NAME}</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
-            <a key={label} href={href} className="hover:text-white transition-colors">{label}</a>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium transition-colors">
-              <Lock size={13} /> Área do Aluno
-            </button>
-            <a href="#cursos" className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hidden md:block animate-pulse hover:animate-none hover:opacity-90 transition-all shadow-lg shadow-[#5b5ef4]/40" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
-              Inscreva-se
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/90 backdrop-blur-2xl border-b border-white/10 py-3 shadow-2xl shadow-black/30' : 'py-5'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/[0.04] px-4 py-3 shadow-lg shadow-black/10 backdrop-blur-xl">
+            <a href="#top" className="flex items-center gap-3 min-w-0 group">
+              <div className="w-12 h-12 rounded-2xl bg-white/8 border border-white/10 flex items-center justify-center shadow-inner group-hover:border-[#5b5ef4]/40 transition-colors">
+                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-10 h-10 object-contain" />
+              </div>
+              <div className="min-w-0">
+                <span className="block text-base sm:text-lg font-black tracking-tight leading-tight truncate">{BRAND_SHORT_NAME}</span>
+                <span className="hidden sm:block text-[10px] text-white/35 uppercase tracking-[0.22em]">Instituto de Desenvolvimento Humano</span>
+              </div>
             </a>
-            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden text-white/60 hover:text-white">
-              {mobileMenu ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            <div className="hidden md:flex items-center gap-1 rounded-2xl bg-black/15 border border-white/8 p-1 text-sm text-white/55">
+              {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+              <a key={label} href={href} className="px-4 py-2 rounded-xl hover:bg-white/8 hover:text-white transition-all">{label}</a>
+              )}
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-4 py-2.5 text-sm font-bold text-white/85 hover:bg-white/12 hover:text-white hover:border-[#5b5ef4]/45 transition-all shadow-lg shadow-black/10">
+                <Key size={14} className="text-[#1db89e]" /> Portal do Aluno
+              </button>
+              <a href="#cursos" className="hidden md:block rounded-2xl bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-[#5b5ef4]/30 hover:opacity-95 transition-all" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+                Inscreva-se
+              </a>
+              <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden w-11 h-11 rounded-2xl bg-white/8 border border-white/10 text-white/70 hover:text-white flex items-center justify-center">
+                {mobileMenu ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
           </div>
         </div>
         {mobileMenu &&
-        <div className="md:hidden bg-[#0d1120] border-t border-white/8 px-6 py-4 space-y-3">
+        <div className="md:hidden mx-4 mt-2 rounded-3xl bg-[#0d1120]/95 border border-white/10 px-4 py-4 space-y-2 shadow-2xl shadow-black/30 backdrop-blur-xl">
             {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
-          <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/60 hover:text-white py-2 text-sm transition-colors">{label}</a>
+          <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/65 hover:text-white hover:bg-white/8 py-3 px-3 rounded-2xl text-sm font-medium transition-all">{label}</a>
           )}
-            <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full text-center py-2 text-[#5b5ef4] font-semibold text-sm">
-              Área do Aluno
+            <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full flex items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 py-3 text-white font-bold text-sm">
+              <Key size={14} className="text-[#1db89e]" /> Portal do Aluno
             </button>
-            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-[#5b5ef4]/40" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black py-3 rounded-2xl text-sm shadow-lg shadow-[#5b5ef4]/35" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
               Inscreva-se
             </a>
           </div>
@@ -362,7 +369,7 @@ ${transcript}`);
       </nav>
 
       {/* HERO FULL-WIDTH */}
-      <div className="relative h-screen flex items-center justify-center overflow-hidden">
+      <div id="top" className="relative h-screen flex items-center justify-center overflow-hidden">
         {HERO_IMAGES.map((src, i) =>
         <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
             <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 35%' }} />
