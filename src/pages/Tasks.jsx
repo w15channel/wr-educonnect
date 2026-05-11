@@ -257,8 +257,8 @@ export default function Tasks({ mode = 'all' }) {
     <div className="p-4 lg:p-7 max-w-5xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">{mode === 'tests' ? 'Provas' : mode === 'tasks' ? 'Tarefas' : 'Tarefas e Avaliações'}</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Gerencie trabalhos, provas e entregas</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">{mode === 'tests' ? 'Provas de Terapia Comportamental' : mode === 'tasks' ? 'Trabalhos de Terapia Comportamental' : 'Trabalhos e Avaliações de Terapia Comportamental'}</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Gerencie trabalhos, provas e entregas da formação em Terapia Comportamental</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2">

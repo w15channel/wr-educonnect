@@ -15,7 +15,7 @@ const LOBBY_MUSIC_KEY = 'wr_lobby_music_enabled';
 const COURSES = [
   {
     id: 'tcc',
-    title: 'Terapeuta TC',
+    title: 'Terapeuta em TC',
     subtitle: 'Terapia Comportamental',
     desc: 'Técnicas de Terapia Comportamental aplicadas à prática clínica, com suporte em tempo real e mentoria ao vivo todas as segundas-feiras.',
     icon: Brain,
@@ -248,7 +248,7 @@ export default function CourseLobby() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#080b14] text-white overflow-hidden">
+    <div className="relative min-h-screen bg-[#080b14] text-white overflow-y-auto overflow-x-hidden">
       {!termsAccepted && <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />}
 
       <div className="pointer-events-none absolute inset-0">

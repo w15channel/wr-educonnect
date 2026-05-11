@@ -216,8 +216,8 @@ export default function Lessons() {
     <div className="p-4 lg:p-7 max-w-7xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Aulas</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Assista, leia e estude no seu ritmo</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Aulas de Terapia Comportamental</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Assista, leia e estude Terapia Comportamental no seu ritmo</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2">

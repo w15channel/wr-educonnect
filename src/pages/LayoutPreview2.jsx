@@ -93,7 +93,7 @@ const CURRENT = [
 
 const COURSES = [
 {
-  title: 'Terapeuta TC',
+  title: 'Terapeuta em TC',
   subtitle: 'Curso Profissionalizante na Formação de Terapeuta em Terapia Comportamental',
   price: 'R$ 250',
   period: '/mês · 4 meses',
