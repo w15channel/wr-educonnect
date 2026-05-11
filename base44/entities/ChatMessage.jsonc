@@ -38,9 +38,12 @@
           "data.author_email": "{{user.email}}"
         },
         {
-          "session_id": {
+          "data.session_id": {
             "$regex": ".*{{user.email}}.*"
           }
+        },
+        {
+          "data.session_id": "class_chat_{{user.course}}"
         },
         {
           "user_condition": {
