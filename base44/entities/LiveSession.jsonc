@@ -54,9 +54,16 @@
       }
     },
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.course": "{{user.course}}"
+        }
+      ]
     },
     "update": {
       "user_condition": {
