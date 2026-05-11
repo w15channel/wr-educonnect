@@ -30,64 +30,45 @@
   ],
   "rls": {
     "create": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "data.author_email": "{{user.email}}"
     },
     "read": {
       "$or": [
         {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
           "data.author_email": "{{user.email}}"
         },
         {
-          "$and": [
-            {
-              "data.session_id": {
-                "$regex": "^class_chat_"
-              }
-            },
-            {
-              "data.session_id": "class_chat_{{user.course}}"
-            }
-          ]
+          "session_id": {
+            "$eq": "class_chat_{{user.course}}"
+          }
         },
         {
-          "user_condition": {
-            "role": "admin"
+          "session_id": {
+            "$regex": "dm_.*{{user.email}}.*"
+          }
+        },
+        {
+          "data.course": "{{user.course}}",
+          "session_id": {
+            "$regex": "monitor-room-.*"
           }
         }
       ]
     },
     "update": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
