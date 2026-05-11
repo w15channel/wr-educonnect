@@ -54,13 +54,15 @@ export default function Tasks({ mode = 'all' }) {
   const taskUnlockRule = unlockRules.find(r => r.scope === 'tasks');
   const unlockedTaskCount = Math.max(10, Number(taskUnlockRule?.unlock_until || 10));
 
+  const studentIdentifiers = [user?.email, user?.code].filter(Boolean);
+
   const { data: submissions = [] } = useQuery({
-    queryKey: ['submissions-mine'],
-    queryFn: () => base44.entities.TaskSubmission.filter(
-      isTeacher ? {} : { student_email: user?.email },
-      '-created_date', 200
-    ),
-    enabled: !!user,
+    queryKey: ['submissions-mine', isTeacher ? 'all' : studentIdentifiers.join('|')],
+    queryFn: async () => {
+      const records = await base44.entities.TaskSubmission.list('-created_date', 3000);
+      return isTeacher ? records : records.filter(s => studentIdentifiers.includes(s.student_email));
+    },
+    enabled: isTeacher || studentIdentifiers.length > 0,
   });
 
   const createTaskMutation = useMutation({

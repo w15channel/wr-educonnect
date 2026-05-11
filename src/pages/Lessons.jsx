@@ -52,10 +52,17 @@ export default function Lessons() {
   const lessonUnlockRule = unlockRules.find(r => r.scope === 'lessons');
   const unlockedLessonCount = Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
 
+  const studentIdentifiers = [session?.email, session?.code].filter(Boolean);
+
   const { data: progresses = [] } = useQuery({
-    queryKey: ['lesson-progress', session?.email],
-    queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email }, '-created_date', 200),
-    enabled: !isTeacher && !!session?.email,
+    queryKey: ['lesson-progress', isTeacher ? 'all' : studentIdentifiers.join('|')],
+    queryFn: async () => {
+      const records = isTeacher
+        ? await base44.entities.LessonProgress.list('-created_date', 3000)
+        : await base44.entities.LessonProgress.list('-created_date', 1000);
+      return isTeacher ? records : records.filter(p => studentIdentifiers.includes(p.student_email));
+    },
+    enabled: isTeacher || studentIdentifiers.length > 0,
   });
 
   const createMutation = useMutation({
@@ -91,7 +98,7 @@ export default function Lessons() {
     } else {
       await base44.entities.LessonProgress.create({ lesson_id: lessonId, student_email: session?.email, ...patch });
     }
-    queryClient.invalidateQueries({ queryKey: ['lesson-progress', session?.email] });
+    queryClient.invalidateQueries({ queryKey: ['lesson-progress'] });
   };
 
   const toggleWatched = async (lessonId) => {
@@ -144,7 +151,8 @@ export default function Lessons() {
     reader.readAsDataURL(file);
   };
 
-  const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId);
+  const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(p.student_email));
+  const getLessonProgressEntries = (lessonId) => progresses.filter(p => p.lesson_id === lessonId && (p.comment || p.summary || p.watched));
 
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = orderedLessons.length > 0 ? Math.round((watchedCount / orderedLessons.length) * 100) : 0;
@@ -552,6 +560,37 @@ export default function Lessons() {
                               className="flex items-center gap-1 text-xs text-primary bg-primary/8 border border-primary/15 px-3 py-1.5 rounded-lg hover:bg-primary/15 transition-colors font-medium">
                               <Link size={11} /> Material {li + 1}
                             </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Teacher view: student summaries and comments */}
+                    {isTeacher && getLessonProgressEntries(lesson.id).length > 0 && (
+                      <div className="px-4 py-3 border-t border-border bg-secondary/10">
+                        <p className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5">
+                          <MessageSquare size={13} className="text-accent" /> Resumos, comentários e presenças dos alunos
+                        </p>
+                        <div className="space-y-2">
+                          {getLessonProgressEntries(lesson.id).map(entry => (
+                            <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <p className="text-xs font-bold text-foreground">{entry.student_email}</p>
+                                {entry.watched && <span className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5 font-bold">Assistida</span>}
+                              </div>
+                              {entry.summary && (
+                                <div className="mb-2">
+                                  <p className="text-[10px] text-muted-foreground font-semibold">Meu resumo:</p>
+                                  <p className="text-xs text-foreground/80 whitespace-pre-wrap">{entry.summary}</p>
+                                </div>
+                              )}
+                              {entry.comment && (
+                                <div>
+                                  <p className="text-[10px] text-muted-foreground font-semibold">Meu comentário:</p>
+                                  <p className="text-xs text-foreground/80 whitespace-pre-wrap">{entry.comment}</p>
+                                </div>
+                              )}
+                            </div>
                           ))}
                         </div>
                       </div>
