@@ -84,29 +84,17 @@
     "update": {
       "$or": [
         {
+          "data.therapist_email": "{{user.email}}",
+          "therapist_submitted": false
+        },
+        {
+          "data.patient_email": "{{user.email}}",
+          "patient_submitted": false
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "$and": [
-            {
-              "data.therapist_email": "{{user.email}}"
-            },
-            {
-              "data.therapist_submitted": false
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "data.patient_email": "{{user.email}}"
-            },
-            {
-              "data.patient_submitted": false
-            }
-          ]
         }
       ]
     },

@@ -52,26 +52,20 @@
   ],
   "rls": {
     "create": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by": "{{user.email}}"
     },
     "read": {
       "$or": [
         {
-          "data.course": "{{user.course}}"
+          "created_by": "{{user.email}}"
         },
         {
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.course": "{{user.course}}"
         }
       ]
     },

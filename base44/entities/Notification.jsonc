@@ -65,6 +65,9 @@
           "data.recipient_email": "{{user.email}}"
         },
         {
+          "data.sender_email": "{{user.email}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
@@ -74,7 +77,8 @@
     "update": {
       "$or": [
         {
-          "data.recipient_email": "{{user.email}}"
+          "data.recipient_email": "{{user.email}}",
+          "data.is_read": true
         },
         {
           "user_condition": {
@@ -84,16 +88,9 @@
       ]
     },
     "delete": {
-      "$or": [
-        {
-          "data.recipient_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

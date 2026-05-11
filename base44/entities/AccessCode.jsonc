@@ -72,9 +72,27 @@
       ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.student_email": {
+            "$ne": "*"
+          },
+          "data.code": {
+            "$ne": "*"
+          },
+          "data.course": {
+            "$ne": "*"
+          },
+          "data.is_active": {
+            "$ne": "*"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
       "user_condition": {

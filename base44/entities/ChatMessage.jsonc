@@ -30,9 +30,31 @@
   ],
   "rls": {
     "create": {
-      "data.author_email": "{{user.email}}"
+      "created_by": "{{user.email}}"
     },
     "read": {
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "data.session_id": {
+            "$regex": "^class_chat_"
+          }
+        },
+        {
+          "data.session_id": {
+            "$regex": "dm_((?:{{user.email}})_.*|.*_(?:{{user.email}}))$"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
       "$or": [
         {
           "data.author_email": "{{user.email}}"
@@ -41,37 +63,8 @@
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "data.session_id": "class_chat_{{user.course}}"
-        },
-        {
-          "$and": [
-            {
-              "data.session_id": {
-                "$regex": "^dm_.*"
-              }
-            },
-            {
-              "$or": [
-                {
-                  "data.session_id": {
-                    "$regex": "^dm_{{user.email}}_.*"
-                  }
-                },
-                {
-                  "data.session_id": {
-                    "$regex": ".*_{{user.email}}$"
-                  }
-                }
-              ]
-            }
-          ]
         }
       ]
-    },
-    "update": {
-      "data.author_email": "{{user.email}}"
     },
     "delete": {
       "$or": [

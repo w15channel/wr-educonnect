@@ -70,18 +70,7 @@
         "role": "admin"
       }
     },
-    "read": {
-      "$or": [
-        {
-          "data.course": "{{user.course}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": {},
     "update": {
       "user_condition": {
         "role": "admin"
