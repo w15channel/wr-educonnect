@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
-import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X, GraduationCap } from 'lucide-react';
+import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
