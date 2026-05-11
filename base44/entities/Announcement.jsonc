@@ -10,14 +10,6 @@
       "type": "string",
       "description": "Announcement content"
     },
-    "recipient_email": {
-      "type": "string",
-      "description": "Email do aluno destinatário quando o aviso for individual"
-    },
-    "certificate_monitor_id": {
-      "type": "string",
-      "description": "ID do registro MonitorHistory usado para liberar o certificado de monitor"
-    },
     "type": {
       "type": "string",
       "enum": [
@@ -41,5 +33,39 @@
   },
   "required": [
     "content"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.recipient_email": "{{user.email}}"
+        },
+        {
+          "data.recipient_email": {
+            "$exists": false
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
