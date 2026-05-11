@@ -83,9 +83,21 @@
       ]
     },
     "read": {
-      "user_condition": {
-        "role": "student"
-      }
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "student"
+          }
+        }
+      ]
     },
     "update": {
       "$or": [
