@@ -230,15 +230,15 @@ export default function Students() {
       </Dialog>
 
       <>
-          <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="mb-4 grid grid-cols-1 md:flex md:flex-wrap items-stretch md:items-center gap-2.5 md:gap-3">
             <div className="relative w-full sm:w-72">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <SlidersHorizontal size={14} className="text-muted-foreground" />
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-9 text-xs w-48">
+                <SelectTrigger className="h-10 text-xs w-full sm:w-56">
                   <SelectValue placeholder="Ordenar por..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -258,14 +258,14 @@ export default function Students() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 h-9 text-xs"
+              className="gap-1.5 h-10 text-xs w-full sm:w-auto"
               onClick={() => queryClient.invalidateQueries()}
             >
               <RefreshCw size={13} /> Atualizar Dados
             </Button>
             <Button
               size="sm"
-              className="gap-1.5 h-9 text-xs bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white border-0"
+              className="gap-1.5 h-10 text-xs w-full sm:w-auto bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white border-0"
               onClick={syncStudents}
               disabled={syncing}
             >
@@ -292,7 +292,8 @@ export default function Students() {
                   const tStatus = getStudentTuitionStatus(code);
                   const tCfg = tStatus ? tuitionConfig[tStatus] : null;
                   return (
-                    <div key={code.id} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
+                    <div key={code.id} className="bg-card rounded-2xl border border-border p-3.5 flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
                       {code.profile_photo_url ? (
                         <img src={code.profile_photo_url} alt={displayName} className="w-10 h-10 rounded-full object-cover shrink-0 border border-border" />
                       ) : (
@@ -305,6 +306,7 @@ export default function Students() {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm text-foreground truncate">{displayName}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{code.student_email || 'Sem e-mail cadastrado'}</p>
                         <div className="flex items-center gap-2 flex-wrap mt-0.5">
                           <code className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">{code.code}</code>
                           {tCfg && (
@@ -315,15 +317,44 @@ export default function Students() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setEnrollingCode(code)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors" title="Matricular em outro curso">
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-xl border border-border px-2.5 py-2 bg-secondary/30">
+                          <p className="text-muted-foreground">Entregas</p>
+                          <p className="font-semibold text-foreground">{stats.submissions}</p>
+                        </div>
+                        <div className="rounded-xl border border-border px-2.5 py-2 bg-secondary/30">
+                          <p className="text-muted-foreground">Média</p>
+                          <p className="font-semibold text-foreground">{stats.avgDisplay}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select
+                          value={code.is_active ? 'active' : 'inactive'}
+                          onValueChange={(v) => updateCodeMutation.mutate({ id: code.id, data: { is_active: v === 'active' } })}
+                        >
+                          <SelectTrigger className="h-10 text-xs w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Ativo</SelectItem>
+                            <SelectItem value="inactive">Inativo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <button onClick={() => setEnrollingCode(code)} className="h-10 px-3 text-primary border border-primary/30 hover:bg-primary/10 rounded-xl transition-colors text-xs font-semibold" title="Matricular em outro curso">
                            <Plus size={15} />
+                           Matricular
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                         <button onClick={() => navigate(`/students/${code.id}`)} className="h-10 px-3 text-primary border border-border hover:bg-primary/10 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5">
+                           <Eye size={15} /> Detalhes
                          </button>
-                         <button onClick={() => navigate(`/students/${code.id}`)} className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors">
-                           <Eye size={15} />
-                         </button>
-                         <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="p-2 text-red-500 hover:bg-red-100 rounded-xl transition-colors" title="Remover aluno">
-                           <Trash2 size={15} />
+                         <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="h-10 px-3 text-red-500 border border-red-200 hover:bg-red-100 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5" title="Remover aluno">
+                           <Trash2 size={15} /> Remover
                          </button>
                       </div>
                     </div>
