@@ -93,12 +93,12 @@ export default function Lessons() {
   });
 
   const upsertProgress = async (lessonId, patch) => {
-    const existing = progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeStudentId(p.student_email)));
-    if (existing) {
-      await base44.entities.LessonProgress.update(existing.id, patch);
-    } else {
-      await base44.entities.LessonProgress.create({ lesson_id: lessonId, student_email: session?.email, ...patch });
-    }
+    await base44.functions.invoke('saveStudentRecord', {
+      action: 'lessonProgressUpsert',
+      lesson_id: lessonId,
+      student_email: session?.email || session?.code || '',
+      patch,
+    });
     queryClient.invalidateQueries({ queryKey: ['lesson-progress'] });
   };
 

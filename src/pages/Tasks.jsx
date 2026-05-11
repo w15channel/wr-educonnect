@@ -153,14 +153,18 @@ export default function Tasks({ mode = 'all' }) {
       try {
         await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
         // Salva na plataforma
-        await base44.entities.TaskSubmission.create({
-          task_id: taskId,
-          student_email: user.email || user.code || '',
-          student_name: studentName,
-          file_name: renamedFileName,
-          comment: description,
-          status: 'submitted',
-          course: submissionCourseCode,
+        await base44.functions.invoke('saveStudentRecord', {
+          action: 'create',
+          entity: 'TaskSubmission',
+          data: {
+            task_id: taskId,
+            student_email: user.email || user.code || '',
+            student_name: studentName,
+            file_name: renamedFileName,
+            comment: description,
+            status: 'submitted',
+            course: submissionCourseCode,
+          },
         });
         // Notificação interna ao professor
         await sendNotificationToTeacher(taskTitle, 'arquivo');
@@ -225,14 +229,19 @@ export default function Tasks({ mode = 'all' }) {
 
   const submitCommentMutation = useMutation({
     mutationFn: async ({ taskId, comment }) => {
-      const sub = await base44.entities.TaskSubmission.create({
-        task_id: taskId,
-        student_email: user?.email || user?.code || '',
-        student_name: user?.name || user?.full_name || '',
-        comment,
-        status: 'submitted',
-        course: submissionCourseCode,
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'TaskSubmission',
+        data: {
+          task_id: taskId,
+          student_email: user?.email || user?.code || '',
+          student_name: user?.name || user?.full_name || '',
+          comment,
+          status: 'submitted',
+          course: submissionCourseCode,
+        },
       });
+      const sub = res.data.record;
       // Notificação interna ao professor
       const task = tasks.find(t => t.id === taskId);
       const taskTitle = task?.title || 'Tarefa';

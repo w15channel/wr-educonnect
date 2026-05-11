@@ -124,12 +124,16 @@ export default function ClassChat() {
     if (!content.trim()) return;
     setText('');
     setShowPicker(false);
-    await base44.entities.ChatMessage.create({
-      session_id: CHAT_SESSION,
-      author_name: session?.name || 'Aluno',
-      author_email: session?.email || '',
-      content,
-      is_hand_raised: isSticker,
+    await base44.functions.invoke('saveStudentRecord', {
+      action: 'create',
+      entity: 'ChatMessage',
+      data: {
+        session_id: CHAT_SESSION,
+        author_name: session?.name || 'Aluno',
+        author_email: session?.email || session?.code || '',
+        content,
+        is_hand_raised: isSticker,
+      },
     });
     queryClient.invalidateQueries({ queryKey: ['class-chat'] });
   };

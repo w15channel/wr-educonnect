@@ -52,16 +52,23 @@ export default function SalaDebates() {
   });
 
   const createPostMutation = useMutation({
-    mutationFn: (data) => base44.entities.ForumPost.create({
-      content: data.content,
-      topic: data.topic,
-      author_name: session?.name || 'Anônimo',
-      author_email: session?.email || '',
-      author_role: isTeacher ? 'teacher' : 'student',
-      course: userCourse,
-      reply_count: 0,
-      space: 'debates',
-    }),
+    mutationFn: async (data) => {
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'ForumPost',
+        data: {
+          content: data.content,
+          topic: data.topic,
+          author_name: session?.name || 'Anônimo',
+          author_email: session?.email || session?.code || '',
+          author_role: isTeacher ? 'teacher' : 'student',
+          course: userCourse,
+          reply_count: 0,
+          space: 'debates',
+        },
+      });
+      return res.data.record;
+    },
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: ['debate-posts', userCourse] });
       const previous = queryClient.getQueryData(['debate-posts', userCourse]);
@@ -103,18 +110,23 @@ export default function SalaDebates() {
   });
 
   const createReplyMutation = useMutation({
-    mutationFn: ({ postId, content }) => {
+    mutationFn: async ({ postId, content }) => {
       const post = posts.find(p => p.id === postId);
-      base44.entities.ForumPost.update(postId, { reply_count: (post?.reply_count || 0) + 1 });
-      return base44.entities.ForumReply.create({
-        post_id: postId,
-        content,
-        author_name: session?.name || 'Anônimo',
-        author_email: session?.email || '',
-        author_role: isTeacher ? 'teacher' : 'student',
-        course: userCourse,
-        space: 'debates',
+      await base44.functions.invoke('saveStudentRecord', { action: 'updateForumReplyCount', post_id: postId, reply_count: (post?.reply_count || 0) + 1 });
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'ForumReply',
+        data: {
+          post_id: postId,
+          content,
+          author_name: session?.name || 'Anônimo',
+          author_email: session?.email || session?.code || '',
+          author_role: isTeacher ? 'teacher' : 'student',
+          course: userCourse,
+          space: 'debates',
+        },
       });
+      return res.data.record;
     },
     onSuccess: async (reply) => {
       queryClient.invalidateQueries({ queryKey: ['debate-replies', expandedPost] });
