@@ -15,9 +15,9 @@ const LOBBY_MUSIC_KEY = 'wr_lobby_music_enabled';
 const COURSES = [
   {
     id: 'tcc',
-    title: 'Terapeuta TCC',
-    subtitle: 'Abordagem Cognitivo-Comportamental',
-    desc: 'Técnicas cognitivo-comportamentais aplicadas à prática clínica, com suporte em tempo real e mentoria ao vivo todas as segundas-feiras.',
+    title: 'Terapeuta TC',
+    subtitle: 'Terapia Comportamental',
+    desc: 'Técnicas de Terapia Comportamental aplicadas à prática clínica, com suporte em tempo real e mentoria ao vivo todas as segundas-feiras.',
     icon: Brain,
     color: '#5b5ef4',
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/9adbe6196_generated_video.mp4',

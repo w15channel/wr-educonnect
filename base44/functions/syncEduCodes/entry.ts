@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
       const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
       const isKnownAdmin = credentials.some((item) => String(item.email || '').trim().toLowerCase() === adminEmail);
       if (!isKnownAdmin) {
-        return Response.json({ error: 'Acesso negado para sincronizar códigos EDU.' }, { status: 403 });
+        return Response.json({ error: 'Acesso negado para sincronizar códigos da turma TC.' }, { status: 403 });
       }
     }
 
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
       updated += 1;
     }
 
-    return Response.json({ success: true, message: `${updated} código(s) EDU vinculados ao TCC.`, updated });
+    return Response.json({ success: true, message: `${updated} código(s) vinculados à turma TC.`, updated });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

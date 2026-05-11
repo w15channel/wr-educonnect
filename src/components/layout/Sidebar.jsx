@@ -98,7 +98,7 @@ const studentGroups = [
   },
 ];
 
-const COURSE_LABELS = { tcc: '🧠 TCC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
+const COURSE_LABELS = { tcc: '🧠 TC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
 
 export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
   const location = useLocation();

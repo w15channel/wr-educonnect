@@ -114,7 +114,7 @@ export default function CodeManager({ course: lockedCourse }) {
     mutationFn: () => base44.functions.invoke('syncEduCodes', { admin_email: getSession()?.email || '' }),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-      toast.success(response?.data?.message || 'Códigos EDU sincronizados.');
+      toast.success(response?.data?.message || 'Códigos da turma TC sincronizados.');
     },
   });
 
@@ -131,7 +131,7 @@ export default function CodeManager({ course: lockedCourse }) {
           <h3 className="font-semibold text-foreground">Gerar Novo Código</h3>
           {lockedCourse === 'tcc' && (
             <Button variant="outline" size="sm" onClick={() => syncEduMutation.mutate()} disabled={syncEduMutation.isPending} className="gap-2">
-              <RefreshCw size={14} className={syncEduMutation.isPending ? 'animate-spin' : ''} /> Vincular EDU
+              <RefreshCw size={14} className={syncEduMutation.isPending ? 'animate-spin' : ''} /> Vincular TC
             </Button>
           )}
         </div>
@@ -154,7 +154,7 @@ export default function CodeManager({ course: lockedCourse }) {
               onChange={e => setNewCourse(e.target.value)}
               className="h-10 rounded-xl border border-border bg-background text-foreground text-sm px-3 shrink-0"
             >
-              <option value="tcc">Terapeuta TCC</option>
+              <option value="tcc">Terapeuta TC</option>
               <option value="psicanalise">Psicanalista Freudiano</option>
               <option value="sexologia">Sexólogo(a)</option>
             </select>
@@ -188,7 +188,7 @@ export default function CodeManager({ course: lockedCourse }) {
                   <div>
                     <p className="font-medium text-foreground text-sm">{c.student_name || 'Sem nome'}</p>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: c.course === 'psicanalise' ? '#1db89e20' : c.course === 'sexologia' ? '#a855f720' : '#5b5ef420', color: c.course === 'psicanalise' ? '#1db89e' : c.course === 'sexologia' ? '#a855f7' : '#5b5ef4' }}>
-                        {c.course === 'psicanalise' ? 'Psicanalista' : c.course === 'sexologia' ? 'Sexólogo(a)' : 'TCC'}
+                        {c.course === 'psicanalise' ? 'Psicanalista' : c.course === 'sexologia' ? 'Sexólogo(a)' : 'TC'}
                       </span>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <code className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-md">

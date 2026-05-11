@@ -93,8 +93,8 @@ const CURRENT = [
 
 const COURSES = [
 {
-  title: 'Terapeuta TCC',
-  subtitle: 'Curso Profissionalizante na Formação de Terapeuta em Abordagem TCC',
+  title: 'Terapeuta TC',
+  subtitle: 'Curso Profissionalizante na Formação de Terapeuta em Terapia Comportamental',
   price: 'R$ 250',
   period: '/mês · 4 meses',
   tag: 'Mais Vendido',
@@ -105,7 +105,7 @@ const COURSES = [
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/fa5959e53_generated_image.png',
   ],
   highlights: [
-    'Técnicas cognitivo-comportamentais aplicadas',
+    'Técnicas de Terapia Comportamental aplicadas',
     'Prática clínica desde as primeiras semanas',
     'Credenciamento internacional como terapeuta',
     'Plataforma centralizada de conteúdos',
@@ -427,7 +427,7 @@ ${transcript}`);
                 <p className="text-[#5b5ef4] text-xs font-bold mt-2">— William Ribeiro</p>
               </blockquote>
               <p className="text-white/60 leading-relaxed mb-4 text-sm">
-                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-white">técnica da TCC</strong>, a <strong className="text-white">profundidade da psicanálise</strong> e a <strong className="text-white">complexidade da sexualidade humana</strong> em um método direto e sem rodeios.
+                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-white">Terapia Comportamental</strong>, a <strong className="text-white">profundidade da psicanálise</strong> e a <strong className="text-white">complexidade da sexualidade humana</strong> em um método direto e sem rodeios.
               </p>
               <p className="text-white/60 leading-relaxed mb-4 text-sm">
                 Diferente de cursos gravados e solitários, estarei com você em tempo real, guiando sua evolução técnica enquanto você interage com colegas e se conecta à comunidade profissional do grupo Sinapse Coletiva. O nosso compromisso é que você experimente a vivência do consultório ainda durante o curso, saindo preparado para atender com ética, segurança e a dignidade que cada paciente merece.

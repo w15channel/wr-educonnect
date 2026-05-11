@@ -173,7 +173,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              A excelência na terapia nasce da vivência. Nossa política garante que o aluno tenha contato com <strong className="text-white">simulações e práticas de consultório</strong> ainda durante o período de formação. Essas atividades são conduzidas sob rigorosos critérios éticos, preparando o futuro terapeuta para lidar com a subjetividade humana em áreas como <strong className="text-white">TCC, Psicanálise e Sexualidade Humana</strong> com segurança e profundidade.
+              A excelência na terapia nasce da vivência. Nossa política garante que o aluno tenha contato com <strong className="text-white">simulações e práticas de consultório</strong> ainda durante o período de formação. Essas atividades são conduzidas sob rigorosos critérios éticos, preparando o futuro terapeuta para lidar com a subjetividade humana em áreas como <strong className="text-white">Terapia Comportamental, Psicanálise e Sexualidade Humana</strong> com segurança e profundidade.
             </p>
           </div>
         </div>
