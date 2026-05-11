@@ -66,7 +66,7 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
           <Button
             size="sm"
             className="h-8 text-xs px-3"
-            onClick={() => onSave({ category, ref_id: refId, ref_title: refTitle, score: roundScore(String(score || 0).replace(',', '.')), max_score: roundScore(maxScore), notes })}
+            onClick={() => onSave({ category, ref_id: refId, ref_title: refTitle || 'Item sem título', score: roundScore(String(score || 0).replace(',', '.')), max_score: roundScore(maxScore), notes })}
             disabled={saving}
           >
             {item?.verified ? 'Atualizar' : 'Verificar'}
