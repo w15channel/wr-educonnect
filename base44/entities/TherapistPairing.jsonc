@@ -69,30 +69,51 @@
     "read": {
       "$or": [
         {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
           "data.therapist_email": "{{user.email}}"
         },
         {
           "data.patient_email": "{{user.email}}"
         },
         {
-          "user_condition": {
-            "role": "admin"
-          }
+          "created_by": "{{user.email}}"
         }
       ]
     },
     "update": {
       "$or": [
         {
-          "data.therapist_email": "{{user.email}}"
-        },
-        {
-          "data.patient_email": "{{user.email}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "$and": [
+            {
+              "data.therapist_email": "{{user.email}}"
+            },
+            {
+              "data.therapist_submitted": {
+                "$ne": true
+              }
+            }
+          ]
+        },
+        {
+          "$and": [
+            {
+              "data.patient_email": "{{user.email}}"
+            },
+            {
+              "data.patient_submitted": {
+                "$ne": true
+              }
+            }
+          ]
         }
       ]
     },
