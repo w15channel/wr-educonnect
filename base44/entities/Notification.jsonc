@@ -46,54 +46,5 @@
     "sender_email",
     "message"
   ],
-  "rls": {
-    "create": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.sender_email": "{{user.email}}"
-        }
-      ]
-    },
-    "read": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.recipient_email": "{{user.email}}"
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.recipient_email": "{{user.email}}"
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.recipient_email": "{{user.email}}"
-        }
-      ]
-    }
-  }
+  "rls": {}
 }
