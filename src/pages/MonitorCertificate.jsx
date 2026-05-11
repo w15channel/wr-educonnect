@@ -22,16 +22,31 @@ export default function MonitorCertificate() {
 
   const certStudent = monitorHistory.find((item) => item.id === id);
 
-  const handleDownload = async () => {
+  const getCertificateCanvas = async () => {
     if (!certRef.current || !certStudent) return;
-    const canvas = await html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff' });
+    return html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff' });
+  };
+
+  const handleDownloadPDF = async () => {
+    const canvas = await getCertificateCanvas();
+    if (!canvas) return;
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
     pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
     pdf.save(`certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.pdf`);
-    toast.success('Certificado baixado. Escolha onde salvar no seu dispositivo quando o navegador solicitar.');
+    toast.success('Certificado em PDF baixado com sucesso.');
+  };
+
+  const handleDownloadPNG = async () => {
+    const canvas = await getCertificateCanvas();
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.png`;
+    link.click();
+    toast.success('Certificado em PNG baixado com sucesso.');
   };
 
   if (isLoading) {
@@ -54,19 +69,20 @@ export default function MonitorCertificate() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2"><Crown size={22} className="text-yellow-500" /> Certificado de Monitor</h2>
-          <p className="text-sm text-muted-foreground">Baixe o PDF e escolha onde salvar no seu dispositivo.</p>
+          <p className="text-sm text-muted-foreground">Baixe em PDF ou PNG e escolha onde salvar no seu dispositivo.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => navigate(-1)} className="gap-2"><ArrowLeft size={14} /> Voltar</Button>
-          <Button onClick={handleDownload} className="gap-2"><Download size={15} /> Baixar PDF</Button>
+          <Button onClick={handleDownloadPDF} className="gap-2"><Download size={15} /> Baixar PDF</Button>
+          <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2"><Download size={15} /> Baixar PNG</Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-secondary/20 p-3">
+      <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
         <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 28 }}>
             <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png" alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
-            <p style={{ fontSize: 12, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>WR — Instituto de Desenvolvimento Humano</p>
+            <p style={{ fontSize: 12, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>WR-EDU Instituto de Desenvolvimento Humano</p>
             <div style={{ width: 68 }} />
           </div>
           <p style={{ fontSize: 12, letterSpacing: 5, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 10px' }}>Certificado de Reconhecimento Acadêmico</p>
@@ -84,13 +100,14 @@ export default function MonitorCertificate() {
               <div style={{ fontFamily: 'Georgia, serif', fontSize: 26, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 2, letterSpacing: 1 }}>W.Ribeiro</div>
               <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 8 }}>
                 <p style={{ fontSize: 11, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>DIREÇÃO GERAL</p>
-                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>WR — Instituto de Desenvolvimento Humano</p>
+                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>WR-EDU Instituto de Desenvolvimento Humano</p>
+                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>CNPJ: 62.213.790/001-40</p>
               </div>
             </div>
           </div>
           <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 34, paddingTop: 14 }}>
             <p style={{ fontSize: 10, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-              Documento emitido digitalmente pela plataforma WR-EDU · {format(new Date(), 'yyyy')}
+              Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/001-40 · {format(new Date(), 'yyyy')}
             </p>
           </div>
         </div>
