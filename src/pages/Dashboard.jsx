@@ -62,6 +62,8 @@ export default function Dashboard() {
   const [importingPoints, setImportingPoints] = React.useState(false);
   const [draggedEmail, setDraggedEmail] = React.useState(null);
   const [customRanking, setCustomRanking] = React.useState([]);
+  const [scoreDrafts, setScoreDrafts] = React.useState({});
+  const [manualScoreEmails, setManualScoreEmails] = React.useState(new Set());
 
 
   useEffect(() => {
@@ -69,6 +71,27 @@ export default function Dashboard() {
       localStorage.setItem('wr_lobby_music_enabled', 'off');
     }
   }, []);
+
+  const getAssignedPoints = React.useCallback((email, fallback = 0) => {
+    if (!manualScoreEmails.has(email)) return roundScore(fallback || 0);
+    const draft = scoreDrafts[email];
+    const numeric = Number(String(draft ?? '').replace(',', '.'));
+    return Number.isFinite(numeric) ? roundScore(numeric) : roundScore(fallback || 0);
+  }, [manualScoreEmails, scoreDrafts]);
+
+  const toggleManualScoreEmail = (email, suggestedPoints) => {
+    setManualScoreEmails((prev) => {
+      const next = new Set(prev);
+      if (next.has(email)) next.delete(email);
+      else next.add(email);
+      return next;
+    });
+    setScoreDrafts((prev) => ({ ...prev, [email]: prev[email] ?? formatScore(suggestedPoints || 0) }));
+  };
+
+  const handleScoreDraftChange = (email, value) => {
+    setScoreDrafts((prev) => ({ ...prev, [email]: value }));
+  };
 
   const toggleMonitorEmail = (email) => {
     setSelectedMonitorEmails((prev) => {
@@ -96,14 +119,24 @@ export default function Dashboard() {
     for (const m of currentCycle) await base44.entities.MonitorHistory.delete(m.id);
     const emailsArr = [...selectedMonitorEmails];
     for (let i = 0; i < emailsArr.length; i++) {
-      const code = accessCodes.find((c) => c.student_email === emailsArr[i]);
-      await base44.entities.MonitorHistory.create({
-        student_email: emailsArr[i],
-        student_name: code?.profile_name || code?.student_name || emailsArr[i],
+      const email = emailsArr[i];
+      const code = accessCodes.find((c) => c.student_email === email);
+      const studentName = code?.profile_name || code?.student_name || email;
+      const monitorRecord = await base44.entities.MonitorHistory.create({
+        student_email: email,
+        student_name: studentName,
         period_start: periodStart,
         period_end: periodEnd,
         rank_position: i + 1,
         course: userCourse || 'tcc'
+      });
+      await base44.entities.Announcement.create({
+        title: '🏅 Você é Monitor(a) da Semana!',
+        content: `${studentName}, parabéns! Você foi selecionado(a) como ${i + 1}º monitor(a) da semana. Abra o link do certificado para baixar o PDF e escolher onde salvar no seu dispositivo.`,
+        type: 'info',
+        course: userCourse || 'tcc',
+        recipient_email: email,
+        certificate_monitor_id: monitorRecord.id,
       });
     }
     await queryClient.invalidateQueries();
@@ -278,6 +311,13 @@ export default function Dashboard() {
   const ranking = rankingFull.slice(0, 10);
   React.useEffect(() => {
     setCustomRanking(ranking);
+    setScoreDrafts((prev) => {
+      const next = { ...prev };
+      ranking.forEach((r) => {
+        if (next[r.email] === undefined) next[r.email] = formatScore(r.total || 0);
+      });
+      return next;
+    });
   }, [ranking.map((r) => r.email).join('|')]);
 
   const saveDashboardOrderMutation = useMutation({
@@ -285,16 +325,18 @@ export default function Dashboard() {
       for (const [index, item] of customRanking.entries()) {
         const profile = publishedScores.find((p) => p.student_email === item.email && (!p.dashboard_course || p.dashboard_course === userCourse));
         const code = accessCodes.find((c) => c.student_email === item.email);
+        const assignedPoints = getAssignedPoints(item.email, item.total);
         const payload = {
           student_email: item.email,
           full_name: code?.profile_name || code?.student_name || item.email,
-          points: roundScore(item.total || 0),
-          pontuacao_total: roundScore(item.total || 0),
+          points: assignedPoints,
+          pontuacao_total: assignedPoints,
           dashboard_rank: index + 1,
           dashboard_course: userCourse,
         };
         if (profile) await base44.entities.StudentProfile.update(profile.id, payload);
         else await base44.entities.StudentProfile.create(payload);
+        if (code?.id) await base44.entities.AccessCode.update(code.id, { pontuacao_total: assignedPoints });
       }
     },
     onSuccess: async () => {
@@ -392,8 +434,8 @@ export default function Dashboard() {
           value={isTeacher ? studentCount : formatScore(totalPoints)}
           icon={isTeacher ? Users : Star}
           iconBg={isTeacher ? 'bg-emerald-500' : 'bg-yellow-500'}
-          to={isTeacher ? '/students' : '/ranking'}
-          subtitle={isTeacher ? 'Ver alunos' : 'Ver ranking'} />
+          to={isTeacher ? '/students' : '/dashboard'}
+          subtitle={isTeacher ? 'Ver alunos' : 'Pontuação publicada pelo administrador'} />
         
         <StatCard
           title={isTeacher ? 'Total de Aulas' : 'Aulas Assistidas'}
@@ -453,9 +495,7 @@ export default function Dashboard() {
           </button>
 
           {/* Ranking */}
-          <button
-          onClick={() => navigate(scoped('/ranking'))}
-          className="bg-card rounded-2xl border border-border p-5 text-left hover:border-primary/30 hover:shadow-lg transition-all group">
+          <div className="bg-card rounded-2xl border border-border p-5 text-left">
           
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -464,14 +504,13 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-foreground">Ranking Geral</h3>
-                  <p className="text-xs text-muted-foreground">Pontuação publicada no ScoreControl</p>
+                  <p className="text-xs text-muted-foreground">Pontuação publicada manualmente pelo administrador</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 {myRank > 0 &&
               <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full">#{myRank}</span>
               }
-                <ArrowRight size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
             {ranking.length === 0 ?
@@ -512,7 +551,7 @@ export default function Dashboard() {
             })}
               </div>
           }
-          </button>
+          </div>
         </div>
       }
 
@@ -525,8 +564,8 @@ export default function Dashboard() {
                 <Trophy size={16} className="text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-foreground">Controle de Pontuação</h3>
-                <p className="text-xs text-muted-foreground">Réplica da sequência publicada no ScoreControl</p>
+                <h3 className="font-bold text-sm text-foreground">Ranking Geral Manual</h3>
+                <p className="text-xs text-muted-foreground">Publique pontos como um post e escolha os 3 monitores no mesmo campo</p>
               </div>
             </div>
             {!monitorSelectMode ?
@@ -549,14 +588,14 @@ export default function Dashboard() {
               disabled={selectedMonitorEmails.size === 0 || savingMonitors}
               className="flex items-center gap-1.5 text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity">
               
-                  {savingMonitors ? 'Salvando...' : 'Salvar Monitores'}
+                  {savingMonitors ? 'Publicando...' : 'Publicar Monitores'}
                 </button>
               </div>
           }
           </div>
           {monitorSelectMode &&
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800 mb-3">
-              Selecione até 3 alunos para serem os Monitores do período atual.
+Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada monitor receberá um aviso individual com link para baixar o certificado.
             </div>
         }
           {customRanking.length === 0 ?
@@ -615,7 +654,25 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-xl">
                       <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-xs font-black text-yellow-700">{formatScore(r.total)}</span>
+                      <span className="text-xs font-black text-yellow-700">{formatScore(getAssignedPoints(r.email, r.total))}</span>
+                    </div>
+                    <div className="w-full space-y-1.5 mt-1">
+                      <div className="text-[10px] text-muted-foreground">Sugestão: {formatScore(r.total)} pts</div>
+                      <input
+                        type="text"
+                        value={manualScoreEmails.has(r.email) ? (scoreDrafts[r.email] ?? formatScore(r.total)) : formatScore(r.total)}
+                        onChange={(e) => handleScoreDraftChange(r.email, e.target.value)}
+                        disabled={!manualScoreEmails.has(r.email)}
+                        className="w-full h-8 rounded-lg border border-border bg-background px-2 text-center text-xs font-bold disabled:bg-secondary/60"
+                        aria-label={`Pontuação de ${displayName}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleManualScoreEmail(r.email, r.total); }}
+                        className="w-full text-[10px] font-bold text-primary hover:underline"
+                      >
+                        {manualScoreEmails.has(r.email) ? 'Usar sugestão automática' : 'Pontuar manualmente'}
+                      </button>
                     </div>
               </div>);
 
@@ -624,7 +681,7 @@ export default function Dashboard() {
         }
           <div className="mt-3 flex justify-end">
             <Button size="sm" variant="outline" onClick={() => saveDashboardOrderMutation.mutate()} disabled={saveDashboardOrderMutation.isPending || customRanking.length === 0}>
-              {saveDashboardOrderMutation.isPending ? 'Salvando ordem...' : 'Salvar sequência do ranking'}
+              {saveDashboardOrderMutation.isPending ? 'Publicando ranking...' : 'Publicar ranking manual'}
             </Button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -46,6 +47,7 @@ const TYPE_CONFIG = {
 
 export default function Announcements() {
   const { user: session } = useOutletContext();
+  const location = useLocation();
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -57,13 +59,19 @@ export default function Announcements() {
   });
   const { course: routeCourse } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const prefix = pathParts[0] && pathParts[1] ? `/${pathParts[0]}/${pathParts[1]}` : '';
 
   const { data: allAnnouncements = [] } = useQuery({
     queryKey: ['announcements-all'],
     queryFn: () => base44.entities.Announcement.list('-created_date', 100),
   });
 
-  const announcements = allAnnouncements.filter(a => a.course === activeCourse || (!a.course && activeCourse === 'tcc'));
+  const announcements = allAnnouncements.filter(a => {
+    const sameCourse = a.course === activeCourse || (!a.course && activeCourse === 'tcc');
+    const allowedRecipient = isTeacher || !a.recipient_email || a.recipient_email === session?.email;
+    return sameCourse && allowedRecipient;
+  });
   const { data: testimonialQueue = [] } = useQuery({
     queryKey: ['testimonial-queue'],
     queryFn: () => base44.entities.Testimonial.filter({ approved: false }, '-created_date', 100),
@@ -205,6 +213,14 @@ export default function Announcements() {
                         </span>
                       </div>
                       <p className="text-sm text-foreground/80 leading-relaxed">{a.content}</p>
+                      {a.certificate_monitor_id && (
+                        <Link
+                          to={`${prefix}/monitor-certificate/${a.certificate_monitor_id}`}
+                          className="inline-flex items-center gap-1.5 mt-3 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1.5 hover:bg-primary/15"
+                        >
+                          Baixar certificado de monitor
+                        </Link>
+                      )}
                     </div>
                   </div>
                   {isTeacher && (
