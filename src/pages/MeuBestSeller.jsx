@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  BookOpen, Plus, Trash2, ChevronLeft, Download, Search, Wand2,
+  BookOpen, Plus, Trash2, ChevronLeft, Download, Wand2,
   Loader2, Image, AlignLeft, FileText, BookMarked, Lightbulb, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

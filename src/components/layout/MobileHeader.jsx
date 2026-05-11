@@ -1,6 +1,5 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import NotificationsBell from '@/components/dashboard/NotificationsBell';
 

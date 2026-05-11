@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { BookOpen, MessageSquare, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 export default function LessonCommentsPanel() {
   const [expandedLesson, setExpandedLesson] = useState(null);

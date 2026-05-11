@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Video, MessageSquare, FileText, User, Trophy, Heart, ChevronRight, ChevronLeft, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const STEPS = [

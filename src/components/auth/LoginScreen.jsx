@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap } from 'lucide-react';
+import { Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';

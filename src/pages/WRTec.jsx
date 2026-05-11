@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Code2, Smartphone, Globe, Zap, Shield, BarChart3, ArrowRight,
+import { Smartphone, Globe, BarChart3, ArrowRight,
   CheckCircle, Star, Mail, MessageSquare, ChevronRight,
   Layers, Database, Cloud, Cpu, TrendingUp,
   ExternalLink, Menu, X, Play, Sparkles, Palette

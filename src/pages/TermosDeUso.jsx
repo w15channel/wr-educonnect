@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, CheckCircle, AlertTriangle, ExternalLink, ArrowLeft, Scale, FileText, Lock, Users, RefreshCw, Ban, DollarSign, BookOpen } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, ArrowLeft, FileText, Lock, Users, RefreshCw, Ban, DollarSign, BookOpen } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
