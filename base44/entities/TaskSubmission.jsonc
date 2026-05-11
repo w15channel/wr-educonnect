@@ -52,5 +52,6 @@
   "required": [
     "task_id",
     "student_email"
-  ]
+  ],
+  "rls": {}
 }
