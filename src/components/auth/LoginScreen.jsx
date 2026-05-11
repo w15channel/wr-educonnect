@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
-import { setSession, hashPassword, nowBRT } from '@/lib/customAuth';
+import { setSession } from '@/lib/customAuth';
 import SetupAdminModal from './SetupAdminModal';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
@@ -52,34 +52,22 @@ export default function LoginScreen({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const trimmed = code.trim().toUpperCase();
-    const results = await base44.entities.AccessCode.filter({ code: trimmed });
-    const record = results.find((item) => item.is_active !== false);
-    if (!record) {
-      setError('Código inválido ou desativado.');
-      setLoading(false);
-      return;
+    const trimmed = code.trim().toUpperCase().replace(/\s+/g, '');
+    try {
+      const response = await base44.functions.invoke('siteLogin', { mode: 'student', code: trimmed });
+      if (rememberCode) {
+        localStorage.setItem('wr_remember_student_code', 'yes');
+        localStorage.setItem('wr_saved_student_code', trimmed);
+      } else {
+        localStorage.removeItem('wr_saved_student_code');
+        localStorage.setItem('wr_remember_student_code', 'no');
+      }
+      localStorage.setItem('wr_remember_student_code', rememberCode ? 'yes' : 'no');
+      setSession(response.data.session, { remember: rememberCode });
+      onLogin();
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Código inválido ou desativado.');
     }
-    if (rememberCode) {
-      localStorage.setItem('wr_remember_student_code', 'yes');
-      localStorage.setItem('wr_saved_student_code', trimmed);
-    } else {
-      localStorage.removeItem('wr_saved_student_code');
-      localStorage.setItem('wr_remember_student_code', 'no');
-    }
-    await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
-    localStorage.setItem('wr_remember_student_code', rememberCode ? 'yes' : 'no');
-    setSession({
-      role: 'student',
-      codeId: record.id,
-      code: trimmed,
-      name: record.profile_name || record.student_name || 'Aluno',
-      email: record.student_email || '',
-      bio: record.profile_bio || '',
-      avatarColor: record.profile_avatar_color || '#5b5ef4',
-      photoUrl: record.profile_photo_url || '',
-    }, { remember: rememberCode });
-    onLogin();
     setLoading(false);
   };
 
@@ -87,20 +75,13 @@ export default function LoginScreen({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const normalizedEmail = adminEmail.trim().toLowerCase();
-    const passwordHash = hashPassword(adminPassword);
-    const creds = await base44.entities.AdminCredential.filter({
-      email: normalizedEmail,
-      password_hash: passwordHash,
-    });
-    if (creds.length === 0) {
-      setError('Email ou senha incorretos.');
-      setLoading(false);
-      return;
+    try {
+      const response = await base44.functions.invoke('siteLogin', { mode: 'admin', email: adminEmail, password: adminPassword });
+      setSession(response.data.session);
+      onLogin();
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Email ou senha incorretos.');
     }
-    const cred = creds[0];
-    setSession({ role: 'admin', name: 'Professor', email: cred.email });
-    onLogin();
     setLoading(false);
   };
 

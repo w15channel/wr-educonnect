@@ -5,7 +5,7 @@ import {
   ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle, MessageCircle, Send } from
 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
+import { setSession } from '@/lib/customAuth';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
@@ -222,27 +222,13 @@ export default function LandingPage({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const trimmed = code.trim().toUpperCase();
-    const results = await base44.entities.AccessCode.filter({ code: trimmed, is_active: true });
-    if (results.length === 0) {
-      setError('Código inválido ou desativado.');
-      setLoading(false);
-      return;
+    try {
+      const response = await base44.functions.invoke('siteLogin', { mode: 'student', code });
+      setSession(response.data.session);
+      onLogin('lobby');
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Não foi possível entrar. Verifique o código.');
     }
-    const record = results[0];
-    await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
-    setSession({
-      role: 'student',
-      codeId: record.id,
-      code: trimmed,
-      name: record.profile_name || record.student_name || 'Aluno',
-      email: record.student_email || '',
-      bio: record.profile_bio || '',
-      avatarColor: record.profile_avatar_color || '#5b5ef4',
-      photoUrl: record.profile_photo_url || '',
-      course: record.course || 'tcc',
-    });
-    onLogin('lobby');
     setLoading(false);
   };
 
@@ -250,20 +236,13 @@ export default function LandingPage({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const creds = await base44.entities.AdminCredential.list();
-    if (creds.length === 0) {
-      setError('Login admin não configurado.');
-      setLoading(false);
-      return;
+    try {
+      const response = await base44.functions.invoke('siteLogin', { mode: 'admin', email: adminEmail, password: adminPassword });
+      setSession(response.data.session);
+      onLogin('lobby');
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Email ou senha incorretos.');
     }
-    const cred = creds[0];
-    if (adminEmail.trim() !== cred.email || !verifyPassword(adminPassword, cred.password_hash)) {
-      setError('Email ou senha incorretos.');
-      setLoading(false);
-      return;
-    }
-    setSession({ role: 'admin', name: 'Professor', email: cred.email, course: null });
-    onLogin('lobby');
     setLoading(false);
   };
 
