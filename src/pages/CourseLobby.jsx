@@ -6,6 +6,9 @@ import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles, Mess
 import ServiceTermsModal from '@/components/onboarding/ServiceTermsModal';
 import { base44 } from '@/api/base44Client';
 
+const MAX_RESERVATION_AI_QUESTIONS = 5;
+const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
+
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
 const LOBBY_MUSIC_KEY = 'wr_lobby_music_enabled';
@@ -182,13 +185,20 @@ export default function CourseLobby() {
   };
 
   const sendLeadMessage = async () => {
-    if (!leadInput.trim() || leadLoading) return;
+    if (!leadInput.trim() || leadLoading || leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS) return;
     const userMessage = { role: 'user', content: leadInput.trim() };
     const nextMessages = [...leadMessages, userMessage];
+    const answeredQuestions = nextMessages.filter(m => m.role === 'user').length;
     setLeadMessages(nextMessages);
     setLeadInput('');
+
+    if (answeredQuestions >= MAX_RESERVATION_AI_QUESTIONS) {
+      setLeadMessages(prev => [...prev, { role: 'assistant', content: RESERVATION_FINAL_MESSAGE }]);
+      return;
+    }
+
     setLeadLoading(true);
-    const prompt = `Você é a IA de pré-reserva da WR-EDU. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, objetivo profissional e melhor horário de contato. Faça uma pergunta por vez e confirme quando puder enviar ao WhatsApp oficial.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
+    const prompt = `Você é a IA de pré-reserva da WR-EDU. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, objetivo profissional e melhor horário de contato. Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez. Quando tiver os dados principais, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre pedindo para a pessoa selecionar a opção de enviar ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
     const response = await base44.integrations.Core.InvokeLLM({ prompt });
     setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]);
     setLeadLoading(false);
@@ -333,8 +343,8 @@ export default function CourseLobby() {
             </div>
             <div className="p-4 border-t border-white/10 space-y-3">
               <div className="flex gap-2">
-                <input value={leadInput} onChange={(e) => setLeadInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendLeadMessage(); }} placeholder="Responda aqui..." className="flex-1 h-11 rounded-xl bg-white/6 border border-white/10 px-3 text-sm outline-none focus:border-emerald-400/60" />
-                <button onClick={sendLeadMessage} disabled={!leadInput.trim() || leadLoading} className="h-11 w-11 rounded-xl bg-emerald-500 flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
+                <input value={leadInput} onChange={(e) => setLeadInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendLeadMessage(); }} placeholder={leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS ? 'Questionário encerrado. Envie pelo WhatsApp.' : 'Responda aqui...'} className="flex-1 h-11 rounded-xl bg-white/6 border border-white/10 px-3 text-sm outline-none focus:border-emerald-400/60" />
+                <button onClick={sendLeadMessage} disabled={!leadInput.trim() || leadLoading || leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS} className="h-11 w-11 rounded-xl bg-emerald-500 flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
               </div>
               <button onClick={sendLead} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold">Enviar para WhatsApp oficial</button>
             </div>

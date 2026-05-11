@@ -7,6 +7,9 @@ import {
 import { base44 } from '@/api/base44Client';
 import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
 
+const MAX_RESERVATION_AI_QUESTIONS = 5;
+const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
+
 const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
 const HERO_IMAGES = [
@@ -278,16 +281,23 @@ export default function LandingPage({ onLogin }) {
   };
 
   const sendReserveChatMessage = async () => {
-    if (!leadInput.trim() || leadLoading) return;
+    if (!leadInput.trim() || leadLoading || leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS) return;
     const userMessage = { role: 'user', content: leadInput.trim() };
     const nextMessages = [...leadMessages, userMessage];
+    const answeredQuestions = nextMessages.filter(m => m.role === 'user').length;
     setLeadMessages(nextMessages);
     setLeadInput('');
+
+    if (answeredQuestions >= MAX_RESERVATION_AI_QUESTIONS) {
+      setLeadMessages(prev => [...prev, { role: 'assistant', content: RESERVATION_FINAL_MESSAGE }]);
+      return;
+    }
+
     setLeadLoading(true);
 
     const prompt = `Você é a IA de pré-reserva da WR-EDU. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.
-Faça uma pergunta por vez até coletar: nome completo, WhatsApp, curso de interesse, objetivo profissional e melhor horário de contato.
-Quando os dados principais já estiverem presentes, confirme que a pessoa pode enviar a reserva ao WhatsApp oficial. Seja acolhedor, objetivo e use português do Brasil.
+Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez, até coletar: nome completo, WhatsApp, curso de interesse, objetivo profissional e melhor horário de contato.
+Quando os dados principais já estiverem presentes, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre o diálogo pedindo para a pessoa selecionar a opção de enviar a reserva ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598. Seja acolhedor, objetivo e use português do Brasil.
 
 Histórico:
 ${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}
@@ -799,10 +809,10 @@ ${transcript}`);
                   value={leadInput}
                   onChange={(e) => setLeadInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') sendReserveChatMessage(); }}
-                  placeholder="Responda aqui..."
+                  placeholder={leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS ? 'Questionário encerrado. Envie pelo WhatsApp.' : 'Responda aqui...'}
                   className="flex-1 bg-white/6 border border-white/10 text-white placeholder:text-white/25 h-11 rounded-xl px-3 text-sm focus:outline-none focus:border-[#1db89e]/60"
                 />
-                <button onClick={sendReserveChatMessage} disabled={!leadInput.trim() || leadLoading} className="h-11 w-11 rounded-xl bg-[#1db89e] text-white flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
+                <button onClick={sendReserveChatMessage} disabled={!leadInput.trim() || leadLoading || leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS} className="h-11 w-11 rounded-xl bg-[#1db89e] text-white flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
               </div>
               <button onClick={sendReserveToWhatsApp} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold text-sm">Enviar reserva para WhatsApp oficial</button>
             </div>

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
-import { Trophy, ChevronLeft, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, RefreshCw } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -721,22 +721,6 @@ export default function ScoreControl() {
             <p className="text-xs text-orange-800 font-semibold">{pendingCount} atividade(s) aguardando verificação e pontuação</p>
           </div>
         )}
-        {isTeacher && <div className="mt-3 flex flex-wrap justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 text-xs border-primary/30 text-primary hover:bg-primary/10"
-            onClick={() => sendRankingToDashboardMutation.mutate()}
-            disabled={sendRankingToDashboardMutation.isPending}
-          >
-            <Trophy size={13} />
-            {sendRankingToDashboardMutation.isPending ? 'Enviando...' : 'Publicar classificação na Dashboard'}
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleRetro} disabled={retroLoading}>
-            <RefreshCw size={13} className={retroLoading ? 'animate-spin' : ''} />
-            {retroLoading ? 'Recalculando...' : 'Recalcular ranking e feedbacks'}
-          </Button>
-        </div>}
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2 items-center">

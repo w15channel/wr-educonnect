@@ -11,6 +11,27 @@ import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+
+const extractSequenceNumber = (item = {}) => {
+  const direct = Number(item.order ?? item.sequence ?? item.lesson_number ?? item.task_number);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const title = item.title || item.name || '';
+  const match = title.match(/(?:aula|tarefa|prova)\s*(\d{1,2})\b|\b(\d{1,2})\b/i);
+  const parsed = Number(match?.[1] || match?.[2]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const sortByNumericSequence = (items = []) => [...items].sort((a, b) => {
+  const aNumber = extractSequenceNumber(a);
+  const bNumber = extractSequenceNumber(b);
+  if (aNumber !== null && bNumber !== null && aNumber !== bNumber) return aNumber - bNumber;
+  if (aNumber !== null && bNumber === null) return -1;
+  if (aNumber === null && bNumber !== null) return 1;
+  return (a.created_date || '').localeCompare(b.created_date || '');
+});
+
+const getLastThreePendingBySequence = (items = []) => sortByNumericSequence(items).slice(-3);
+
 function useScopedPrefix() {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
@@ -692,8 +713,10 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
         const today = new Date();
         const todayYmd = format(today, 'yyyy-MM-dd');
         const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
-        const unwatchedLessons = lessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched));
-        const pendingTasksList = tasks.filter((t) => t.type === 'upload' && !submissions.find((s) => s.task_id === t.id));
+        const unwatchedLessons = sortByNumericSequence(lessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched)));
+        const pendingTasksList = sortByNumericSequence(tasks.filter((t) => t.type === 'upload' && !submissions.find((s) => s.task_id === t.id)));
+        const visiblePendingLessons = getLastThreePendingBySequence(unwatchedLessons);
+        const visiblePendingTasks = getLastThreePendingBySequence(pendingTasksList);
         const pendingQuizzes = tasks.filter((t) => t.type === 'quiz' && !submissions.find((s) => s.task_id === t.id));
         const therapistPending = therapistPairings.filter((p) => {
           const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
@@ -740,29 +763,29 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
                   +{therapistPending.length - 3} pendências de terapeuta → Ver todas
                 </button>
               }
-              {unwatchedLessons.slice(0, 3).map((l) =>
+              {visiblePendingLessons.map((l) =>
               <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
                   <Circle size={13} className="text-purple-400 shrink-0" />
                   <BookOpen size={13} className="text-purple-600 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-purple-700 truncate">{l.title}</p>
-                    <p className="text-[10px] text-purple-500">Aula não assistida</p>
+                    <p className="text-xs font-bold text-purple-700 truncate">{extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}</p>
+                    <p className="text-[10px] text-purple-500">Aula não assistida · últimas 3 pendências em ordem numérica</p>
                   </div>
                   <ArrowRight size={12} className="text-purple-400 shrink-0" />
                 </button>
               )}
               {unwatchedLessons.length > 3 &&
               <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
-                  +{unwatchedLessons.length - 3} aulas não assistidas → Ver todas
+                  +{unwatchedLessons.length - visiblePendingLessons.length} aulas não assistidas → Ver todas
                 </button>
               }
-              {pendingTasksList.slice(0, 3).map((t) =>
+              {visiblePendingTasks.map((t) =>
               <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
                   <ClipboardList size={13} className="text-orange-500 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-orange-700 truncate">{t.title}</p>
+                    <p className="text-xs font-bold text-orange-700 truncate">{extractSequenceNumber(t) ? `Tarefa ${extractSequenceNumber(t)} · ` : ''}{t.title}</p>
                     <p className="text-[10px] text-orange-500">
                       Tarefa pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
                     </p>
@@ -772,7 +795,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
               )}
               {pendingTasksList.length > 3 &&
               <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
-                  +{pendingTasksList.length - 3} tarefas pendentes → Ver todas
+                  +{pendingTasksList.length - visiblePendingTasks.length} tarefas pendentes → Ver todas
                 </button>
               }
               {pendingQuizzes.slice(0, 3).map((t) =>
