@@ -187,30 +187,30 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
           <h2 className="text-xl font-bold text-foreground truncate">{displayName}</h2>
           <p className="text-xs text-muted-foreground">{email}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl px-4 py-2 text-center shrink-0 space-y-2 hidden">
-          {isTeacher ?
-          <div>
-              <p className="text-lg font-black text-primary">{formatScore(totalScore)}</p>
-              <p className="text-[10px] text-muted-foreground">pts totais</p>
-            </div> :
+        
 
-          <div>
-              <p className="text-lg font-black text-primary">{formatScore(totalScore)}</p>
-              <p className="text-[10px] text-muted-foreground">pts atribuídos a você</p>
-            </div>
-          }
-          {isTeacher &&
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 px-2 text-[10px] whitespace-normal leading-tight"
-            onClick={() => sendTotalMutation.mutate()}
-            disabled={sendTotalMutation.isPending}>
-            
-              {sendTotalMutation.isPending ? 'Enviando...' : 'Enviar para controle e Dashboard'}
-            </Button>
-          }
-        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
       </div>
 
       <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-5 overflow-x-auto">
