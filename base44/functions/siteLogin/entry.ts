@@ -21,7 +21,6 @@ function nowBRT() {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    await base44.auth.me().catch(() => null);
     const payload = await req.json().catch(() => ({}));
     const mode = payload?.mode;
 
