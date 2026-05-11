@@ -48,12 +48,14 @@
   ],
   "rls": {
     "create": {
-      "$and": [
+      "$or": [
         {
           "data.sender_email": "{{user.email}}"
         },
         {
-          "data.recipient_email": "admin"
+          "user_condition": {
+            "role": "admin"
+          }
         }
       ]
     },
@@ -82,9 +84,16 @@
       ]
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.recipient_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
