@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import EmbeddedBrowser from '@/components/layout/EmbeddedBrowser';
+import { isSocialAppLink, openSocialAppOrStore } from '@/lib/mobileLinking';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '' };
@@ -34,6 +36,7 @@ export default function Lessons() {
   const [summaryDraft, setSummaryDraft] = useState({});
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFile, setUploadFile] = useState({});
+  const [compactBrowser, setCompactBrowser] = useState({ url: '', title: '' });
 
   const { course: routeCourse } = useCourseFilteredEmails();
   const userCourse = routeCourse || session?.course || 'tcc';
@@ -150,9 +153,13 @@ export default function Lessons() {
   const progressPct = orderedLessons.length > 0 ? Math.round((watchedCount / orderedLessons.length) * 100) : 0;
 
   // Abre link em nova aba do navegador (funciona em modo quiosque também)
-  const openExternal = (url) => {
+  const openExternal = (url, title = 'Link externo') => {
     if (!url) return;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (isSocialAppLink(url)) {
+      openSocialAppOrStore(url);
+      return;
+    }
+    setCompactBrowser({ url, title });
   };
 
   const getEmbedUrl = (url) => {
@@ -343,6 +350,18 @@ export default function Lessons() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!compactBrowser.url} onOpenChange={() => setCompactBrowser({ url: '', title: '' })}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+          <div className="h-[72vh] min-h-[420px]">
+            <EmbeddedBrowser
+              url={compactBrowser.url}
+              title={compactBrowser.title || 'Navegação interna'}
+              onClose={() => setCompactBrowser({ url: '', title: '' })}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? (
         <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="bg-card rounded-2xl border border-border animate-pulse h-20" />)}</div>
       ) : lessons.length === 0 ? (
@@ -510,11 +529,11 @@ export default function Lessons() {
                     {/* External content link */}
                     {lesson.lesson_type === 'content_external' && lesson.external_url && (
                       <div className="px-4 py-3 border-t border-border">
-                        <a href={lesson.external_url} target="_blank" rel="noopener noreferrer"
+                        <button onClick={() => openExternal(lesson.external_url, lesson.title || 'Material externo')}
                           className="flex items-center gap-2 text-sm text-primary bg-primary/8 border border-primary/15 px-4 py-3 rounded-xl hover:bg-primary/15 transition-colors font-semibold w-full">
                           <Globe size={15} /> Acessar Material Externo
                           <ExternalLink size={12} className="ml-auto" />
-                        </a>
+                        </button>
                       </div>
                     )}
 
@@ -530,10 +549,10 @@ export default function Lessons() {
                             const label = parts.length > 1 ? parts[0].trim() : `Pesquisa ${li + 1}`;
                             const url = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                             return (
-                              <a key={li} href={url} target="_blank" rel="noopener noreferrer"
+                              <button key={li} onClick={() => openExternal(url, label)}
                                 className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors font-medium">
                                 <Globe size={10} /> {label}
-                              </a>
+                              </button>
                             );
                           })}
                         </div>
@@ -548,10 +567,10 @@ export default function Lessons() {
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {materialLinks.map((link, li) => (
-                            <a key={li} href={link} target="_blank" rel="noopener noreferrer"
+                            <button key={li} onClick={() => openExternal(link, `Material ${li + 1}`)}
                               className="flex items-center gap-1 text-xs text-primary bg-primary/8 border border-primary/15 px-3 py-1.5 rounded-lg hover:bg-primary/15 transition-colors font-medium">
                               <Link size={11} /> Material {li + 1}
-                            </a>
+                            </button>
                           ))}
                         </div>
                       </div>
