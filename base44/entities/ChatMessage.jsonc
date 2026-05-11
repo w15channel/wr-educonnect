@@ -29,52 +29,29 @@
     "content"
   ],
   "rls": {
-    "create": {
-      "created_by": "{{user.email}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "data.session_id": {
-            "$regex": "^class_chat_"
-          }
-        },
-        {
-          "data.session_id": {
-            "$regex": "dm_((?:{{user.email}})_.*|.*_(?:{{user.email}}))$"
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": {},
+    "read": null,
     "update": {
       "$or": [
         {
-          "data.author_email": "{{user.email}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.author_email": "{{user.email}}"
         }
       ]
     },
     "delete": {
       "$or": [
         {
-          "data.author_email": "{{user.email}}"
-        },
-        {
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.author_email": "{{user.email}}"
         }
       ]
     }
