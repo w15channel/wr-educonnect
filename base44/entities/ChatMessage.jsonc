@@ -38,17 +38,35 @@
           "data.author_email": "{{user.email}}"
         },
         {
-          "data.session_id": {
-            "$regex": ".*{{user.email}}.*"
+          "user_condition": {
+            "role": "admin"
           }
         },
         {
           "data.session_id": "class_chat_{{user.course}}"
         },
         {
-          "user_condition": {
-            "role": "admin"
-          }
+          "$and": [
+            {
+              "data.session_id": {
+                "$regex": "^dm_.*"
+              }
+            },
+            {
+              "$or": [
+                {
+                  "data.session_id": {
+                    "$regex": "^dm_{{user.email}}_.*"
+                  }
+                },
+                {
+                  "data.session_id": {
+                    "$regex": ".*_{{user.email}}$"
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     },
