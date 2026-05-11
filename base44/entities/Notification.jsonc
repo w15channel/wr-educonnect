@@ -47,42 +47,44 @@
     "message"
   ],
   "rls": {
-    "create": {},
+    "create": {
+      "$and": [
+        {
+          "data.sender_email": "{{user.email}}"
+        },
+        {
+          "data.recipient_email": "admin"
+        }
+      ]
+    },
     "read": {
       "$or": [
+        {
+          "data.recipient_email": "{{user.email}}"
+        },
         {
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "data.recipient_email": "{{user.email}}"
         }
       ]
     },
     "update": {
       "$or": [
         {
+          "data.recipient_email": "{{user.email}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "data.recipient_email": "{{user.email}}"
         }
       ]
     },
     "delete": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.recipient_email": "{{user.email}}"
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
