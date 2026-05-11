@@ -187,7 +187,8 @@ export default function Tasks({ mode = 'all' }) {
     if (!detail.studentName?.trim() || !detail.className?.trim()) return '';
     return `Aluno: ${detail.studentName.trim()} | Turma: ${submissionCourseCode}`;
   };
-  const getSubmission = (taskId) => submissions.find(s => s.task_id === taskId);
+  const normalizeTitle = (value = '') => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\b(tarefa|trabalho)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const getSubmission = (taskId, taskTitle = '') => submissions.find(s => s.task_id === taskId) || submissions.find(s => normalizeTitle(s.task_title || s.comment || s.file_name || '') && normalizeTitle(taskTitle) && normalizeTitle(s.task_title || s.comment || s.file_name || '').includes(normalizeTitle(taskTitle).slice(0, 20)));
 
   const openEdit = (task) => {
     setEditingTask(task);
@@ -328,7 +329,7 @@ export default function Tasks({ mode = 'all' }) {
       ) : (
         <div className="space-y-3">
           {displayedTasks.map((task, idx) => {
-            const submission = getSubmission(task.id);
+            const submission = getSubmission(task.id, task.title);
             const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
             const status = uploadStatus[task.id];
             const sequentialNumber = idx + 1;

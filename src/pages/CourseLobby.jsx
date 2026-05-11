@@ -208,7 +208,7 @@ export default function CourseLobby() {
 
   if (isAdmin) {
     return (
-      <div className="min-h-screen bg-[#080b14] text-white">
+      <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#080b14] text-white" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="relative z-10 border-b border-white/8 px-6 py-5">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -248,7 +248,7 @@ export default function CourseLobby() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#080b14] text-white overflow-y-auto overflow-x-hidden">
+    <div className="relative h-[100dvh] bg-[#080b14] text-white overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
       {!termsAccepted && <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />}
 
       <div className="pointer-events-none absolute inset-0">
