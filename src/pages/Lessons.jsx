@@ -52,7 +52,8 @@ export default function Lessons() {
   const lessonUnlockRule = unlockRules.find(r => r.scope === 'lessons');
   const unlockedLessonCount = Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
 
-  const studentIdentifiers = [session?.email, session?.code].filter(Boolean);
+  const normalizeStudentId = (value = '') => String(value || '').trim().toLowerCase();
+  const studentIdentifiers = [session?.email, session?.code].filter(Boolean).map(normalizeStudentId);
 
   const { data: progresses = [] } = useQuery({
     queryKey: ['lesson-progress', isTeacher ? 'all' : studentIdentifiers.join('|')],
@@ -60,7 +61,7 @@ export default function Lessons() {
       const records = isTeacher
         ? await base44.entities.LessonProgress.list('-created_date', 3000)
         : await base44.entities.LessonProgress.list('-created_date', 1000);
-      return isTeacher ? records : records.filter(p => studentIdentifiers.includes(p.student_email));
+      return isTeacher ? records : records.filter(p => studentIdentifiers.includes(normalizeStudentId(p.student_email)));
     },
     enabled: isTeacher || studentIdentifiers.length > 0,
   });
@@ -151,7 +152,7 @@ export default function Lessons() {
     reader.readAsDataURL(file);
   };
 
-  const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(p.student_email));
+  const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeStudentId(p.student_email)));
   const getLessonProgressEntries = (lessonId) => progresses.filter(p => p.lesson_id === lessonId && (p.comment || p.summary || p.watched));
 
   const watchedCount = progresses.filter(p => p.watched).length;
