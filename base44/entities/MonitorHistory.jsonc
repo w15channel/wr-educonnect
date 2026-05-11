@@ -54,6 +54,9 @@
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.course": "{{user.course}}"
         }
       ]
     },
