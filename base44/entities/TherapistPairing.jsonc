@@ -84,12 +84,10 @@
     "update": {
       "$or": [
         {
-          "data.therapist_email": "{{user.email}}",
-          "therapist_submitted": false
+          "data.therapist_email": "{{user.email}}"
         },
         {
-          "data.patient_email": "{{user.email}}",
-          "patient_submitted": false
+          "data.patient_email": "{{user.email}}"
         },
         {
           "user_condition": {
