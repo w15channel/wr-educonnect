@@ -30,7 +30,7 @@ const sortByNumericSequence = (items = []) => [...items].sort((a, b) => {
   return (a.created_date || '').localeCompare(b.created_date || '');
 });
 
-const getLastThreePendingBySequence = (items = []) => sortByNumericSequence(items).slice(-3);
+const getFirstThreePendingBySequence = (items = []) => sortByNumericSequence(items).slice(0, 3);
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -724,8 +724,8 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
         const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
         const unwatchedLessons = sortByNumericSequence(lessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched)));
         const pendingTasksList = sortByNumericSequence(tasks.filter((t) => t.type === 'upload' && !submissions.find((s) => s.task_id === t.id)));
-        const visiblePendingLessons = getLastThreePendingBySequence(unwatchedLessons);
-        const visiblePendingTasks = getLastThreePendingBySequence(pendingTasksList);
+        const visiblePendingLessons = getFirstThreePendingBySequence(unwatchedLessons);
+        const visiblePendingTasks = getFirstThreePendingBySequence(pendingTasksList);
         const pendingQuizzes = tasks.filter((t) => t.type === 'quiz' && !submissions.find((s) => s.task_id === t.id));
         const therapistPending = therapistPairings.filter((p) => {
           const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
@@ -779,7 +779,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
                   <BookOpen size={13} className="text-purple-600 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-purple-700 truncate">{extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}</p>
-                    <p className="text-[10px] text-purple-500">Aula não assistida · últimas 3 pendências em ordem numérica</p>
+                    <p className="text-[10px] text-purple-500">Aula não assistida · próximas pendências em ordem numérica</p>
                   </div>
                   <ArrowRight size={12} className="text-purple-400 shrink-0" />
                 </button>

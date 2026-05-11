@@ -47,7 +47,7 @@ export default function Forum() {
 
   const { data: replies = [] } = useQuery({
     queryKey: ['forum-replies', expandedPost],
-    queryFn: () => base44.entities.ForumReply.filter({ post_id: expandedPost }, 'created_date', 100),
+    queryFn: () => base44.entities.ForumReply.filter({ post_id: expandedPost, course: userCourse, space: 'forum' }, 'created_date', 100),
     enabled: !!expandedPost,
   });
 
@@ -110,6 +110,8 @@ export default function Forum() {
         author_name: session?.name || 'Anônimo',
         author_email: session?.email || '',
         author_role: isTeacher ? 'teacher' : 'student',
+        course: userCourse,
+        space: 'forum',
       });
     },
     onSuccess: async (reply) => {

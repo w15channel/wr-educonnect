@@ -47,7 +47,7 @@ export default function SalaDebates() {
 
   const { data: replies = [] } = useQuery({
     queryKey: ['debate-replies', expandedPost],
-    queryFn: () => base44.entities.ForumReply.filter({ post_id: expandedPost }, 'created_date', 100),
+    queryFn: () => base44.entities.ForumReply.filter({ post_id: expandedPost, course: userCourse, space: 'debates' }, 'created_date', 100),
     enabled: !!expandedPost,
   });
 
@@ -112,6 +112,8 @@ export default function SalaDebates() {
         author_name: session?.name || 'Anônimo',
         author_email: session?.email || '',
         author_role: isTeacher ? 'teacher' : 'student',
+        course: userCourse,
+        space: 'debates',
       });
     },
     onSuccess: async (reply) => {

@@ -25,6 +25,20 @@
     "content": {
       "type": "string",
       "description": "Reply content"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Turma/curso do comentário"
+    },
+    "space": {
+      "type": "string",
+      "description": "Espaço do comentário: forum ou debates"
     }
   },
   "required": [
@@ -44,6 +58,9 @@
           "user_condition": {
             "role": "admin"
           }
+        },
+        {
+          "data.course": "{{user.course}}"
         }
       ]
     },
