@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useLocation, useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
@@ -27,6 +27,11 @@ export default function Tasks({ mode = 'all' }) {
   const { course: routeCourse } = useCourseFilteredEmails();
   const userCourse = routeCourse || session?.course || 'tcc';
   const navigate = useNavigate();
+  const location = useLocation();
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const routeSlug = (pathParts[0] === 'student' || pathParts[0] === 'adm') ? pathParts[1] : null;
+  const courseToSubmissionCode = { tcc: 'tcc', sexologia: 'sex', psicanalise: 'psi' };
+  const submissionCourseCode = routeSlug || courseToSubmissionCode[userCourse] || userCourse || 'tcc';
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -93,6 +98,7 @@ export default function Tasks({ mode = 'all' }) {
         student_name: user.name || user.full_name || '',
         file_url,
         status: 'submitted',
+        course: submissionCourseCode,
       });
     },
     onSuccess: (_, { taskId }) => {
@@ -151,6 +157,7 @@ export default function Tasks({ mode = 'all' }) {
           file_name: renamedFileName,
           comment: description,
           status: 'submitted',
+          course: submissionCourseCode,
         });
         // Notificação interna ao professor
         await sendNotificationToTeacher(taskTitle, 'arquivo');
@@ -171,14 +178,14 @@ export default function Tasks({ mode = 'all' }) {
     const current = submissionDetails[taskId] || {};
     return {
       studentName: current.studentName || user?.name || user?.full_name || '',
-      className: current.className || userCourse || '',
+      className: submissionCourseCode,
     };
   };
 
   const getSubmissionDescription = (taskId) => {
     const detail = getSubmissionDetail(taskId);
     if (!detail.studentName?.trim() || !detail.className?.trim()) return '';
-    return `Aluno: ${detail.studentName.trim()} | Turma: ${detail.className.trim()}`;
+    return `Aluno: ${detail.studentName.trim()} | Turma: ${submissionCourseCode}`;
   };
   const getSubmission = (taskId) => submissions.find(s => s.task_id === taskId);
 
@@ -220,6 +227,7 @@ export default function Tasks({ mode = 'all' }) {
         student_name: user?.name || user?.full_name || '',
         comment,
         status: 'submitted',
+        course: submissionCourseCode,
       });
       // Notificação interna ao professor
       const task = tasks.find(t => t.id === taskId);
@@ -374,17 +382,9 @@ export default function Tasks({ mode = 'all' }) {
                           onChange={e => setSubmissionDetails(prev => ({ ...prev, [task.id]: { ...getSubmissionDetail(task.id), studentName: e.target.value } }))}
                           className="h-9 text-xs"
                         />
-                        <Select
-                          value={getSubmissionDetail(task.id).className}
-                          onValueChange={value => setSubmissionDetails(prev => ({ ...prev, [task.id]: { ...getSubmissionDetail(task.id), className: value } }))}
-                        >
-                          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Selecione a turma" /></SelectTrigger>
-                          <SelectContent>
-                            {[userCourse, 'tcc', 'concursos', 'enem'].filter((v, i, arr) => v && arr.indexOf(v) === i).map(course => (
-                              <SelectItem key={course} value={course}>{course.toUpperCase()}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="h-9 rounded-md border border-input bg-secondary/40 px-3 flex items-center text-xs font-semibold text-muted-foreground">
+                          Turma automática: {submissionCourseCode.toUpperCase()}
+                        </div>
                       </div>
                       <input
                         type="file"
