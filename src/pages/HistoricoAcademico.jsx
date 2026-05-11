@@ -159,7 +159,8 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
             <div style={{ fontFamily: '"Dancing Script", "Brush Script MT", cursive', fontSize: 28, color: '#7b8fcc', marginBottom: 4, letterSpacing: 1 }}>William Ribeiro S.</div>
             <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
               <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>Direção Geral</p>
-              <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>WR — Instituto de Desenvolvimento Humano</p>
+              <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>WR-EDU Instituto de Desenvolvimento Humano</p>
+              <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>CNPJ: 62.213.790/001-40</p>
             </div>
           </div>
         </div>
@@ -167,7 +168,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         {/* Footer */}
         <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 20, paddingTop: 10, textAlign: 'center' }}>
           <p style={{ fontSize: 8, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-            Documento emitido digitalmente pela plataforma WR-EDU · {emissionDate} às {emissionTime}
+            Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/001-40 · {emissionDate} às {emissionTime}
           </p>
         </div>
       </div>

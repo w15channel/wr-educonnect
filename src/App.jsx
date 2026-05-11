@@ -143,7 +143,6 @@ const AuthenticatedApp = () => {
   }
 
   const redirectTo = (sub) => <Navigate to={buildScopedRedirect(session, sub)} replace />;
-  const legacyStudentDetailId = pathname.startsWith('/students/') ? pathname.split('/').filter(Boolean)[1] : '';
 
   return (
     <Routes>
@@ -163,7 +162,6 @@ const AuthenticatedApp = () => {
       <Route path="/debates" element={redirectTo('/debates')} />
       <Route path="/chat" element={redirectTo('/chat')} />
       <Route path="/students" element={redirectTo('/students')} />
-      <Route path="/students/:id" element={redirectTo(`/students/${legacyStudentDetailId}`)} />
       <Route path="/keys" element={redirectTo('/keys')} />
       <Route path="/announcements" element={redirectTo('/announcements')} />
       <Route path="/profile" element={redirectTo('/profile')} />

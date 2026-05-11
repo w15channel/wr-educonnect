@@ -59,7 +59,14 @@ export default function MobileHeader() {
       </div>
       <h1 className="text-sm font-bold text-white tracking-tight">{label}</h1>
       <div className="ml-auto flex items-center gap-2">
-        <button onClick={toggleTheme} className="p-1.5 rounded-lg text-white/80 hover:bg-white/10" title="Alternar tema">{theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}</button>
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-lg border border-white/30 bg-white/20 text-white hover:bg-white/30 shadow-sm"
+          title="Alternar tema"
+          aria-label="Alternar tema claro e escuro"
+        >
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
         {session?.role === 'admin' && (
           <div className="[&_button]:text-white/70 [&_button:hover]:bg-white/10">
             <NotificationsBell session={session} />
