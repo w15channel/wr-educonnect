@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
+import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 
 export default function MonitorCertificate() {
   const { id } = useParams();
@@ -36,18 +37,32 @@ export default function MonitorCertificate() {
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
     pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
-    pdf.save(`certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.pdf`);
-    toast.success('Certificado em PDF baixado com sucesso.');
+    const blob = pdf.output('blob');
+    await saveBlobWithPicker(blob, `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.pdf`, 'application/pdf');
+    toast.success('Certificado salvo em PDF.');
   };
 
   const handleDownloadPNG = async () => {
     const canvas = await getCertificateCanvas();
     if (!canvas) return;
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.png`;
-    link.click();
-    toast.success('Certificado em PNG baixado com sucesso.');
+    const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!pngBlob) return;
+    await saveBlobWithPicker(pngBlob, `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.png`, 'image/png');
+    toast.success('Certificado salvo em PNG.');
+  };
+
+  const handleShare = async () => {
+    const canvas = await getCertificateCanvas();
+    if (!canvas) return;
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+    const blob = pdf.output('blob');
+    const shared = await shareBlob(blob, `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.pdf`, 'application/pdf', 'Certificado de Monitor');
+    if (shared) toast.success('Compartilhamento aberto.');
+    else toast.error('Compartilhamento não suportado neste dispositivo.');
   };
 
   if (isLoading) {
@@ -74,8 +89,9 @@ export default function MonitorCertificate() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => navigate(-1)} className="gap-2"><ArrowLeft size={14} /> Voltar</Button>
-          <Button onClick={handleDownloadPDF} className="gap-2"><Download size={15} /> Baixar PDF</Button>
-          <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2"><Download size={15} /> Baixar PNG</Button>
+          <Button onClick={handleDownloadPDF} className="gap-2"><Download size={15} /> Salvar PDF</Button>
+          <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2"><Download size={15} /> Salvar PNG</Button>
+          <Button variant="outline" onClick={handleShare} className="gap-2">Compartilhar</Button>
         </div>
       </div>
 

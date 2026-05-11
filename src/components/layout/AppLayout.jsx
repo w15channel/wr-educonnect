@@ -117,7 +117,7 @@ export default function AppLayout() {
   const showIndicator = pullY > 8;
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
       )}

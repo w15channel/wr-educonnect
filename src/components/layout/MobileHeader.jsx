@@ -54,7 +54,7 @@ export default function MobileHeader() {
   const toggleTheme = () => setTheme((prev) => prev === 'dark' ? 'light' : 'dark');
 
   return (
-    <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border shrink-0">
+    <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-sidebar-border shrink-0 pt-[calc(0.75rem+env(safe-area-inset-top))]">
       <div className="w-7 h-7 flex items-center justify-center">
         <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
       </div>
