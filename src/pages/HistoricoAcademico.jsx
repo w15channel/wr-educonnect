@@ -12,26 +12,10 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
-import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, formatDocumentIssuer } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 
 const HOURS_MAP = { lesson: 2, live_attendance: 2, task: 1, quiz: 1.5, forum: 0.5, therapist: 1 };
-
-// ─── Assinatura SVG manual ────────────────────────────────────────────────────
-function SignatureSVG() {
-  return (
-    <div style={{ display: 'block', margin: '0 auto 2px', textAlign: 'center' }}>
-      <span style={{
-        fontFamily: '"Dancing Script", "Brush Script MT", cursive',
-        fontSize: 32,
-        color: '#7b8fcc',
-        letterSpacing: 2,
-        display: 'block',
-        lineHeight: 1.1,
-      }}>William Ribeiro S.</span>
-    </div>
-  );
-}
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
 function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, onClose }) {
@@ -220,7 +204,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '24px auto 20px' }} />
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: '"Dancing Script", "Brush Script MT", cursive', fontSize: 28, color: '#7b8fcc', marginBottom: 4, letterSpacing: 1 }}>William Ribeiro S.</div>
+            <img src={WR_SIGNATURE_IMAGE} alt="Assinatura William Ribeiro" crossOrigin="anonymous" style={{ width: 220, height: 72, objectFit: 'contain', margin: '0 auto 2px', display: 'block' }} />
             <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
               <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>Direção Geral</p>
               <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>{BRAND_LEGAL_NAME}</p>
