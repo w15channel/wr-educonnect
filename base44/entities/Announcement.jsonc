@@ -43,12 +43,10 @@
     "read": {
       "$or": [
         {
-          "data.recipient_email": "{{user.email}}"
+          "data.course": "{{user.course}}"
         },
         {
-          "data.recipient_email": {
-            "$exists": false
-          }
+          "data.recipient_email": "{{user.email}}"
         },
         {
           "user_condition": {
