@@ -11,7 +11,6 @@ const MAX_RESERVATION_AI_QUESTIONS = 5;
 const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
 
 const LOBBY_MUSIC_KEY = 'wr_lobby_music_enabled';
-const LOBBY_MUSIC_EMBED = 'https://www.youtube.com/embed/Cg0dAc4-UCY?autoplay=1&start=545&controls=0&disablekb=1&modestbranding=1&rel=0&loop=1&playlist=Cg0dAc4-UCY';
 
 const COURSES = [
   {
@@ -71,7 +70,6 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect, onReserve, 
           loop
           playsInline
           preload="metadata"
-          autoPlay
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-transparent to-transparent" />
 
@@ -142,7 +140,6 @@ export default function CourseLobby() {
   const userCourse = session?.course || 'tcc';
 
   const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
-  const [musicEnabled, setMusicEnabled] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(localStorage.getItem('wr_terms_lobby_accepted') === 'yes');
   const [reserveOpen, setReserveOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -152,8 +149,7 @@ export default function CourseLobby() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(LOBBY_MUSIC_KEY, 'on');
-    setMusicEnabled(localStorage.getItem(LOBBY_MUSIC_KEY) !== 'off');
+    localStorage.setItem(LOBBY_MUSIC_KEY, 'off');
   }, []);
 
 
@@ -254,14 +250,7 @@ export default function CourseLobby() {
   return (
     <div className="relative min-h-screen bg-[#080b14] text-white overflow-hidden">
       {!termsAccepted && <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />}
-      {musicEnabled && (
-        <iframe
-          className="absolute w-0 h-0 opacity-0 pointer-events-none"
-          src={LOBBY_MUSIC_EMBED}
-          title="Lobby ambience audio"
-          allow="autoplay"
-        />
-      )}
+
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(91,94,244,0.25),transparent_45%),radial-gradient(circle_at_82%_8%,rgba(29,184,158,0.2),transparent_42%),radial-gradient(circle_at_50%_85%,rgba(168,85,247,0.12),transparent_45%)]" />
       </div>

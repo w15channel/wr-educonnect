@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { generateCode } from '@/lib/customAuth';
+import { generateCode, getSession } from '@/lib/customAuth';
 import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,6 +110,14 @@ export default function CodeManager({ course: lockedCourse }) {
     },
   });
 
+  const syncEduMutation = useMutation({
+    mutationFn: () => base44.functions.invoke('syncEduCodes', { admin_email: getSession()?.email || '' }),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      toast.success(response?.data?.message || 'Códigos EDU sincronizados.');
+    },
+  });
+
   const copyCode = (code) => {
     navigator.clipboard.writeText(code);
     toast.success('Código copiado!');
@@ -119,7 +127,14 @@ export default function CodeManager({ course: lockedCourse }) {
     <div className="space-y-6">
       {/* Generator */}
       <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
-        <h3 className="font-semibold text-foreground mb-4">Gerar Novo Código</h3>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="font-semibold text-foreground">Gerar Novo Código</h3>
+          {lockedCourse === 'tcc' && (
+            <Button variant="outline" size="sm" onClick={() => syncEduMutation.mutate()} disabled={syncEduMutation.isPending} className="gap-2">
+              <RefreshCw size={14} className={syncEduMutation.isPending ? 'animate-spin' : ''} /> Vincular EDU
+            </Button>
+          )}
+        </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
             placeholder="Nome do aluno"
