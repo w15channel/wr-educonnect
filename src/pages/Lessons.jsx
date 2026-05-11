@@ -152,13 +152,37 @@ export default function Lessons() {
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = orderedLessons.length > 0 ? Math.round((watchedCount / orderedLessons.length) * 100) : 0;
 
-  // Abre link em nova aba do navegador (funciona em modo quiosque também)
-  const openExternal = (url, title = 'Link externo') => {
+  const shouldForceNativeBrowser = (url) => {
+    try {
+      const host = new URL(url).hostname.toLowerCase().replace('www.', '');
+      const blockedHosts = [
+        'drive.google.com',
+        'docs.google.com',
+        'onedrive.live.com',
+        'dropbox.com',
+      ];
+      return blockedHosts.some(domain => host === domain || host.endsWith(`.${domain}`));
+    } catch {
+      return false;
+    }
+  };
+
+  const isMobileDevice = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+  // Abre link externo com fallback para browser nativo quando iframe é bloqueado
+  const openExternal = (url, title = 'Link externo', options = {}) => {
     if (!url) return;
     if (isSocialAppLink(url)) {
       openSocialAppOrStore(url);
       return;
     }
+    const { preferInternal = true } = options;
+
+    if (!preferInternal || isMobileDevice() || shouldForceNativeBrowser(url)) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     setCompactBrowser({ url, title });
   };
 
@@ -529,7 +553,7 @@ export default function Lessons() {
                     {/* External content link */}
                     {lesson.lesson_type === 'content_external' && lesson.external_url && (
                       <div className="px-4 py-3 border-t border-border">
-                        <button onClick={() => openExternal(lesson.external_url, lesson.title || 'Material externo')}
+                        <button onClick={() => openExternal(lesson.external_url, lesson.title || 'Material externo', { preferInternal: false })}
                           className="flex items-center gap-2 text-sm text-primary bg-primary/8 border border-primary/15 px-4 py-3 rounded-xl hover:bg-primary/15 transition-colors font-semibold w-full">
                           <Globe size={15} /> Acessar Material Externo
                           <ExternalLink size={12} className="ml-auto" />
