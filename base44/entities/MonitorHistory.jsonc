@@ -48,6 +48,9 @@
     "read": {
       "$or": [
         {
+          "data.course": "{{user.course}}"
+        },
+        {
           "data.student_email": "{{user.email}}"
         },
         {
