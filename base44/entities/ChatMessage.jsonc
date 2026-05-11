@@ -40,35 +40,62 @@
           }
         },
         {
-          "data.author_email": "{{user.email}}"
+          "$and": [
+            {
+              "data.session_id": {
+                "$regex": "^class_chat_"
+              }
+            },
+            {
+              "data.session_id": {
+                "$regex": "{{user.course}}"
+              }
+            }
+          ]
         },
         {
-          "session_id": {
-            "$eq": "class_chat_{{user.course}}"
-          }
-        },
-        {
-          "session_id": {
-            "$regex": "dm_.*{{user.email}}.*"
-          }
-        },
-        {
-          "data.course": "{{user.course}}",
-          "session_id": {
-            "$regex": "monitor-room-.*"
-          }
+          "$and": [
+            {
+              "data.session_id": {
+                "$regex": "^dm_"
+              }
+            },
+            {
+              "$or": [
+                {
+                  "data.session_id": {
+                    "$regex": "{{user.email}}"
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     "update": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "data.author_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
