@@ -138,6 +138,11 @@ export default function Dashboard() {
     const existing = await base44.entities.MonitorHistory.list('-period_start', 100);
     const currentCycle = existing.filter((m) => m.period_start === periodStart && (m.course === userCourse || !m.course));
     for (const m of currentCycle) await base44.entities.MonitorHistory.delete(m.id);
+    const oldMonitorAnnouncements = await base44.entities.Announcement.filter({ course: userCourse || 'tcc' }, '-created_date', 300);
+    for (const announcement of oldMonitorAnnouncements) {
+      const isMonitorNotice = Boolean(announcement.certificate_monitor_id) || (announcement.title || '').includes('Monitor(a) da Semana');
+      if (isMonitorNotice) await base44.entities.Announcement.delete(announcement.id);
+    }
     const emailsArr = [...selectedMonitorEmails];
     for (let i = 0; i < emailsArr.length; i++) {
       const email = emailsArr[i];
@@ -330,6 +335,9 @@ export default function Dashboard() {
     return a.name.localeCompare(b.name);
   });
   const ranking = rankingFull.slice(0, 10);
+  const studentPublishedRanking = rankingFull
+    .filter((item) => Number.isFinite(item.publishedRank) && item.publishedRank !== Number.MAX_SAFE_INTEGER)
+    .sort((a, b) => a.publishedRank - b.publishedRank);
   React.useEffect(() => {
     setCustomRanking(ranking);
     setScoreDrafts((prev) => {
@@ -366,7 +374,8 @@ export default function Dashboard() {
     },
   });
 
-  const myRank = ranking.findIndex((r) => r.email === session?.email) + 1;
+  const visibleStudentRanking = studentPublishedRanking.length > 0 ? studentPublishedRanking : ranking;
+  const myRank = visibleStudentRanking.findIndex((r) => r.email === session?.email) + 1;
 
   const firstName = (session?.name || 'Usuário').split(' ')[0];
   const hour = new Date().getHours();
@@ -534,11 +543,11 @@ export default function Dashboard() {
               }
               </div>
             </div>
-            {ranking.length === 0 ?
+            {visibleStudentRanking.length === 0 ?
           <p className="text-sm text-muted-foreground text-center py-6">O ranking será exibido após as primeiras notas</p> :
 
           <div className="space-y-1.5">
-                {ranking.map((r, i) => {
+                {visibleStudentRanking.map((r, i) => {
               const isMe = r.email === session?.email;
               const code = accessCodes.find((c) => c.student_email === r.email);
               const displayName = code?.profile_name || code?.student_name || r.email;

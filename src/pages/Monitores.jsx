@@ -256,60 +256,6 @@ export default function Monitores() {
         </div>
       )}
 
-      {/* Ranking de Desempenho */}
-      {ranking.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
-              <Trophy size={16} className="text-yellow-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-foreground">Ranking de Desempenho</h3>
-              <p className="text-xs text-muted-foreground">Turma {courseLabel} · Os 3 primeiros são os Monitores da Semana</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {ranking.map((r, i) => {
-              const code = getCodeByEmail(r.email);
-              const displayName = code?.profile_name || code?.student_name || r.email;
-              const avatarColor = code?.profile_avatar_color || '#5b5ef4';
-              const photoUrl = code?.profile_photo_url || '';
-              const isMonitor = i < 3;
-              const isMe = r.email === session?.email;
-              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
-              return (
-                <div key={r.email} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                  isMe ? 'bg-primary/8 border-primary/20' :
-                  isMonitor ? 'bg-yellow-50 border-yellow-200' :
-                  'bg-secondary/20 border-transparent'
-                }`}>
-                  <span className="w-6 text-center shrink-0">
-                    {medal || <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}
-                  </span>
-                  {photoUrl ? (
-                    <img src={photoUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
-                      {displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
-                      {displayName}{isMe && <span className="ml-1 text-primary/60">(você)</span>}
-                    </p>
-                    {isMonitor && <MonitorBadge rank={i + 1} />}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Monitores atuais */}
       {currentMonitors.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-10 text-center">

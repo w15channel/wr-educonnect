@@ -92,7 +92,7 @@ function ScopedRoutesTree() {
         <Route path="scores" element={<Navigate to="../scorecontrol" replace />} />
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="ranking" element={<AdminOnly><RankingGeral /></AdminOnly>} />
-        <Route path="monitores" element={<AdminOnly><Monitores /></AdminOnly>} />
+        <Route path="monitores" element={<Monitores />} />
         <Route path="monitor-certificate/:id" element={<MonitorCertificate />} />
         <Route path="terapeuta" element={<TerapeutaDaSemana />} />
         <Route path="bestseller" element={<MeuBestSeller />} />
