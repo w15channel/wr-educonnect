@@ -9,6 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
 
 export default function MonitorCertificate() {
   const { id } = useParams();
@@ -24,7 +25,7 @@ export default function MonitorCertificate() {
 
   const getCertificateCanvas = async () => {
     if (!certRef.current || !certStudent) return;
-    return html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff' });
+    return html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff', useCORS: true });
   };
 
   const handleDownloadPDF = async () => {
@@ -81,8 +82,8 @@ export default function MonitorCertificate() {
       <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
         <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 28 }}>
-            <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png" alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
-            <p style={{ fontSize: 12, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>WR-EDU Instituto de Desenvolvimento Humano</p>
+            <img src={WR_CERTIFICATE_LOGO} alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
+            <p style={{ fontSize: 12, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{BRAND_LEGAL_NAME}</p>
             <div style={{ width: 68 }} />
           </div>
           <p style={{ fontSize: 12, letterSpacing: 5, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 10px' }}>Certificado de Reconhecimento Acadêmico</p>
@@ -100,14 +101,14 @@ export default function MonitorCertificate() {
               <div style={{ fontFamily: 'Georgia, serif', fontSize: 26, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 2, letterSpacing: 1 }}>W.Ribeiro</div>
               <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 8 }}>
                 <p style={{ fontSize: 11, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>DIREÇÃO GERAL</p>
-                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>WR-EDU Instituto de Desenvolvimento Humano</p>
-                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>CNPJ: 62.213.790/001-40</p>
+                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>{BRAND_LEGAL_NAME}</p>
+                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>CNPJ: {BRAND_CNPJ}</p>
               </div>
             </div>
           </div>
           <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 34, paddingTop: 14 }}>
             <p style={{ fontSize: 10, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-              Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/001-40 · {format(new Date(), 'yyyy')}
+              {formatDocumentIssuer(format(new Date(), 'yyyy'))}
             </p>
           </div>
         </div>

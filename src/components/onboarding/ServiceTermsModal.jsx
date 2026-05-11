@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, GraduationCap, Award, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 
 export default function ServiceTermsModal({ studentName, onAccept }) {
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
@@ -25,7 +26,7 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
             </div>
             <div>
               <h2 className="font-bold text-lg leading-tight">Termo de Prestação de Serviços</h2>
-              <p className="text-white/60 text-xs">WR — Instituto de Desenvolvimento Humano</p>
+              <p className="text-white/60 text-xs">{BRAND_LEGAL_NAME}</p>
             </div>
           </div>
           <p className="text-white/80 text-sm">Olá, <strong>{studentName}</strong>! Antes de continuar, leia e aceite nossos termos.</p>
@@ -44,7 +45,7 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
               <h3 className="font-bold text-gray-800">Proteção de Dados — LGPD</h3>
             </div>
             <p className="leading-relaxed text-gray-600">
-              Em conformidade com a <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</strong>, o WR — Instituto de Desenvolvimento Humano coleta e trata seus dados pessoais exclusivamente para fins educacionais, incluindo nome, e-mail, WhatsApp, data de nascimento e foto de perfil.
+              Em conformidade com a <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</strong>, a {BRAND_LEGAL_NAME} coleta e trata seus dados pessoais exclusivamente para fins educacionais, incluindo nome, e-mail, WhatsApp, data de nascimento e foto de perfil.
             </p>
             <ul className="mt-2 space-y-1 list-none">
               {[
@@ -73,7 +74,7 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
             <div className="flex items-start gap-2 mt-3 bg-amber-100 rounded-xl p-3">
               <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-700">
-                <strong>Importante:</strong> A certificação estará disponível ao aluno apenas a partir de <strong>90% de conclusão do curso</strong>, conforme os critérios de aproveitamento da plataforma WR-EDU.
+                <strong>Importante:</strong> A certificação estará disponível ao aluno apenas a partir de <strong>90% de conclusão do curso</strong>, conforme os critérios de aproveitamento da plataforma {BRAND_LEGAL_NAME}.
               </p>
             </div>
           </section>
@@ -100,7 +101,7 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
           <section>
             <h3 className="font-bold text-gray-800 mb-2">Prestação de Serviços Educacionais</h3>
             <p className="text-gray-600 text-xs leading-relaxed">
-              O WR — Instituto de Desenvolvimento Humano oferece formação em terapia e desenvolvimento pessoal através de videoaulas, sessões ao vivo, tarefas, quizzes e práticas terapêuticas. A participação ativa do aluno é fundamental para o aproveitamento e certificação. O acesso à plataforma é pessoal e intransferível, vinculado ao código de acesso fornecido.
+              A {BRAND_LEGAL_NAME} oferece formação em terapia e desenvolvimento pessoal através de videoaulas, sessões ao vivo, tarefas, quizzes e práticas terapêuticas. CNPJ {BRAND_CNPJ}. A participação ativa do aluno é fundamental para o aproveitamento e certificação. O acesso à plataforma é pessoal e intransferível, vinculado ao código de acesso fornecido.
             </p>
           </section>
 
@@ -122,7 +123,7 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
               className="mt-0.5 w-4 h-4 accent-[#5b5ef4] shrink-0"
             />
             <span className={`text-xs leading-relaxed ${!scrolledToBottom ? 'text-gray-300' : 'text-gray-700'}`}>
-              Li e aceito os <strong>Termos de Prestação de Serviços</strong>, estou ciente sobre a <strong>LGPD</strong>, sobre a certificação pela <strong>Escola Venes</strong> e credenciamento pela <strong>AHDE</strong>, e sobre o requisito de <strong>90% de conclusão</strong> para obtenção do certificado.
+              Li e aceito os <strong>Termos de Prestação de Serviços</strong> da <strong>{BRAND_SHORT_NAME}</strong>, estou ciente sobre a <strong>LGPD</strong>, sobre a certificação pela <strong>Escola Venes</strong> e credenciamento pela <strong>AHDE</strong>, e sobre o requisito de <strong>90% de conclusão</strong> para obtenção do certificado.
             </span>
           </label>
           <Button

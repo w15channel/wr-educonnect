@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
 const SITE_TOOLS = [
   'Dashboard administrativo', 'Aulas gravadas', 'Sala ao vivo', 'Tarefas', 'Provas',
@@ -58,7 +59,7 @@ function buildPrompt(requestText, mode, courseName, selectedItem) {
     ? `\nItem selecionado: ${selectedItem.label}\nÁrea: ${selectedItem.area}\nPosição: ${selectedItem.position}\nComportamento: ${selectedItem.behavior}`
     : '\nNenhum item específico foi selecionado.';
 
-  return `Você é o Agente Editor IA do WR-EDU, uma plataforma educacional com áreas administrativas e estudantis.
+  return `Você é o Agente Editor IA da ${BRAND_LEGAL_NAME}, uma plataforma educacional com áreas administrativas e estudantis.
 
 Curso ativo: ${courseName || 'geral'}
 Ferramentas existentes: ${SITE_TOOLS.join(', ')}.

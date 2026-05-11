@@ -1,7 +1,6 @@
 import React from 'react';
 import { Shield, CheckCircle, ArrowLeft, Lock, Eye, Database, Share2, Cookie, AlertTriangle, FileText, Server, Users, RefreshCw } from 'lucide-react';
-
-const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const ARTICLES = [
   {
@@ -9,7 +8,7 @@ const ARTICLES = [
     icon: Shield,
     color: '#5b5ef4',
     title: 'Compromisso com a Privacidade',
-    text: 'A WR-EDU reafirma seu compromisso com a segurança e a privacidade de todos os seus usuários, tratando a proteção de dados pessoais como um pilar fundamental da nossa relação de confiança. Esta Política de Privacidade é regida pela Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018), pelo Marco Civil da Internet (Lei nº 12.965/2014) e pelas normativas que regulamentam a transparência de informações em plataformas de ensino online credenciadas.',
+    text: `A ${BRAND_LEGAL_NAME} reafirma seu compromisso com a segurança e a privacidade de todos os seus usuários, tratando a proteção de dados pessoais como um pilar fundamental da nossa relação de confiança. CNPJ ${BRAND_CNPJ}. Esta Política de Privacidade é regida pela Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018), pelo Marco Civil da Internet (Lei nº 12.965/2014) e pelas normativas que regulamentam a transparência de informações em plataformas de ensino online credenciadas.`,
   },
   {
     num: '2',
@@ -23,7 +22,7 @@ const ARTICLES = [
     icon: Lock,
     color: '#a855f7',
     title: 'Dados Financeiros e Segurança de Pagamentos',
-    text: 'Os dados financeiros utilizados no ato da compra são processados exclusivamente por gateways de pagamento certificados com criptografia de ponta a ponta (padrão PCI-DSS), garantindo que a WR-EDU não armazene, em nenhuma hipótese, informações sensíveis de cartões de crédito ou débito. Toda transação é processada em ambiente seguro e auditável.',
+    text: `Os dados financeiros utilizados no ato da compra são processados exclusivamente por gateways de pagamento certificados com criptografia de ponta a ponta (padrão PCI-DSS), garantindo que a ${BRAND_LEGAL_NAME} não armazene, em nenhuma hipótese, informações sensíveis de cartões de crédito ou débito. Toda transação é processada em ambiente seguro e auditável.`,
   },
   {
     num: '4',
@@ -37,7 +36,7 @@ const ARTICLES = [
     icon: Share2,
     color: '#ef4444',
     title: 'Não Comercialização de Dados',
-    text: 'A WR-EDU compromete-se expressamente a não vender, alugar, ceder ou compartilhar seus dados pessoais com terceiros para fins comerciais, publicitários ou estranhos ao escopo do seu curso profissionalizante. Eventuais parceiros técnicos que necessitem de acesso a dados para prestação de serviços (como plataformas de emissão de certificados e sistemas de pagamento) estão contratualmente vinculados às mesmas obrigações de confidencialidade e segurança exigidas por esta política.',
+    text: `A ${BRAND_LEGAL_NAME} compromete-se expressamente a não vender, alugar, ceder ou compartilhar seus dados pessoais com terceiros para fins comerciais, publicitários ou estranhos ao escopo do seu curso profissionalizante. Eventuais parceiros técnicos que necessitem de acesso a dados para prestação de serviços (como plataformas de emissão de certificados e sistemas de pagamento) estão contratualmente vinculados às mesmas obrigações de confidencialidade e segurança exigidas por esta política.`,
   },
   {
     num: '6',
@@ -65,14 +64,14 @@ const ARTICLES = [
     icon: AlertTriangle,
     color: '#f4a23d',
     title: 'Incidentes de Segurança',
-    text: 'Na hipótese improvável de incidente de segurança que possa acarretar risco ou dano relevante aos titulares, a WR-EDU se compromete a comunicar a ocorrência à Autoridade Nacional de Proteção de Dados (ANPD) e aos usuários afetados, no prazo previsto em lei, descrevendo a natureza dos dados afetados e as medidas adotadas para mitigação.',
+    text: `Na hipótese improvável de incidente de segurança que possa acarretar risco ou dano relevante aos titulares, a ${BRAND_LEGAL_NAME} se compromete a comunicar a ocorrência à Autoridade Nacional de Proteção de Dados (ANPD) e aos usuários afetados, no prazo previsto em lei, descrevendo a natureza dos dados afetados e as medidas adotadas para mitigação.`,
   },
   {
     num: '10',
     icon: CheckCircle,
     color: '#1db89e',
     title: 'Base Legal para o Tratamento',
-    text: 'O tratamento de dados pessoais realizado pela WR-EDU está fundamentado nas seguintes bases legais previstas no Art. 7º da LGPD: (i) consentimento do titular, formalizado no ato de cadastro na plataforma; (ii) execução de contrato ou de procedimentos preliminares relacionados ao contrato do qual o titular é parte; e (iii) cumprimento de obrigação legal ou regulatória pelo controlador.',
+    text: `O tratamento de dados pessoais realizado pela ${BRAND_LEGAL_NAME} está fundamentado nas seguintes bases legais previstas no Art. 7º da LGPD: (i) consentimento do titular, formalizado no ato de cadastro na plataforma; (ii) execução de contrato ou de procedimentos preliminares relacionados ao contrato do qual o titular é parte; e (iii) cumprimento de obrigação legal ou regulatória pelo controlador.`,
   },
   {
     num: '11',
@@ -94,8 +93,8 @@ export default function PoliticaDePrivacidade() {
           </a>
           <div className="h-4 w-px bg-white/10" />
           <div className="flex items-center gap-2">
-            <img src={LOGO_URL} alt="WR-EDU" className="w-6 h-6 object-contain" />
-            <span className="text-white/60 text-sm font-semibold">WR-EDU</span>
+            <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-6 h-6 object-contain" />
+            <span className="text-white/60 text-sm font-semibold">{BRAND_LEGAL_NAME}</span>
           </div>
         </div>
       </div>
@@ -123,7 +122,7 @@ export default function PoliticaDePrivacidade() {
             <div>
               <p className="text-white font-bold text-sm mb-2">Seus dados são tratados com responsabilidade</p>
               <p className="text-white/60 text-sm leading-relaxed">
-                A WR-EDU atua como <strong className="text-white">Controladora de Dados</strong> nos termos da LGPD, sendo responsável pelas decisões referentes ao tratamento dos seus dados pessoais. Nosso compromisso é coletar o mínimo necessário, com finalidade clara e proteção máxima.
+                A {BRAND_LEGAL_NAME} atua como <strong className="text-white">Controladora de Dados</strong> nos termos da LGPD, sendo responsável pelas decisões referentes ao tratamento dos seus dados pessoais. Nosso compromisso é coletar o mínimo necessário, com finalidade clara e proteção máxima.
               </p>
             </div>
           </div>
@@ -161,24 +160,24 @@ export default function PoliticaDePrivacidade() {
           </p>
           <div className="bg-white/5 border border-white/8 rounded-2xl px-5 py-3 flex items-center gap-3">
             <Lock size={14} className="text-[#1db89e] shrink-0" />
-            <p className="text-white/50 text-xs">As comunicações são tratadas com sigilo e respondidas diretamente pela direção da WR-EDU.</p>
+            <p className="text-white/50 text-xs">As comunicações são tratadas com sigilo e respondidas diretamente pela direção da {BRAND_LEGAL_NAME}.</p>
           </div>
         </div>
 
         {/* Aviso legal */}
         <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 mb-10 text-sm leading-relaxed">
           <p className="text-yellow-200/80">
-            <strong className="text-yellow-200">Importante:</strong> A presente Política de Privacidade não substitui os Termos de Uso da plataforma. Recomendamos a leitura conjunta de ambos os documentos para total compreensão dos direitos e deveres envolvidos na relação educacional com a WR-EDU.
+            <strong className="text-yellow-200">Importante:</strong> A presente Política de Privacidade não substitui os Termos de Uso da plataforma. Recomendamos a leitura conjunta de ambos os documentos para total compreensão dos direitos e deveres envolvidos na relação educacional com a {BRAND_LEGAL_NAME}.
           </p>
         </div>
 
         {/* Footer */}
         <div className="border-t border-white/8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="WR-EDU" className="w-8 h-8 object-contain" />
+            <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-8 h-8 object-contain" />
             <div>
-              <p className="text-white font-bold text-sm">WR-EDU</p>
-              <p className="text-white/30 text-xs">Escola de Formação de Terapeutas</p>
+              <p className="text-white font-bold text-sm">{BRAND_LEGAL_NAME}</p>
+              <p className="text-white/30 text-xs">CNPJ {BRAND_CNPJ}</p>
             </div>
           </div>
           <div className="text-center">
@@ -191,7 +190,7 @@ export default function PoliticaDePrivacidade() {
               lineHeight: 1.2,
             }}>William Ribeiro S.</span>
             <div className="w-48 border-t border-white/15 pt-2 mx-auto">
-              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · WR-EDU</p>
+              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · {BRAND_LEGAL_NAME}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">

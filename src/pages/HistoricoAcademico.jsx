@@ -12,8 +12,7 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
-
-const WR_LOGO = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
 
 const HOURS_MAP = { lesson: 2, live_attendance: 2, task: 1, quiz: 1.5, forum: 0.5, therapist: 1 };
 
@@ -38,17 +37,46 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
   const certRef = useRef(null);
   const emissionDate = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const emissionTime = format(new Date(), "HH:mm:ss");
+  const fileBase = `historico-academico-${student.name?.replace(/\s+/g, '-') || 'aluno'}`;
+
+  const getDocumentCanvas = async () => {
+    if (!certRef.current) return null;
+    return html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff', useCORS: true });
+  };
 
   const handleDownloadPDF = async () => {
-    if (!certRef.current) return;
-    const canvas = await html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff', useCORS: true });
+    const canvas = await getDocumentCanvas();
+    if (!canvas) return;
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pdfW = pdf.internal.pageSize.getWidth();
-    const pdfH = (canvas.height * pdfW) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
-    pdf.save(`historico-academico-${student.name.replace(/\s+/g, '-')}.pdf`);
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgH = (canvas.height * pdfW) / canvas.width;
+    let heightLeft = imgH;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, pdfW, imgH);
+    heightLeft -= pageH;
+
+    while (heightLeft > 0) {
+      position -= pageH;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, pdfW, imgH);
+      heightLeft -= pageH;
+    }
+
+    pdf.save(`${fileBase}.pdf`);
     toast.success('Histórico exportado em PDF!');
+  };
+
+  const handleDownloadPNG = async () => {
+    const canvas = await getDocumentCanvas();
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = `${fileBase}.png`;
+    link.click();
+    toast.success('Histórico exportado em PNG!');
   };
 
   return (
@@ -57,27 +85,35 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         {onClose && (
           <button onClick={onClose} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar</button>
         )}
-        <Button onClick={handleDownloadPDF} className="gap-2 ml-auto">
-          <Download size={15} /> Exportar PDF
-        </Button>
+        <div className="flex gap-2 flex-wrap ml-auto">
+          <Button onClick={handleDownloadPDF} className="gap-2">
+            <Download size={15} /> Exportar PDF
+          </Button>
+          <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2">
+            <Download size={15} /> Exportar PNG
+          </Button>
+        </div>
       </div>
 
-      <div
-        ref={certRef}
-        className="bg-white"
-        style={{
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          padding: '40px 48px',
-          border: '2px solid #1e3a5f',
-          boxShadow: 'inset 0 0 0 6px #f0f4f8, inset 0 0 0 8px #1e3a5f',
-        }}
-      >
+      <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
+        <div
+          ref={certRef}
+          className="bg-white mx-auto"
+          style={{
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            width: 794,
+            minHeight: 1123,
+            padding: '40px 48px',
+            border: '2px solid #1e3a5f',
+            boxShadow: 'inset 0 0 0 6px #f0f4f8, inset 0 0 0 8px #1e3a5f',
+          }}
+        >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
-          <img src={WR_LOGO} alt="WR Logo" style={{ width: 70, height: 70, objectFit: 'contain' }} crossOrigin="anonymous" />
+          <img src={WR_CERTIFICATE_LOGO} alt="WR Logo" style={{ width: 70, height: 70, objectFit: 'contain' }} crossOrigin="anonymous" />
           <div style={{ textAlign: 'center', flex: 1 }}>
             <p style={{ fontSize: 10, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>
-              WR — Instituto de Desenvolvimento Humano
+              {BRAND_LEGAL_NAME}
             </p>
             <p style={{ fontSize: 9, color: '#888', margin: '4px 0 0', letterSpacing: 2, textTransform: 'uppercase' }}>
               Terapia · Educação · Desenvolvimento Pessoal
@@ -159,8 +195,8 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
             <div style={{ fontFamily: '"Dancing Script", "Brush Script MT", cursive', fontSize: 28, color: '#7b8fcc', marginBottom: 4, letterSpacing: 1 }}>William Ribeiro S.</div>
             <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 6 }}>
               <p style={{ fontSize: 9, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' }}>Direção Geral</p>
-              <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>WR-EDU Instituto de Desenvolvimento Humano</p>
-              <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>CNPJ: 62.213.790/001-40</p>
+              <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>{BRAND_LEGAL_NAME}</p>
+              <p style={{ fontSize: 8, color: '#888', margin: '2px 0 0' }}>CNPJ: {BRAND_CNPJ}</p>
             </div>
           </div>
         </div>
@@ -168,8 +204,9 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         {/* Footer */}
         <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 20, paddingTop: 10, textAlign: 'center' }}>
           <p style={{ fontSize: 8, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-            Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/001-40 · {emissionDate} às {emissionTime}
+            {formatDocumentIssuer(`${emissionDate} às ${emissionTime}`)}
           </p>
+        </div>
         </div>
       </div>
     </div>
@@ -368,7 +405,7 @@ export default function HistoricoAcademico() {
             <Square size={13} /> Limpar
           </Button>
           <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedItems.size === 0} onClick={() => setShowDocument(true)}>
-            <Download size={13} /> Gerar PDF ({selectedItems.size})
+            <Download size={13} /> Gerar Histórico ({selectedItems.size})
           </Button>
         </div>
 
