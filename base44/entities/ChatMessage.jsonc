@@ -29,29 +29,22 @@
     "content"
   ],
   "rls": {
-    "create": {},
+    "create": {
+      "data.author_email": "{{user.email}}"
+    },
     "read": null,
     "update": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.author_email": "{{user.email}}"
-        }
-      ]
+      "data.author_email": "{{user.email}}"
     },
     "delete": {
       "$or": [
         {
+          "data.author_email": "{{user.email}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
-        },
-        {
-          "data.author_email": "{{user.email}}"
         }
       ]
     }
