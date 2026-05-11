@@ -41,6 +41,15 @@
       "default": "tcc",
       "description": "Turma/curso onde o post foi publicado"
     },
+    "space": {
+      "type": "string",
+      "enum": [
+        "forum",
+        "debates"
+      ],
+      "default": "forum",
+      "description": "\u00c1rea onde a publica\u00e7\u00e3o deve aparecer"
+    },
     "bot_replied": {
       "type": "boolean",
       "default": false,
@@ -51,53 +60,9 @@
     "content"
   ],
   "rls": {
-    "create": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "read": {
-      "$or": [
-        {
-          "data.course": "{{user.course}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

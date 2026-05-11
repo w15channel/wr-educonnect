@@ -42,7 +42,7 @@ export default function Forum() {
 
   const { data: posts = [] } = useQuery({
     queryKey: ['forum-posts', userCourse],
-    queryFn: () => base44.entities.ForumPost.filter({ course: userCourse }, '-created_date', 100),
+    queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'forum' }, '-created_date', 100),
   });
 
   const { data: replies = [] } = useQuery({
@@ -59,6 +59,7 @@ export default function Forum() {
       author_email: session?.email || '',
       author_role: isTeacher ? 'teacher' : 'student',
       course: userCourse,
+      space: 'forum',
       reply_count: 0,
     }),
     onMutate: async (data) => {
@@ -72,6 +73,7 @@ export default function Forum() {
         author_email: session?.email || '',
         author_role: isTeacher ? 'teacher' : 'student',
         reply_count: 0,
+        space: 'forum',
         created_date: new Date().toISOString(),
       };
       queryClient.setQueryData(['forum-posts'], old => [optimistic, ...(old || [])]);

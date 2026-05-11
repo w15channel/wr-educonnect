@@ -118,6 +118,14 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+  html, body, #root {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   body {
     @apply bg-background text-foreground;
@@ -133,6 +141,7 @@
   input, textarea, select {
     background-color: #ffffff !important;
     color: #1a1a2e !important;
+    font-size: 16px;
   }
   input::placeholder, textarea::placeholder {
     color: #8896a8 !important;

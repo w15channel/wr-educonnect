@@ -25,6 +25,25 @@
     "content": {
       "type": "string",
       "description": "Reply content"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso/turma da resposta"
+    },
+    "space": {
+      "type": "string",
+      "enum": [
+        "forum",
+        "debates"
+      ],
+      "default": "forum",
+      "description": "\u00c1rea onde a resposta deve aparecer"
     }
   },
   "required": [
@@ -32,44 +51,9 @@
     "content"
   ],
   "rls": {
-    "create": {
-      "data.author_email": "{{user.email}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "data.course": "{{user.course}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }
