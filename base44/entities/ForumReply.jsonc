@@ -50,5 +50,10 @@
     "post_id",
     "content"
   ],
-  "rls": {}
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
 }
