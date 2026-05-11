@@ -299,7 +299,11 @@ ${transcript}`);
   };
 
   return (
-    <div className="min-h-screen bg-[#080b14] text-white">
+    <div
+      className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#080b14] text-white"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+      onScroll={(e) => setNavScrolled(e.currentTarget.scrollTop > 60)}
+    >
 
       {/* STICKY NAVBAR */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'py-3' : 'py-5'}`}>
