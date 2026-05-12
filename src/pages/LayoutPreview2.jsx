@@ -614,9 +614,9 @@ ${transcript}`);
             {/* Selos ABED + AHDE */}
             <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
-                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-10 object-contain" />
-                <ExternalLink size={11} className="text-white/20 group-hover:text-[#5b5ef4] transition-colors" />
+              className="flex items-center gap-[18px] bg-white/6 hover:bg-white/10 border border-white/10 rounded-3xl px-[30px] py-[18px] transition-all group">
+                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-[60px] object-contain" />
+                <ExternalLink size={17} className="text-white/20 group-hover:text-[#5b5ef4] transition-colors" />
               </a>
               <a href="https://ahde-global.org/?lang=pt-br" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
