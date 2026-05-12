@@ -141,7 +141,13 @@ export default function AppLayout() {
         <Sidebar session={session} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
       </div>
 
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <main
+        className="flex-1 flex flex-col overflow-hidden min-w-0"
+        style={{
+          transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
+          transition: isPulling.current ? 'none' : 'transform 0.3s ease',
+        }}
+      >
         {/* Mobile top header */}
         <MobileHeader />
 
@@ -173,8 +179,6 @@ export default function AppLayout() {
               className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
               style={{
                 paddingBottom: window.innerWidth < 768 && stripScopedPrefix(location.pathname) !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
-                transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
-                transition: isPulling.current ? 'none' : 'transform 0.3s ease',
               }}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
