@@ -93,6 +93,7 @@ const CURRENT = [
 
 const COURSES = [
 {
+  slug: 'tc',
   title: 'TERAPEUTA TC',
   subtitle: 'Curso Profissionalizante em Terapia Comportamental',
   price: 'R$ 250',
@@ -114,6 +115,7 @@ const COURSES = [
   ]
 },
 {
+  slug: 'psicanalise',
   title: 'PSICANALISTA FREUDIANO',
   subtitle: 'Curso Profissionalizante em Métodos Psicanalíticos',
   price: 'R$ 300',
@@ -135,6 +137,7 @@ const COURSES = [
   ]
 },
 {
+  slug: 'sexologia',
   title: 'SEXÓLOGO(A)',
   subtitle: 'Curso Profissionalizante em Sexualidade Humana',
   price: 'R$ 350',
@@ -611,6 +614,7 @@ ${transcript}`);
             </div>
             <h2 className="text-4xl font-black text-white">Nossos Cursos Profissionalizantes</h2>
             <p className="text-white/50 mt-3 max-w-lg mx-auto text-base">Certificados digitais verificáveis emitidos pela {BRAND_LEGAL_NAME}.</p>
+            <p className="text-[#1db89e] mt-3 text-sm font-bold">Valores de matrícula antecipada com bolsa de 30% em todos os cursos — condição limitada.</p>
             {/* Selos ABED + AHDE */}
             <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
@@ -665,9 +669,13 @@ ${transcript}`);
                   </div>
                   <div className="pt-4 border-t border-white/8">
                     <div className="mb-3">
-                      <p className="text-xs text-white/30 mb-0.5">Investimento</p>
+                      <p className="text-xs text-[#1db89e] font-bold mb-1 uppercase tracking-wide">Matrícula antecipada com bolsa de 30%</p>
                       <p className="text-2xl font-black text-white">{c.price} <span className="text-sm font-normal text-white/40">{c.period}</span></p>
+                      <p className="text-[11px] text-orange-200/80 mt-1">Condição especial por tempo limitado. Garanta antes que as vagas acabem.</p>
                     </div>
+                    <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 rounded-2xl font-bold text-xs text-white/85 bg-white/8 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/12 transition-all">
+                      <BookOpen size={13} /> Ver ementa do curso
+                    </a>
                     <button
                       onClick={() => openCourseReservation(c)}
                       className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] border border-[#5b5ef4]/30 flex items-center justify-center gap-2 hover:opacity-90 transition-all" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>

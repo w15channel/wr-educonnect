@@ -8,6 +8,7 @@ import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
 import { AuthProvider } from '@/lib/AuthContext';
 
 import LandingPage from './pages/LayoutPreview2';
+import CourseSyllabus from './pages/CourseSyllabus';
 import WRTec from './pages/WRTec';
 import CourseLobby from './pages/CourseLobby';
 import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
@@ -132,6 +133,7 @@ const AuthenticatedApp = () => {
 
   if (!session) {
     if (pathname === '/politica') return <PoliticaDeTrabalho />;
+    if (pathname === '/ementa-cursos') return <CourseSyllabus />;
     if (pathname === '/termos') return <TermosDeUso />;
     if (pathname === '/privacidade') return <PoliticaDePrivacidade />;
     if (pathname === '/wr-tec') return <WRTec />;
@@ -179,6 +181,7 @@ const AuthenticatedApp = () => {
       <Route path="/classe" element={redirectTo('/classe')} />
 
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
+      <Route path="/ementa-cursos" element={<CourseSyllabus />} />
       <Route path="/wr-tec" element={<WRTec />} />
       <Route path="/termos" element={<TermosDeUso />} />
       <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
