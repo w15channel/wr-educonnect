@@ -6,6 +6,10 @@ function norm(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function uniqueNormList(values = []) {
+  return Array.from(new Set((values || []).map(norm).filter(Boolean)));
+}
+
 function cleanObject(obj = {}) {
   const out = {};
   for (const [key, value] of Object.entries(obj || {})) {
@@ -23,13 +27,15 @@ Deno.serve(async (req) => {
     if (action === 'lessonProgressUpsert') {
       const lessonId = payload.lesson_id;
       const studentEmail = norm(payload.student_email);
-      if (!lessonId || !studentEmail) {
+      const identifiers = uniqueNormList([studentEmail, ...(payload.student_identifiers || [])]);
+      if (!lessonId || identifiers.length === 0) {
         return Response.json({ error: 'Dados do aluno ou da aula ausentes.' }, { status: 400 });
       }
 
       const records = await base44.asServiceRole.entities.LessonProgress.list('-updated_date', 5000);
-      const existing = records.find((item) => item.lesson_id === lessonId && norm(item.student_email) === studentEmail);
-      const data = cleanObject({ lesson_id: lessonId, student_email: studentEmail, ...payload.patch });
+      const existing = records.find((item) => item.lesson_id === lessonId && identifiers.includes(norm(item.student_email)));
+      const canonicalStudentEmail = studentEmail || identifiers[0];
+      const data = cleanObject({ lesson_id: lessonId, student_email: canonicalStudentEmail, ...payload.patch });
 
       const record = existing
         ? await base44.asServiceRole.entities.LessonProgress.update(existing.id, data)
@@ -44,6 +50,22 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Área não permitida para salvamento.' }, { status: 400 });
       }
       const data = cleanObject(payload.data || {});
+
+      if (entity === 'TaskSubmission') {
+        const taskId = data.task_id;
+        const identifiers = uniqueNormList([data.student_email, ...(payload.student_identifiers || [])]);
+
+        if (taskId && identifiers.length > 0) {
+          const records = await base44.asServiceRole.entities.TaskSubmission.list('-updated_date', 5000);
+          const existing = records.find((item) => item.task_id === taskId && identifiers.includes(norm(item.student_email)));
+          if (existing) {
+            const merged = cleanObject({ ...existing, ...data, student_email: norm(data.student_email) || norm(existing.student_email) });
+            const record = await base44.asServiceRole.entities.TaskSubmission.update(existing.id, merged);
+            return Response.json({ success: true, record, restored: true });
+          }
+        }
+      }
+
       const record = await base44.asServiceRole.entities[entity].create(data);
       return Response.json({ success: true, record });
     }

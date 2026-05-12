@@ -98,6 +98,7 @@ export default function Lessons() {
       lesson_id: lessonId,
       student_email: session?.email || session?.code || '',
       patch,
+      student_identifiers: [session?.email, session?.code],
     });
     queryClient.invalidateQueries({ queryKey: ['lesson-progress'] });
   };

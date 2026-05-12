@@ -98,6 +98,7 @@ export default function Tasks({ mode = 'all' }) {
       const res = await base44.functions.invoke('saveStudentRecord', {
         action: 'create',
         entity: 'TaskSubmission',
+        student_identifiers: [user?.email, user?.code],
         data: {
           task_id: taskId,
           student_email: user.email || user.code || '',
@@ -161,6 +162,7 @@ export default function Tasks({ mode = 'all' }) {
         await base44.functions.invoke('saveStudentRecord', {
           action: 'create',
           entity: 'TaskSubmission',
+          student_identifiers: [user?.email, user?.code],
           data: {
             task_id: taskId,
             student_email: user.email || user.code || '',
@@ -237,6 +239,7 @@ export default function Tasks({ mode = 'all' }) {
       const res = await base44.functions.invoke('saveStudentRecord', {
         action: 'create',
         entity: 'TaskSubmission',
+        student_identifiers: [user?.email, user?.code],
         data: {
           task_id: taskId,
           student_email: user?.email || user?.code || '',
