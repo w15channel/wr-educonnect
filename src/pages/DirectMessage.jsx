@@ -6,6 +6,7 @@ import { Send, ArrowLeft, Smile, Minus, Square, X } from 'lucide-react';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 
 const DM_PREFIX = 'dm_';
+const MSN_LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/10fc0b060_pngegg.png';
 
 function getDMSessionId(emailA, emailB) {
   const sorted = [emailA, emailB].sort();
@@ -38,6 +39,11 @@ export default function DirectMessage() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['student-profiles-dm'],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 500),
+  });
+
   const sessionId = session?.email ? getDMSessionId(session.email, decodeURIComponent(targetEmail)) : null;
 
   const { data: messages = [] } = useQuery({
@@ -64,10 +70,12 @@ export default function DirectMessage() {
   const getTargetInfo = () => {
     const dec = decodeURIComponent(targetEmail);
     const code = codes.find(c => c.student_email === dec);
+    const profile = profiles.find(p => p.student_email === dec || p.email === dec);
     return {
-      name: code?.profile_name || code?.student_name || dec,
-      color: code?.profile_avatar_color || '#3b82f6',
-      photo: code?.profile_photo_url,
+      name: code?.profile_name || profile?.full_name || code?.student_name || dec,
+      nickname: profile?.nickname || '',
+      color: code?.profile_avatar_color || profile?.avatar_color || '#3b82f6',
+      photo: code?.profile_photo_url || profile?.photo_url,
     };
   };
 
@@ -112,6 +120,7 @@ export default function DirectMessage() {
           <button onClick={() => navigate(-1)} className="mr-2 text-white/80 hover:text-white">
             <ArrowLeft size={15} />
           </button>
+          <img src={MSN_LOGO_URL} alt="MSN" className="w-5 h-5 object-contain mr-2" />
           <span className="font-bold text-xs tracking-wide">EDU Live Messenger - {target.name}</span>
           <div className="ml-auto flex items-center gap-2"><Minus size={13}/><Square size={11}/><X size={13}/></div>
         </div>
@@ -126,6 +135,7 @@ export default function DirectMessage() {
           )}
           <div className="min-w-0">
             <h2 className="text-2xl text-[#24436b] leading-tight truncate">{target.name}</h2>
+            {target.nickname && <p className="text-sm text-[#2e6da4] truncate -mt-0.5">“{target.nickname}”</p>}
             <p className="text-xs font-bold text-[#4f5f87]">(Online) · Conversa particular</p>
             <p className="text-xs text-[#5c7399] truncate">🔒 Mensagens privadas no EDU Live Messenger</p>
           </div>

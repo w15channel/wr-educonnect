@@ -15,16 +15,20 @@ const MSN_CLASSIC_EMOJIS = [
   { code: '(F)', icon: '🌹' }, { code: '(W)', icon: '🥀' }, { code: '(K)', icon: '💋' },
 ];
 
+const MSN_LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/10fc0b060_pngegg.png';
+const ACTION_PREFIX = '[MSN_ACTION]';
+const ATTENTION_PREFIX = '[MSN_ATTENTION]';
+
 const STICKERS = [
-  { id: 's1', emoji: '(nudge)', label: 'Cutucar' },
-  { id: 's2', emoji: '(brb)', label: 'Volto já' },
-  { id: 's3', emoji: '(afk)', label: 'Ausente' },
-  { id: 's4', emoji: '(bah)', label: 'Bah' },
-  { id: 's5', emoji: '(h5)', label: 'Toca aqui' },
-  { id: 's6', emoji: '(rock)', label: 'Rock' },
-  { id: 's7', emoji: '(rain)', label: 'Chovendo' },
-  { id: 's8', emoji: '(party)', label: 'Festa' },
-  { id: 's9', emoji: '(cof)', label: 'Café' },
+  { id: 'attention', emoji: '🔔', label: 'Chamar atenção', message: 'chamou a atenção da sala.', attention: true },
+  { id: 'brb', emoji: '⏳', label: 'Volto já', message: 'ficou com status: volto já.' },
+  { id: 'afk', emoji: '🌙', label: 'Ausente', message: 'avisou que está ausente por alguns minutos.' },
+  { id: 'help', emoji: '🙋', label: 'Pedir ajuda', message: 'pediu ajuda para a turma.' },
+  { id: 'material', emoji: '📎', label: 'Pedir material', message: 'pediu o material ou link citado no chat.' },
+  { id: 'summary', emoji: '📝', label: 'Pedir resumo', message: 'pediu um resumo dos pontos principais.' },
+  { id: 'coffee', emoji: '☕', label: 'Pausa rápida', message: 'avisou que fará uma pausa rápida.' },
+  { id: 'done', emoji: '✅', label: 'Concluído', message: 'marcou que concluiu essa etapa.' },
+  { id: 'celebrate', emoji: '🎉', label: 'Comemorar', message: 'comemorou com a turma.' },
 ];
 
 const MSN_COLORS = ['#4f6edc', '#0a7ad1', '#9a59c5', '#de4f8b', '#f2a327', '#17a589'];
@@ -36,6 +40,19 @@ function formatBRT(dateStr) {
 }
 
 function MessageItem({ msg, isMe, name, color, email, time }) {
+  const isAttention = msg.content?.startsWith(ATTENTION_PREFIX);
+  const isAction = msg.content?.startsWith(ACTION_PREFIX);
+  const cleanContent = (msg.content || '').replace(ATTENTION_PREFIX, '').replace(ACTION_PREFIX, '').trim();
+
+  if (isAttention || isAction) {
+    return (
+      <div className={`text-[12px] px-2 py-1 rounded border ${isAttention ? 'bg-yellow-50 border-yellow-200 text-yellow-800' : 'bg-[#eef6ff] border-[#c8d7f5] text-[#31558c]'}`} style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
+        <span className="text-[11px] opacity-70">[{time}] </span>
+        <span className="font-bold">{isAttention ? '🔔 Atenção: ' : '⚡ Ação MSN: '}</span>{cleanContent}
+      </div>
+    );
+  }
+
   return (
     <div className="text-[13px] leading-relaxed" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
       <span className="text-[11px] text-[#6f7ba8]">[{time}] </span>
@@ -43,7 +60,7 @@ function MessageItem({ msg, isMe, name, color, email, time }) {
         {name}
       </ClickableStudent>
       <span className="text-[#1f2937]"> diz:</span>
-      <span className="ml-1 text-[#0f172a]">{msg.content}</span>
+      <span className="ml-1 text-[#0f172a]">{cleanContent}</span>
     </div>
   );
 }
@@ -59,6 +76,7 @@ export default function ClassChat() {
   const [pickerTab, setPickerTab] = useState('emoji');
   const [dmSearch, setDmSearch] = useState('');
   const bottomRef = useRef(null);
+  const lastAttentionRef = useRef(null);
 
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const userCourse = routeCourse || session?.course || 'tcc';
@@ -76,6 +94,35 @@ export default function ClassChat() {
   });
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, activeTab]);
+
+  const courseLabel = userCourse === 'tcc' ? 'TC' : userCourse.toUpperCase();
+
+  const playAttention = () => {
+    document.body.classList.add('msn-attention-shake');
+    setTimeout(() => document.body.classList.remove('msn-attention-shake'), 1200);
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const audio = new AudioContext();
+    [0, 0.16, 0.32].forEach((offset) => {
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      oscillator.frequency.value = 880;
+      gain.gain.value = 0.05;
+      oscillator.connect(gain);
+      gain.connect(audio.destination);
+      oscillator.start(audio.currentTime + offset);
+      oscillator.stop(audio.currentTime + offset + 0.08);
+    });
+  };
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.id === lastAttentionRef.current) return;
+    if (last.is_hand_raised && last.author_email !== session?.email && last.content?.startsWith(ATTENTION_PREFIX)) {
+      lastAttentionRef.current = last.id;
+      playAttention();
+    }
+  }, [messages, session?.email]);
 
   useEffect(() => {
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
@@ -100,6 +147,25 @@ export default function ClassChat() {
     queryClient.invalidateQueries({ queryKey: ['class-chat'] });
   };
 
+  const handleMsnAction = async (action) => {
+    const name = session?.name || 'Aluno';
+    if (action.attention) {
+      const key = `msn_attention_${CHAT_SESSION}_${session?.email || 'anon'}`;
+      const now = Date.now();
+      const saved = JSON.parse(localStorage.getItem(key) || '{"count":0,"blockedUntil":0}');
+      if (saved.blockedUntil > now) {
+        alert(`Aguarde ${Math.ceil((saved.blockedUntil - now) / 1000)}s para chamar atenção novamente.`);
+        return;
+      }
+      const nextCount = (saved.count || 0) + 1;
+      localStorage.setItem(key, JSON.stringify({ count: nextCount >= 3 ? 0 : nextCount, blockedUntil: nextCount >= 3 ? now + 60000 : 0 }));
+      await sendMessage(`${ATTENTION_PREFIX} ${name} ${action.message}`, true);
+      playAttention();
+      return;
+    }
+    await sendMessage(`${ACTION_PREFIX} ${action.emoji} ${name} ${action.message}`, true);
+  };
+
   const getProfile = (email) => {
     const code = codes.find(c => c.student_email === email);
     const idx = Math.abs(email?.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 0) % MSN_COLORS.length;
@@ -115,6 +181,7 @@ export default function ClassChat() {
     <div className="mx-auto max-w-5xl h-[calc(100vh-80px)] md:h-[calc(100vh-32px)] p-3 bg-[#b9cdf3]">
       <div className="h-full rounded-md border border-[#3a5db6] shadow-[0_2px_0_#fff,inset_0_1px_0_rgba(255,255,255,.7)] bg-[#dfe9fb] overflow-hidden">
         <div className="h-8 px-3 bg-gradient-to-r from-[#2f58b6] via-[#4e7de0] to-[#2f58b6] text-white flex items-center">
+          <img src={MSN_LOGO_URL} alt="MSN" className="w-5 h-5 object-contain mr-2" />
           <span className="font-bold text-xs tracking-wide">EDU Live Messenger - Conversa da Turma</span>
           <div className="ml-auto flex items-center gap-2"><Minus size={13}/><Square size={11}/><X size={13}/></div>
         </div>
@@ -130,7 +197,7 @@ export default function ClassChat() {
         <div className="h-[calc(100%-68px)] flex">
           {activeTab === 'geral' && <>
             <div className="w-[68%] border-r border-[#abc0ea] flex flex-col bg-white">
-              <div className="px-3 py-1 text-[11px] bg-[#f4f8ff] border-b border-[#dae5fa] text-[#5a6d9e]">Sala geral • {userCourse.toUpperCase()} • mensagens públicas</div>
+              <div className="px-3 py-1 text-[11px] bg-[#f4f8ff] border-b border-[#dae5fa] text-[#5a6d9e]">Sala geral • {courseLabel} • mensagens públicas</div>
               <div className="flex-1 p-3 overflow-y-auto space-y-1">
                 {messages.length === 0 ? <p className="text-sm text-[#7182ac]">Ninguém falou ainda. Inicie com um “Oi :)”.</p> : messages.map((msg) => {
                   const isMe = msg.author_email === session?.email;
@@ -142,7 +209,7 @@ export default function ClassChat() {
 
               {showPicker && <div className="border-t border-[#dae5fa] bg-[#f8fbff]">
                 <div className="flex text-[11px] border-b border-[#dae5fa]"><button onClick={() => setPickerTab('emoji')} className={`px-3 py-1.5 ${pickerTab==='emoji'?'font-bold text-[#25449c]':''}`}>Emoticons clássicos</button><button onClick={() => setPickerTab('sticker')} className={`px-3 py-1.5 ${pickerTab==='sticker'?'font-bold text-[#25449c]':''}`}>Ações MSN</button></div>
-                {pickerTab === 'emoji' ? <div className="p-2 grid grid-cols-6 gap-1">{MSN_CLASSIC_EMOJIS.map((em) => <button key={em.code} onClick={() => setText(t => `${t}${em.code} `)} className="border border-[#d5e2fa] rounded px-2 py-1 hover:bg-[#ecf3ff] text-left text-xs"><span className="mr-1">{em.icon}</span>{em.code}</button>)}</div> : <div className="p-2 grid grid-cols-3 gap-1.5">{STICKERS.map(s => <button key={s.id} onClick={() => sendMessage(s.emoji, true)} className="border border-[#d5e2fa] rounded px-2 py-1 hover:bg-[#ecf3ff] text-xs">{s.label}</button>)}</div>}
+                {pickerTab === 'emoji' ? <div className="p-2 grid grid-cols-6 gap-1">{MSN_CLASSIC_EMOJIS.map((em) => <button key={em.code} onClick={() => setText(t => `${t}${em.code} `)} className="border border-[#d5e2fa] rounded px-2 py-1 hover:bg-[#ecf3ff] text-left text-xs"><span className="mr-1">{em.icon}</span>{em.code}</button>)}</div> : <div className="p-2 grid grid-cols-3 gap-1.5">{STICKERS.map(s => <button key={s.id} onClick={() => handleMsnAction(s)} className="border border-[#d5e2fa] rounded px-2 py-1 hover:bg-[#ecf3ff] text-xs text-left"><span className="mr-1">{s.emoji}</span>{s.label}</button>)}</div>}
               </div>}
 
               <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) sendMessage(text); }} className="border-t border-[#abc0ea] bg-[#edf3ff] p-2 flex items-center gap-2">
