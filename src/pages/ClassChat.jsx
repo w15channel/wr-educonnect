@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Send, Smile, Lock, Users, Search, Minus, Square, X } from 'lucide-react';
+import { Send, Smile, Lock, Users, Search, Minus, Square, X, Bell } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
@@ -75,6 +75,7 @@ export default function ClassChat() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState('emoji');
   const [dmSearch, setDmSearch] = useState('');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
   const bottomRef = useRef(null);
   const lastAttentionRef = useRef(null);
 
@@ -91,6 +92,7 @@ export default function ClassChat() {
   const { data: codes = [] } = useQuery({
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 300),
+    refetchInterval: 15000,
   });
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, activeTab]);
@@ -103,15 +105,19 @@ export default function ClassChat() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
     const audio = new AudioContext();
-    [0, 0.16, 0.32].forEach((offset) => {
+    [0, 0.42, 0.9].forEach((offset) => {
       const oscillator = audio.createOscillator();
       const gain = audio.createGain();
-      oscillator.frequency.value = 880;
-      gain.gain.value = 0.05;
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(740, audio.currentTime + offset);
+      oscillator.frequency.exponentialRampToValueAtTime(980, audio.currentTime + offset + 0.08);
+      gain.gain.setValueAtTime(0.001, audio.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.12, audio.currentTime + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + offset + 0.36);
       oscillator.connect(gain);
       gain.connect(audio.destination);
       oscillator.start(audio.currentTime + offset);
-      oscillator.stop(audio.currentTime + offset + 0.08);
+      oscillator.stop(audio.currentTime + offset + 0.38);
     });
   };
 
@@ -121,6 +127,9 @@ export default function ClassChat() {
     if (last.is_hand_raised && last.author_email !== session?.email && last.content?.startsWith(ATTENTION_PREFIX)) {
       lastAttentionRef.current = last.id;
       playAttention();
+      if (Notification.permission === 'granted') {
+        new Notification('EDU Live Messenger', { body: last.content.replace(ATTENTION_PREFIX, '').trim(), icon: MSN_LOGO_URL });
+      }
     }
   }, [messages, session?.email]);
 
@@ -130,6 +139,21 @@ export default function ClassChat() {
     });
     return unsub;
   }, [queryClient, CHAT_SESSION, userCourse]);
+
+  useEffect(() => {
+    const myCode = codes.find(c => c.student_email === session?.email);
+    if (!myCode?.id) return;
+    const markOnline = () => base44.entities.AccessCode.update(myCode.id, { is_online: true, last_seen_at: new Date().toISOString() });
+    markOnline();
+    const timer = setInterval(markOnline, 30000);
+    const markAway = () => base44.entities.AccessCode.update(myCode.id, { is_online: false, last_seen_at: new Date().toISOString() });
+    window.addEventListener('beforeunload', markAway);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('beforeunload', markAway);
+      markAway();
+    };
+  }, [codes, session?.email]);
 
   const sendMessage = async (content, isSticker = false) => {
     if (!content.trim()) return;
@@ -172,10 +196,33 @@ export default function ClassChat() {
     return { color: code?.profile_avatar_color || MSN_COLORS[idx], emoji: code?.profile_emoji || '•', name: code?.profile_name || null };
   };
 
+  const formatLastSeen = (dateStr) => {
+    if (!dateStr) return 'nunca visto';
+    const date = new Date(dateStr);
+    const diff = Date.now() - date.getTime();
+    if (diff < 60000) return 'agora mesmo';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)} min atrás`;
+    return date.toLocaleDateString('pt-BR') + ' às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const isStudentOnline = (student) => student.is_online && student.last_seen_at && Date.now() - new Date(student.last_seen_at).getTime() < 90000;
+
   const otherStudents = codes.filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
     .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
     .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse)
     .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
+  const onlineStudents = otherStudents.filter(isStudentOnline);
+  const awayStudents = otherStudents.filter(c => !isStudentOnline(c));
+
+  const enableNotifications = async () => {
+    if (typeof Notification === 'undefined') return alert('Este aparelho não suporta notificações do navegador.');
+    const permission = await Notification.requestPermission();
+    const enabled = permission === 'granted';
+    setNotificationsEnabled(enabled);
+    const myCode = codes.find(c => c.student_email === session?.email);
+    if (myCode?.id) await base44.entities.AccessCode.update(myCode.id, { site_notifications_enabled: enabled });
+    if (enabled) new Notification('EDU Live Messenger', { body: 'Notificações ativadas neste aparelho.', icon: MSN_LOGO_URL });
+  };
 
   return (
     <div className="mx-auto max-w-5xl h-[calc(100vh-80px)] md:h-[calc(100vh-32px)] p-3 bg-[#b9cdf3]">
@@ -191,7 +238,9 @@ export default function ClassChat() {
             <button onClick={() => setActiveTab('geral')} className={`px-3 py-1 rounded ${activeTab==='geral'?'bg-white border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Users size={12} className="inline mr-1"/>Chat geral</button>
             <button onClick={() => setActiveTab('particular')} className={`px-3 py-1 rounded ${activeTab==='particular'?'bg-white border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Lock size={11} className="inline mr-1"/>Particular</button>
           </div>
-          <span className="text-[#5471b9]">Status: Online</span>
+          <button onClick={enableNotifications} className={`flex items-center gap-1 px-2 py-1 rounded border ${notificationsEnabled ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-[#abc0ea] text-[#5471b9]'}`} title="Ativar notificações neste aparelho">
+            <Bell size={11} /> {notificationsEnabled ? 'Notificações ativas' : 'Ativar notificações'}
+          </button>
         </div>
 
         <div className="h-[calc(100%-68px)] flex">
@@ -220,12 +269,21 @@ export default function ClassChat() {
             </div>
 
             <div className="w-[32%] bg-[#f2f6ff] p-2">
-              <div className="text-[11px] font-bold text-[#4962a5] mb-2">Contatos online</div>
-              <div className="space-y-1 max-h-full overflow-y-auto">
-                {otherStudents.slice(0, 60).map((c) => {
-                  const name = c.profile_name || c.student_name || c.student_email;
-                  return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] truncate">🟢 {name}</button>;
-                })}
+              <div className="space-y-2 max-h-full overflow-y-auto">
+                <div>
+                  <div className="text-[11px] font-bold text-[#2f7d32] mb-1 border-b border-green-200 pb-1">🟢 Online ({onlineStudents.length})</div>
+                  {onlineStudents.slice(0, 60).map((c) => {
+                    const name = c.profile_name || c.student_name || c.student_email;
+                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] truncate"><span className="text-green-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
+                  })}
+                </div>
+                <div>
+                  <div className="text-[11px] font-bold text-[#b42318] mb-1 border-b border-red-200 pb-1">🔴 Ausentes ({awayStudents.length})</div>
+                  {awayStudents.slice(0, 60).map((c) => {
+                    const name = c.profile_name || c.student_name || c.student_email;
+                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] truncate"><span className="text-red-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Visto por último: {formatLastSeen(c.last_seen_at)}</span></button>;
+                  })}
+                </div>
               </div>
             </div>
           </>}
@@ -236,7 +294,8 @@ export default function ClassChat() {
             <div className="grid md:grid-cols-2 gap-2">
               {otherStudents.map((c) => {
                 const name = c.profile_name || c.student_name || c.student_email;
-                return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="border border-[#c8d7f5] rounded px-3 py-2 text-left hover:bg-[#f6f9ff] text-sm">🔒 {name}</button>;
+                const online = isStudentOnline(c);
+                return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="border border-[#c8d7f5] rounded px-3 py-2 text-left hover:bg-[#f6f9ff] text-sm"><span className={online ? 'text-green-500' : 'text-red-500'}>●</span> 🔒 {name}<span className="block text-[10px] text-[#6f7ba8] ml-4">{online ? 'Online agora' : `Visto por último: ${formatLastSeen(c.last_seen_at)}`}</span></button>;
               })}
             </div>
           </div>}

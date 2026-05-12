@@ -41,6 +41,10 @@
       "type": "string",
       "description": "Avatar color hex"
     },
+    "profile_avatar_emoji": {
+      "type": "string",
+      "description": "Emoji/avatar selecionado pelo aluno"
+    },
     "profile_photo_url": {
       "type": "string",
       "description": "Student profile photo URL"
@@ -48,44 +52,29 @@
     "last_login": {
       "type": "string",
       "description": "Last login timestamp"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "description": "\u00daltimo momento em que o aluno esteve ativo no site"
+    },
+    "is_online": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o aluno est\u00e1 online agora"
+    },
+    "site_notifications_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o aluno ativou notifica\u00e7\u00f5es do site neste aparelho"
     }
   },
   "required": [
     "code"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.student_email": "{{user.email}}"
-        }
-      ]
-    },
+    "create": true,
+    "read": true,
+    "update": true,
     "delete": {
       "user_condition": {
         "role": "admin"
