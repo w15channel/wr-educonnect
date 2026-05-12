@@ -164,8 +164,6 @@ const COURSES = [
 
 
 const TESTIMONIALS = [
-{ name: 'Marilene Batist', text: 'Estou aqui navegando pela plataforma, e olha, eu já fiz vários cursos e ainda faço alguns, mas nos detalhes se percebe o capricho, o zelo, a entrega de nosso professor! Eu agradeço demais sua dedicação, seu espírito visionário nos move a querer ir além e a acreditar que também somos capazes.', stars: 5 },
-{ name: 'Diane Martins', text: 'Ao nosso mentor @WR TERAPIA | Psicoterapia | Psicanálise, parabenizo pela dedicação, entrega e intencionalidade em dar o primeiro passo na formação de novos terapeutas. Do aparente menor ofício ao mais significativo, você ousou, acreditou, executou e o resultado está à disposição de todos que intencionam crescer em conhecimento, formações ou mesmo para quem deseja buscar suporte para suas demandas. A plataforma ficou excelente, bonita e atrativa.', stars: 5 },
 { name: 'Ana Paula M.', text: 'A formação mais completa que já fiz. O diferencial da prática desde o início foi transformador para mim.', stars: 5 },
 { name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
 { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 }];
@@ -707,7 +705,7 @@ ${transcript}`);
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-white mb-2">O que dizem nossos alunos</h2>
-            <p className="text-white/40 text-sm uppercase tracking-widest">Alunos da primeira turma de formação</p>
+            <p className="text-white/40 text-sm">Mais de 500 terapeutas formados</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t, i) =>
