@@ -66,7 +66,7 @@ export default function BottomNav({ onMenuOpen }) {
         document.querySelector('[data-scroll-container]')?.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else {
-      const saved = stacks[target];
+      const saved = stacks[root];
       navigate(saved || target);
     }
   };

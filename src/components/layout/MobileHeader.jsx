@@ -40,7 +40,8 @@ export default function MobileHeader() {
   const location = useLocation();
   const { session } = useCustomAuth();
   const sub = stripScopedPrefix(location.pathname);
-  const label = routeLabels[sub] || BRAND_LEGAL_NAME;
+  const baseSub = '/' + sub.split('/').filter(Boolean)[0];
+  const label = routeLabels[sub] || routeLabels[baseSub] || BRAND_LEGAL_NAME;
 
   const [theme, setTheme] = useState(() => localStorage.getItem('wr_theme') || 'light');
 
