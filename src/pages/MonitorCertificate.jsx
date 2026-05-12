@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Download, ArrowLeft, Crown } from 'lucide-react';
+import { Download, ArrowLeft, Crown, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -22,16 +22,33 @@ export default function MonitorCertificate() {
 
   const certStudent = monitorHistory.find((item) => item.id === id);
 
-  const handleDownload = async () => {
-    if (!certRef.current || !certStudent) return;
+  const exportCertificateImage = async () => {
+    if (!certRef.current || !certStudent) return null;
     const canvas = await html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff' });
-    const imgData = canvas.toDataURL('image/png');
+    return canvas.toDataURL('image/png');
+  };
+
+  const handleDownloadPDF = async () => {
+    const imgData = await exportCertificateImage();
+    if (!imgData) return;
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
     pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
     pdf.save(`certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.pdf`);
-    toast.success('Certificado baixado. Escolha onde salvar no seu dispositivo quando o navegador solicitar.');
+    toast.success('PDF baixado. Escolha onde salvar no seu dispositivo quando o navegador solicitar.');
+  };
+
+  const handleDownloadPNG = async () => {
+    const imgData = await exportCertificateImage();
+    if (!imgData) return;
+    const link = document.createElement('a');
+    link.href = imgData;
+    link.download = `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('PNG baixado com sucesso.');
   };
 
   if (isLoading) {
@@ -54,15 +71,16 @@ export default function MonitorCertificate() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2"><Crown size={22} className="text-yellow-500" /> Certificado de Monitor</h2>
-          <p className="text-sm text-muted-foreground">Baixe o PDF e escolha onde salvar no seu dispositivo.</p>
+          <p className="text-sm text-muted-foreground">Baixe em PDF ou PNG e escolha onde salvar no seu dispositivo.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate(-1)} className="gap-2"><ArrowLeft size={14} /> Voltar</Button>
-          <Button onClick={handleDownload} className="gap-2"><Download size={15} /> Baixar PDF</Button>
+          <Button onClick={handleDownloadPDF} className="gap-2"><Download size={15} /> Baixar PDF</Button>
+          <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2"><ImageIcon size={15} /> Baixar PNG</Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-secondary/20 p-3">
+      <div className="overflow-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
         <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 28 }}>
             <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png" alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
@@ -90,7 +108,7 @@ export default function MonitorCertificate() {
           </div>
           <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 34, paddingTop: 14 }}>
             <p style={{ fontSize: 10, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-              Documento emitido digitalmente pela plataforma WR-EDU · {format(new Date(), 'yyyy')}
+              Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/001-40 · {format(new Date(), 'yyyy')}
             </p>
           </div>
         </div>

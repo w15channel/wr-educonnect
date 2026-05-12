@@ -401,7 +401,7 @@ export default function Monitores() {
             </div>
             <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 24, paddingTop: 12 }}>
               <p style={{ fontSize: 9, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-                Documento emitido digitalmente pela plataforma WR-EDU · {format(new Date(), 'yyyy')}
+                Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/001-40 · {format(new Date(), 'yyyy')}
               </p>
             </div>
           </div>
