@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Download, ArrowLeft, Crown } from 'lucide-react';
+import { Download, ArrowLeft, Crown, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -24,45 +24,33 @@ export default function MonitorCertificate() {
 
   const certStudent = monitorHistory.find((item) => item.id === id);
 
-  const getCertificateCanvas = async () => {
-    if (!certRef.current || !certStudent) return;
-    return html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff', useCORS: true });
+  const exportCertificateImage = async () => {
+    if (!certRef.current || !certStudent) return null;
+    const canvas = await html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff' });
+    return canvas.toDataURL('image/png');
   };
 
   const handleDownloadPDF = async () => {
-    const canvas = await getCertificateCanvas();
-    if (!canvas) return;
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = await exportCertificateImage();
+    if (!imgData) return;
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
     pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
-    const blob = pdf.output('blob');
-    await saveBlobWithPicker(blob, `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.pdf`, 'application/pdf');
-    toast.success('Certificado salvo em PDF.');
+    pdf.save(`certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.pdf`);
+    toast.success('PDF baixado. Escolha onde salvar no seu dispositivo quando o navegador solicitar.');
   };
 
   const handleDownloadPNG = async () => {
-    const canvas = await getCertificateCanvas();
-    if (!canvas) return;
-    const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    if (!pngBlob) return;
-    await saveBlobWithPicker(pngBlob, `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.png`, 'image/png');
-    toast.success('Certificado salvo em PNG.');
-  };
-
-  const handleShare = async () => {
-    const canvas = await getCertificateCanvas();
-    if (!canvas) return;
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pdfW = pdf.internal.pageSize.getWidth();
-    const pdfH = pdf.internal.pageSize.getHeight();
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
-    const blob = pdf.output('blob');
-    const shared = await shareBlob(blob, `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.pdf`, 'application/pdf', 'Certificado de Monitor');
-    if (shared) toast.success('Compartilhamento aberto.');
-    else toast.error('Compartilhamento não suportado neste dispositivo.');
+    const imgData = await exportCertificateImage();
+    if (!imgData) return;
+    const link = document.createElement('a');
+    link.href = imgData;
+    link.download = `certificado-monitor-${certStudent.student_name?.replace(/\s/g, '-') || 'aluno'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('PNG baixado com sucesso.');
   };
 
   if (isLoading) {
@@ -89,13 +77,12 @@ export default function MonitorCertificate() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => navigate(-1)} className="gap-2"><ArrowLeft size={14} /> Voltar</Button>
-          <Button onClick={handleDownloadPDF} className="gap-2"><Download size={15} /> Salvar PDF</Button>
-          <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2"><Download size={15} /> Salvar PNG</Button>
-          <Button variant="outline" onClick={handleShare} className="gap-2">Compartilhar</Button>
+          <Button onClick={handleDownloadPDF} className="gap-2"><Download size={15} /> Baixar PDF</Button>
+          <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2"><ImageIcon size={15} /> Baixar PNG</Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
+      <div className="overflow-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
         <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 28 }}>
             <img src={WR_CERTIFICATE_LOGO} alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
@@ -124,7 +111,7 @@ export default function MonitorCertificate() {
           </div>
           <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 34, paddingTop: 14 }}>
             <p style={{ fontSize: 10, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-              {formatDocumentIssuer(format(new Date(), 'yyyy'))}
+              Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/001-40 · {format(new Date(), 'yyyy')}
             </p>
           </div>
         </div>

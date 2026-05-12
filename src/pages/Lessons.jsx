@@ -575,37 +575,6 @@ export default function Lessons() {
                       </div>
                     )}
 
-                    {/* Teacher view: student summaries and comments */}
-                    {isTeacher && getLessonProgressEntries(lesson.id).length > 0 && (
-                      <div className="px-4 py-3 border-t border-border bg-secondary/10">
-                        <p className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5">
-                          <MessageSquare size={13} className="text-accent" /> Resumos, comentários e presenças dos alunos
-                        </p>
-                        <div className="space-y-2">
-                          {getLessonProgressEntries(lesson.id).map(entry => (
-                            <div key={entry.id} className="rounded-xl border border-border bg-card p-3">
-                              <div className="flex items-center justify-between gap-2 mb-2">
-                                <p className="text-xs font-bold text-foreground">{entry.student_email}</p>
-                                {entry.watched && <span className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5 font-bold">Assistida</span>}
-                              </div>
-                              {entry.summary && (
-                                <div className="mb-2">
-                                  <p className="text-[10px] text-muted-foreground font-semibold">Meu resumo:</p>
-                                  <p className="text-xs text-foreground/80 whitespace-pre-wrap">{entry.summary}</p>
-                                </div>
-                              )}
-                              {entry.comment && (
-                                <div>
-                                  <p className="text-[10px] text-muted-foreground font-semibold">Meu comentário:</p>
-                                  <p className="text-xs text-foreground/80 whitespace-pre-wrap">{entry.comment}</p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     {/* Student sections */}
                     {!isTeacher && (
                       <div className="px-4 pb-4 space-y-4 pt-3">
