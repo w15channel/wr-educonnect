@@ -96,6 +96,7 @@ const COURSES = [
   slug: 'tc',
   title: 'TERAPEUTA TC',
   subtitle: 'Curso Profissionalizante em Terapia Comportamental',
+  originalPrice: 'R$ 357',
   price: 'R$ 250',
   period: '/mês · 4 meses',
   tag: 'Mais Vendido',
@@ -118,6 +119,7 @@ const COURSES = [
   slug: 'psicanalise',
   title: 'PSICANALISTA FREUDIANO',
   subtitle: 'Curso Profissionalizante em Métodos Psicanalíticos',
+  originalPrice: 'R$ 428',
   price: 'R$ 300',
   period: '/mês · 4 meses',
   tag: 'Novo',
@@ -140,6 +142,7 @@ const COURSES = [
   slug: 'sexologia',
   title: 'SEXÓLOGO(A)',
   subtitle: 'Curso Profissionalizante em Sexualidade Humana',
+  originalPrice: 'R$ 500',
   price: 'R$ 350',
   period: '/mês · 4 meses',
   tag: 'Novo',
@@ -670,6 +673,7 @@ ${transcript}`);
                   <div className="pt-4 border-t border-white/8">
                     <div className="mb-3">
                       <p className="text-xs text-[#1db89e] font-bold mb-1 uppercase tracking-wide">Matrícula antecipada com bolsa de 30%</p>
+                      <p className="text-xs text-white/35 mb-0.5">De <span className="line-through decoration-red-400/80">{c.originalPrice}</span> por</p>
                       <p className="text-2xl font-black text-white">{c.price} <span className="text-sm font-normal text-white/40">{c.period}</span></p>
                       <p className="text-[11px] text-orange-200/80 mt-1">Condição especial por tempo limitado. Garanta antes que as vagas acabem.</p>
                     </div>
