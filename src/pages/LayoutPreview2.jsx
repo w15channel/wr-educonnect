@@ -505,7 +505,7 @@ ${transcript}`);
                 </div>
                 <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
                 <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
-                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro · {BRAND_LEGAL_NAME}</p>
+                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro - WR EDU®</p>
                 </div>
               </div>
             </div>
