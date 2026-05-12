@@ -93,8 +93,8 @@ const CURRENT = [
 
 const COURSES = [
 {
-  title: 'Terapeuta em TC',
-  subtitle: 'Curso Profissionalizante na Formação de Terapeuta em Terapia Comportamental',
+  title: 'TERAPEUTA TC',
+  subtitle: 'Curso Profissionalizante em Terapia Comportamental',
   price: 'R$ 250',
   period: '/mês · 4 meses',
   tag: 'Mais Vendido',
@@ -114,8 +114,8 @@ const COURSES = [
   ]
 },
 {
-  title: 'Psicanalista Freudiano',
-  subtitle: 'Curso Profissionalizante na Formação de Terapeutas do Método Psicanalítico',
+  title: 'PSICANALISTA FREUDIANO',
+  subtitle: 'Curso Profissionalizante em Métodos Psicanalíticos',
   price: 'R$ 300',
   period: '/mês · 4 meses',
   tag: 'Novo',
@@ -135,8 +135,8 @@ const COURSES = [
   ]
 },
 {
-  title: 'Sexólogo(a)',
-  subtitle: 'Curso Profissionalizante na Formação de Terapeutas da Sexualidade Humana',
+  title: 'SEXÓLOGO(A)',
+  subtitle: 'Curso Profissionalizante em Sexualidade Humana',
   price: 'R$ 350',
   period: '/mês · 4 meses',
   tag: 'Novo',
