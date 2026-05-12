@@ -8,7 +8,7 @@ import { BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 const routeLabels = {
   '/dashboard': 'Dashboard',
   '/lessons': 'Aulas',
-  '/chat': 'Chat da Turma',
+  '/chat': 'EDU Live Messenger',
   '/live': 'Sala ao Vivo',
   '/tasks': 'Tarefas e Provas',
   '/forum': 'Fórum de Dúvidas',

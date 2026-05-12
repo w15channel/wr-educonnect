@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, ArrowLeft, Smile } from 'lucide-react';
+import { Send, ArrowLeft, Smile, Minus, Square, X } from 'lucide-react';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 
 const DM_PREFIX = 'dm_';
@@ -106,76 +106,85 @@ export default function DirectMessage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] md:h-[calc(100vh-32px)] max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="shrink-0 px-4 py-3 border-b border-border bg-gradient-to-r from-[#1e3a8a] via-[#3b5ef4] to-[#5b5ef4] flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="text-white/70 hover:text-white p-1 rounded-lg transition-colors">
-          <ArrowLeft size={18} />
-        </button>
-        <MSNAvatar color={target.color} size={36} />
-        <div className="flex-1">
-          <p className="text-white font-bold text-sm">{target.name}</p>
-          <p className="text-white/50 text-[10px]">Mensagem Privada · WR-EDU</p>
+    <div className="mx-auto max-w-4xl h-[calc(100vh-80px)] md:h-[calc(100vh-32px)] p-3 bg-[#b9cdf3]">
+      <div className="h-full rounded-md border border-[#3a5db6] shadow-[0_2px_0_#fff,inset_0_1px_0_rgba(255,255,255,.7)] bg-[#dfe9fb] overflow-hidden" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
+        <div className="h-8 px-3 bg-gradient-to-r from-[#2f58b6] via-[#4e7de0] to-[#2f58b6] text-white flex items-center">
+          <button onClick={() => navigate(-1)} className="mr-2 text-white/80 hover:text-white">
+            <ArrowLeft size={15} />
+          </button>
+          <span className="font-bold text-xs tracking-wide">EDU Live Messenger - {target.name}</span>
+          <div className="ml-auto flex items-center gap-2"><Minus size={13}/><Square size={11}/><X size={13}/></div>
         </div>
-      </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-[radial-gradient(circle_at_top_left,_#e9efff,_#f7f9ff_45%,_#ecf3ff)] space-y-3">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-center">
-            <MSNAvatar color={target.color} size={48} />
-            <p className="text-[#5b5ef4] font-bold">Inicie a conversa com {target.name}!</p>
-            <p className="text-gray-400 text-sm">Suas mensagens são privadas.</p>
+        <div className="h-24 px-4 bg-gradient-to-b from-[#c9efff] to-[#edf7ff] border-b border-[#abc0ea] flex items-center gap-4">
+          {target.photo ? (
+            <img src={target.photo} alt={target.name} className="w-16 h-16 rounded-md object-cover border-4 border-white shadow-[0_0_0_2px_#70c843,0_2px_8px_rgba(0,0,0,.18)]" />
+          ) : (
+            <div className="w-16 h-16 rounded-md bg-white border-4 border-white shadow-[0_0_0_2px_#70c843,0_2px_8px_rgba(0,0,0,.18)] flex items-center justify-center">
+              <MSNAvatar color={target.color} size={48} />
+            </div>
+          )}
+          <div className="min-w-0">
+            <h2 className="text-2xl text-[#24436b] leading-tight truncate">{target.name}</h2>
+            <p className="text-xs font-bold text-[#4f5f87]">(Online) · Conversa particular</p>
+            <p className="text-xs text-[#5c7399] truncate">🔒 Mensagens privadas no EDU Live Messenger</p>
           </div>
-        )}
-        {messages.map(msg => {
-          const isMe = msg.author_email === session?.email;
-          const rawDate = msg.created_date ? new Date(new Date(msg.created_date).getTime() - 3 * 60 * 60 * 1000) : null;
-          const time = rawDate ? rawDate.toISOString().slice(11, 16) : '';
-          return (
-            <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-              <MSNAvatar color={isMe ? myColor : target.color} size={28} />
-              <div className={`max-w-[72%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                {!isMe && <span className="text-[10px] font-bold mb-0.5 ml-1 text-[#3b82f6]">{msg.author_name}</span>}
-                <div className={`px-3 py-2 rounded-2xl text-sm shadow-sm ${isMe ? 'rounded-br-sm bg-gradient-to-br from-[#5b5ef4] to-[#7c5ef4] text-white' : 'rounded-bl-sm bg-white border border-gray-200 text-gray-800'}`}>
-                  {msg.content}
+        </div>
+
+        <div className="h-[calc(100%-8rem)] flex flex-col bg-white">
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 bg-white">
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full gap-2 text-center text-[#7182ac]">
+                <MSNAvatar color={target.color} size={58} />
+                <p className="font-bold text-[#25449c]">Inicie a conversa com {target.name}!</p>
+                <p className="text-sm">Suas mensagens são privadas.</p>
+              </div>
+            )}
+            {messages.map(msg => {
+              const isMe = msg.author_email === session?.email;
+              const rawDate = msg.created_date ? new Date(new Date(msg.created_date).getTime() - 3 * 60 * 60 * 1000) : null;
+              const time = rawDate ? rawDate.toISOString().slice(11, 16) : '';
+              return (
+                <div key={msg.id} className="text-[13px] leading-relaxed">
+                  <span className="text-[11px] text-[#6f7ba8]">[{time}] </span>
+                  <span className="font-bold" style={{ color: isMe ? '#0d5d9a' : target.color }}>
+                    {isMe ? 'Você' : msg.author_name}
+                  </span>
+                  <span className="text-[#1f2937]"> diz:</span>
+                  <span className="ml-1 text-[#0f172a]">{msg.content}</span>
                 </div>
-                <span className="text-[9px] text-gray-400 mt-0.5 mx-1">{time}</span>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
+
+          <div className="shrink-0 border-t border-[#abc0ea] bg-[#edf3ff] p-2">
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <Smile size={15} className="text-[#3f62ba]" />
+              <div className="flex gap-1 overflow-x-auto">
+                {CHAT_EMOJIS.slice(0, 10).map(e => (
+                  <button key={e} type="button" onClick={() => setText(prev => `${prev}${e}`)} className="w-7 h-7 border border-[#c8d7f5] bg-white rounded hover:bg-[#f2f7ff] text-sm">{e}</button>
+                ))}
               </div>
             </div>
-          );
-        })}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Input */}
-      <div className="shrink-0 bg-white/90 backdrop-blur border-t border-border p-3">
-        <div className="flex gap-2 items-center">
-          <input
-            className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-[#5b5ef4]/50 focus:bg-white transition-all"
-            placeholder={`Mensagem para ${target.name}...`}
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={handleKey}
-            style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}
-          />
-          <div className="flex items-center gap-1 px-2 py-1 rounded-xl border border-gray-200 bg-gray-50">
-            <Smile size={14} className="text-gray-400" />
-            <div className="flex gap-1">
-              {CHAT_EMOJIS.slice(0, 6).map(e => (
-                <button key={e} type="button" onClick={() => setText(prev => `${prev}${e}`)} className="text-sm hover:scale-110 transition-transform">{e}</button>
-              ))}
+            <div className="flex gap-2 items-center">
+              <input
+                className="flex-1 h-9 px-3 text-sm border border-[#abc0ea] rounded bg-white focus:outline-none"
+                placeholder={`Digite uma mensagem para ${target.name}...`}
+                value={text}
+                onChange={e => setText(e.target.value)}
+                onKeyDown={handleKey}
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!text.trim()}
+                className="h-9 px-4 rounded bg-[#4f7de0] text-white text-sm font-semibold disabled:opacity-50"
+              >
+                <Send size={14} className="inline mr-1"/>Enviar
+              </button>
             </div>
           </div>
-          <button
-            onClick={sendMessage}
-            disabled={!text.trim()}
-            className="p-2.5 bg-gradient-to-br from-[#5b5ef4] to-[#7c5ef4] text-white rounded-xl disabled:opacity-40 hover:opacity-90 transition-all shrink-0 shadow-sm"
-          >
-            <Send size={16} />
-          </button>
         </div>
-        <p className="text-[9px] text-gray-300 text-center mt-1.5 font-mono">🔒 Mensagem privada · WR-EDU</p>
       </div>
     </div>
   );

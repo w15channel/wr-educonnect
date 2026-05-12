@@ -28,7 +28,7 @@ const adminGroups = [
   {
     label: 'Comunidade',
     items: [
-      { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
+      { icon: Hash, label: 'EDU Live Messenger', path: '/chat', color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: UsersRound, label: 'Sala de Debates', path: '/debates', color: 'text-fuchsia-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
@@ -70,7 +70,7 @@ const studentGroups = [
   {
     label: 'Comunidade',
     items: [
-      { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
+      { icon: Hash, label: 'EDU Live Messenger', path: '/chat', color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
       { icon: UsersRound, label: 'Sala de Debates', path: '/debates', color: 'text-fuchsia-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
