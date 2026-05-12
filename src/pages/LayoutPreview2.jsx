@@ -164,6 +164,9 @@ const COURSES = [
 
 
 const TESTIMONIALS = [
+{ name: 'Diane Martins', text: 'Ao nosso mentor William, parabenizo pela dedicação, entrega e intencionalidade em dar o primeiro passo na formação de novos terapeutas. Do aparente “menor ofício” ao mais significativo, você ousou, acreditou, executou, e o resultado está à disposição de todos que desejam crescer em conhecimento, formações ou buscar suporte para suas demandas.', stars: 5 },
+{ name: 'Stella Torres', text: 'Estou maravilhada com o andamento do curso. Confesso que iniciei um pouco desanimada e confusa, mas, mesmo em pouco tempo, nosso professor, com suas palavras de ânimo, me impulsionou a acreditar que chegarei ao meu objetivo. Obrigada por tudo e por tanto, William. Você é show! Orgulho de ser sua aluna. A plataforma ficou excelente, bonita e atrativa.', stars: 5 },
+{ name: 'Marilene Batista', text: 'Estou aqui navegando pela plataforma e, olha, eu já fiz vários cursos e ainda faço alguns, mas nos detalhes se percebe o capricho, o zelo e a entrega do nosso professor! Agradeço demais sua dedicação. Seu espírito visionário nos move a querer ir além e a acreditar que também somos capazes.', stars: 5 },
 { name: 'Ana Paula M.', text: 'A formação mais completa que já fiz. O diferencial da prática desde o início foi transformador para mim.', stars: 5 },
 { name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
 { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 }];
@@ -705,15 +708,15 @@ ${transcript}`);
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-white mb-2">O que dizem nossos alunos</h2>
-            <p className="text-white/40 text-sm">Mais de 500 terapeutas formados</p>
+            <p className="text-white/40 text-sm">Relatos reais sobre a experiência na plataforma</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {testimonials.map((t, i) =>
-            <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all">
-                <Quote size={22} className="text-[#5b5ef4]/30 mb-3" />
-                <p className="text-white/70 text-sm leading-relaxed mb-5">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center text-xs font-black">{t.name[0]}</div>
+            <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all h-full flex flex-col">
+                <Quote size={22} className="text-[#5b5ef4]/30 mb-3 shrink-0" />
+                <p className={`text-white/70 leading-relaxed mb-5 flex-1 ${i < 3 ? 'text-[13px]' : 'text-sm'}`}>"{t.text}"</p>
+                <div className="flex items-center gap-3 pt-4 border-t border-white/6">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center text-xs font-black shrink-0">{t.name[0]}</div>
                   <div>
                     <p className="text-white text-sm font-bold">{t.name}</p>
                     <div className="flex gap-0.5 mt-0.5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={9} className="text-yellow-400 fill-yellow-400" />)}</div>
