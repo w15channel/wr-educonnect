@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Send, Brain, Sparkles, RefreshCw, Heart, Mic, MicOff, Volume2, PhoneCall, PhoneOff } from 'lucide-react';
+import { Send, Brain, Sparkles, RefreshCw, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Input } from '@/components/ui/input';
@@ -49,10 +49,7 @@ export default function TutorDigital() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [voiceMode, setVoiceMode] = useState(false);
-  const [listening, setListening] = useState(false);
   const chatEndRef = useRef(null);
-  const recognitionRef = useRef(null);
   const { course: routeCourse } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
 
@@ -75,24 +72,6 @@ export default function TutorDigital() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  useEffect(() => {
-    if (!voiceMode || messages[messages.length - 1]?.role !== 'assistant') return;
-    const speech = window.speechSynthesis;
-    if (!speech) return;
-    speech.cancel();
-    const utterance = new SpeechSynthesisUtterance(messages[messages.length - 1].content.replace(/[😊📚🎉]/g, ''));
-    utterance.lang = 'pt-BR';
-    utterance.rate = 0.98;
-    speech.speak(utterance);
-  }, [messages, voiceMode]);
-
-  useEffect(() => {
-    return () => {
-      recognitionRef.current?.stop?.();
-      window.speechSynthesis?.cancel?.();
-    };
-  }, []);
 
   const buildContext = () => {
     const pendingTasks = tasks.filter(t => !submissions.find(s => s.task_id === t.id));
@@ -121,34 +100,6 @@ Contexto do aluno:
     setLoading(false);
   };
 
-  const toggleVoiceMode = () => {
-    const next = !voiceMode;
-    setVoiceMode(next);
-    if (!next) {
-      recognitionRef.current?.stop?.();
-      window.speechSynthesis?.cancel?.();
-      setListening(false);
-    }
-  };
-
-  const startListening = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition || loading) return;
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'pt-BR';
-    recognition.interimResults = false;
-    recognition.continuous = false;
-    recognition.onstart = () => setListening(true);
-    recognition.onend = () => setListening(false);
-    recognition.onresult = (event) => {
-      const transcript = event.results?.[0]?.[0]?.transcript || '';
-      if (transcript) sendMessage(transcript);
-    };
-    recognitionRef.current = recognition;
-    recognition.start();
-  };
-
   return (
     <div className="flex flex-col h-full max-h-screen bg-background">
       {/* Header */}
@@ -164,13 +115,6 @@ Contexto do aluno:
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <button
-            onClick={toggleVoiceMode}
-            className={`p-2 rounded-xl transition-colors ${voiceMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
-            title={voiceMode ? 'Encerrar chamada com EDU' : 'Iniciar chamada com EDU'}
-          >
-            {voiceMode ? <PhoneOff size={15} /> : <PhoneCall size={15} />}
-          </button>
-          <button
             onClick={() => setMessages([messages[0]])}
             className="text-muted-foreground hover:text-foreground hover:bg-secondary p-2 rounded-xl transition-colors"
             title="Reiniciar conversa"
@@ -179,25 +123,6 @@ Contexto do aluno:
           </button>
         </div>
       </div>
-
-      {voiceMode && (
-        <div className="mx-4 mt-3 rounded-2xl border border-primary/20 bg-primary/8 p-3 flex items-center gap-3 animate-fade-in">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground animate-pulse">
-            <Volume2 size={17} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground">Chamada com o EDU ativa</p>
-            <p className="text-xs text-muted-foreground">Toque no microfone e converse por voz.</p>
-          </div>
-          <button
-            onClick={startListening}
-            disabled={loading || listening}
-            className={`w-11 h-11 rounded-full flex items-center justify-center text-white transition-all ${listening ? 'bg-red-500 animate-pulse' : 'bg-gradient-to-br from-pink-500 to-purple-600'} disabled:opacity-50`}
-          >
-            {listening ? <MicOff size={18} /> : <Mic size={18} />}
-          </button>
-        </div>
-      )}
 
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -259,15 +184,6 @@ Contexto do aluno:
       {/* Input */}
       <div className="p-4 border-t border-border bg-card shrink-0">
         <form onSubmit={e => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
-          <button
-            type="button"
-            onClick={startListening}
-            disabled={loading || listening}
-            className={`h-11 w-11 rounded-xl flex items-center justify-center text-white shrink-0 transition-all ${listening ? 'bg-red-500 animate-pulse' : 'bg-secondary text-foreground border border-border'} disabled:opacity-50`}
-            title="Falar com o EDU"
-          >
-            {listening ? <MicOff size={16} /> : <Mic size={16} />}
-          </button>
           <Input
             value={input}
             onChange={e => setInput(e.target.value)}
