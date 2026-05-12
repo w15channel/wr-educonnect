@@ -160,7 +160,7 @@ export default function LiveSessions() {
     const alreadyAttended = myAttendances.some(a => a.session_id === selectedSession.id);
 
     return (
-      <div className="flex flex-col h-full bg-background">
+      <div className="flex flex-col flex-1 min-h-[calc(100dvh-140px)] md:min-h-[calc(100dvh-48px)] bg-background overflow-hidden">
         {/* Top bar */}
         <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-card flex-wrap gap-y-1.5">
           <Button variant="ghost" size="sm" onClick={() => setSelectedSession(null)} className="shrink-0 h-8 px-2 gap-1 text-xs">
@@ -187,11 +187,11 @@ export default function LiveSessions() {
         </div>
 
         {/* Layout: video top / chat bottom on mobile, side-by-side on desktop */}
-        <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+        <div className="flex flex-col xl:flex-row flex-1 min-h-0 overflow-hidden">
           {/* Stream */}
-          <div className="flex flex-col bg-black relative flex-shrink-0 lg:flex-1">
+          <div className="flex flex-col bg-black relative flex-shrink-0 xl:flex-1 min-h-0">
             {/* 16:9 iframe */}
-            <div className="w-full aspect-video lg:aspect-auto lg:flex-1" style={{ minHeight: 0 }}>
+            <div className="w-full aspect-video xl:aspect-auto xl:flex-1" style={{ minHeight: 0 }}>
               <iframe
                 src={embedSrc}
                 className="w-full h-full"
@@ -222,7 +222,7 @@ export default function LiveSessions() {
           </div>
 
           {/* Chat */}
-          <div className="w-full lg:w-80 bg-card border-t lg:border-t-0 lg:border-l border-border flex flex-col h-[260px] lg:h-full">
+          <div className="w-full xl:w-96 bg-card border-t xl:border-t-0 xl:border-l border-border flex flex-col h-[300px] md:h-[340px] xl:h-full min-h-0">
             <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
               <MessageSquare size={14} className="text-primary" />
               <h3 className="font-bold text-sm text-foreground flex-1">Chat ao Vivo</h3>
@@ -294,7 +294,7 @@ export default function LiveSessions() {
   const past = orderedSessions.filter(s => s.status === 'ended');
 
   return (
-    <div className="p-4 lg:p-7 max-w-5xl mx-auto space-y-5 animate-fade-in-up">
+    <div className="w-full max-w-screen-2xl mx-auto p-4 md:p-5 xl:p-7 space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Sala ao Vivo</h2>
