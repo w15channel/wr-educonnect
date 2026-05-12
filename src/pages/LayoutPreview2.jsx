@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   GraduationCap, Lock, Key, Sparkles, Users, BookOpen, Video, Heart,
   Star, ChevronRight, Shield, Award, CheckCircle, ExternalLink,
-  ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle, MessageCircle, Send } from
+  ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle, MessageCircle, Send,
+  Instagram, Clock, Gift } from
 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { setSession } from '@/lib/customAuth';
@@ -10,6 +11,10 @@ import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from 
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
 const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
+const OFFER_DURATION_MS = 48 * 60 * 60 * 1000;
+const INSTAGRAM_PROFILE_URL = 'https://www.instagram.com/wrterapia';
+const SOCIAL_REEL_URL = 'https://www.instagram.com/wrterapia/reel/DTvNvvoDHgd/';
+const SOCIAL_REEL_EMBED_URL = 'https://www.instagram.com/reel/DTvNvvoDHgd/embed';
 
 const HERO_IMAGES = [
 'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
@@ -97,8 +102,9 @@ const COURSES = [
   title: 'TERAPEUTA TC',
   subtitle: 'Curso Profissionalizante em Terapia Comportamental',
   originalPrice: 'R$ 357',
-  price: 'R$ 250',
-  period: '/mês · 4 meses',
+  firstMonthPrice: 'R$ 178,50',
+  price: 'R$ 214,20',
+  period: '/mês até o fim do curso',
   tag: 'Mais Vendido',
   tagColor: '#5b5ef4',
   imgs: [
@@ -120,8 +126,9 @@ const COURSES = [
   title: 'PSICANALISTA FREUDIANO',
   subtitle: 'Curso Profissionalizante em Métodos Psicanalíticos',
   originalPrice: 'R$ 428',
-  price: 'R$ 300',
-  period: '/mês · 4 meses',
+  firstMonthPrice: 'R$ 214',
+  price: 'R$ 256,80',
+  period: '/mês até o fim do curso',
   tag: 'Novo',
   tagColor: '#1db89e',
   imgs: [
@@ -143,8 +150,9 @@ const COURSES = [
   title: 'SEXÓLOGO(A)',
   subtitle: 'Curso Profissionalizante em Sexualidade Humana',
   originalPrice: 'R$ 500',
-  price: 'R$ 350',
-  period: '/mês · 4 meses',
+  firstMonthPrice: 'R$ 250',
+  price: 'R$ 300',
+  period: '/mês até o fim do curso',
   tag: 'Novo',
   tagColor: '#a855f7',
   imgs: [
@@ -201,11 +209,27 @@ export default function LandingPage({ onLogin }) {
   const [leadMessages, setLeadMessages] = useState([]);
   const [leadInput, setLeadInput] = useState('');
   const [leadLoading, setLeadLoading] = useState(false);
+  const [offerTimeLeft, setOfferTimeLeft] = useState(OFFER_DURATION_MS);
 
   useEffect(() => {
     const interval = setInterval(() => setHeroImg((i) => (i + 1) % HERO_IMAGES.length), 5000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const storedDeadline = localStorage.getItem('wrEduOfferDeadline');
+    const deadline = storedDeadline ? Number(storedDeadline) : Date.now() + OFFER_DURATION_MS;
+    if (!storedDeadline) localStorage.setItem('wrEduOfferDeadline', String(deadline));
+
+    const updateTimer = () => setOfferTimeLeft(Math.max(0, deadline - Date.now()));
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const offerHours = String(Math.floor(offerTimeLeft / 3600000)).padStart(2, '0');
+  const offerMinutes = String(Math.floor((offerTimeLeft % 3600000) / 60000)).padStart(2, '0');
+  const offerSeconds = String(Math.floor((offerTimeLeft % 60000) / 1000)).padStart(2, '0');
 
   useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 60);
@@ -309,9 +333,8 @@ ${transcript}`);
 
   return (
     <div
-      className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#080b14] text-white"
-      style={{ WebkitOverflowScrolling: 'touch' }}
-      onScroll={(e) => setNavScrolled(e.currentTarget.scrollTop > 60)}
+      className="min-h-[100dvh] overflow-x-hidden bg-[#080b14] text-white"
+      style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
     >
 
       {/* STICKY NAVBAR */}
@@ -328,7 +351,7 @@ ${transcript}`);
               </div>
             </a>
             <div className="hidden md:flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/10 p-1 text-sm text-white/62 shadow-inner shadow-black/20">
-              {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+              {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Social', '#atuacao-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
               <a key={label} href={href} className="px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all">{label}</a>
               )}
             </div>
@@ -347,7 +370,7 @@ ${transcript}`);
         </div>
         {mobileMenu &&
         <div className="md:hidden mx-4 mt-2 rounded-3xl bg-[#0d1120]/95 border border-white/10 px-4 py-4 space-y-2 shadow-2xl shadow-black/30 backdrop-blur-xl">
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Social', '#atuacao-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
           <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/65 hover:text-white hover:bg-white/8 py-3 px-3 rounded-2xl text-sm font-medium transition-all">{label}</a>
           )}
             <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full flex items-center justify-center gap-2 rounded-2xl border border-[#1db89e]/25 bg-[#1db89e]/10 py-3 text-white font-bold text-sm">
@@ -610,17 +633,72 @@ ${transcript}`);
         </div>
       </section>
 
+      {/* ATUAÇÃO SOCIAL */}
+      <section id="atuacao-social" className="py-24 px-6 lg:px-20 bg-[#080b14]">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-[#1db89e]/10 border border-[#1db89e]/20 rounded-full px-4 py-1.5 mb-5">
+              <Heart size={13} className="text-[#1db89e]" />
+              <span className="text-xs font-bold text-[#1db89e] uppercase tracking-widest">Atuação aberta à comunidade</span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-black text-white leading-tight mb-5">Terapia também é presença social.</h2>
+            <p className="text-white/60 leading-relaxed mb-4 text-sm lg:text-base">
+              Nossa atuação vai além da sala de aula: produzimos conteúdo aberto, acolhimento emocional e reflexões para ouvintes e espectadores que buscam orientação, equilíbrio e consciência no dia a dia.
+            </p>
+            <p className="text-white/50 leading-relaxed mb-7 text-sm">
+              Esse compromisso social mostra na prática a essência da nossa formação: técnica, humanidade e responsabilidade com pessoas reais.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a href={SOCIAL_REEL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-6 py-3 rounded-2xl shadow-lg shadow-[#5b5ef4]/25">
+                <Play size={15} className="fill-current" /> Assistir no Instagram
+              </a>
+              <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/12 text-white font-bold px-6 py-3 rounded-2xl hover:bg-white/12 transition-all">
+                <Instagram size={15} /> @wrterapia
+              </a>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute -inset-4 bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/20 rounded-[2rem] blur-2xl" />
+            <div className="relative bg-[#0d1120] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-black/30">
+              <iframe
+                title="WR Terapia — Atuação social"
+                src={SOCIAL_REEL_EMBED_URL}
+                className="w-full h-[560px] bg-black"
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* NOSSOS CURSOS */}
-      <section id="cursos" className="py-28 px-6 lg:px-20 bg-[#080b14]">
+      <section id="cursos" className="py-24 px-5 sm:px-6 lg:px-20 bg-[#080b14]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 bg-[#1db89e]/10 border border-[#1db89e]/20 rounded-full px-4 py-1.5 mb-4">
               <GraduationCap size={13} className="text-[#1db89e]" />
               <span className="text-xs font-bold text-[#1db89e] uppercase tracking-widest">Formações</span>
             </div>
-            <h2 className="text-4xl font-black text-white">Nossos Cursos Profissionalizantes</h2>
-            <p className="text-white/50 mt-3 max-w-lg mx-auto text-base">Certificados digitais verificáveis emitidos pela {BRAND_LEGAL_NAME}.</p>
-            <p className="text-[#1db89e] mt-3 text-sm font-bold">Valores de matrícula antecipada com bolsa de 30% em todos os cursos — condição limitada.</p>
+            <h2 className="text-4xl lg:text-5xl font-black text-white">Oferta de Matrícula Antecipada</h2>
+            <p className="text-white/55 mt-3 max-w-2xl mx-auto text-base">Entre na primeira turma com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto mantido até o final do curso.</p>
+            <div className="mt-6 mx-auto max-w-3xl rounded-3xl border border-orange-300/25 bg-gradient-to-r from-orange-500/15 via-[#5b5ef4]/15 to-[#1db89e]/15 p-5 shadow-2xl shadow-orange-500/10">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-5">
+                <div className="text-center lg:text-left">
+                  <p className="inline-flex items-center gap-2 text-orange-200 text-xs font-black uppercase tracking-widest mb-2"><Gift size={14} /> Janela especial de 48 horas</p>
+                  <p className="text-white font-black text-xl">Garanta 50% na 1ª mensalidade + 40% vitalício até o fim do curso</p>
+                  <p className="text-white/45 text-xs mt-1">A condição vitalícia vale para inscritos até a abertura da primeira turma.</p>
+                </div>
+                <div className="shrink-0 grid grid-cols-3 gap-2 text-center">
+                  {[['Horas', offerHours], ['Min', offerMinutes], ['Seg', offerSeconds]].map(([label, value]) => (
+                    <div key={label} className="min-w-[72px] rounded-2xl bg-black/35 border border-white/10 px-3 py-2">
+                      <p className="text-2xl font-black text-white font-mono">{value}</p>
+                      <p className="text-[10px] text-white/35 uppercase tracking-widest">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
             {/* Selos ABED + AHDE */}
             <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
@@ -675,10 +753,13 @@ ${transcript}`);
                   </div>
                   <div className="pt-4 border-t border-white/8">
                     <div className="mb-3">
-                      <p className="text-xs text-[#1db89e] font-bold mb-1 uppercase tracking-wide">Matrícula antecipada com bolsa de 30%</p>
-                      <p className="text-xs text-white/35 mb-0.5">De <span className="line-through decoration-red-400/80">{c.originalPrice}</span> por</p>
-                      <p className="text-2xl font-black text-white">{c.price} <span className="text-sm font-normal text-white/40">{c.period}</span></p>
-                      <p className="text-[11px] text-orange-200/80 mt-1">Condição especial por tempo limitado. Garanta antes que as vagas acabem.</p>
+                      <p className="text-xs text-orange-200 font-black mb-1 uppercase tracking-wide flex items-center gap-1.5"><Clock size={12} /> Oferta ativa por 48h</p>
+                      <p className="text-xs text-white/35 mb-0.5">Valor cheio: <span className="line-through decoration-red-400/80">{c.originalPrice}</span></p>
+                      <p className="text-[11px] text-[#1db89e] font-bold">Primeira mensalidade com 50%:</p>
+                      <p className="text-2xl font-black text-white">{c.firstMonthPrice}</p>
+                      <p className="text-[11px] text-white/40 mt-2">Depois, 40% de desconto vitalício:</p>
+                      <p className="text-xl font-black text-white">{c.price} <span className="text-xs font-normal text-white/40">{c.period}</span></p>
+                      <p className="text-[11px] text-orange-200/80 mt-2">Entre agora e preserve esta condição até a conclusão da formação.</p>
                     </div>
                     <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 rounded-2xl font-bold text-xs text-white/85 bg-white/8 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/12 transition-all">
                       <BookOpen size={13} /> Ver ementa do curso
@@ -700,6 +781,11 @@ ${transcript}`);
         @keyframes pulse-cta {
           0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(91,94,244,0.5); }
           50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(91,94,244,0); }
+        }
+        html { scroll-behavior: smooth; }
+        @media (max-width: 767px) {
+          #top { min-height: 100svh; height: auto; padding-top: 6rem; padding-bottom: 5rem; }
+          iframe { max-width: 100%; }
         }
       `}</style>
 
