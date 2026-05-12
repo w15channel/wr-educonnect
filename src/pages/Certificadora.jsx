@@ -11,7 +11,7 @@ const TOTAL_LIVES_H = 10;
 const REMINDER_KEY = 'cert_last_reminder';
 
 const COURSE_NAMES = {
-  tcc: 'Formação de Terapeuta em Abordagem TCC',
+  tcc: 'Formação de Terapeuta em Terapia Comportamental',
   psicanalise: 'Formação de Terapeutas do Método Psicanalítico',
   sexologia: 'Formação de Terapeutas da Sexualidade Humana',
 };

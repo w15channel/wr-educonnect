@@ -5,12 +5,11 @@ import {
   ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle, MessageCircle, Send } from
 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
+import { setSession } from '@/lib/customAuth';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
 const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
-
-const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 
 const HERO_IMAGES = [
 'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
@@ -79,8 +78,8 @@ const CURRENT = [
   link: null
 },
 {
-  title: 'Gestor — WR-EDU',
-  desc: 'Gerencia o Curso Profissionalizante para Formação de Terapeutas. Representado oficialmente junto à ABED (Associação Brasileira de Educação a Distância).',
+  title: `Gestor — ${BRAND_LEGAL_NAME}`,
+  desc: `Gerencia o Curso Profissionalizante para Formação de Terapeutas pela ${BRAND_LEGAL_NAME}. Representado oficialmente junto à ABED (Associação Brasileira de Educação a Distância).`,
   link: 'https://www.abed.org.br/site/associados/consulta-associados-ativos/',
   linkLabel: 'Consultar na ABED'
 },
@@ -94,8 +93,10 @@ const CURRENT = [
 
 const COURSES = [
 {
-  title: 'Terapeuta TCC',
-  subtitle: 'Curso Profissionalizante na Formação de Terapeuta em Abordagem TCC',
+  slug: 'tc',
+  title: 'TERAPEUTA TC',
+  subtitle: 'Curso Profissionalizante em Terapia Comportamental',
+  originalPrice: 'R$ 357',
   price: 'R$ 250',
   period: '/mês · 4 meses',
   tag: 'Mais Vendido',
@@ -106,7 +107,7 @@ const COURSES = [
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/fa5959e53_generated_image.png',
   ],
   highlights: [
-    'Técnicas cognitivo-comportamentais aplicadas',
+    'Técnicas de Terapia Comportamental aplicadas',
     'Prática clínica desde as primeiras semanas',
     'Credenciamento internacional como terapeuta',
     'Plataforma centralizada de conteúdos',
@@ -115,8 +116,10 @@ const COURSES = [
   ]
 },
 {
-  title: 'Psicanalista Freudiano',
-  subtitle: 'Curso Profissionalizante na Formação de Terapeutas do Método Psicanalítico',
+  slug: 'psicanalise',
+  title: 'PSICANALISTA FREUDIANO',
+  subtitle: 'Curso Profissionalizante em Métodos Psicanalíticos',
+  originalPrice: 'R$ 428',
   price: 'R$ 300',
   period: '/mês · 4 meses',
   tag: 'Novo',
@@ -136,8 +139,10 @@ const COURSES = [
   ]
 },
 {
-  title: 'Sexólogo(a)',
-  subtitle: 'Curso Profissionalizante na Formação de Terapeutas da Sexualidade Humana',
+  slug: 'sexologia',
+  title: 'SEXÓLOGO(A)',
+  subtitle: 'Curso Profissionalizante em Sexualidade Humana',
+  originalPrice: 'R$ 500',
   price: 'R$ 350',
   period: '/mês · 4 meses',
   tag: 'Novo',
@@ -159,6 +164,9 @@ const COURSES = [
 
 
 const TESTIMONIALS = [
+{ name: 'Diane Martins', text: 'Ao nosso mentor William, parabenizo pela dedicação, entrega e intencionalidade em dar o primeiro passo na formação de novos terapeutas. Do aparente “menor ofício” ao mais significativo, você ousou, acreditou, executou, e o resultado está à disposição de todos que desejam crescer em conhecimento, formações ou buscar suporte para suas demandas.', stars: 5 },
+{ name: 'Stella Torres', text: 'Estou maravilhada com o andamento do curso. Confesso que iniciei um pouco desanimada e confusa, mas, mesmo em pouco tempo, nosso professor, com suas palavras de ânimo, me impulsionou a acreditar que chegarei ao meu objetivo. Obrigada por tudo e por tanto, William. Você é show! Orgulho de ser sua aluna. A plataforma ficou excelente, bonita e atrativa.', stars: 5 },
+{ name: 'Marilene Batista', text: 'Estou aqui navegando pela plataforma e, olha, eu já fiz vários cursos e ainda faço alguns, mas nos detalhes se percebe o capricho, o zelo e a entrega do nosso professor! Agradeço demais sua dedicação. Seu espírito visionário nos move a querer ir além e a acreditar que também somos capazes.', stars: 5 },
 { name: 'Ana Paula M.', text: 'A formação mais completa que já fiz. O diferencial da prática desde o início foi transformador para mim.', stars: 5 },
 { name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
 { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 }];
@@ -223,27 +231,13 @@ export default function LandingPage({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const trimmed = code.trim().toUpperCase();
-    const results = await base44.entities.AccessCode.filter({ code: trimmed, is_active: true });
-    if (results.length === 0) {
-      setError('Código inválido ou desativado.');
-      setLoading(false);
-      return;
+    try {
+      const response = await base44.functions.invoke('siteLogin', { mode: 'student', code });
+      setSession(response.data.session);
+      onLogin('lobby');
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Não foi possível entrar. Verifique o código.');
     }
-    const record = results[0];
-    await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
-    setSession({
-      role: 'student',
-      codeId: record.id,
-      code: trimmed,
-      name: record.profile_name || record.student_name || 'Aluno',
-      email: record.student_email || '',
-      bio: record.profile_bio || '',
-      avatarColor: record.profile_avatar_color || '#5b5ef4',
-      photoUrl: record.profile_photo_url || '',
-      course: record.course || 'tcc',
-    });
-    onLogin('lobby');
     setLoading(false);
   };
 
@@ -251,20 +245,13 @@ export default function LandingPage({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const creds = await base44.entities.AdminCredential.list();
-    if (creds.length === 0) {
-      setError('Login admin não configurado.');
-      setLoading(false);
-      return;
+    try {
+      const response = await base44.functions.invoke('siteLogin', { mode: 'admin', email: adminEmail, password: adminPassword });
+      setSession(response.data.session);
+      onLogin('lobby');
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Email ou senha incorretos.');
     }
-    const cred = creds[0];
-    if (adminEmail.trim() !== cred.email || !verifyPassword(adminPassword, cred.password_hash)) {
-      setError('Email ou senha incorretos.');
-      setLoading(false);
-      return;
-    }
-    setSession({ role: 'admin', name: 'Professor', email: cred.email, course: null });
-    onLogin('lobby');
     setLoading(false);
   };
 
@@ -273,7 +260,7 @@ export default function LandingPage({ onLogin }) {
     setLeadMessages([
       {
         role: 'assistant',
-        content: `Olá! Sou a IA da WR-EDU 😊 Vou registrar sua reserva antecipada para ${course.title}. Para começar: qual é seu nome completo e melhor WhatsApp?`
+        content: `Olá! Sou a IA da ${BRAND_LEGAL_NAME} 😊 Vou registrar sua reserva antecipada para ${course.title}. Para começar: qual é seu nome completo e melhor WhatsApp?`
       }
     ]);
     setLeadInput('');
@@ -295,7 +282,7 @@ export default function LandingPage({ onLogin }) {
 
     setLeadLoading(true);
 
-    const prompt = `Você é a IA de pré-reserva da WR-EDU. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.
+    const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.
 Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez, até coletar: nome completo, WhatsApp, curso de interesse, objetivo profissional e melhor horário de contato.
 Quando os dados principais já estiverem presentes, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre o diálogo pedindo para a pessoa selecionar a opção de enviar a reserva ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598. Seja acolhedor, objetivo e use português do Brasil.
 
@@ -310,7 +297,7 @@ IA:`;
   };
 
   const sendReserveToWhatsApp = () => {
-    const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA WR-EDU'}: ${m.content}`).join('\n');
+    const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : `IA ${BRAND_SHORT_NAME}`}: ${m.content}`).join('\n');
     const summary = encodeURIComponent(`Olá! Quero reservar vaga antecipada.
 Curso: ${selectedCourse?.title}
 
@@ -321,41 +308,52 @@ ${transcript}`);
   };
 
   return (
-    <div className="min-h-screen bg-[#080b14] text-white">
+    <div
+      className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#080b14] text-white"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+      onScroll={(e) => setNavScrolled(e.currentTarget.scrollTop > 60)}
+    >
 
       {/* STICKY NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/95 backdrop-blur-xl border-b border-white/8 py-3 shadow-xl' : 'py-6'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-          <img src={LOGO_URL} alt="WR" className="w-14 h-14 object-contain" />
-            <span className="text-2xl font-black tracking-tight">WR-EDU</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
-            <a key={label} href={href} className="hover:text-white transition-colors">{label}</a>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-medium transition-colors">
-              <Lock size={13} /> Área do Aluno
-            </button>
-            <a href="#cursos" className="bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white text-sm font-bold px-5 py-2 rounded-xl hidden md:block animate-pulse hover:animate-none hover:opacity-90 transition-all shadow-lg shadow-[#5b5ef4]/40" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
-              Inscreva-se
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'py-3' : 'py-5'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className={`flex items-center justify-between rounded-[2rem] border px-4 sm:px-5 py-3 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/88 border-white/12 shadow-2xl shadow-black/35 backdrop-blur-2xl' : 'bg-[#080b14]/45 border-white/10 shadow-lg shadow-black/10 backdrop-blur-xl'}`}>
+            <a href="#top" className="flex items-center gap-3 min-w-0 group">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/12 to-white/4 border border-white/12 flex items-center justify-center shadow-inner group-hover:border-[#1db89e]/45 transition-colors">
+                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-10 h-10 object-contain" />
+              </div>
+              <div className="min-w-0">
+                <span className="block text-base sm:text-lg font-black tracking-tight leading-tight truncate text-white">{BRAND_SHORT_NAME}</span>
+                <span className="hidden sm:block text-[10px] text-white/40 uppercase tracking-[0.22em]">Instituto de Desenvolvimento Humano</span>
+              </div>
             </a>
-            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden text-white/60 hover:text-white">
-              {mobileMenu ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            <div className="hidden md:flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/10 p-1 text-sm text-white/62 shadow-inner shadow-black/20">
+              {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+              <a key={label} href={href} className="px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all">{label}</a>
+              )}
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-2 rounded-full border border-[#1db89e]/25 bg-[#1db89e]/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-[#1db89e]/16 hover:border-[#1db89e]/45 transition-all shadow-lg shadow-[#1db89e]/10">
+                <span className="w-2 h-2 rounded-full bg-[#1db89e] shadow-[0_0_12px_rgba(29,184,158,0.8)]" /> Área do Aluno
+              </button>
+              <a href="#cursos" className="hidden md:block rounded-full bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-[#5b5ef4]/30 hover:opacity-95 transition-all" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+                Inscreva-se
+              </a>
+              <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden w-11 h-11 rounded-2xl bg-white/8 border border-white/10 text-white/70 hover:text-white flex items-center justify-center">
+                {mobileMenu ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
           </div>
         </div>
         {mobileMenu &&
-        <div className="md:hidden bg-[#0d1120] border-t border-white/8 px-6 py-4 space-y-3">
+        <div className="md:hidden mx-4 mt-2 rounded-3xl bg-[#0d1120]/95 border border-white/10 px-4 py-4 space-y-2 shadow-2xl shadow-black/30 backdrop-blur-xl">
             {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
-          <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/60 hover:text-white py-2 text-sm transition-colors">{label}</a>
+          <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/65 hover:text-white hover:bg-white/8 py-3 px-3 rounded-2xl text-sm font-medium transition-all">{label}</a>
           )}
-            <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full text-center py-2 text-[#5b5ef4] font-semibold text-sm">
-              Área do Aluno
+            <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full flex items-center justify-center gap-2 rounded-2xl border border-[#1db89e]/25 bg-[#1db89e]/10 py-3 text-white font-bold text-sm">
+              <span className="w-2 h-2 rounded-full bg-[#1db89e]" /> Área do Aluno
             </button>
-            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-[#5b5ef4]/40" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black py-3 rounded-2xl text-sm shadow-lg shadow-[#5b5ef4]/35" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
               Inscreva-se
             </a>
           </div>
@@ -363,7 +361,7 @@ ${transcript}`);
       </nav>
 
       {/* HERO FULL-WIDTH */}
-      <div className="relative h-screen flex items-center justify-center overflow-hidden">
+      <div id="top" className="relative h-screen flex items-center justify-center overflow-hidden">
         {HERO_IMAGES.map((src, i) =>
         <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
             <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 35%' }} />
@@ -442,7 +440,7 @@ ${transcript}`);
                 <p className="text-[#5b5ef4] text-xs font-bold mt-2">— William Ribeiro</p>
               </blockquote>
               <p className="text-white/60 leading-relaxed mb-4 text-sm">
-                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-white">técnica da TCC</strong>, a <strong className="text-white">profundidade da psicanálise</strong> e a <strong className="text-white">complexidade da sexualidade humana</strong> em um método direto e sem rodeios.
+                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-white">Terapia Comportamental</strong>, a <strong className="text-white">profundidade da psicanálise</strong> e a <strong className="text-white">complexidade da sexualidade humana</strong> em um método direto e sem rodeios.
               </p>
               <p className="text-white/60 leading-relaxed mb-4 text-sm">
                 Diferente de cursos gravados e solitários, estarei com você em tempo real, guiando sua evolução técnica enquanto você interage com colegas e se conecta à comunidade profissional do grupo Sinapse Coletiva. O nosso compromisso é que você experimente a vivência do consultório ainda durante o curso, saindo preparado para atender com ética, segurança e a dignidade que cada paciente merece.
@@ -516,7 +514,7 @@ ${transcript}`);
                 </div>
                 <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
                 <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
-                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro · WR-EDU</p>
+                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro - WR EDU®</p>
                 </div>
               </div>
             </div>
@@ -534,7 +532,7 @@ ${transcript}`);
                 Dessa evolução natural, consolidou-se sua atuação como Psicoterapeuta, Psicanalista e Sexólogo Integrativo, com formações certificadas nacional e internacionalmente. Especialista em vícios e dinâmicas conjugais, William fundou o grupo <strong className="text-white">Sinapse Coletiva</strong>, um ecossistema que integra profissionais da saúde comportamental focados em uma técnica consciente, equilibrada e despida de amadorismos.
               </p>
               <p className="text-white/60 text-sm leading-relaxed">
-                Atualmente, essa trajetória culmina na coordenação da plataforma <strong className="text-white">WR-EDU</strong>. Como mantenedor associado à <strong className="text-white">ABED</strong>, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento. Esse compromisso expande-se como Educador Social no projeto <strong className="text-white">Vida Digital</strong> da <strong className="text-white">ADRA Paraná</strong>, onde reestrutura comunidades em vulnerabilidade.
+                Atualmente, essa trajetória culmina na coordenação da plataforma <strong className="text-white">{BRAND_LEGAL_NAME}</strong>. Como mantenedor associado à <strong className="text-white">ABED</strong>, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento. Esse compromisso expande-se como Educador Social no projeto <strong className="text-white">Vida Digital</strong> da <strong className="text-white">ADRA Paraná</strong>, onde reestrutura comunidades em vulnerabilidade.
               </p>
               <p className="text-white/50 text-sm leading-relaxed italic">
                 William Ribeiro não apenas ensina terapia; ele lidera uma formação que une o rigor da utilidade comportamental ao poder transformador do acolhimento humanizado.
@@ -621,13 +619,14 @@ ${transcript}`);
               <span className="text-xs font-bold text-[#1db89e] uppercase tracking-widest">Formações</span>
             </div>
             <h2 className="text-4xl font-black text-white">Nossos Cursos Profissionalizantes</h2>
-            <p className="text-white/50 mt-3 max-w-lg mx-auto text-base">Certificados digitais verificáveis emitidos pelo WR-EDU.</p>
+            <p className="text-white/50 mt-3 max-w-lg mx-auto text-base">Certificados digitais verificáveis emitidos pela {BRAND_LEGAL_NAME}.</p>
+            <p className="text-[#1db89e] mt-3 text-sm font-bold">Valores de matrícula antecipada com bolsa de 30% em todos os cursos — condição limitada.</p>
             {/* Selos ABED + AHDE */}
             <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
-                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-10 object-contain" />
-                <ExternalLink size={11} className="text-white/20 group-hover:text-[#5b5ef4] transition-colors" />
+              className="flex items-center gap-[18px] bg-white/6 hover:bg-white/10 border border-white/10 rounded-3xl px-[30px] py-[18px] transition-all group">
+                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-[60px] object-contain" />
+                <ExternalLink size={17} className="text-white/20 group-hover:text-[#5b5ef4] transition-colors" />
               </a>
               <a href="https://ahde-global.org/?lang=pt-br" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
@@ -676,9 +675,14 @@ ${transcript}`);
                   </div>
                   <div className="pt-4 border-t border-white/8">
                     <div className="mb-3">
-                      <p className="text-xs text-white/30 mb-0.5">Investimento</p>
+                      <p className="text-xs text-[#1db89e] font-bold mb-1 uppercase tracking-wide">Matrícula antecipada com bolsa de 30%</p>
+                      <p className="text-xs text-white/35 mb-0.5">De <span className="line-through decoration-red-400/80">{c.originalPrice}</span> por</p>
                       <p className="text-2xl font-black text-white">{c.price} <span className="text-sm font-normal text-white/40">{c.period}</span></p>
+                      <p className="text-[11px] text-orange-200/80 mt-1">Condição especial por tempo limitado. Garanta antes que as vagas acabem.</p>
                     </div>
+                    <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 rounded-2xl font-bold text-xs text-white/85 bg-white/8 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/12 transition-all">
+                      <BookOpen size={13} /> Ver ementa do curso
+                    </a>
                     <button
                       onClick={() => openCourseReservation(c)}
                       className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] border border-[#5b5ef4]/30 flex items-center justify-center gap-2 hover:opacity-90 transition-all" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
@@ -704,15 +708,15 @@ ${transcript}`);
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-white mb-2">O que dizem nossos alunos</h2>
-            <p className="text-white/40 text-sm">Mais de 500 terapeutas formados</p>
+            <p className="text-white/40 text-sm">Relatos reais sobre a experiência na plataforma</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {testimonials.map((t, i) =>
-            <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all">
-                <Quote size={22} className="text-[#5b5ef4]/30 mb-3" />
-                <p className="text-white/70 text-sm leading-relaxed mb-5">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center text-xs font-black">{t.name[0]}</div>
+            <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all h-full flex flex-col">
+                <Quote size={22} className="text-[#5b5ef4]/30 mb-3 shrink-0" />
+                <p className={`text-white/70 leading-relaxed mb-5 flex-1 ${i < 3 ? 'text-[13px]' : 'text-sm'}`}>"{t.text}"</p>
+                <div className="flex items-center gap-3 pt-4 border-t border-white/6">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center text-xs font-black shrink-0">{t.name[0]}</div>
                   <div>
                     <p className="text-white text-sm font-bold">{t.name}</p>
                     <div className="flex gap-0.5 mt-0.5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={9} className="text-yellow-400 fill-yellow-400" />)}</div>
@@ -735,7 +739,7 @@ ${transcript}`);
               Garantir Minha Vaga <ChevronRight size={18} />
             </a>
             <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/12 transition-all text-sm">
-              <Lock size={14} /> Já sou aluno
+              <span className="w-2 h-2 rounded-full bg-[#1db89e] shadow-[0_0_12px_rgba(29,184,158,0.7)]" /> Já sou aluno
             </button>
           </div>
         </div>
@@ -746,10 +750,10 @@ ${transcript}`);
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
             <div className="flex items-center gap-3">
-              <img src={LOGO_URL} alt="WR" className="w-12 h-12 object-contain" />
+              <img src={WR_PRIMARY_LOGO} alt="WR" className="w-12 h-12 object-contain" />
               <div>
-                <p className="text-white font-black text-base">WR-EDU</p>
-                <p className="text-white/30 text-xs">Escola de Formação de Terapeutas</p>
+                <p className="text-white font-black text-base">{BRAND_LEGAL_NAME}</p>
+                <p className="text-white/30 text-xs">CNPJ {BRAND_CNPJ}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-6 text-white/30 text-sm">
@@ -764,7 +768,7 @@ ${transcript}`);
           </div>
           <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
-              <p className="text-white/20 text-xs">WR-EDU © 2026 — Todos os direitos reservados</p>
+              <p className="text-white/20 text-xs">{BRAND_LEGAL_NAME} © 2026 · CNPJ {BRAND_CNPJ}</p>
               <span className="text-white/10 hidden sm:inline">·</span>
               <p className="text-white/20 text-xs">Feito com <span className="text-red-500">♥</span> pela <a href="/wr-tec" className="text-white/40 font-semibold hover:text-[#5b5ef4] transition-colors">WR-TEC®</a> © 2026</p>
             </div>

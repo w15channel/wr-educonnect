@@ -9,6 +9,8 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, formatDocumentIssuer } from '@/lib/brand';
+import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 
 export default function MonitorCertificate() {
   const { id } = useParams();
@@ -73,7 +75,7 @@ export default function MonitorCertificate() {
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2"><Crown size={22} className="text-yellow-500" /> Certificado de Monitor</h2>
           <p className="text-sm text-muted-foreground">Baixe em PDF ou PNG e escolha onde salvar no seu dispositivo.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => navigate(-1)} className="gap-2"><ArrowLeft size={14} /> Voltar</Button>
           <Button onClick={handleDownloadPDF} className="gap-2"><Download size={15} /> Baixar PDF</Button>
           <Button variant="secondary" onClick={handleDownloadPNG} className="gap-2"><ImageIcon size={15} /> Baixar PNG</Button>
@@ -83,8 +85,8 @@ export default function MonitorCertificate() {
       <div className="overflow-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
         <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 28 }}>
-            <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/5265f3b64_1000407748_d589e7f2d77d09c6941cdd7fa30003c5-03_02_202612_32_07.png" alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
-            <p style={{ fontSize: 12, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>WR — Instituto de Desenvolvimento Humano</p>
+            <img src={WR_CERTIFICATE_LOGO} alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
+            <p style={{ fontSize: 12, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{BRAND_LEGAL_NAME}</p>
             <div style={{ width: 68 }} />
           </div>
           <p style={{ fontSize: 12, letterSpacing: 5, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 10px' }}>Certificado de Reconhecimento Acadêmico</p>
@@ -99,10 +101,11 @@ export default function MonitorCertificate() {
           <div style={{ width: 96, height: 2, background: '#c9a84c', margin: '0 auto 30px' }} />
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: 'Georgia, serif', fontSize: 26, fontStyle: 'italic', color: '#1e3a5f', marginBottom: 2, letterSpacing: 1 }}>W.Ribeiro</div>
+              <img src={WR_SIGNATURE_IMAGE} alt="Assinatura William Ribeiro" crossOrigin="anonymous" style={{ width: 240, height: 78, objectFit: 'contain', margin: '0 auto 2px', display: 'block' }} />
               <div style={{ width: 180, borderTop: '1px solid #1e3a5f', paddingTop: 8 }}>
                 <p style={{ fontSize: 11, color: '#1e3a5f', margin: 0, fontWeight: 'bold', letterSpacing: 1 }}>DIREÇÃO GERAL</p>
-                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>WR — Instituto de Desenvolvimento Humano</p>
+                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>{BRAND_LEGAL_NAME}</p>
+                <p style={{ fontSize: 10, color: '#888', margin: 0 }}>CNPJ: {BRAND_CNPJ}</p>
               </div>
             </div>
           </div>

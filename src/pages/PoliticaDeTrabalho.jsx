@@ -1,7 +1,7 @@
 import React from 'react';
 import { Shield, CheckCircle, AlertTriangle, ExternalLink, ArrowLeft, Scale, Award } from 'lucide-react';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
-const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
 const ABED_WHITE = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png';
 
 export default function PoliticaDeTrabalho() {
@@ -15,8 +15,8 @@ export default function PoliticaDeTrabalho() {
           </a>
           <div className="h-4 w-px bg-white/10" />
           <div className="flex items-center gap-2">
-            <img src={LOGO_URL} alt="WR-EDU" className="w-6 h-6 object-contain" />
-            <span className="text-white/60 text-sm font-semibold">WR-EDU</span>
+            <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-6 h-6 object-contain" />
+            <span className="text-white/60 text-sm font-semibold">{BRAND_LEGAL_NAME}</span>
           </div>
         </div>
       </div>
@@ -45,7 +45,7 @@ export default function PoliticaDeTrabalho() {
               <div>
                 <p className="text-white font-bold text-sm mb-1">Associação Brasileira de Educação a Distância</p>
                 <p className="text-white/50 text-xs leading-relaxed">
-                  A WR-EDU é associada à ABED, habilitada a operar em conformidade com a <strong className="text-white/70">Lei nº 9.394/96</strong> (LDB) e o <strong className="text-white/70">Decreto Presidencial nº 5.154/04</strong>.
+                  A {BRAND_LEGAL_NAME} é associada à ABED, habilitada a operar em conformidade com a <strong className="text-white/70">Lei nº 9.394/96</strong> (LDB) e o <strong className="text-white/70">Decreto Presidencial nº 5.154/04</strong>. CNPJ {BRAND_CNPJ}.
                 </p>
               </div>
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
@@ -151,7 +151,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              A WR-EDU dedica-se à oferta de <strong className="text-white">Cursos de Formação Profissionalizante Livre</strong>, em conformidade com a <strong className="text-white">Lei nº 9.394 (Diretrizes e Bases da Educação Nacional)</strong>. Nossas certificações são de caráter profissionalizante e de atualização técnica, não se configurando como cursos de graduação ou pós-graduação acadêmica. Nosso objetivo é a capacitação prática para o exercício ético e técnico da terapia no âmbito das terapias integrativas e comportamentais.
+              A {BRAND_LEGAL_NAME} dedica-se à oferta de <strong className="text-white">Cursos de Formação Profissionalizante Livre</strong>, em conformidade com a <strong className="text-white">Lei nº 9.394 (Diretrizes e Bases da Educação Nacional)</strong>. Nossas certificações são de caráter profissionalizante e de atualização técnica, não se configurando como cursos de graduação ou pós-graduação acadêmica. Nosso objetivo é a capacitação prática para o exercício ético e técnico da terapia no âmbito das terapias integrativas e comportamentais.
             </p>
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              A excelência na terapia nasce da vivência. Nossa política garante que o aluno tenha contato com <strong className="text-white">simulações e práticas de consultório</strong> ainda durante o período de formação. Essas atividades são conduzidas sob rigorosos critérios éticos, preparando o futuro terapeuta para lidar com a subjetividade humana em áreas como <strong className="text-white">TCC, Psicanálise e Sexualidade Humana</strong> com segurança e profundidade.
+              A excelência na terapia nasce da vivência. Nossa política garante que o aluno tenha contato com <strong className="text-white">simulações e práticas de consultório</strong> ainda durante o período de formação. Essas atividades são conduzidas sob rigorosos critérios éticos, preparando o futuro terapeuta para lidar com a subjetividade humana em áreas como <strong className="text-white">Terapia Comportamental, Psicanálise e Sexualidade Humana</strong> com segurança e profundidade.
             </p>
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              Todo o material didático, metodologias exclusivas (como a <strong className="text-white">Teoria da Utilidade Comportamental</strong>) e conteúdos disponibilizados na plataforma são de <strong className="text-white">propriedade intelectual da WR-EDU e de seu mantenedor</strong>. O uso desse material é restrito ao aprendizado individual, sendo proibida a reprodução ou distribuição sem autorização prévia.
+              Todo o material didático, metodologias exclusivas (como a <strong className="text-white">Teoria da Utilidade Comportamental</strong>) e conteúdos disponibilizados na plataforma são de <strong className="text-white">propriedade intelectual da {BRAND_LEGAL_NAME} e de seu mantenedor</strong>. O uso desse material é restrito ao aprendizado individual, sendo proibida a reprodução ou distribuição sem autorização prévia.
             </p>
           </div>
         </div>
@@ -225,10 +225,10 @@ export default function PoliticaDeTrabalho() {
         {/* Footer da página */}
         <div className="border-t border-white/8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="WR-EDU" className="w-8 h-8 object-contain" />
+            <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-8 h-8 object-contain" />
             <div>
-              <p className="text-white font-bold text-sm">WR-EDU</p>
-              <p className="text-white/30 text-xs">Escola de Formação de Terapeutas</p>
+              <p className="text-white font-bold text-sm">{BRAND_LEGAL_NAME}</p>
+              <p className="text-white/30 text-xs">CNPJ {BRAND_CNPJ}</p>
             </div>
           </div>
           <div className="text-center">
@@ -241,7 +241,7 @@ export default function PoliticaDeTrabalho() {
               lineHeight: 1.2,
             }}>William Ribeiro S.</span>
             <div className="w-48 border-t border-white/15 pt-2 mx-auto">
-              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · WR-EDU</p>
+              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · {BRAND_LEGAL_NAME}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">

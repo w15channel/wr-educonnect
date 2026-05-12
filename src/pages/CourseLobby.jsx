@@ -5,21 +5,19 @@ import { setSession, getSession } from '@/lib/customAuth';
 import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles, MessageCircle, Send } from 'lucide-react';
 import ServiceTermsModal from '@/components/onboarding/ServiceTermsModal';
 import { base44 } from '@/api/base44Client';
+import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
 const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
 
-const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
-
 const LOBBY_MUSIC_KEY = 'wr_lobby_music_enabled';
-const LOBBY_MUSIC_EMBED = 'https://www.youtube.com/embed/Cg0dAc4-UCY?autoplay=1&start=545&controls=0&disablekb=1&modestbranding=1&rel=0&loop=1&playlist=Cg0dAc4-UCY';
 
 const COURSES = [
   {
     id: 'tcc',
-    title: 'Terapeuta TCC',
-    subtitle: 'Abordagem Cognitivo-Comportamental',
-    desc: 'Técnicas cognitivo-comportamentais aplicadas à prática clínica, com suporte em tempo real e mentoria ao vivo todas as segundas-feiras.',
+    title: 'Terapeuta em TC',
+    subtitle: 'Terapia Comportamental',
+    desc: 'Técnicas de Terapia Comportamental aplicadas à prática clínica, com suporte em tempo real e mentoria ao vivo todas as segundas-feiras.',
     icon: Brain,
     color: '#5b5ef4',
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/9adbe6196_generated_video.mp4',
@@ -72,7 +70,6 @@ function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect, onReserve, 
           loop
           playsInline
           preload="metadata"
-          autoPlay
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-transparent to-transparent" />
 
@@ -143,7 +140,6 @@ export default function CourseLobby() {
   const userCourse = session?.course || 'tcc';
 
   const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
-  const [musicEnabled, setMusicEnabled] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(localStorage.getItem('wr_terms_lobby_accepted') === 'yes');
   const [reserveOpen, setReserveOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -153,8 +149,7 @@ export default function CourseLobby() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(LOBBY_MUSIC_KEY, 'on');
-    setMusicEnabled(localStorage.getItem(LOBBY_MUSIC_KEY) !== 'off');
+    localStorage.setItem(LOBBY_MUSIC_KEY, 'off');
   }, []);
 
 
@@ -179,7 +174,7 @@ export default function CourseLobby() {
 
   const openReserve = (course) => {
     setSelectedCourse(course);
-    setLeadMessages([{ role: 'assistant', content: `Olá! Sou a IA da WR-EDU 😊 Vamos fazer sua reserva antecipada para ${course.title}. Qual é seu nome completo e melhor WhatsApp?` }]);
+    setLeadMessages([{ role: 'assistant', content: `Olá! Sou a IA da ${BRAND_LEGAL_NAME} 😊 Vamos fazer sua reserva antecipada para ${course.title}. Qual é seu nome completo e melhor WhatsApp?` }]);
     setLeadInput('');
     setReserveOpen(true);
   };
@@ -198,14 +193,14 @@ export default function CourseLobby() {
     }
 
     setLeadLoading(true);
-    const prompt = `Você é a IA de pré-reserva da WR-EDU. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, objetivo profissional e melhor horário de contato. Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez. Quando tiver os dados principais, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre pedindo para a pessoa selecionar a opção de enviar ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
+    const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, objetivo profissional e melhor horário de contato. Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez. Quando tiver os dados principais, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre pedindo para a pessoa selecionar a opção de enviar ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
     const response = await base44.integrations.Core.InvokeLLM({ prompt });
     setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]);
     setLeadLoading(false);
   };
 
   const sendLead = () => {
-    const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA WR-EDU'}: ${m.content}`).join('\n');
+    const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : `IA ${BRAND_SHORT_NAME}`}: ${m.content}`).join('\n');
     const summary = encodeURIComponent(`Olá! Quero reservar vaga antecipada.\nCurso: ${selectedCourse?.title}\n\nQuestionário em chat:\n${transcript}`);
     window.open(`https://wa.me/5541992531598?text=${summary}`, '_blank');
     setReserveOpen(false);
@@ -213,12 +208,12 @@ export default function CourseLobby() {
 
   if (isAdmin) {
     return (
-      <div className="min-h-screen bg-[#080b14] text-white">
+      <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#080b14] text-white" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="relative z-10 border-b border-white/8 px-6 py-5">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={LOGO_URL} alt="WR-EDU" className="w-10 h-10 object-contain" />
-              <span className="font-black text-lg">WR-EDU</span>
+              <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-10 h-10 object-contain" />
+              <span className="font-black text-sm sm:text-lg leading-tight">{BRAND_LEGAL_NAME}</span>
             </div>
             <div className="flex items-center gap-4">
               <p className="text-sm font-semibold text-white">{session?.name}</p>
@@ -253,16 +248,9 @@ export default function CourseLobby() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#080b14] text-white overflow-hidden">
+    <div className="relative h-[100dvh] bg-[#080b14] text-white overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
       {!termsAccepted && <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />}
-      {musicEnabled && (
-        <iframe
-          className="absolute w-0 h-0 opacity-0 pointer-events-none"
-          src={LOBBY_MUSIC_EMBED}
-          title="Lobby ambience audio"
-          allow="autoplay"
-        />
-      )}
+
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(91,94,244,0.25),transparent_45%),radial-gradient(circle_at_82%_8%,rgba(29,184,158,0.2),transparent_42%),radial-gradient(circle_at_50%_85%,rgba(168,85,247,0.12),transparent_45%)]" />
       </div>
@@ -270,8 +258,8 @@ export default function CourseLobby() {
       <div className="border-b border-white/8 px-6 py-5">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="WR-EDU" className="w-10 h-10 object-contain" />
-            <span className="font-black text-lg">WR-EDU</span>
+            <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-10 h-10 object-contain" />
+            <span className="font-black text-sm sm:text-lg leading-tight">{BRAND_LEGAL_NAME}</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">

@@ -4,10 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { base44 } from '@/api/base44Client';
-import { setSession, verifyPassword, nowBRT } from '@/lib/customAuth';
+import { setSession } from '@/lib/customAuth';
 import SetupAdminModal from './SetupAdminModal';
-
-const LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const HERO_IMAGES = [
   'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
@@ -53,34 +52,22 @@ export default function LoginScreen({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const trimmed = code.trim().toUpperCase();
-    const results = await base44.entities.AccessCode.filter({ code: trimmed, is_active: true });
-    if (results.length === 0) {
-      setError('Código inválido ou desativado.');
-      setLoading(false);
-      return;
+    const trimmed = code.trim().toUpperCase().replace(/\s+/g, '');
+    try {
+      const response = await base44.functions.invoke('siteLogin', { mode: 'student', code: trimmed });
+      if (rememberCode) {
+        localStorage.setItem('wr_remember_student_code', 'yes');
+        localStorage.setItem('wr_saved_student_code', trimmed);
+      } else {
+        localStorage.removeItem('wr_saved_student_code');
+        localStorage.setItem('wr_remember_student_code', 'no');
+      }
+      localStorage.setItem('wr_remember_student_code', rememberCode ? 'yes' : 'no');
+      setSession(response.data.session, { remember: rememberCode });
+      onLogin();
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Código inválido ou desativado.');
     }
-    const record = results[0];
-    if (rememberCode) {
-      localStorage.setItem('wr_remember_student_code', 'yes');
-      localStorage.setItem('wr_saved_student_code', trimmed);
-    } else {
-      localStorage.removeItem('wr_saved_student_code');
-      localStorage.setItem('wr_remember_student_code', 'no');
-    }
-    await base44.entities.AccessCode.update(record.id, { last_login: nowBRT() });
-    localStorage.setItem('wr_remember_student_code', rememberCode ? 'yes' : 'no');
-    setSession({
-      role: 'student',
-      codeId: record.id,
-      code: trimmed,
-      name: record.profile_name || record.student_name || 'Aluno',
-      email: record.student_email || '',
-      bio: record.profile_bio || '',
-      avatarColor: record.profile_avatar_color || '#5b5ef4',
-      photoUrl: record.profile_photo_url || '',
-    }, { remember: rememberCode });
-    onLogin();
     setLoading(false);
   };
 
@@ -88,20 +75,13 @@ export default function LoginScreen({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const creds = await base44.entities.AdminCredential.list();
-    if (creds.length === 0) {
-      setError('Login admin não configurado.');
-      setLoading(false);
-      return;
+    try {
+      const response = await base44.functions.invoke('siteLogin', { mode: 'admin', email: adminEmail, password: adminPassword });
+      setSession(response.data.session);
+      onLogin();
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Email ou senha incorretos.');
     }
-    const cred = creds[0];
-    if (adminEmail.trim() !== cred.email || !verifyPassword(adminPassword, cred.password_hash)) {
-      setError('Email ou senha incorretos.');
-      setLoading(false);
-      return;
-    }
-    setSession({ role: 'admin', name: 'Professor', email: cred.email });
-    onLogin();
     setLoading(false);
   };
 
@@ -130,11 +110,11 @@ export default function LoginScreen({ onLogin }) {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 flex items-center justify-center">
-                <img src={LOGO_URL} alt="WR" className="w-full h-full object-contain" />
+                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
               </div>
               <div>
-                <span className="text-xl font-bold text-white tracking-tight">WR-EDU</span>
-                <p className="text-[10px] text-white/40 -mt-0.5 tracking-widest uppercase">Portal Educacional</p>
+                <span className="text-xl font-bold text-white tracking-tight">{BRAND_SHORT_NAME}</span>
+                <p className="text-[10px] text-white/40 -mt-0.5 tracking-widest uppercase">Instituto de Desenvolvimento Humano</p>
               </div>
             </div>
 
@@ -190,10 +170,10 @@ export default function LoginScreen({ onLogin }) {
             {/* Mobile logo */}
             <div className="flex flex-col items-center lg:hidden">
               <div className="w-16 h-16 flex items-center justify-center mb-3">
-                <img src={LOGO_URL} alt="WR" className="w-full h-full object-contain" />
+                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">WR-EDU</h1>
-              <p className="text-white/35 text-xs mt-1 tracking-widest uppercase">Escola de Terapeutas</p>
+              <h1 className="text-2xl font-bold text-white tracking-tight">{BRAND_SHORT_NAME}</h1>
+              <p className="text-white/35 text-xs mt-1 tracking-widest uppercase">Instituto de Desenvolvimento Humano</p>
             </div>
 
             <div>
@@ -350,7 +330,7 @@ export default function LoginScreen({ onLogin }) {
             <div className="text-center space-y-2 pt-2 border-t border-white/6">
               <div className="flex items-center justify-center gap-1.5 text-white/20 text-xs">
                 <Star size={9} className="fill-current" />
-                <span>WR-EDU © 2025 — Escola de Formação de Terapeutas</span>
+                <span>{BRAND_LEGAL_NAME} © {new Date().getFullYear()} · CNPJ {BRAND_CNPJ}</span>
                 <Star size={9} className="fill-current" />
               </div>
               <p className="text-white/12 text-[10px]">

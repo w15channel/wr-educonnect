@@ -29,43 +29,23 @@
       ],
       "default": "tcc",
       "description": "Curso ao qual o aviso pertence"
+    },
+    "recipient_email": {
+      "type": "string",
+      "description": "Email do destinat\u00e1rio espec\u00edfico, quando o aviso for individual"
+    },
+    "certificate_monitor_id": {
+      "type": "string",
+      "description": "ID do certificado de monitor vinculado"
     }
   },
   "required": [
     "content"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "data.recipient_email": "{{user.email}}"
-        },
-        {
-          "data.recipient_email": {
-            "$exists": false
-          }
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

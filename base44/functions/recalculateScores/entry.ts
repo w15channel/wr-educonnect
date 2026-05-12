@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json().catch(() => ({}));
-    const isAutomation = payload?.automation?.type === 'scheduled';
+    const isAutomation = ['scheduled', 'entity'].includes(payload?.automation?.type);
     const user = await base44.auth.me().catch(() => null);
 
     if (!isAutomation && user?.role !== 'admin') {
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
 
       const currentMonitors = monitorHistory.filter((monitor) => monitor.period_start === period.start && sameCourse(monitor, course));
       for (const monitor of currentMonitors) {
-        await base44.asServiceRole.entities.MonitorHistory.delete(monitor.id);
+        await base44.asServiceRole.entities.MonitorHistory.delete(monitor.id).catch(() => null);
       }
 
       const bonusByEmail = new Map();

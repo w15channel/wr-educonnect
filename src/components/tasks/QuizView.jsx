@@ -37,17 +37,21 @@ export default function QuizView({ task, user, onBack }) {
 
     const hasTextQuestions = questions.some(q => q.answer_type === 'text');
 
-    await base44.entities.TaskSubmission.create({
-      task_id: task.id,
-      student_email: user.email || user.code || '',
-      student_name: user.name || user.full_name || '',
-      quiz_answers: questions.map((q, i) => {
-        const ans = answers[i];
-        if (q.answer_type === 'text') return ans?.text ?? '';
-        return ans !== undefined ? String(ans) : '';
-      }),
-      grade: grade !== null ? grade : undefined,
-      status: hasTextQuestions ? 'submitted' : 'graded',
+    await base44.functions.invoke('saveStudentRecord', {
+      action: 'create',
+      entity: 'TaskSubmission',
+      data: {
+        task_id: task.id,
+        student_email: user.email || user.code || '',
+        student_name: user.name || user.full_name || '',
+        quiz_answers: questions.map((q, i) => {
+          const ans = answers[i];
+          if (q.answer_type === 'text') return ans?.text ?? '';
+          return ans !== undefined ? String(ans) : '';
+        }),
+        grade: grade !== null ? grade : undefined,
+        status: hasTextQuestions ? 'submitted' : 'graded',
+      },
     });
 
     setScore(grade);

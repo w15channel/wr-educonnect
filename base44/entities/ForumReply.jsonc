@@ -34,11 +34,16 @@
         "sexologia"
       ],
       "default": "tcc",
-      "description": "Turma/curso do comentário"
+      "description": "Curso/turma da resposta"
     },
     "space": {
       "type": "string",
-      "description": "Espaço do comentário: forum ou debates"
+      "enum": [
+        "forum",
+        "debates"
+      ],
+      "default": "forum",
+      "description": "\u00c1rea onde a resposta deve aparecer"
     }
   },
   "required": [
@@ -46,47 +51,9 @@
     "content"
   ],
   "rls": {
-    "create": {
-      "created_by": "{{user.email}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "data.course": "{{user.course}}"
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

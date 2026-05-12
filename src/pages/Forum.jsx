@@ -42,7 +42,7 @@ export default function Forum() {
 
   const { data: posts = [] } = useQuery({
     queryKey: ['forum-posts', userCourse],
-    queryFn: () => base44.entities.ForumPost.filter({ course: userCourse }, '-created_date', 100),
+    queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'forum' }, '-created_date', 100),
   });
 
   const { data: replies = [] } = useQuery({
@@ -52,18 +52,26 @@ export default function Forum() {
   });
 
   const createPostMutation = useMutation({
-    mutationFn: (data) => base44.entities.ForumPost.create({
-      content: data.content,
-      topic: data.topic,
-      author_name: session?.name || 'Anônimo',
-      author_email: session?.email || '',
-      author_role: isTeacher ? 'teacher' : 'student',
-      course: userCourse,
-      reply_count: 0,
-    }),
+    mutationFn: async (data) => {
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'ForumPost',
+        data: {
+          content: data.content,
+          topic: data.topic,
+          author_name: session?.name || 'Anônimo',
+          author_email: session?.email || session?.code || '',
+          author_role: isTeacher ? 'teacher' : 'student',
+          course: userCourse,
+          space: 'forum',
+          reply_count: 0,
+        },
+      });
+      return res.data.record;
+    },
     onMutate: async (data) => {
-      await queryClient.cancelQueries({ queryKey: ['forum-posts'] });
-      const previous = queryClient.getQueryData(['forum-posts']);
+      await queryClient.cancelQueries({ queryKey: ['forum-posts', userCourse] });
+      const previous = queryClient.getQueryData(['forum-posts', userCourse]);
       const optimistic = {
         id: `optimistic-${Date.now()}`,
         content: data.content,
@@ -72,14 +80,15 @@ export default function Forum() {
         author_email: session?.email || '',
         author_role: isTeacher ? 'teacher' : 'student',
         reply_count: 0,
+        space: 'forum',
         created_date: new Date().toISOString(),
       };
-      queryClient.setQueryData(['forum-posts'], old => [optimistic, ...(old || [])]);
+      queryClient.setQueryData(['forum-posts', userCourse], old => [optimistic, ...(old || [])]);
       setNewPost('');
       return { previous };
     },
     onError: (_err, _data, context) => {
-      if (context?.previous) queryClient.setQueryData(['forum-posts'], context.previous);
+      if (context?.previous) queryClient.setQueryData(['forum-posts', userCourse], context.previous);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['forum-posts'] }),
     onSuccess: async (post) => {
@@ -101,18 +110,23 @@ export default function Forum() {
   });
 
   const createReplyMutation = useMutation({
-    mutationFn: ({ postId, content }) => {
+    mutationFn: async ({ postId, content }) => {
       const post = posts.find(p => p.id === postId);
-      base44.entities.ForumPost.update(postId, { reply_count: (post?.reply_count || 0) + 1 });
-      return base44.entities.ForumReply.create({
-        post_id: postId,
-        content,
-        author_name: session?.name || 'Anônimo',
-        author_email: session?.email || '',
-        author_role: isTeacher ? 'teacher' : 'student',
-        course: userCourse,
-        space: 'forum',
+      await base44.functions.invoke('saveStudentRecord', { action: 'updateForumReplyCount', post_id: postId, reply_count: (post?.reply_count || 0) + 1 });
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'ForumReply',
+        data: {
+          post_id: postId,
+          content,
+          author_name: session?.name || 'Anônimo',
+          author_email: session?.email || session?.code || '',
+          author_role: isTeacher ? 'teacher' : 'student',
+          course: userCourse,
+          space: 'forum',
+        },
       });
+      return res.data.record;
     },
     onSuccess: async (reply) => {
       queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] });

@@ -61,47 +61,9 @@
     "pairing_date"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "data.therapist_email": "{{user.email}}"
-        },
-        {
-          "data.patient_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.therapist_email": "{{user.email}}",
-          "therapist_submitted": false
-        },
-        {
-          "data.patient_email": "{{user.email}}",
-          "patient_submitted": false
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

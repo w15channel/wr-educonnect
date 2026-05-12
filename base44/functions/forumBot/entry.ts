@@ -3,6 +3,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
 
+  const payload = await req.json().catch(() => ({}));
+  const isAutomation = payload?.automation?.type === 'scheduled';
+  const user = await base44.auth.me().catch(() => null);
+
+  if (!isAutomation && user?.role !== 'admin' && user?.role !== 'teacher') {
+    return Response.json({ error: 'Forbidden: only admin/teacher users or scheduled automation can run forumBot' }, { status: 403 });
+  }
+
   const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
 
   // Get recent posts not yet bot-replied

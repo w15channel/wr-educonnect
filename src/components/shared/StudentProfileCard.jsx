@@ -50,6 +50,9 @@ export default function StudentProfileCard({ email, onClose }) {
   const bio = profile?.bio || code?.profile_bio || '';
   const whatsapp = profile?.whatsapp || '';
   const nickname = profile?.nickname || '';
+  const lastSeen = code?.last_seen_at ? new Date(code.last_seen_at) : null;
+  const isOnline = code?.is_online && lastSeen && Date.now() - lastSeen.getTime() < 90000;
+  const lastSeenText = isOnline ? 'Online agora' : lastSeen ? `Visto por último em ${lastSeen.toLocaleDateString('pt-BR')} às ${lastSeen.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Visto por último indisponível';
   const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
 
   return (
@@ -91,6 +94,7 @@ export default function StudentProfileCard({ email, onClose }) {
 
           <h3 className="mt-3 font-bold text-foreground text-base text-center leading-tight">{name}</h3>
           {nickname && <p className="text-sm text-muted-foreground mt-0.5">"{nickname}"</p>}
+          <p className={`text-[11px] font-semibold mt-1 ${isOnline ? 'text-green-600' : 'text-red-500'}`}>{isOnline ? '🟢' : '🔴'} {lastSeenText}</p>
 
           {bio && (
             <p className="text-xs text-muted-foreground text-center mt-2 leading-relaxed line-clamp-3">{bio}</p>

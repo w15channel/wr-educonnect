@@ -12,6 +12,7 @@ import {
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const adminGroups = [
   {
@@ -27,9 +28,9 @@ const adminGroups = [
   {
     label: 'Comunidade',
     items: [
-      { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
+      { icon: Hash, label: 'EDU Live Messenger', path: '/chat', color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
-      { icon: UsersRound, label: 'Sala de Debates', path: '/debates', color: 'text-fuchsia-400' },
+      { icon: Hash, label: 'Sala de Debates', path: '/debates', color: 'text-fuchsia-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
       { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
     ],
@@ -69,9 +70,9 @@ const studentGroups = [
   {
     label: 'Comunidade',
     items: [
-      { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
+      { icon: Hash, label: 'EDU Live Messenger', path: '/chat', color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas', path: '/forum', color: 'text-green-400' },
-      { icon: UsersRound, label: 'Sala de Debates', path: '/debates', color: 'text-fuchsia-400' },
+      { icon: Hash, label: 'Sala de Debates', path: '/debates', color: 'text-fuchsia-400' },
       { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
       { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
       { icon: UsersRound, label: 'Classe', path: '/classe', color: 'text-sky-400' },
@@ -97,7 +98,7 @@ const studentGroups = [
   },
 ];
 
-const COURSE_LABELS = { tcc: '🧠 TCC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
+const COURSE_LABELS = { tcc: '🧠 TC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
 
 export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
   const location = useLocation();
@@ -237,13 +238,13 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-9 h-9 flex items-center justify-center">
-                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/077216e46_textodoseupargrafoWR_20251219_192959_0000.png" alt="WR" className="w-full h-full object-contain" />
+                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-sidebar" />
             </div>
             <div>
-              <h1 className="text-[15px] font-bold tracking-tight text-white">WR-EDU</h1>
-              <p className="text-[10px] text-white/40 -mt-0.5">Portal Educacional</p>
+              <h1 className="text-[15px] font-bold tracking-tight text-white">{BRAND_SHORT_NAME}</h1>
+              <p className="text-[10px] text-white/40 -mt-0.5">Instituto de Desenvolvimento Humano</p>
             </div>
           </div>
           <button onClick={handleClose} className="md:hidden text-white/40 hover:text-white p-1 rounded-lg transition-colors">
@@ -286,6 +287,9 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
         {/* User footer */}
         <div className="p-3 border-t border-white/8">
+          <p className="px-2 pb-2 text-[9px] leading-snug text-white/30">
+            {BRAND_LEGAL_NAME}<br />CNPJ {BRAND_CNPJ}
+          </p>
           <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/6 transition-colors mb-1">
             {session?.photoUrl ? (
               <img src={session.photoUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover ring-2 ring-white/20 shrink-0" />

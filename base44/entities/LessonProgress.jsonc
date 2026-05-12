@@ -29,33 +29,9 @@
     "student_email"
   ],
   "rls": {
-    "create": {
-      "data.student_email": "{{user.email}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": true,
+    "read": true,
+    "update": true,
     "delete": {
       "user_condition": {
         "role": "admin"

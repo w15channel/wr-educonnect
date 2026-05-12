@@ -190,7 +190,7 @@ export default function Students() {
     overdue: { label: 'Inadimplente', class: 'text-red-700 bg-red-100 border-red-200', icon: XCircle },
   };
 
-  const courseLabel = { tcc: 'TCC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' }[activeCourse] || activeCourse;
+  const courseLabel = { tcc: 'TC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' }[activeCourse] || activeCourse;
 
   return (
     <div className="p-4 lg:p-7 max-w-6xl mx-auto animate-fade-in-up">
@@ -212,7 +212,7 @@ export default function Students() {
               className="w-full h-10 rounded-xl border border-border bg-background text-foreground text-sm px-3"
             >
               <option value="">Escolher curso...</option>
-              <option value="tcc" disabled={enrollingCode?.course === 'tcc'}>Terapeuta TCC</option>
+              <option value="tcc" disabled={enrollingCode?.course === 'tcc'}>Terapeuta TC</option>
               <option value="psicanalise" disabled={enrollingCode?.course === 'psicanalise'}>Psicanalista Freudiano</option>
               <option value="sexologia" disabled={enrollingCode?.course === 'sexologia'}>Sexólogo(a)</option>
             </select>

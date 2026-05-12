@@ -52,10 +52,18 @@ export default function Lessons() {
   const lessonUnlockRule = unlockRules.find(r => r.scope === 'lessons');
   const unlockedLessonCount = Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
 
+  const normalizeStudentId = (value = '') => String(value || '').trim().toLowerCase();
+  const studentIdentifiers = [session?.email, session?.code].filter(Boolean).map(normalizeStudentId);
+
   const { data: progresses = [] } = useQuery({
-    queryKey: ['lesson-progress', session?.email],
-    queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email }, '-created_date', 200),
-    enabled: !isTeacher && !!session?.email,
+    queryKey: ['lesson-progress', isTeacher ? 'all' : studentIdentifiers.join('|')],
+    queryFn: async () => {
+      const records = isTeacher
+        ? await base44.entities.LessonProgress.list('-created_date', 3000)
+        : await base44.entities.LessonProgress.list('-created_date', 1000);
+      return isTeacher ? records : records.filter(p => studentIdentifiers.includes(normalizeStudentId(p.student_email)));
+    },
+    enabled: isTeacher || studentIdentifiers.length > 0,
   });
 
   const createMutation = useMutation({
@@ -85,17 +93,18 @@ export default function Lessons() {
   });
 
   const upsertProgress = async (lessonId, patch) => {
-    const existing = progresses.find(p => p.lesson_id === lessonId);
-    if (existing) {
-      await base44.entities.LessonProgress.update(existing.id, patch);
-    } else {
-      await base44.entities.LessonProgress.create({ lesson_id: lessonId, student_email: session?.email, ...patch });
-    }
-    queryClient.invalidateQueries({ queryKey: ['lesson-progress', session?.email] });
+    await base44.functions.invoke('saveStudentRecord', {
+      action: 'lessonProgressUpsert',
+      lesson_id: lessonId,
+      student_email: session?.email || session?.code || '',
+      patch,
+      student_identifiers: [session?.email, session?.code],
+    });
+    queryClient.invalidateQueries({ queryKey: ['lesson-progress'] });
   };
 
   const toggleWatched = async (lessonId) => {
-    const existing = progresses.find(p => p.lesson_id === lessonId);
+    const existing = progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeStudentId(p.student_email)));
     if (!existing?.watched) {
       // Validação: precisa ter comentário e resumo para marcar como assistida
       const comment = commentDraft[lessonId] ?? existing?.comment ?? '';
@@ -105,7 +114,15 @@ export default function Lessons() {
         return;
       }
     }
-    await upsertProgress(lessonId, { watched: !existing?.watched });
+    if (!existing?.watched) {
+      await upsertProgress(lessonId, {
+        summary: summaryDraft[lessonId] ?? existing?.summary ?? '',
+        comment: commentDraft[lessonId] ?? existing?.comment ?? '',
+        watched: true,
+      });
+    } else {
+      await upsertProgress(lessonId, { watched: false });
+    }
     toast.success(!existing?.watched ? '✅ Aula marcada como assistida!' : 'Marcação removida.');
   };
 
@@ -144,9 +161,10 @@ export default function Lessons() {
     reader.readAsDataURL(file);
   };
 
-  const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId);
+  const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeStudentId(p.student_email)));
+  const getLessonProgressEntries = (lessonId) => progresses.filter(p => p.lesson_id === lessonId && (p.comment || p.summary || p.watched));
 
-  const watchedCount = progresses.filter(p => p.watched).length;
+  const watchedCount = progresses.filter(p => p.watched && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
   const progressPct = orderedLessons.length > 0 ? Math.round((watchedCount / orderedLessons.length) * 100) : 0;
 
   // Abre link em nova aba do navegador (funciona em modo quiosque também)
@@ -216,8 +234,8 @@ export default function Lessons() {
     <div className="p-4 lg:p-7 max-w-7xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Aulas</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Assista, leia e estude no seu ritmo</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Aulas de Terapia Comportamental</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Assista, leia e estude Terapia Comportamental no seu ritmo</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2">

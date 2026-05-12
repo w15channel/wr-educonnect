@@ -14,6 +14,18 @@
       "type": "string",
       "description": "Name of the student"
     },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia",
+        "sex",
+        "psi"
+      ],
+      "default": "tcc",
+      "description": "Curso/turma da entrega"
+    },
     "file_url": {
       "type": "string",
       "description": "URL of the uploaded file"
@@ -52,5 +64,15 @@
   "required": [
     "task_id",
     "student_email"
-  ]
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }

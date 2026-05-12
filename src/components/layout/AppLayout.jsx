@@ -9,6 +9,7 @@ import MobileHeader from './MobileHeader';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import TutorialModal from '../onboarding/TutorialModal';
+import MobileSplash from './MobileSplash';
 
 const TUTORIAL_KEY = 'wr_tutorial_done';
 
@@ -22,6 +23,14 @@ const PTR_THRESHOLD = 72; // px to pull before triggering refresh
 
 const SLUG_TO_COURSE = { tcc: 'tcc', psi: 'psicanalise', sex: 'sexologia' };
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
+
+function stripScopedPrefix(pathname) {
+  const parts = pathname.split('/').filter(Boolean);
+  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
+    return '/' + parts.slice(2).join('/');
+  }
+  return pathname;
+}
 
 export default function AppLayout() {
   const { session, login } = useCustomAuth();
@@ -117,7 +126,8 @@ export default function AppLayout() {
   const showIndicator = pullY > 8;
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
+      <MobileSplash />
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
       )}
@@ -162,7 +172,7 @@ export default function AppLayout() {
               data-scroll-container
               className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
               style={{
-                paddingBottom: location.pathname !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
+                paddingBottom: window.innerWidth < 768 && stripScopedPrefix(location.pathname) !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
                 transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
                 transition: isPulling.current ? 'none' : 'transform 0.3s ease',
               }}
@@ -170,7 +180,7 @@ export default function AppLayout() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <div className={location.pathname === '/certificadora' ? 'flex-1 min-h-0 flex flex-col' : ''}>
+              <div className={stripScopedPrefix(location.pathname) === '/certificadora' ? 'flex-1 min-h-0 flex flex-col' : ''}>
                 <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
               </div>
             </motion.div>

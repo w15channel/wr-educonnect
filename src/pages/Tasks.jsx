@@ -54,13 +54,16 @@ export default function Tasks({ mode = 'all' }) {
   const taskUnlockRule = unlockRules.find(r => r.scope === 'tasks');
   const unlockedTaskCount = Math.max(10, Number(taskUnlockRule?.unlock_until || 10));
 
+  const normalizeStudentId = (value = '') => String(value || '').trim().toLowerCase();
+  const studentIdentifiers = [user?.email, user?.code].filter(Boolean).map(normalizeStudentId);
+
   const { data: submissions = [] } = useQuery({
-    queryKey: ['submissions-mine'],
-    queryFn: () => base44.entities.TaskSubmission.filter(
-      isTeacher ? {} : { student_email: user?.email },
-      '-created_date', 200
-    ),
-    enabled: !!user,
+    queryKey: ['submissions-mine', isTeacher ? 'all' : studentIdentifiers.join('|')],
+    queryFn: async () => {
+      const records = await base44.entities.TaskSubmission.list('-created_date', 3000);
+      return isTeacher ? records : records.filter(s => studentIdentifiers.includes(normalizeStudentId(s.student_email)));
+    },
+    enabled: isTeacher || studentIdentifiers.length > 0,
   });
 
   const createTaskMutation = useMutation({
@@ -92,14 +95,20 @@ export default function Tasks({ mode = 'all' }) {
   const submitFileMutation = useMutation({
     mutationFn: async ({ taskId, file }) => {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      return base44.entities.TaskSubmission.create({
-        task_id: taskId,
-        student_email: user.email || user.code || '',
-        student_name: user.name || user.full_name || '',
-        file_url,
-        status: 'submitted',
-        course: submissionCourseCode,
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'TaskSubmission',
+        student_identifiers: [user?.email, user?.code],
+        data: {
+          task_id: taskId,
+          student_email: user.email || user.code || '',
+          student_name: user.name || user.full_name || '',
+          file_url,
+          status: 'submitted',
+          course: submissionCourseCode,
+        },
       });
+      return res.data.record;
     },
     onSuccess: (_, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
@@ -150,14 +159,19 @@ export default function Tasks({ mode = 'all' }) {
       try {
         await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
         // Salva na plataforma
-        await base44.entities.TaskSubmission.create({
-          task_id: taskId,
-          student_email: user.email || user.code || '',
-          student_name: studentName,
-          file_name: renamedFileName,
-          comment: description,
-          status: 'submitted',
-          course: submissionCourseCode,
+        await base44.functions.invoke('saveStudentRecord', {
+          action: 'create',
+          entity: 'TaskSubmission',
+          student_identifiers: [user?.email, user?.code],
+          data: {
+            task_id: taskId,
+            student_email: user.email || user.code || '',
+            student_name: studentName,
+            file_name: renamedFileName,
+            comment: description,
+            status: 'submitted',
+            course: submissionCourseCode,
+          },
         });
         // Notificação interna ao professor
         await sendNotificationToTeacher(taskTitle, 'arquivo');
@@ -187,7 +201,8 @@ export default function Tasks({ mode = 'all' }) {
     if (!detail.studentName?.trim() || !detail.className?.trim()) return '';
     return `Aluno: ${detail.studentName.trim()} | Turma: ${submissionCourseCode}`;
   };
-  const getSubmission = (taskId) => submissions.find(s => s.task_id === taskId);
+  const normalizeTitle = (value = '') => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\b(tarefa|trabalho)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const getSubmission = (taskId, taskTitle = '') => submissions.find(s => s.task_id === taskId) || submissions.find(s => normalizeTitle(s.task_title || s.comment || s.file_name || '') && normalizeTitle(taskTitle) && normalizeTitle(s.task_title || s.comment || s.file_name || '').includes(normalizeTitle(taskTitle).slice(0, 20)));
 
   const openEdit = (task) => {
     setEditingTask(task);
@@ -221,14 +236,20 @@ export default function Tasks({ mode = 'all' }) {
 
   const submitCommentMutation = useMutation({
     mutationFn: async ({ taskId, comment }) => {
-      const sub = await base44.entities.TaskSubmission.create({
-        task_id: taskId,
-        student_email: user?.email || user?.code || '',
-        student_name: user?.name || user?.full_name || '',
-        comment,
-        status: 'submitted',
-        course: submissionCourseCode,
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'TaskSubmission',
+        student_identifiers: [user?.email, user?.code],
+        data: {
+          task_id: taskId,
+          student_email: user?.email || user?.code || '',
+          student_name: user?.name || user?.full_name || '',
+          comment,
+          status: 'submitted',
+          course: submissionCourseCode,
+        },
       });
+      const sub = res.data.record;
       // Notificação interna ao professor
       const task = tasks.find(t => t.id === taskId);
       const taskTitle = task?.title || 'Tarefa';
@@ -257,8 +278,8 @@ export default function Tasks({ mode = 'all' }) {
     <div className="p-4 lg:p-7 max-w-5xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">{mode === 'tests' ? 'Provas' : mode === 'tasks' ? 'Tarefas' : 'Tarefas e Avaliações'}</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Gerencie trabalhos, provas e entregas</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">{mode === 'tests' ? 'Provas de Terapia Comportamental' : mode === 'tasks' ? 'Trabalhos de Terapia Comportamental' : 'Trabalhos e Avaliações de Terapia Comportamental'}</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Gerencie trabalhos, provas e entregas da formação em Terapia Comportamental</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2">
@@ -328,7 +349,7 @@ export default function Tasks({ mode = 'all' }) {
       ) : (
         <div className="space-y-3">
           {displayedTasks.map((task, idx) => {
-            const submission = getSubmission(task.id);
+            const submission = getSubmission(task.id, task.title);
             const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
             const status = uploadStatus[task.id];
             const sequentialNumber = idx + 1;

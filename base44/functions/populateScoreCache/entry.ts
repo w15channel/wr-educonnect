@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
         ? base44.asServiceRole.entities.StudentProfile.filter({ student_email: targetEmail }, '-updated_date', 1000)
         : base44.asServiceRole.entities.StudentProfile.list('-updated_date', 20000),
       targetEmail
-        ? base44.asServiceRole.entities.User.filter({ email: targetEmail }, '-created_date', 1000).catch(() => [])
-        : base44.asServiceRole.entities.User.list('-created_date', 20000).catch(() => []),
+        ? []
+        : [],
     ]);
 
     const totals = new Map();

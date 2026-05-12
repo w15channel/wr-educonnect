@@ -8,6 +8,7 @@ import { CustomAuthProvider, useCustomAuth } from '@/lib/CustomAuthContext';
 import { AuthProvider } from '@/lib/AuthContext';
 
 import LandingPage from './pages/LayoutPreview2';
+import CourseSyllabus from './pages/CourseSyllabus';
 import WRTec from './pages/WRTec';
 import CourseLobby from './pages/CourseLobby';
 import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
@@ -43,6 +44,7 @@ import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
 import Notifications from './pages/Notifications';
 import MonitorCertificate from './pages/MonitorCertificate';
+import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 
@@ -123,7 +125,7 @@ const AuthenticatedApp = () => {
       <div className="fixed inset-0 flex items-center justify-center bg-[#080b14]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-[#5b5ef4]/30 border-t-[#5b5ef4] rounded-full animate-spin"></div>
-          <p className="text-sm text-white/40 font-medium">Carregando WR-EDU...</p>
+          <p className="text-sm text-white/40 font-medium">Carregando {BRAND_LEGAL_NAME}...</p>
         </div>
       </div>
     );
@@ -131,6 +133,7 @@ const AuthenticatedApp = () => {
 
   if (!session) {
     if (pathname === '/politica') return <PoliticaDeTrabalho />;
+    if (pathname === '/ementa-cursos') return <CourseSyllabus />;
     if (pathname === '/termos') return <TermosDeUso />;
     if (pathname === '/privacidade') return <PoliticaDePrivacidade />;
     if (pathname === '/wr-tec') return <WRTec />;
@@ -178,6 +181,7 @@ const AuthenticatedApp = () => {
       <Route path="/classe" element={redirectTo('/classe')} />
 
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
+      <Route path="/ementa-cursos" element={<CourseSyllabus />} />
       <Route path="/wr-tec" element={<WRTec />} />
       <Route path="/termos" element={<TermosDeUso />} />
       <Route path="/privacidade" element={<PoliticaDePrivacidade />} />

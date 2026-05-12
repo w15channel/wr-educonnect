@@ -138,9 +138,15 @@ function SubmissionRow({ sub, task }) {
 }
 
 export default function SubmissionsList({ task, onBack }) {
+  const normalizeTitle = (value = '') => String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\b(tarefa|trabalho)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
   const { data: submissions = [], isLoading } = useQuery({
-    queryKey: ['task-submissions', task.id],
-    queryFn: () => base44.entities.TaskSubmission.filter({ task_id: task.id }, '-created_date', 200),
+    queryKey: ['task-submissions', task.id, task.title],
+    queryFn: async () => {
+      const records = await base44.entities.TaskSubmission.list('-created_date', 3000);
+      const taskTitle = normalizeTitle(task.title);
+      return records.filter(sub => sub.task_id === task.id || (taskTitle && normalizeTitle([sub.task_title, sub.file_name, sub.comment].filter(Boolean).join(' ')).includes(taskTitle.slice(0, 20))));
+    },
   });
 
   return (

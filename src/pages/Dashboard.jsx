@@ -374,7 +374,7 @@ export default function Dashboard() {
     },
   });
 
-  const visibleStudentRanking = studentPublishedRanking.length > 0 ? studentPublishedRanking : ranking;
+  const visibleStudentRanking = (studentPublishedRanking.length > 0 ? studentPublishedRanking : ranking).slice(0, 10);
   const myRank = visibleStudentRanking.findIndex((r) => r.email === session?.email) + 1;
 
   const firstName = (session?.name || 'Usuário').split(' ')[0];
