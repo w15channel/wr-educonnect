@@ -253,7 +253,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         </div>
 
         {/* Nav */}
-        <nav className="p-3 flex flex-col gap-0.5 flex-grow overflow-y-auto scrollbar-thin">
+        <nav className="p-3 flex flex-col gap-0.5 flex-grow overflow-y-auto scrollbar-invisible">
           {groups.map((group, gi) => (
             <div key={gi} className={gi > 0 ? 'mt-3' : ''}>
               <p className="text-[9px] font-light text-[#c8bfa8]/25 uppercase tracking-[0.25em] mb-1.5 px-3">
