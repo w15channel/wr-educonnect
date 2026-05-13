@@ -165,6 +165,26 @@
   .font-inter {
     font-family: var(--font-inter);
   }
+  .site-page {
+    width: 100%;
+    min-height: 100svh;
+    overflow-x: clip;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: auto;
+  }
+  .site-container {
+    width: min(100% - 2rem, 72rem);
+    margin-inline: auto;
+  }
+  .site-section {
+    padding: clamp(4rem, 8vw, 7rem) clamp(1.25rem, 4vw, 5rem);
+  }
+  .site-hero {
+    min-height: 100svh;
+    padding-block: clamp(6rem, 12vw, 9rem) clamp(4rem, 8vw, 6rem);
+  }
 }
 
 @keyframes fadeInUp {

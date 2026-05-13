@@ -396,10 +396,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
   };
 
   return (
-    <div
-      className="min-h-[100svh] overflow-x-hidden bg-[#080b14] text-white landing-mobile-scroll"
-      style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehaviorY: 'auto' }}
-    >
+    <div className="site-page bg-[#080b14] text-white">
 
       {/* STICKY NAVBAR */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'py-3' : 'py-5'}`}>
@@ -451,7 +448,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </nav>
 
       {/* HERO FULL-WIDTH */}
-      <div id="top" className="relative h-screen flex items-center justify-center overflow-hidden">
+      <div id="top" className="site-hero relative flex items-center justify-center overflow-hidden">
         {HERO_IMAGES.map((src, i) =>
         <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
             <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 35%' }} />
@@ -460,13 +457,13 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
         <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14]" />
         <div className="absolute inset-0 bg-[#080b14]/30" />
 
-        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto pt-24 lg:pt-32">
-          <h1 className="text-6xl lg:text-8xl font-black leading-[0.95] mb-8 tracking-tight">
+        <div className="site-container relative z-10 text-center pt-24 lg:pt-32">
+          <h1 className="text-[clamp(3rem,12vw,6rem)] lg:text-8xl font-black leading-[0.95] mb-6 sm:mb-8 tracking-tight">
             Transforme
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] via-[#a855f7] to-[#1db89e]">
               vidas
             </span>
-            <span className="block text-4xl lg:text-5xl text-white/80 font-bold mt-2">através da cura.</span>
+            <span className="block text-[clamp(2rem,8vw,3rem)] lg:text-5xl text-white/80 font-bold mt-2">através da cura.</span>
           </h1>
           <p className="text-white/60 text-lg lg:text-xl leading-relaxed max-w-2xl mx-auto mb-12">
             Sua vocação merece o próximo passo. Nossa formação profissionalizante redefine o ensino da terapia ao integrar o acolhimento humanizado à prática terapêutica constante.
@@ -513,7 +510,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </div>
 
       {/* METODOLOGIA */}
-      <section id="metodologia" className="py-28 px-6 lg:px-20">
+      <section id="metodologia" className="site-section">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -578,7 +575,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* SOBRE O PROFESSOR */}
-      <section id="professor" className="py-28 px-6 lg:px-20 bg-[#0a0d1a]">
+      <section id="professor" className="site-section bg-[#0a0d1a]">
         <div className="max-w-6xl mx-auto">
               {/* Header */}
           <div className="text-center mb-16">
@@ -701,7 +698,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* ATUAÇÃO SOCIAL */}
-      <section id="atuacao-social" className="py-24 px-6 lg:px-20 bg-[#080b14]">
+      <section id="atuacao-social" className="site-section bg-[#080b14]">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center gap-2 bg-[#1db89e]/10 border border-[#1db89e]/20 rounded-full px-4 py-1.5 mb-5">
@@ -755,7 +752,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* ATENDIMENTO SOCIAL */}
-      <section id="atendimento-social" className="py-24 px-5 sm:px-6 lg:px-20 bg-gradient-to-br from-[#06120f] via-[#080b14] to-[#111827] relative overflow-hidden">
+      <section id="atendimento-social" className="site-section bg-gradient-to-br from-[#06120f] via-[#080b14] to-[#111827] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(29,184,158,0.18),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(91,94,244,0.16),transparent_45%)]" />
         <div className="max-w-6xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -802,7 +799,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* NOSSOS CURSOS */}
-      <section id="cursos" className="py-24 px-5 sm:px-6 lg:px-20 bg-[#080b14]">
+      <section id="cursos" className="site-section bg-[#080b14]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 bg-[#1db89e]/10 border border-[#1db89e]/20 rounded-full px-4 py-1.5 mb-4">
@@ -913,17 +910,13 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
         }
         html { scroll-behavior: smooth; }
         @media (max-width: 767px) {
-          html, body, #root { min-height: 100%; height: auto; overflow-y: auto !important; }
-          body { position: static !important; overscroll-behavior-y: auto !important; touch-action: pan-y !important; }
-          .landing-mobile-scroll { min-height: 100svh; height: auto; overflow-y: visible !important; }
-          #top { min-height: 100svh; height: auto; padding-top: 6rem; padding-bottom: 5rem; }
-          #atuacao-social { scroll-margin-top: 6rem; }
+          #atuacao-social, #atendimento-social, #cursos, #professor, #metodologia, #depoimentos { scroll-margin-top: 6rem; }
           iframe { max-width: 100%; }
         }
       `}</style>
 
       {/* DEPOIMENTOS */}
-      <section id="depoimentos" className="py-24 px-6 lg:px-20 bg-[#0a0d1a]">
+      <section id="depoimentos" className="site-section bg-[#0a0d1a]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-white mb-2">O que dizem nossos alunos</h2>
@@ -948,7 +941,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* CTA FINAL */}
-      <section className="py-24 px-6 lg:px-20 bg-gradient-to-br from-[#5b5ef4]/20 via-[#080b14] to-[#1db89e]/10 relative overflow-hidden">
+      <section className="site-section bg-gradient-to-br from-[#5b5ef4]/20 via-[#080b14] to-[#1db89e]/10 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(91,94,244,0.15)_0%,transparent_70%)]" />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">Pronto para começar sua jornada?</h2>
@@ -965,7 +958,7 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/8 py-12 px-6 lg:px-20 bg-[#080b14]">
+      <footer className="border-t border-white/8 py-12 px-5 sm:px-6 lg:px-20 bg-[#080b14]">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
             <div className="flex items-center gap-3">
