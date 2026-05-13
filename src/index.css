@@ -127,6 +127,7 @@
     overflow-x: hidden;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    font-size: clamp(13px, 1.1vw, 16px);
   }
   body {
     @apply bg-background text-foreground;

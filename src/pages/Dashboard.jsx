@@ -373,7 +373,7 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
   return (
-    <div className="w-full max-w-screen-2xl mx-auto px-3 py-4 sm:p-4 md:p-5 xl:p-7 space-y-5 animate-fade-in-up overflow-x-hidden">
+    <div className="w-full max-w-[1100px] mx-auto px-3 py-4 sm:p-4 md:p-5 space-y-4 animate-fade-in-up overflow-x-hidden">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

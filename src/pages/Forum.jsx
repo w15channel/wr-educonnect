@@ -195,7 +195,7 @@ export default function Forum() {
   const filteredPosts = filterTopic === 'Todos' ? sequencedPosts : sequencedPosts.filter(p => p.topic === filterTopic);
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
+    <div className="p-3 md:p-5 max-w-[860px] mx-auto animate-fade-in-up">
       <div className="mb-5">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Fórum de Dúvidas</h2>
         <p className="text-muted-foreground text-sm mt-0.5">Faça perguntas e compartilhe conhecimento (+0,500 ponto por resposta em dúvida de colega)</p>

@@ -231,7 +231,7 @@ export default function Lessons() {
   };
 
   return (
-    <div className="p-4 lg:p-7 max-w-7xl mx-auto animate-fade-in-up">
+    <div className="p-3 md:p-5 max-w-[1100px] mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Aulas de Terapia Comportamental</h2>

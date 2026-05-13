@@ -227,7 +227,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
       <aside className={`
         fixed md:static inset-y-0 left-0 z-50
-        w-60 flex flex-col
+        w-56 flex flex-col
         bg-[#07080f] text-[#c8bfa8]
         border-r border-[#151c30]
         transform transition-transform duration-300 ease-in-out

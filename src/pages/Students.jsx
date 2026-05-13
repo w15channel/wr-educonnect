@@ -193,7 +193,7 @@ export default function Students() {
   const courseLabel = { tcc: 'TC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' }[activeCourse] || activeCourse;
 
   return (
-    <div className="p-4 lg:p-7 max-w-6xl mx-auto animate-fade-in-up">
+    <div className="p-3 md:p-5 max-w-[1100px] mx-auto animate-fade-in-up">
       <div className="mb-5">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Gestão de Alunos — {courseLabel}</h2>
         <p className="text-muted-foreground text-sm mt-0.5">Gerencie alunos e códigos de acesso da turma ativa</p>
