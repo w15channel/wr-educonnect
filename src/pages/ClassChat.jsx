@@ -225,7 +225,7 @@ export default function ClassChat() {
   };
 
   return (
-    <div className="w-full max-w-screen-2xl mx-auto h-[calc(100dvh-140px)] md:h-[calc(100dvh-48px)] lg:h-[calc(100dvh-32px)] min-h-[560px] p-2 sm:p-3 bg-[#b9cdf3] overflow-hidden">
+    <div className="w-full max-w-screen-2xl mx-auto h-full min-h-0 p-2 sm:p-3 bg-[#b9cdf3] overflow-hidden">
       <div className="h-full rounded-md border border-[#3a5db6] shadow-[0_2px_0_#fff,inset_0_1px_0_rgba(255,255,255,.7)] bg-[#dfe9fb] overflow-hidden">
         <div className="h-8 px-3 bg-gradient-to-r from-[#2f58b6] via-[#4e7de0] to-[#2f58b6] text-white flex items-center">
           <img src={MSN_LOGO_URL} alt="MSN" className="w-5 h-5 object-contain mr-2" />
