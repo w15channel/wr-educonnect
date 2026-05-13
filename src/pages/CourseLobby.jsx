@@ -233,9 +233,9 @@ export default function CourseLobby() {
 
   if (isAdmin) {
     return (
-      <div className="h-[100dvh] overflow-y-auto overflow-x-hidden text-white" style={{ background: BG, WebkitOverflowScrolling: 'touch' }}>
+      <div className="app-shell-bg h-[100dvh] overflow-y-auto overflow-x-hidden scrollbar-invisible text-white" style={{ WebkitOverflowScrolling: 'touch' }}>
         <Header />
-        <div className="max-w-5xl mx-auto px-6 py-14">
+        <div className="internal-page-shell">
           <div className="text-center mb-14">
             <div className="flex items-center justify-center gap-3 mb-6">
               <div className="h-px w-8" style={{ background: `${G}50` }} />
@@ -260,7 +260,7 @@ export default function CourseLobby() {
   }
 
   return (
-    <div className="relative h-[100dvh] text-white overflow-y-auto overflow-x-hidden" style={{ background: BG, WebkitOverflowScrolling: 'touch' }}>
+    <div className="app-shell-bg relative h-[100dvh] text-white overflow-y-auto overflow-x-hidden scrollbar-invisible" style={{ WebkitOverflowScrolling: 'touch' }}>
       {!termsAccepted && <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />}
 
       {/* Subtle cosmos gradient */}
@@ -270,7 +270,7 @@ export default function CourseLobby() {
 
       <Header />
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="internal-page-shell">
         {/* Title */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-6">

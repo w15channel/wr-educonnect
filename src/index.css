@@ -150,29 +150,15 @@
   }
 }
 
-/* Keep scrollbars visible for better orientation and control */
+/* Hide visible scrollbars while preserving scroll behavior */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(91, 94, 244, 0.55) rgba(13, 17, 32, 0.85);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-track {
-  background: rgba(13, 17, 32, 0.85);
-}
-
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(91, 94, 244, 0.9), rgba(29, 184, 158, 0.8));
-  border-radius: 9999px;
-  border: 2px solid rgba(13, 17, 32, 0.85);
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(123, 94, 244, 1), rgba(29, 184, 158, 1));
+  width: 0;
+  height: 0;
 }
 
 @layer utilities {
@@ -262,5 +248,26 @@
   [class*="base44-badge"],
   [id*="base44-badge"] {
     display: none !important;
+  }
+}
+
+
+@layer utilities {
+  .scrollbar-invisible {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-invisible::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .internal-page-shell {
+    width: 100%;
+    max-width: min(100%, 1220px);
+    margin-inline: auto;
+    padding-inline: clamp(0.9rem, 2.6vw, 1.75rem);
+    padding-block: clamp(1rem, 2.2vw, 1.5rem);
   }
 }
