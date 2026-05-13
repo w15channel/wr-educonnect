@@ -171,14 +171,14 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         onClick={handleClose}
         className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative ${
           active
-            ? 'bg-white/10 text-white shadow-sm'
-            : 'text-white/55 hover:bg-white/6 hover:text-white/85'
+            ? 'bg-[#161c32] text-[#e8dfc8] shadow-sm'
+            : 'text-white/45 hover:bg-white/5 hover:text-white/75'
         }`}
       >
-        {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary" />}
-        <item.icon size={17} className={active ? 'text-white' : item.color} />
+        {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#d4b96a]" />}
+        <item.icon size={17} className={active ? 'text-[#d4b96a]' : item.color} />
         <span className="font-medium text-[13px] flex-1">{item.label}</span>
-        {active && <ChevronRight size={12} className="opacity-40" />}
+        {active && <ChevronRight size={12} className="text-[#d4b96a] opacity-60" />}
       </Link>
     );
   };

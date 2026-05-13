@@ -76,7 +76,7 @@ export default function BottomNav({ onMenuOpen }) {
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="absolute inset-0 bg-sidebar/95 backdrop-blur-xl border-t border-sidebar-border" />
+      <div className="absolute inset-0 bg-[#07080f]/97 backdrop-blur-xl border-t border-[#1e2540]" />
       <div className="relative flex items-stretch">
         {tabs.map(({ icon: Icon, label, root }) => {
           if (root === '__menu__') {
@@ -98,14 +98,14 @@ export default function BottomNav({ onMenuOpen }) {
               key={root}
               onClick={() => handleTabPress(root)}
               className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors relative ${
-                active ? 'text-white' : 'text-white/40 hover:text-white/70'
+                active ? 'text-[#e8dfc8]' : 'text-white/35 hover:text-white/60'
               }`}
             >
               {active && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-primary" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-[#d4b96a]" />
               )}
-              <Icon size={20} className={active ? 'text-primary' : ''} />
-              <span className={`text-[9px] font-semibold uppercase tracking-wide ${active ? 'text-white' : ''}`}>
+              <Icon size={20} className={active ? 'text-[#d4b96a]' : ''} />
+              <span className={`text-[9px] font-semibold uppercase tracking-wide ${active ? 'text-[#d4b96a]' : ''}`}>
                 {label}
               </span>
             </button>

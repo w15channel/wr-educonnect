@@ -166,11 +166,11 @@ const TESTIMONIALS = [
 { name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
 { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 }];
 
-// ── Paleta Luxo Minimalista ──────────────────────────────────────────────────
-const G = '#c9a227';   // dourado
-const BG = '#0a0a0a';  // preto profundo
-const BG2 = '#0f0f0f'; // preto levemente mais claro (separadores)
-const BG3 = '#111111'; // cards
+// ── Paleta Cosmos & Ouro Pálido ──────────────────────────────────────────────
+const G = '#d4b96a';   // ouro pálido
+const BG = '#07080f';  // azul-cosmos profundo
+const BG2 = '#0a0c18'; // sidebar/secções alternadas
+const BG3 = '#0f1220'; // cards azul-meia-noite
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
