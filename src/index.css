@@ -127,7 +127,7 @@
     overflow-x: hidden;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    font-size: clamp(13px, 1.1vw, 16px);
+    font-size: 16px;
   }
   body {
     @apply bg-background text-foreground;
@@ -150,13 +150,29 @@
   }
 }
 
-/* Hide scrollbars globally but keep scroll functionality */
+/* Keep scrollbars visible for better orientation and control */
 * {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(91, 94, 244, 0.55) rgba(13, 17, 32, 0.85);
 }
+
 *::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Opera */
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(13, 17, 32, 0.85);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(91, 94, 244, 0.9), rgba(29, 184, 158, 0.8));
+  border-radius: 9999px;
+  border: 2px solid rgba(13, 17, 32, 0.85);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(123, 94, 244, 1), rgba(29, 184, 158, 1));
 }
 
 @layer utilities {
@@ -195,6 +211,19 @@
   .site-hero {
     min-height: 100svh;
     padding-block: clamp(6rem, 12vw, 9rem) clamp(4rem, 8vw, 6rem);
+  }
+  .app-shell-bg {
+    background-color: #080b14;
+    background-image:
+      radial-gradient(62rem 46rem at -8% -12%, rgba(91, 94, 244, 0.24), transparent 62%),
+      radial-gradient(50rem 38rem at 112% 6%, rgba(29, 184, 158, 0.18), transparent 58%),
+      linear-gradient(180deg, #080b14 0%, #0d1120 45%, #080b14 100%);
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
   }
 }
 

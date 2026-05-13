@@ -126,7 +126,7 @@ export default function AppLayout() {
   const showIndicator = pullY > 8;
 
   return (
-    <div className="flex h-[100dvh] bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
+    <div className="app-shell-bg flex h-[100dvh] overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
       <MobileSplash />
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
