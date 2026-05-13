@@ -333,8 +333,8 @@ ${transcript}`);
 
   return (
     <div
-      className="min-h-[100dvh] overflow-x-hidden bg-[#080b14] text-white"
-      style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+      className="min-h-[100svh] overflow-x-hidden bg-[#080b14] text-white landing-mobile-scroll"
+      style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehaviorY: 'auto' }}
     >
 
       {/* STICKY NAVBAR */}
@@ -660,13 +660,28 @@ ${transcript}`);
           <div className="relative">
             <div className="absolute -inset-4 bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/20 rounded-[2rem] blur-2xl" />
             <div className="relative bg-[#0d1120] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-black/30">
-              <iframe
-                title="WR Terapia — Atuação social"
-                src={SOCIAL_REEL_EMBED_URL}
-                className="w-full h-[560px] bg-black"
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                allowFullScreen
-              />
+              <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Instagram size={16} className="text-[#1db89e] shrink-0" />
+                  <span className="text-sm font-bold text-white truncate">Instagram @wrterapia</span>
+                </div>
+                <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[#1db89e] hover:text-white transition-colors shrink-0">Ver perfil</a>
+              </div>
+              <div className="relative w-full bg-black aspect-[9/16] max-h-[620px]">
+                <iframe
+                  title="WR Terapia — Vídeo do Instagram"
+                  src={SOCIAL_REEL_EMBED_URL}
+                  className="absolute inset-0 w-full h-full bg-black"
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+              <div className="px-4 py-3 border-t border-white/10 bg-white/5 text-center">
+                <a href={SOCIAL_REEL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 text-xs font-bold text-white/80 hover:text-white">
+                  <Play size={13} className="fill-current" /> Abrir vídeo direto no Instagram
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -784,7 +799,11 @@ ${transcript}`);
         }
         html { scroll-behavior: smooth; }
         @media (max-width: 767px) {
+          html, body, #root { min-height: 100%; height: auto; overflow-y: auto !important; }
+          body { position: static !important; overscroll-behavior-y: auto !important; touch-action: pan-y !important; }
+          .landing-mobile-scroll { min-height: 100svh; height: auto; overflow-y: visible !important; }
           #top { min-height: 100svh; height: auto; padding-top: 6rem; padding-bottom: 5rem; }
+          #atuacao-social { scroll-margin-top: 6rem; }
           iframe { max-width: 100%; }
         }
       `}</style>
