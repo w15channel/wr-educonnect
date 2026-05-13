@@ -131,7 +131,7 @@ export default function Announcements() {
   const unreadCount = announcements.filter(a => !readIds.includes(a.id)).length;
 
   return (
-    <div className="p-3 md:p-5 max-w-[860px] mx-auto animate-fade-in-up">
+    <div className="app-page app-page--narrow animate-fade-in-up">
       <div className="flex items-center justify-between mb-6 gap-3">
         <div>
           <div className="flex items-center gap-2">
