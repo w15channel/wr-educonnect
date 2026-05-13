@@ -86,7 +86,7 @@ export default function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#080b14] flex flex-col">
+    <div className="min-h-screen app-shell-bg flex flex-col">
       {/* ── HERO SECTION ── */}
       <div className="relative min-h-screen flex flex-col lg:flex-row">
 
