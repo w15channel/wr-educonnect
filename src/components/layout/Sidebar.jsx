@@ -194,12 +194,12 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     const unread = notifications.filter(n => !n.is_read).length;
     const active = isActive('/ring');
     return (
-      <div className="px-3 py-2 border-t border-white/8">
+      <div className="px-3 py-2 border-t border-[#151c30]">
         <Link
           to={scoped('/ring')}
           onClick={onNav}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-            active ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/6 hover:text-white/85'
+          className={`flex items-center gap-3 px-3 py-2.5 transition-all ${
+            active ? 'bg-[#161c32] text-[#e8dfc8]' : 'text-[#c8bfa8]/45 hover:bg-white/4 hover:text-[#c8bfa8]/75'
           }`}
         >
           <div className="relative">
@@ -228,23 +228,23 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
       <aside className={`
         fixed md:static inset-y-0 left-0 z-50
         w-60 flex flex-col
-        bg-sidebar text-sidebar-foreground
-        border-r border-sidebar-border
+        bg-[#07080f] text-[#c8bfa8]
+        border-r border-[#151c30]
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
-        <div className="p-5 flex items-center justify-between border-b border-white/8">
+        <div className="p-5 flex items-center justify-between border-b border-[#151c30]">
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-9 h-9 flex items-center justify-center">
                 <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-sidebar" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#d4b96a] rounded-full border-2 border-[#07080f]" />
             </div>
             <div>
-              <h1 className="text-[15px] font-bold tracking-tight text-white">{BRAND_SHORT_NAME}</h1>
-              <p className="text-[10px] text-white/40 -mt-0.5">Instituto de Desenvolvimento Humano</p>
+              <h1 className="text-[13px] font-light tracking-[0.2em] uppercase text-[#e8dfc8]">{BRAND_SHORT_NAME}</h1>
+              <p className="text-[9px] text-[#c8bfa8]/30 -mt-0.5 font-light uppercase tracking-[0.15em]">Instituto de Desenvolvimento Humano</p>
             </div>
           </div>
           <button onClick={handleClose} className="md:hidden text-white/40 hover:text-white p-1 rounded-lg transition-colors">
@@ -256,7 +256,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         <nav className="p-3 flex flex-col gap-0.5 flex-grow overflow-y-auto scrollbar-thin">
           {groups.map((group, gi) => (
             <div key={gi} className={gi > 0 ? 'mt-3' : ''}>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5 px-3">
+              <p className="text-[9px] font-light text-[#c8bfa8]/25 uppercase tracking-[0.25em] mb-1.5 px-3">
                 {group.label}
               </p>
               {group.items.map(item => <NavLink key={item.path} item={item} />)}
@@ -269,16 +269,13 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
         {/* Course badge for admin */}
         {isAdmin && activeCourse && (
-          <div className="px-3 py-2 border-t border-white/8">
-            <div className="flex items-center justify-between bg-white/6 rounded-xl px-3 py-2">
+          <div className="px-3 py-2 border-t border-[#151c30]">
+            <div className="flex items-center justify-between border border-[#d4b96a]/12 px-3 py-2" style={{ background: 'rgba(212,185,106,0.04)' }}>
               <div>
-                <p className="text-[10px] text-white/30 uppercase tracking-widest">Turma ativa</p>
-                <p className="text-xs font-bold text-white/80">{COURSE_LABELS[activeCourse] || activeCourse}</p>
+                <p className="text-[9px] text-[#c8bfa8]/30 uppercase tracking-[0.2em] font-light">Turma ativa</p>
+                <p className="text-[11px] font-light text-[#e8dfc8]/70 tracking-wide">{COURSE_LABELS[activeCourse] || activeCourse}</p>
               </div>
-              <button
-                onClick={handleChangeCourse}
-                className="text-[10px] text-primary font-semibold hover:text-accent transition-colors underline"
-              >
+              <button onClick={handleChangeCourse} className="text-[10px] font-light text-[#d4b96a]/70 hover:text-[#d4b96a] transition-colors underline">
                 Trocar
               </button>
             </div>
@@ -286,34 +283,33 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         )}
 
         {/* User footer */}
-        <div className="p-3 border-t border-white/8">
-          <p className="px-2 pb-2 text-[9px] leading-snug text-white/30">
+        <div className="p-3 border-t border-[#151c30]">
+          <p className="px-2 pb-2 text-[9px] leading-snug text-[#c8bfa8]/20 font-light">
             {BRAND_LEGAL_NAME}<br />CNPJ {BRAND_CNPJ}
           </p>
-          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/6 transition-colors mb-1">
+          <div className="flex items-center gap-3 p-2 hover:bg-white/4 transition-colors mb-1">
             {session?.photoUrl ? (
-              <img src={session.photoUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
+              <img src={session.photoUrl} alt="Avatar" className="w-8 h-8 object-cover ring-1 ring-[#d4b96a]/20 shrink-0" />
             ) : (
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] text-white ring-2 ring-white/20 shrink-0"
+                className="w-8 h-8 flex items-center justify-center text-[11px] font-light text-white ring-1 ring-[#d4b96a]/20 shrink-0"
                 style={{ backgroundColor: avatarBg }}
               >
                 {initials}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold text-white/90 truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-[10px] text-white/40">
+              <p className="text-[12px] font-light text-[#e8dfc8]/80 truncate tracking-wide">{session?.name || 'Usuário'}</p>
+              <p className="text-[9px] text-[#c8bfa8]/30 uppercase tracking-[0.15em] font-light">
                 {isAdmin ? 'Administrador' : 'Estudante'}
               </p>
             </div>
-            <Sparkles size={13} className="text-white/20 shrink-0" />
           </div>
           <button
             onClick={logout}
-            className="flex items-center gap-2 text-white/35 hover:text-red-400 w-full px-3 py-2 rounded-xl transition-colors text-[12px] font-medium"
+            className="flex items-center gap-2 text-[#c8bfa8]/25 hover:text-red-400/70 w-full px-3 py-2 transition-colors text-[11px] font-light tracking-wide"
           >
-            <LogOut size={14} />
+            <LogOut size={13} />
             Sair da conta
           </button>
         </div>

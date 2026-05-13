@@ -2,10 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
-import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles, MessageCircle, Send } from 'lucide-react';
+import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles, MessageCircle, Send, X } from 'lucide-react';
 import ServiceTermsModal from '@/components/onboarding/ServiceTermsModal';
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
+
+const G = '#d4b96a';
+const BG = '#07080f';
+const BG2 = '#0a0c18';
+const BG3 = '#0f1220';
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
 const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
@@ -19,9 +24,9 @@ const COURSES = [
     subtitle: 'Terapia Comportamental',
     desc: 'Técnicas de Terapia Comportamental aplicadas à prática clínica, com suporte em tempo real e mentoria ao vivo todas as segundas-feiras.',
     icon: Brain,
-    color: '#5b5ef4',
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/9adbe6196_generated_video.mp4',
     tag: 'Turma Ativa',
+    active: true,
   },
   {
     id: 'psicanalise',
@@ -29,9 +34,9 @@ const COURSES = [
     subtitle: 'Método Psicanalítico',
     desc: 'Profundidade do método psicanalítico freudiano com casos clínicos supervisionados, credenciamento internacional e plataforma exclusiva.',
     icon: Sparkles,
-    color: '#1db89e',
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/220a59761_generated_video.mp4',
     tag: 'Em breve · Set/2026',
+    active: false,
   },
   {
     id: 'sexologia',
@@ -39,95 +44,93 @@ const COURSES = [
     subtitle: 'Sexualidade Humana Integrativa',
     desc: '80h de conteúdo especializado em sexualidade humana, com abordagem integrativa, multidisciplinar e credenciamento como terapeuta.',
     icon: Heart,
-    color: '#a855f7',
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/d4e6af21f_generated_video.mp4',
     tag: 'Em breve · Set/2026',
+    active: false,
   },
 ];
 
-function CourseVideoCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStudentEnter }) {
+function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStudentEnter }) {
   const videoRef = useRef(null);
   const Icon = course.icon;
 
-  const handleMouseEnter = () => videoRef.current?.play();
-
   return (
     <div
-      className={`relative bg-[#0d1120] border rounded-3xl overflow-hidden flex flex-col transition-all ${
+      className={`relative border flex flex-col overflow-hidden transition-all duration-300 ${
         isActive
-          ? 'border-[#5b5ef4]/50 ring-2 ring-[#5b5ef4]/20 shadow-2xl shadow-[#5b5ef4]/10'
-          : 'border-white/10 opacity-70'
+          ? 'border-[#d4b96a]/30 shadow-lg shadow-[#d4b96a]/5'
+          : 'border-[#1e2540] opacity-60'
       }`}
-      onMouseEnter={handleMouseEnter}
+      style={{ background: BG3 }}
+      onMouseEnter={() => videoRef.current?.play()}
+      onMouseLeave={() => { if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = 0; } }}
     >
-      {/* Video / thumbnail area */}
-      <div className="relative h-48 overflow-hidden bg-black">
+      {/* Video area */}
+      <div className="relative h-44 overflow-hidden bg-black">
         <video
           ref={videoRef}
           src={course.video}
-          className={`w-full h-full object-cover transition-all ${!isActive ? 'grayscale brightness-40' : ''}`}
-          muted
-          loop
-          playsInline
-          preload="metadata"
+          className={`w-full h-full object-cover transition-all duration-500 ${!isActive ? 'grayscale brightness-[0.3]' : 'brightness-75'}`}
+          muted loop playsInline preload="metadata"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-transparent to-transparent" />
+        <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG3}, ${BG3}20)` }} />
 
-        {/* Tag badge */}
-        <div
-          className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black text-white"
-          style={{ backgroundColor: isActive ? course.color : '#444' }}
-        >
+        {/* Tag */}
+        <div className="absolute top-3 left-3 border px-2.5 py-1 text-[9px] font-light uppercase tracking-[0.2em]"
+          style={isActive
+            ? { borderColor: `${G}50`, color: G, background: `${BG}cc` }
+            : { borderColor: '#ffffff15', color: 'rgba(255,255,255,0.35)', background: `${BG}cc` }}>
           {isActive ? `✓ ${course.tag}` : course.tag}
         </div>
 
-        {/* Lock overlay */}
+        {/* Lock */}
         {!isActive && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-black/70 rounded-full p-4 border border-white/10">
-              <Lock size={26} className="text-white/50" />
+            <div className="border border-white/10 p-4" style={{ background: `${BG}90` }}>
+              <Lock size={22} className="text-white/30" />
             </div>
           </div>
         )}
-
       </div>
 
       {/* Content */}
       <div className="p-5 flex flex-col flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: course.color + '20' }}>
-            <Icon size={13} style={{ color: course.color }} />
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <div className="w-6 h-6 border flex items-center justify-center shrink-0" style={{ borderColor: `${G}25` }}>
+            <Icon size={12} style={{ color: isActive ? G : 'rgba(255,255,255,0.3)' }} />
           </div>
-          <h3 className={`font-black text-lg ${!isActive ? 'text-white/40' : 'text-white'}`}>{course.title}</h3>
+          <h3 className={`font-light text-sm uppercase tracking-[0.15em] ${isActive ? 'text-[#e8dfc8]' : 'text-white/35'}`}>{course.title}</h3>
         </div>
-        <p className="text-white/30 text-xs mb-3">{course.subtitle}</p>
-        <p className={`text-sm leading-relaxed flex-1 mb-5 ${!isActive ? 'text-white/25' : 'text-white/55'}`}>{course.desc}</p>
+        <p className="text-[10px] uppercase tracking-[0.2em] font-light mb-3" style={{ color: `${G}50` }}>{course.subtitle}</p>
+        <p className={`text-xs leading-relaxed flex-1 mb-5 font-light ${isActive ? 'text-white/45' : 'text-white/20'}`}>{course.desc}</p>
 
         {isAdmin ? (
           <button
             onClick={() => onAdminSelect(course.id)}
-            className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${course.color}, #1db89e)` }}
+            className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
+            style={{ borderColor: `${G}60`, color: G }}
+            onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
           >
-            Gerenciar esta Turma <ChevronRight size={16} />
+            Gerenciar Turma <ChevronRight size={13} />
           </button>
         ) : isActive ? (
           <button
             onClick={onStudentEnter}
-            className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95"
-            style={{ background: `linear-gradient(135deg, ${course.color}, #1db89e)` }}
+            className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
+            style={{ borderColor: `${G}60`, color: G }}
+            onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
           >
-            Entrar na Plataforma <ChevronRight size={16} />
+            Entrar na Plataforma <ChevronRight size={13} />
           </button>
         ) : (
-          <div className="space-y-2">
-            <button
-              onClick={() => onReserve(course)}
-              className="w-full py-3 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-emerald-500 to-cyan-500 border border-white/10 flex items-center justify-center gap-2"
-            >
-              Reserva Antecipada em Chat
-            </button>
-          </div>
+          <button
+            onClick={() => onReserve(course)}
+            className="w-full py-3 border border-[#1e2540] text-[11px] font-light uppercase tracking-[0.2em] text-white/30 flex items-center justify-center gap-2 hover:border-white/20 hover:text-white/50 transition-all"
+          >
+            <MessageCircle size={11} /> Reserva Antecipada
+          </button>
         )}
       </div>
     </div>
@@ -152,11 +155,10 @@ export default function CourseLobby() {
     localStorage.setItem(LOBBY_MUSIC_KEY, 'off');
   }, []);
 
-
   const handleAdminSelectCourse = (courseId) => {
     const current = getSession();
     setSession({ ...current, course: courseId });
-    login(); // refresh context
+    login();
     const slug = COURSE_TO_SLUG[courseId] || 'tcc';
     navigate(`/adm/${slug}/dashboard`);
   };
@@ -186,12 +188,10 @@ export default function CourseLobby() {
     const answeredQuestions = nextMessages.filter(m => m.role === 'user').length;
     setLeadMessages(nextMessages);
     setLeadInput('');
-
     if (answeredQuestions >= MAX_RESERVATION_AI_QUESTIONS) {
       setLeadMessages(prev => [...prev, { role: 'assistant', content: RESERVATION_FINAL_MESSAGE }]);
       return;
     }
-
     setLeadLoading(true);
     const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, objetivo profissional e melhor horário de contato. Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez. Quando tiver os dados principais, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre pedindo para a pessoa selecionar a opção de enviar ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
     const response = await base44.integrations.Core.InvokeLLM({ prompt });
@@ -206,40 +206,52 @@ export default function CourseLobby() {
     setReserveOpen(false);
   };
 
-  if (isAdmin) {
-    return (
-      <div className="h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#080b14] text-white" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className="relative z-10 border-b border-white/8 px-6 py-5">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-10 h-10 object-contain" />
-              <span className="font-black text-sm sm:text-lg leading-tight">{BRAND_LEGAL_NAME}</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <p className="text-sm font-semibold text-white">{session?.name}</p>
-              <button onClick={logout} className="text-white/40 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/8" title="Sair">
-                <LogOut size={16} />
-              </button>
-            </div>
+  const Header = () => (
+    <div className="border-b px-6 py-4" style={{ borderColor: `${G}12`, background: `${BG}f5` }}>
+      <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 border flex items-center justify-center" style={{ borderColor: `${G}30` }}>
+            <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-6 h-6 object-contain" />
+          </div>
+          <div>
+            <p className="text-xs font-light uppercase tracking-[0.25em] text-white/70">{BRAND_SHORT_NAME}</p>
+            <p className="text-[9px] font-light text-white/25 uppercase tracking-[0.2em] hidden sm:block">Instituto de Desenvolvimento Humano</p>
           </div>
         </div>
-        <div className="relative z-10 max-w-5xl mx-auto px-6 py-14">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-5">
-              <GraduationCap size={13} className="text-[#5b5ef4]" />
-              <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Painel do Professor</span>
+        <div className="flex items-center gap-4">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-light text-white/60 uppercase tracking-[0.15em]">{session?.name}</p>
+            <p className="text-[9px] text-white/25 uppercase tracking-[0.15em]">{isAdmin ? 'Administrador' : 'Aluno(a)'}</p>
+          </div>
+          <button onClick={logout} className="border border-white/10 p-2 text-white/30 hover:text-white/60 hover:border-white/20 transition-all" title="Sair">
+            <LogOut size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isAdmin) {
+    return (
+      <div className="h-[100dvh] overflow-y-auto overflow-x-hidden text-white" style={{ background: BG, WebkitOverflowScrolling: 'touch' }}>
+        <Header />
+        <div className="max-w-5xl mx-auto px-6 py-14">
+          <div className="text-center mb-14">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="h-px w-8" style={{ background: `${G}50` }} />
+              <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Painel do Professor</span>
+              <div className="h-px w-8" style={{ background: `${G}50` }} />
             </div>
-            <h1 className="text-4xl lg:text-5xl font-black text-white mb-3">
-              Escolha a{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">Turma</span>
+            <h1 className="text-4xl lg:text-5xl font-thin text-white mb-3 tracking-[-0.01em]">
+              Escolha a <span className="font-light italic" style={{ color: G }}>Turma</span>
             </h1>
-            <p className="text-white/50 max-w-md mx-auto text-base">
+            <p className="text-white/35 max-w-md mx-auto text-sm font-light">
               Selecione o curso que deseja gerenciar. Cada turma tem seu painel isolado.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {COURSES.map((c) => (
-              <CourseVideoCard key={c.id} course={c} isActive={true} isAdmin={true} onAdminSelect={handleAdminSelectCourse} />
+              <CourseCard key={c.id} course={c} isActive={true} isAdmin={true} onAdminSelect={handleAdminSelectCourse} />
             ))}
           </div>
         </div>
@@ -248,93 +260,119 @@ export default function CourseLobby() {
   }
 
   return (
-    <div className="relative h-[100dvh] bg-[#080b14] text-white overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="relative h-[100dvh] text-white overflow-y-auto overflow-x-hidden" style={{ background: BG, WebkitOverflowScrolling: 'touch' }}>
       {!termsAccepted && <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />}
 
+      {/* Subtle cosmos gradient */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(91,94,244,0.25),transparent_45%),radial-gradient(circle_at_82%_8%,rgba(29,184,158,0.2),transparent_42%),radial-gradient(circle_at_50%_85%,rgba(168,85,247,0.12),transparent_45%)]" />
-      </div>
-      {/* Header */}
-      <div className="border-b border-white/8 px-6 py-5">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-10 h-10 object-contain" />
-            <span className="font-black text-sm sm:text-lg leading-tight">{BRAND_LEGAL_NAME}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-semibold text-white">{session?.name}</p>
-              <p className="text-xs text-white/40">Aluno(a)</p>
-            </div>
-            <button
-              onClick={logout}
-              className="text-white/40 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/8"
-              title="Sair"
-            >
-              <LogOut size={16} />
-            </button>
-          </div>
-        </div>
+        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 20% 20%, rgba(212,185,106,0.04), transparent 45%), radial-gradient(circle at 80% 80%, rgba(212,185,106,0.03), transparent 45%)` }} />
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-14">
+      <Header />
+
+      <div className="max-w-5xl mx-auto px-6 py-12">
         {/* Title */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-5">
-            <GraduationCap size={13} className="text-[#5b5ef4]" />
-            <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Área do Aluno</span>
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="h-px w-8" style={{ background: `${G}50` }} />
+            <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Área do Aluno</span>
+            <div className="h-px w-8" style={{ background: `${G}50` }} />
           </div>
-          <h1 className="text-4xl lg:text-5xl font-black text-white mb-3">
-            Olá,{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">
-              {session?.name?.split(' ')[0]}!
-            </span>
+          <h1 className="text-4xl lg:text-5xl font-thin text-white mb-3 tracking-[-0.01em]">
+            Olá, <span className="font-light italic" style={{ color: G }}>{session?.name?.split(' ')[0]}!</span>
           </h1>
-          <p className="text-white/50 max-w-md mx-auto text-base">
+          <p className="text-white/35 max-w-md mx-auto text-sm font-light">
             Sua formação está ativa abaixo. As demais turmas estarão disponíveis em breve.
           </p>
         </div>
 
         {/* Course Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
           {COURSES.map((c) => (
-            <CourseVideoCard key={c.id} course={c} isActive={userCourse === c.id} isAdmin={false} onAdminSelect={() => {}} onReserve={openReserve} onStudentEnter={handleStudentEnter} />
+            <CourseCard
+              key={c.id}
+              course={c}
+              isActive={userCourse === c.id}
+              isAdmin={false}
+              onAdminSelect={() => {}}
+              onReserve={openReserve}
+              onStudentEnter={handleStudentEnter}
+            />
           ))}
         </div>
-        <div className="max-w-xl mx-auto mt-8 rounded-2xl border border-white/10 p-4 bg-white/5">
-          <p className="text-sm text-white/70">O Termo de Prestação de Serviços abre aqui no lobby antes do acesso ao portal.</p>
-          <button onClick={handleStudentEnter} disabled={!termsAccepted} className="mt-3 w-full py-3 rounded-xl font-bold bg-[#5b5ef4] disabled:opacity-40">Entrar no Portal do Aluno</button>
+
+        {/* Terms + Enter CTA */}
+        <div className="max-w-xl mx-auto border p-5" style={{ borderColor: `${G}15`, background: BG3 }}>
+          <p className="text-xs text-white/40 font-light leading-relaxed mb-4">
+            O Termo de Prestação de Serviços é exibido aqui no lobby antes do acesso ao portal. Ao entrar, você confirma que leu e aceita os termos.
+          </p>
+          <button
+            onClick={handleStudentEnter}
+            disabled={!termsAccepted}
+            className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.22em] flex items-center justify-center gap-2 transition-all disabled:opacity-30"
+            style={{ borderColor: `${G}60`, color: G }}
+            onMouseEnter={e => { if (termsAccepted) { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
+          >
+            Entrar no Portal do Aluno <ChevronRight size={13} />
+          </button>
         </div>
 
-        <p className="text-center text-white/20 text-xs mt-10">
-          Você está matriculado(a) no curso{' '}
-          <strong className="text-white/40">{COURSES.find(c => c.id === userCourse)?.title}</strong>. Em caso de dúvidas, entre em contato com a coordenação.
+        <p className="text-center text-white/20 text-[10px] mt-8 font-light uppercase tracking-[0.15em]">
+          Matriculado(a) em <span className="text-white/35">{COURSES.find(c => c.id === userCourse)?.title}</span> · Dúvidas? Fale com a coordenação.
         </p>
       </div>
+
+      {/* Reserve Modal */}
       {reserveOpen && (
-        <div className="fixed inset-0 z-[120] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
-          <div className="bg-[#0d1120] text-white border border-white/10 rounded-3xl w-full max-w-lg max-h-[88dvh] overflow-hidden flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+        <div className="fixed inset-0 z-[120] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
+          <div className="border w-full max-w-lg max-h-[88dvh] shadow-2xl overflow-hidden flex flex-col" style={{ background: BG3, borderColor: `${G}20` }} onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b flex items-start justify-between gap-4" style={{ borderColor: `${G}12` }}>
               <div>
-                <h3 className="font-black text-lg flex items-center gap-2"><MessageCircle size={18} className="text-emerald-400" /> Reserva Antecipada</h3>
-                <p className="text-white/40 text-xs mt-1">{selectedCourse?.title} · atendimento guiado por IA</p>
+                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><MessageCircle size={14} style={{ color: G }} /> Reserva Antecipada</h3>
+                <p className="text-white/30 text-xs mt-1 font-light">{selectedCourse?.title} · atendimento guiado por IA</p>
               </div>
-              <button onClick={() => setReserveOpen(false)} className="text-white/35 hover:text-white">×</button>
+              <button onClick={() => setReserveOpen(false)} className="text-white/25 hover:text-white/60 transition-colors"><X size={15} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#080b14]">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ background: BG }}>
               {leadMessages.map((message, index) => (
                 <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${message.role === 'user' ? 'bg-[#5b5ef4]' : 'bg-white/8 border border-white/10 text-white/80'}`}>{message.content}</div>
+                  <div className="max-w-[82%] border px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap font-light"
+                    style={message.role === 'user'
+                      ? { background: G, borderColor: G, color: '#000' }
+                      : { background: BG3, borderColor: `${G}15`, color: 'rgba(255,255,255,0.6)' }}>
+                    {message.content}
+                  </div>
                 </div>
               ))}
-              {leadLoading && <p className="text-xs text-white/35">IA digitando...</p>}
+              {leadLoading && <p className="text-xs text-white/25 font-light">IA digitando...</p>}
             </div>
-            <div className="p-4 border-t border-white/10 space-y-3">
+            <div className="p-4 border-t space-y-3" style={{ borderColor: `${G}12`, background: BG3 }}>
               <div className="flex gap-2">
-                <input value={leadInput} onChange={(e) => setLeadInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') sendLeadMessage(); }} placeholder={leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS ? 'Questionário encerrado. Envie pelo WhatsApp.' : 'Responda aqui...'} className="flex-1 h-11 rounded-xl bg-white/6 border border-white/10 px-3 text-sm outline-none focus:border-emerald-400/60" />
-                <button onClick={sendLeadMessage} disabled={!leadInput.trim() || leadLoading || leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS} className="h-11 w-11 rounded-xl bg-emerald-500 flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
+                <input
+                  value={leadInput}
+                  onChange={e => setLeadInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') sendLeadMessage(); }}
+                  placeholder={leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS ? 'Questionário encerrado. Envie pelo WhatsApp.' : 'Responda aqui...'}
+                  className="flex-1 border h-11 px-3 text-sm focus:outline-none font-light"
+                  style={{ background: BG, borderColor: `${G}18`, color: 'white' }}
+                />
+                <button
+                  onClick={sendLeadMessage}
+                  disabled={!leadInput.trim() || leadLoading || leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS}
+                  className="h-11 w-11 border flex items-center justify-center disabled:opacity-30 transition-all"
+                  style={{ borderColor: `${G}50`, color: G }}>
+                  <Send size={14} />
+                </button>
               </div>
-              <button onClick={sendLead} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold">Enviar para WhatsApp oficial</button>
+              <button
+                onClick={sendLead}
+                className="w-full py-3 border text-xs uppercase tracking-[0.2em] font-medium transition-all"
+                style={{ borderColor: `${G}60`, color: G }}
+                onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                Enviar para WhatsApp oficial
+              </button>
             </div>
           </div>
         </div>
