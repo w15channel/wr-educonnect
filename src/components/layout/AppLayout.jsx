@@ -198,5 +198,3 @@ export default function AppLayout() {
     </div>
   );
 }
-
-export default AppLayout;
