@@ -178,7 +178,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
+    <div className="w-full max-w-4xl mx-auto px-3 py-4 sm:p-4 lg:p-7 animate-fade-in-up overflow-x-hidden">
       <div className="flex items-center gap-3 mb-5">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ChevronLeft size={16} /> Voltar
@@ -704,7 +704,7 @@ export default function ScoreControl() {
   [['alpha', 'A–Z'], ['points', 'Classificação']];
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
+    <div className="w-full max-w-4xl mx-auto px-3 py-4 sm:p-4 lg:p-7 animate-fade-in-up overflow-x-hidden">
       <div className="mb-5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
@@ -728,7 +728,7 @@ export default function ScoreControl() {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar aluno..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
         </div>
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-auto overflow-x-auto pb-1">
           <ArrowUpDown size={13} className="text-muted-foreground" />
           {sortOptions.map(([val, label]) =>
 
@@ -774,7 +774,7 @@ export default function ScoreControl() {
                 setCustomOrder(next);
               }}
               onClick={() => (isTeacher || code.student_email === session?.email) && setSelectedCode(code)}
-              className={`bg-card rounded-2xl border p-4 flex items-center gap-3 ${isTeacher || code.student_email === session?.email ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}>
+              className={`bg-card rounded-2xl border p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${isTeacher || code.student_email === session?.email ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}>
               
                   <div className="w-7 text-center shrink-0">
                     {medal || <span className="text-xs font-black text-muted-foreground">#{index + 1}</span>}
@@ -792,7 +792,7 @@ export default function ScoreControl() {
                     </div>
                     {isTeacher && <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>}
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
                     {isTeacher &&
                 <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Aulas assistidas + lives + entregas + fórum + monitoria">
                         <Activity size={11} className="text-blue-500" />

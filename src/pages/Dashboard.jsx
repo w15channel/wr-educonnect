@@ -382,7 +382,7 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
   return (
-    <div className="w-full max-w-screen-2xl mx-auto p-4 md:p-5 xl:p-7 space-y-5 animate-fade-in-up">
+    <div className="w-full max-w-screen-2xl mx-auto px-3 py-4 sm:p-4 md:p-5 xl:p-7 space-y-5 animate-fade-in-up overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
@@ -587,7 +587,7 @@ export default function Dashboard() {
 
       {/* Admin ranking */}
       {isTeacher &&
-      <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
+      <div className="bg-card rounded-2xl border border-border p-3 sm:p-5 overflow-hidden max-w-full">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
@@ -631,7 +631,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
           {customRanking.length === 0 ?
         <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p> :
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-2 max-h-[70vh] overflow-y-auto pr-1">
               {customRanking.map((r, i) => {
             const code = accessCodes.find((c) => c.student_email === r.email);
             const displayName = code?.profile_name || code?.student_name || r.email;

@@ -126,7 +126,7 @@ export default function AppLayout() {
   const showIndicator = pullY > 8;
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
+    <div className="flex h-[100dvh] bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
       <MobileSplash />
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
@@ -176,15 +176,16 @@ export default function AppLayout() {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               ref={scrollRef}
               data-scroll-container
-              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
+              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden overscroll-contain [-webkit-overflow-scrolling:touch]"
               style={{
+
                 paddingBottom: window.innerWidth < 768 && stripScopedPrefix(location.pathname) !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
               }}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <div className="flex-1 min-h-0 flex flex-col w-full">
+              <div className="flex-1 min-h-0 flex flex-col w-full max-w-full">
                 <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
               </div>
             </motion.div>
@@ -197,3 +198,5 @@ export default function AppLayout() {
     </div>
   );
 }
+
+export default AppLayout;

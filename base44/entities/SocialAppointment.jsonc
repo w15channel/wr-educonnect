@@ -1,0 +1,66 @@
+{
+  "name": "SocialAppointment",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da pessoa interessada"
+    },
+    "whatsapp": {
+      "type": "string",
+      "description": "WhatsApp para contato"
+    },
+    "preferred_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data escolhida para atendimento"
+    },
+    "preferred_time": {
+      "type": "string",
+      "description": "Hor\u00e1rio escolhido para atendimento"
+    },
+    "interview_transcript": {
+      "type": "string",
+      "description": "Resumo do chat de entrevista"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "contacted",
+        "paid",
+        "completed",
+        "cancelled"
+      ],
+      "default": "requested",
+      "description": "Status do agendamento"
+    },
+    "price": {
+      "type": "number",
+      "default": 35,
+      "description": "Valor social da consulta"
+    }
+  },
+  "required": [
+    "preferred_date",
+    "preferred_time"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

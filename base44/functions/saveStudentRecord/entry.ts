@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const ALLOWED_ENTITIES = new Set(['ForumPost', 'ForumReply', 'ChatMessage', 'TaskSubmission']);
+const ALLOWED_ENTITIES = new Set(['ForumPost', 'ForumReply', 'ChatMessage', 'TaskSubmission', 'LiveAttendance']);
 
 function norm(value) {
   return String(value || '').trim().toLowerCase();

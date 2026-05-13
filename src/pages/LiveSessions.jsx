@@ -138,12 +138,16 @@ export default function LiveSessions() {
   });
 
   const confirmAttendanceMutation = useMutation({
-    mutationFn: (sess) => base44.entities.LiveAttendance.create({
-      session_id: sess.id,
-      session_title: sess.title,
-      student_email: session?.email || '',
-      student_name: session?.name || '',
-      confirmed_at: new Date().toISOString(),
+    mutationFn: (sess) => base44.functions.invoke('saveStudentRecord', {
+      action: 'create',
+      entity: 'LiveAttendance',
+      data: {
+        session_id: sess.id,
+        session_title: sess.title,
+        student_email: session?.email || '',
+        student_name: session?.name || '',
+        confirmed_at: new Date().toISOString(),
+      },
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-attendances', session?.email] });
@@ -222,7 +226,7 @@ export default function LiveSessions() {
           </div>
 
           {/* Chat */}
-          <div className="w-full xl:w-96 bg-card border-t xl:border-t-0 xl:border-l border-border flex flex-col h-[300px] md:h-[340px] xl:h-full min-h-0">
+          <div className="w-full xl:w-[30rem] 2xl:w-[34rem] bg-card border-t xl:border-t-0 xl:border-l border-border flex flex-col h-[42dvh] min-h-[360px] md:h-[420px] xl:h-full xl:min-h-0">
             <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
               <MessageSquare size={14} className="text-primary" />
               <h3 className="font-bold text-sm text-foreground flex-1">Chat ao Vivo</h3>
@@ -405,7 +409,7 @@ function AttendanceWidget({ secondsLeft, onConfirm, loading, onTick }) {
   const secs = secondsLeft % 60;
   if (secondsLeft <= 0) return <span className="text-xs text-muted-foreground">Janela de presença encerrada</span>;
   return (
-    <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-1.5">
+    <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 flex-wrap">
       <UserCheck size={13} className="text-blue-600 shrink-0" />
       <span className="text-xs font-semibold text-blue-800">Confirmar presença</span>
       <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">{String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}</span>

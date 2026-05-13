@@ -11,7 +11,10 @@ import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from 
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
 const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
+const SOCIAL_FINAL_MESSAGE = 'Obrigado. Agora escolha uma data e horário no calendário do mês vigente. Após o agendamento, em até 48 horas um atendente entrará em contato pelo WhatsApp para enviar o código Pix do atendimento social no valor de R$ 35,00 por consulta.';
 const OFFER_DURATION_MS = 48 * 60 * 60 * 1000;
+const SOCIAL_APPOINTMENT_PRICE = 35;
+const SOCIAL_TIME_SLOTS = ['09:00', '10:30', '14:00', '15:30', '19:00'];
 const INSTAGRAM_PROFILE_URL = 'https://www.instagram.com/wrterapia';
 const SOCIAL_REEL_URL = 'https://www.instagram.com/wrterapia/reel/DTvNvvoDHgd/';
 const SOCIAL_REEL_EMBED_URL = 'https://www.instagram.com/reel/DTvNvvoDHgd/embed';
@@ -209,6 +212,13 @@ export default function LandingPage({ onLogin }) {
   const [leadMessages, setLeadMessages] = useState([]);
   const [leadInput, setLeadInput] = useState('');
   const [leadLoading, setLeadLoading] = useState(false);
+  const [socialOpen, setSocialOpen] = useState(false);
+  const [socialMessages, setSocialMessages] = useState([]);
+  const [socialInput, setSocialInput] = useState('');
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [selectedSocialDate, setSelectedSocialDate] = useState('');
+  const [selectedSocialTime, setSelectedSocialTime] = useState('');
+  const [socialBooked, setSocialBooked] = useState(false);
   const [offerTimeLeft, setOfferTimeLeft] = useState(OFFER_DURATION_MS);
 
   useEffect(() => {
@@ -331,6 +341,60 @@ ${transcript}`);
     setReserveOpen(false);
   };
 
+  const openSocialAppointment = () => {
+    setSocialMessages([{ role: 'assistant', content: 'Olá! Vou fazer uma breve entrevista para o Atendimento Terapêutico Social. Para começar: qual é seu nome completo e WhatsApp para contato?' }]);
+    setSocialInput('');
+    setSelectedSocialDate('');
+    setSelectedSocialTime('');
+    setSocialBooked(false);
+    setSocialOpen(true);
+  };
+
+  const sendSocialChatMessage = async () => {
+    if (!socialInput.trim() || socialLoading || socialMessages.filter(m => m.role === 'user').length >= 5) return;
+    const userMessage = { role: 'user', content: socialInput.trim() };
+    const nextMessages = [...socialMessages, userMessage];
+    const answeredQuestions = nextMessages.filter(m => m.role === 'user').length;
+    setSocialMessages(nextMessages);
+    setSocialInput('');
+
+    if (answeredQuestions >= 5) {
+      setSocialMessages(prev => [...prev, { role: 'assistant', content: SOCIAL_FINAL_MESSAGE }]);
+      return;
+    }
+
+    setSocialLoading(true);
+    const prompt = `Você é a IA de triagem acolhedora do Atendimento Terapêutico Social da ${BRAND_LEGAL_NAME}. Faça uma entrevista curta com no máximo 5 perguntas no total, uma pergunta por vez, em português do Brasil. Colete: nome e WhatsApp, principal motivo da busca, urgência emocional, se já faz acompanhamento, preferência de horário. Não faça diagnóstico. Reforce que é um espaço sério, seguro e de cuidado comportamental. Ao final, oriente a pessoa a escolher data e horário no calendário e informe que em até 48 horas um atendente enviará o Pix de R$ 35,00 por consulta.
+
+Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
+    const response = await base44.integrations.Core.InvokeLLM({ prompt });
+    setSocialMessages(prev => [...prev, { role: 'assistant', content: response }]);
+    setSocialLoading(false);
+  };
+
+  const getCurrentMonthDates = () => {
+    const now = new Date();
+    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return Array.from({ length: days }, (_, i) => {
+      const date = new Date(now.getFullYear(), now.getMonth(), i + 1);
+      const iso = date.toISOString().slice(0, 10);
+      return { iso, day: i + 1, week: date.toLocaleDateString('pt-BR', { weekday: 'short' }) };
+    }).filter(d => d.iso >= now.toISOString().slice(0, 10));
+  };
+
+  const bookSocialAppointment = async () => {
+    if (!selectedSocialDate || !selectedSocialTime) return;
+    const transcript = socialMessages.map(m => `${m.role === 'user' ? 'Pessoa' : `IA ${BRAND_SHORT_NAME}`}: ${m.content}`).join('\n');
+    await base44.entities.SocialAppointment.create({
+      preferred_date: selectedSocialDate,
+      preferred_time: selectedSocialTime,
+      interview_transcript: transcript,
+      price: SOCIAL_APPOINTMENT_PRICE,
+      status: 'requested'
+    });
+    setSocialBooked(true);
+  };
+
   return (
     <div
       className="min-h-[100svh] overflow-x-hidden bg-[#080b14] text-white landing-mobile-scroll"
@@ -351,7 +415,7 @@ ${transcript}`);
               </div>
             </a>
             <div className="hidden md:flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/10 p-1 text-sm text-white/62 shadow-inner shadow-black/20">
-              {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Social', '#atuacao-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+              {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '#atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
               <a key={label} href={href} className="px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all">{label}</a>
               )}
             </div>
@@ -359,6 +423,9 @@ ${transcript}`);
               <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-2 rounded-full border border-[#1db89e]/25 bg-[#1db89e]/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-[#1db89e]/16 hover:border-[#1db89e]/45 transition-all shadow-lg shadow-[#1db89e]/10">
                 <span className="w-2 h-2 rounded-full bg-[#1db89e] shadow-[0_0_12px_rgba(29,184,158,0.8)]" /> Área do Aluno
               </button>
+              <a href="#atendimento-social" className="hidden md:block rounded-full border border-emerald-300/25 bg-emerald-400/10 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-emerald-500/10 hover:bg-emerald-400/15 transition-all">
+                Atendimento Social
+              </a>
               <a href="#cursos" className="hidden md:block rounded-full bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-[#5b5ef4]/30 hover:opacity-95 transition-all" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
                 Inscreva-se
               </a>
@@ -370,7 +437,7 @@ ${transcript}`);
         </div>
         {mobileMenu &&
         <div className="md:hidden mx-4 mt-2 rounded-3xl bg-[#0d1120]/95 border border-white/10 px-4 py-4 space-y-2 shadow-2xl shadow-black/30 backdrop-blur-xl">
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Social', '#atuacao-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '#atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
           <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/65 hover:text-white hover:bg-white/8 py-3 px-3 rounded-2xl text-sm font-medium transition-all">{label}</a>
           )}
             <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full flex items-center justify-center gap-2 rounded-2xl border border-[#1db89e]/25 bg-[#1db89e]/10 py-3 text-white font-bold text-sm">
@@ -687,6 +754,53 @@ ${transcript}`);
         </div>
       </section>
 
+      {/* ATENDIMENTO SOCIAL */}
+      <section id="atendimento-social" className="py-24 px-5 sm:px-6 lg:px-20 bg-gradient-to-br from-[#06120f] via-[#080b14] to-[#111827] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(29,184,158,0.18),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(91,94,244,0.16),transparent_45%)]" />
+        <div className="max-w-6xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-300/20 rounded-full px-4 py-1.5 mb-5">
+              <Heart size={13} className="text-emerald-300" />
+              <span className="text-xs font-black text-emerald-200 uppercase tracking-widest">Atendimento Social · R$ 35,00</span>
+            </div>
+            <h2 className="text-4xl lg:text-6xl font-black text-white leading-tight mb-5">Cuidado sério, seguro e acessível.</h2>
+            <p className="text-white/65 leading-relaxed mb-5 text-base">
+              Um espaço de acolhimento terapêutico social para promover saúde comportamental, ampliar o acesso ao cuidado e permitir que profissionais em capacitação desenvolvam sua prática com seriedade, supervisão e responsabilidade humana.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-7">
+              {[['R$ 35', 'por consulta'], ['5 perguntas', 'triagem inicial'], ['48h', 'retorno com Pix']].map(([value, label]) => (
+                <div key={value} className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                  <p className="text-2xl font-black text-white">{value}</p>
+                  <p className="text-xs text-white/40 mt-1">{label}</p>
+                </div>
+              ))}
+            </div>
+            <button onClick={openSocialAppointment} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-7 py-4 text-sm font-black text-[#06120f] shadow-2xl shadow-emerald-500/20 hover:scale-[1.02] transition-transform">
+              <MessageCircle size={16} /> Quero agendar atendimento social
+            </button>
+          </div>
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 sm:p-7 shadow-2xl shadow-black/25 backdrop-blur-xl">
+            <p className="text-white font-black text-xl mb-4">Como funciona</p>
+            <div className="space-y-4">
+              {[
+                'Você responde uma entrevista curta pelo chat com 5 perguntas.',
+                'Escolhe data e horário disponíveis no mês vigente.',
+                'Nossa equipe entra em contato em até 48 horas pelo WhatsApp.',
+                'O atendente envia o código Pix de R$ 35,00 para confirmar a consulta.'
+              ].map((item, index) => (
+                <div key={item} className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-emerald-400 text-[#06120f] flex items-center justify-center text-xs font-black shrink-0">{index + 1}</div>
+                  <p className="text-sm text-white/65 leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4">
+              <p className="text-xs text-emerald-100 leading-relaxed">Este atendimento não substitui serviços de emergência. Em risco imediato, procure ajuda presencial ou serviço de urgência da sua cidade.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* NOSSOS CURSOS */}
       <section id="cursos" className="py-24 px-5 sm:px-6 lg:px-20 bg-[#080b14]">
         <div className="max-w-6xl mx-auto">
@@ -890,6 +1004,71 @@ ${transcript}`);
           </div>
         </div>
       </footer>
+
+      {/* ATENDIMENTO SOCIAL EM CHAT */}
+      {socialOpen &&
+      <div className="fixed inset-0 z-[190] bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4" onClick={() => setSocialOpen(false)}>
+          <div className="bg-[#0d1120] border border-white/15 rounded-3xl w-full max-w-2xl max-h-[90dvh] shadow-2xl overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-white font-black text-lg flex items-center gap-2"><Heart size={18} className="text-emerald-300" /> Atendimento Social</h3>
+                <p className="text-white/40 text-xs mt-1">Triagem breve · consulta social R$ 35,00 · retorno em até 48h</p>
+              </div>
+              <button onClick={() => setSocialOpen(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#080b14]">
+              <div className="space-y-3">
+                {socialMessages.map((message, index) => (
+                  <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${message.role === 'user' ? 'bg-emerald-500 text-white' : 'bg-white/8 border border-white/10 text-white/80'}`}>
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+                {socialLoading && <div className="text-xs text-white/35">IA digitando...</div>}
+              </div>
+              {socialMessages.filter(m => m.role === 'user').length >= 5 && (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 space-y-4">
+                  <p className="text-sm font-black text-white">Escolha uma data do mês vigente</p>
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-40 overflow-y-auto pr-1">
+                    {getCurrentMonthDates().map((date) => (
+                      <button key={date.iso} onClick={() => setSelectedSocialDate(date.iso)} className={`rounded-xl border px-2 py-2 text-center ${selectedSocialDate === date.iso ? 'border-emerald-300 bg-emerald-400 text-[#06120f]' : 'border-white/10 bg-white/5 text-white/70'}`}>
+                        <span className="block text-[10px] uppercase">{date.week}</span>
+                        <span className="text-base font-black">{date.day}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-sm font-black text-white">Horário</p>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {SOCIAL_TIME_SLOTS.map((time) => (
+                      <button key={time} onClick={() => setSelectedSocialTime(time)} className={`rounded-xl border px-3 py-2 text-sm font-bold ${selectedSocialTime === time ? 'border-cyan-300 bg-cyan-300 text-[#06120f]' : 'border-white/10 bg-white/5 text-white/70'}`}>{time}</button>
+                    ))}
+                  </div>
+                  {socialBooked ? (
+                    <div className="rounded-2xl border border-emerald-300/25 bg-emerald-400/10 p-4 text-sm text-emerald-100">
+                      Agendamento solicitado. Em até 48 horas um atendente entrará em contato para enviar o código Pix de R$ 35,00.
+                    </div>
+                  ) : (
+                    <button onClick={bookSocialAppointment} disabled={!selectedSocialDate || !selectedSocialTime} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 font-black text-sm text-[#06120f] disabled:opacity-40">Solicitar agendamento</button>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-white/10 bg-[#0d1120]">
+              <div className="flex gap-2">
+                <input
+                  value={socialInput}
+                  onChange={(e) => setSocialInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') sendSocialChatMessage(); }}
+                  placeholder={socialMessages.filter(m => m.role === 'user').length >= 5 ? 'Entrevista concluída. Escolha data e horário acima.' : 'Responda aqui...'}
+                  className="flex-1 bg-white/6 border border-white/10 text-white placeholder:text-white/25 h-11 rounded-xl px-3 text-sm focus:outline-none focus:border-emerald-300/60"
+                />
+                <button onClick={sendSocialChatMessage} disabled={!socialInput.trim() || socialLoading || socialMessages.filter(m => m.role === 'user').length >= 5} className="h-11 w-11 rounded-xl bg-emerald-400 text-[#06120f] flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
 
       {/* RESERVA ANTECIPADA EM CHAT */}
       {reserveOpen &&

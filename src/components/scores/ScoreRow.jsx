@@ -25,14 +25,14 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
   const color = CATEGORY_CONFIG[category]?.iconColor || 'bg-secondary text-muted-foreground';
 
   return (
-    <div className={`p-4 rounded-xl border transition-all ${needsCorrection ? 'border-red-300 bg-red-50/40' : item?.verified ? 'border-green-200 bg-green-50/30' : 'border-border bg-card'}`}>
-      <div className="flex items-start gap-3 mb-3">
+    <div className={`p-3 sm:p-4 rounded-xl border transition-all max-w-full overflow-hidden ${needsCorrection ? 'border-red-300 bg-red-50/40' : item?.verified ? 'border-green-200 bg-green-50/30' : 'border-border bg-card'}`}>
+      <div className="flex items-start gap-3 mb-3 min-w-0">
         <div className={`p-1.5 rounded-lg shrink-0 ${color}`}>
           <Icon size={13} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="text-sm font-semibold text-foreground leading-snug">{refTitle}</p>
+            <p className="text-sm font-semibold text-foreground leading-snug break-words min-w-0">{refTitle}</p>
             {needsCorrection && <AlertCircle size={13} className="text-red-500 shrink-0" />}
           </div>
           {children}
@@ -47,7 +47,7 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
           {item?.notes && <span className="text-xs text-muted-foreground">• {item.notes}</span>}
         </div>
       ) : (
-        <div className="flex items-center gap-2 flex-wrap mt-2">
+        <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 mt-2">
           <Input
             type="text"
             inputMode="decimal"
