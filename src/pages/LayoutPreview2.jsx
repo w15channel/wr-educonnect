@@ -25,20 +25,17 @@ const HERO_IMAGES = [
 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
 'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85'];
 
-
 const FEATURES = [
 { icon: BookOpen, title: 'Videoaulas Gravadas', desc: 'Conteúdo terapêutico exclusivo' },
 { icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
 { icon: Users, title: 'Comunidade Ativa', desc: 'Fórum de dúvidas entre alunos' },
 { icon: Heart, title: 'Prática Real', desc: 'Experiência terapêutica ao longo do curso' }];
 
-
 const CERTS = [
 {
   title: 'Psicoterapeuta',
   institution: 'Faculdade Unypública',
   code: '267797-1-432-19012026071526',
-  link: null,
   extra: 'Registrado internacionalmente pela AHDE · ID: 00403THE',
   verifyLink: 'https://www.ahde-global.org/lang/ptbr/terapeuta.php?search=00403THE',
   verifyLabel: 'Verificar via AHDE'
@@ -47,7 +44,6 @@ const CERTS = [
   title: 'Psicanalista Diplomado',
   institution: 'Faculdade Unifatec',
   code: 'eeee6d19-0d18-46c5-a657-3e6f5bfdb515',
-  link: null,
   extra: 'Registrado internacionalmente pela Therapist University · ID: CERT-1768040814293-CAZA86VTQ',
   verifyLink: 'https://certificados.therapist.university/certificates/CERT-1768040814293-CAZA86VTQ',
   verifyLabel: 'Verificar Certificado'
@@ -56,7 +52,6 @@ const CERTS = [
   title: 'Logoterapeuta Diplomado',
   institution: 'Faculdade Unypública',
   code: '267797-1-405-13112025030416',
-  link: null,
   extra: null,
   verifyLink: null,
   verifyLabel: null
@@ -65,19 +60,10 @@ const CERTS = [
   title: 'Sexólogo Integrativo',
   institution: 'Unifast — School of Business Acceleration',
   code: '000300950029868',
-  link: null,
   extra: 'Especializações em sexualidade, infidelidade conjugal, vícios e outras áreas',
   verifyLink: null,
   verifyLabel: null
 }];
-
-
-const TIMELINE = [
-{ period: '2009 – 2019', role: 'Atuação Administrativa', desc: 'Departamentos financeiro, RH, departamento pessoal e processos seletivos como Headhunter.' },
-{ period: '2019', role: 'Administração — UFPR', desc: 'Ingresso na turma de Administração da UFPR, com destaque nas matérias de Comportamento Organizacional.' },
-{ period: '2020', role: 'Operador no Mercado Financeiro e de Criptoativos', desc: 'Atuação ativa durante a crise da pandemia no mercado financeiro e de criptoativos.' },
-{ period: '2022', role: 'Tecnologia da Informação — 8° RI de Curitiba', desc: 'Profissional de TI no 8° Registro de Imóveis de Curitiba, participando da implementação de migração tecnológica.' }];
-
 
 const CURRENT = [
 {
@@ -87,17 +73,16 @@ const CURRENT = [
 },
 {
   title: `Gestor — ${BRAND_LEGAL_NAME}`,
-  desc: `Gerencia o Curso Profissionalizante para Formação de Terapeutas pela ${BRAND_LEGAL_NAME}. Representado oficialmente junto à ABED (Associação Brasileira de Educação a Distância).`,
+  desc: `Gerencia o Curso Profissionalizante para Formação de Terapeutas pela ${BRAND_LEGAL_NAME}. Representado oficialmente junto à ABED.`,
   link: 'https://www.abed.org.br/site/associados/consulta-associados-ativos/',
   linkLabel: 'Consultar na ABED'
 },
 {
   title: 'Educador Social — Projeto Vida Digital (ADRA)',
-  desc: 'Profissional de Educação Social para Crianças e Adolescentes em programa da instituição internacional ADRA. O projeto reestrutura grupos em vulnerabilidade social levando temas socioeducacionais e resgate de dignidade.',
+  desc: 'Profissional de Educação Social para Crianças e Adolescentes em programa da instituição internacional ADRA. O projeto reestrutura grupos em vulnerabilidade social.',
   link: 'https://adra.org.br/projetos/vida-digital/',
   linkLabel: 'Conhecer o Projeto'
 }];
-
 
 const COURSES = [
 {
@@ -109,7 +94,7 @@ const COURSES = [
   price: 'R$ 270',
   period: '/mês até o fim do curso',
   tag: 'Mais Vendido',
-  tagColor: '#5b5ef4',
+  tagColor: '#c9a227',
   imgs: [
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/1d898387b_generated_image.png',
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/7a4725dbb_generated_image.png',
@@ -133,7 +118,7 @@ const COURSES = [
   price: 'R$ 300',
   period: '/mês até o fim do curso',
   tag: 'Novo',
-  tagColor: '#1db89e',
+  tagColor: '#888',
   imgs: [
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/f28c89ba7_generated_image.png',
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/919ebf5be_generated_image.png',
@@ -157,7 +142,7 @@ const COURSES = [
   price: 'R$ 330',
   period: '/mês até o fim do curso',
   tag: 'Novo',
-  tagColor: '#a855f7',
+  tagColor: '#888',
   imgs: [
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/e9014c7ae_generated_image.png',
     'https://media.base44.com/images/public/69f55577840a3c93cee191be/31339ba94_generated_image.png',
@@ -173,34 +158,38 @@ const COURSES = [
   ]
 }];
 
-
 const TESTIMONIALS = [
-{ name: 'Diane Martins', text: 'Ao nosso mentor William, parabenizo pela dedicação, entrega e intencionalidade em dar o primeiro passo na formação de novos terapeutas. Do aparente “menor ofício” ao mais significativo, você ousou, acreditou, executou, e o resultado está à disposição de todos que desejam crescer em conhecimento, formações ou buscar suporte para suas demandas.', stars: 5 },
-{ name: 'Stella Torres', text: 'Estou maravilhada com o andamento do curso. Confesso que iniciei um pouco desanimada e confusa, mas, mesmo em pouco tempo, nosso professor, com suas palavras de ânimo, me impulsionou a acreditar que chegarei ao meu objetivo. Obrigada por tudo e por tanto, William. Você é show! Orgulho de ser sua aluna. A plataforma ficou excelente, bonita e atrativa.', stars: 5 },
-{ name: 'Marilene Batista', text: 'Estou aqui navegando pela plataforma e, olha, eu já fiz vários cursos e ainda faço alguns, mas nos detalhes se percebe o capricho, o zelo e a entrega do nosso professor! Agradeço demais sua dedicação. Seu espírito visionário nos move a querer ir além e a acreditar que também somos capazes.', stars: 5 },
+{ name: 'Diane Martins', text: 'Ao nosso mentor William, parabenizo pela dedicação, entrega e intencionalidade em dar o primeiro passo na formação de novos terapeutas. Do aparente "menor ofício" ao mais significativo, você ousou, acreditou, executou, e o resultado está à disposição de todos que desejam crescer.', stars: 5 },
+{ name: 'Stella Torres', text: 'Estou maravilhada com o andamento do curso. Confesso que iniciei um pouco desanimada e confusa, mas, mesmo em pouco tempo, nosso professor me impulsionou a acreditar que chegarei ao meu objetivo. A plataforma ficou excelente, bonita e atrativa.', stars: 5 },
+{ name: 'Marilene Batista', text: 'Estou aqui navegando pela plataforma e, olha, eu já fiz vários cursos mas nos detalhes se percebe o capricho, o zelo e a entrega do nosso professor! Agradeço demais sua dedicação. Seu espírito visionário nos move a querer ir além.', stars: 5 },
 { name: 'Ana Paula M.', text: 'A formação mais completa que já fiz. O diferencial da prática desde o início foi transformador para mim.', stars: 5 },
 { name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
 { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 }];
 
+// ── Paleta Luxo Minimalista ──────────────────────────────────────────────────
+const G = '#c9a227';   // dourado
+const BG = '#0a0a0a';  // preto profundo
+const BG2 = '#0f0f0f'; // preto levemente mais claro (separadores)
+const BG3 = '#111111'; // cards
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
   const [courseImgs, setCourseImgs] = useState([0, 0, 0]);
 
   useEffect(() => {
-    const intervals = COURSES.map((_, i) => {
-      return setInterval(() => {
+    const intervals = COURSES.map((_, i) =>
+      setInterval(() => {
         setCourseImgs(prev => prev.map((v, idx) => idx === i ? (v + 1) % COURSES[i].imgs.length : v));
-      }, 4000 + i * 1500);
-    });
+      }, 4000 + i * 1500)
+    );
     return () => intervals.forEach(clearInterval);
   }, []);
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mode, setMode] = useState('code');
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
 
-  // Login state
   const [code, setCode] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -230,7 +219,6 @@ export default function LandingPage({ onLogin }) {
     const storedDeadline = localStorage.getItem('wrEduOfferDeadline');
     const deadline = storedDeadline ? Number(storedDeadline) : Date.now() + OFFER_DURATION_MS;
     if (!storedDeadline) localStorage.setItem('wrEduOfferDeadline', String(deadline));
-
     const updateTimer = () => setOfferTimeLeft(Math.max(0, deadline - Date.now()));
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
@@ -254,51 +242,33 @@ export default function LandingPage({ onLogin }) {
         if (approved?.length) {
           setTestimonials(approved.map(t => ({ name: t.student_name || 'Aluno(a)', stars: Number(t.stars || 5), text: t.comment || '' })));
         }
-      } catch (error) {
-        console.error('Falha ao carregar depoimentos aprovados', error);
-      }
+      } catch {}
     };
     loadTestimonials();
   }, []);
 
   const handleCodeLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+    e.preventDefault(); setError(''); setLoading(true);
     try {
       const response = await base44.functions.invoke('siteLogin', { mode: 'student', code });
-      setSession(response.data.session);
-      onLogin('lobby');
-    } catch (err) {
-      setError(err?.response?.data?.error || 'Não foi possível entrar. Verifique o código.');
-    }
+      setSession(response.data.session); onLogin('lobby');
+    } catch (err) { setError(err?.response?.data?.error || 'Não foi possível entrar. Verifique o código.'); }
     setLoading(false);
   };
 
   const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+    e.preventDefault(); setError(''); setLoading(true);
     try {
       const response = await base44.functions.invoke('siteLogin', { mode: 'admin', email: adminEmail, password: adminPassword });
-      setSession(response.data.session);
-      onLogin('lobby');
-    } catch (err) {
-      setError(err?.response?.data?.error || 'Email ou senha incorretos.');
-    }
+      setSession(response.data.session); onLogin('lobby');
+    } catch (err) { setError(err?.response?.data?.error || 'Email ou senha incorretos.'); }
     setLoading(false);
   };
 
   const openCourseReservation = (course) => {
     setSelectedCourse(course);
-    setLeadMessages([
-      {
-        role: 'assistant',
-        content: `Olá! Sou a IA da ${BRAND_LEGAL_NAME} 😊 Vou registrar sua reserva antecipada para ${course.title}. Para começar: qual é seu nome completo e melhor WhatsApp?`
-      }
-    ]);
-    setLeadInput('');
-    setReserveOpen(true);
+    setLeadMessages([{ role: 'assistant', content: `Olá! Sou a IA da ${BRAND_LEGAL_NAME} 😊 Vou registrar sua reserva antecipada para ${course.title}. Para começar: qual é seu nome completo e melhor WhatsApp?` }]);
+    setLeadInput(''); setReserveOpen(true);
   };
 
   const sendReserveChatMessage = async () => {
@@ -306,48 +276,23 @@ export default function LandingPage({ onLogin }) {
     const userMessage = { role: 'user', content: leadInput.trim() };
     const nextMessages = [...leadMessages, userMessage];
     const answeredQuestions = nextMessages.filter(m => m.role === 'user').length;
-    setLeadMessages(nextMessages);
-    setLeadInput('');
-
-    if (answeredQuestions >= MAX_RESERVATION_AI_QUESTIONS) {
-      setLeadMessages(prev => [...prev, { role: 'assistant', content: RESERVATION_FINAL_MESSAGE }]);
-      return;
-    }
-
+    setLeadMessages(nextMessages); setLeadInput('');
+    if (answeredQuestions >= MAX_RESERVATION_AI_QUESTIONS) { setLeadMessages(prev => [...prev, { role: 'assistant', content: RESERVATION_FINAL_MESSAGE }]); return; }
     setLeadLoading(true);
-
-    const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.
-Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez, até coletar: nome completo, WhatsApp, curso de interesse, objetivo profissional e melhor horário de contato.
-Quando os dados principais já estiverem presentes, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre o diálogo pedindo para a pessoa selecionar a opção de enviar a reserva ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598. Seja acolhedor, objetivo e use português do Brasil.
-
-Histórico:
-${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}
-
-IA:`;
-
+    const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.\nFaça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez, até coletar: nome completo, WhatsApp, curso de interesse, objetivo profissional e melhor horário de contato.\nQuando os dados principais já estiverem presentes, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre o diálogo pedindo para a pessoa selecionar a opção de enviar a reserva ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598. Seja acolhedor, objetivo e use português do Brasil.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
     const response = await base44.integrations.Core.InvokeLLM({ prompt });
-    setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]);
-    setLeadLoading(false);
+    setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]); setLeadLoading(false);
   };
 
   const sendReserveToWhatsApp = () => {
     const transcript = leadMessages.map(m => `${m.role === 'user' ? 'Interessado' : `IA ${BRAND_SHORT_NAME}`}: ${m.content}`).join('\n');
-    const summary = encodeURIComponent(`Olá! Quero reservar vaga antecipada.
-Curso: ${selectedCourse?.title}
-
-Questionário em chat:
-${transcript}`);
-    window.open(`https://wa.me/5541992531598?text=${summary}`, '_blank');
-    setReserveOpen(false);
+    const summary = encodeURIComponent(`Olá! Quero reservar vaga antecipada.\nCurso: ${selectedCourse?.title}\n\nQuestionário em chat:\n${transcript}`);
+    window.open(`https://wa.me/5541992531598?text=${summary}`, '_blank'); setReserveOpen(false);
   };
 
   const openSocialAppointment = () => {
     setSocialMessages([{ role: 'assistant', content: 'Olá! Vou fazer uma breve entrevista para o Atendimento Terapêutico Social. Para começar: qual é seu nome completo e WhatsApp para contato?' }]);
-    setSocialInput('');
-    setSelectedSocialDate('');
-    setSelectedSocialTime('');
-    setSocialBooked(false);
-    setSocialOpen(true);
+    setSocialInput(''); setSelectedSocialDate(''); setSelectedSocialTime(''); setSocialBooked(false); setSocialOpen(true);
   };
 
   const sendSocialChatMessage = async () => {
@@ -355,21 +300,12 @@ ${transcript}`);
     const userMessage = { role: 'user', content: socialInput.trim() };
     const nextMessages = [...socialMessages, userMessage];
     const answeredQuestions = nextMessages.filter(m => m.role === 'user').length;
-    setSocialMessages(nextMessages);
-    setSocialInput('');
-
-    if (answeredQuestions >= 5) {
-      setSocialMessages(prev => [...prev, { role: 'assistant', content: SOCIAL_FINAL_MESSAGE }]);
-      return;
-    }
-
+    setSocialMessages(nextMessages); setSocialInput('');
+    if (answeredQuestions >= 5) { setSocialMessages(prev => [...prev, { role: 'assistant', content: SOCIAL_FINAL_MESSAGE }]); return; }
     setSocialLoading(true);
-    const prompt = `Você é a IA de triagem acolhedora do Atendimento Terapêutico Social da ${BRAND_LEGAL_NAME}. Faça uma entrevista curta com no máximo 5 perguntas no total, uma pergunta por vez, em português do Brasil. Colete: nome e WhatsApp, principal motivo da busca, urgência emocional, se já faz acompanhamento, preferência de horário. Não faça diagnóstico. Reforce que é um espaço sério, seguro e de cuidado comportamental. Ao final, oriente a pessoa a escolher data e horário no calendário e informe que em até 48 horas um atendente enviará o Pix de R$ 35,00 por consulta.
-
-Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
+    const prompt = `Você é a IA de triagem acolhedora do Atendimento Terapêutico Social da ${BRAND_LEGAL_NAME}. Faça uma entrevista curta com no máximo 5 perguntas no total, uma pergunta por vez, em português do Brasil. Colete: nome e WhatsApp, principal motivo da busca, urgência emocional, se já faz acompanhamento, preferência de horário. Não faça diagnóstico. Reforce que é um espaço sério, seguro e de cuidado comportamental. Ao final, oriente a pessoa a escolher data e horário no calendário e informe que em até 48 horas um atendente enviará o Pix de R$ 35,00 por consulta.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
     const response = await base44.integrations.Core.InvokeLLM({ prompt });
-    setSocialMessages(prev => [...prev, { role: 'assistant', content: response }]);
-    setSocialLoading(false);
+    setSocialMessages(prev => [...prev, { role: 'assistant', content: response }]); setSocialLoading(false);
   };
 
   const getCurrentMonthDates = () => {
@@ -385,311 +321,283 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
   const bookSocialAppointment = async () => {
     if (!selectedSocialDate || !selectedSocialTime) return;
     const transcript = socialMessages.map(m => `${m.role === 'user' ? 'Pessoa' : `IA ${BRAND_SHORT_NAME}`}: ${m.content}`).join('\n');
-    await base44.entities.SocialAppointment.create({
-      preferred_date: selectedSocialDate,
-      preferred_time: selectedSocialTime,
-      interview_transcript: transcript,
-      price: SOCIAL_APPOINTMENT_PRICE,
-      status: 'requested'
-    });
+    await base44.entities.SocialAppointment.create({ preferred_date: selectedSocialDate, preferred_time: selectedSocialTime, interview_transcript: transcript, price: SOCIAL_APPOINTMENT_PRICE, status: 'requested' });
     setSocialBooked(true);
   };
 
-  return (
-    <div className="site-page bg-[#080b14] text-white">
+  // ── Shared sub-components ──────────────────────────────────────────────────
+  const GoldDivider = () => <div className="h-px bg-[#c9a227]/12 my-0" />;
+  const SectionLabel = ({ children }) => (
+    <div className="flex items-center gap-3 mb-8">
+      <div className="h-px w-8" style={{ background: `${G}50` }} />
+      <span className="text-[10px] uppercase tracking-[0.32em] font-light" style={{ color: `${G}80` }}>{children}</span>
+    </div>
+  );
 
-      {/* STICKY NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled ? 'py-3' : 'py-5'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className={`flex items-center justify-between rounded-[2rem] border px-4 sm:px-5 py-3 transition-all duration-300 ${navScrolled ? 'bg-[#080b14]/88 border-white/12 shadow-2xl shadow-black/35 backdrop-blur-2xl' : 'bg-[#080b14]/45 border-white/10 shadow-lg shadow-black/10 backdrop-blur-xl'}`}>
-            <a href="#top" className="flex items-center gap-3 min-w-0 group">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/12 to-white/4 border border-white/12 flex items-center justify-center shadow-inner group-hover:border-[#1db89e]/45 transition-colors">
-                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-10 h-10 object-contain" />
-              </div>
-              <div className="min-w-0">
-                <span className="block text-base sm:text-lg font-black tracking-tight leading-tight truncate text-white">{BRAND_SHORT_NAME}</span>
-                <span className="hidden sm:block text-[10px] text-white/40 uppercase tracking-[0.22em]">Instituto de Desenvolvimento Humano</span>
-              </div>
-            </a>
-            <div className="hidden md:flex items-center gap-1 rounded-full bg-white/[0.06] border border-white/10 p-1 text-sm text-white/62 shadow-inner shadow-black/20">
-              {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '#atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
-              <a key={label} href={href} className="px-4 py-2 rounded-full hover:bg-white/10 hover:text-white transition-all">{label}</a>
-              )}
+  return (
+    <div className="site-page text-white" style={{ background: BG }}>
+
+      {/* NAVBAR */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${navScrolled ? 'py-3 border-b backdrop-blur-xl' : 'py-5'}`}
+        style={navScrolled ? { background: `${BG}f2`, borderColor: `${G}18` } : {}}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between">
+          <a href="#top" className="flex items-center gap-3 min-w-0 group">
+            <div className="w-9 h-9 border flex items-center justify-center group-hover:border-[#c9a227]/60 transition-colors" style={{ borderColor: `${G}30` }}>
+              <img src={WR_PRIMARY_LOGO} alt="WR" className="w-7 h-7 object-contain" />
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button onClick={() => setShowLoginModal(true)} className="hidden md:flex items-center gap-2 rounded-full border border-[#1db89e]/25 bg-[#1db89e]/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-[#1db89e]/16 hover:border-[#1db89e]/45 transition-all shadow-lg shadow-[#1db89e]/10">
-                <span className="w-2 h-2 rounded-full bg-[#1db89e] shadow-[0_0_12px_rgba(29,184,158,0.8)]" /> Área do Aluno
-              </button>
-              <a href="#atendimento-social" className="hidden md:block rounded-full border border-emerald-300/25 bg-emerald-400/10 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-emerald-500/10 hover:bg-emerald-400/15 transition-all">
-                Atendimento Social
-              </a>
-              <a href="#cursos" className="hidden md:block rounded-full bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-[#5b5ef4]/30 hover:opacity-95 transition-all" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
-                Inscreva-se
-              </a>
-              <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden w-11 h-11 rounded-2xl bg-white/8 border border-white/10 text-white/70 hover:text-white flex items-center justify-center">
-                {mobileMenu ? <X size={20} /> : <Menu size={20} />}
-              </button>
+            <div className="min-w-0">
+              <span className="block text-sm font-light tracking-[0.28em] uppercase text-white">{BRAND_SHORT_NAME}</span>
+              <span className="hidden sm:block text-[9px] uppercase tracking-[0.25em] font-light" style={{ color: `${G}60` }}>Instituto de Desenvolvimento Humano</span>
             </div>
-          </div>
-        </div>
-        {mobileMenu &&
-        <div className="md:hidden mx-4 mt-2 rounded-3xl bg-[#0d1120]/95 border border-white/10 px-4 py-4 space-y-2 shadow-2xl shadow-black/30 backdrop-blur-xl">
+          </a>
+
+          <div className="hidden md:flex items-center gap-7 text-[11px] text-white/35 uppercase tracking-[0.18em] font-light">
             {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '#atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
-          <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/65 hover:text-white hover:bg-white/8 py-3 px-3 rounded-2xl text-sm font-medium transition-all">{label}</a>
-          )}
-            <button onClick={() => {setShowLoginModal(true);setMobileMenu(false);}} className="w-full flex items-center justify-center gap-2 rounded-2xl border border-[#1db89e]/25 bg-[#1db89e]/10 py-3 text-white font-bold text-sm">
-              <span className="w-2 h-2 rounded-full bg-[#1db89e]" /> Área do Aluno
+              <a key={label} href={href} className="hover:text-white/70 transition-colors"
+                onMouseEnter={e => { e.currentTarget.style.color = G; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
+              >{label}</a>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button onClick={() => setShowLoginModal(true)} className="hidden md:flex text-[10px] uppercase tracking-[0.22em] font-light text-white/35 hover:text-white/60 transition-colors">
+              Área do Aluno
             </button>
-            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black py-3 rounded-2xl text-sm shadow-lg shadow-[#5b5ef4]/35" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
+            <div className="hidden md:block w-px h-3 bg-white/10" />
+            <a href="#cursos" className="hidden md:block text-[10px] uppercase tracking-[0.22em] font-medium px-5 py-2.5 border transition-all hover:text-black"
+              style={{ borderColor: `${G}60`, color: G }}
+              onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
               Inscreva-se
             </a>
+            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden w-9 h-9 border border-white/10 text-white/50 hover:text-white flex items-center justify-center">
+              {mobileMenu ? <X size={15} /> : <Menu size={15} />}
+            </button>
           </div>
-        }
+        </div>
+
+        {mobileMenu && (
+          <div className="md:hidden mx-5 mt-2 border px-5 py-5 space-y-3" style={{ background: BG3, borderColor: `${G}18` }}>
+            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '#atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+              <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/40 hover:text-white/70 py-2 text-[11px] uppercase tracking-[0.2em] transition-all">{label}</a>
+            )}
+            <div className="h-px" style={{ background: `${G}15` }} />
+            <button onClick={() => { setShowLoginModal(true); setMobileMenu(false); }} className="w-full text-center text-white/35 text-[11px] uppercase tracking-[0.2em] py-2">Área do Aluno</button>
+            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center border text-[11px] uppercase tracking-[0.2em] py-3" style={{ borderColor: `${G}60`, color: G }}>Inscreva-se</a>
+          </div>
+        )}
       </nav>
 
-      {/* HERO FULL-WIDTH */}
+      {/* HERO */}
       <div id="top" className="site-hero relative flex items-center justify-center overflow-hidden">
         {HERO_IMAGES.map((src, i) =>
-        <div key={src} className={`absolute inset-0 transition-opacity duration-1500 ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
+          <div key={src} className={`absolute inset-0 transition-opacity duration-[2000ms] ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
             <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 35%' }} />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#080b14]/70 via-[#080b14]/50 to-[#080b14]" />
-        <div className="absolute inset-0 bg-[#080b14]/30" />
+        <div className="absolute inset-0" style={{ background: `${BG}c0` }} />
+        <div className="absolute inset-x-0 bottom-0 h-56" style={{ background: `linear-gradient(to top, ${BG}, transparent)` }} />
 
-        <div className="site-container relative z-10 text-center pt-24 lg:pt-32">
-          <h1 className="text-[clamp(3rem,12vw,6rem)] lg:text-8xl font-black leading-[0.95] mb-6 sm:mb-8 tracking-tight">
-            Transforme
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] via-[#a855f7] to-[#1db89e]">
-              vidas
-            </span>
-            <span className="block text-[clamp(2rem,8vw,3rem)] lg:text-5xl text-white/80 font-bold mt-2">através da cura.</span>
+        <div className="site-container relative z-10 text-center pt-28">
+          <div className="inline-flex items-center gap-3 mb-8">
+            <div className="h-px w-10" style={{ background: `${G}50` }} />
+            <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Instituto de Desenvolvimento Humano</span>
+            <div className="h-px w-10" style={{ background: `${G}50` }} />
+          </div>
+
+          <h1 className="font-thin leading-[0.9] mb-6 tracking-[-0.02em] text-white" style={{ fontSize: 'clamp(3rem,11vw,6.5rem)' }}>
+            Transforme vidas
+            <span className="block font-light italic" style={{ color: G }}>através da cura.</span>
           </h1>
-          <p className="text-white/60 text-lg lg:text-xl leading-relaxed max-w-2xl mx-auto mb-12">
+
+          <p className="text-base lg:text-lg leading-relaxed max-w-xl mx-auto mb-12 font-light tracking-wide text-white/40">
             Sua vocação merece o próximo passo. Nossa formação profissionalizante redefine o ensino da terapia ao integrar o acolhimento humanizado à prática terapêutica constante.
           </p>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="#cursos" className="inline-flex items-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-8 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base">
-              Ver Nossos Cursos <ChevronRight size={18} />
+            <a href="#cursos" className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] px-8 py-4 border font-medium transition-all hover:text-black"
+              style={{ borderColor: `${G}70`, color: G }}
+              onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+              Ver Nossos Cursos <ChevronRight size={13} />
             </a>
-            <a href="#metodologia" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/15 transition-all text-base">
-              <Play size={15} className="fill-current" /> Nossa Metodologia
+            <a href="#metodologia" className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] px-8 py-4 border border-white/10 text-white/35 hover:border-white/25 hover:text-white/55 transition-all font-light">
+              <Play size={11} className="fill-current" /> Nossa Metodologia
             </a>
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce">
-          <span className="text-xs tracking-widest uppercase">Role para baixo</span>
-          <ArrowDown size={16} />
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/20 animate-bounce">
+          <ArrowDown size={13} />
         </div>
-        <div className="absolute bottom-8 right-8 flex gap-2">
+        <div className="absolute bottom-8 right-8 flex gap-2 items-center">
           {HERO_IMAGES.map((_, i) =>
-          <button key={i} onClick={() => setHeroImg(i)}
-          className={`h-1.5 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`} />
+            <button key={i} onClick={() => setHeroImg(i)} className="h-px transition-all" style={{ width: i === heroImg ? '2rem' : '1rem', background: i === heroImg ? G : 'rgba(255,255,255,0.2)' }} />
           )}
         </div>
       </div>
 
       {/* STATS BAR */}
-      <div className="bg-[#0d1120] border-y border-white/8 py-8 px-6">
+      <div className="border-y py-8 px-6" style={{ background: BG2, borderColor: `${G}12` }}>
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-center">
           {[
-          { value: '4.8★', label: 'Avaliação Média' },
-          { value: '80h', label: 'Carga Horária' },
-          { value: '4 meses', label: 'Duração' },
-          { value: 'Reais', label: 'Professores Reais' },
-          { value: 'Vivência', label: 'Consultório' },
-          { value: 'Exclusiva', label: 'Plataforma' }].
-          map((s, i) =>
-          <div key={i}>
-              <p className="text-2xl lg:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">{s.value}</p>
-              <p className="text-white/40 text-xs mt-1 uppercase tracking-wide">{s.label}</p>
+            { value: '4.8★', label: 'Avaliação Média' },
+            { value: '80h', label: 'Carga Horária' },
+            { value: '4 meses', label: 'Duração' },
+            { value: 'Reais', label: 'Professores Reais' },
+            { value: 'Vivência', label: 'Consultório' },
+            { value: 'Exclusiva', label: 'Plataforma' }
+          ].map((s, i) =>
+            <div key={i}>
+              <p className="text-xl lg:text-2xl font-light tracking-wider" style={{ color: G }}>{s.value}</p>
+              <p className="text-white/25 text-[10px] mt-1.5 uppercase tracking-[0.2em] font-light">{s.label}</p>
             </div>
           )}
         </div>
       </div>
 
       {/* METODOLOGIA */}
-      <section id="metodologia" className="site-section">
+      <section id="metodologia" className="site-section" style={{ background: BG }}>
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-6">
-                <GraduationCap size={13} className="text-[#5b5ef4]" />
-                <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Nossa Metodologia</span>
-              </div>
-              <h2 className="text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
+              <SectionLabel>Nossa Metodologia</SectionLabel>
+              <h2 className="text-4xl lg:text-5xl font-thin text-white mb-2 leading-tight tracking-[-0.01em]">
                 Nossa
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">Metodologia.</span>
+                <span className="block font-light italic" style={{ color: G }}>Metodologia.</span>
               </h2>
-              <blockquote className="border-l-2 border-[#5b5ef4]/40 pl-4 mb-6">
-                <p className="text-white/50 text-sm italic leading-relaxed">“Você pode ser ótimo(a) em muitas coisas na sua vida, mas a excelência vai se apresentar somente quando encontrar o que realmente nasceu para fazer.”</p>
-                <p className="text-[#5b5ef4] text-xs font-bold mt-2">— William Ribeiro</p>
+              <div className="h-px my-7" style={{ background: `${G}15` }} />
+              <blockquote className="border-l pl-5 mb-7" style={{ borderColor: `${G}30` }}>
+                <p className="text-white/40 text-sm italic leading-relaxed font-light">"Você pode ser ótimo(a) em muitas coisas na sua vida, mas a excelência vai se apresentar somente quando encontrar o que realmente nasceu para fazer."</p>
+                <p className="text-xs font-light mt-2 uppercase tracking-[0.2em]" style={{ color: `${G}70` }}>— William Ribeiro</p>
               </blockquote>
-              <p className="text-white/60 leading-relaxed mb-4 text-sm">
-                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-white">Terapia Comportamental</strong>, a <strong className="text-white">profundidade da psicanálise</strong> e a <strong className="text-white">complexidade da sexualidade humana</strong> em um método direto e sem rodeios.
+              <p className="text-white/40 leading-relaxed mb-4 text-sm font-light">
+                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-white/70 font-normal">Terapia Comportamental</strong>, a <strong className="text-white/70 font-normal">profundidade da psicanálise</strong> e a <strong className="text-white/70 font-normal">complexidade da sexualidade humana</strong>.
               </p>
-              <p className="text-white/60 leading-relaxed mb-4 text-sm">
-                Diferente de cursos gravados e solitários, estarei com você em tempo real, guiando sua evolução técnica enquanto você interage com colegas e se conecta à comunidade profissional do grupo Sinapse Coletiva. O nosso compromisso é que você experimente a vivência do consultório ainda durante o curso, saindo preparado para atender com ética, segurança e a dignidade que cada paciente merece.
-              </p>
-              <p className="text-white/60 leading-relaxed mb-8 text-sm">
-                Se você busca transformar sua vocação em uma carreira de impacto e <strong className="text-white">excelência</strong>, este é o caminho para dominar as ferramentas que realmente <strong className="text-white">mudam vidas</strong>.
+              <p className="text-white/35 leading-relaxed mb-8 text-sm font-light">
+                Se você busca transformar sua vocação em uma carreira de impacto e <strong className="text-white/60 font-normal">excelência</strong>, este é o caminho para dominar as ferramentas que realmente <strong className="text-white/60 font-normal">mudam vidas</strong>.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {FEATURES.map(({ icon: Icon, title, desc }) =>
-                <div key={title} className="flex items-start gap-3 bg-white/4 border border-white/8 rounded-2xl p-4">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/20 flex items-center justify-center shrink-0">
-                      <Icon size={14} className="text-[#1db89e]" />
+                  <div key={title} className="flex items-start gap-3 border p-4 transition-colors" style={{ borderColor: `${G}12` }}>
+                    <div className="w-7 h-7 border flex items-center justify-center shrink-0" style={{ borderColor: `${G}25` }}>
+                      <Icon size={12} style={{ color: `${G}80` }} />
                     </div>
                     <div>
-                      <p className="font-bold text-white text-sm">{title}</p>
-                      <p className="text-white/40 text-xs mt-0.5">{desc}</p>
+                      <p className="font-medium text-white/70 text-xs uppercase tracking-[0.15em]">{title}</p>
+                      <p className="text-white/30 text-xs mt-0.5 font-light">{desc}</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
+
             <div className="relative">
-              <div className="relative rounded-3xl overflow-hidden">
-                <img src={'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'} alt="Curso" className="w-full aspect-[4/5] object-cover object-center" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#080b14]/80 via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
-                  <div className="bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] rounded-full flex items-center justify-center">
-                        <Zap size={16} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="text-white font-bold text-sm">Próxima turma</p>
-                        <p className="text-[#1db89e] text-xs font-semibold">Início em Setembro/2026 · Vagas limitadas</p>
-                      </div>
+              <div className="relative overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80" alt="Curso" className="w-full aspect-[4/5] object-cover object-center" />
+                <div className="absolute inset-0" style={{ background: `${BG}28` }} />
+                <div className="absolute inset-x-0 bottom-0 h-36" style={{ background: `linear-gradient(to top, ${BG}, transparent)` }} />
+                <div className="absolute bottom-6 left-6 right-6 border backdrop-blur-sm p-4" style={{ borderColor: `${G}25`, background: `${BG}cc` }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 border flex items-center justify-center" style={{ borderColor: `${G}40` }}>
+                      <Zap size={12} style={{ color: G }} />
+                    </div>
+                    <div>
+                      <p className="text-white/70 font-light text-xs uppercase tracking-[0.2em]">Próxima turma</p>
+                      <p className="text-xs font-light tracking-wide" style={{ color: `${G}70` }}>Setembro/2026 · Vagas limitadas</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-[#5b5ef4]/20 rounded-full blur-2xl" />
-              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-[#1db89e]/15 rounded-full blur-2xl" />
+              <div className="absolute -top-2 -right-2 w-full h-full border pointer-events-none" style={{ borderColor: `${G}08` }} />
             </div>
           </div>
         </div>
       </section>
 
       {/* SOBRE O PROFESSOR */}
-      <section id="professor" className="site-section bg-[#0a0d1a]">
+      <section id="professor" className="site-section" style={{ background: BG2 }}>
         <div className="max-w-6xl mx-auto">
-              {/* Header */}
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-[#5b5ef4]/10 border border-[#5b5ef4]/20 rounded-full px-4 py-1.5 mb-4">
-              <Award size={13} className="text-[#5b5ef4]" />
-              <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Seu Mentor</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-white">Prof. William Ribeiro</h2>
-            <p className="text-white/50 mt-2 text-lg">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
+            <SectionLabel>Seu Mentor</SectionLabel>
+            <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Prof. William Ribeiro</h2>
+            <p className="text-white/35 mt-2 text-sm font-light uppercase tracking-[0.2em]">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
           </div>
 
-          {/* Avatar + Bio */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16" style={{alignItems:'start'}}>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16">
             <div className="lg:col-span-2">
               <div className="relative">
-                <div className="w-full rounded-3xl overflow-hidden aspect-square">
-                  <img
-                    src="https://media.base44.com/images/public/69f55577840a3c93cee191be/3488805d0_17673765754883.jpg"
-                    alt="Prof. William Ribeiro"
-                    className="w-full h-full object-cover"
-                    style={{ objectPosition: '50% 30%' }} />
-                  
+                <div className="w-full overflow-hidden aspect-square">
+                  <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/3488805d0_17673765754883.jpg"
+                    alt="Prof. William Ribeiro" className="w-full h-full object-cover" style={{ objectPosition: '50% 30%' }} />
                 </div>
-                <div className="absolute inset-0 rounded-3xl ring-2 ring-[#5b5ef4]/20" />
-                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] rounded-2xl px-6 py-3 shadow-xl shadow-[#5b5ef4]/30">
-                  <p className="text-white font-black text-center text-sm">Prof. William Ribeiro - WR EDU®</p>
+                <div className="absolute inset-0 ring-1 pointer-events-none" style={{ ringColor: `${G}20` }} />
+                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap border px-6 py-3" style={{ background: BG3, borderColor: `${G}30` }}>
+                  <p className="font-light text-center text-xs uppercase tracking-[0.25em]" style={{ color: G }}>Prof. William Ribeiro — WR EDU®</p>
                 </div>
               </div>
             </div>
             <div className="lg:col-span-3 space-y-4">
-              <p className="text-white/70 text-sm leading-relaxed">
-                A base do pensamento de William Ribeiro foi construída em um mergulho profundo nos processos organizacionais e corporativos entre 2007 e 2017. Essa década representou uma ascensão estratégica: iniciando como office boy e percorrendo setores vitais como auxiliar de finanças, assistente de departamento pessoal e, finalmente, gestor de pessoas à frente de recrutamentos e seleções.
-              </p>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Foi com o ingresso na turma de Administração da <strong className="text-white">Universidade Federal do Paraná (UFPR)</strong> que William desenvolveu uma de suas principais teses: a <strong className="text-white">Teoria da Utilidade Comportamental</strong>. Originalmente inspirada em teorias do comportamento econômico e adaptada para o âmbito clínico, essa visão propõe uma análise profunda de como as escolhas e motivações moldam a existência humana.
-              </p>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Também atuou profissionalmente no campo da tecnologia, atendendo a estruturas e processos junto ao <strong className="text-white">8° Registro de Imóveis de Curitiba</strong>, realizando transições entre sistemas tecnológicos, manutenção do ecossistema digital, controle de dados de pessoal e processos de treinamentos e capacitações internas.
-              </p>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Dessa evolução natural, consolidou-se sua atuação como Psicoterapeuta, Psicanalista e Sexólogo Integrativo, com formações certificadas nacional e internacionalmente. Especialista em vícios e dinâmicas conjugais, William fundou o grupo <strong className="text-white">Sinapse Coletiva</strong>, um ecossistema que integra profissionais da saúde comportamental focados em uma técnica consciente, equilibrada e despida de amadorismos.
-              </p>
-              <p className="text-white/60 text-sm leading-relaxed">
-                Atualmente, essa trajetória culmina na coordenação da plataforma <strong className="text-white">{BRAND_LEGAL_NAME}</strong>. Como mantenedor associado à <strong className="text-white">ABED</strong>, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento. Esse compromisso expande-se como Educador Social no projeto <strong className="text-white">Vida Digital</strong> da <strong className="text-white">ADRA Paraná</strong>, onde reestrutura comunidades em vulnerabilidade.
-              </p>
-              <p className="text-white/50 text-sm leading-relaxed italic">
-                William Ribeiro não apenas ensina terapia; ele lidera uma formação que une o rigor da utilidade comportamental ao poder transformador do acolhimento humanizado.
-              </p>
+              {[
+                'A base do pensamento de William Ribeiro foi construída em um mergulho profundo nos processos organizacionais e corporativos entre 2007 e 2017. Essa década representou uma ascensão estratégica: iniciando como office boy e percorrendo setores vitais como auxiliar de finanças, assistente de departamento pessoal e, finalmente, gestor de pessoas à frente de recrutamentos e seleções.',
+                `Foi com o ingresso na turma de Administração da Universidade Federal do Paraná (UFPR) que William desenvolveu uma de suas principais teses: a Teoria da Utilidade Comportamental. Originalmente inspirada em teorias do comportamento econômico e adaptada para o âmbito clínico.`,
+                `Dessa evolução natural, consolidou-se sua atuação como Psicoterapeuta, Psicanalista e Sexólogo Integrativo, com formações certificadas nacional e internacionalmente. Especialista em vícios e dinâmicas conjugais, William fundou o grupo Sinapse Coletiva.`,
+                `Atualmente, essa trajetória culmina na coordenação da plataforma ${BRAND_LEGAL_NAME}. Como mantenedor associado à ABED, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento.`
+              ].map((text, i) =>
+                <p key={i} className="text-white/40 text-sm leading-relaxed font-light">{text}</p>
+              )}
             </div>
           </div>
 
           {/* Credenciais */}
           <div className="mb-14">
-            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
-              <CheckCircle size={13} className="text-[#1db89e]" /> Credenciais e Certificações Verificáveis
-            </p>
+            <div className="flex items-center gap-3 mb-6">
+              <CheckCircle size={11} style={{ color: G }} />
+              <span className="text-[10px] font-light text-white/30 uppercase tracking-[0.3em]">Credenciais e Certificações Verificáveis</span>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {CERTS.map((c, i) =>
-              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#5b5ef4]/30 hover:bg-white/6 transition-all">
+                <div key={i} className="border p-5 transition-all" style={{ borderColor: `${G}10` }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = `${G}25`}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = `${G}10`}>
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-7 h-7 rounded-full bg-[#1db89e]/15 flex items-center justify-center shrink-0 mt-0.5">
-                      <CheckCircle size={13} className="text-[#1db89e]" />
+                    <div className="w-6 h-6 border flex items-center justify-center shrink-0 mt-0.5" style={{ borderColor: `${G}25` }}>
+                      <CheckCircle size={11} style={{ color: G }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-bold text-sm">{c.title}</p>
-                      <p className="text-white/50 text-xs mt-0.5">{c.institution}</p>
+                      <p className="text-white/80 font-light text-sm uppercase tracking-[0.12em]">{c.title}</p>
+                      <p className="text-white/35 text-xs mt-0.5 font-light">{c.institution}</p>
                     </div>
                   </div>
-                  <p className="text-white/25 text-[10px] font-mono bg-white/5 rounded-lg px-3 py-1.5 mb-2 truncate">Cód: {c.code}</p>
-                  {c.extra && <p className="text-white/40 text-xs mb-2 leading-relaxed">{c.extra}</p>}
-                  {c.verifyLink &&
-                <a href={c.verifyLink} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[#5b5ef4] text-xs font-semibold hover:text-[#7c7ef4] transition-colors">
-                      <ExternalLink size={11} /> {c.verifyLabel}
-                    </a>
-                }
+                  <p className="text-white/20 text-[10px] font-mono py-1.5 mb-2 truncate">Cód: {c.code}</p>
+                  {c.extra && <p className="text-white/30 text-xs mb-2 leading-relaxed font-light">{c.extra}</p>}
+                  {c.verifyLink && <a href={c.verifyLink} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-light hover:opacity-80 transition-opacity" style={{ color: G }}>
+                    <ExternalLink size={10} /> {c.verifyLabel}
+                  </a>}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Trajetória */}
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-          
-
           {/* Atuação Atual */}
           <div>
-            <p className="text-xs font-black text-white/30 uppercase tracking-widest mb-5 flex items-center gap-2">
-              <Sparkles size={13} className="text-yellow-400" /> Atuação Atual
-            </p>
+            <div className="flex items-center gap-3 mb-6">
+              <Sparkles size={11} className="text-white/30" />
+              <span className="text-[10px] font-light text-white/30 uppercase tracking-[0.3em]">Atuação Atual</span>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {CURRENT.map((item, i) =>
-              <div key={i} className="bg-white/4 border border-white/8 rounded-2xl p-5 hover:border-[#1db89e]/30 transition-all">
-                  <p className="text-white font-bold text-sm mb-2">{item.title}</p>
-                  <p className="text-white/45 text-xs leading-relaxed mb-3">{item.desc}</p>
-                  {item.link &&
-                <a href={item.link} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[#1db89e] text-xs font-semibold hover:opacity-80 transition-opacity">
-                      <ExternalLink size={11} /> {item.linkLabel}
-                    </a>
-                }
+                <div key={i} className="border p-5 transition-all" style={{ borderColor: `${G}10` }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = `${G}22`}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = `${G}10`}>
+                  <p className="text-white/70 font-light text-xs uppercase tracking-[0.12em] mb-2">{item.title}</p>
+                  <p className="text-white/35 text-xs leading-relaxed mb-3 font-light">{item.desc}</p>
+                  {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-light hover:opacity-80 transition-opacity" style={{ color: G }}>
+                    <ExternalLink size={10} /> {item.linkLabel}
+                  </a>}
                 </div>
               )}
             </div>
@@ -698,52 +606,48 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* ATUAÇÃO SOCIAL */}
-      <section id="atuacao-social" className="site-section bg-[#080b14]">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section id="atuacao-social" className="site-section" style={{ background: BG }}>
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 bg-[#1db89e]/10 border border-[#1db89e]/20 rounded-full px-4 py-1.5 mb-5">
-              <Heart size={13} className="text-[#1db89e]" />
-              <span className="text-xs font-bold text-[#1db89e] uppercase tracking-widest">Atuação aberta à comunidade</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-white leading-tight mb-5">Terapia também é presença social.</h2>
-            <p className="text-white/60 leading-relaxed mb-4 text-sm lg:text-base">
+            <SectionLabel>Atuação aberta à comunidade</SectionLabel>
+            <h2 className="text-4xl lg:text-5xl font-thin text-white leading-tight mb-5 tracking-[-0.01em]">Terapia também é<span className="block font-light italic" style={{ color: G }}>presença social.</span></h2>
+            <p className="text-white/40 leading-relaxed mb-4 text-sm font-light">
               Nossa atuação vai além da sala de aula: produzimos conteúdo aberto, acolhimento emocional e reflexões para ouvintes e espectadores que buscam orientação, equilíbrio e consciência no dia a dia.
             </p>
-            <p className="text-white/50 leading-relaxed mb-7 text-sm">
+            <p className="text-white/30 leading-relaxed mb-7 text-sm font-light">
               Esse compromisso social mostra na prática a essência da nossa formação: técnica, humanidade e responsabilidade com pessoas reais.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <a href={SOCIAL_REEL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-6 py-3 rounded-2xl shadow-lg shadow-[#5b5ef4]/25">
-                <Play size={15} className="fill-current" /> Assistir no Instagram
+              <a href={SOCIAL_REEL_URL} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 text-xs uppercase tracking-[0.2em] border px-6 py-3 font-medium transition-all"
+                style={{ borderColor: `${G}60`, color: G }}
+                onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                <Play size={12} className="fill-current" /> Assistir no Instagram
               </a>
-              <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/12 text-white font-bold px-6 py-3 rounded-2xl hover:bg-white/12 transition-all">
-                <Instagram size={15} /> @wrterapia
+              <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 border border-white/10 text-white/40 text-xs uppercase tracking-[0.2em] px-6 py-3 hover:border-white/20 hover:text-white/60 transition-all font-light">
+                <Instagram size={12} /> @wrterapia
               </a>
             </div>
           </div>
           <div className="relative">
-            <div className="absolute -inset-4 bg-gradient-to-br from-[#5b5ef4]/20 to-[#1db89e]/20 rounded-[2rem] blur-2xl" />
-            <div className="relative bg-[#0d1120] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-black/30">
-              <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-white/5">
+            <div className="border overflow-hidden" style={{ borderColor: `${G}15` }}>
+              <div className="flex items-center justify-between gap-3 px-4 py-3 border-b" style={{ borderColor: `${G}10`, background: BG3 }}>
                 <div className="flex items-center gap-2 min-w-0">
-                  <Instagram size={16} className="text-[#1db89e] shrink-0" />
-                  <span className="text-sm font-bold text-white truncate">Instagram @wrterapia</span>
+                  <Instagram size={14} style={{ color: G }} />
+                  <span className="text-xs font-light uppercase tracking-[0.15em] text-white/60">Instagram @wrterapia</span>
                 </div>
-                <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[#1db89e] hover:text-white transition-colors shrink-0">Ver perfil</a>
+                <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="text-[11px] font-light uppercase tracking-[0.15em] hover:text-white/70 transition-colors" style={{ color: G }}>Ver perfil</a>
               </div>
-              <div className="relative w-full bg-black aspect-[9/16] max-h-[620px]">
-                <iframe
-                  title="WR Terapia — Vídeo do Instagram"
-                  src={SOCIAL_REEL_EMBED_URL}
+              <div className="relative w-full bg-black aspect-[9/16] max-h-[520px]">
+                <iframe title="WR Terapia — Vídeo do Instagram" src={SOCIAL_REEL_EMBED_URL}
                   className="absolute inset-0 w-full h-full bg-black"
-                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                  allowFullScreen
-                  loading="lazy"
-                />
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen loading="lazy" />
               </div>
-              <div className="px-4 py-3 border-t border-white/10 bg-white/5 text-center">
-                <a href={SOCIAL_REEL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 text-xs font-bold text-white/80 hover:text-white">
-                  <Play size={13} className="fill-current" /> Abrir vídeo direto no Instagram
+              <div className="px-4 py-3 border-t text-center" style={{ borderColor: `${G}10`, background: BG3 }}>
+                <a href={SOCIAL_REEL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 text-[11px] font-light text-white/40 hover:text-white/60 uppercase tracking-[0.15em]">
+                  <Play size={11} className="fill-current" /> Abrir no Instagram
                 </a>
               </div>
             </div>
@@ -752,32 +656,34 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* ATENDIMENTO SOCIAL */}
-      <section id="atendimento-social" className="site-section bg-gradient-to-br from-[#06120f] via-[#080b14] to-[#111827] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(29,184,158,0.18),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(91,94,244,0.16),transparent_45%)]" />
-        <div className="max-w-6xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section id="atendimento-social" className="site-section relative overflow-hidden" style={{ background: BG2 }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(circle at top left, ${G}0a, transparent 45%)` }} />
+        <div className="max-w-6xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-300/20 rounded-full px-4 py-1.5 mb-5">
-              <Heart size={13} className="text-emerald-300" />
-              <span className="text-xs font-black text-emerald-200 uppercase tracking-widest">Atendimento Social · R$ 35,00</span>
-            </div>
-            <h2 className="text-4xl lg:text-6xl font-black text-white leading-tight mb-5">Cuidado sério, seguro e acessível.</h2>
-            <p className="text-white/65 leading-relaxed mb-5 text-base">
+            <SectionLabel>Atendimento Social · R$ 35,00</SectionLabel>
+            <h2 className="text-4xl lg:text-5xl font-thin text-white leading-tight mb-5 tracking-[-0.01em]">Cuidado sério,<span className="block font-light italic" style={{ color: G }}>seguro e acessível.</span></h2>
+            <p className="text-white/40 leading-relaxed mb-5 text-sm font-light">
               Um espaço de acolhimento terapêutico social para promover saúde comportamental, ampliar o acesso ao cuidado e permitir que profissionais em capacitação desenvolvam sua prática com seriedade, supervisão e responsabilidade humana.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-7">
+            <div className="grid grid-cols-3 gap-3 mb-7">
               {[['R$ 35', 'por consulta'], ['5 perguntas', 'triagem inicial'], ['48h', 'retorno com Pix']].map(([value, label]) => (
-                <div key={value} className="rounded-2xl border border-white/10 bg-white/6 p-4">
-                  <p className="text-2xl font-black text-white">{value}</p>
-                  <p className="text-xs text-white/40 mt-1">{label}</p>
+                <div key={value} className="border p-4" style={{ borderColor: `${G}15` }}>
+                  <p className="text-xl font-light text-white">{value}</p>
+                  <p className="text-xs text-white/30 mt-1 font-light uppercase tracking-[0.15em]">{label}</p>
                 </div>
               ))}
             </div>
-            <button onClick={openSocialAppointment} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 px-7 py-4 text-sm font-black text-[#06120f] shadow-2xl shadow-emerald-500/20 hover:scale-[1.02] transition-transform">
-              <MessageCircle size={16} /> Quero agendar atendimento social
+            <button onClick={openSocialAppointment}
+              className="inline-flex items-center justify-center gap-2 text-xs uppercase tracking-[0.22em] border px-7 py-4 font-medium transition-all"
+              style={{ borderColor: `${G}60`, color: G }}
+              onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+              <MessageCircle size={13} /> Quero agendar atendimento social
             </button>
           </div>
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 sm:p-7 shadow-2xl shadow-black/25 backdrop-blur-xl">
-            <p className="text-white font-black text-xl mb-4">Como funciona</p>
+
+          <div className="border p-6 sm:p-7" style={{ borderColor: `${G}15`, background: BG3 }}>
+            <p className="text-white/70 font-light text-sm uppercase tracking-[0.22em] mb-5">Como funciona</p>
             <div className="space-y-4">
               {[
                 'Você responde uma entrevista curta pelo chat com 5 perguntas.',
@@ -785,115 +691,122 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
                 'Nossa equipe entra em contato em até 48 horas pelo WhatsApp.',
                 'O atendente envia o código Pix de R$ 35,00 para confirmar a consulta.'
               ].map((item, index) => (
-                <div key={item} className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-full bg-emerald-400 text-[#06120f] flex items-center justify-center text-xs font-black shrink-0">{index + 1}</div>
-                  <p className="text-sm text-white/65 leading-relaxed">{item}</p>
+                <div key={item} className="flex items-start gap-4">
+                  <div className="w-6 h-6 border flex items-center justify-center text-[10px] font-light shrink-0" style={{ borderColor: `${G}40`, color: G }}>{index + 1}</div>
+                  <p className="text-sm text-white/40 leading-relaxed font-light">{item}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-6 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4">
-              <p className="text-xs text-emerald-100 leading-relaxed">Este atendimento não substitui serviços de emergência. Em risco imediato, procure ajuda presencial ou serviço de urgência da sua cidade.</p>
+            <div className="mt-6 border p-4" style={{ borderColor: `${G}15` }}>
+              <p className="text-xs text-white/30 leading-relaxed font-light">Este atendimento não substitui serviços de emergência. Em risco imediato, procure ajuda presencial ou serviço de urgência da sua cidade.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* NOSSOS CURSOS */}
-      <section id="cursos" className="site-section bg-[#080b14]">
+      <section id="cursos" className="site-section" style={{ background: BG }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-[#1db89e]/10 border border-[#1db89e]/20 rounded-full px-4 py-1.5 mb-4">
-              <GraduationCap size={13} className="text-[#1db89e]" />
-              <span className="text-xs font-bold text-[#1db89e] uppercase tracking-widest">Formações</span>
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-white">Oferta de Matrícula Antecipada</h2>
-            <p className="text-white/55 mt-3 max-w-2xl mx-auto text-base">Entre na primeira turma com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto mantido até o final do curso.</p>
-            <div className="mt-6 mx-auto max-w-3xl rounded-3xl border border-orange-300/25 bg-gradient-to-r from-orange-500/15 via-[#5b5ef4]/15 to-[#1db89e]/15 p-5 shadow-2xl shadow-orange-500/10">
+            <SectionLabel>Formações</SectionLabel>
+            <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Oferta de Matrícula<span className="block font-light italic" style={{ color: G }}>Antecipada</span></h2>
+            <p className="text-white/35 mt-3 max-w-2xl mx-auto text-sm font-light">Entre na primeira turma com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto mantido até o final do curso.</p>
+
+            {/* Timer oferta */}
+            <div className="mt-8 mx-auto max-w-2xl border p-6" style={{ borderColor: `${G}20`, background: BG3 }}>
               <div className="flex flex-col lg:flex-row items-center justify-between gap-5">
                 <div className="text-center lg:text-left">
-                  <p className="inline-flex items-center gap-2 text-orange-200 text-xs font-black uppercase tracking-widest mb-2"><Gift size={14} /> Janela especial de 48 horas</p>
-                  <p className="text-white font-black text-xl">Garanta 50% na 1ª mensalidade + 40% vitalício até o fim do curso</p>
-                  <p className="text-white/45 text-xs mt-1">A condição vitalícia vale para inscritos até a abertura da primeira turma.</p>
+                  <p className="text-[10px] uppercase tracking-[0.28em] font-light mb-2" style={{ color: `${G}80` }}>Janela especial de 48 horas</p>
+                  <p className="text-white/70 font-light text-base">Garanta 50% na 1ª mensalidade + 40% vitalício até o fim do curso</p>
+                  <p className="text-white/30 text-xs mt-1 font-light">A condição vitalícia vale para inscritos até a abertura da primeira turma.</p>
                 </div>
                 <div className="shrink-0 grid grid-cols-3 gap-2 text-center">
                   {[['Horas', offerHours], ['Min', offerMinutes], ['Seg', offerSeconds]].map(([label, value]) => (
-                    <div key={label} className="min-w-[72px] rounded-2xl bg-black/35 border border-white/10 px-3 py-2">
-                      <p className="text-2xl font-black text-white font-mono">{value}</p>
-                      <p className="text-[10px] text-white/35 uppercase tracking-widest">{label}</p>
+                    <div key={label} className="min-w-[68px] border px-3 py-2.5" style={{ borderColor: `${G}20`, background: BG }}>
+                      <p className="text-xl font-light text-white font-mono" style={{ color: G }}>{value}</p>
+                      <p className="text-[9px] text-white/25 uppercase tracking-[0.2em] mt-0.5">{label}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            {/* Selos ABED + AHDE */}
+
+            {/* Selos */}
             <div className="flex flex-wrap items-center justify-center gap-5 mt-6">
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-[27px] bg-white/6 hover:bg-white/10 border border-white/10 rounded-[2rem] px-[45px] py-[27px] transition-all group">
-                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-[90px] object-contain" />
-                <ExternalLink size={26} className="text-white/20 group-hover:text-[#5b5ef4] transition-colors" />
+                className="flex items-center gap-5 border px-8 py-5 transition-all group" style={{ borderColor: `${G}12` }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = `${G}28`}
+                onMouseLeave={e => e.currentTarget.style.borderColor = `${G}12`}>
+                <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-16 object-contain opacity-50 group-hover:opacity-80 transition-opacity" />
+                <ExternalLink size={14} className="text-white/20 group-hover:text-white/50 transition-colors" />
               </a>
               <a href="https://ahde-global.org/?lang=pt-br" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-white/6 hover:bg-white/10 border border-white/10 rounded-2xl px-5 py-3 transition-all group">
+                className="flex items-center gap-3 border px-5 py-3 transition-all group" style={{ borderColor: `${G}12` }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = `${G}28`}
+                onMouseLeave={e => e.currentTarget.style.borderColor = `${G}12`}>
                 <div className="text-center">
-                  <p className="text-[#1db89e] font-black text-sm leading-none">AHDE</p>
-                  <p className="text-white/30 text-[9px] uppercase tracking-widest mt-0.5">International</p>
+                  <p className="font-light text-sm uppercase tracking-[0.2em]" style={{ color: G }}>AHDE</p>
+                  <p className="text-white/25 text-[9px] uppercase tracking-widest mt-0.5">International</p>
                 </div>
-                <div className="h-8 w-px bg-white/10" />
+                <div className="h-6 w-px bg-white/10" />
                 <div className="text-left">
-                  <p className="text-white/70 text-xs font-semibold leading-none">Membro Registrado</p>
-                  <p className="text-white/30 text-[10px] mt-0.5">ID: 00403THE</p>
+                  <p className="text-white/50 text-xs font-light">Membro Registrado</p>
+                  <p className="text-white/25 text-[10px] mt-0.5 font-light">ID: 00403THE</p>
                 </div>
-                <ExternalLink size={11} className="text-white/20 group-hover:text-[#1db89e] transition-colors" />
+                <ExternalLink size={10} className="text-white/20 group-hover:text-white/50 transition-colors" />
               </a>
             </div>
           </div>
+
+          {/* Cards de Cursos */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {COURSES.map((c, i) =>
-            <div key={i} className={`bg-[#0d1120] border rounded-3xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:shadow-[#5b5ef4]/10 ${i === 0 ? 'border-[#5b5ef4]/40 ring-1 ring-[#5b5ef4]/20' : 'border-white/10'}`}>
+              <div key={i} className="border flex flex-col transition-all overflow-hidden" style={{ borderColor: i === 0 ? `${G}35` : `${G}12` }}>
                 <div className="relative h-44 overflow-hidden">
                   {c.imgs.map((img, j) =>
-                <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
-                )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d1120] via-[#0d1120]/20 to-transparent" />
-                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black text-white" style={{ backgroundColor: c.tagColor }}>
+                    <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
+                  )}
+                  <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG3}, ${BG3}10)` }} />
+                  <div className="absolute top-3 left-3 border px-2.5 py-1 text-[9px] font-light uppercase tracking-[0.2em]" style={{ borderColor: `${G}50`, color: G, background: `${BG}cc` }}>
                     {c.tag}
                   </div>
-                  <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-2 items-center">
                     {c.imgs.map((_, j) =>
-                  <button key={j} onClick={() => setCourseImgs((prev) => prev.map((v, idx) => idx === i ? j : v))}
-                  className={`h-1.5 rounded-full transition-all ${j === courseImgs[i] ? 'w-5' : 'bg-white/40 w-2'}`}
-                  style={j === courseImgs[i] ? { backgroundColor: c.tagColor } : {}} />
-                  )}
+                      <button key={j} onClick={() => setCourseImgs((prev) => prev.map((v, idx) => idx === i ? j : v))}
+                        className="h-px transition-all" style={{ width: j === courseImgs[i] ? '1.5rem' : '0.75rem', background: j === courseImgs[i] ? G : 'rgba(255,255,255,0.25)' }} />
+                    )}
                   </div>
                 </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <h3 className="font-black text-white text-lg mb-1">{c.title}</h3>
-                  <p className="text-white/40 text-xs leading-relaxed mb-4">{c.subtitle}</p>
+
+                <div className="p-5 flex flex-col flex-1" style={{ background: BG3 }}>
+                  <h3 className="font-light text-white text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
+                  <p className="text-white/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
                   <div className="space-y-1.5 mb-5 flex-1">
                     {c.highlights.map((h, j) =>
-                  <div key={j} className="flex items-center gap-2 text-xs text-white/55">
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: c.tagColor }} />
+                      <div key={j} className="flex items-center gap-2 text-xs text-white/35 font-light">
+                        <div className="w-1 h-1 shrink-0" style={{ background: `${G}80` }} />
                         {h}
                       </div>
-                  )}
+                    )}
                   </div>
-                  <div className="pt-4 border-t border-white/8">
-                    <div className="mb-3">
-                      <p className="text-xs text-orange-200 font-black mb-1 uppercase tracking-wide flex items-center gap-1.5"><Clock size={12} /> Oferta ativa por 48h</p>
-                      <p className="text-xs text-white/35 mb-0.5">Valor cheio: <span className="line-through decoration-red-400/80">{c.originalPrice}</span></p>
-                      <p className="text-[11px] text-[#1db89e] font-bold">Primeira mensalidade com 50%:</p>
-                      <p className="text-2xl font-black text-white">{c.firstMonthPrice}</p>
-                      <p className="text-[11px] text-white/40 mt-2">Depois, 40% de desconto vitalício:</p>
-                      <p className="text-xl font-black text-white">{c.price} <span className="text-xs font-normal text-white/40">{c.period}</span></p>
-                      <p className="text-[11px] text-orange-200/80 mt-2">Entre agora e preserve esta condição até a conclusão da formação.</p>
+                  <div className="pt-4 border-t" style={{ borderColor: `${G}10` }}>
+                    <div className="mb-4">
+                      <p className="text-[10px] text-white/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta ativa por 48h</p>
+                      <p className="text-xs text-white/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
+                      <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>Primeira mensalidade com 50%:</p>
+                      <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
+                      <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
+                      <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
                     </div>
-                    <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 rounded-2xl font-bold text-xs text-white/85 bg-white/8 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/12 transition-all">
-                      <BookOpen size={13} /> Ver ementa do curso
+                    <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 border text-[11px] text-white/40 font-light uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:text-white/60 transition-all" style={{ borderColor: `${G}12` }}>
+                      <BookOpen size={11} /> Ver ementa do curso
                     </a>
-                    <button
-                      onClick={() => openCourseReservation(c)}
-                      className="w-full px-4 py-3 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] border border-[#5b5ef4]/30 flex items-center justify-center gap-2 hover:opacity-90 transition-all" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
-                      <MessageCircle size={13} /> Quero Me Inscrever
+                    <button onClick={() => openCourseReservation(c)}
+                      className="w-full px-4 py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
+                      style={{ borderColor: `${G}60`, color: G }}
+                      onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                      <MessageCircle size={11} /> Quero Me Inscrever
                     </button>
                   </div>
                 </div>
@@ -904,34 +817,33 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       <style>{`
-        @keyframes pulse-cta {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(91,94,244,0.5); }
-          50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(91,94,244,0); }
-        }
         html { scroll-behavior: smooth; }
         @media (max-width: 767px) {
-          #atuacao-social, #atendimento-social, #cursos, #professor, #metodologia, #depoimentos { scroll-margin-top: 6rem; }
+          #atuacao-social, #atendimento-social, #cursos, #professor, #metodologia, #depoimentos { scroll-margin-top: 5rem; }
           iframe { max-width: 100%; }
         }
       `}</style>
 
       {/* DEPOIMENTOS */}
-      <section id="depoimentos" className="site-section bg-[#0a0d1a]">
+      <section id="depoimentos" className="site-section" style={{ background: BG2 }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-white mb-2">O que dizem nossos alunos</h2>
-            <p className="text-white/40 text-sm">Relatos reais sobre a experiência na plataforma</p>
+            <SectionLabel>Depoimentos</SectionLabel>
+            <h2 className="text-3xl font-thin text-white tracking-[-0.01em]">O que dizem nossos alunos</h2>
+            <p className="text-white/30 text-xs mt-2 font-light uppercase tracking-[0.2em]">Relatos reais sobre a experiência na plataforma</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
             {testimonials.map((t, i) =>
-            <div key={i} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-[#5b5ef4]/20 transition-all h-full flex flex-col">
-                <Quote size={22} className="text-[#5b5ef4]/30 mb-3 shrink-0" />
-                <p className={`text-white/70 leading-relaxed mb-5 flex-1 ${i < 3 ? 'text-[13px]' : 'text-sm'}`}>"{t.text}"</p>
-                <div className="flex items-center gap-3 pt-4 border-t border-white/6">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center text-xs font-black shrink-0">{t.name[0]}</div>
+              <div key={i} className="border p-6 flex flex-col transition-all h-full" style={{ borderColor: `${G}10` }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = `${G}22`}
+                onMouseLeave={e => e.currentTarget.style.borderColor = `${G}10`}>
+                <Quote size={18} className="mb-3 shrink-0" style={{ color: `${G}25` }} />
+                <p className="text-white/40 leading-relaxed mb-5 flex-1 text-sm font-light">"{t.text}"</p>
+                <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: `${G}08` }}>
+                  <div className="w-8 h-8 border flex items-center justify-center text-xs font-light shrink-0" style={{ borderColor: `${G}30`, color: G }}>{t.name[0]}</div>
                   <div>
-                    <p className="text-white text-sm font-bold">{t.name}</p>
-                    <div className="flex gap-0.5 mt-0.5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={9} className="text-yellow-400 fill-yellow-400" />)}</div>
+                    <p className="text-white/60 text-xs font-light uppercase tracking-[0.15em]">{t.name}</p>
+                    <div className="flex gap-0.5 mt-0.5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={8} style={{ color: G, fill: G }} />)}</div>
                   </div>
                 </div>
               </div>
@@ -941,240 +853,239 @@ Histórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${
       </section>
 
       {/* CTA FINAL */}
-      <section className="site-section bg-gradient-to-br from-[#5b5ef4]/20 via-[#080b14] to-[#1db89e]/10 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(91,94,244,0.15)_0%,transparent_70%)]" />
-        <div className="max-w-3xl mx-auto text-center relative z-10">
-          <h2 className="text-4xl lg:text-5xl font-black text-white mb-4">Pronto para começar sua jornada?</h2>
-          <p className="text-white/60 text-lg mb-10">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
+      <section className="site-section relative overflow-hidden" style={{ background: BG }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at center, ${G}08, transparent 65%)` }} />
+        <div className="max-w-2xl mx-auto text-center relative z-10">
+          <div className="h-px w-20 mx-auto mb-10" style={{ background: `${G}40` }} />
+          <h2 className="text-4xl lg:text-5xl font-thin text-white mb-4 tracking-[-0.01em]">Pronto para começar<span className="block font-light italic" style={{ color: G }}>sua jornada?</span></h2>
+          <p className="text-white/35 text-sm mb-10 font-light">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#cursos" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/40 hover:opacity-90 transition-all text-base" style={{animation:'pulse-cta 2s ease-in-out infinite'}}>
-              Garantir Minha Vaga <ChevronRight size={18} />
+            <a href="#cursos" className="inline-flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.25em] border px-10 py-4 font-medium transition-all"
+              style={{ borderColor: `${G}60`, color: G }}
+              onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+              Garantir Minha Vaga <ChevronRight size={13} />
             </a>
-            <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 bg-white/8 border border-white/15 text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white/12 transition-all text-sm">
-              <span className="w-2 h-2 rounded-full bg-[#1db89e] shadow-[0_0_12px_rgba(29,184,158,0.7)]" /> Já sou aluno
+            <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 border border-white/10 text-white/30 text-[11px] uppercase tracking-[0.25em] px-8 py-4 hover:border-white/20 hover:text-white/50 transition-all font-light">
+              Já sou aluno
             </button>
           </div>
+          <div className="h-px w-20 mx-auto mt-10" style={{ background: `${G}25` }} />
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/8 py-12 px-5 sm:px-6 lg:px-20 bg-[#080b14]">
+      <footer className="border-t py-12 px-5 sm:px-8" style={{ background: BG2, borderColor: `${G}12` }}>
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
             <div className="flex items-center gap-3">
-              <img src={WR_PRIMARY_LOGO} alt="WR" className="w-12 h-12 object-contain" />
+              <div className="w-8 h-8 border flex items-center justify-center" style={{ borderColor: `${G}25` }}>
+                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-6 h-6 object-contain" />
+              </div>
               <div>
-                <p className="text-white font-black text-base">{BRAND_LEGAL_NAME}</p>
-                <p className="text-white/30 text-xs">CNPJ {BRAND_CNPJ}</p>
+                <p className="text-white/70 font-light text-sm uppercase tracking-[0.2em]">{BRAND_LEGAL_NAME}</p>
+                <p className="text-white/25 text-[10px] font-light mt-0.5">CNPJ {BRAND_CNPJ}</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-6 text-white/30 text-sm">
-              {[
-              { label: 'Política de Trabalho', href: '/politica' },
-              { label: 'Termos de Uso', href: '/termos' },
-              { label: 'Privacidade', href: '/privacidade' }].
-              map((l) =>
-              <a key={l.label} href={l.href} className="hover:text-white/70 transition-colors">{l.label}</a>
+            <div className="flex flex-wrap gap-6 text-white/25 text-[11px] font-light uppercase tracking-[0.15em]">
+              {[{ label: 'Política de Trabalho', href: '/politica' }, { label: 'Termos de Uso', href: '/termos' }, { label: 'Privacidade', href: '/privacidade' }].map((l) =>
+                <a key={l.label} href={l.href} className="hover:text-white/50 transition-colors">{l.label}</a>
               )}
             </div>
           </div>
-          <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="border-t pt-6 flex flex-col md:flex-row items-center justify-between gap-3" style={{ borderColor: `${G}08` }}>
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
-              <p className="text-white/20 text-xs">{BRAND_LEGAL_NAME} © 2026 · CNPJ {BRAND_CNPJ}</p>
+              <p className="text-white/20 text-[10px] font-light">{BRAND_LEGAL_NAME} © 2026 · CNPJ {BRAND_CNPJ}</p>
               <span className="text-white/10 hidden sm:inline">·</span>
-              <p className="text-white/20 text-xs">Feito com <span className="text-red-500">♥</span> pela <a href="/wr-tec" className="text-white/40 font-semibold hover:text-[#5b5ef4] transition-colors">WR-TEC®</a> © 2026</p>
+              <p className="text-white/20 text-[10px] font-light">Feito com <span className="text-red-400/60">♥</span> pela <a href="/wr-tec" className="hover:text-white/40 transition-colors" style={{ color: `${G}60` }}>WR-TEC®</a> © 2026</p>
             </div>
             <div className="flex items-center gap-4">
-              <img
-                src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png"
-                alt="ABED" className="h-8 object-contain opacity-30 hover:opacity-70 transition-opacity" />
-              
-              <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-                <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
+              <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png"
+                alt="ABED" className="h-7 object-contain opacity-20 hover:opacity-50 transition-opacity" />
+              <div className="flex items-center gap-1.5 border px-3 py-1" style={{ borderColor: `${G}12` }}>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: G }} />
+                <span className="text-white/20 text-[10px] font-mono font-light tracking-widest">V-003-00</span>
               </div>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* ATENDIMENTO SOCIAL EM CHAT */}
-      {socialOpen &&
-      <div className="fixed inset-0 z-[190] bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4" onClick={() => setSocialOpen(false)}>
-          <div className="bg-[#0d1120] border border-white/15 rounded-3xl w-full max-w-2xl max-h-[90dvh] shadow-2xl overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+      {/* MODAL ATENDIMENTO SOCIAL */}
+      {socialOpen && (
+        <div className="fixed inset-0 z-[190] bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4" onClick={() => setSocialOpen(false)}>
+          <div className="border w-full max-w-2xl max-h-[90dvh] shadow-2xl overflow-hidden flex flex-col" style={{ background: BG3, borderColor: `${G}20` }} onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b flex items-start justify-between gap-4" style={{ borderColor: `${G}12` }}>
               <div>
-                <h3 className="text-white font-black text-lg flex items-center gap-2"><Heart size={18} className="text-emerald-300" /> Atendimento Social</h3>
-                <p className="text-white/40 text-xs mt-1">Triagem breve · consulta social R$ 35,00 · retorno em até 48h</p>
+                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><Heart size={14} style={{ color: G }} /> Atendimento Social</h3>
+                <p className="text-white/30 text-xs mt-1 font-light">Triagem breve · consulta social R$ 35,00 · retorno em até 48h</p>
               </div>
-              <button onClick={() => setSocialOpen(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+              <button onClick={() => setSocialOpen(false)} className="text-white/25 hover:text-white/60 transition-colors"><X size={16} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#080b14]">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ background: BG }}>
               <div className="space-y-3">
                 {socialMessages.map((message, index) => (
                   <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${message.role === 'user' ? 'bg-emerald-500 text-white' : 'bg-white/8 border border-white/10 text-white/80'}`}>
+                    <div className={`max-w-[86%] border px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap font-light ${message.role === 'user' ? 'text-black' : 'text-white/60'}`}
+                      style={message.role === 'user' ? { background: G, borderColor: G } : { background: BG3, borderColor: `${G}15` }}>
                       {message.content}
                     </div>
                   </div>
                 ))}
-                {socialLoading && <div className="text-xs text-white/35">IA digitando...</div>}
+                {socialLoading && <div className="text-xs text-white/25 font-light">A IA está digitando...</div>}
               </div>
               {socialMessages.filter(m => m.role === 'user').length >= 5 && (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 space-y-4">
-                  <p className="text-sm font-black text-white">Escolha uma data do mês vigente</p>
+                <div className="border p-4 space-y-4" style={{ background: BG3, borderColor: `${G}15` }}>
+                  <p className="text-xs font-light uppercase tracking-[0.2em]" style={{ color: G }}>Escolha uma data do mês vigente</p>
                   <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-40 overflow-y-auto pr-1">
                     {getCurrentMonthDates().map((date) => (
-                      <button key={date.iso} onClick={() => setSelectedSocialDate(date.iso)} className={`rounded-xl border px-2 py-2 text-center ${selectedSocialDate === date.iso ? 'border-emerald-300 bg-emerald-400 text-[#06120f]' : 'border-white/10 bg-white/5 text-white/70'}`}>
-                        <span className="block text-[10px] uppercase">{date.week}</span>
-                        <span className="text-base font-black">{date.day}</span>
+                      <button key={date.iso} onClick={() => setSelectedSocialDate(date.iso)} className="border px-2 py-2 text-center transition-all"
+                        style={selectedSocialDate === date.iso ? { borderColor: G, background: G, color: '#000' } : { borderColor: `${G}15`, color: 'rgba(255,255,255,0.5)' }}>
+                        <span className="block text-[9px] uppercase font-light">{date.week}</span>
+                        <span className="text-sm font-light">{date.day}</span>
                       </button>
                     ))}
                   </div>
-                  <p className="text-sm font-black text-white">Horário</p>
+                  <p className="text-xs font-light uppercase tracking-[0.2em]" style={{ color: G }}>Horário</p>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {SOCIAL_TIME_SLOTS.map((time) => (
-                      <button key={time} onClick={() => setSelectedSocialTime(time)} className={`rounded-xl border px-3 py-2 text-sm font-bold ${selectedSocialTime === time ? 'border-cyan-300 bg-cyan-300 text-[#06120f]' : 'border-white/10 bg-white/5 text-white/70'}`}>{time}</button>
+                      <button key={time} onClick={() => setSelectedSocialTime(time)} className="border px-3 py-2 text-xs font-light transition-all"
+                        style={selectedSocialTime === time ? { borderColor: G, background: G, color: '#000' } : { borderColor: `${G}15`, color: 'rgba(255,255,255,0.5)' }}>{time}</button>
                     ))}
                   </div>
                   {socialBooked ? (
-                    <div className="rounded-2xl border border-emerald-300/25 bg-emerald-400/10 p-4 text-sm text-emerald-100">
+                    <div className="border p-4 text-xs text-white/50 font-light" style={{ borderColor: `${G}20` }}>
                       Agendamento solicitado. Em até 48 horas um atendente entrará em contato para enviar o código Pix de R$ 35,00.
                     </div>
                   ) : (
-                    <button onClick={bookSocialAppointment} disabled={!selectedSocialDate || !selectedSocialTime} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 font-black text-sm text-[#06120f] disabled:opacity-40">Solicitar agendamento</button>
+                    <button onClick={bookSocialAppointment} disabled={!selectedSocialDate || !selectedSocialTime}
+                      className="w-full py-3 text-xs uppercase tracking-[0.2em] font-medium border transition-all disabled:opacity-30"
+                      style={{ borderColor: `${G}60`, color: G }}>Solicitar agendamento</button>
                   )}
                 </div>
               )}
             </div>
-            <div className="p-4 border-t border-white/10 bg-[#0d1120]">
+            <div className="p-4 border-t" style={{ borderColor: `${G}12`, background: BG3 }}>
               <div className="flex gap-2">
-                <input
-                  value={socialInput}
-                  onChange={(e) => setSocialInput(e.target.value)}
+                <input value={socialInput} onChange={(e) => setSocialInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') sendSocialChatMessage(); }}
                   placeholder={socialMessages.filter(m => m.role === 'user').length >= 5 ? 'Entrevista concluída. Escolha data e horário acima.' : 'Responda aqui...'}
-                  className="flex-1 bg-white/6 border border-white/10 text-white placeholder:text-white/25 h-11 rounded-xl px-3 text-sm focus:outline-none focus:border-emerald-300/60"
-                />
-                <button onClick={sendSocialChatMessage} disabled={!socialInput.trim() || socialLoading || socialMessages.filter(m => m.role === 'user').length >= 5} className="h-11 w-11 rounded-xl bg-emerald-400 text-[#06120f] flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
+                  className="flex-1 border text-white placeholder:text-white/20 h-11 px-3 text-sm focus:outline-none font-light"
+                  style={{ background: BG, borderColor: `${G}18`, color: 'white' }} />
+                <button onClick={sendSocialChatMessage} disabled={!socialInput.trim() || socialLoading || socialMessages.filter(m => m.role === 'user').length >= 5}
+                  className="h-11 w-11 border flex items-center justify-center disabled:opacity-30 transition-all"
+                  style={{ borderColor: `${G}50`, color: G }}><Send size={14} /></button>
               </div>
             </div>
           </div>
         </div>
-      }
+      )}
 
-      {/* RESERVA ANTECIPADA EM CHAT */}
-      {reserveOpen &&
-      <div className="fixed inset-0 z-[190] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
-          <div className="bg-[#0d1120] border border-white/15 rounded-3xl w-full max-w-lg max-h-[88dvh] shadow-2xl overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-white/10 flex items-start justify-between gap-4">
+      {/* MODAL RESERVA */}
+      {reserveOpen && (
+        <div className="fixed inset-0 z-[190] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
+          <div className="border w-full max-w-lg max-h-[88dvh] shadow-2xl overflow-hidden flex flex-col" style={{ background: BG3, borderColor: `${G}20` }} onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b flex items-start justify-between gap-4" style={{ borderColor: `${G}12` }}>
               <div>
-                <h3 className="text-white font-black text-lg flex items-center gap-2"><MessageCircle size={18} className="text-[#1db89e]" /> Reserva Antecipada</h3>
-                <p className="text-white/40 text-xs mt-1">{selectedCourse?.title} · questionário guiado por IA</p>
+                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><MessageCircle size={14} style={{ color: G }} /> Reserva Antecipada</h3>
+                <p className="text-white/30 text-xs mt-1 font-light">{selectedCourse?.title} · questionário guiado por IA</p>
               </div>
-              <button onClick={() => setReserveOpen(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+              <button onClick={() => setReserveOpen(false)} className="text-white/25 hover:text-white/60 transition-colors"><X size={16} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#080b14]">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ background: BG }}>
               {leadMessages.map((message, index) => (
                 <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${message.role === 'user' ? 'bg-[#5b5ef4] text-white' : 'bg-white/8 border border-white/10 text-white/80'}`}>
+                  <div className={`max-w-[82%] border px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap font-light`}
+                    style={message.role === 'user' ? { background: G, borderColor: G, color: '#000' } : { background: BG3, borderColor: `${G}15`, color: 'rgba(255,255,255,0.6)' }}>
                     {message.content}
                   </div>
                 </div>
               ))}
-              {leadLoading && <div className="text-xs text-white/35">IA digitando...</div>}
+              {leadLoading && <div className="text-xs text-white/25 font-light">A IA está digitando...</div>}
             </div>
-            <div className="p-4 border-t border-white/10 bg-[#0d1120] space-y-3">
+            <div className="p-4 border-t space-y-3" style={{ borderColor: `${G}12`, background: BG3 }}>
               <div className="flex gap-2">
-                <input
-                  value={leadInput}
-                  onChange={(e) => setLeadInput(e.target.value)}
+                <input value={leadInput} onChange={(e) => setLeadInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') sendReserveChatMessage(); }}
                   placeholder={leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS ? 'Questionário encerrado. Envie pelo WhatsApp.' : 'Responda aqui...'}
-                  className="flex-1 bg-white/6 border border-white/10 text-white placeholder:text-white/25 h-11 rounded-xl px-3 text-sm focus:outline-none focus:border-[#1db89e]/60"
-                />
-                <button onClick={sendReserveChatMessage} disabled={!leadInput.trim() || leadLoading || leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS} className="h-11 w-11 rounded-xl bg-[#1db89e] text-white flex items-center justify-center disabled:opacity-40"><Send size={16} /></button>
+                  className="flex-1 border h-11 px-3 text-sm focus:outline-none font-light"
+                  style={{ background: BG, borderColor: `${G}18`, color: 'white' }} />
+                <button onClick={sendReserveChatMessage} disabled={!leadInput.trim() || leadLoading || leadMessages.filter(m => m.role === 'user').length >= MAX_RESERVATION_AI_QUESTIONS}
+                  className="h-11 w-11 border flex items-center justify-center disabled:opacity-30"
+                  style={{ borderColor: `${G}50`, color: G }}><Send size={14} /></button>
               </div>
-              <button onClick={sendReserveToWhatsApp} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 font-bold text-sm">Enviar reserva para WhatsApp oficial</button>
-            </div>
-          </div>
-        </div>
-      }
-
-      {/* LOGIN MODAL */}
-      {showLoginModal &&
-      <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
-          <div className="bg-[#0d1120] border border-white/15 rounded-3xl p-8 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-white font-black text-xl">Área do Aluno</h3>
-                <p className="text-white/40 text-xs mt-0.5">Acesso seguro à plataforma</p>
-              </div>
-              <button onClick={() => {setShowLoginModal(false);setError('');}} className="text-white/30 hover:text-white transition-colors">
-                <X size={18} />
+              <button onClick={sendReserveToWhatsApp} className="w-full py-3 border text-xs uppercase tracking-[0.2em] font-medium transition-all"
+                style={{ borderColor: `${G}60`, color: G }}
+                onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                Enviar reserva para WhatsApp oficial
               </button>
             </div>
-
-            <div className="flex gap-1.5 bg-white/4 rounded-2xl p-1.5 mb-5 border border-white/8">
-              {['code', 'admin'].map((m) =>
-            <button key={m} onClick={() => {setMode(m);setError('');}}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${mode === m ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg' : 'text-white/35 hover:text-white/65'}`}>
-                  {m === 'code' ? <><Key size={12} /> Código</> : <><Shield size={12} /> Admin</>}
-                </button>
-            )}
-            </div>
-
-            {error &&
-          <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/25 text-red-300 text-xs p-3 rounded-xl mb-4">
-                <AlertCircle size={13} className="shrink-0" /> {error}
-              </div>
-          }
-
-            {mode === 'code' ?
-          <form onSubmit={handleCodeLogin} className="space-y-4">
-                <input
-              placeholder="EDU-XXXX-XXXX"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-12 text-center text-lg tracking-widest font-mono rounded-xl px-3 focus:outline-none focus:border-[#5b5ef4]/60"
-              autoCapitalize="characters" />
-            
-                <button
-              type="submit"
-              disabled={code.length < 3 || loading}
-              className="w-full h-12 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
-              
-                  {loading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verificando...</> : <>Entrar na Plataforma <ChevronRight size={15} /></>}
-                </button>
-              </form> :
-
-          <form onSubmit={handleAdminLogin} className="space-y-3">
-                <input
-              type="email"
-              placeholder="seu@email.com"
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-              className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none focus:border-[#5b5ef4]/60" />
-            
-                <input
-              type="password"
-              placeholder="••••••••"
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              className="w-full bg-white/6 border border-white/10 text-white placeholder:text-white/20 h-10 rounded-xl px-3 text-sm focus:outline-none focus:border-[#5b5ef4]/60" />
-            
-                <button
-              type="submit"
-              disabled={!adminEmail || !adminPassword || loading}
-              className="w-full h-10 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold text-sm rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
-              
-                  {loading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Entrando...</> : 'Entrar como Admin'}
-                </button>
-              </form>
-          }
           </div>
         </div>
-      }
-    </div>);
+      )}
 
+      {/* LOGIN MODAL */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
+          <div className="border p-8 w-full max-w-sm shadow-2xl" style={{ background: BG3, borderColor: `${G}20` }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-7">
+              <div>
+                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.25em]">Área do Aluno</h3>
+                <p className="text-white/25 text-[10px] mt-0.5 font-light uppercase tracking-[0.15em]">Acesso seguro à plataforma</p>
+              </div>
+              <button onClick={() => { setShowLoginModal(false); setError(''); }} className="text-white/25 hover:text-white/60 transition-colors"><X size={15} /></button>
+            </div>
+
+            <div className="flex gap-2 border p-1.5 mb-5" style={{ borderColor: `${G}15` }}>
+              {['code', 'admin'].map((m) =>
+                <button key={m} onClick={() => { setMode(m); setError(''); }}
+                  className="flex-1 py-2.5 text-[10px] font-light transition-all flex items-center justify-center gap-1.5 uppercase tracking-[0.18em]"
+                  style={mode === m ? { background: G, color: '#000' } : { color: 'rgba(255,255,255,0.25)' }}>
+                  {m === 'code' ? <><Key size={10} /> Código</> : <><Shield size={10} /> Admin</>}
+                </button>
+              )}
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2.5 border text-white/50 text-xs p-3 mb-4 font-light" style={{ borderColor: 'rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.06)' }}>
+                <AlertCircle size={11} className="text-red-400/70 shrink-0" /> {error}
+              </div>
+            )}
+
+            {mode === 'code' ? (
+              <form onSubmit={handleCodeLogin} className="space-y-4">
+                <input placeholder="EDU-XXXX-XXXX" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  className="w-full border text-white placeholder:text-white/20 h-12 text-center text-base tracking-[0.3em] font-mono focus:outline-none"
+                  style={{ background: BG, borderColor: `${G}20` }} autoCapitalize="characters" />
+                <button type="submit" disabled={code.length < 3 || loading}
+                  className="w-full h-12 border text-xs uppercase tracking-[0.22em] font-medium flex items-center justify-center gap-2 disabled:opacity-40 transition-all"
+                  style={{ borderColor: `${G}60`, color: G }}
+                  onMouseEnter={e => { if (!loading && code.length >= 3) { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; } }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                  {loading ? <><div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" /> Verificando...</> : <>Entrar na Plataforma <ChevronRight size={12} /></>}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleAdminLogin} className="space-y-3">
+                <input type="email" placeholder="seu@email.com" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)}
+                  className="w-full border text-white placeholder:text-white/20 h-10 px-3 text-sm focus:outline-none font-light"
+                  style={{ background: BG, borderColor: `${G}18` }} />
+                <input type="password" placeholder="••••••••" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full border text-white placeholder:text-white/20 h-10 px-3 text-sm focus:outline-none font-light"
+                  style={{ background: BG, borderColor: `${G}18` }} />
+                <button type="submit" disabled={!adminEmail || !adminPassword || loading}
+                  className="w-full h-10 border text-xs uppercase tracking-[0.2em] font-medium disabled:opacity-40 flex items-center justify-center gap-2 transition-all"
+                  style={{ borderColor: `${G}60`, color: G }}
+                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; } }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                  {loading ? <><div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" /> Entrando...</> : 'Entrar como Admin'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
