@@ -120,7 +120,7 @@ export default function Tuitions() {
     : null;
 
   return (
-    <div className="p-3 md:p-5 max-w-[900px] mx-auto space-y-4 animate-fade-in-up">
+    <div className="app-page app-page--narrow space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Mensalidades</h2>

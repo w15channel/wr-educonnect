@@ -298,7 +298,7 @@ export default function LiveSessions() {
   const past = orderedSessions.filter(s => s.status === 'ended');
 
   return (
-    <div className="w-full max-w-[900px] mx-auto p-3 md:p-5 space-y-4 animate-fade-in-up">
+    <div className="app-page app-page--narrow space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Sala ao Vivo</h2>

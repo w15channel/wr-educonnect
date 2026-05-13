@@ -252,7 +252,7 @@ export default function Monitores() {
   );
 
   return (
-    <div className="p-3 md:p-5 max-w-[860px] mx-auto space-y-5 animate-fade-in-up">
+    <div className="app-page app-page--narrow space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">

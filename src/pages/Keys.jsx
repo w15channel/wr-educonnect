@@ -13,7 +13,7 @@ export default function Keys() {
   const label = COURSE_LABEL[activeCourse] || activeCourse;
 
   return (
-    <div className="p-3 md:p-5 max-w-[1050px] mx-auto animate-fade-in-up">
+    <div className="app-page app-page--compact animate-fade-in-up">
       <div className="mb-5 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
           <Key size={20} className="text-white" />
