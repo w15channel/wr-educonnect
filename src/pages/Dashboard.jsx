@@ -47,25 +47,16 @@ function StatCard({ title, value, icon: Icon, iconBg, to, subtitle, pulse }) {
   return (
     <button
       onClick={() => navigate(prefix + to)}
-      className="group bg-card rounded-2xl border border-border p-4 sm:p-5 text-left hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 w-full">
-      
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} group-hover:scale-110 transition-transform`}>
-          <Icon size={18} className="text-white" />
-        </div>
-        {pulse && <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full border border-red-100">
-          <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> AO VIVO
-        </span>}
+      className="group bg-card rounded-xl border border-border p-5 flex flex-col items-center justify-center text-center hover:border-primary/20 hover:shadow-sm transition-all duration-200 w-full min-h-[140px]">
+      <div className={`w-11 h-11 rounded-lg flex items-center justify-center mb-3 ${iconBg}`}>
+        <Icon size={20} className="text-white" />
       </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      <p className="text-xs font-medium text-muted-foreground mt-0.5">{title}</p>
-      {subtitle &&
-      <p className="text-xs text-primary mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {subtitle} <ArrowRight size={11} />
-        </p>
-      }
+      {pulse && <span className="flex items-center gap-1 text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full border border-red-100 mb-1">
+        <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> AO VIVO
+      </span>}
+      <p className="text-sm text-muted-foreground mb-1">{title}</p>
+      <p className="text-2xl font-mono font-bold text-foreground">{value}</p>
     </button>);
-
 }
 
 export default function Dashboard() {
@@ -384,26 +375,24 @@ export default function Dashboard() {
   return (
     <div className="w-full max-w-screen-2xl mx-auto px-3 py-4 sm:p-4 md:p-5 xl:p-7 space-y-5 animate-fade-in-up overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-muted-foreground font-medium mb-0.5">
-            {greeting}, {firstName} 👋
-          </p>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">
-            {isTeacher ? 'Painel Administrativo' : 'Meu Dashboard'}
+          <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
+            {greeting}, Dashboard
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+          <p className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-2">
+            <span>{isTeacher ? 'Painel Administrativo' : 'Meu Dashboard'} / {firstName}</span>
+            <span className="text-muted-foreground/50">·</span>
+            <span>{format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}</span>
           </p>
         </div>
         {isTeacher &&
         <Button
           variant="outline"
           size="sm"
-          className="gap-2 shrink-0 w-full sm:w-auto"
+          className="gap-2 shrink-0"
           onClick={handleRefreshAll}
           disabled={refreshing}>
-          
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
             {refreshing ? 'Atualizando...' : 'Atualizar Gestão'}
           </Button>
@@ -414,7 +403,7 @@ export default function Dashboard() {
       {nextLive &&
       <div
         onClick={() => navigate(scoped('/live'))}
-        className={`cursor-pointer rounded-2xl p-4 flex items-center gap-4 border transition-all hover:shadow-lg ${
+        className={`cursor-pointer rounded-xl p-4 flex items-center gap-4 border transition-all hover:shadow-sm ${
         isLiveNow ?
         'bg-gradient-to-r from-red-50 to-red-50/50 border-red-200 hover:border-red-300' :
         'bg-gradient-to-r from-blue-50 to-blue-50/50 border-blue-200 hover:border-blue-300'}`
@@ -441,7 +430,7 @@ export default function Dashboard() {
       }
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard
           title="Próxima Live"
           value={nextLive ? isLiveNow ? 'Ao Vivo!' : nextLive.scheduled_at ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Agendada' : 'Nenhuma'}
@@ -483,7 +472,7 @@ export default function Dashboard() {
           {/* Progress */}
           <button
           onClick={() => navigate(scoped('/lessons'))}
-          className="bg-card rounded-2xl border border-border p-5 text-left hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all group">
+          className="bg-card rounded-xl border border-border p-5 text-left hover:border-primary/20 hover:shadow-sm transition-all group">
           
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -525,7 +514,7 @@ export default function Dashboard() {
           </button>
 
           {/* Ranking */}
-          <div className="bg-card rounded-2xl border border-border p-5 text-left">
+          <div className="bg-card rounded-xl border border-border p-5 text-left">
           
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -585,9 +574,10 @@ export default function Dashboard() {
         </div>
       }
 
-      {/* Admin ranking */}
+      {/* Admin ranking + announcements side by side */}
       {isTeacher &&
-      <div className="bg-card rounded-2xl border border-border p-3 sm:p-5 overflow-hidden max-w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="bg-card rounded-xl border border-border p-4 overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
@@ -715,7 +705,30 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
             </Button>
           </div>
         </div>
+
+        {/* Announcements — inside the 2-col grid for teachers */}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-sm text-foreground">Avisos Recentes</h3>
+            <button onClick={() => navigate(scoped('/announcements'))} className="text-xs text-primary hover:underline flex items-center gap-1">
+              Ver todos <ArrowRight size={11} />
+            </button>
+          </div>
+          <div className="space-y-3">
+            {announcements.slice(0, 5).map((a) => (
+              <div key={a.id} className="text-xs text-muted-foreground border-b border-border pb-2 last:border-0 last:pb-0">
+                <p className="font-mono text-[10px] text-muted-foreground/60 mb-0.5">{a.created_date ? format(new Date(a.created_date), 'dd/MM/yyyy') : ''}</p>
+                <p className="text-foreground/80 leading-relaxed">{a.title || a.content}</p>
+              </div>
+            ))}
+            {announcements.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhum aviso recente</p>}
+          </div>
+        </div>
+      </div>
       }
+
+      {/* Lesson Comments Panel — teacher only */}
+      {isTeacher && <LessonCommentsPanel />}
 
       {/* Pendências do Aluno */}
       {!isTeacher && (() => {
@@ -741,7 +754,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
         if (totalPending === 0) return null;
 
         return (
-          <div className="bg-card rounded-2xl border border-orange-200 p-5">
+          <div className="bg-card rounded-xl border border-orange-200 p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
                 <ClipboardList size={16} className="text-orange-600" />
@@ -852,33 +865,22 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
       {/* Lesson Comments Panel — teacher only */}
       {isTeacher && <LessonCommentsPanel />}
 
-      {/* Announcements */}
-      {announcements.length > 0 &&
-      <div className="bg-card rounded-2xl border border-border p-5">
+      {/* Announcements for students */}
+      {!isTeacher && announcements.length > 0 &&
+      <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
-                <Bell size={16} className="text-yellow-600" />
-              </div>
-              <h3 className="font-bold text-sm text-foreground">Avisos Recentes</h3>
-            </div>
+            <h3 className="font-bold text-sm text-foreground flex items-center gap-2"><Bell size={14} className="text-yellow-500" /> Avisos Recentes</h3>
             <button onClick={() => navigate(scoped('/announcements'))} className="text-xs text-primary hover:underline flex items-center gap-1">
               Ver todos <ArrowRight size={11} />
             </button>
           </div>
-          <div className="space-y-2">
-            {announcements.slice(0, 3).map((a) => {
-            const urgentClass = a.type === 'urgent' ? 'border-red-200 bg-red-50/50' : a.type === 'warning' ? 'border-yellow-200 bg-yellow-50/50' : 'border-border bg-secondary/30';
-            return (
-              <div key={a.id} className={`p-3 rounded-xl border text-xs ${urgentClass}`}>
-                  <div className="flex items-center gap-2">
-                    {a.type === 'urgent' && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
-                    <p className="font-semibold text-foreground truncate">{a.title || a.content}</p>
-                    <span className="ml-auto text-muted-foreground shrink-0">{a.created_date ? format(new Date(a.created_date), 'dd/MM') : ''}</span>
-                  </div>
-                </div>);
-
-          })}
+          <div className="space-y-3">
+            {announcements.slice(0, 3).map((a) => (
+              <div key={a.id} className="text-xs border-b border-border pb-2 last:border-0 last:pb-0">
+                <p className="font-mono text-[10px] text-muted-foreground/60 mb-0.5">{a.created_date ? format(new Date(a.created_date), 'dd/MM/yyyy') : ''}</p>
+                <p className="text-foreground/80">{a.title || a.content}</p>
+              </div>
+            ))}
           </div>
         </div>
       }
