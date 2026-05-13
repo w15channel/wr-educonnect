@@ -335,7 +335,7 @@ export default function LandingPage({ onLogin }) {
   );
 
   return (
-    <div className="site-page text-white" style={{ background: BG }}>
+    <div className="site-page scrollbar-invisible text-white" style={{ background: BG }}>
 
       {/* NAVBAR */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${navScrolled ? 'py-3 border-b backdrop-blur-xl' : 'py-5'}`}
@@ -352,7 +352,7 @@ export default function LandingPage({ onLogin }) {
           </a>
 
           <div className="hidden md:flex items-center gap-7 text-[11px] text-white/35 uppercase tracking-[0.18em] font-light">
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '#atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '/atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
               <a key={label} href={href} className="hover:text-white/70 transition-colors"
                 onMouseEnter={e => { e.currentTarget.style.color = G; }}
                 onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
@@ -379,7 +379,7 @@ export default function LandingPage({ onLogin }) {
 
         {mobileMenu && (
           <div className="md:hidden mx-5 mt-2 border px-5 py-5 space-y-3" style={{ background: BG3, borderColor: `${G}18` }}>
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '#atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '/atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
               <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/40 hover:text-white/70 py-2 text-[11px] uppercase tracking-[0.2em] transition-all">{label}</a>
             )}
             <div className="h-px" style={{ background: `${G}15` }} />
@@ -650,55 +650,6 @@ export default function LandingPage({ onLogin }) {
                   <Play size={11} className="fill-current" /> Abrir no Instagram
                 </a>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ATENDIMENTO SOCIAL */}
-      <section id="atendimento-social" className="site-section relative overflow-hidden" style={{ background: BG2 }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(circle at top left, ${G}0a, transparent 45%)` }} />
-        <div className="max-w-6xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <SectionLabel>Atendimento Social · R$ 35,00</SectionLabel>
-            <h2 className="text-4xl lg:text-5xl font-thin text-white leading-tight mb-5 tracking-[-0.01em]">Cuidado sério,<span className="block font-light italic" style={{ color: G }}>seguro e acessível.</span></h2>
-            <p className="text-white/40 leading-relaxed mb-5 text-sm font-light">
-              Um espaço de acolhimento terapêutico social para promover saúde comportamental, ampliar o acesso ao cuidado e permitir que profissionais em capacitação desenvolvam sua prática com seriedade, supervisão e responsabilidade humana.
-            </p>
-            <div className="grid grid-cols-3 gap-3 mb-7">
-              {[['R$ 35', 'por consulta'], ['5 perguntas', 'triagem inicial'], ['48h', 'retorno com Pix']].map(([value, label]) => (
-                <div key={value} className="border p-4" style={{ borderColor: `${G}15` }}>
-                  <p className="text-xl font-light text-white">{value}</p>
-                  <p className="text-xs text-white/30 mt-1 font-light uppercase tracking-[0.15em]">{label}</p>
-                </div>
-              ))}
-            </div>
-            <button onClick={openSocialAppointment}
-              className="inline-flex items-center justify-center gap-2 text-xs uppercase tracking-[0.22em] border px-7 py-4 font-medium transition-all"
-              style={{ borderColor: `${G}60`, color: G }}
-              onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
-              <MessageCircle size={13} /> Quero agendar atendimento social
-            </button>
-          </div>
-
-          <div className="border p-6 sm:p-7" style={{ borderColor: `${G}15`, background: BG3 }}>
-            <p className="text-white/70 font-light text-sm uppercase tracking-[0.22em] mb-5">Como funciona</p>
-            <div className="space-y-4">
-              {[
-                'Você responde uma entrevista curta pelo chat com 5 perguntas.',
-                'Escolhe data e horário disponíveis no mês vigente.',
-                'Nossa equipe entra em contato em até 48 horas pelo WhatsApp.',
-                'O atendente envia o código Pix de R$ 35,00 para confirmar a consulta.'
-              ].map((item, index) => (
-                <div key={item} className="flex items-start gap-4">
-                  <div className="w-6 h-6 border flex items-center justify-center text-[10px] font-light shrink-0" style={{ borderColor: `${G}40`, color: G }}>{index + 1}</div>
-                  <p className="text-sm text-white/40 leading-relaxed font-light">{item}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 border p-4" style={{ borderColor: `${G}15` }}>
-              <p className="text-xs text-white/30 leading-relaxed font-light">Este atendimento não substitui serviços de emergência. Em risco imediato, procure ajuda presencial ou serviço de urgência da sua cidade.</p>
             </div>
           </div>
         </div>
