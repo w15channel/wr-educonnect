@@ -74,10 +74,9 @@ export default function BottomNav({ onMenuOpen }) {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="absolute inset-0 bg-[#07080f]/97 backdrop-blur-xl border-t border-[#1e2540]" />
-      <div className="relative flex items-stretch">
+      <div className="relative flex items-stretch" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {tabs.map(({ icon: Icon, label, root }) => {
           if (root === '__menu__') {
             return (

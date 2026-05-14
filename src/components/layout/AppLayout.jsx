@@ -145,7 +145,8 @@ export default function AppLayout() {
         className="flex-1 flex flex-col overflow-hidden min-w-0"
         style={{
           transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
-          transition: isPulling.current ? 'none' : 'transform 0.3s ease',
+          transition: isPulling.current ? 'none' : 'transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          willChange: pullY > 0 ? 'transform' : 'auto',
         }}
       >
         {/* Mobile top header */}
@@ -176,7 +177,8 @@ export default function AppLayout() {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               ref={scrollRef}
               data-scroll-container
-              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden overscroll-contain [-webkit-overflow-scrolling:touch] scrollbar-invisible pb-[76px] md:pb-0"
+              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-invisible pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-4"
+              style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain', willChange: 'scroll-position' }}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}

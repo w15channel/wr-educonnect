@@ -150,16 +150,9 @@
   }
 }
 
-/* Hide visible scrollbars while preserving scroll behavior */
-* {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
+/* Hide scrollbars globally */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; }
 
 @layer utilities {
   .animate-fade-in-up {
@@ -186,6 +179,7 @@
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     overscroll-behavior-y: auto;
+    transform: translateZ(0);
   }
   .site-container {
     width: min(100% - 2rem, 72rem);
@@ -240,6 +234,24 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Mobile scroll performance */
+@media (max-width: 767px) {
+  [data-scroll-container] {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Force GPU layer for the shell */
+  .app-shell-bg {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
 /* Hide Base44 builder widget on mobile to avoid student distraction */
 @media (max-width: 767px) {
   [data-base44-widget],
@@ -253,15 +265,8 @@
 
 
 @layer utilities {
-  .scrollbar-invisible {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .scrollbar-invisible::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-  }
+  .scrollbar-invisible { scrollbar-width: none; -ms-overflow-style: none; }
+  .scrollbar-invisible::-webkit-scrollbar { display: none; }
 
   .internal-page-shell {
     width: 100%;
