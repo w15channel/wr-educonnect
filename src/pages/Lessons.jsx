@@ -382,8 +382,8 @@ export default function Lessons() {
             if (isLocked) return (
               <div key={lesson.id} className="bg-card rounded-2xl border border-border shadow-sm opacity-60 select-none">
                 <div className="flex items-center gap-3 p-3 sm:p-4">
-                  <div className="w-18 h-12 sm:w-24 sm:h-16 bg-muted rounded-xl flex items-center justify-center shrink-0" style={{ minWidth: '4.5rem' }}>
-                    <span className="text-2xl">🔒</span>
+                  <div className="w-12 h-9 sm:w-24 sm:h-16 bg-muted rounded-xl flex items-center justify-center shrink-0" style={{ minWidth: '3rem' }}>
+                    <span className="text-xl">🔒</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -402,8 +402,8 @@ export default function Lessons() {
                 <div className="flex items-center gap-3 p-3 sm:p-4">
                   {/* Thumbnail — only clickable/play for video type */}
                   <div
-                    className={`w-18 h-12 sm:w-24 sm:h-16 bg-muted rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 ${lesson.lesson_type === 'video_external' ? 'cursor-pointer group' : 'cursor-default'}`}
-                    style={{ minWidth: '4.5rem' }}
+                    className={`w-12 h-9 sm:w-24 sm:h-16 bg-muted rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 ${lesson.lesson_type === 'video_external' ? 'cursor-pointer group' : 'cursor-default'}`}
+                    style={{ minWidth: '3rem' }}
                     onClick={() => lesson.lesson_type === 'video_external' && setSelectedVideo(lesson)}
                   >
                     {lesson.thumbnail_url ? (
