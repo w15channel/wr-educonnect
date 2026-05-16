@@ -219,10 +219,28 @@ export default function LandingPage({ onLogin }) {
   }, []);
 
   useEffect(() => {
-    const storedDeadline = localStorage.getItem('wrEduOfferDeadline');
-    const deadline = storedDeadline ? Number(storedDeadline) : Date.now() + OFFER_DURATION_MS;
-    if (!storedDeadline) localStorage.setItem('wrEduOfferDeadline', String(deadline));
-    const updateTimer = () => setOfferTimeLeft(Math.max(0, deadline - Date.now()));
+    const getOrResetDeadline = () => {
+      const stored = localStorage.getItem('wrEduOfferDeadline');
+      const deadline = stored ? Number(stored) : 0;
+      if (!stored || deadline <= Date.now()) {
+        const next = Date.now() + OFFER_DURATION_MS;
+        localStorage.setItem('wrEduOfferDeadline', String(next));
+        return next;
+      }
+      return deadline;
+    };
+
+    let deadline = getOrResetDeadline();
+    const updateTimer = () => {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        deadline = Date.now() + OFFER_DURATION_MS;
+        localStorage.setItem('wrEduOfferDeadline', String(deadline));
+        setOfferTimeLeft(OFFER_DURATION_MS);
+      } else {
+        setOfferTimeLeft(remaining);
+      }
+    };
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);

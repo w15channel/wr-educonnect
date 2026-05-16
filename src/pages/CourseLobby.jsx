@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
-import { GraduationCap, Lock, ChevronRight, LogOut, Brain, Heart, Sparkles, MessageCircle, Send, X } from 'lucide-react';
+import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X } from 'lucide-react';
 import ServiceTermsModal from '@/components/onboarding/ServiceTermsModal';
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
@@ -27,29 +27,7 @@ const COURSES = [
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/9adbe6196_generated_video.mp4',
     tag: 'Turma Ativa',
     active: true,
-    externalUrl: null, // acesso nesta plataforma
-  },
-  {
-    id: 'psicanalise',
-    title: 'Psicanalista Freudiano',
-    subtitle: 'Método Psicanalítico',
-    desc: 'Profundidade do método psicanalítico freudiano com casos clínicos supervisionados, credenciamento internacional e plataforma exclusiva.',
-    icon: Sparkles,
-    video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/220a59761_generated_video.mp4',
-    tag: 'Plataforma própria',
-    active: false,
-    externalUrl: null, // substituir pela URL do app de psicanálise
-  },
-  {
-    id: 'sexologia',
-    title: 'Sexólogo(a)',
-    subtitle: 'Sexualidade Humana Integrativa',
-    desc: '80h de conteúdo especializado em sexualidade humana, com abordagem integrativa, multidisciplinar e credenciamento como terapeuta.',
-    icon: Heart,
-    video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/d4e6af21f_generated_video.mp4',
-    tag: 'Plataforma própria',
-    active: false,
-    externalUrl: null, // substituir pela URL do app de sexologia
+    externalUrl: null,
   },
 ];
 
@@ -261,7 +239,7 @@ export default function CourseLobby() {
               Selecione o curso que deseja gerenciar. Cada turma tem seu painel isolado.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="max-w-md mx-auto w-full">
             {COURSES.map((c) => (
               <CourseCard key={c.id} course={c} isActive={true} isAdmin={true} onAdminSelect={handleAdminSelectCourse} />
             ))}
@@ -294,17 +272,17 @@ export default function CourseLobby() {
             Olá, <span className="font-light italic" style={{ color: G }}>{session?.name?.split(' ')[0]}!</span>
           </h1>
           <p className="text-white/35 max-w-md mx-auto text-sm font-light">
-            Acesse sua formação ativa. Os demais cursos possuem plataformas exclusivas — o acesso direto estará disponível em breve.
+            Acesse sua formação em Terapia Comportamental.
           </p>
         </div>
 
-        {/* Course Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        {/* Course Card */}
+        <div className="max-w-md mx-auto w-full mb-8">
           {COURSES.map((c) => (
             <CourseCard
               key={c.id}
               course={c}
-              isActive={c.id === 'tcc'}
+              isActive={true}
               isAdmin={false}
               onAdminSelect={() => {}}
               onReserve={openReserve}
