@@ -108,54 +108,6 @@ const COURSES = [
     'Aulas ao vivo todas as segundas-feiras',
     'Ingresso em Setembro/2026',
   ]
-},
-{
-  slug: 'psicanalise',
-  title: 'PSICANALISTA FREUDIANO',
-  subtitle: 'Curso Profissionalizante em Métodos Psicanalíticos',
-  originalPrice: 'R$ 500',
-  firstMonthPrice: 'R$ 250',
-  price: 'R$ 300',
-  period: '/mês até o fim do curso',
-  tag: 'Novo',
-  tagColor: '#888',
-  imgs: [
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/f28c89ba7_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/919ebf5be_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/2ac899065_generated_image.png',
-  ],
-  highlights: [
-    'Estudos de casos reais supervisionados',
-    'Profundidade do método psicanalítico freudiano',
-    'Credenciamento internacional como terapeuta',
-    'Plataforma centralizada de conteúdos',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Ingresso em Setembro/2026',
-  ]
-},
-{
-  slug: 'sexologia',
-  title: 'SEXÓLOGO(A)',
-  subtitle: 'Curso Profissionalizante em Sexualidade Humana',
-  originalPrice: 'R$ 550',
-  firstMonthPrice: 'R$ 275',
-  price: 'R$ 330',
-  period: '/mês até o fim do curso',
-  tag: 'Novo',
-  tagColor: '#888',
-  imgs: [
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/e9014c7ae_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/31339ba94_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/f2d68446f_generated_image.png',
-  ],
-  highlights: [
-    'Estudos de casos reais em sexualidade',
-    '80h de conteúdo especializado e integrativo',
-    'Credenciamento internacional como terapeuta',
-    'Plataforma centralizada de conteúdos',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Ingresso em Setembro/2026',
-  ]
 }];
 
 const TESTIMONIALS = [

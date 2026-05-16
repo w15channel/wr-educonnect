@@ -282,17 +282,17 @@ export default function CourseLobby() {
             Olá, <span className="font-light italic" style={{ color: G }}>{session?.name?.split(' ')[0]}!</span>
           </h1>
           <p className="text-white/35 max-w-md mx-auto text-sm font-light">
-            Sua formação está ativa abaixo. As demais turmas estarão disponíveis em breve.
+            Sua formação em Terapia Comportamental está ativa abaixo.
           </p>
         </div>
 
-        {/* Course Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-          {COURSES.map((c) => (
+        {/* Course Cards — aluno só vê TC */}
+        <div className="max-w-md mx-auto w-full mb-8">
+          {COURSES.filter(c => c.id === 'tcc').map((c) => (
             <CourseCard
               key={c.id}
               course={c}
-              isActive={userCourse === c.id}
+              isActive={true}
               isAdmin={false}
               onAdminSelect={() => {}}
               onReserve={openReserve}
