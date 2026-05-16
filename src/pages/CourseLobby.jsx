@@ -27,6 +27,7 @@ const COURSES = [
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/9adbe6196_generated_video.mp4',
     tag: 'Turma Ativa',
     active: true,
+    externalUrl: null, // acesso nesta plataforma
   },
   {
     id: 'psicanalise',
@@ -35,8 +36,9 @@ const COURSES = [
     desc: 'Profundidade do método psicanalítico freudiano com casos clínicos supervisionados, credenciamento internacional e plataforma exclusiva.',
     icon: Sparkles,
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/220a59761_generated_video.mp4',
-    tag: 'Em breve · Set/2026',
+    tag: 'Plataforma própria',
     active: false,
+    externalUrl: null, // substituir pela URL do app de psicanálise
   },
   {
     id: 'sexologia',
@@ -45,8 +47,9 @@ const COURSES = [
     desc: '80h de conteúdo especializado em sexualidade humana, com abordagem integrativa, multidisciplinar e credenciamento como terapeuta.',
     icon: Heart,
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/d4e6af21f_generated_video.mp4',
-    tag: 'Em breve · Set/2026',
+    tag: 'Plataforma própria',
     active: false,
+    externalUrl: null, // substituir pela URL do app de sexologia
   },
 ];
 
@@ -124,13 +127,22 @@ function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStu
           >
             Entrar na Plataforma <ChevronRight size={13} />
           </button>
-        ) : (
-          <button
-            onClick={() => onReserve(course)}
-            className="w-full py-3 border border-[#1e2540] text-[11px] font-light uppercase tracking-[0.2em] text-white/30 flex items-center justify-center gap-2 hover:border-white/20 hover:text-white/50 transition-all"
+        ) : course.externalUrl ? (
+          <a
+            href={course.externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
+            style={{ borderColor: `${G}40`, color: G }}
+            onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
           >
-            <MessageCircle size={11} /> Reserva Antecipada
-          </button>
+            Acessar Plataforma <ChevronRight size={13} />
+          </a>
+        ) : (
+          <div className="w-full py-3 border border-[#1e2540] text-[11px] font-light uppercase tracking-[0.2em] text-white/20 flex items-center justify-center gap-2 cursor-default">
+            <Lock size={11} /> Plataforma em breve
+          </div>
         )}
       </div>
     </div>
@@ -282,17 +294,17 @@ export default function CourseLobby() {
             Olá, <span className="font-light italic" style={{ color: G }}>{session?.name?.split(' ')[0]}!</span>
           </h1>
           <p className="text-white/35 max-w-md mx-auto text-sm font-light">
-            Sua formação em Terapia Comportamental está ativa abaixo.
+            Acesse sua formação ativa. Os demais cursos possuem plataformas exclusivas — o acesso direto estará disponível em breve.
           </p>
         </div>
 
-        {/* Course Cards — aluno só vê TC */}
-        <div className="max-w-md mx-auto w-full mb-8">
-          {COURSES.filter(c => c.id === 'tcc').map((c) => (
+        {/* Course Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+          {COURSES.map((c) => (
             <CourseCard
               key={c.id}
               course={c}
-              isActive={true}
+              isActive={c.id === 'tcc'}
               isAdmin={false}
               onAdminSelect={() => {}}
               onReserve={openReserve}
