@@ -109,56 +109,6 @@ const COURSES = [
     'Aulas ao vivo todas as segundas-feiras',
     'Ingresso em Setembro/2026',
   ]
-},
-{
-  slug: 'psicanalise',
-  title: 'PSICANALISTA FREUDIANO',
-  subtitle: 'Curso Profissionalizante em Métodos Psicanalíticos',
-  originalPrice: 'R$ 500',
-  firstMonthPrice: 'R$ 250',
-  price: 'R$ 300',
-  period: '/mês até o fim do curso',
-  tag: 'Novo',
-  tagColor: '#888',
-  externalUrl: null,
-  imgs: [
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/f28c89ba7_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/919ebf5be_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/2ac899065_generated_image.png',
-  ],
-  highlights: [
-    'Estudos de casos reais supervisionados',
-    'Profundidade do método psicanalítico freudiano',
-    'Credenciamento internacional como terapeuta',
-    'Plataforma exclusiva para Psicanalistas',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Ingresso em Setembro/2026',
-  ]
-},
-{
-  slug: 'sexologia',
-  title: 'SEXÓLOGO(A)',
-  subtitle: 'Curso Profissionalizante em Sexualidade Humana',
-  originalPrice: 'R$ 550',
-  firstMonthPrice: 'R$ 275',
-  price: 'R$ 330',
-  period: '/mês até o fim do curso',
-  tag: 'Novo',
-  tagColor: '#888',
-  externalUrl: null,
-  imgs: [
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/e9014c7ae_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/31339ba94_generated_image.png',
-    'https://media.base44.com/images/public/69f55577840a3c93cee191be/f2d68446f_generated_image.png',
-  ],
-  highlights: [
-    'Estudos de casos reais em sexualidade',
-    '80h de conteúdo especializado e integrativo',
-    'Credenciamento internacional como terapeuta',
-    'Plataforma exclusiva para Sexólogos',
-    'Aulas ao vivo todas as segundas-feiras',
-    'Ingresso em Setembro/2026',
-  ]
 }];
 
 const TESTIMONIALS = [
@@ -177,7 +127,7 @@ const BG3 = '#0f1220'; // cards azul-meia-noite
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
-  const [courseImgs, setCourseImgs] = useState([0, 0, 0]);
+  const [courseImgs, setCourseImgs] = useState([0]);
 
   useEffect(() => {
     const intervals = COURSES.map((_, i) =>
@@ -730,8 +680,8 @@ export default function LandingPage({ onLogin }) {
             </div>
           </div>
 
-          {/* Cards de Cursos */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card do Curso */}
+          <div className="max-w-lg mx-auto">
             {COURSES.map((c, i) =>
               <div key={i} className="border flex flex-col transition-all overflow-hidden" style={{ borderColor: i === 0 ? `${G}35` : `${G}12` }}>
                 <div className="relative h-44 overflow-hidden">
