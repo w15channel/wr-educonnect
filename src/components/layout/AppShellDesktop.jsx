@@ -1,18 +1,23 @@
 /**
- * AppShellDesktop — shell otimizado para desktop e tablet (>= 768px).
- * Layout: Sidebar fixa à esquerda + área de conteúdo scrollável à direita.
- * Sem BottomNav nem MobileHeader.
+ * AppShellDesktop — layout exclusivo para desktop (>= 1024px).
+ *
+ * Estrutura:
+ * ┌──────────┬───────────────────────────────────────┐
+ * │ Sidebar  │  Conteúdo principal com scroll         │
+ * │ 224px    │  Sem header fixo — mais área útil       │
+ * │ fixa     │  Sem BottomNav                          │
+ * └──────────┴───────────────────────────────────────┘
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 const pageVariants = {
-  initial: { opacity: 0, y: 8 },
+  initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0 },
-  exit:    { opacity: 0, y: -8 },
+  exit:    { opacity: 0, y: -6 },
 };
 
 export default function AppShellDesktop() {
@@ -21,13 +26,13 @@ export default function AppShellDesktop() {
 
   return (
     <div className="app-shell-bg flex h-[100dvh] overflow-hidden">
-      {/* Persistent sidebar */}
-      <div className="shrink-0">
+      {/* Sidebar persistente */}
+      <div className="shrink-0 h-full">
         <Sidebar session={session} />
       </div>
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+      {/* Área de conteúdo */}
+      <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
@@ -35,14 +40,17 @@ export default function AppShellDesktop() {
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             data-scroll-container
-            className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-invisible pb-4"
+            className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-invisible pb-6"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div className="flex-1 min-h-0 flex flex-col w-full max-w-full">
-              <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
-            </div>
+            <Outlet context={{
+              user: session,
+              isAdmin: session?.role === 'admin',
+              isStudent: session?.role === 'student',
+              shell: 'desktop',
+            }} />
           </motion.div>
         </AnimatePresence>
       </main>

@@ -1,27 +1,28 @@
 /**
- * AppLayout — roteador de shells adaptativos.
+ * AppLayout — roteador de shells por dispositivo.
  *
- * ┌────────────────────────────────────────────────────────┐
- * │  desktop / tablet (≥ 768px)  →  AppShellDesktop        │
- * │  mobile browser  (< 768px)   →  AppShellMobile         │
- * │  app / WebView / PWA         →  AppShellMobile          │
- * └────────────────────────────────────────────────────────┘
+ * ┌──────────────────────────────────────────────────────────────┐
+ * │  desktop  (>= 1024px)  →  AppShellDesktop                    │
+ * │  tablet   (768-1023px) →  AppShellTablet                     │
+ * │  mobile   (< 768px)    →  AppShellMobile  (browser)          │
+ * │  app      (< 768px)    →  AppShellMobile  (WebView / PWA)    │
+ * └──────────────────────────────────────────────────────────────┘
  *
- * Cada shell é totalmente independente e otimizado para seu
- * ambiente, sem precisar de hacks de CSS ou media-queries
- * para "desfazer" comportamentos do outro.
+ * Cada shell é completamente independente:
+ * - Layout próprio, sem hacks de CSS entre dispositivos
+ * - Experiência nativa para cada tipo de acesso
+ * - Contexto `shell` disponível via useOutletContext()
  */
-import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { setSession as persistSession, getSession } from '@/lib/customAuth';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import AppShellDesktop from './AppShellDesktop';
+import AppShellTablet from './AppShellTablet';
 import AppShellMobile from './AppShellMobile';
 import TutorialModal from '../onboarding/TutorialModal';
 import MobileSplash from './MobileSplash';
-import { useState } from 'react';
 
 const TUTORIAL_KEY = 'wr_tutorial_done';
 const SLUG_TO_COURSE = { tcc: 'tcc', psi: 'psicanalise', sex: 'sexologia' };
@@ -32,21 +33,17 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
-  const { isMobile } = useDeviceType();
+  const { deviceType, isMobile, isTablet, isDesktop } = useDeviceType();
 
-  // Determine role/course from URL
   const pathParts = location.pathname.split('/').filter(Boolean);
   const urlRole = pathParts[0];
   const urlCourseSlug = params.courseSlug || pathParts[1];
   const urlCourse = SLUG_TO_COURSE[urlCourseSlug] || null;
 
-  // Guard: sync session course with URL course; redirect if role mismatch
+  // Sincroniza sessão com curso da URL e protege por role
   useEffect(() => {
     if (!session) return;
-    if (!session.course && !urlCourse) {
-      navigate('/lobby');
-      return;
-    }
+    if (!session.course && !urlCourse) { navigate('/lobby'); return; }
     if (urlCourse && urlCourse !== session.course) {
       const current = getSession();
       persistSession({ ...current, course: urlCourse });
@@ -59,7 +56,7 @@ export default function AppLayout() {
     }
   }, [session, urlCourse, urlRole, navigate, login]);
 
-  // Tutorial for new students
+  // Tutorial para novos alunos
   const isStudent = session?.role === 'student';
   const sessionKey = session?.email || session?.code || '';
   const [showTutorial, setShowTutorial] = useState(false);
@@ -75,15 +72,25 @@ export default function AppLayout() {
     setShowTutorial(false);
   };
 
+  // Seleciona o shell correto para cada tipo de dispositivo
+  function Shell() {
+    if (isDesktop) return <AppShellDesktop />;
+    if (isTablet)  return <AppShellTablet />;
+    return <AppShellMobile />;        // mobile browser + app (WebView/PWA)
+  }
+
   return (
     <>
-      <MobileSplash />
+      {/* Splash screen apenas para mobile/app */}
+      {isMobile && <MobileSplash />}
+
+      {/* Tutorial onboarding para novos alunos */}
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
       )}
 
-      {/* Adaptive shell: mobile/app vs desktop/tablet */}
-      {isMobile ? <AppShellMobile /> : <AppShellDesktop />}
+      {/* Shell adaptado ao dispositivo */}
+      <Shell />
     </>
   );
 }
