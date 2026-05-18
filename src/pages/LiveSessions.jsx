@@ -226,28 +226,28 @@ export default function LiveSessions() {
           </div>
 
           {/* Chat */}
-          <div className="w-full xl:w-[30rem] 2xl:w-[34rem] bg-card border-t xl:border-t-0 xl:border-l border-border flex flex-col h-[42dvh] min-h-[360px] md:h-[420px] xl:h-full xl:min-h-0">
-            <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
+          <div className="w-full xl:w-[30rem] 2xl:w-[34rem] bg-white border-t xl:border-t-0 xl:border-l border-gray-200 flex flex-col h-[42dvh] min-h-[360px] md:h-[420px] xl:h-full xl:min-h-0">
+            <div className="px-3 py-2.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
               <MessageSquare size={14} className="text-primary" />
               <h3 className="font-bold text-sm text-foreground flex-1">Chat ao Vivo</h3>
               <span className="text-[10px] text-muted-foreground">{chatMessages.length} msgs</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-white">
               {chatMessages.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center mt-6 px-2">
+                <p className="text-xs text-gray-400 text-center mt-6 px-2">
                   O chat está vazio. Seja o primeiro a enviar uma mensagem!
                 </p>
               )}
               {chatMessages.map(msg => (
-                <div key={msg.id} className={`text-sm ${msg.is_hand_raised ? 'bg-amber-50 p-2 rounded-xl border border-amber-200' : ''}`}>
-                  <span className="font-semibold text-xs text-gray-800">{msg.author_name}: </span>
-                  <span className="text-xs text-gray-700">{msg.content}</span>
+                <div key={msg.id} className={`text-sm ${msg.is_hand_raised ? 'bg-amber-50 p-2 rounded-xl border border-amber-200' : 'py-0.5'}`}>
+                  <span className="font-bold text-xs text-gray-900">{msg.author_name}: </span>
+                  <span className="text-xs text-gray-800">{msg.content}</span>
                 </div>
               ))}
               <div ref={chatEndRef} />
             </div>
             {/* Attendance + Emojis + Hand */}
-            <div className="px-2 py-1.5 border-t border-border space-y-1.5">
+            <div className="px-2 py-1.5 border-t border-gray-200 bg-gray-50 space-y-1.5">
               {!isTeacher && isLive && !alreadyAttended && !attendanceConfirmed && (
                 attendanceTimer > 0
                   ? <AttendanceWidget secondsLeft={attendanceTimer} onTick={setAttendanceTimer} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
@@ -275,13 +275,12 @@ export default function LiveSessions() {
                 )}
               </div>
             </div>
-            <form onSubmit={handleSend} className="p-2 border-t border-border flex gap-2">
+            <form onSubmit={handleSend} className="p-2 border-t border-gray-200 bg-white flex gap-2">
               <input
                 value={newMsg}
                 onChange={e => setNewMsg(e.target.value)}
                 placeholder="Digite no chat..."
-                className="flex-1 h-9 text-xs px-3 rounded-md border border-input outline-none focus:ring-1 focus:ring-ring"
-                style={{ backgroundColor: '#ffffff', color: '#1a1a2e' }}
+                className="flex-1 h-9 text-xs px-3 rounded-md border border-gray-300 outline-none focus:ring-1 focus:ring-blue-400 text-gray-900 placeholder:text-gray-400 bg-white"
               />
               <Button type="submit" size="sm" className="h-9 w-9 p-0 shrink-0"><Send size={14} /></Button>
             </form>

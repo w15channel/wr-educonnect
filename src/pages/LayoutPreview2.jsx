@@ -121,9 +121,9 @@ const TESTIMONIALS = [
 
 // ── Paleta Cosmos & Ouro Pálido ──────────────────────────────────────────────
 const G = '#d4b96a';   // ouro pálido
-const BG = '#07080f';  // azul-cosmos profundo
-const BG2 = '#0a0c18'; // sidebar/secções alternadas
-const BG3 = '#0f1220'; // cards azul-meia-noite
+const BG = '#0d1228';  // azul-cosmos mais claro
+const BG2 = '#111730'; // sidebar/secções alternadas
+const BG3 = '#172040'; // cards azul-meia-noite
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
@@ -367,7 +367,7 @@ export default function LandingPage({ onLogin }) {
             <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 35%' }} />
           </div>
         )}
-        <div className="absolute inset-0" style={{ background: `${BG}c0` }} />
+        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${BG}d8 0%, #1a2550cc 50%, ${BG}d0 100%)` }} />
         <div className="absolute inset-x-0 bottom-0 h-56" style={{ background: `linear-gradient(to top, ${BG}, transparent)` }} />
 
         <div className="site-container relative z-10 text-center pt-28">
@@ -745,6 +745,66 @@ export default function LandingPage({ onLogin }) {
           iframe { max-width: 100%; }
         }
       `}</style>
+
+      {/* PRÓXIMAS FORMAÇÕES — OFERTAS */}
+      <section className="site-section" style={{ background: BG2 }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <SectionLabel>Em breve</SectionLabel>
+            <h2 className="text-3xl lg:text-4xl font-thin text-white tracking-[-0.01em]">Próximas <span className="font-light italic" style={{ color: G }}>Formações</span></h2>
+            <p className="text-white/35 mt-2 max-w-xl mx-auto text-sm font-light">Reserve sua vaga com condição especial de early-bird: 50% de desconto na primeira mensalidade e 40% mantido até o fim do curso.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                title: 'Psicanalista Diplomado',
+                subtitle: 'Formação em Psicanálise',
+                desc: 'Formação completa em Psicanálise com base teórica e prática clínica supervisionada. Ingresso previsto para 2027.',
+                originalPrice: 'R$ 450',
+                firstMonthPrice: 'R$ 225',
+                price: 'R$ 270',
+                icon: '🪞',
+              },
+              {
+                title: 'Sexólogo Integrativo',
+                subtitle: 'Formação em Sexologia',
+                desc: 'Especialização em sexualidade humana, infidelidade conjugal e vícios com abordagem integrativa. Ingresso previsto para 2027.',
+                originalPrice: 'R$ 450',
+                firstMonthPrice: 'R$ 225',
+                price: 'R$ 270',
+                icon: '💜',
+              },
+            ].map((c, i) => (
+              <div key={i} className="border p-7 flex flex-col gap-4 transition-all" style={{ borderColor: `${G}15`, background: BG3 }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = `${G}30`}
+                onMouseLeave={e => e.currentTarget.style.borderColor = `${G}15`}>
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl">{c.icon}</span>
+                    <span className="text-[9px] uppercase tracking-[0.25em] font-light border px-2 py-1" style={{ borderColor: `${G}30`, color: G }}>Reserva Antecipada</span>
+                  </div>
+                  <h3 className="font-light text-white/90 text-base uppercase tracking-[0.12em] mb-1">{c.title}</h3>
+                  <p className="text-white/40 text-xs uppercase tracking-[0.15em] font-light mb-3">{c.subtitle}</p>
+                  <p className="text-white/40 text-sm leading-relaxed font-light">{c.desc}</p>
+                </div>
+                <div className="border-t pt-4" style={{ borderColor: `${G}12` }}>
+                  <p className="text-white/25 text-xs line-through font-light mb-1">{c.originalPrice}/mês valor cheio</p>
+                  <p className="text-sm font-light mb-0.5" style={{ color: `${G}90` }}>1ª mensalidade com <strong>50% off:</strong> {c.firstMonthPrice}</p>
+                  <p className="text-sm font-light" style={{ color: `${G}70` }}>Depois, 40% vitalício: <strong className="text-white/70">{c.price}/mês</strong></p>
+                </div>
+                <button
+                  onClick={() => { openCourseReservation({ title: c.title }); }}
+                  className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
+                  style={{ borderColor: `${G}50`, color: G }}
+                  onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                  <MessageCircle size={12} /> Reservar Vaga Antecipada
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* DEPOIMENTOS */}
       <section id="depoimentos" className="site-section" style={{ background: BG2 }}>
