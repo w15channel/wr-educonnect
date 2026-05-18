@@ -749,57 +749,96 @@ export default function LandingPage({ onLogin }) {
       {/* PRÓXIMAS FORMAÇÕES — OFERTAS */}
       <section className="site-section" style={{ background: BG2 }}>
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <SectionLabel>Em breve</SectionLabel>
-            <h2 className="text-3xl lg:text-4xl font-thin text-white tracking-[-0.01em]">Próximas <span className="font-light italic" style={{ color: G }}>Formações</span></h2>
-            <p className="text-white/35 mt-2 max-w-xl mx-auto text-sm font-light">Reserve sua vaga com condição especial de early-bird: 50% de desconto na primeira mensalidade e 40% mantido até o fim do curso.</p>
+            <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Próximas <span className="font-light italic" style={{ color: G }}>Formações</span></h2>
+            <p className="text-white/35 mt-3 max-w-2xl mx-auto text-sm font-light">Garanta sua vaga antecipada com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto vitalício até o final do curso.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               {
-                title: 'Psicanalista Diplomado',
-                subtitle: 'Formação em Psicanálise',
-                desc: 'Formação completa em Psicanálise com base teórica e prática clínica supervisionada. Ingresso previsto para 2027.',
+                title: 'PSICANALISTA DIPLOMADO',
+                subtitle: 'Formação Profissionalizante em Psicanálise',
                 originalPrice: 'R$ 450',
                 firstMonthPrice: 'R$ 225',
                 price: 'R$ 270',
-                icon: '🪞',
+                period: '/mês até o fim do curso',
+                tag: 'Em breve · 2027',
+                slug: 'psi',
+                imgs: [
+                  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80',
+                  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80',
+                ],
+                highlights: [
+                  'Fundamentos da Psicanálise Freudiana e Lacaniana',
+                  'Prática clínica supervisionada ao vivo',
+                  'Certificação profissional reconhecida',
+                  'Análise de sonhos e processos inconscientes',
+                  'Ingresso previsto para início de 2027',
+                ],
               },
               {
-                title: 'Sexólogo Integrativo',
-                subtitle: 'Formação em Sexologia',
-                desc: 'Especialização em sexualidade humana, infidelidade conjugal e vícios com abordagem integrativa. Ingresso previsto para 2027.',
+                title: 'SEXÓLOGO INTEGRATIVO',
+                subtitle: 'Formação Profissionalizante em Sexologia',
                 originalPrice: 'R$ 450',
                 firstMonthPrice: 'R$ 225',
                 price: 'R$ 270',
-                icon: '💜',
+                period: '/mês até o fim do curso',
+                tag: 'Em breve · 2027',
+                slug: 'sex',
+                imgs: [
+                  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
+                  'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=800&q=80',
+                ],
+                highlights: [
+                  'Sexualidade humana com base científica',
+                  'Infidelidade conjugal e vícios comportamentais',
+                  'Abordagem integrativa e sistêmica',
+                  'Certificação nacional e internacional',
+                  'Ingresso previsto para meados de 2027',
+                ],
               },
             ].map((c, i) => (
-              <div key={i} className="border p-7 flex flex-col gap-4 transition-all" style={{ borderColor: `${G}15`, background: BG3 }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = `${G}30`}
-                onMouseLeave={e => e.currentTarget.style.borderColor = `${G}15`}>
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xl">{c.icon}</span>
-                    <span className="text-[9px] uppercase tracking-[0.25em] font-light border px-2 py-1" style={{ borderColor: `${G}30`, color: G }}>Reserva Antecipada</span>
+              <div key={i} className="border flex flex-col transition-all overflow-hidden" style={{ borderColor: `${G}20` }}>
+                {/* Imagem */}
+                <div className="relative h-44 overflow-hidden">
+                  <img src={c.imgs[0]} alt={c.title} className="w-full h-full object-cover object-center" />
+                  <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG3}, ${BG3}10)` }} />
+                  <div className="absolute top-3 left-3 border px-2.5 py-1 text-[9px] font-light uppercase tracking-[0.2em]" style={{ borderColor: `${G}50`, color: G, background: `${BG}cc` }}>
+                    {c.tag}
                   </div>
-                  <h3 className="font-light text-white/90 text-base uppercase tracking-[0.12em] mb-1">{c.title}</h3>
-                  <p className="text-white/40 text-xs uppercase tracking-[0.15em] font-light mb-3">{c.subtitle}</p>
-                  <p className="text-white/40 text-sm leading-relaxed font-light">{c.desc}</p>
                 </div>
-                <div className="border-t pt-4" style={{ borderColor: `${G}12` }}>
-                  <p className="text-white/25 text-xs line-through font-light mb-1">{c.originalPrice}/mês valor cheio</p>
-                  <p className="text-sm font-light mb-0.5" style={{ color: `${G}90` }}>1ª mensalidade com <strong>50% off:</strong> {c.firstMonthPrice}</p>
-                  <p className="text-sm font-light" style={{ color: `${G}70` }}>Depois, 40% vitalício: <strong className="text-white/70">{c.price}/mês</strong></p>
+                {/* Conteúdo */}
+                <div className="p-5 flex flex-col flex-1" style={{ background: BG3 }}>
+                  <h3 className="font-light text-white text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
+                  <p className="text-white/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
+                  <div className="space-y-1.5 mb-5 flex-1">
+                    {c.highlights.map((h, j) => (
+                      <div key={j} className="flex items-center gap-2 text-xs text-white/35 font-light">
+                        <div className="w-1 h-1 shrink-0" style={{ background: `${G}80` }} />
+                        {h}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-4 border-t" style={{ borderColor: `${G}10` }}>
+                    <div className="mb-4">
+                      <p className="text-[10px] text-white/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta de reserva antecipada</p>
+                      <p className="text-xs text-white/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
+                      <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>Primeira mensalidade com 50%:</p>
+                      <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
+                      <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
+                      <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
+                    </div>
+                    <button
+                      onClick={() => openCourseReservation({ title: c.title })}
+                      className="w-full px-4 py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
+                      style={{ borderColor: `${G}60`, color: G }}
+                      onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                      <MessageCircle size={11} /> Reservar Vaga Antecipada
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => { openCourseReservation({ title: c.title }); }}
-                  className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
-                  style={{ borderColor: `${G}50`, color: G }}
-                  onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
-                  <MessageCircle size={12} /> Reservar Vaga Antecipada
-                </button>
               </div>
             ))}
           </div>

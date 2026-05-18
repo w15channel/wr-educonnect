@@ -446,12 +446,12 @@ export default function Dashboard() {
           pulse={isLiveNow} />
         
         <StatCard
-          title={isTeacher ? 'Para Corrigir' : 'Tarefas Pendentes'}
-          value={pendingTasks}
-          icon={FileText}
+          title={isTeacher ? 'Para Corrigir' : 'Ofensivas'}
+          value={isTeacher ? pendingTasks : '🔥'}
+          icon={isTeacher ? FileText : Flame}
           iconBg="bg-orange-500"
-          to={isTeacher ? '/scorecontrol?filter=pending' : '/tasks'}
-          subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Ir para Tarefas'} />
+          to={isTeacher ? '/scorecontrol?filter=pending' : '/ofensivas'}
+          subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Trilha de atividades diárias'} />
         
         <StatCard
           title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}
