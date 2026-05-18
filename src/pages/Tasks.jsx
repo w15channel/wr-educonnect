@@ -1,489 +1,481 @@
 import React, { useState } from 'react';
-import { useLocation, useOutletContext, useNavigate } from 'react-router-dom';
+import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { FileText, Clock, CheckCircle, Plus, Play, Trash2, Pencil, GraduationCap, ClipboardList, Send, MessageSquare } from 'lucide-react';
+import {
+  Flame, CheckCircle, Star, Plus, Pencil, Trash2, Play, Send,
+  MessageSquare, GraduationCap, Upload, ChevronDown, ChevronUp,
+  Trophy, Zap, Lock
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
-import { sortBySequence } from '@/lib/sequenceUtils';
+import { format } from 'date-fns';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
+const DAILY_LIMIT = 5;
+const POINTS_PER_ACTIVITY = 0.1;
+const EMPTY_FORM = {
+  title: '', description: '', type: 'text',
+  order: '', points_reward: 0.1, quiz_questions: []
+};
 
-const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 10, quiz_questions: [] };
-
-export default function Tasks({ mode = 'all' }) {
-  const { user: session } = useOutletContext();
-  const user = session;
-  const isTeacher = session?.role === 'admin';
-  const { course: routeCourse } = useCourseFilteredEmails();
-  const userCourse = routeCourse || session?.course || 'tcc';
-  const navigate = useNavigate();
+function useScopedPrefix() {
   const location = useLocation();
-  const pathParts = location.pathname.split('/').filter(Boolean);
-  const routeSlug = (pathParts[0] === 'student' || pathParts[0] === 'adm') ? pathParts[1] : null;
-  const courseToSubmissionCode = { tcc: 'tcc', sexologia: 'sex', psicanalise: 'psi' };
-  const submissionCourseCode = routeSlug || courseToSubmissionCode[userCourse] || userCourse || 'tcc';
+  const parts = location.pathname.split('/').filter(Boolean);
+  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return `/${parts[0]}/${parts[1]}`;
+  return '';
+}
+
+// Barra de progresso de ofensiva diária
+function DailyProgress({ doneToday }) {
+  const pct = Math.min((doneToday / DAILY_LIMIT) * 100, 100);
+  return (
+    <div className="bg-card border border-border rounded-2xl p-4 mb-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Flame size={18} className={doneToday > 0 ? 'text-orange-500' : 'text-muted-foreground'} />
+          <span className="font-bold text-sm">Ofensiva de Hoje</span>
+        </div>
+        <span className="font-mono font-bold text-primary text-sm">{doneToday}/{DAILY_LIMIT}</span>
+      </div>
+      <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${pct}%`,
+            background: doneToday >= DAILY_LIMIT
+              ? 'linear-gradient(90deg, #f97316, #ea580c)'
+              : 'linear-gradient(90deg, #fb923c, #f97316)'
+          }}
+        />
+      </div>
+      <div className="flex gap-1.5 mt-2">
+        {Array.from({ length: DAILY_LIMIT }).map((_, i) => (
+          <div key={i} className={`flex-1 h-1.5 rounded-full transition-all ${i < doneToday ? 'bg-orange-400' : 'bg-secondary'}`} />
+        ))}
+      </div>
+      {doneToday >= DAILY_LIMIT ? (
+        <p className="text-xs text-orange-600 font-bold mt-2 flex items-center gap-1.5">
+          🔥 Ofensiva do dia completa! Volte amanhã.
+        </p>
+      ) : doneToday > 0 ? (
+        <p className="text-xs text-muted-foreground mt-2">
+          {DAILY_LIMIT - doneToday} atividade{DAILY_LIMIT - doneToday !== 1 ? 's' : ''} restante{DAILY_LIMIT - doneToday !== 1 ? 's' : ''} · +{((DAILY_LIMIT - doneToday) * POINTS_PER_ACTIVITY).toFixed(1)} pts disponíveis
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground mt-2">Complete até {DAILY_LIMIT} atividades hoje e ganhe pontos extras!</p>
+      )}
+    </div>
+  );
+}
+
+// Card de atividade na trilha
+function ActivityCard({
+  activity, idx, isDone, isExpanded, canDo, doneToday, isTeacher,
+  onToggle, onEdit, onDelete, onViewSubmissions,
+  commentInputs, setCommentInputs, uploadFiles, setUploadFiles,
+  submitTextMutation, submitFileMutation, navigate, prefix
+}) {
+  const typeIcon = activity.type === 'quiz'
+    ? <GraduationCap size={16} />
+    : activity.type === 'upload'
+    ? <Upload size={16} />
+    : <MessageSquare size={16} />;
+
+  const typeColor = activity.type === 'quiz'
+    ? 'bg-purple-100 text-purple-600'
+    : activity.type === 'upload'
+    ? 'bg-blue-100 text-blue-600'
+    : 'bg-orange-100 text-orange-600';
+
+  const isLocked = !isTeacher && !isDone && doneToday >= DAILY_LIMIT;
+
+  return (
+    <div className={`rounded-2xl border shadow-sm overflow-hidden transition-all ${
+      isDone ? 'border-green-200 bg-green-50/5' : isLocked ? 'border-border opacity-60' : 'border-border hover:shadow-md'
+    } bg-card`}>
+      {/* Header da atividade */}
+      <div
+        className="flex items-center gap-3 p-4 cursor-pointer select-none"
+        onClick={() => !isTeacher && onToggle()}
+      >
+        {/* Círculo de passo */}
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${
+          isDone
+            ? 'bg-green-500 border-green-400 text-white'
+            : isLocked
+            ? 'bg-muted border-border text-muted-foreground'
+            : 'bg-secondary border-border text-foreground'
+        }`}>
+          {isDone ? <CheckCircle size={20} /> : isLocked ? <Lock size={16} /> : idx + 1}
+        </div>
+
+        {/* Ícone de tipo */}
+        <div className={`p-2 rounded-xl shrink-0 ${typeColor}`}>{typeIcon}</div>
+
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-sm text-foreground truncate">{activity.title}</h3>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className="text-[10px] text-muted-foreground capitalize">
+              {activity.type === 'text' ? 'Resposta em texto' : activity.type === 'upload' ? 'Envio de arquivo' : 'Quiz'}
+            </span>
+            <span className="text-[10px] text-yellow-600 font-semibold flex items-center gap-0.5">
+              <Star size={9} className="fill-yellow-500 text-yellow-500" />
+              +{activity.points_reward || POINTS_PER_ACTIVITY} pts
+            </span>
+            {isDone && <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200 py-0 px-1.5">✓ Concluída</Badge>}
+          </div>
+        </div>
+
+        {!isTeacher && (
+          <div className="shrink-0 text-muted-foreground">
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        )}
+
+        {isTeacher && (
+          <div className="flex gap-1 shrink-0">
+            <button
+              onClick={e => { e.stopPropagation(); onViewSubmissions(); }}
+              className="p-2 text-muted-foreground hover:text-primary rounded-lg text-xs border border-border"
+            >Entregas</button>
+            <button onClick={e => { e.stopPropagation(); onEdit(); }} className="p-2 text-muted-foreground hover:text-primary rounded-lg">
+              <Pencil size={13} />
+            </button>
+            <button onClick={e => { e.stopPropagation(); onDelete(); }} className="p-2 text-muted-foreground hover:text-destructive rounded-lg">
+              <Trash2 size={13} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Conteúdo expandido */}
+      {isExpanded && !isTeacher && (
+        <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 bg-secondary/10">
+          {activity.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed">{activity.description}</p>
+          )}
+
+          {isDone ? (
+            <p className="text-sm text-green-600 font-semibold flex items-center gap-1.5">
+              <CheckCircle size={14} /> Atividade já concluída! Ótimo trabalho.
+            </p>
+          ) : doneToday >= DAILY_LIMIT ? (
+            <p className="text-sm text-orange-600 font-semibold flex items-center gap-1.5">
+              <Flame size={14} /> Limite diário atingido. Volte amanhã!
+            </p>
+          ) : activity.type === 'quiz' ? (
+            <Button size="sm" className="gap-1.5" onClick={() => navigate(`${prefix}/tasks/quiz/${activity.id}`)}>
+              <Play size={13} /> Iniciar Quiz
+            </Button>
+          ) : activity.type === 'upload' ? (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-foreground">📎 Enviar Arquivo</p>
+              <input
+                type="file"
+                onChange={e => setUploadFiles(prev => ({ ...prev, [activity.id]: e.target.files[0] }))}
+                className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground"
+              />
+              <Button
+                size="sm" className="w-full gap-1.5"
+                disabled={!uploadFiles[activity.id] || submitFileMutation.isPending}
+                onClick={() => submitFileMutation.mutate({ activityId: activity.id, file: uploadFiles[activity.id] })}
+              >
+                <Send size={13} /> Enviar
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-foreground">✍️ Sua resposta</p>
+              <Textarea
+                placeholder="Escreva sua resposta aqui..."
+                value={commentInputs[activity.id] || ''}
+                onChange={e => setCommentInputs(prev => ({ ...prev, [activity.id]: e.target.value }))}
+                rows={3} className="text-sm"
+              />
+              <Button
+                size="sm" className="w-full gap-1.5"
+                disabled={!commentInputs[activity.id]?.trim() || submitTextMutation.isPending}
+                onClick={() => submitTextMutation.mutate({ activityId: activity.id, comment: commentInputs[activity.id] })}
+              >
+                <Send size={13} /> Enviar Resposta
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Tasks({ mode = 'tasks' }) {
+  const { user: session } = useOutletContext();
+  const isTeacher = session?.role === 'admin';
+  const prefix = useScopedPrefix();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const userCourse = session?.course || 'tcc';
+
   const [showForm, setShowForm] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [viewSubmissions, setViewSubmissions] = useState(null);
-  const [activeTab, setActiveTab] = useState(mode === 'tests' ? 'quizzes' : 'tasks');
+  const [editingActivity, setEditingActivity] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [uploadStatus, setUploadStatus] = useState({});
-  const [uploadFiles, setUploadFiles] = useState({});
+  const [expandedId, setExpandedId] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
-  const [submissionDetails, setSubmissionDetails] = useState({});
+  const [uploadFiles, setUploadFiles] = useState({});
+  const [viewSubmissions, setViewSubmissions] = useState(null);
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks', userCourse],
-    queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 200),
-  });
-  const { data: unlockRules = [] } = useQuery({
-    queryKey: ['unlock-rules-tasks', userCourse],
-    queryFn: () => base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20),
-  });
-  const taskUnlockRule = unlockRules.find(r => r.scope === 'tasks');
-  const unlockedTaskCount = Math.max(10, Number(taskUnlockRule?.unlock_until || 10));
-
-  const normalizeStudentId = (value = '') => String(value || '').trim().toLowerCase();
-  const studentIdentifiers = [user?.email, user?.code].filter(Boolean).map(normalizeStudentId);
-
-  const { data: submissions = [] } = useQuery({
-    queryKey: ['submissions-mine', isTeacher ? 'all' : studentIdentifiers.join('|')],
-    queryFn: async () => {
-      const records = await base44.entities.TaskSubmission.list('-created_date', 3000);
-      return isTeacher ? records : records.filter(s => studentIdentifiers.includes(normalizeStudentId(s.student_email)));
-    },
-    enabled: isTeacher || studentIdentifiers.length > 0,
+  const { data: activities = [] } = useQuery({
+    queryKey: ['trail-activities', userCourse],
+    queryFn: () => base44.entities.TrailActivity.filter({ course: userCourse }, 'order', 100),
   });
 
-  const createTaskMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks'] }); setShowForm(false); setForm(EMPTY_FORM); toast.success('Tarefa criada!'); },
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  const { data: allSubmissions = [] } = useQuery({
+    queryKey: ['trail-submissions', isTeacher ? 'all' : session?.email],
+    queryFn: () => isTeacher
+      ? base44.entities.TrailSubmission.list('-created_date', 2000)
+      : base44.entities.TrailSubmission.filter({ student_email: session?.email || '' }, '-created_date', 500),
+    enabled: !!session,
   });
 
-  const updateTaskMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks'] }); setEditingTask(null); setShowForm(false); setForm(EMPTY_FORM); toast.success('Tarefa atualizada!'); },
-  });
+  const doneToday = allSubmissions.filter(s =>
+    s.student_email === session?.email && s.completed_date === today
+  ).length;
 
-  const deleteTaskMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
-  });
-  const updateUnlockMutation = useMutation({
-    mutationFn: async (unlockUntil) => {
-      const payload = { course: userCourse, type: 'unlock_rule', scope: 'tasks', title: `Unlock tasks ${userCourse}`, unlock_until: Number(unlockUntil) };
-      if (taskUnlockRule?.id) return base44.entities.Announcement.update(taskUnlockRule.id, payload);
-      return base44.entities.Announcement.create(payload);
-    },
+  const completedIds = new Set(
+    allSubmissions.filter(s => s.student_email === session?.email).map(s => s.activity_id)
+  );
+
+  const sortedActivities = [...activities].sort((a, b) => (a.order || 0) - (b.order || 0));
+  const totalDone = completedIds.size;
+  const totalActivities = sortedActivities.length;
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.TrailActivity.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['unlock-rules-tasks', userCourse] });
-      toast.success('Desbloqueio de tarefas atualizado!');
+      queryClient.invalidateQueries({ queryKey: ['trail-activities'] });
+      setShowForm(false); setForm(EMPTY_FORM);
+      toast.success('Atividade criada!');
     },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.TrailActivity.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trail-activities'] });
+      setEditingActivity(null); setShowForm(false); setForm(EMPTY_FORM);
+      toast.success('Atividade atualizada!');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.TrailActivity.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trail-activities'] }),
+  });
+
+  const submitTextMutation = useMutation({
+    mutationFn: async ({ activityId, comment }) => {
+      if (doneToday >= DAILY_LIMIT) throw new Error('Limite diário atingido');
+      return base44.entities.TrailSubmission.create({
+        activity_id: activityId,
+        student_email: session?.email || '',
+        student_name: session?.name || session?.full_name || '',
+        comment,
+        course: userCourse,
+        status: 'submitted',
+        completed_date: today,
+      });
+    },
+    onSuccess: (_, { activityId }) => {
+      queryClient.invalidateQueries({ queryKey: ['trail-submissions'] });
+      setCommentInputs(prev => ({ ...prev, [activityId]: '' }));
+      setExpandedId(null);
+      toast.success(`🔥 +${POINTS_PER_ACTIVITY} pts! Ofensiva avançando!`);
+    },
+    onError: (err) => toast.error(err.message || 'Erro ao enviar'),
   });
 
   const submitFileMutation = useMutation({
-    mutationFn: async ({ taskId, file }) => {
+    mutationFn: async ({ activityId, file }) => {
+      if (doneToday >= DAILY_LIMIT) throw new Error('Limite diário atingido');
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const res = await base44.functions.invoke('saveStudentRecord', {
-        action: 'create',
-        entity: 'TaskSubmission',
-        student_identifiers: [user?.email, user?.code],
-        data: {
-          task_id: taskId,
-          student_email: user.email || user.code || '',
-          student_name: user.name || user.full_name || '',
-          file_url,
-          status: 'submitted',
-          course: submissionCourseCode,
-        },
+      return base44.entities.TrailSubmission.create({
+        activity_id: activityId,
+        student_email: session?.email || '',
+        student_name: session?.name || session?.full_name || '',
+        file_url,
+        file_name: file.name,
+        course: userCourse,
+        status: 'submitted',
+        completed_date: today,
       });
-      return res.data.record;
     },
-    onSuccess: (_, { taskId }) => {
-      queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
-      setUploadStatus(prev => ({ ...prev, [taskId]: 'success' }));
-      toast.success('Arquivo enviado com sucesso!');
-      setTimeout(() => setUploadStatus(prev => ({ ...prev, [taskId]: null })), 5000);
+    onSuccess: (_, { activityId }) => {
+      queryClient.invalidateQueries({ queryKey: ['trail-submissions'] });
+      setUploadFiles(prev => ({ ...prev, [activityId]: null }));
+      setExpandedId(null);
+      toast.success(`🔥 +${POINTS_PER_ACTIVITY} pts! Arquivo enviado!`);
     },
+    onError: (err) => toast.error(err.message || 'Erro ao enviar'),
   });
 
-  const sendNotificationToTeacher = async (taskTitle, submissionType) => {
-    // Busca admin para notificar
-    const admins = await base44.entities.AccessCode.filter({ is_active: true }, '-created_date', 200);
-    // Notifica via entidade interna (não e-mail externo)
-    const studentName = user?.name || user?.full_name || user?.email || 'Aluno';
-    await base44.entities.Notification.create({
-      recipient_email: 'admin',
-      sender_email: user?.email || user?.code || '',
-      sender_name: studentName,
-      message: `${studentName} enviou um ${submissionType} para: "${taskTitle}"`,
-      task_title: taskTitle,
-      type: 'task_submission',
-      is_read: false,
+  const handleSave = () => {
+    const payload = { ...form, order: Number(form.order) || activities.length + 1, course: userCourse };
+    if (editingActivity) updateMutation.mutate({ id: editingActivity.id, data: payload });
+    else createMutation.mutate(payload);
+  };
+
+  const openEdit = (activity) => {
+    setEditingActivity(activity);
+    setForm({
+      title: activity.title, description: activity.description || '',
+      type: activity.type, order: activity.order || '',
+      points_reward: activity.points_reward || 0.1, quiz_questions: activity.quiz_questions || []
     });
-  };
-
-  const handleGoogleDriveUpload = async (taskId) => {
-    const file = uploadFiles[taskId];
-    if (!file) { toast.error('Selecione um arquivo'); return; }
-
-    const description = getSubmissionDescription(taskId);
-    if (!description) { toast.error('Preencha seu nome e selecione a turma antes de enviar.'); return; }
-    const task = tasks.find(t => t.id === taskId);
-    const taskTitle = task?.title || 'Tarefa';
-    const studentName = getSubmissionDetail(taskId).studentName || user?.name || user?.full_name || 'Aluno';
-    // Prefixo no nome do arquivo: TítuloDaTarefa_NomeDoAluno_arquivo.ext
-    const safeName = (str) => str.replace(/[^a-zA-Z0-9À-ÿ ]/g, '').trim().replace(/\s+/g, '_');
-    const renamedFileName = `${safeName(taskTitle)}_${safeName(studentName)}_${file.name}`;
-
-    setUploadStatus(prev => ({ ...prev, [taskId]: 'sending' }));
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64Data = e.target.result.split(',')[1];
-      const params = new URLSearchParams();
-      params.append('fileName', renamedFileName);
-      params.append('mimeType', file.type);
-      params.append('fileData', base64Data);
-      params.append('description', description);
-      try {
-        await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
-        // Salva na plataforma
-        await base44.functions.invoke('saveStudentRecord', {
-          action: 'create',
-          entity: 'TaskSubmission',
-          student_identifiers: [user?.email, user?.code],
-          data: {
-            task_id: taskId,
-            student_email: user.email || user.code || '',
-            student_name: studentName,
-            file_name: renamedFileName,
-            comment: description,
-            status: 'submitted',
-            course: submissionCourseCode,
-          },
-        });
-        // Notificação interna ao professor
-        await sendNotificationToTeacher(taskTitle, 'arquivo');
-        queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
-        setUploadStatus(prev => ({ ...prev, [taskId]: 'success' }));
-        setUploadFiles(prev => ({ ...prev, [taskId]: null }));
-        toast.success('Trabalho enviado com sucesso!');
-        setTimeout(() => setUploadStatus(prev => ({ ...prev, [taskId]: null })), 5000);
-      } catch (err) {
-        setUploadStatus(prev => ({ ...prev, [taskId]: 'error' }));
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-
-  const getSubmissionDetail = (taskId) => {
-    const current = submissionDetails[taskId] || {};
-    return {
-      studentName: current.studentName || user?.name || user?.full_name || '',
-      className: submissionCourseCode,
-    };
-  };
-
-  const getSubmissionDescription = (taskId) => {
-    const detail = getSubmissionDetail(taskId);
-    if (!detail.studentName?.trim() || !detail.className?.trim()) return '';
-    return `Aluno: ${detail.studentName.trim()} | Turma: ${submissionCourseCode}`;
-  };
-  const normalizeTitle = (value = '') => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\b(tarefa|trabalho)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
-  const getSubmission = (taskId, taskTitle = '') => submissions.find(s => s.task_id === taskId) || submissions.find(s => normalizeTitle(s.task_title || s.comment || s.file_name || '') && normalizeTitle(taskTitle) && normalizeTitle(s.task_title || s.comment || s.file_name || '').includes(normalizeTitle(taskTitle).slice(0, 20)));
-
-  const openEdit = (task) => {
-    setEditingTask(task);
-    setForm({ title: task.title, description: task.description || '', type: task.type, deadline: task.deadline || '', max_grade: task.max_grade || 10, quiz_questions: task.quiz_questions || [] });
     setShowForm(true);
   };
 
-  const handleSave = () => {
-    const payload = { ...form, max_grade: roundScore(form.max_grade), course: userCourse };
-    if (editingTask) updateTaskMutation.mutate({ id: editingTask.id, data: payload });
-    else createTaskMutation.mutate(payload);
-  };
-
-  const extractTaskNumber = (title = '') => {
-    const m = title.match(/tarefa\s*(\d+)/i);
-    return m ? Number(m[1]) : null;
-  };
-
-  const taskSorter = (a, b) => {
-    const na = extractTaskNumber(a.title);
-    const nb = extractTaskNumber(b.title);
-    if (na !== null && nb !== null && na !== nb) return na - nb;
-    if (na !== null && nb === null) return -1;
-    if (na === null && nb !== null) return 1;
-    return (a.created_date || '').localeCompare(b.created_date || '');
-  };
-
-  const uploadTasks = sortBySequence(tasks.filter(t => t.type === 'upload')).sort(taskSorter);
-  const quizTasks = sortBySequence(tasks.filter(t => t.type === 'quiz')).sort(taskSorter);
-  const displayedTasks = mode === 'tasks' ? uploadTasks : mode === 'tests' ? quizTasks : (activeTab === 'tasks' ? uploadTasks : quizTasks);
-
-  const submitCommentMutation = useMutation({
-    mutationFn: async ({ taskId, comment }) => {
-      const res = await base44.functions.invoke('saveStudentRecord', {
-        action: 'create',
-        entity: 'TaskSubmission',
-        student_identifiers: [user?.email, user?.code],
-        data: {
-          task_id: taskId,
-          student_email: user?.email || user?.code || '',
-          student_name: user?.name || user?.full_name || '',
-          comment,
-          status: 'submitted',
-          course: submissionCourseCode,
-        },
-      });
-      const sub = res.data.record;
-      // Notificação interna ao professor
-      const task = tasks.find(t => t.id === taskId);
-      const taskTitle = task?.title || 'Tarefa';
-      const studentName = user?.name || user?.full_name || user?.email || 'Aluno';
-      await base44.entities.Notification.create({
-        recipient_email: 'admin',
-        sender_email: user?.email || user?.code || '',
-        sender_name: studentName,
-        message: `${studentName} enviou uma resposta para: "${taskTitle}"`,
-        task_title: taskTitle,
-        type: 'task_submission',
-        is_read: false,
-      });
-      return sub;
-    },
-    onSuccess: (_, { taskId }) => {
-      queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
-      setCommentInputs(prev => ({ ...prev, [taskId]: '' }));
-      toast.success('Resposta enviada!');
-    },
-  });
-
-  if (viewSubmissions) return <SubmissionsList task={viewSubmissions} onBack={() => setViewSubmissions(null)} />;
+  if (viewSubmissions) {
+    return (
+      <div className="p-3 md:p-5 max-w-[900px] mx-auto">
+        <button onClick={() => setViewSubmissions(null)} className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1">← Voltar</button>
+        <h2 className="text-lg font-bold mb-4">{viewSubmissions.title} — Entregas</h2>
+        <div className="space-y-3">
+          {allSubmissions.filter(s => s.activity_id === viewSubmissions.id).map(sub => (
+            <div key={sub.id} className="bg-card border border-border rounded-xl p-4 text-sm">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-semibold">{sub.student_name || sub.student_email}</span>
+                <Badge variant="secondary">{sub.status}</Badge>
+              </div>
+              {sub.comment && <p className="text-muted-foreground text-xs">{sub.comment}</p>}
+              {sub.file_name && <p className="text-xs text-primary">{sub.file_name}</p>}
+              <p className="text-[10px] text-muted-foreground mt-1">{sub.completed_date}</p>
+            </div>
+          ))}
+          {allSubmissions.filter(s => s.activity_id === viewSubmissions.id).length === 0 && (
+            <p className="text-muted-foreground text-sm text-center py-8">Nenhuma entrega ainda.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-3 md:p-5 max-w-[900px] mx-auto animate-fade-in-up">
-      <div className="flex items-center justify-between mb-5 gap-3">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-5">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">{mode === 'tests' ? 'Provas de Terapia Comportamental' : mode === 'tasks' ? 'Trabalhos de Terapia Comportamental' : 'Trabalhos e Avaliações de Terapia Comportamental'}</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Gerencie trabalhos, provas e entregas da formação em Terapia Comportamental</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Flame size={22} className="text-orange-500" /> Trilha de Ofensivas
+          </h2>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Complete atividades e mantenha sua sequência. Até {DAILY_LIMIT} por dia · {POINTS_PER_ACTIVITY} pts cada
+          </p>
         </div>
+
         {isTeacher && (
-          <div className="flex gap-2">
-            <Button variant="outline" className="h-9 text-sm" onClick={() => updateUnlockMutation.mutate(unlockedTaskCount + 1)} disabled={updateUnlockMutation.isPending}>
-              Liberar próximo trabalho
-            </Button>
-            <Button variant="outline" className="gap-2 h-9 text-sm border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => navigate('/tasks/builder/new')}>
-              <GraduationCap size={15} /> Nova Prova
-            </Button>
-          <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingTask(null); setForm(EMPTY_FORM); } }}>
+          <Dialog open={showForm} onOpenChange={v => { setShowForm(v); if (!v) { setEditingActivity(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
-              <Button className="gap-2 h-9 text-sm"><Plus size={15} /> Nova Tarefa</Button>
+              <Button className="gap-2 h-9 text-sm shrink-0"><Plus size={15} /> Nova Atividade</Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>{editingTask ? 'Editar Tarefa' : 'Criar Tarefa'}</DialogTitle></DialogHeader>
-              <div className="space-y-4 mt-4">
-                <Input placeholder="Título" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                <Textarea placeholder="Descrição / Instruções para o aluno" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} />
-                <Select value={form.type} onValueChange={v => setForm({...form, type: v})}>
+              <DialogHeader><DialogTitle>{editingActivity ? 'Editar Atividade' : 'Criar Atividade de Trilha'}</DialogTitle></DialogHeader>
+              <div className="space-y-3 mt-3">
+                <Input placeholder="Título" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+                <Textarea placeholder="Descrição / Enunciado" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3} />
+                <Select value={form.type} onValueChange={v => setForm({ ...form, type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="upload">Envio de Arquivo (Tarefa)</SelectItem>
-                    <SelectItem value="quiz">Prova / Quiz</SelectItem>
+                    <SelectItem value="text">Resposta em Texto</SelectItem>
+                    <SelectItem value="upload">Envio de Arquivo</SelectItem>
+                    <SelectItem value="quiz">Quiz</SelectItem>
                   </SelectContent>
                 </Select>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Data de entrega</label>
-                  <Input type="datetime-local" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} />
-                  <p className="text-[10px] text-muted-foreground mt-1">Esta data também será adicionada ao calendário dos alunos</p>
-                </div>
-                <Input type="number" placeholder="Nota máxima" value={form.max_grade} onChange={e => setForm({...form, max_grade: Number(e.target.value)})} />
-                <Button onClick={handleSave} disabled={!form.title || createTaskMutation.isPending || updateTaskMutation.isPending} className="w-full">
-                  {editingTask ? 'Salvar Alterações' : 'Criar Tarefa'}
+                <Input type="number" placeholder="Posição na trilha (1, 2, 3...)" value={form.order} onChange={e => setForm({ ...form, order: e.target.value })} />
+                <Button onClick={handleSave} disabled={!form.title || createMutation.isPending || updateMutation.isPending} className="w-full">
+                  {editingActivity ? 'Salvar' : 'Criar Atividade'}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
-          </div>
         )}
       </div>
-      {isTeacher && <p className="text-xs text-muted-foreground mb-3">Trabalhos/provas liberados para a turma: <strong>{unlockedTaskCount}</strong>.</p>}
 
-      {mode === 'all' && (<>{/* Tabs */}
-      <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-5 w-full sm:w-fit">
-        <button
-          onClick={() => setActiveTab('tasks')}
-          className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'tasks' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          <ClipboardList size={14} /> Tarefas
-          {uploadTasks.length > 0 && <span className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">{uploadTasks.length}</span>}
-        </button>
-        <button
-          onClick={() => setActiveTab('quizzes')}
-          className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'quizzes' ? 'bg-card shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          <GraduationCap size={14} /> Provas
-          {quizTasks.length > 0 && <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">{quizTasks.length}</span>}
-        </button>
-      </div></>)}
+      {/* Progresso diário (só alunos) */}
+      {!isTeacher && <DailyProgress doneToday={doneToday} />}
 
-      {displayedTasks.length === 0 ? (
+      {/* Estatísticas rápidas (alunos) */}
+      {!isTeacher && totalActivities > 0 && (
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="bg-card border border-border rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-orange-500">{doneToday}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">Hoje</p>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-green-500">{totalDone}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">Total</p>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-primary">{totalActivities > 0 ? Math.round((totalDone / totalActivities) * 100) : 0}%</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">Progresso</p>
+          </div>
+        </div>
+      )}
+
+      {/* Trilha */}
+      {sortedActivities.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
-          {activeTab === 'tasks' ? <ClipboardList size={48} className="mx-auto mb-4 opacity-20" /> : <GraduationCap size={48} className="mx-auto mb-4 opacity-20" />}
-          <p className="text-lg font-semibold">{activeTab === 'tasks' ? 'Nenhuma tarefa criada' : 'Nenhuma prova criada'}</p>
-          {isTeacher && <p className="text-sm mt-1">Clique em "Nova Tarefa" para adicionar</p>}
+          <Flame size={48} className="mx-auto mb-4 opacity-20" />
+          <p className="text-lg font-semibold">Nenhuma atividade na trilha</p>
+          {isTeacher && <p className="text-sm mt-1">Clique em "Nova Atividade" para começar a trilha</p>}
         </div>
       ) : (
-        <div className="space-y-3">
-          {displayedTasks.map((task, idx) => {
-            const submission = getSubmission(task.id, task.title);
-            const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
-            const status = uploadStatus[task.id];
-            const sequentialNumber = idx + 1;
-            const isLocked = !isTeacher && sequentialNumber > unlockedTaskCount;
+        <div className="relative">
+          {/* Linha vertical da trilha */}
+          <div className="absolute left-[23px] top-10 bottom-10 w-0.5 bg-border" />
 
-            if (isLocked) return (
-              <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm opacity-60 select-none">
-                <div className="flex items-start gap-3 p-4 sm:p-5">
-                  <div className="p-2.5 rounded-xl shrink-0 bg-muted text-muted-foreground">
-                    <span className="text-lg">🔒</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-sm leading-snug">Tarefa {sequentialNumber} · {task.title}</h3>
-                    <p className="text-xs text-amber-600 font-semibold mt-1 flex items-center gap-1">⏳ Em breve — será liberado pelo professor</p>
-                  </div>
-                </div>
-              </div>
-            );
+          <div className="space-y-3">
+            {sortedActivities.map((activity, idx) => (
+              <ActivityCard
+                key={activity.id}
+                activity={activity}
+                idx={idx}
+                isDone={completedIds.has(activity.id)}
+                isExpanded={expandedId === activity.id}
+                canDo={!completedIds.has(activity.id) && doneToday < DAILY_LIMIT}
+                doneToday={doneToday}
+                isTeacher={isTeacher}
+                onToggle={() => setExpandedId(expandedId === activity.id ? null : activity.id)}
+                onEdit={() => openEdit(activity)}
+                onDelete={() => deleteMutation.mutate(activity.id)}
+                onViewSubmissions={() => setViewSubmissions(activity)}
+                commentInputs={commentInputs}
+                setCommentInputs={setCommentInputs}
+                uploadFiles={uploadFiles}
+                setUploadFiles={setUploadFiles}
+                submitTextMutation={submitTextMutation}
+                submitFileMutation={submitFileMutation}
+                navigate={navigate}
+                prefix={prefix}
+              />
+            ))}
+          </div>
 
-            return (
-              <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                <div className="flex items-start gap-3 p-4 sm:p-5">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${task.type === 'quiz' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
-                    <FileText size={17} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-sm leading-snug">Tarefa {sequentialNumber} · {task.title}</h3>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      <Badge variant="secondary" className="text-[10px]">{task.type === 'quiz' ? 'Prova' : 'Tarefa'}</Badge>
-                      {task.deadline && (
-                        <span className={`text-[10px] flex items-center gap-1 font-semibold ${isPastDeadline ? 'text-red-600' : 'text-muted-foreground'}`}>
-                          <Clock size={10} /> Entrega: {format(new Date(task.deadline), 'dd/MM HH:mm')}
-                          {isPastDeadline && ' (Expirou)'}
-                        </span>
-                      )}
-                      {task.max_grade && <span className="text-[10px] text-muted-foreground">Valor: {formatScore(task.max_grade)} pts</span>}
-                    </div>
-                    {task.description && <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{task.description}</p>}
-                  </div>
-                </div>
-
-                {/* Student upload/comment section */}
-                {!isTeacher && task.type === 'upload' && !submission && (
-                  <div className="px-4 sm:px-5 pb-4 border-t border-border pt-3 bg-secondary/20 space-y-3">
-                    <div>
-                      <p className="text-xs font-bold text-foreground mb-2">📎 Enviar Arquivo</p>
-                      <div className="grid sm:grid-cols-2 gap-2 mb-2">
-                        <Input
-                          placeholder="Seu nome"
-                          value={getSubmissionDetail(task.id).studentName}
-                          onChange={e => setSubmissionDetails(prev => ({ ...prev, [task.id]: { ...getSubmissionDetail(task.id), studentName: e.target.value } }))}
-                          className="h-9 text-xs"
-                        />
-                        <div className="h-9 rounded-md border border-input bg-secondary/40 px-3 flex items-center text-xs font-semibold text-muted-foreground">
-                          Turma automática: {submissionCourseCode.toUpperCase()}
-                        </div>
-                      </div>
-                      <input
-                        type="file"
-                        onChange={e => setUploadFiles(prev => ({ ...prev, [task.id]: e.target.files[0] }))}
-                        className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer mb-2"
-                      />
-                      <Button
-                        size="sm"
-                        className="w-full h-9 text-xs gap-1.5"
-                        disabled={!uploadFiles[task.id] || status === 'sending' || !getSubmissionDescription(task.id)}
-                        onClick={() => handleGoogleDriveUpload(task.id)}
-                      >
-                        <Send size={13} />
-                        {status === 'sending' ? 'Enviando, aguarde...' : 'Enviar Arquivo'}
-                      </Button>
-                      {status === 'error' && <p className="text-xs text-red-500 text-center mt-1.5 font-semibold">❌ Erro ao enviar. Tente novamente.</p>}
-                    </div>
-                    <div className="border-t border-border/50 pt-3">
-                      <p className="text-xs font-bold text-foreground mb-2">💬 Responder por Comentário</p>
-                      <Textarea
-                        placeholder="Se não puder enviar arquivo, escreva sua resposta aqui..."
-                        value={commentInputs[task.id] || ''}
-                        onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))}
-                        rows={3}
-                        className="text-xs"
-                      />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full h-9 text-xs gap-1.5 mt-2"
-                        disabled={!commentInputs[task.id]?.trim() || submitCommentMutation.isPending}
-                        onClick={() => submitCommentMutation.mutate({ taskId: task.id, comment: commentInputs[task.id] })}
-                      >
-                        <MessageSquare size={13} /> Enviar Comentário
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="px-4 sm:px-5 pb-4 flex items-center justify-end gap-2 flex-wrap">
-                  {!isTeacher ? (
-                    submission ? (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
-                          <CheckCircle size={12} /> Entregue
-                        </span>
-                        {submission.grade !== undefined && submission.grade !== null && (
-                          <span className="text-sm font-black text-foreground bg-secondary px-3 py-1.5 rounded-xl border border-border">
-                            Nota: {formatScore(submission.grade)}
-                          </span>
-                        )}
-                      </div>
-                    ) : task.type === 'quiz' ? (
-                      <Button size="sm" className="gap-1.5 w-full sm:w-auto h-9 text-xs" onClick={() => navigate(`/tasks/quiz/${task.id}`)}>
-                        <Play size={13} /> Iniciar Prova
-                      </Button>
-                    ) : null
-                  ) : (
-                    <div className="flex gap-2 w-full sm:w-auto justify-end">
-                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 text-xs" onClick={() => setViewSubmissions(task)}>
-                        Ver Entregas
-                      </Button>
-                      <button onClick={() => {
-                        if (task.type === 'quiz') { navigate(`/tasks/builder/${task.id}`); }
-                        else openEdit(task);
-                      }} className="p-2 text-muted-foreground hover:text-primary transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg">
-                        <Pencil size={13} />
-                      </button>
-                      <button onClick={() => deleteTaskMutation.mutate(task.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg">
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {/* Troféu no fim da trilha */}
+          {totalDone >= totalActivities && totalActivities > 0 && (
+            <div className="mt-6 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-5 text-center">
+              <Trophy size={32} className="mx-auto mb-2 text-yellow-500" />
+              <p className="font-black text-lg text-foreground">Trilha Concluída! 🎉</p>
+              <p className="text-sm text-muted-foreground mt-1">Você completou todas as atividades desta trilha.</p>
+            </div>
+          )}
         </div>
       )}
     </div>

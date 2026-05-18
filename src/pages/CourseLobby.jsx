@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
-import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X, Tag } from 'lucide-react';
+import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X, BookOpen } from 'lucide-react';
 import ServiceTermsModal from '@/components/onboarding/ServiceTermsModal';
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
@@ -40,6 +40,19 @@ const OFFER_COURSES = [
     originalPrice: 'R$ 450',
     firstMonthPrice: 'R$ 225',
     price: 'R$ 270',
+    period: '/mês até o fim do curso',
+    tag: 'Em breve · 2027',
+    imgs: [
+      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80',
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80',
+    ],
+    highlights: [
+      'Fundamentos da Psicanálise Freudiana e Lacaniana',
+      'Prática clínica supervisionada ao vivo',
+      'Certificação profissional reconhecida',
+      'Análise de sonhos e processos inconscientes',
+      'Ingresso previsto para início de 2027',
+    ],
   },
   {
     id: 'sexologia',
@@ -49,8 +62,87 @@ const OFFER_COURSES = [
     originalPrice: 'R$ 450',
     firstMonthPrice: 'R$ 225',
     price: 'R$ 270',
+    period: '/mês até o fim do curso',
+    tag: 'Em breve · 2027',
+    imgs: [
+      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
+      'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=800&q=80',
+    ],
+    highlights: [
+      'Sexualidade humana com base científica',
+      'Infidelidade conjugal e vícios comportamentais',
+      'Abordagem integrativa e sistêmica',
+      'Certificação nacional e internacional',
+      'Ingresso previsto para meados de 2027',
+    ],
   },
 ];
+
+function OfferCard({ course: c, onReserve }) {
+  const [imgIdx, setImgIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setImgIdx(i => (i + 1) % c.imgs.length), 4000);
+    return () => clearInterval(t);
+  }, [c.imgs.length]);
+
+  return (
+    <div className="border flex flex-col overflow-hidden transition-all" style={{ borderColor: `${G}20` }}>
+      {/* Imagem rotativa */}
+      <div className="relative h-44 overflow-hidden">
+        {c.imgs.map((src, j) => (
+          <img key={j} src={src} alt={c.title}
+            className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${j === imgIdx ? 'opacity-100' : 'opacity-0'}`} />
+        ))}
+        <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG3}, ${BG3}10)` }} />
+        <div className="absolute top-3 left-3 border px-2.5 py-1 text-[9px] font-light uppercase tracking-[0.2em]"
+          style={{ borderColor: `${G}50`, color: G, background: `${BG}cc` }}>{c.tag}</div>
+        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 items-center">
+          {c.imgs.map((_, j) => (
+            <button key={j} onClick={() => setImgIdx(j)}
+              className="h-px transition-all"
+              style={{ width: j === imgIdx ? '1.5rem' : '0.75rem', background: j === imgIdx ? G : 'rgba(255,255,255,0.25)' }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Conteúdo */}
+      <div className="p-5 flex flex-col flex-1" style={{ background: BG3 }}>
+        <h3 className="font-light text-white text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
+        <p className="text-white/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
+
+        {/* Highlights */}
+        <div className="space-y-1.5 mb-5 flex-1">
+          {c.highlights.map((h, j) => (
+            <div key={j} className="flex items-center gap-2 text-xs text-white/35 font-light">
+              <div className="w-1 h-1 shrink-0" style={{ background: `${G}80` }} />
+              {h}
+            </div>
+          ))}
+        </div>
+
+        {/* Preços */}
+        <div className="pt-4 border-t mb-4" style={{ borderColor: `${G}10` }}>
+          <p className="text-[10px] text-white/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta de reserva antecipada</p>
+          <p className="text-xs text-white/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
+          <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>Primeira mensalidade com 50%:</p>
+          <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
+          <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
+          <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
+        </div>
+
+        <button
+          onClick={() => onReserve(c)}
+          className="w-full px-4 py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
+          style={{ borderColor: `${G}60`, color: G }}
+          onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
+        >
+          <MessageCircle size={11} /> Reservar Vaga Antecipada
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStudentEnter }) {
   const videoRef = useRef(null);
@@ -273,30 +365,8 @@ export default function CourseLobby() {
               <div className="h-px flex-1" style={{ background: `${G}20` }} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {OFFER_COURSES.map(c => (
-                <div key={c.id} className="border p-5 flex flex-col gap-3" style={{ background: BG3, borderColor: `${G}12` }}>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Tag size={11} style={{ color: G }} />
-                      <span className="text-[9px] uppercase tracking-[0.2em] font-light" style={{ color: `${G}70` }}>Reserva Antecipada</span>
-                    </div>
-                    <h4 className="font-light text-sm text-white/80 uppercase tracking-[0.1em]">{c.title}</h4>
-                    <p className="text-xs text-white/35 font-light mt-2 leading-relaxed">{c.desc}</p>
-                  </div>
-                  <div className="border-t pt-3" style={{ borderColor: `${G}10` }}>
-                    <p className="text-[10px] text-white/25 line-through font-light">{c.originalPrice}/mês</p>
-                    <p className="text-[11px] font-light" style={{ color: `${G}70` }}>1ª mensalidade: {c.firstMonthPrice} · Depois: {c.price}/mês (40% off vitalício)</p>
-                  </div>
-                  <button
-                    onClick={() => openReserve(c)}
-                    className="w-full py-2.5 border text-[10px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-1.5 transition-all"
-                    style={{ borderColor: `${G}40`, color: G }}
-                    onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
-                  >
-                    <MessageCircle size={11} /> Ver Reservas desta Turma
-                  </button>
-                </div>
+              {OFFER_COURSES.map((c, i) => (
+                <OfferCard key={c.id} course={c} onReserve={openReserve} />
               ))}
             </div>
           </div>
@@ -376,32 +446,8 @@ export default function CourseLobby() {
             <div className="h-px flex-1" style={{ background: `${G}20` }} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {OFFER_COURSES.map(c => (
-              <div key={c.id} className="border p-5 flex flex-col gap-3" style={{ background: BG3, borderColor: `${G}12` }}>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Tag size={11} style={{ color: G }} />
-                    <span className="text-[9px] uppercase tracking-[0.2em] font-light" style={{ color: `${G}70` }}>Reserva Antecipada</span>
-                  </div>
-                  <h4 className="font-light text-sm text-white/80 uppercase tracking-[0.1em]">{c.title}</h4>
-                  <p className="text-[10px] text-white/30 font-light mt-0.5">{c.subtitle}</p>
-                  <p className="text-xs text-white/35 font-light mt-2 leading-relaxed">{c.desc}</p>
-                </div>
-                <div className="border-t pt-3" style={{ borderColor: `${G}10` }}>
-                  <p className="text-[10px] text-white/25 line-through font-light">{c.originalPrice}/mês</p>
-                  <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>1ª mensalidade com 50%: <strong className="text-white/70">{c.firstMonthPrice}</strong></p>
-                  <p className="text-[11px] font-light" style={{ color: `${G}60` }}>Depois 40% vitalício: <strong className="text-white/60">{c.price}/mês</strong></p>
-                </div>
-                <button
-                  onClick={() => openReserve(c)}
-                  className="w-full py-2.5 border text-[10px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-1.5 transition-all"
-                  style={{ borderColor: `${G}40`, color: G }}
-                  onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
-                >
-                  <MessageCircle size={11} /> Reservar Vaga
-                </button>
-              </div>
+            {OFFER_COURSES.map((c) => (
+              <OfferCard key={c.id} course={c} onReserve={openReserve} />
             ))}
           </div>
         </div>
