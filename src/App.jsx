@@ -33,6 +33,7 @@ import Certificadora from './pages/Certificadora';
 import RankingGeral from './pages/RankingGeral';
 import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
+import Ofensivas from './pages/Ofensivas';
 import MeuBestSeller from './pages/MeuBestSeller';
 import ClassChat from './pages/ClassChat';
 import HistoricoAcademico from './pages/HistoricoAcademico';
@@ -100,6 +101,7 @@ function ScopedRoutesTree() {
         <Route path="monitores" element={<Monitores />} />
         <Route path="monitor-certificate/:id" element={<MonitorCertificate />} />
         <Route path="terapeuta" element={<TerapeutaDaSemana />} />
+        <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="bestseller" element={<MeuBestSeller />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="dm/:email" element={<DirectMessage />} />

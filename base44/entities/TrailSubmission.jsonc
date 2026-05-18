@@ -1,0 +1,79 @@
+{
+  "name": "TrailSubmission",
+  "type": "object",
+  "properties": {
+    "activity_id": {
+      "type": "string",
+      "description": "ID da atividade de trilha"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome do aluno"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL do arquivo enviado (para tipo upload)"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Nome do arquivo"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Resposta textual do aluno"
+    },
+    "quiz_answers": {
+      "type": "array",
+      "description": "Respostas do quiz",
+      "items": {}
+    },
+    "grade": {
+      "type": "number",
+      "description": "Nota atribu\u00edda pelo professor"
+    },
+    "feedback": {
+      "type": "string",
+      "description": "Feedback do professor"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "graded"
+      ],
+      "default": "submitted"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data em que o aluno completou"
+    }
+  },
+  "required": [
+    "activity_id",
+    "student_email"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

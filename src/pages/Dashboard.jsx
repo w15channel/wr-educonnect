@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Video, FileText, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart } from 'lucide-react';
+import { Video, FileText, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Flame } from 'lucide-react';
 import DashboardMobile from './DashboardMobile';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
@@ -862,6 +862,26 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
             </div>
           </div>);
 
+      })()}
+
+      {/* Lembrete Ofensivas */}
+      {!isTeacher && (() => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        return (
+          <button
+            onClick={() => navigate(scoped('/ofensivas'))}
+            className="w-full bg-gradient-to-r from-orange-500/10 to-orange-400/5 rounded-xl border border-orange-500/20 p-4 flex items-center gap-3 hover:border-orange-500/40 transition-all text-left"
+          >
+            <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+              <Flame size={18} className="text-orange-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm text-foreground">Trilha de Ofensivas</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Complete até 5 atividades hoje e ganhe pontos extras na sua trilha!</p>
+            </div>
+            <ArrowRight size={16} className="text-orange-400 shrink-0" />
+          </button>
+        );
       })()}
 
       {/* Serviços */}

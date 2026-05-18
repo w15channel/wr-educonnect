@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
-import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X } from 'lucide-react';
+import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X, Tag } from 'lucide-react';
 import ServiceTermsModal from '@/components/onboarding/ServiceTermsModal';
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
@@ -31,6 +31,27 @@ const COURSES = [
   },
 ];
 
+const OFFER_COURSES = [
+  {
+    id: 'psicanalise',
+    title: 'Psicanalista Diplomado',
+    subtitle: 'Formação em Psicanálise',
+    desc: 'Formação completa em Psicanálise com base teórica e prática clínica supervisionada. Ingresso previsto para 2027.',
+    originalPrice: 'R$ 450',
+    firstMonthPrice: 'R$ 225',
+    price: 'R$ 270',
+  },
+  {
+    id: 'sexologia',
+    title: 'Sexólogo Integrativo',
+    subtitle: 'Formação em Sexologia',
+    desc: 'Especialização em sexualidade humana, infidelidade conjugal e vícios com abordagem integrativa. Ingresso previsto para 2027.',
+    originalPrice: 'R$ 450',
+    firstMonthPrice: 'R$ 225',
+    price: 'R$ 270',
+  },
+];
+
 function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStudentEnter }) {
   const videoRef = useRef(null);
   const Icon = course.icon;
@@ -43,8 +64,8 @@ function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStu
           : 'border-[#1e2540] opacity-60'
       }`}
       style={{ background: BG3 }}
-      onMouseEnter={() => videoRef.current?.play()}
-      onMouseLeave={() => { if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = 0; } }}
+      onMouseEnter={() => {}}
+      onMouseLeave={() => {}}
     >
       {/* Video area */}
       <div className="relative h-44 overflow-hidden bg-black">
@@ -52,7 +73,7 @@ function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStu
           ref={videoRef}
           src={course.video}
           className={`w-full h-full object-cover transition-all duration-500 ${!isActive ? 'grayscale brightness-[0.3]' : 'brightness-75'}`}
-          muted loop playsInline preload="metadata"
+          muted loop playsInline autoPlay
         />
         <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG3}, ${BG3}20)` }} />
 
@@ -239,10 +260,45 @@ export default function CourseLobby() {
               Selecione o curso que deseja gerenciar. Cada turma tem seu painel isolado.
             </p>
           </div>
-          <div className="max-w-md mx-auto w-full">
+          <div className="max-w-md mx-auto w-full mb-10">
             {COURSES.map((c) => (
               <CourseCard key={c.id} course={c} isActive={true} isAdmin={true} onAdminSelect={handleAdminSelectCourse} />
             ))}
+          </div>
+          {/* Oferta dos outros cursos para admin */}
+          <div className="max-w-2xl mx-auto w-full">
+            <div className="flex items-center gap-3 mb-5 justify-center">
+              <div className="h-px flex-1" style={{ background: `${G}20` }} />
+              <span className="text-[10px] uppercase tracking-[0.3em] font-light" style={{ color: `${G}60` }}>Próximas Formações — Em Oferta</span>
+              <div className="h-px flex-1" style={{ background: `${G}20` }} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {OFFER_COURSES.map(c => (
+                <div key={c.id} className="border p-5 flex flex-col gap-3" style={{ background: BG3, borderColor: `${G}12` }}>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Tag size={11} style={{ color: G }} />
+                      <span className="text-[9px] uppercase tracking-[0.2em] font-light" style={{ color: `${G}70` }}>Reserva Antecipada</span>
+                    </div>
+                    <h4 className="font-light text-sm text-white/80 uppercase tracking-[0.1em]">{c.title}</h4>
+                    <p className="text-xs text-white/35 font-light mt-2 leading-relaxed">{c.desc}</p>
+                  </div>
+                  <div className="border-t pt-3" style={{ borderColor: `${G}10` }}>
+                    <p className="text-[10px] text-white/25 line-through font-light">{c.originalPrice}/mês</p>
+                    <p className="text-[11px] font-light" style={{ color: `${G}70` }}>1ª mensalidade: {c.firstMonthPrice} · Depois: {c.price}/mês (40% off vitalício)</p>
+                  </div>
+                  <button
+                    onClick={() => openReserve(c)}
+                    className="w-full py-2.5 border text-[10px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-1.5 transition-all"
+                    style={{ borderColor: `${G}40`, color: G }}
+                    onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
+                  >
+                    <MessageCircle size={11} /> Ver Reservas desta Turma
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -311,6 +367,44 @@ export default function CourseLobby() {
         <p className="text-center text-white/20 text-[10px] mt-8 font-light uppercase tracking-[0.15em]">
           Matriculado(a) em <span className="text-white/35">{COURSES.find(c => c.id === userCourse)?.title}</span> · Dúvidas? Fale com a coordenação.
         </p>
+
+        {/* Oferta dos outros cursos */}
+        <div className="max-w-2xl mx-auto w-full mt-10">
+          <div className="flex items-center gap-3 mb-5 justify-center">
+            <div className="h-px flex-1" style={{ background: `${G}20` }} />
+            <span className="text-[10px] uppercase tracking-[0.3em] font-light" style={{ color: `${G}60` }}>Próximas Formações</span>
+            <div className="h-px flex-1" style={{ background: `${G}20` }} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {OFFER_COURSES.map(c => (
+              <div key={c.id} className="border p-5 flex flex-col gap-3" style={{ background: BG3, borderColor: `${G}12` }}>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Tag size={11} style={{ color: G }} />
+                    <span className="text-[9px] uppercase tracking-[0.2em] font-light" style={{ color: `${G}70` }}>Reserva Antecipada</span>
+                  </div>
+                  <h4 className="font-light text-sm text-white/80 uppercase tracking-[0.1em]">{c.title}</h4>
+                  <p className="text-[10px] text-white/30 font-light mt-0.5">{c.subtitle}</p>
+                  <p className="text-xs text-white/35 font-light mt-2 leading-relaxed">{c.desc}</p>
+                </div>
+                <div className="border-t pt-3" style={{ borderColor: `${G}10` }}>
+                  <p className="text-[10px] text-white/25 line-through font-light">{c.originalPrice}/mês</p>
+                  <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>1ª mensalidade com 50%: <strong className="text-white/70">{c.firstMonthPrice}</strong></p>
+                  <p className="text-[11px] font-light" style={{ color: `${G}60` }}>Depois 40% vitalício: <strong className="text-white/60">{c.price}/mês</strong></p>
+                </div>
+                <button
+                  onClick={() => openReserve(c)}
+                  className="w-full py-2.5 border text-[10px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-1.5 transition-all"
+                  style={{ borderColor: `${G}40`, color: G }}
+                  onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
+                >
+                  <MessageCircle size={11} /> Reservar Vaga
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Reserve Modal */}
