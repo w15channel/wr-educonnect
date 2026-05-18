@@ -1,0 +1,517 @@
+/**
+ * DashboardMobile — Dashboard exclusiva para mobile.
+ * Otimizada para Moto G53 (720x1600, Android 13+).
+ *
+ * Layout:
+ * - Cards em grid 2 colunas, sem scroll horizontal
+ * - Live banner com tap de tela cheia
+ * - Ranking compacto em lista
+ * - Pendências em acordeão (evita scroll excessivo)
+ * - Não tem painel de ranking administrativo (usa ScoreControl)
+ */
+import React, { useState } from 'react';
+import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import {
+  Video, FileText, Users, Trophy, Star, Bell, BookOpen,
+  ArrowRight, Wifi, WifiOff, ClipboardList, GraduationCap,
+  Circle, Heart, ChevronDown, ChevronUp, TrendingUp, RefreshCw, Crown
+} from 'lucide-react';
+import { format, addDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { toast } from 'sonner';
+
+function getScopedPrefix(pathname) {
+  const parts = pathname.split('/').filter(Boolean);
+  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return `/${parts[0]}/${parts[1]}`;
+  return '';
+}
+
+const extractSeq = (item = {}) => {
+  const n = Number(item.order ?? item.sequence ?? item.lesson_number);
+  if (Number.isFinite(n) && n > 0) return n;
+  const m = (item.title || '').match(/(?:aula|tarefa)\s*(\d+)/i);
+  return m ? Number(m[1]) : null;
+};
+const sortBySeq = (arr = []) => [...arr].sort((a, b) => {
+  const an = extractSeq(a), bn = extractSeq(b);
+  if (an !== null && bn !== null) return an - bn;
+  if (an !== null) return -1;
+  if (bn !== null) return 1;
+  return 0;
+});
+
+export default function DashboardMobile() {
+  const { user: session } = useOutletContext();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const prefix = getScopedPrefix(location.pathname);
+  const scoped = (p) => prefix + p;
+  const isTeacher = session?.role === 'admin';
+  const userCourse = session?.course;
+  const [pendingOpen, setPendingOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const firstName = (session?.name || 'Usuário').split(' ')[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.Task.filter({ course: userCourse }, '-created_date', 200)
+      : base44.entities.Task.list('-created_date', 200),
+  });
+
+  const { data: submissions = [] } = useQuery({
+    queryKey: ['submissions'],
+    queryFn: () => base44.entities.TaskSubmission.filter(
+      isTeacher ? {} : { student_email: session?.email || '' },
+      '-created_date',
+      isTeacher ? 1000 : 50
+    ),
+    enabled: !!session,
+  });
+
+  const { data: allScoreItems = [] } = useQuery({
+    queryKey: ['all-score-items-rank'],
+    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
+  });
+
+  const { data: publishedScores = [] } = useQuery({
+    queryKey: ['student-profiles-score-overview'],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 500),
+  });
+
+  const { data: liveSessions = [] } = useQuery({
+    queryKey: ['live-sessions'],
+    queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 5),
+  });
+
+  const { data: liveAttendances = [] } = useQuery({
+    queryKey: ['live-attendances-dashboard', session?.email],
+    queryFn: () => base44.entities.LiveAttendance.filter({ student_email: session?.email || '' }, '-created_date', 300),
+    enabled: !isTeacher && !!session?.email,
+  });
+
+  const { data: accessCodes = [] } = useQuery({
+    queryKey: ['access-codes'],
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+  });
+
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['lessons', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 200)
+      : base44.entities.RecordedLesson.list('order', 200),
+  });
+
+  const { data: progresses = [] } = useQuery({
+    queryKey: ['lesson-progress', session?.email],
+    queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email }, '-created_date', 200),
+    enabled: !isTeacher && !!session?.email,
+  });
+
+  const { data: announcements = [] } = useQuery({
+    queryKey: ['announcements'],
+    queryFn: () => base44.entities.Announcement.list('-created_date', 5),
+  });
+
+  const { data: therapistPairings = [] } = useQuery({
+    queryKey: ['therapist-pairings-dashboard'],
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 300),
+    enabled: !isTeacher,
+  });
+
+  const pendingTasks = isTeacher
+    ? submissions.filter(s => s.status === 'submitted' && !allScoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length
+    : tasks.filter(t => !submissions.find(s => s.task_id === t.id)).length;
+
+  const nextLive = liveSessions.find(s => s.status === 'live' || s.status === 'scheduled');
+  const isLiveNow = nextLive?.status === 'live';
+
+  const studentCount = accessCodes.filter(c => {
+    if (!c.is_active) return false;
+    if (!userCourse) return true;
+    return c.course === userCourse || (userCourse === 'tcc' && !c.course);
+  }).length;
+
+  const publishedScoreMap = {};
+  publishedScores.forEach(p => {
+    if (!p.student_email) return;
+    if (typeof p.points === 'number' && publishedScoreMap[p.student_email] === undefined) {
+      publishedScoreMap[p.student_email] = p.points;
+    }
+  });
+
+  const currentAccessCode = accessCodes.find(c => c.student_email === session?.email);
+  const totalPoints = roundScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
+  const watchedCount = progresses.filter(p => p.watched).length;
+  const progressPct = lessons.length > 0 ? Math.round(watchedCount / lessons.length * 100) : 0;
+
+  // Ranking
+  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
+  const expectedPrefix = COURSE_PREFIX[userCourse];
+  const courseCodes = accessCodes.filter(c => {
+    if (!c.student_email) return false;
+    if (userCourse && c.course !== userCourse && !(userCourse === 'tcc' && !c.course)) return false;
+    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
+    return true;
+  });
+
+  const publishedRankMap = {};
+  publishedScores.forEach(p => {
+    if (typeof p.dashboard_rank === 'number' && publishedRankMap[p.student_email] === undefined) {
+      publishedRankMap[p.student_email] = p.dashboard_rank;
+    }
+  });
+
+  const rankingFull = courseCodes.map(c => ({
+    email: c.student_email,
+    total: roundScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0),
+    publishedRank: publishedRankMap[c.student_email] || Number.MAX_SAFE_INTEGER,
+    name: (c.profile_name || c.student_name || c.student_email || ''),
+    avatarColor: c.profile_avatar_color || '#5b5ef4',
+    photoUrl: c.profile_photo_url || '',
+    avatarEmoji: c.profile_avatar_emoji || '',
+  })).sort((a, b) => {
+    if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
+    return b.total - a.total;
+  });
+
+  const studentPublishedRanking = rankingFull.filter(r => Number.isFinite(r.publishedRank) && r.publishedRank !== Number.MAX_SAFE_INTEGER);
+  const visibleRanking = (studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull).slice(0, 5);
+  const myRank = visibleRanking.findIndex(r => r.email === session?.email) + 1;
+  const myGrades = submissions.filter(s => s.grade !== undefined && s.grade !== null);
+
+  // Pendências
+  const today = new Date();
+  const todayYmd = format(today, 'yyyy-MM-dd');
+  const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
+  const unwatchedLessons = sortBySeq(lessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
+  const pendingTasksList = sortBySeq(tasks.filter(t => t.type === 'upload' && !submissions.find(s => s.task_id === t.id)));
+  const pendingQuizzes = tasks.filter(t => t.type === 'quiz' && !submissions.find(s => s.task_id === t.id));
+  const therapistPending = therapistPairings.filter(p => {
+    if (p.pairing_date < periodStart || p.pairing_date > todayYmd) return false;
+    if (p.therapist_email === session?.email) return !p.therapist_submitted;
+    if (p.patient_email === session?.email) return !p.patient_submitted;
+    return false;
+  });
+  const attendedIds = new Set(liveAttendances.map(a => a.session_id));
+  const missedLives = liveSessions.filter(s => s.status === 'ended' && !attendedIds.has(s.id));
+  const totalPending = therapistPending.length + unwatchedLessons.length + pendingTasksList.length + pendingQuizzes.length + missedLives.length;
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries();
+    setTimeout(() => { setRefreshing(false); toast.success('Atualizado!'); }, 700);
+  };
+
+  return (
+    <div className="px-3.5 py-4 space-y-4 min-h-full">
+
+      {/* Saudação */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] text-[#c8bfa8]/35 uppercase tracking-[0.25em] font-light">{format(new Date(), "EEE, dd MMM", { locale: ptBR })}</p>
+          <h2 className="text-lg font-light text-[#e8dfc8] tracking-wide mt-0.5">
+            {greeting}, <span className="text-[#d4b96a]">{firstName}</span>
+          </h2>
+        </div>
+        <button onClick={handleRefresh} className="w-9 h-9 flex items-center justify-center border border-[#1e2540] rounded-full text-[#c8bfa8]/40 active:scale-95 transition-all">
+          <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
+      {/* Live Banner */}
+      {nextLive && (
+        <button
+          onClick={() => navigate(scoped('/live'))}
+          className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border text-left active:scale-[0.98] transition-all ${
+            isLiveNow
+              ? 'bg-red-950/30 border-red-500/30'
+              : 'bg-[#0d1120] border-[#1e2540]'
+          }`}
+        >
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLiveNow ? 'bg-red-500/20' : 'bg-[#161c32]'}`}>
+            {isLiveNow
+              ? <Wifi size={18} className="text-red-400" />
+              : <WifiOff size={18} className="text-[#c8bfa8]/40" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            {isLiveNow && (
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-[9px] font-bold text-red-400 uppercase tracking-wide">Ao vivo agora</span>
+              </div>
+            )}
+            <p className={`text-[13px] font-light truncate ${isLiveNow ? 'text-red-300' : 'text-[#e8dfc8]/70'}`}>{nextLive.title}</p>
+            <p className="text-[10px] text-[#c8bfa8]/30 mt-0.5">
+              {isLiveNow ? 'Toque para assistir' : nextLive.scheduled_at ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Sala ao vivo'}
+            </p>
+          </div>
+          <ArrowRight size={14} className={isLiveNow ? 'text-red-400 shrink-0' : 'text-[#c8bfa8]/25 shrink-0'} />
+        </button>
+      )}
+
+      {/* Stat Cards — 2 colunas */}
+      <div className="grid grid-cols-2 gap-2.5">
+        {[
+          {
+            label: isTeacher ? 'Para Corrigir' : 'Tarefas',
+            value: pendingTasks,
+            icon: FileText,
+            color: 'bg-orange-500/15',
+            iconColor: 'text-orange-400',
+            path: isTeacher ? '/scorecontrol' : '/tasks',
+          },
+          {
+            label: isTeacher ? 'Alunos' : 'Pontos',
+            value: isTeacher ? studentCount : formatScore(totalPoints),
+            icon: isTeacher ? Users : Star,
+            color: isTeacher ? 'bg-emerald-500/15' : 'bg-yellow-500/15',
+            iconColor: isTeacher ? 'text-emerald-400' : 'text-yellow-400',
+            path: isTeacher ? '/students' : '/dashboard',
+          },
+          {
+            label: isTeacher ? 'Aulas' : 'Aulas Assistidas',
+            value: isTeacher ? lessons.length : `${watchedCount}/${lessons.length}`,
+            icon: BookOpen,
+            color: 'bg-purple-500/15',
+            iconColor: 'text-purple-400',
+            path: '/lessons',
+          },
+          {
+            label: 'Meu Rank',
+            value: myRank > 0 ? `#${myRank}` : '—',
+            icon: Trophy,
+            color: 'bg-yellow-500/15',
+            iconColor: 'text-yellow-400',
+            path: '/ranking',
+            hideAdmin: true,
+          },
+        ].filter(c => !(isTeacher && c.hideAdmin)).map((card, i) => (
+          <button
+            key={i}
+            onClick={() => navigate(scoped(card.path))}
+            className="bg-[#0d1120] border border-[#1e2540] rounded-2xl p-4 flex flex-col gap-2.5 text-left active:scale-95 transition-all"
+          >
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${card.color}`}>
+              <card.icon size={17} className={card.iconColor} />
+            </div>
+            <div>
+              <p className="text-[10px] text-[#c8bfa8]/35 uppercase tracking-[0.15em] font-light leading-tight">{card.label}</p>
+              <p className="text-xl font-light text-[#e8dfc8] mt-0.5">{card.value}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Progresso — apenas aluno */}
+      {!isTeacher && (
+        <button
+          onClick={() => navigate(scoped('/lessons'))}
+          className="w-full bg-[#0d1120] border border-[#1e2540] rounded-2xl p-4 text-left active:scale-[0.99] transition-all"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-purple-500/15 flex items-center justify-center">
+                <TrendingUp size={15} className="text-purple-400" />
+              </div>
+              <div>
+                <p className="text-[12px] font-light text-[#e8dfc8]/80">Progresso</p>
+                <p className="text-[10px] text-[#c8bfa8]/30">{watchedCount} de {lessons.length} aulas</p>
+              </div>
+            </div>
+            <span className="text-lg font-light text-[#d4b96a]">{progressPct}%</span>
+          </div>
+          <div className="h-1.5 bg-[#161c32] rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#5b5ef4] to-[#d4b96a] transition-all duration-700"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          {myGrades.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {myGrades.slice(0, 3).map((s, i) => {
+                const task = tasks.find(t => t.id === s.task_id);
+                return (
+                  <div key={i} className="bg-[#161c32] rounded-xl p-2 text-center">
+                    <p className="text-base font-light text-[#e8dfc8]">{formatScore(s.grade)}</p>
+                    <p className="text-[9px] text-[#c8bfa8]/30 truncate mt-0.5">{task?.title || 'Tarefa'}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </button>
+      )}
+
+      {/* Ranking compacto — apenas aluno */}
+      {!isTeacher && visibleRanking.length > 0 && (
+        <div className="bg-[#0d1120] border border-[#1e2540] rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-yellow-500/15 flex items-center justify-center">
+                <Trophy size={15} className="text-yellow-400" />
+              </div>
+              <p className="text-[12px] font-light text-[#e8dfc8]/80">Ranking</p>
+            </div>
+            {myRank > 0 && (
+              <span className="text-[10px] font-light border border-[#d4b96a]/20 text-[#d4b96a] px-2 py-0.5 rounded-full">#{myRank}</span>
+            )}
+          </div>
+          <div className="space-y-1">
+            {visibleRanking.map((r, i) => {
+              const isMe = r.email === session?.email;
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+              return (
+                <div key={r.email} className={`flex items-center gap-2.5 p-2 rounded-xl ${isMe ? 'bg-[#d4b96a]/8 border border-[#d4b96a]/12' : ''}`}>
+                  <span className="w-5 text-center text-sm shrink-0">
+                    {medal || <span className="text-[11px] text-[#c8bfa8]/30 font-light">{i + 1}</span>}
+                  </span>
+                  {r.photoUrl
+                    ? <img src={r.photoUrl} alt={r.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                    : r.avatarEmoji
+                    ? <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ background: r.avatarColor }}>{r.avatarEmoji}</div>
+                    : <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-light text-white shrink-0" style={{ background: r.avatarColor }}>{r.name?.[0]?.toUpperCase()}</div>
+                  }
+                  <span className={`flex-1 text-[12px] font-light truncate ${isMe ? 'text-[#d4b96a]' : 'text-[#e8dfc8]/70'}`}>{r.name}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                    <span className="text-[11px] font-light text-[#e8dfc8]/60">{formatScore(r.total)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Painel admin — quick stats */}
+      {isTeacher && (
+        <div className="bg-[#0d1120] border border-[#1e2540] rounded-2xl p-4">
+          <p className="text-[10px] text-[#c8bfa8]/30 uppercase tracking-[0.25em] font-light mb-3">Turma · Resumo</p>
+          <div className="space-y-2">
+            <button onClick={() => navigate(scoped('/students'))} className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a0c18] active:scale-[0.98] transition-all">
+              <div className="flex items-center gap-2.5">
+                <Users size={15} className="text-emerald-400" />
+                <span className="text-[12px] font-light text-[#e8dfc8]/70">Alunos ativos</span>
+              </div>
+              <span className="text-sm font-light text-[#d4b96a]">{studentCount}</span>
+            </button>
+            <button onClick={() => navigate(scoped('/scorecontrol'))} className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a0c18] active:scale-[0.98] transition-all">
+              <div className="flex items-center gap-2.5">
+                <FileText size={15} className="text-orange-400" />
+                <span className="text-[12px] font-light text-[#e8dfc8]/70">Entregas para corrigir</span>
+              </div>
+              <span className="text-sm font-light text-[#d4b96a]">{pendingTasks}</span>
+            </button>
+            <button onClick={() => navigate(scoped('/lessons'))} className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a0c18] active:scale-[0.98] transition-all">
+              <div className="flex items-center gap-2.5">
+                <BookOpen size={15} className="text-purple-400" />
+                <span className="text-[12px] font-light text-[#e8dfc8]/70">Total de aulas</span>
+              </div>
+              <span className="text-sm font-light text-[#d4b96a]">{lessons.length}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pendências — acordeão mobile */}
+      {!isTeacher && totalPending > 0 && (
+        <div className="bg-[#0d1120] border border-orange-500/20 rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setPendingOpen(v => !v)}
+            className="w-full flex items-center gap-2.5 p-4 active:bg-white/4 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-xl bg-orange-500/15 flex items-center justify-center shrink-0">
+              <ClipboardList size={15} className="text-orange-400" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-[12px] font-light text-[#e8dfc8]/80">Minhas Pendências</p>
+              <p className="text-[10px] text-orange-400/70">{totalPending} {totalPending === 1 ? 'item' : 'itens'} aguardando</p>
+            </div>
+            {pendingOpen ? <ChevronUp size={16} className="text-[#c8bfa8]/30 shrink-0" /> : <ChevronDown size={16} className="text-[#c8bfa8]/30 shrink-0" />}
+          </button>
+
+          {pendingOpen && (
+            <div className="px-4 pb-4 space-y-2 border-t border-[#1e2540]">
+              {therapistPending.slice(0, 2).map(p => {
+                const isTherapist = p.therapist_email === session?.email;
+                return (
+                  <button key={p.id} onClick={() => navigate(scoped('/terapeuta'))}
+                    className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-pink-500/8 border border-pink-500/15 active:scale-[0.98] text-left transition-all">
+                    <Heart size={13} className="text-pink-400 shrink-0" />
+                    <span className="text-[11px] text-pink-300/80 flex-1 truncate">{isTherapist ? 'Atender' : 'Ser atendido por'}: {p.patient_name || p.therapist_name}</span>
+                    <ArrowRight size={12} className="text-pink-400/40 shrink-0" />
+                  </button>
+                );
+              })}
+              {unwatchedLessons.slice(0, 2).map(l => (
+                <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
+                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-purple-500/8 border border-purple-500/15 active:scale-[0.98] text-left transition-all">
+                  <BookOpen size={13} className="text-purple-400 shrink-0" />
+                  <span className="text-[11px] text-purple-300/80 flex-1 truncate">{extractSeq(l) ? `Aula ${extractSeq(l)} · ` : ''}{l.title}</span>
+                  <ArrowRight size={12} className="text-purple-400/40 shrink-0" />
+                </button>
+              ))}
+              {pendingTasksList.slice(0, 2).map(t => (
+                <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
+                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-orange-500/8 border border-orange-500/15 active:scale-[0.98] text-left transition-all">
+                  <ClipboardList size={13} className="text-orange-400 shrink-0" />
+                  <span className="text-[11px] text-orange-300/80 flex-1 truncate">{extractSeq(t) ? `Tarefa ${extractSeq(t)} · ` : ''}{t.title}</span>
+                  <ArrowRight size={12} className="text-orange-400/40 shrink-0" />
+                </button>
+              ))}
+              {pendingQuizzes.slice(0, 1).map(t => (
+                <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
+                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-violet-500/8 border border-violet-500/15 active:scale-[0.98] text-left transition-all">
+                  <GraduationCap size={13} className="text-violet-400 shrink-0" />
+                  <span className="text-[11px] text-violet-300/80 flex-1 truncate">{t.title}</span>
+                  <ArrowRight size={12} className="text-violet-400/40 shrink-0" />
+                </button>
+              ))}
+              {missedLives.slice(0, 1).map(live => (
+                <button key={live.id} onClick={() => navigate(scoped('/live'))}
+                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-red-500/8 border border-red-500/15 active:scale-[0.98] text-left transition-all">
+                  <WifiOff size={13} className="text-red-400 shrink-0" />
+                  <span className="text-[11px] text-red-300/80 flex-1 truncate">{live.title}</span>
+                  <ArrowRight size={12} className="text-red-400/40 shrink-0" />
+                </button>
+              ))}
+              {totalPending > 5 && (
+                <p className="text-[10px] text-[#c8bfa8]/30 text-center pt-1">+{totalPending - 5} pendências a mais</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Avisos recentes */}
+      {announcements.length > 0 && (
+        <div className="bg-[#0d1120] border border-[#1e2540] rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Bell size={14} className="text-yellow-400" />
+              <p className="text-[12px] font-light text-[#e8dfc8]/80">Avisos</p>
+            </div>
+            <button onClick={() => navigate(scoped('/announcements'))} className="text-[10px] text-[#d4b96a]/60 active:opacity-60">Ver todos</button>
+          </div>
+          <div className="space-y-2.5">
+            {announcements.slice(0, 2).map(a => (
+              <div key={a.id} className="border-b border-[#1e2540] pb-2.5 last:border-0 last:pb-0">
+                <p className="text-[9px] text-[#c8bfa8]/25 font-light mb-0.5">{a.created_date ? format(new Date(a.created_date), 'dd/MM') : ''}</p>
+                <p className="text-[12px] text-[#e8dfc8]/60 font-light leading-snug">{a.title || a.content}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

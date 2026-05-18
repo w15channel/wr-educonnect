@@ -3,6 +3,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Video, FileText, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart } from 'lucide-react';
+import DashboardMobile from './DashboardMobile';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -60,7 +61,8 @@ function StatCard({ title, value, icon: Icon, iconBg, to, subtitle, pulse }) {
 }
 
 export default function Dashboard() {
-  const { user: session } = useOutletContext();
+  const ctx = useOutletContext();
+  const { user: session } = ctx || {};
   const navigate = useNavigate();
   const prefix = useScopedPrefix();
   const scoped = (p) => prefix + p;
@@ -371,6 +373,9 @@ export default function Dashboard() {
   const firstName = (session?.name || 'Usuário').split(' ')[0];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+
+  // Shell mobile → dashboard exclusiva (todos os hooks já foram chamados acima)
+  if (ctx?.shell === 'mobile') return <DashboardMobile />;
 
   return (
     <div className="app-page app-page--wide space-y-4 animate-fade-in-up overflow-x-hidden">
