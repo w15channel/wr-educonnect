@@ -451,7 +451,7 @@ export default function Dashboard() {
           icon={isTeacher ? FileText : Flame}
           iconBg="bg-orange-500"
           to={isTeacher ? '/scorecontrol?filter=pending' : '/ofensivas'}
-          subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Trilha de atividades diárias'} />
+          subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Perguntas diárias de reflexão'} />
         
         <StatCard
           title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}

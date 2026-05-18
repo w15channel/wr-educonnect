@@ -1,0 +1,71 @@
+{
+  "name": "DailyChallenge",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "Data desta ofensiva (YYYY-MM-DD)"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc"
+    },
+    "lesson_ref": {
+      "type": "string",
+      "description": "T\u00edtulo da aula de refer\u00eancia usada para gerar as perguntas"
+    },
+    "lesson_id": {
+      "type": "string",
+      "description": "ID da aula de refer\u00eancia"
+    },
+    "questions": {
+      "type": "array",
+      "description": "5 perguntas geradas para o dia",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "created_by_admin": {
+      "type": "string",
+      "description": "Email do admin que gerou"
+    }
+  },
+  "required": [
+    "date",
+    "course"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

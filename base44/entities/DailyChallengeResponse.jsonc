@@ -1,0 +1,68 @@
+{
+  "name": "DailyChallengeResponse",
+  "type": "object",
+  "properties": {
+    "challenge_id": {
+      "type": "string",
+      "description": "ID do DailyChallenge"
+    },
+    "date": {
+      "type": "string",
+      "description": "Data (YYYY-MM-DD)"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc"
+    },
+    "student_email": {
+      "type": "string"
+    },
+    "student_name": {
+      "type": "string"
+    },
+    "answers": {
+      "type": "array",
+      "description": "Respostas do aluno por question_id",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_id": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "questions_answered": {
+      "type": "number",
+      "default": 0,
+      "description": "Quantas perguntas respondidas (m\u00e1x 5)"
+    },
+    "points_earned": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "challenge_id",
+    "date",
+    "student_email"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
