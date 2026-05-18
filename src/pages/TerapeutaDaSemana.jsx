@@ -58,9 +58,10 @@ export default function TerapeutaDaSemana() {
     },
   });
 
-  // Período atual: últimos 5 dias
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
+  // Período atual: pareamentos cujo period_end >= hoje (ainda ativos)
+  // ou criados nos últimos 5 dias caso period_end não esteja definido
   const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
 
   // Filtro por curso: /sex/ exibe apenas alunos SEX-
@@ -82,12 +83,15 @@ export default function TerapeutaDaSemana() {
   const activeDomainStudents = accessCodes.filter(isCodeInActiveDomain);
   const rankedDomainStudents = [...activeDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
 
+  // Pareamento "atual" = period_end >= hoje OU (sem period_end e criado nos últimos 5 dias)
+  const isActivePairing = (p) => p.period_end ? p.period_end >= todayStr : p.pairing_date >= periodStart;
+
   const currentPairings = sortBySequence(pairings.filter(p =>
-    p.pairing_date >= periodStart &&
+    isActivePairing(p) &&
     (!courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email)))
   ));
   const pastPairings = sortBySequence(pairings.filter(p =>
-    p.pairing_date < periodStart &&
+    !isActivePairing(p) &&
     (!courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email)))
   ));
 
