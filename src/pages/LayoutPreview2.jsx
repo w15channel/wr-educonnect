@@ -119,11 +119,11 @@ const TESTIMONIALS = [
 { name: 'Carlos Eduardo S.', text: 'O Professor William tem uma didática incrível. Aprendi mais aqui do que em anos de graduação.', stars: 5 },
 { name: 'Fernanda R.', text: 'Plataforma excelente, suporte impecável e conteúdo de altíssimo nível. Super recomendo!', stars: 5 }];
 
-// ── Paleta Cosmos & Ouro Pálido ──────────────────────────────────────────────
+// ── Paleta Original — Preto Profundo & Ouro Pálido ───────────────────────────
 const G = '#d4b96a';   // ouro pálido
-const BG = '#0d1228';  // azul-cosmos mais claro
-const BG2 = '#111730'; // sidebar/secções alternadas
-const BG3 = '#172040'; // cards azul-meia-noite
+const BG = '#0a0a0c';  // preto profundo
+const BG2 = '#0f0f12'; // secções alternadas — quase preto
+const BG3 = '#141418'; // cards escuros
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
@@ -367,7 +367,7 @@ export default function LandingPage({ onLogin }) {
             <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 35%' }} />
           </div>
         )}
-        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${BG}d8 0%, #1a2550cc 50%, ${BG}d0 100%)` }} />
+        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${BG}e0 0%, #0d0d11cc 50%, ${BG}d8 100%)` }} />
         <div className="absolute inset-x-0 bottom-0 h-56" style={{ background: `linear-gradient(to top, ${BG}, transparent)` }} />
 
         <div className="site-container relative z-10 text-center pt-28">
