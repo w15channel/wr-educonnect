@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext, useLocation } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  Flame, CheckCircle, Star, RefreshCw, ChevronDown, ChevronUp,
-  Send, Trophy, Zap, BookOpen, Loader2, Users, Calendar
+  Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send, Trophy, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const POINTS_PER_QUESTION = 0.1;
-const MAX_QUESTIONS = 5;
+// Pontuação por posição: 1=0.1, 2=0.1, 3=0.5(baú), 4=0.1, 5=0.1
+const QUESTION_POINTS = [0.1, 0.1, 0.5, 0.1, 0.1];
+const TOTAL_POINTS = QUESTION_POINTS.reduce((a, b) => a + b, 0); // 1.0
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -25,102 +24,184 @@ function useScopedPrefix() {
   return '';
 }
 
-// Barra de progresso diária
-function DailyBar({ answered }) {
+// Posições em zigue-zague para as 5 bolinhas (centro, direita, centro, esquerda, centro)
+const TRAIL_POSITIONS = [
+  { x: 'center', offset: 0 },
+  { x: 'right',  offset: 60 },
+  { x: 'center', offset: 0 },   // baú
+  { x: 'left',   offset: -60 },
+  { x: 'center', offset: 0 },
+];
+
+// Mascote corujinha SVG simples
+function Owl() {
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 mb-5">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Flame size={18} className={answered > 0 ? 'text-orange-500' : 'text-muted-foreground'} />
-          <span className="font-bold text-sm">Ofensiva de Hoje</span>
-        </div>
-        <span className="font-mono font-bold text-primary text-sm">{answered}/{MAX_QUESTIONS}</span>
-      </div>
-      <div className="flex gap-1.5 mb-2">
-        {Array.from({ length: MAX_QUESTIONS }).map((_, i) => (
-          <div key={i} className={`flex-1 h-3 rounded-full transition-all ${i < answered ? 'bg-orange-400' : 'bg-secondary'}`} />
-        ))}
-      </div>
-      {answered >= MAX_QUESTIONS ? (
-        <p className="text-xs text-orange-600 font-bold flex items-center gap-1.5">
-          🔥 Ofensiva do dia completa! +{(answered * POINTS_PER_QUESTION).toFixed(1)} pts ganhos. Volte amanhã!
-        </p>
-      ) : answered > 0 ? (
-        <p className="text-xs text-muted-foreground">
-          {MAX_QUESTIONS - answered} pergunta{MAX_QUESTIONS - answered !== 1 ? 's' : ''} restante{MAX_QUESTIONS - answered !== 1 ? 's' : ''} ·
-          +{((MAX_QUESTIONS - answered) * POINTS_PER_QUESTION).toFixed(1)} pts disponíveis
-        </p>
-      ) : (
-        <p className="text-xs text-muted-foreground">Responda {MAX_QUESTIONS} perguntas hoje e ganhe +{(MAX_QUESTIONS * POINTS_PER_QUESTION).toFixed(1)} pts!</p>
-      )}
+    <div className="flex flex-col items-center">
+      <div className="text-5xl select-none" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.18))' }}>🦉</div>
     </div>
   );
 }
 
-// Card de pergunta individual
-function QuestionCard({ question, idx, answered, answerValue, onChangeAnswer, onSubmit, isPending }) {
-  const [expanded, setExpanded] = useState(!answered);
+// Bolinha da trilha
+function TrailNode({ question, idx, answered, locked, isChest, onPress }) {
+  const pts = QUESTION_POINTS[idx];
 
-  return (
-    <div className={`bg-card rounded-2xl border overflow-hidden transition-all ${answered ? 'border-green-200' : 'border-border hover:shadow-md'}`}>
-      <div
-        className="flex items-center gap-3 p-4 cursor-pointer select-none"
-        onClick={() => setExpanded(e => !e)}
+  // Bolinha do baú
+  if (isChest) {
+    return (
+      <button
+        onClick={() => !locked && onPress()}
+        disabled={locked}
+        className={`relative flex flex-col items-center group transition-transform active:scale-95 ${locked ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+        style={{ marginLeft: TRAIL_POSITIONS[idx].offset }}
       >
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${
-          answered ? 'bg-green-500 border-green-400 text-white' : 'bg-secondary border-border text-foreground'
+        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg border-4 transition-all ${
+          answered
+            ? 'bg-yellow-400 border-yellow-300 shadow-yellow-400/40'
+            : locked
+            ? 'bg-secondary border-border'
+            : 'bg-amber-500 border-amber-400 shadow-amber-400/40'
         }`}>
-          {answered ? <CheckCircle size={17} /> : idx + 1}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-foreground leading-snug">{question.text}</p>
-          <div className="flex items-center gap-2 mt-0.5">
-            {answered
-              ? <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200 py-0 px-1.5">✓ Respondida · +{POINTS_PER_QUESTION} pts</Badge>
-              : <span className="text-[10px] text-yellow-600 font-semibold flex items-center gap-0.5"><Star size={9} className="fill-yellow-500" /> +{POINTS_PER_QUESTION} pts ao responder</span>
-            }
-          </div>
-        </div>
-
-        <div className="shrink-0 text-muted-foreground">
-          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 bg-secondary/10">
-          {question.hint && (
-            <p className="text-xs text-muted-foreground italic">💡 {question.hint}</p>
-          )}
           {answered ? (
-            <div className="bg-green-50/10 border border-green-200/30 rounded-xl p-3">
-              <p className="text-xs font-bold text-green-600 mb-1 flex items-center gap-1"><CheckCircle size={11} /> Sua resposta foi registrada!</p>
-              {answerValue && <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{answerValue}</p>}
-            </div>
+            <CheckCircle size={32} className="text-white" />
+          ) : locked ? (
+            <Lock size={28} className="text-muted-foreground" />
           ) : (
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Escreva sua resposta aqui... Não precisa ser perfeita, o que importa é refletir!"
-                value={answerValue || ''}
-                onChange={e => onChangeAnswer(e.target.value)}
-                rows={3}
-                className="text-sm"
-              />
-              <Button
-                size="sm"
-                className="w-full gap-1.5"
-                disabled={!answerValue?.trim() || isPending}
-                onClick={onSubmit}
-              >
-                {isPending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-                Registrar Resposta · +{POINTS_PER_QUESTION} pts
-              </Button>
-            </div>
+            <span className="text-4xl">🗝️</span>
           )}
+        </div>
+        {!locked && !answered && (
+          <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-amber-300 shadow">
+            +{pts}
+          </div>
+        )}
+        {answered && (
+          <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-green-300 shadow">
+            ✓
+          </div>
+        )}
+        <span className={`mt-2 text-[11px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-amber-400'}`}>
+          Baú do Saber
+        </span>
+        <span className="text-[10px] text-muted-foreground/70">+{pts} pts</span>
+      </button>
+    );
+  }
+
+  // Bolinha normal
+  return (
+    <button
+      onClick={() => !locked && onPress()}
+      disabled={locked}
+      className={`relative flex flex-col items-center group transition-transform active:scale-95 ${locked ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+      style={{ marginLeft: TRAIL_POSITIONS[idx].offset }}
+    >
+      <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 transition-all ${
+        answered
+          ? 'bg-green-500 border-green-400 shadow-green-400/40'
+          : locked
+          ? 'bg-secondary border-border'
+          : 'bg-primary border-primary/70 shadow-primary/30'
+      }`}>
+        {answered ? (
+          <CheckCircle size={26} className="text-white" />
+        ) : locked ? (
+          <Lock size={20} className="text-muted-foreground" />
+        ) : (
+          <Flame size={24} className="text-white" />
+        )}
+      </div>
+      {!locked && !answered && (
+        <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-primary/50 shadow">
+          +{pts}
         </div>
       )}
+      {answered && (
+        <div className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">
+          ✓
+        </div>
+      )}
+      <span className={`mt-1.5 text-[10px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-foreground/70'}`}>
+        {answered ? 'Feita' : locked ? 'Bloqueada' : `Pergunta ${idx + 1}`}
+      </span>
+      <span className="text-[10px] text-muted-foreground/60">+{pts} pts</span>
+    </button>
+  );
+}
+
+// Conector vertical entre bolinhas
+function Connector({ answered }) {
+  return (
+    <div className="flex justify-center my-1">
+      <div className={`w-1 h-8 rounded-full ${answered ? 'bg-green-400' : 'bg-border'}`} />
     </div>
+  );
+}
+
+// Popup de pergunta
+function QuestionModal({ question, idx, isChest, pointsValue, answered, savedAnswer, open, onClose, onSubmit, isPending }) {
+  const [answer, setAnswer] = useState('');
+
+  React.useEffect(() => {
+    if (open) setAnswer('');
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-sm mx-4">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            {isChest ? <span className="text-xl">🗝️</span> : <Flame size={16} className="text-orange-500" />}
+            {isChest ? 'Baú do Saber' : `Pergunta ${idx + 1}`}
+            <span className="ml-auto text-xs font-bold text-yellow-500 flex items-center gap-0.5">
+              <Star size={11} className="fill-yellow-400" /> +{pointsValue} pts
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-1">
+          {isChest && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-xs text-amber-500 font-semibold flex items-center gap-1.5">
+              🗝️ Pergunta desafio! Vale mais pontos — reflita com cuidado.
+            </div>
+          )}
+
+          <p className="text-sm font-semibold text-foreground leading-relaxed">{question?.text}</p>
+
+          {question?.hint && (
+            <p className="text-xs text-muted-foreground italic flex gap-1.5">
+              <span>💡</span> {question.hint}
+            </p>
+          )}
+
+          {answered ? (
+            <div className="bg-green-500/10 border border-green-400/30 rounded-xl p-3 space-y-1">
+              <p className="text-xs font-bold text-green-500 flex items-center gap-1"><CheckCircle size={11} /> Resposta registrada!</p>
+              {savedAnswer && <p className="text-xs text-muted-foreground whitespace-pre-wrap">{savedAnswer}</p>}
+            </div>
+          ) : (
+            <>
+              <Textarea
+                placeholder="Escreva sua reflexão aqui... Não precisa ser perfeita!"
+                value={answer}
+                onChange={e => setAnswer(e.target.value)}
+                rows={4}
+                className="text-sm"
+                autoFocus
+              />
+              <Button
+                className="w-full gap-2"
+                disabled={!answer.trim() || isPending}
+                onClick={() => onSubmit(answer)}
+              >
+                {isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                Registrar · +{pointsValue} pts
+              </Button>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -130,30 +211,29 @@ function GenerateChallengePanel({ lessons, course, onGenerated }) {
   const [customTopic, setCustomTopic] = useState('');
   const [generating, setGenerating] = useState(false);
   const queryClient = useQueryClient();
-
   const today = format(new Date(), 'yyyy-MM-dd');
 
   const handleGenerate = async () => {
     const lesson = lessons.find(l => l.id === selectedLesson);
     const topic = customTopic.trim() || lesson?.title || 'comportamento humano e emoções';
     const lessonDesc = lesson?.description || '';
-
     setGenerating(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Você é um professor de psicologia/comportamento humano. Gere exatamente 5 perguntas de reflexão rápida para alunos de um curso online.
+        prompt: `Você é professor de psicologia/comportamento humano. Gere 5 perguntas de reflexão para alunos de curso online.
 
-Tema da aula de referência: "${topic}"
-${lessonDesc ? `Descrição da aula: "${lessonDesc}"` : ''}
+Tema: "${topic}"
+${lessonDesc ? `Descrição: "${lessonDesc}"` : ''}
 
 Regras:
-- Linguagem simples e acessível (não acadêmica)
-- Perguntas abertas para reflexão pessoal ou observação do cotidiano
-- Curtas: máximo 2 linhas por pergunta
-- Cada pergunta deve ter uma dica curta (hint) de como pensar sobre ela
-- Não repita temas entre as 5 perguntas
+- Linguagem simples, acessível, cotidiana
+- Perguntas 1, 2, 4 e 5: reflexão rápida e leve (fáceis)
+- Pergunta 3 (BAÚ): mais reflexiva, exige mais elaboração, maior dificuldade
+- Cada pergunta: máximo 2 linhas
+- Cada pergunta tem uma dica curta (hint)
+- Não repita temas
 
-Retorne em JSON com este formato exato:
+JSON exato:
 {
   "questions": [
     { "id": "q1", "text": "...", "hint": "..." },
@@ -193,10 +273,10 @@ Retorne em JSON com este formato exato:
       });
 
       await queryClient.invalidateQueries({ queryKey: ['daily-challenge'] });
-      toast.success('🔥 Nova ofensiva gerada com sucesso!');
+      toast.success('🔥 Nova ofensiva gerada!');
       onGenerated();
     } catch (err) {
-      toast.error('Erro ao gerar: ' + (err.message || 'tente novamente'));
+      toast.error('Erro: ' + (err.message || 'tente novamente'));
     } finally {
       setGenerating(false);
     }
@@ -207,7 +287,7 @@ Retorne em JSON com este formato exato:
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-xs font-bold text-foreground mb-1">Aula de referência (opcional)</p>
+        <p className="text-xs font-bold text-foreground mb-1">Aula de referência</p>
         <Select value={selectedLesson} onValueChange={setSelectedLesson}>
           <SelectTrigger><SelectValue placeholder="Selecionar aula..." /></SelectTrigger>
           <SelectContent>
@@ -218,9 +298,9 @@ Retorne em JSON com este formato exato:
         </Select>
       </div>
       <div>
-        <p className="text-xs font-bold text-foreground mb-1">Ou descreva o tema (livre)</p>
+        <p className="text-xs font-bold text-foreground mb-1">Ou tema livre</p>
         <Textarea
-          placeholder="Ex: emoções e comportamento, relacionamentos, autoconhecimento..."
+          placeholder="Ex: emoções, autoconhecimento, relacionamentos..."
           value={customTopic}
           onChange={e => setCustomTopic(e.target.value)}
           rows={2}
@@ -232,7 +312,9 @@ Retorne em JSON com este formato exato:
         disabled={generating || (!selectedLesson && !customTopic.trim())}
         className="w-full gap-2"
       >
-        {generating ? <><Loader2 size={14} className="animate-spin" /> Gerando perguntas com IA...</> : <><Zap size={14} /> Gerar 5 Perguntas com IA</>}
+        {generating
+          ? <><Loader2 size={14} className="animate-spin" /> Gerando com IA...</>
+          : <><Zap size={14} /> Gerar 5 Perguntas com IA</>}
       </Button>
     </div>
   );
@@ -250,18 +332,15 @@ export default function Ofensivas() {
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState({});
   const [showGenerate, setShowGenerate] = useState(false);
-  const [viewingDate, setViewingDate] = useState(today);
+  const [activeQuestion, setActiveQuestion] = useState(null); // idx of open modal
 
-  // Buscar desafio do dia
-  const { data: challenges = [], isLoading: loadingChallenge } = useQuery({
+  const { data: challenges = [], isLoading } = useQuery({
     queryKey: ['daily-challenge', userCourse, today],
     queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: today }, '-created_date', 5),
     staleTime: 60000,
   });
-
   const challenge = challenges[0] || null;
 
-  // Buscar minha resposta de hoje
   const { data: myResponse } = useQuery({
     queryKey: ['daily-response', challenge?.id, session?.email],
     queryFn: () => base44.entities.DailyChallengeResponse.filter(
@@ -276,45 +355,44 @@ export default function Ofensivas() {
   (myResponseRecord?.answers || []).forEach(a => { answeredMap[a.question_id] = a.answer; });
   const answeredCount = Object.keys(answeredMap).length;
 
-  // Admin: histórico de desafios
   const { data: allChallenges = [] } = useQuery({
     queryKey: ['all-challenges', userCourse],
     queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse }, '-created_date', 30),
     enabled: isTeacher,
   });
 
-  // Admin: respostas do dia
   const { data: allResponses = [] } = useQuery({
     queryKey: ['all-responses-today', challenge?.id],
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ challenge_id: challenge.id }, '-created_date', 200),
     enabled: isTeacher && !!challenge?.id,
   });
 
-  // Aulas para referência
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons-ref', userCourse],
     queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 100),
     enabled: isTeacher,
   });
 
-  // Submeter uma resposta
-  const handleSubmitAnswer = async (question) => {
-    const answer = answers[question.id]?.trim();
-    if (!answer) return;
-
-    setSubmitting(prev => ({ ...prev, [question.id]: true }));
+  const handleSubmitAnswer = async (questionId, answer) => {
+    if (!answer?.trim()) return;
+    setSubmitting(prev => ({ ...prev, [questionId]: true }));
     try {
-      const newAnswer = { question_id: question.id, answer };
       const currentAnswers = myResponseRecord?.answers || [];
-      const updatedAnswers = [...currentAnswers.filter(a => a.question_id !== question.id), newAnswer];
+      const updatedAnswers = [...currentAnswers.filter(a => a.question_id !== questionId), { question_id: questionId, answer }];
       const newCount = updatedAnswers.length;
-      const newPoints = newCount * POINTS_PER_QUESTION;
+      // Calcular pontos baseados nas posições respondidas
+      const questions = challenge?.questions || [];
+      let pts = 0;
+      updatedAnswers.forEach(a => {
+        const qIdx = questions.findIndex(q => q.id === a.question_id);
+        if (qIdx >= 0) pts += QUESTION_POINTS[qIdx] || 0.1;
+      });
 
       if (myResponseRecord) {
         await base44.entities.DailyChallengeResponse.update(myResponseRecord.id, {
           answers: updatedAnswers,
           questions_answered: newCount,
-          points_earned: newPoints,
+          points_earned: pts,
         });
       } else {
         await base44.entities.DailyChallengeResponse.create({
@@ -325,20 +403,22 @@ export default function Ofensivas() {
           student_name: session?.name || session?.full_name || '',
           answers: updatedAnswers,
           questions_answered: newCount,
-          points_earned: newPoints,
+          points_earned: pts,
         });
       }
 
       await queryClient.invalidateQueries({ queryKey: ['daily-response'] });
-      toast.success(`🔥 +${POINTS_PER_QUESTION} pts registrados!`);
+      const pointsEarned = QUESTION_POINTS[activeQuestion] || 0.1;
+      toast.success(`🔥 +${pointsEarned} pts!`);
+      setActiveQuestion(null);
     } catch (err) {
-      toast.error('Erro ao registrar: ' + (err.message || 'tente novamente'));
+      toast.error('Erro: ' + (err.message || 'tente novamente'));
     } finally {
-      setSubmitting(prev => ({ ...prev, [question.id]: false }));
+      setSubmitting(prev => ({ ...prev, [questionId]: false }));
     }
   };
 
-  if (loadingChallenge) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
         <Loader2 size={28} className="animate-spin text-primary" />
@@ -346,29 +426,24 @@ export default function Ofensivas() {
     );
   }
 
+  const questions = challenge?.questions || [];
+
   return (
-    <div className="p-3 md:p-5 max-w-[820px] mx-auto animate-fade-in-up">
+    <div className="p-3 md:p-5 max-w-[560px] mx-auto animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-5">
+      <div className="flex items-start justify-between gap-3 mb-6">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             <Flame size={22} className="text-orange-500" /> Ofensivas Diárias
           </h2>
           <p className="text-muted-foreground text-sm mt-0.5 capitalize">{todayLabel}</p>
         </div>
-
         {isTeacher && (
-          <Button
-            onClick={() => setShowGenerate(true)}
-            className="gap-2 h-9 text-sm shrink-0 bg-orange-500 hover:bg-orange-600"
-          >
+          <Button onClick={() => setShowGenerate(true)} className="gap-2 h-9 text-sm shrink-0 bg-orange-500 hover:bg-orange-600">
             <Zap size={15} /> Atualizar Ofensiva
           </Button>
         )}
       </div>
-
-      {/* Barra de progresso — alunos */}
-      {!isTeacher && challenge && <DailyBar answered={answeredCount} />}
 
       {/* SEM DESAFIO */}
       {!challenge && (
@@ -376,47 +451,107 @@ export default function Ofensivas() {
           <Flame size={48} className="mx-auto mb-4 opacity-20" />
           <p className="text-lg font-bold">Nenhuma ofensiva para hoje</p>
           <p className="text-sm mt-1 text-muted-foreground/70">
-            {isTeacher ? 'Clique em "Atualizar Ofensiva" para gerar as perguntas do dia.' : 'O professor ainda não liberou a ofensiva de hoje. Volte mais tarde!'}
+            {isTeacher
+              ? 'Clique em "Atualizar Ofensiva" para gerar as perguntas do dia.'
+              : 'O professor ainda não liberou a ofensiva de hoje. Volte mais tarde!'}
           </p>
         </div>
       )}
 
-      {/* DESAFIO DO DIA — alunos */}
+      {/* TRILHA DO TESOURO — alunos */}
       {!isTeacher && challenge && (
-        <div className="space-y-3">
+        <div>
+          {/* Tema da ofensiva */}
           {challenge.lesson_ref && (
-            <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 text-xs text-orange-600 font-semibold mb-4">
-              <BookOpen size={13} /> Tema: {challenge.lesson_ref}
+            <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 text-xs text-orange-500 font-semibold mb-6">
+              <BookOpen size={13} /> {challenge.lesson_ref}
             </div>
           )}
 
-          {answeredCount >= MAX_QUESTIONS && (
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-5 text-center mb-4">
-              <Trophy size={30} className="mx-auto mb-2 text-yellow-500" />
-              <p className="font-black text-base text-foreground">Ofensiva completa! 🔥</p>
-              <p className="text-sm text-muted-foreground mt-1">Você ganhou +{(MAX_QUESTIONS * POINTS_PER_QUESTION).toFixed(1)} pts hoje. Volte amanhã!</p>
+          {/* Pontuação total */}
+          <div className="flex items-center justify-center gap-4 mb-6">
+            {[0,1,2,3,4].map(i => {
+              const q = questions[i];
+              const isAnswered = q && !!answeredMap[q?.id];
+              return (
+                <div key={i} className="flex flex-col items-center gap-0.5">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all ${
+                    isAnswered ? 'bg-green-500 border-green-400 text-white' : 'bg-secondary border-border text-muted-foreground'
+                  }`}>
+                    {isAnswered ? '✓' : i + 1}
+                  </div>
+                  <span className="text-[9px] text-muted-foreground">{QUESTION_POINTS[i]}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* MAPA DO TESOURO */}
+          {answeredCount >= 5 && (
+            <div className="bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border border-yellow-400/30 rounded-2xl p-5 text-center mb-6">
+              <Trophy size={36} className="mx-auto mb-2 text-yellow-400" />
+              <p className="font-black text-lg text-foreground">Ofensiva Completa! 🔥</p>
+              <p className="text-sm text-muted-foreground mt-1">+{TOTAL_POINTS.toFixed(1)} pts ganhos hoje. Volte amanhã!</p>
             </div>
           )}
 
-          {(challenge.questions || []).map((q, idx) => (
-            <QuestionCard
-              key={q.id}
-              question={q}
-              idx={idx}
-              answered={!!answeredMap[q.id]}
-              answerValue={answeredMap[q.id] || answers[q.id] || ''}
-              onChangeAnswer={v => setAnswers(prev => ({ ...prev, [q.id]: v }))}
-              onSubmit={() => handleSubmitAnswer(q)}
-              isPending={!!submitting[q.id]}
+          <div className="relative flex flex-col items-center py-4 select-none" style={{ minHeight: 480 }}>
+            {/* Mascote no topo */}
+            <div className="mb-4">
+              <Owl />
+              {answeredCount < 5 && (
+                <div className="mt-2 bg-card border border-border rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground text-center shadow">
+                  {answeredCount === 0 ? 'Toque numa bolinha para começar!' : `${5 - answeredCount} pergunta${5 - answeredCount !== 1 ? 's' : ''} restante${5 - answeredCount !== 1 ? 's' : ''}`}
+                </div>
+              )}
+            </div>
+
+            {/* Trilha */}
+            {questions.map((q, idx) => {
+              const isAnswered = !!answeredMap[q.id];
+              const isLocked = idx > 0 && !answeredMap[questions[idx - 1]?.id];
+              const isChest = idx === 2;
+              const pts = QUESTION_POINTS[idx];
+
+              return (
+                <React.Fragment key={q.id}>
+                  <TrailNode
+                    question={q}
+                    idx={idx}
+                    answered={isAnswered}
+                    locked={isLocked}
+                    isChest={isChest}
+                    onPress={() => setActiveQuestion(idx)}
+                  />
+                  {idx < questions.length - 1 && (
+                    <Connector answered={isAnswered} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Modal da pergunta ativa */}
+          {activeQuestion !== null && questions[activeQuestion] && (
+            <QuestionModal
+              question={questions[activeQuestion]}
+              idx={activeQuestion}
+              isChest={activeQuestion === 2}
+              pointsValue={QUESTION_POINTS[activeQuestion]}
+              answered={!!answeredMap[questions[activeQuestion]?.id]}
+              savedAnswer={answeredMap[questions[activeQuestion]?.id]}
+              open={activeQuestion !== null}
+              onClose={() => setActiveQuestion(null)}
+              onSubmit={(answer) => handleSubmitAnswer(questions[activeQuestion].id, answer)}
+              isPending={!!submitting[questions[activeQuestion]?.id]}
             />
-          ))}
+          )}
         </div>
       )}
 
       {/* VISÃO PROFESSOR */}
       {isTeacher && challenge && (
         <div className="space-y-4">
-          {/* Info do desafio ativo */}
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -425,36 +560,38 @@ export default function Ofensivas() {
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Users size={12} />
-                <span>{allResponses.length} aluno{allResponses.length !== 1 ? 's' : ''} responderam</span>
+                <span>{allResponses.length} aluno{allResponses.length !== 1 ? 's' : ''}</span>
               </div>
             </div>
             {challenge.lesson_ref && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <BookOpen size={11} /> Tema: <span className="font-semibold text-foreground">{challenge.lesson_ref}</span>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-3">
+                <BookOpen size={11} /> <span className="font-semibold text-foreground">{challenge.lesson_ref}</span>
               </p>
             )}
-            <div className="mt-3 space-y-2">
+            <div className="space-y-2">
               {(challenge.questions || []).map((q, i) => (
-                <div key={q.id} className="flex items-start gap-2 text-xs">
-                  <span className="font-bold text-primary shrink-0">{i + 1}.</span>
-                  <span className="text-foreground">{q.text}</span>
+                <div key={q.id} className={`flex items-start gap-2 p-2.5 rounded-xl text-xs ${i === 2 ? 'bg-amber-500/10 border border-amber-400/20' : 'bg-secondary/30'}`}>
+                  <span className={`font-black shrink-0 ${i === 2 ? 'text-amber-400' : 'text-primary'}`}>{i === 2 ? '🗝️' : `${i + 1}.`}</span>
+                  <div className="flex-1">
+                    <span className="text-foreground">{q.text}</span>
+                    {i === 2 && <span className="ml-1 text-amber-400 font-bold">(Baú · +0.5pts)</span>}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Respostas dos alunos */}
           {allResponses.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-4">
-              <h3 className="font-bold text-sm mb-3 flex items-center gap-2"><Users size={14} /> Participações de Hoje</h3>
-              <div className="space-y-2 max-h-80 overflow-y-auto">
+              <h3 className="font-bold text-sm mb-3 flex items-center gap-2"><Users size={14} /> Participações</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
                 {allResponses.map(r => (
                   <div key={r.id} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-xl text-xs">
                     <span className="font-semibold text-foreground truncate">{r.student_name || r.student_email}</span>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-muted-foreground">{r.questions_answered || 0}/{MAX_QUESTIONS}</span>
-                      <span className="text-yellow-600 font-bold flex items-center gap-0.5">
-                        <Star size={9} className="fill-yellow-500" /> +{((r.points_earned || 0)).toFixed(1)}
+                      <span className="text-muted-foreground">{r.questions_answered || 0}/5</span>
+                      <span className="text-yellow-500 font-bold flex items-center gap-0.5">
+                        <Star size={9} className="fill-yellow-400" /> +{(r.points_earned || 0).toFixed(1)}
                       </span>
                     </div>
                   </div>
@@ -463,16 +600,15 @@ export default function Ofensivas() {
             </div>
           )}
 
-          {/* Histórico de desafios */}
           {allChallenges.length > 1 && (
             <div className="bg-card border border-border rounded-2xl p-4">
-              <h3 className="font-bold text-sm mb-3">Histórico de Ofensivas</h3>
+              <h3 className="font-bold text-sm mb-3">Histórico</h3>
               <div className="space-y-1.5">
                 {allChallenges.map(c => (
-                  <div key={c.id} className={`flex items-center justify-between p-2.5 rounded-xl text-xs ${c.date === today ? 'bg-orange-50/10 border border-orange-200/30' : 'bg-secondary/30'}`}>
+                  <div key={c.id} className={`flex items-center justify-between p-2 rounded-xl text-xs ${c.date === today ? 'bg-orange-500/10 border border-orange-400/20' : 'bg-secondary/30'}`}>
                     <span className="font-semibold">{c.date}</span>
-                    <span className="text-muted-foreground truncate max-w-[200px]">{c.lesson_ref || '—'}</span>
-                    <Badge variant="outline" className="text-[9px]">{(c.questions || []).length} perguntas</Badge>
+                    <span className="text-muted-foreground truncate max-w-[160px]">{c.lesson_ref || '—'}</span>
+                    <span className="text-muted-foreground shrink-0">{(c.questions || []).length}q</span>
                   </div>
                 ))}
               </div>
@@ -489,14 +625,8 @@ export default function Ofensivas() {
               <Zap size={16} className="text-orange-500" /> Gerar Nova Ofensiva
             </DialogTitle>
           </DialogHeader>
-          <div className="text-xs text-muted-foreground mb-3">
-            Selecione uma aula ou descreva o tema. A IA vai gerar 5 perguntas de reflexão rápida para os alunos responderem hoje.
-          </div>
-          <GenerateChallengePanel
-            lessons={lessons}
-            course={userCourse}
-            onGenerated={() => setShowGenerate(false)}
-          />
+          <p className="text-xs text-muted-foreground -mt-2 mb-1">A IA vai gerar 5 perguntas (posição 3 = Baú, mais difícil, +0.5pts).</p>
+          <GenerateChallengePanel lessons={lessons} course={userCourse} onGenerated={() => setShowGenerate(false)} />
         </DialogContent>
       </Dialog>
     </div>
