@@ -109,6 +109,54 @@ const COURSES = [
     'Aulas ao vivo todas as segundas-feiras',
     'Ingresso em Setembro/2026',
   ]
+},
+{
+  slug: 'psi',
+  title: 'PSICANALISTA FREUDIANO',
+  subtitle: 'Curso Profissionalizante em Métodos Psicanalíticos',
+  originalPrice: 'R$ 500',
+  firstMonthPrice: 'R$ 250',
+  price: 'R$ 300',
+  period: '/mês até o fim do curso',
+  tag: 'Novo',
+  tagColor: '#c9a227',
+  externalUrl: null,
+  imgs: [
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80',
+    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80',
+  ],
+  highlights: [
+    'Estudos de casos reais supervisionados',
+    'Profundidade do método psicanalítico freudiano',
+    'Credenciamento internacional como terapeuta',
+    'Plataforma centralizada de conteúdos',
+    'Aulas ao vivo todas as segundas-feiras',
+    'Ingresso em Setembro/2026',
+  ]
+},
+{
+  slug: 'sex',
+  title: 'SEXÓLOGO(A)',
+  subtitle: 'Curso Profissionalizante em Sexualidade Humana',
+  originalPrice: 'R$ 550',
+  firstMonthPrice: 'R$ 275',
+  price: 'R$ 330',
+  period: '/mês até o fim do curso',
+  tag: 'Novo',
+  tagColor: '#c9a227',
+  externalUrl: null,
+  imgs: [
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
+    'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=800&q=80',
+  ],
+  highlights: [
+    'Estudos de casos reais em sexualidade',
+    '80h de conteúdo especializado e integrativo',
+    'Credenciamento internacional como terapeuta',
+    'Plataforma centralizada de conteúdos',
+    'Aulas ao vivo todas as segundas-feiras',
+    'Ingresso em Setembro/2026',
+  ]
 }];
 
 const TESTIMONIALS = [
@@ -127,7 +175,7 @@ const BG3 = '#141418'; // cards escuros
 
 export default function LandingPage({ onLogin }) {
   const [heroImg, setHeroImg] = useState(0);
-  const [courseImgs, setCourseImgs] = useState([0]);
+  const [courseImgs, setCourseImgs] = useState([0, 0, 0]);
 
   useEffect(() => {
     const intervals = COURSES.map((_, i) =>
@@ -680,8 +728,8 @@ export default function LandingPage({ onLogin }) {
             </div>
           </div>
 
-          {/* Card do Curso */}
-          <div className="max-w-lg mx-auto">
+          {/* Cards dos Cursos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {COURSES.map((c, i) =>
               <div key={i} className="border flex flex-col transition-all overflow-hidden" style={{ borderColor: i === 0 ? `${G}35` : `${G}12` }}>
                 <div className="relative h-44 overflow-hidden">
@@ -746,7 +794,8 @@ export default function LandingPage({ onLogin }) {
         }
       `}</style>
 
-      {/* PRÓXIMAS FORMAÇÕES — OFERTAS */}
+      {/* SEÇÃO REMOVIDA — cursos agora exibidos diretamente acima */}
+      {false && (
       <section className="site-section" style={{ background: BG2 }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
@@ -844,6 +893,7 @@ export default function LandingPage({ onLogin }) {
           </div>
         </div>
       </section>
+      )}
 
       {/* DEPOIMENTOS */}
       <section id="depoimentos" className="site-section" style={{ background: BG2 }}>
