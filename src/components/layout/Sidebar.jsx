@@ -185,7 +185,21 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     );
   };
 
-  const groups = isAdmin ? adminGroups : studentGroups;
+  // Aluno no modo "diploma" vê apenas aulas, tarefas, mensalidades e perfil
+  const diplomaAllowedPaths = ['/lessons', '/tasks', '/tuitions', '/profile', '/'];
+  const isDiploma = !isAdmin && session?.study_mode === 'diploma';
+  const filteredStudentGroups = isDiploma
+    ? [
+        {
+          label: 'Minha Formação',
+          items: studentGroups
+            .flatMap(g => g.items)
+            .filter(item => diplomaAllowedPaths.includes(item.path)),
+        },
+      ]
+    : studentGroups;
+
+  const groups = isAdmin ? adminGroups : filteredStudentGroups;
 
   function NotificationsLink({ scoped, isActive, onNav }) {
     const { data: notifications = [] } = useQuery({

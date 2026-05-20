@@ -4,7 +4,7 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User, Trash2 } from 'lucide-react';
+import { Save, CheckCircle, Camera, User, Trash2, GraduationCap, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import {
@@ -51,6 +51,7 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [studyMode, setStudyMode] = useState(session?.study_mode || 'interativa');
   const fileRef = useRef();
 
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function Profile() {
   const handleSave = async () => {
     setSaving(true);
     // Optimistic: update session immediately so UI reflects changes at once
-    setSession({ ...session, name, bio, avatarColor, photoUrl });
+    setSession({ ...session, name, bio, avatarColor, photoUrl, study_mode: studyMode });
     setSaved(true);
     try {
       if (session?.codeId) {
@@ -268,6 +269,32 @@ export default function Profile() {
               <label className="text-xs font-bold text-foreground block mb-1.5">Código de Acesso</label>
               <Input value={session.code} disabled className="font-mono text-center tracking-widest opacity-60 bg-secondary" />
               <p className="text-[10px] text-muted-foreground mt-1">Este é seu código exclusivo de acesso à plataforma</p>
+            </div>
+          )}
+
+          {/* Modalidade de Estudo */}
+          {session?.role !== 'admin' && (
+            <div>
+              <label className="text-xs font-bold text-foreground block mb-2">Modalidade de Estudo</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setStudyMode('diploma'); setSession({ ...session, study_mode: 'diploma' }); }}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-xs font-semibold ${studyMode === 'diploma' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
+                >
+                  <GraduationCap size={18} />
+                  Estudar pelo Diploma
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStudyMode('interativa'); setSession({ ...session, study_mode: 'interativa' }); }}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-xs font-semibold ${studyMode === 'interativa' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
+                >
+                  <Users size={18} />
+                  Formação Prática
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5">A alteração de modalidade é aplicada imediatamente ao menu de navegação.</p>
             </div>
           )}
 
