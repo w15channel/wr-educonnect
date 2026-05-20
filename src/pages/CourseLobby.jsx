@@ -253,7 +253,9 @@ export default function CourseLobby() {
   const [leadInput, setLeadInput] = useState('');
   const [leadLoading, setLeadLoading] = useState(false);
   const [studyModeStep, setStudyModeStep] = useState(() => {
-    // Se já tem study_mode salvo, pula a escolha
+    // 'choose' = ainda não escolheu (mas não mostra até clicar em entrar)
+    // 'choosing' = clicou em entrar, mostrando a tela de escolha
+    // 'done' = já escolheu
     return session?.study_mode ? 'done' : 'choose';
   });
 
@@ -280,10 +282,18 @@ export default function CourseLobby() {
     setSession({ ...current, study_mode: mode });
     login();
     setStudyModeStep('done');
+    // Navega imediatamente após escolher
+    const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
+    navigate(`/student/${slug}/dashboard`);
   };
 
   const handleStudentEnter = () => {
     if (!termsAccepted) return;
+    // Se ainda não escolheu modalidade, mostra a tela de escolha antes de navegar
+    if (studyModeStep === 'choose') {
+      setStudyModeStep('choosing');
+      return;
+    }
     const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
     navigate(`/student/${slug}/dashboard`);
   };
@@ -386,8 +396,8 @@ export default function CourseLobby() {
     );
   }
 
-  // Tela de escolha de modalidade (somente alunos que ainda não escolheram)
-  if (!isAdmin && studyModeStep === 'choose') {
+  // Tela de escolha de modalidade (aparece após clicar em "Entrar no Portal")
+  if (!isAdmin && studyModeStep === 'choosing') {
     return (
       <div className="app-shell-bg relative h-[100dvh] text-white overflow-y-auto overflow-x-hidden scrollbar-invisible" style={{ WebkitOverflowScrolling: 'touch' }}>
         <Header />

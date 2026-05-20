@@ -186,8 +186,9 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   };
 
   // Aluno no modo "diploma" vê apenas aulas, tarefas, mensalidades e perfil
+  // Lemos diretamente do getSession() pois o contexto pode estar com valor desatualizado
   const diplomaAllowedPaths = ['/lessons', '/tasks', '/tuitions', '/profile', '/'];
-  const isDiploma = !isAdmin && session?.study_mode === 'diploma';
+  const isDiploma = !isAdmin && (getSession()?.study_mode === 'diploma');
   const filteredStudentGroups = isDiploma
     ? [
         {
