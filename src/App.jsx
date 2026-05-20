@@ -15,6 +15,8 @@ import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import TermosDeUso from './pages/TermosDeUso';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade';
 import AppLayout from './components/layout/AppLayout';
+import DiplomaLayout from './pages/DiplomaLayout';
+import DiplomaDashboard from './pages/DiplomaDashboard';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
 import LiveSessions from './pages/LiveSessions';
@@ -153,6 +155,19 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
+      {/* Diploma-only isolated routes */}
+      <Route path="/degree/student/:courseSlug/*" element={<DiplomaLayout />}>
+        <Route index element={<DiplomaDashboard />} />
+        <Route path="dashboard" element={<DiplomaDashboard />} />
+        <Route path="lessons" element={<Lessons />} />
+        <Route path="tasks" element={<Tasks mode="tasks" />} />
+        <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
+        <Route path="tuitions" element={<Tuitions />} />
+        <Route path="historico" element={<HistoricoAcademico />} />
+        <Route path="certificadora" element={<Certificadora />} />
+        <Route path="profile" element={<Profile />} />
+      </Route>
+
       {/* Scoped student routes */}
       <Route path="/student/:courseSlug/*" element={<ScopedRoutesTree />} />
       {/* Scoped admin routes */}

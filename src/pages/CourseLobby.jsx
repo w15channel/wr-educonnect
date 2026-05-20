@@ -282,9 +282,13 @@ export default function CourseLobby() {
     setSession({ ...current, study_mode: mode });
     login();
     setStudyModeStep('done');
-    // Navega imediatamente após escolher
     const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
-    navigate(`/student/${slug}/dashboard`);
+    // Diploma → rota isolada com interface simplificada
+    if (mode === 'diploma') {
+      navigate(`/degree/student/${slug}/dashboard`);
+    } else {
+      navigate(`/student/${slug}/dashboard`);
+    }
   };
 
   const handleStudentEnter = () => {
@@ -295,7 +299,12 @@ export default function CourseLobby() {
       return;
     }
     const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
-    navigate(`/student/${slug}/dashboard`);
+    const savedMode = getSession()?.study_mode;
+    if (savedMode === 'diploma') {
+      navigate(`/degree/student/${slug}/dashboard`);
+    } else {
+      navigate(`/student/${slug}/dashboard`);
+    }
   };
 
   const openReserve = (course) => {
