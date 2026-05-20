@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
   Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send, Trophy, X
@@ -321,10 +322,12 @@ JSON exato:
 }
 
 export default function Ofensivas() {
-  const { user: session } = useOutletContext();
+  const ctx = useOutletContext() || {};
+  const { session: authSession } = useCustomAuth();
+  const session = ctx.user || authSession;
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
-  const userCourse = session?.course || 'tcc';
+  const userCourse = session?.course || ctx.course || 'tcc';
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayLabel = format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });
