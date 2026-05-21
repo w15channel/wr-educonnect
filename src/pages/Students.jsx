@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
@@ -14,7 +14,15 @@ import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 export default function Students() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: session } = useOutletContext() || {};
+
+  // Build scoped prefix from current URL (/adm/:slug or /student/:slug)
+  const scopedPrefix = (() => {
+    const parts = location.pathname.split('/').filter(Boolean);
+    if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return `/${parts[0]}/${parts[1]}`;
+    return '';
+  })();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('date_desc');
   const [enrollingCode, setEnrollingCode] = useState(null);
@@ -350,7 +358,7 @@ export default function Students() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                         <button onClick={() => navigate(`/students/${code.id}`)} className="h-10 px-3 text-primary border border-border hover:bg-primary/10 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5">
+                         <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="h-10 px-3 text-primary border border-border hover:bg-primary/10 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5">
                            <Eye size={15} /> Detalhes
                          </button>
                          <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="h-10 px-3 text-red-500 border border-red-200 hover:bg-red-100 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5" title="Remover aluno">
@@ -431,7 +439,7 @@ export default function Students() {
                                 <button onClick={() => setEnrollingCode(code)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold" title="Matricular em outro curso">
                                   <Plus size={13} /> Matricular
                                 </button>
-                                <button onClick={() => navigate(`/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
+                                <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
                                   <Eye size={13} /> Detalhes
                                 </button>
                                 <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="flex items-center gap-1 text-xs text-red-500 hover:underline font-semibold">

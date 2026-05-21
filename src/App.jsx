@@ -162,6 +162,7 @@ const AuthenticatedApp = () => {
         <Route path="lessons" element={<Lessons />} />
         <Route path="tasks" element={<Tasks mode="tasks" />} />
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
+        <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="certificadora" element={<Certificadora />} />
