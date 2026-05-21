@@ -23,6 +23,11 @@ const adminGroups = [
       { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
       { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
       { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
+    ],
+  },
+  {
+    label: 'Geral',
+    items: [
       { icon: Flame, label: 'Ofensivas', path: '/ofensivas', color: 'text-orange-400' },
     ],
   },
@@ -66,6 +71,11 @@ const studentGroups = [
       { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
       { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
       { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
+    ],
+  },
+  {
+    label: 'Geral',
+    items: [
       { icon: Flame, label: 'Ofensivas', path: '/ofensivas', color: 'text-orange-400' },
     ],
   },
@@ -187,7 +197,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
   // Aluno no modo "diploma" vê apenas aulas, tarefas, mensalidades e perfil
   // Lemos diretamente do getSession() pois o contexto pode estar com valor desatualizado
-  const diplomaAllowedPaths = ['/lessons', '/tasks', '/tuitions', '/profile', '/'];
+  const diplomaAllowedPaths = ['/lessons', '/tasks', '/ofensivas', '/tuitions', '/profile', '/'];
   const isDiploma = !isAdmin && (getSession()?.study_mode === 'diploma');
   const filteredStudentGroups = isDiploma
     ? [
