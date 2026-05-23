@@ -711,6 +711,62 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
           </div>
         </div>
 
+        <div className="space-y-4">
+        {/* Mini Ranking — admin quick panel */}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+                <Trophy size={16} className="text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Mini Ranking (Top 10)</h3>
+                <p className="text-xs text-muted-foreground">Escolha manual dos monitores da semana</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setMonitorSelectMode((prev) => !prev)}
+              className="text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-2.5 py-1 rounded-lg hover:bg-yellow-200 transition-colors"
+            >
+              {monitorSelectMode ? 'Fechar seleção' : 'Selecionar'}
+            </button>
+          </div>
+          <div className="space-y-1.5 max-h-[360px] overflow-y-auto pr-1">
+            {customRanking.slice(0, 10).map((r, i) => {
+              const code = accessCodes.find((c) => c.student_email === r.email);
+              const displayName = code?.profile_name || code?.student_name || r.email;
+              const isSelected = selectedMonitorEmails.has(r.email);
+              return (
+                <button
+                  key={r.email}
+                  type="button"
+                  onClick={() => monitorSelectMode && toggleMonitorEmail(r.email)}
+                  className={`w-full flex items-center gap-2.5 p-2 rounded-lg border text-left ${
+                    monitorSelectMode ? 'cursor-pointer' : 'cursor-default'
+                  } ${isSelected ? 'bg-yellow-100 border-yellow-300' : 'border-border hover:bg-secondary/40'}`}
+                >
+                  <span className="w-6 text-center text-xs font-bold text-muted-foreground">#{i + 1}</span>
+                  <span className="flex-1 text-xs font-semibold text-foreground truncate">{displayName}</span>
+                  <span className="text-xs font-bold text-yellow-700">{formatScore(getAssignedPoints(r.email, r.total))}</span>
+                </button>
+              );
+            })}
+            {customRanking.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Sem alunos para classificar ainda.</p>}
+          </div>
+          {monitorSelectMode &&
+          <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">{selectedMonitorEmails.size}/3 selecionados</span>
+              <button
+              onClick={handleSaveMonitors}
+              disabled={selectedMonitorEmails.size === 0 || savingMonitors}
+              className="text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg disabled:opacity-50"
+            >
+                {savingMonitors ? 'Publicando...' : 'Publicar monitores'}
+              </button>
+            </div>
+          }
+        </div>
+
         {/* Announcements — inside the 2-col grid for teachers */}
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center justify-between mb-3">
@@ -728,6 +784,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
             ))}
             {announcements.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhum aviso recente</p>}
           </div>
+        </div>
         </div>
       </div>
       }
