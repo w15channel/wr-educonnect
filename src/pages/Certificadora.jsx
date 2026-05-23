@@ -4,8 +4,8 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
-const TOTAL_LESSONS = 60;
-const TOTAL_TASKS = 60;
+const TOTAL_LESSONS = 45;
+const TOTAL_TASKS = 45;
 const TOTAL_PRACTICE_H = 10;
 const TOTAL_LIVES_H = 10;
 const REMINDER_KEY = 'cert_last_reminder';

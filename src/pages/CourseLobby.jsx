@@ -36,7 +36,7 @@ const OFFER_COURSES = [
     id: 'psicanalise',
     title: 'Psicanalista Diplomado',
     subtitle: 'Formação em Psicanálise',
-    desc: 'Formação completa em Psicanálise com base teórica e prática clínica supervisionada. Ingresso previsto para 2027.',
+    desc: 'Fundamentos da Psicanálise Freudiana e Lacaniana, prática clínica supervisionada e aprofundamento terapêutico. Ingresso previsto para 2027.',
     originalPrice: 'R$ 450',
     firstMonthPrice: 'R$ 225',
     price: 'R$ 270',
@@ -48,7 +48,7 @@ const OFFER_COURSES = [
     ],
     highlights: [
       'Fundamentos da Psicanálise Freudiana e Lacaniana',
-      'Prática clínica supervisionada ao vivo',
+      'Prática clínica supervisionada',
       'Certificação profissional reconhecida',
       'Análise de sonhos e processos inconscientes',
       'Ingresso previsto para início de 2027',
@@ -58,7 +58,7 @@ const OFFER_COURSES = [
     id: 'sexologia',
     title: 'Sexólogo Integrativo',
     subtitle: 'Formação em Sexologia',
-    desc: 'Especialização em sexualidade humana, infidelidade conjugal e vícios com abordagem integrativa. Ingresso previsto para 2027.',
+    desc: 'Sexualidade humana com base científica, infidelidade conjugal e abordagem integrativa. Ingresso previsto para 2027.',
     originalPrice: 'R$ 450',
     firstMonthPrice: 'R$ 225',
     price: 'R$ 270',
@@ -372,7 +372,7 @@ export default function CourseLobby() {
           <div className="text-center mb-14">
             <div className="flex items-center justify-center gap-3 mb-6">
               <div className="h-px w-8" style={{ background: `${G}50` }} />
-              <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Painel do Professor</span>
+              <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Painel do Administrador</span>
               <div className="h-px w-8" style={{ background: `${G}50` }} />
             </div>
             <h1 className="text-4xl lg:text-5xl font-thin text-white mb-3 tracking-[-0.01em]">
