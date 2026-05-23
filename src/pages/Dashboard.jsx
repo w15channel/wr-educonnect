@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Video, FileText, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Flame } from 'lucide-react';
 import DashboardMobile from './DashboardMobile';
@@ -74,10 +74,6 @@ export default function Dashboard() {
   const [selectedMonitorEmails, setSelectedMonitorEmails] = React.useState(new Set());
   const [savingMonitors, setSavingMonitors] = React.useState(false);
   const [importingPoints, setImportingPoints] = React.useState(false);
-  const [draggedEmail, setDraggedEmail] = React.useState(null);
-  const [customRanking, setCustomRanking] = React.useState([]);
-  const [scoreDrafts, setScoreDrafts] = React.useState({});
-  const [manualScoreEmails, setManualScoreEmails] = React.useState(new Set());
 
 
   useEffect(() => {
@@ -86,29 +82,8 @@ export default function Dashboard() {
     }
   }, []);
 
-  const getAssignedPoints = React.useCallback((email, fallback = 0) => {
-    if (!manualScoreEmails.has(email)) return roundScore(fallback || 0);
-    const draft = scoreDrafts[email];
-    const numeric = Number(String(draft ?? '').replace(',', '.'));
-    return Number.isFinite(numeric) ? roundScore(numeric) : roundScore(fallback || 0);
-  }, [manualScoreEmails, scoreDrafts]);
-
-  const toggleManualScoreEmail = (email, suggestedPoints) => {
-    setManualScoreEmails((prev) => {
-      const next = new Set(prev);
-      if (next.has(email)) next.delete(email);
-      else next.add(email);
-      return next;
-    });
-    setScoreDrafts((prev) => ({ ...prev, [email]: prev[email] ?? formatScore(suggestedPoints || 0) }));
-  };
-
-  const handleScoreDraftChange = (email, value) => {
-    setScoreDrafts((prev) => ({ ...prev, [email]: value }));
-  };
-
   const toggleMonitorEmail = (email) => {
-    const rankPosition = customRanking.findIndex((item) => item.email === email) + 1;
+    const rankPosition = ranking.findIndex((item) => item.email === email) + 1;
     const isTopThree = rankPosition > 0 && rankPosition <= 3;
     if (!isTopThree) {
       toast.error('Somente o Top 3 do ranking pode virar monitor da semana.');
@@ -343,41 +318,6 @@ export default function Dashboard() {
   const studentPublishedRanking = rankingFull
     .filter((item) => Number.isFinite(item.publishedRank) && item.publishedRank !== Number.MAX_SAFE_INTEGER)
     .sort((a, b) => a.publishedRank - b.publishedRank);
-  React.useEffect(() => {
-    setCustomRanking(ranking);
-    setScoreDrafts((prev) => {
-      const next = { ...prev };
-      ranking.forEach((r) => {
-        if (next[r.email] === undefined) next[r.email] = formatScore(r.total || 0);
-      });
-      return next;
-    });
-  }, [ranking.map((r) => r.email).join('|')]);
-
-  const saveDashboardOrderMutation = useMutation({
-    mutationFn: async () => {
-      for (const [index, item] of customRanking.entries()) {
-        const profile = publishedScores.find((p) => p.student_email === item.email && (!p.dashboard_course || p.dashboard_course === userCourse));
-        const code = accessCodes.find((c) => c.student_email === item.email);
-        const assignedPoints = getAssignedPoints(item.email, item.total);
-        const payload = {
-          student_email: item.email,
-          full_name: code?.profile_name || code?.student_name || item.email,
-          points: assignedPoints,
-          pontuacao_total: assignedPoints,
-          dashboard_rank: index + 1,
-          dashboard_course: userCourse,
-        };
-        if (profile) await base44.entities.StudentProfile.update(profile.id, payload);
-        else await base44.entities.StudentProfile.create(payload);
-        if (code?.id) await base44.entities.AccessCode.update(code.id, { pontuacao_total: assignedPoints });
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
-      toast.success('Sequência do ranking salva com sucesso!');
-    },
-  });
 
   const visibleStudentRanking = (studentPublishedRanking.length > 0 ? studentPublishedRanking : ranking).slice(0, 10);
   const myRank = visibleStudentRanking.findIndex((r) => r.email === session?.email) + 1;
@@ -601,7 +541,7 @@ export default function Dashboard() {
                 <Trophy size={16} className="text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-foreground">Ranking Geral Manual</h3>
+                <h3 className="font-bold text-sm text-foreground">Ranking da Dashboard (Top 10)</h3>
                 <p className="text-xs text-muted-foreground">Top 10 da dashboard com seleção manual dos 3 melhores para monitor da semana</p>
               </div>
             </div>
@@ -610,7 +550,7 @@ export default function Dashboard() {
                 <button
               onClick={() => {
                 setMonitorSelectMode(true);
-                const topThree = customRanking.slice(0, 3).map((item) => item.email);
+                const topThree = ranking.slice(0, 3).map((item) => item.email);
                 setSelectedMonitorEmails(new Set(topThree));
               }}
               className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors">
@@ -639,11 +579,11 @@ export default function Dashboard() {
 Os Monitores da semana são sempre os 3 primeiros colocados no ranking. Você pode confirmar manualmente a seleção antes de publicar. Ao publicar, cada monitor receberá um aviso individual com link para baixar o certificado.
             </div>
         }
-          {customRanking.length === 0 ?
+          {ranking.length === 0 ?
         <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p> :
 
         <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-2 max-h-[70vh] overflow-y-auto pr-1">
-              {customRanking.map((r, i) => {
+              {ranking.map((r, i) => {
             const code = accessCodes.find((c) => c.student_email === r.email);
             const displayName = code?.profile_name || code?.student_name || r.email;
             const avatarColor = code?.profile_avatar_color || '#5b5ef4';
@@ -652,19 +592,6 @@ Os Monitores da semana são sempre os 3 primeiros colocados no ranking. Você po
             return (
               <div
                 key={r.email}
-                draggable
-                onDragStart={() => setDraggedEmail(r.email)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => {
-                  if (!draggedEmail || draggedEmail === r.email) return;
-                  const from = customRanking.findIndex((x) => x.email === draggedEmail);
-                  const to = customRanking.findIndex((x) => x.email === r.email);
-                  if (from < 0 || to < 0) return;
-                  const next = [...customRanking];
-                  const [moved] = next.splice(from, 1);
-                  next.splice(to, 0, moved);
-                  setCustomRanking(next);
-                }}
                 onClick={() => monitorSelectMode && toggleMonitorEmail(r.email)}
                 className={`relative flex flex-col items-center text-center gap-1.5 p-3 rounded-xl border transition-colors ${
                 monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''} ${
@@ -695,36 +622,13 @@ Os Monitores da semana são sempre os 3 primeiros colocados no ranking. Você po
                     </div>
                     <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-xl">
                       <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-xs font-black text-yellow-700">{formatScore(getAssignedPoints(r.email, r.total))}</span>
-                    </div>
-                    <div className="w-full space-y-1.5 mt-1">
-                      <div className="text-[10px] text-muted-foreground">Sugestão: {formatScore(r.total)} pts</div>
-                      <input
-                        type="text"
-                        value={manualScoreEmails.has(r.email) ? (scoreDrafts[r.email] ?? formatScore(r.total)) : formatScore(r.total)}
-                        onChange={(e) => handleScoreDraftChange(r.email, e.target.value)}
-                        disabled={!manualScoreEmails.has(r.email)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2 text-center text-xs font-bold disabled:bg-secondary/60"
-                        aria-label={`Pontuação de ${displayName}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleManualScoreEmail(r.email, r.total); }}
-                        className="w-full text-[10px] font-bold text-primary hover:underline"
-                      >
-                        {manualScoreEmails.has(r.email) ? 'Usar sugestão automática' : 'Pontuar manualmente'}
-                      </button>
+                      <span className="text-xs font-black text-yellow-700">{formatScore(r.total)}</span>
                     </div>
               </div>);
 
           })}
             </div>
         }
-          <div className="mt-3 flex justify-end">
-            <Button size="sm" variant="outline" onClick={() => saveDashboardOrderMutation.mutate()} disabled={saveDashboardOrderMutation.isPending || customRanking.length === 0}>
-              {saveDashboardOrderMutation.isPending ? 'Publicando ranking...' : 'Publicar ranking manual'}
-            </Button>
-          </div>
         </div>
 
         <div className="space-y-4">
@@ -748,7 +652,7 @@ Os Monitores da semana são sempre os 3 primeiros colocados no ranking. Você po
                   return;
                 }
                 setMonitorSelectMode(true);
-                const topThree = customRanking.slice(0, 3).map((item) => item.email);
+                const topThree = ranking.slice(0, 3).map((item) => item.email);
                 setSelectedMonitorEmails(new Set(topThree));
               }}
               className="text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-2.5 py-1 rounded-lg hover:bg-yellow-200 transition-colors"
@@ -757,7 +661,7 @@ Os Monitores da semana são sempre os 3 primeiros colocados no ranking. Você po
             </button>
           </div>
           <div className="space-y-1.5 max-h-[360px] overflow-y-auto pr-1">
-            {customRanking.slice(0, 10).map((r, i) => {
+            {ranking.slice(0, 10).map((r, i) => {
               const code = accessCodes.find((c) => c.student_email === r.email);
               const displayName = code?.profile_name || code?.student_name || r.email;
               const isSelected = selectedMonitorEmails.has(r.email);
@@ -772,11 +676,11 @@ Os Monitores da semana são sempre os 3 primeiros colocados no ranking. Você po
                 >
                   <span className="w-6 text-center text-xs font-bold text-muted-foreground">#{i + 1}</span>
                   <span className="flex-1 text-xs font-semibold text-foreground truncate">{displayName}</span>
-                  <span className="text-xs font-bold text-yellow-700">{formatScore(getAssignedPoints(r.email, r.total))}</span>
+                  <span className="text-xs font-bold text-yellow-700">{formatScore(r.total)}</span>
                 </button>
               );
             })}
-            {customRanking.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Sem alunos para classificar ainda.</p>}
+            {ranking.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Sem alunos para classificar ainda.</p>}
           </div>
           {monitorSelectMode &&
           <div className="mt-3 flex items-center justify-between gap-2">
