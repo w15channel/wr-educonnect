@@ -34,6 +34,9 @@ const adminGroups = [
     { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
     { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
   ]},
+  { label: 'Geral', items: [
+    { icon: Trophy, label: 'Ranking Geral', path: '/ranking', color: 'text-yellow-400' },
+  ]},
   { label: 'Comunidade', items: [
     { icon: Hash, label: 'EDU Messenger', path: '/chat', color: 'text-blue-400' },
     { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-green-400' },
