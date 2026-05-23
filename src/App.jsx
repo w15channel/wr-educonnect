@@ -99,11 +99,10 @@ function ScopedRoutesTree() {
         <Route path="scorecontrol" element={<ScoreControl />} />
         <Route path="scores" element={<Navigate to="../scorecontrol" replace />} />
         <Route path="certificadora" element={<Certificadora />} />
-        <Route path="ranking" element={<AdminOnly><RankingGeral /></AdminOnly>} />
+        <Route path="ranking" element={<RankingGeral />} />
         <Route path="monitores" element={<Monitores />} />
         <Route path="monitor-certificate/:id" element={<MonitorCertificate />} />
         <Route path="terapeuta" element={<TerapeutaDaSemana />} />
-        <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="bestseller" element={<MeuBestSeller />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="dm/:email" element={<DirectMessage />} />
@@ -162,7 +161,6 @@ const AuthenticatedApp = () => {
         <Route path="lessons" element={<Lessons />} />
         <Route path="tasks" element={<Tasks mode="tasks" />} />
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
-        <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="certificadora" element={<Certificadora />} />
