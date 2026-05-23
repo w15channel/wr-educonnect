@@ -108,10 +108,22 @@ export default function Dashboard() {
   };
 
   const toggleMonitorEmail = (email) => {
+    const rankPosition = customRanking.findIndex((item) => item.email === email) + 1;
+    const isTopThree = rankPosition > 0 && rankPosition <= 3;
+    if (!isTopThree) {
+      toast.error('Somente o Top 3 do ranking pode virar monitor da semana.');
+      return;
+    }
+
     setSelectedMonitorEmails((prev) => {
       const next = new Set(prev);
-      if (next.has(email)) {next.delete(email);return next;}
-      if (next.size >= 3) {return prev;}
+      if (next.has(email)) {
+        next.delete(email);
+        return next;
+      }
+      if (next.size >= 3) {
+        return prev;
+      }
       next.add(email);
       return next;
     });
@@ -590,13 +602,17 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-bold text-sm text-foreground">Ranking Geral Manual</h3>
-                <p className="text-xs text-muted-foreground">Publique pontos como um post e escolha os 3 monitores no mesmo campo</p>
+                <p className="text-xs text-muted-foreground">Top 10 da dashboard com seleção manual dos 3 melhores para monitor da semana</p>
               </div>
             </div>
             {!monitorSelectMode ?
           <div className="flex flex-wrap items-center justify-end gap-2">
                 <button
-              onClick={() => setMonitorSelectMode(true)}
+              onClick={() => {
+                setMonitorSelectMode(true);
+                const topThree = customRanking.slice(0, 3).map((item) => item.email);
+                setSelectedMonitorEmails(new Set(topThree));
+              }}
               className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors">
               
                   <Crown size={12} /> Selecionar Monitores
@@ -620,7 +636,7 @@ export default function Dashboard() {
           </div>
           {monitorSelectMode &&
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800 mb-3">
-Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada monitor receberá um aviso individual com link para baixar o certificado.
+Os Monitores da semana são sempre os 3 primeiros colocados no ranking. Você pode confirmar manualmente a seleção antes de publicar. Ao publicar, cada monitor receberá um aviso individual com link para baixar o certificado.
             </div>
         }
           {customRanking.length === 0 ?
@@ -720,12 +736,21 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
                 <Trophy size={16} className="text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-foreground">Mini Ranking (Top 10)</h3>
+                <h3 className="font-bold text-sm text-foreground">Ranking da Dashboard (Top 10)</h3>
                 <p className="text-xs text-muted-foreground">Escolha manual dos monitores da semana</p>
               </div>
             </div>
             <button
-              onClick={() => setMonitorSelectMode((prev) => !prev)}
+              onClick={() => {
+                if (monitorSelectMode) {
+                  setMonitorSelectMode(false);
+                  setSelectedMonitorEmails(new Set());
+                  return;
+                }
+                setMonitorSelectMode(true);
+                const topThree = customRanking.slice(0, 3).map((item) => item.email);
+                setSelectedMonitorEmails(new Set(topThree));
+              }}
               className="text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-2.5 py-1 rounded-lg hover:bg-yellow-200 transition-colors"
             >
               {monitorSelectMode ? 'Fechar seleção' : 'Selecionar'}
