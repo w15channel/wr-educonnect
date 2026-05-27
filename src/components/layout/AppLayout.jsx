@@ -1,62 +1,72 @@
-/**
- * AppLayout — roteador de shells por dispositivo.
- *
- * ┌──────────────────────────────────────────────────────────────┐
- * │  desktop  (>= 1024px)  →  AppShellDesktop                    │
- * │  tablet   (768-1023px) →  AppShellTablet                     │
- * │  mobile   (< 768px)    →  AppShellMobile  (browser)          │
- * │  app      (< 768px)    →  AppShellMobile  (WebView / PWA)    │
- * └──────────────────────────────────────────────────────────────┘
- *
- * Cada shell é completamente independente:
- * - Layout próprio, sem hacks de CSS entre dispositivos
- * - Experiência nativa para cada tipo de acesso
- * - Contexto `shell` disponível via useOutletContext()
- */
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { setSession as persistSession, getSession } from '@/lib/customAuth';
+import Sidebar from './Sidebar';
+import BottomNav from './BottomNav';
+import MobileHeader from './MobileHeader';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { useDeviceType } from '@/hooks/useDeviceType';
-import AppShellDesktop from './AppShellDesktop';
-import AppShellTablet from './AppShellTablet';
-import AppShellMobile from './AppShellMobile';
+import { useQueryClient } from '@tanstack/react-query';
 import TutorialModal from '../onboarding/TutorialModal';
 import MobileSplash from './MobileSplash';
 
 const TUTORIAL_KEY = 'wr_tutorial_done';
+
+const pageVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+};
+
+const PTR_THRESHOLD = 72; // px to pull before triggering refresh
+
 const SLUG_TO_COURSE = { tcc: 'tcc', psi: 'psicanalise', sex: 'sexologia' };
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
+
+function stripScopedPrefix(pathname) {
+  const parts = pathname.split('/').filter(Boolean);
+  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
+    return '/' + parts.slice(2).join('/');
+  }
+  return pathname;
+}
 
 export default function AppLayout() {
   const { session, login } = useCustomAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
-  const { deviceType, isMobile, isTablet, isDesktop } = useDeviceType();
+  const queryClient = useQueryClient();
 
+  // Determine role/course from URL
   const pathParts = location.pathname.split('/').filter(Boolean);
-  const urlRole = pathParts[0];
+  const urlRole = pathParts[0]; // 'student' or 'adm'
   const urlCourseSlug = params.courseSlug || pathParts[1];
   const urlCourse = SLUG_TO_COURSE[urlCourseSlug] || null;
 
-  // Sincroniza sessão com curso da URL e protege por role
+  // Guard: no session course → lobby. URL course != session course → sync session to URL course.
   useEffect(() => {
     if (!session) return;
-    if (!session.course && !urlCourse) { navigate('/lobby'); return; }
+    if (!session.course && !urlCourse) {
+      navigate('/lobby');
+      return;
+    }
+    // If URL has a valid course and it differs from session, update session to match URL
     if (urlCourse && urlCourse !== session.course) {
       const current = getSession();
       persistSession({ ...current, course: urlCourse });
       login();
     }
+    // Role mismatch protection: if URL says /adm but user is student (or vice versa), redirect
     const expectedRole = session.role === 'admin' ? 'adm' : 'student';
     if (urlRole && (urlRole === 'adm' || urlRole === 'student') && urlRole !== expectedRole) {
       const slug = COURSE_TO_SLUG[session.course] || 'tcc';
       navigate(`/${expectedRole}/${slug}/dashboard`, { replace: true });
     }
   }, [session, urlCourse, urlRole, navigate, login]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Tutorial para novos alunos
   const isStudent = session?.role === 'student';
   const sessionKey = session?.email || session?.code || '';
   const [showTutorial, setShowTutorial] = useState(false);
@@ -64,33 +74,122 @@ export default function AppLayout() {
   useEffect(() => {
     if (!isStudent || !sessionKey) return;
     const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
-    if (!localStorage.getItem(tutKey)) setShowTutorial(true);
+    const tutDone = localStorage.getItem(tutKey);
+    if (!tutDone) { setShowTutorial(true); }
   }, [isStudent, sessionKey]);
 
+
   const handleTutorialFinish = () => {
-    localStorage.setItem(`${TUTORIAL_KEY}_${sessionKey}`, '1');
+    const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
+    localStorage.setItem(tutKey, '1');
     setShowTutorial(false);
   };
 
-  // Seleciona o shell correto para cada tipo de dispositivo
-  function Shell() {
-    if (isDesktop) return <AppShellDesktop />;
-    if (isTablet)  return <AppShellTablet />;
-    return <AppShellMobile />;        // mobile browser + app (WebView/PWA)
-  }
+  // Pull-to-refresh state
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const scrollRef = useRef(null);
+  const isPulling = useRef(false);
+
+  const handleTouchStart = useCallback((e) => {
+    if (scrollRef.current?.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isPulling.current || refreshing) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0 && scrollRef.current?.scrollTop === 0) {
+      setPullY(Math.min(delta * 0.45, PTR_THRESHOLD + 20));
+    }
+  }, [refreshing]);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (!isPulling.current) return;
+    isPulling.current = false;
+    if (pullY >= PTR_THRESHOLD && !refreshing) {
+      setRefreshing(true);
+      setPullY(PTR_THRESHOLD);
+      await queryClient.invalidateQueries();
+      setTimeout(() => {
+        setRefreshing(false);
+        setPullY(0);
+      }, 600);
+    } else {
+      setPullY(0);
+    }
+  }, [pullY, refreshing, queryClient]);
+
+  const showIndicator = pullY > 8;
 
   return (
-    <>
-      {/* Splash screen apenas para mobile/app */}
-      {isMobile && <MobileSplash />}
-
-      {/* Tutorial onboarding para novos alunos */}
+    <div className="flex h-screen bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
+      <MobileSplash />
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
       )}
+      {/* Desktop sidebar */}
+      <div className="hidden md:block shrink-0">
+        <Sidebar session={session} />
+      </div>
 
-      {/* Shell adaptado ao dispositivo */}
-      <Shell />
-    </>
+      {/* Mobile sidebar drawer */}
+      <div className="md:hidden">
+        <Sidebar session={session} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
+      </div>
+
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Mobile top header */}
+        <MobileHeader />
+
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
+          {/* Pull-to-refresh indicator */}
+          {showIndicator && (
+            <div
+              className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all pointer-events-none md:hidden"
+              style={{ height: pullY, overflow: 'hidden' }}
+            >
+              <div className={`w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary flex items-center justify-center ${refreshing ? 'animate-spin' : ''}`}
+                style={{ transform: !refreshing ? `rotate(${(pullY / PTR_THRESHOLD) * 270}deg)` : undefined }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              </div>
+            </div>
+          )}
+
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              ref={scrollRef}
+              data-scroll-container
+              className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
+              style={{
+                paddingBottom: window.innerWidth < 768 && stripScopedPrefix(location.pathname) !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
+                transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
+                transition: isPulling.current ? 'none' : 'transform 0.3s ease',
+              }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div className={stripScopedPrefix(location.pathname) === '/certificadora' ? 'flex-1 min-h-0 flex flex-col' : ''}>
+                <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Mobile bottom nav */}
+        <BottomNav onMenuOpen={() => setSidebarOpen(true)} />
+      </main>
+    </div>
   );
 }
