@@ -43,8 +43,8 @@ const OFFER_COURSES = [
     period: '/mês até o fim do curso',
     tag: 'Em breve · 2027',
     imgs: [
-      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80',
-      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80',
+      'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
     ],
     highlights: [
       'Fundamentos da Psicanálise Freudiana e Lacaniana',
@@ -65,8 +65,8 @@ const OFFER_COURSES = [
     period: '/mês até o fim do curso',
     tag: 'Em breve · 2027',
     imgs: [
-      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
-      'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=800&q=80',
+      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
+      'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
     ],
     highlights: [
       'Sexualidade humana com base científica',
