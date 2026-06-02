@@ -18,6 +18,22 @@ function readCertificateParams(search) {
   };
 }
 
+function normalizeVerificationCode(value) {
+  return String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[–—−]/g, '-')
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9-]/g, '');
+}
+
+async function searchCertificateRecords(code) {
+  const response = await base44.functions.invoke('saveStudentRecord', { action: 'certificateSearch', code });
+  const data = response?.data || response;
+  if (data?.error) throw new Error(data.error);
+  return data?.records || [];
+}
+
 function mapCertificateRecord(record) {
   if (!record) return null;
   return {
@@ -36,8 +52,8 @@ export default function CertificateVerifier() {
   const [certificateData, setCertificateData] = useState(certificateParams);
   const [typedCode, setTypedCode] = useState(certificateParams.codigo);
   const [isSearching, setIsSearching] = useState(false);
-  const normalizedTypedCode = typedCode.trim().toUpperCase();
-  const normalizedCertificateCode = certificateData.codigo.trim().toUpperCase();
+  const normalizedTypedCode = normalizeVerificationCode(typedCode);
+  const normalizedCertificateCode = normalizeVerificationCode(certificateData.codigo);
   const hasCertificateData = Boolean(normalizedCertificateCode && certificateData.aluno && certificateData.curso);
   const isCodeConfirmed = hasCertificateData && normalizedTypedCode === normalizedCertificateCode;
 
@@ -50,7 +66,7 @@ export default function CertificateVerifier() {
 
     setIsSearching(true);
     try {
-      const records = await base44.entities.CertificateRecord.filter({ verification_code: code }, '-created_date', 1);
+      const records = await searchCertificateRecords(code);
       const publicData = mapCertificateRecord(records[0]);
       if (!publicData) {
         setCertificateData({ codigo: code, aluno: '', curso: '', carga: '', media: '', emissao: '', honra: '' });

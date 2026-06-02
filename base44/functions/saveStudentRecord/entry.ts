@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const ALLOWED_ENTITIES = new Set(['ForumPost', 'ForumReply', 'ChatMessage', 'TaskSubmission', 'LiveAttendance']);
+const CERTIFICATE_LIST_LIMIT = 5000;
 
 function norm(value) {
   return String(value || '').trim().toLowerCase();
@@ -8,6 +9,66 @@ function norm(value) {
 
 function uniqueNormList(values = []) {
   return Array.from(new Set((values || []).map(norm).filter(Boolean)));
+}
+
+
+function normalizeVerificationCode(value) {
+  return String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[–—−]/g, '-')
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9-]/g, '');
+}
+
+function certificateCodeVariants(value) {
+  const normalized = normalizeVerificationCode(value);
+  const compact = normalized.replace(/-/g, '');
+  return Array.from(new Set([
+    normalized,
+    compact,
+    normalized.replace(/^WR(\d{2})(\d+)$/, 'WR-$1-$2'),
+  ].filter(Boolean)));
+}
+
+async function findCertificateRecords(base44, payload = {}) {
+  const codes = certificateCodeVariants(payload.verification_code || payload.code);
+  const email = norm(payload.student_email || payload.email);
+  const accessCode = norm(payload.student_access_code || payload.access_code);
+
+  for (const code of codes) {
+    const records = await base44.asServiceRole.entities.CertificateRecord.filter({ verification_code: code }, '-created_date', 5);
+    if (records.length) return records;
+  }
+
+  if (email) {
+    const records = await base44.asServiceRole.entities.CertificateRecord.filter({ student_email: email }, '-created_date', 5);
+    if (records.length) return records;
+  }
+
+  if (accessCode) {
+    const records = await base44.asServiceRole.entities.CertificateRecord.filter({ student_access_code: accessCode }, '-created_date', 5);
+    if (records.length) return records;
+  }
+
+  if (codes.length || email || accessCode) {
+    const records = await base44.asServiceRole.entities.CertificateRecord.list('-created_date', CERTIFICATE_LIST_LIMIT);
+    const compactCodes = codes.map((code) => code.replace(/-/g, ''));
+    return records.filter((record) => {
+      const recordCode = normalizeVerificationCode(record.verification_code);
+      const recordCompactCode = recordCode.replace(/-/g, '');
+      const recordEmail = norm(record.student_email);
+      const recordAccessCode = norm(record.student_access_code);
+      return (
+        codes.includes(recordCode) ||
+        compactCodes.includes(recordCompactCode) ||
+        (email && recordEmail === email) ||
+        (accessCode && recordAccessCode === accessCode)
+      );
+    }).slice(0, 5);
+  }
+
+  return [];
 }
 
 function cleanObject(obj = {}) {
@@ -40,6 +101,34 @@ Deno.serve(async (req) => {
       const record = existing
         ? await base44.asServiceRole.entities.LessonProgress.update(existing.id, data)
         : await base44.asServiceRole.entities.LessonProgress.create(data);
+
+      return Response.json({ success: true, record });
+    }
+
+    if (action === 'certificateSearch') {
+      const records = await findCertificateRecords(base44, payload);
+      return Response.json({ success: true, records });
+    }
+
+    if (action === 'certificateUpsert') {
+      const data = cleanObject(payload.data || {});
+      const verificationCode = normalizeVerificationCode(data.verification_code);
+      const studentName = String(data.student_name || '').trim();
+      if (!verificationCode || !studentName || !data.course_name) {
+        return Response.json({ error: 'Código, aluno e curso são obrigatórios para salvar o certificado.' }, { status: 400 });
+      }
+
+      data.verification_code = verificationCode;
+      data.student_email = norm(data.student_email);
+      data.student_access_code = String(data.student_access_code || '').trim();
+
+      const records = payload.id
+        ? []
+        : await findCertificateRecords(base44, { verification_code: verificationCode });
+      const recordId = payload.id || records[0]?.id;
+      const record = recordId
+        ? await base44.asServiceRole.entities.CertificateRecord.update(recordId, data)
+        : await base44.asServiceRole.entities.CertificateRecord.create(data);
 
       return Response.json({ success: true, record });
     }
