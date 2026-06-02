@@ -49,6 +49,7 @@ import Notifications from './pages/Notifications';
 import MonitorCertificate from './pages/MonitorCertificate';
 import AdminCertificateGenerator from './pages/AdminCertificateGenerator';
 import AtendimentoSocial from './pages/AtendimentoSocial';
+import CertificateVerifier from './pages/CertificateVerifier';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
@@ -144,6 +145,7 @@ const AuthenticatedApp = () => {
     if (pathname === '/privacidade') return <PoliticaDePrivacidade />;
     if (pathname === '/wr-tec') return <WRTec />;
     if (pathname === '/atendimento-social') return <AtendimentoSocial />;
+    if (pathname === '/validar-certificado') return <CertificateVerifier />;
     return <LandingPage onLogin={handleLogin} />;
   }
 
@@ -205,6 +207,7 @@ const AuthenticatedApp = () => {
       <Route path="/ementa-cursos" element={<CourseSyllabus />} />
       <Route path="/wr-tec" element={<WRTec />} />
       <Route path="/atendimento-social" element={<AtendimentoSocial />} />
+      <Route path="/validar-certificado" element={<CertificateVerifier />} />
       <Route path="/termos" element={<TermosDeUso />} />
       <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
       <Route path="*" element={<PageNotFound />} />
