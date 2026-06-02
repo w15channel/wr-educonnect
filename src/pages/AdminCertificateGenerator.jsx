@@ -12,6 +12,8 @@ const ABED_BLUE_FILTER = 'brightness(0) saturate(100%) invert(25%) sepia(78%) sa
 const VERIFICATION_PATH = '/validar-certificado';
 const CERTIFICATE_BACKGROUND = '#ffffff';
 const CERTIFICATE_TEXT = '#000000';
+const CERTIFICATE_WIDTH_PX = 1123;
+const CERTIFICATE_HEIGHT_PX = 794;
 
 const COURSE_LABELS = {
   tcc: 'Formação de Terapeuta em Terapia Comportamental',
@@ -52,13 +54,29 @@ function getPublicBaseUrl() {
   return window.location.origin;
 }
 
+function normalizeVerificationCode(value) {
+  return String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[–—−]/g, '-')
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9-]/g, '');
+}
+
 function createVerificationUrl(certificate) {
-  const params = new URLSearchParams({ codigo: certificate.verificationCode });
+  const params = new URLSearchParams({ codigo: normalizeVerificationCode(certificate.verificationCode) });
   return `${getPublicBaseUrl()}${VERIFICATION_PATH}?${params.toString()}`;
 }
 
 function createQrCodeUrl(value) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=12&color=000000&bgcolor=FFFFFF&data=${encodeURIComponent(value)}`;
+}
+
+async function invokeCertificateAction(payload) {
+  const response = await base44.functions.invoke('saveStudentRecord', payload);
+  const data = response?.data || response;
+  if (data?.error) throw new Error(data.error);
+  return data;
 }
 
 function normalizeClassRecord(item) {
@@ -86,7 +104,7 @@ function FrontCertificate({ certificate, totalHours, averageGrade, verificationU
   return (
     <article
       ref={previewRef}
-      className="relative mx-auto flex min-h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12 shadow-2xl"
+      className="relative mx-auto flex h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12 shadow-2xl"
       style={{ backgroundColor: CERTIFICATE_BACKGROUND, color: CERTIFICATE_TEXT }}
     >
       <div className="absolute inset-5 border-[3px] border-[#b99744]" />
@@ -96,13 +114,15 @@ function FrontCertificate({ certificate, totalHours, averageGrade, verificationU
 
       <header className="relative z-10 flex items-start justify-between gap-8">
         <div className="flex items-center gap-4">
-          <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-24 w-24 object-contain" crossOrigin="anonymous" />
+          <div className="rounded-2xl border border-[#b99744]/70 bg-white p-2 shadow-lg ring-2 ring-[#d9bf75]/45">
+            <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-20 w-20 object-contain" crossOrigin="anonymous" />
+          </div>
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.32em] text-[#9a7528]">Certificado de conclusão</p>
             <h1 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-black">{certificate.courseName}</h1>
           </div>
         </div>
-        <div className="rounded-2xl border border-[#1d4f91]/25 bg-white px-5 py-4 text-right shadow-lg">
+        <div className="rounded-2xl border border-[#1d4f91]/70 bg-white px-5 py-4 text-right shadow-lg ring-2 ring-[#d9bf75]/45">
           <img src={ABED_LOGO} alt="Logo ABED" className="ml-auto h-12 object-contain" style={{ filter: ABED_BLUE_FILTER }} crossOrigin="anonymous" />
           <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-[#1d4f91]">Associada ABED</p>
         </div>
@@ -155,7 +175,7 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
   return (
     <article
       ref={backRef}
-      className="relative mx-auto flex min-h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12 shadow-2xl"
+      className="relative mx-auto flex h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12 shadow-2xl"
       style={{ backgroundColor: CERTIFICATE_BACKGROUND, color: CERTIFICATE_TEXT }}
     >
       <div className="absolute inset-5 border-[3px] border-[#b99744]" />
@@ -165,7 +185,9 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
           <p className="text-sm font-bold uppercase tracking-[0.32em] text-[#9a7528]">Verso do certificado</p>
           <h2 className="mt-2 text-3xl font-black uppercase tracking-wide text-black">Registro acadêmico e validação</h2>
         </div>
-        <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-20 w-20 object-contain" crossOrigin="anonymous" />
+        <div className="rounded-2xl border border-[#b99744]/70 bg-white p-2 shadow-lg">
+          <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-16 w-16 object-contain" crossOrigin="anonymous" />
+        </div>
       </header>
 
       <main className="relative z-10 grid flex-1 grid-cols-[1.7fr_1fr] gap-8 py-8">
@@ -214,50 +236,7 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
   );
 }
 
-function SocialCertificate({ certificate, totalHours, averageGrade, verificationUrl, socialRef }) {
-  return (
-    <article ref={socialRef} className="relative mx-auto flex h-[1080px] w-[1080px] flex-col overflow-hidden p-16 text-center shadow-2xl" style={{ backgroundColor: CERTIFICATE_BACKGROUND, color: CERTIFICATE_TEXT }}>
-      <div className="absolute inset-8 border-[3px] border-[#b99744]" />
-      <div className="absolute inset-14 border border-[#d9bf75]" />
-      <div className="absolute -left-28 -top-28 h-96 w-96 rounded-full bg-[#b99744]/10" />
-      <div className="absolute -bottom-28 -right-28 h-96 w-96 rounded-full bg-black/5" />
-      <header className="relative z-10 flex items-center justify-between">
-        <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-24 w-24 object-contain" crossOrigin="anonymous" />
-        <div className="rounded-xl border border-[#1d4f91]/25 bg-white p-3">
-          <img src={ABED_LOGO} alt="Logo ABED" className="h-16 object-contain" style={{ filter: ABED_BLUE_FILTER }} crossOrigin="anonymous" />
-        </div>
-      </header>
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center">
-        <p className="text-lg font-black uppercase tracking-[0.36em] text-[#9a7528]">Certificado de conclusão</p>
-        <h1 className="mt-8 text-6xl font-black uppercase leading-tight text-black">{certificate.studentName || 'Nome completo do aluno'}</h1>
-        <p className="mt-8 max-w-3xl text-2xl leading-10 text-black">concluiu <strong>{certificate.courseName}</strong>, com <strong>{totalHours} horas</strong> e média final <strong>{averageGrade}</strong>.</p>
-        {certificate.honorTitle && (
-          <div className="mt-10 rounded-3xl border border-[#c9a84c] bg-white px-8 py-6">
-            <p className="text-xs font-black uppercase tracking-[0.32em] text-[#9a7528]">Destaque de honra</p>
-            <p className="mt-2 text-3xl font-black text-black">{certificate.honorTitle}</p>
-          </div>
-        )}
-      </main>
-      <footer className="relative z-10 flex items-end justify-between gap-8 text-left text-xs text-black">
-        <div>
-          <p className="font-bold uppercase tracking-wide text-[#9a7528]">Autenticação</p>
-          <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[#d9bf75] bg-white p-2">
-            <img src={createQrCodeUrl(verificationUrl)} alt="QR Code de validação" className="h-16 w-16 rounded bg-white p-1" crossOrigin="anonymous" />
-            <p className="max-w-[170px] text-[10px] leading-4 text-black">Escaneie para validar os dados públicos do certificado.</p>
-          </div>
-        </div>
-        <div className="text-center">
-          <img src={WR_SIGNATURE_IMAGE} alt="Assinatura da coordenação" className="mx-auto h-20 object-contain" crossOrigin="anonymous" />
-          <div className="mx-auto -mt-2 h-px w-56 bg-black" />
-          <p className="mt-2 text-sm font-bold text-black">{certificate.coordinatorName}</p>
-          <p className="text-xs uppercase tracking-wide text-black">Coordenação pedagógica</p>
-        </div>
-      </footer>
-    </article>
-  );
-}
-
-function CertificatePreview({ certificate, selectedClasses, totalHours, averageGrade, verificationUrl, previewRef, backRef, socialRef }) {
+function CertificatePreview({ certificate, selectedClasses, totalHours, averageGrade, verificationUrl, previewRef, backRef }) {
   return (
     <div className="space-y-4 overflow-x-auto rounded-2xl border border-border bg-secondary/40 p-4">
       <div>
@@ -268,9 +247,8 @@ function CertificatePreview({ certificate, selectedClasses, totalHours, averageG
         <p className="mb-2 text-xs font-black uppercase tracking-wide text-muted-foreground">Verso</p>
         <BackCertificate certificate={certificate} selectedClasses={selectedClasses} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} backRef={backRef} />
       </div>
-      <div>
-        <p className="mb-2 text-xs font-black uppercase tracking-wide text-muted-foreground">PNG para redes sociais</p>
-        <SocialCertificate certificate={certificate} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} socialRef={socialRef} />
+      <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-900">
+        O botão PNG 1ª página exporta exatamente a frente exibida acima, sem um layout social separado.
       </div>
     </div>
   );
@@ -280,7 +258,6 @@ export default function AdminCertificateGenerator() {
   const { session } = useCustomAuth();
   const previewRef = useRef(null);
   const backRef = useRef(null);
-  const socialRef = useRef(null);
   const [certificate, setCertificate] = useState({
     studentName: '',
     studentDocument: '',
@@ -353,7 +330,7 @@ export default function AdminCertificateGenerator() {
   };
 
   const buildCertificatePayload = () => ({
-    verification_code: certificate.verificationCode.trim().toUpperCase(),
+    verification_code: normalizeVerificationCode(certificate.verificationCode),
     student_name: certificate.studentName.trim(),
     student_document: certificate.studentDocument.trim(),
     student_email: certificate.studentEmail.trim(),
@@ -402,15 +379,9 @@ export default function AdminCertificateGenerator() {
     setIsSaving(true);
     try {
       const payload = buildCertificatePayload();
-      const existing = savedCertificateId
-        ? []
-        : await base44.entities.CertificateRecord.filter({ verification_code: payload.verification_code }, '-created_date', 1);
-      const record = savedCertificateId
-        ? await base44.entities.CertificateRecord.update(savedCertificateId, payload)
-        : existing[0]
-          ? await base44.entities.CertificateRecord.update(existing[0].id, payload)
-          : await base44.entities.CertificateRecord.create(payload);
-      setSavedCertificateId(record.id || savedCertificateId || existing[0]?.id || null);
+      const { record } = await invokeCertificateAction({ action: 'certificateUpsert', id: savedCertificateId, data: payload });
+      setSavedCertificateId(record?.id || savedCertificateId || null);
+      updateCertificate('verificationCode', record?.verification_code || payload.verification_code);
       toast.success('Certificado salvo no banco de dados.');
     } catch (error) {
       console.error('Erro ao salvar certificado:', error);
@@ -421,16 +392,18 @@ export default function AdminCertificateGenerator() {
   };
 
   const rescueCertificateData = async () => {
-    const code = certificate.verificationCode.trim().toUpperCase();
+    const code = normalizeVerificationCode(certificate.verificationCode);
     const email = selectedStudent?.student_email || certificate.studentEmail.trim();
     const accessCode = selectedStudent?.code || certificate.studentAccessCode.trim();
 
     setIsRescuing(true);
     try {
-      let records = [];
-      if (code) records = await base44.entities.CertificateRecord.filter({ verification_code: code }, '-created_date', 1);
-      if (!records.length && email) records = await base44.entities.CertificateRecord.filter({ student_email: email }, '-created_date', 1);
-      if (!records.length && accessCode) records = await base44.entities.CertificateRecord.filter({ student_access_code: accessCode }, '-created_date', 1);
+      const { records = [] } = await invokeCertificateAction({
+        action: 'certificateSearch',
+        code,
+        student_email: email,
+        student_access_code: accessCode,
+      });
 
       if (records[0]) {
         applySavedRecord(records[0]);
@@ -453,7 +426,26 @@ export default function AdminCertificateGenerator() {
   };
 
   const exportNodeAsImage = async (node, backgroundColor = CERTIFICATE_BACKGROUND) => {
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor, useCORS: true });
+    const canvas = await html2canvas(node, {
+      scale: 2,
+      backgroundColor,
+      useCORS: true,
+      allowTaint: false,
+      width: CERTIFICATE_WIDTH_PX,
+      height: CERTIFICATE_HEIGHT_PX,
+      windowWidth: CERTIFICATE_WIDTH_PX,
+      windowHeight: CERTIFICATE_HEIGHT_PX,
+      scrollX: 0,
+      scrollY: 0,
+      onclone: (documentClone, element) => {
+        element.style.width = `${CERTIFICATE_WIDTH_PX}px`;
+        element.style.height = `${CERTIFICATE_HEIGHT_PX}px`;
+        element.style.minHeight = `${CERTIFICATE_HEIGHT_PX}px`;
+        element.style.transform = 'none';
+        element.style.margin = '0';
+        element.style.boxShadow = 'none';
+      },
+    });
     return canvas.toDataURL('image/png');
   };
 
@@ -483,18 +475,18 @@ export default function AdminCertificateGenerator() {
   };
 
   const generateSocialPng = async () => {
-    if (!socialRef.current) return;
+    if (!previewRef.current) return;
     setIsGenerating(true);
     try {
-      const image = await exportNodeAsImage(socialRef.current);
+      const image = await exportNodeAsImage(previewRef.current);
       const link = document.createElement('a');
       const name = sanitizeFileName(certificate.studentName || 'aluno');
       link.href = image;
-      link.download = `certificado-redes-sociais-${name}.png`;
+      link.download = `certificado-primeira-pagina-${name}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success('PNG para redes sociais gerado com sucesso.');
+      toast.success('PNG gerado com a primeira página exatamente como exibida na prévia.');
     } finally {
       setIsGenerating(false);
     }
@@ -526,7 +518,7 @@ export default function AdminCertificateGenerator() {
             {isGenerating ? 'Gerando...' : 'Baixar PDF frente e verso'}
           </button>
           <button type="button" onClick={generateSocialPng} disabled={isGenerating} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-bold text-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-50">
-            <FileImage size={16} /> PNG redes sociais
+            <FileImage size={16} /> PNG 1ª página
           </button>
         </div>
       </header>
@@ -667,7 +659,7 @@ export default function AdminCertificateGenerator() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <strong>Prévia em tempo real:</strong> a frente não exibe CPF/RG, e-mail, grade nem código autenticador. Ela traz apenas o QR Code; os dados sensíveis e o código público menor ficam no verso.
           </div>
-          <CertificatePreview certificate={certificate} selectedClasses={selectedClasses} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} previewRef={previewRef} backRef={backRef} socialRef={socialRef} />
+          <CertificatePreview certificate={certificate} selectedClasses={selectedClasses} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} previewRef={previewRef} backRef={backRef} />
         </main>
       </div>
     </div>
