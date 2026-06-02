@@ -16,8 +16,8 @@
  * - drawer de menu abre pela direita (MobileMenuDrawer)
  * - Dashboard usa DashboardMobile exclusiva
  */
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Outlet, useLocation, useNavigate, useRoutes } from 'react-router-dom';
+import React, { useState, useRef, useCallback } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { BarChart3, Play, Video, MessageSquare, LayoutGrid } from 'lucide-react';
@@ -39,7 +39,7 @@ const routeLabels = {
   '/live': 'Sala ao Vivo', '/tasks': 'Tarefas', '/forum': 'Fórum',
   '/students': 'Alunos', '/announcements': 'Avisos', '/profile': 'Meu Perfil',
   '/calendar': 'Calendário', '/tuitions': 'Mensalidades', '/tutor': 'Tutor Digital',
-  '/scorecontrol': 'Pontuação', '/certificadora': 'Certificação',
+  '/scorecontrol': 'Pontuação', '/certificadora': 'Certificação', '/gerar-certificado': 'Gerar Certificado',
   '/ranking': 'Ranking', '/monitores': 'Monitores', '/terapeuta': 'Terapeuta',
   '/bestseller': 'Best Seller', '/historico': 'Histórico', '/classe': 'Classe',
   '/debates': 'Debates', '/tests': 'Provas', '/keys': 'Acessos', '/ring': 'Notificações',

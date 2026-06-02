@@ -14,13 +14,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
-  CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
+  CalendarDays, DollarSign, GraduationCap, Brain,
   ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
+import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import { setSession, getSession } from '@/lib/customAuth';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
@@ -56,6 +56,7 @@ const adminGroups = [
     { icon: Brain, label: 'Tutor Digital', path: '/tutor', color: 'text-pink-400' },
     { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
     { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },
+    { icon: FileText, label: 'Gerar Certificado', path: '/gerar-certificado', color: 'text-amber-400' },
   ]},
 ];
 
