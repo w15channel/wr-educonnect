@@ -1,14 +1,17 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Award, Download, FileImage, FilePlus2, Plus, RefreshCw, Trash2, UserCheck } from 'lucide-react';
+import { Award, Download, FileImage, FilePlus2, Plus, RefreshCw, Save, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE } from '@/lib/brand';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 const ABED_LOGO = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png';
 const ABED_BLUE_FILTER = 'brightness(0) saturate(100%) invert(25%) sepia(78%) saturate(1037%) hue-rotate(183deg) brightness(91%) contrast(93%)';
 const VERIFICATION_PATH = '/validar-certificado';
+const CERTIFICATE_BACKGROUND = '#ffffff';
+const CERTIFICATE_TEXT = '#000000';
 
 const COURSE_LABELS = {
   tcc: 'Formação de Terapeuta em Terapia Comportamental',
@@ -49,21 +52,24 @@ function getPublicBaseUrl() {
   return window.location.origin;
 }
 
-function createVerificationUrl(certificate, totalHours, averageGrade) {
-  const params = new URLSearchParams({
-    codigo: certificate.verificationCode,
-    aluno: certificate.studentName || 'Nome completo do aluno',
-    curso: certificate.courseName,
-    carga: String(totalHours),
-    media: averageGrade,
-    emissao: certificate.issueDate,
-    honra: certificate.honorTitle || '',
-  });
+function createVerificationUrl(certificate) {
+  const params = new URLSearchParams({ codigo: certificate.verificationCode });
   return `${getPublicBaseUrl()}${VERIFICATION_PATH}?${params.toString()}`;
 }
 
 function createQrCodeUrl(value) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=12&data=${encodeURIComponent(value)}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=12&color=000000&bgcolor=FFFFFF&data=${encodeURIComponent(value)}`;
+}
+
+function normalizeClassRecord(item) {
+  return {
+    id: item.id || createClassId(),
+    selected: item.selected !== false,
+    title: item.title || 'Aula sem título',
+    description: item.description || '',
+    hours: Number(item.hours) || 0,
+    grade: Number(item.grade) || 0,
+  };
 }
 
 function FormField({ label, children, hint = null }) {
@@ -80,61 +86,62 @@ function FrontCertificate({ certificate, totalHours, averageGrade, verificationU
   return (
     <article
       ref={previewRef}
-      className="relative mx-auto flex min-h-[794px] w-[1123px] flex-col overflow-hidden bg-[#fbf8ef] px-16 py-12 text-[#1b1a16] shadow-2xl"
+      className="relative mx-auto flex min-h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12 shadow-2xl"
+      style={{ backgroundColor: CERTIFICATE_BACKGROUND, color: CERTIFICATE_TEXT }}
     >
       <div className="absolute inset-5 border-[3px] border-[#b99744]" />
       <div className="absolute inset-8 border border-[#d9bf75]" />
       <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#b99744]/10" />
-      <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-[#24190b]/10" />
+      <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-black/5" />
 
       <header className="relative z-10 flex items-start justify-between gap-8">
         <div className="flex items-center gap-4">
           <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-24 w-24 object-contain" crossOrigin="anonymous" />
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.32em] text-[#9a7528]">Certificado de conclusão</p>
-            <h1 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#24190b]">{certificate.courseName}</h1>
+            <h1 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-black">{certificate.courseName}</h1>
           </div>
         </div>
-        <div className="rounded-2xl border border-[#1d4f91]/25 bg-white/70 px-5 py-4 text-right shadow-lg">
+        <div className="rounded-2xl border border-[#1d4f91]/25 bg-white px-5 py-4 text-right shadow-lg">
           <img src={ABED_LOGO} alt="Logo ABED" className="ml-auto h-12 object-contain" style={{ filter: ABED_BLUE_FILTER }} crossOrigin="anonymous" />
           <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-[#1d4f91]">Associada ABED</p>
         </div>
       </header>
 
       <main className="relative z-10 flex flex-1 flex-col justify-center py-8 text-center">
-        <p className="text-lg leading-8 text-[#403626]">Certificamos que</p>
-        <h2 className="mx-auto mt-3 max-w-4xl border-b-2 border-[#d9bf75] pb-2 text-5xl font-black uppercase tracking-wide text-[#24190b]">
+        <p className="text-lg leading-8 text-black">Certificamos que</p>
+        <h2 className="mx-auto mt-3 max-w-4xl border-b-2 border-[#d9bf75] pb-2 text-5xl font-black uppercase tracking-wide text-black">
           {certificate.studentName || 'Nome completo do aluno'}
         </h2>
-        <p className="mx-auto mt-5 max-w-4xl text-lg leading-9 text-[#403626]">
+        <p className="mx-auto mt-5 max-w-4xl text-lg leading-9 text-black">
           concluiu o curso <strong>{certificate.courseName}</strong>, realizado pela {BRAND_LEGAL_NAME}, com carga horária total de <strong>{totalHours} horas</strong>, média final <strong>{averageGrade}</strong> e aproveitamento considerado satisfatório.
         </p>
-        <p className="mx-auto mt-3 max-w-4xl text-base leading-7 text-[#5d5140]">{certificate.description}</p>
+        <p className="mx-auto mt-3 max-w-4xl text-base leading-7 text-black">{certificate.description}</p>
 
         {certificate.honorTitle && (
-          <section className="mx-auto mt-7 max-w-3xl rounded-2xl border border-[#c9a84c] bg-white/65 px-6 py-4 shadow-sm">
+          <section className="mx-auto mt-7 max-w-3xl rounded-2xl border border-[#c9a84c] bg-white px-6 py-4 shadow-sm">
             <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#9a7528]">Destaque de honra</p>
-            <h3 className="mt-1 text-2xl font-black text-[#24190b]">{certificate.honorTitle}</h3>
-            {certificate.honorDescription && <p className="mt-2 text-sm leading-6 text-[#5d5140]">{certificate.honorDescription}</p>}
+            <h3 className="mt-1 text-2xl font-black text-black">{certificate.honorTitle}</h3>
+            {certificate.honorDescription && <p className="mt-2 text-sm leading-6 text-black">{certificate.honorDescription}</p>}
           </section>
         )}
       </main>
 
-      <footer className="relative z-10 grid grid-cols-[1fr_1.2fr_1fr] items-end gap-8 pt-5 text-center text-[#403626]">
+      <footer className="relative z-10 grid grid-cols-[1fr_1.2fr_1fr] items-end gap-8 pt-5 text-center text-black">
         <div className="text-left text-xs leading-5">
           <p className="font-bold uppercase tracking-wide text-[#9a7528]">Autenticação</p>
-          <div className="mt-2 inline-flex items-center gap-3 rounded-xl border border-[#d9bf75] bg-white/70 p-2 shadow-sm">
+          <div className="mt-2 inline-flex items-center gap-3 rounded-xl border border-[#d9bf75] bg-white p-2 shadow-sm">
             <img src={createQrCodeUrl(verificationUrl)} alt="QR Code de validação" className="h-20 w-20 rounded bg-white p-1" crossOrigin="anonymous" />
-            <p className="max-w-[150px] text-[10px] leading-4 text-[#6f6049]">Escaneie para conferir a autenticidade pública deste certificado.</p>
+            <p className="max-w-[150px] text-[10px] leading-4 text-black">Escaneie para conferir a autenticidade pública deste certificado.</p>
           </div>
         </div>
         <div>
           <img src={WR_SIGNATURE_IMAGE} alt="Assinatura da coordenação" className="mx-auto h-20 object-contain" crossOrigin="anonymous" />
-          <div className="mx-auto -mt-2 h-px w-64 bg-[#9a7528]" />
-          <p className="mt-2 text-sm font-bold">{certificate.coordinatorName}</p>
-          <p className="text-xs uppercase tracking-wide text-[#6f6049]">Coordenação pedagógica</p>
+          <div className="mx-auto -mt-2 h-px w-64 bg-black" />
+          <p className="mt-2 text-sm font-bold text-black">{certificate.coordinatorName}</p>
+          <p className="text-xs uppercase tracking-wide text-black">Coordenação pedagógica</p>
         </div>
-        <div className="text-right text-xs leading-5">
+        <div className="text-right text-xs leading-5 text-black">
           <p>Emitido em: {certificate.issueDate}</p>
           <p>{BRAND_LEGAL_NAME}</p>
           <p>CNPJ {BRAND_CNPJ}</p>
@@ -148,27 +155,28 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
   return (
     <article
       ref={backRef}
-      className="relative mx-auto flex min-h-[794px] w-[1123px] flex-col overflow-hidden bg-[#fbf8ef] px-16 py-12 text-[#1b1a16] shadow-2xl"
+      className="relative mx-auto flex min-h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12 shadow-2xl"
+      style={{ backgroundColor: CERTIFICATE_BACKGROUND, color: CERTIFICATE_TEXT }}
     >
       <div className="absolute inset-5 border-[3px] border-[#b99744]" />
       <div className="absolute inset-8 border border-[#d9bf75]" />
       <header className="relative z-10 flex items-center justify-between border-b border-[#d9bf75] pb-5">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.32em] text-[#9a7528]">Verso do certificado</p>
-          <h2 className="mt-2 text-3xl font-black uppercase tracking-wide text-[#24190b]">Registro acadêmico e validação</h2>
+          <h2 className="mt-2 text-3xl font-black uppercase tracking-wide text-black">Registro acadêmico e validação</h2>
         </div>
         <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-20 w-20 object-contain" crossOrigin="anonymous" />
       </header>
 
       <main className="relative z-10 grid flex-1 grid-cols-[1.7fr_1fr] gap-8 py-8">
-        <section className="rounded-2xl border border-[#d9bf75] bg-white/55 p-5 text-left">
+        <section className="rounded-2xl border border-[#d9bf75] bg-white p-5 text-left">
           <h3 className="text-sm font-black uppercase tracking-[0.24em] text-[#9a7528]">Grade, cargas e notas</h3>
-          <div className="mt-4 grid grid-cols-[1.2fr_2fr_80px_80px] gap-2 border-b border-[#d9bf75] pb-2 text-[11px] font-black uppercase tracking-wide text-[#9a7528]">
+          <div className="mt-4 grid grid-cols-[1.2fr_2fr_80px_80px] gap-2 border-b border-[#d9bf75] pb-2 text-[11px] font-black uppercase tracking-wide text-black">
             <span>Aula</span><span>Descrição</span><span className="text-center">Horas</span><span className="text-center">Nota</span>
           </div>
           <div className="divide-y divide-[#e7d6a5]">
             {selectedClasses.map((item) => (
-              <div key={item.id} className="grid grid-cols-[1.2fr_2fr_80px_80px] gap-2 py-2 text-xs text-[#403626]">
+              <div key={item.id} className="grid grid-cols-[1.2fr_2fr_80px_80px] gap-2 py-2 text-xs text-black">
                 <span className="font-bold">{item.title}</span>
                 <span>{item.description}</span>
                 <span className="text-center font-bold">{Number(item.hours) || 0}h</span>
@@ -176,16 +184,16 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
               </div>
             ))}
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-[#f2e6c6] p-3 text-center text-sm">
-            <div><p className="text-[11px] uppercase tracking-wide text-[#6f6049]">Carga total</p><p className="text-xl font-black text-[#24190b]">{totalHours}h</p></div>
-            <div><p className="text-[11px] uppercase tracking-wide text-[#6f6049]">Média final</p><p className="text-xl font-black text-[#24190b]">{averageGrade}</p></div>
+          <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-[#d9bf75] bg-white p-3 text-center text-sm">
+            <div><p className="text-[11px] uppercase tracking-wide text-black">Carga total</p><p className="text-xl font-black text-black">{totalHours}h</p></div>
+            <div><p className="text-[11px] uppercase tracking-wide text-black">Média final</p><p className="text-xl font-black text-black">{averageGrade}</p></div>
           </div>
         </section>
 
         <aside className="space-y-4 text-left">
-          <section className="rounded-2xl border border-[#d9bf75] bg-white/60 p-5">
+          <section className="rounded-2xl border border-[#d9bf75] bg-white p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.24em] text-[#9a7528]">Dados sensíveis</h3>
-            <div className="mt-4 space-y-2 text-sm leading-6 text-[#403626]">
+            <div className="mt-4 space-y-2 text-sm leading-6 text-black">
               <p><strong>Aluno:</strong> {certificate.studentName || 'não informado'}</p>
               <p><strong>CPF/RG:</strong> {certificate.studentDocument || 'não informado'}</p>
               <p><strong>E-mail:</strong> {certificate.studentEmail || 'não informado'}</p>
@@ -193,12 +201,12 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
               <p><strong>Emissão:</strong> {certificate.issueDate}</p>
             </div>
           </section>
-          <section className="rounded-2xl border border-[#d9bf75] bg-white/60 p-5 text-center">
+          <section className="rounded-2xl border border-[#d9bf75] bg-white p-5 text-center">
             <h3 className="text-sm font-black uppercase tracking-[0.24em] text-[#9a7528]">Conferência externa</h3>
             <img src={createQrCodeUrl(verificationUrl)} alt="QR Code de validação" className="mx-auto mt-4 h-36 w-36 rounded-lg bg-white p-2" crossOrigin="anonymous" />
-            <p className="mt-3 text-xs leading-5 text-[#403626]">Escaneie o QR Code da frente ou informe o código autenticador abaixo no autenticador público.</p>
-            <p className="mx-auto mt-2 inline-flex rounded-md bg-[#24190b] px-2.5 py-1.5 text-[11px] font-black tracking-[0.18em] text-white">{certificate.verificationCode}</p>
-            <p className="mt-2 break-all text-[10px] text-[#6f6049]">{verificationUrl}</p>
+            <p className="mt-3 text-xs leading-5 text-black">Escaneie o QR Code da frente ou informe o código autenticador abaixo no autenticador público.</p>
+            <p className="mx-auto mt-2 inline-flex rounded-md bg-black px-2.5 py-1.5 text-[11px] font-black tracking-[0.18em] text-white">{certificate.verificationCode}</p>
+            <p className="mt-2 break-all text-[10px] text-black">{verificationUrl}</p>
           </section>
         </aside>
       </main>
@@ -208,41 +216,41 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
 
 function SocialCertificate({ certificate, totalHours, averageGrade, verificationUrl, socialRef }) {
   return (
-    <article ref={socialRef} className="relative mx-auto flex h-[1080px] w-[1080px] flex-col overflow-hidden bg-[#fbf8ef] p-16 text-center text-[#1b1a16] shadow-2xl">
+    <article ref={socialRef} className="relative mx-auto flex h-[1080px] w-[1080px] flex-col overflow-hidden p-16 text-center shadow-2xl" style={{ backgroundColor: CERTIFICATE_BACKGROUND, color: CERTIFICATE_TEXT }}>
       <div className="absolute inset-8 border-[3px] border-[#b99744]" />
       <div className="absolute inset-14 border border-[#d9bf75]" />
-      <div className="absolute -left-28 -top-28 h-96 w-96 rounded-full bg-[#b99744]/15" />
-      <div className="absolute -bottom-28 -right-28 h-96 w-96 rounded-full bg-[#24190b]/10" />
+      <div className="absolute -left-28 -top-28 h-96 w-96 rounded-full bg-[#b99744]/10" />
+      <div className="absolute -bottom-28 -right-28 h-96 w-96 rounded-full bg-black/5" />
       <header className="relative z-10 flex items-center justify-between">
         <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-24 w-24 object-contain" crossOrigin="anonymous" />
-        <div className="rounded-xl border border-[#1d4f91]/25 bg-white/70 p-3">
+        <div className="rounded-xl border border-[#1d4f91]/25 bg-white p-3">
           <img src={ABED_LOGO} alt="Logo ABED" className="h-16 object-contain" style={{ filter: ABED_BLUE_FILTER }} crossOrigin="anonymous" />
         </div>
       </header>
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center">
         <p className="text-lg font-black uppercase tracking-[0.36em] text-[#9a7528]">Certificado de conclusão</p>
-        <h1 className="mt-8 text-6xl font-black uppercase leading-tight text-[#24190b]">{certificate.studentName || 'Nome completo do aluno'}</h1>
-        <p className="mt-8 max-w-3xl text-2xl leading-10 text-[#403626]">concluiu <strong>{certificate.courseName}</strong>, com <strong>{totalHours} horas</strong> e média final <strong>{averageGrade}</strong>.</p>
+        <h1 className="mt-8 text-6xl font-black uppercase leading-tight text-black">{certificate.studentName || 'Nome completo do aluno'}</h1>
+        <p className="mt-8 max-w-3xl text-2xl leading-10 text-black">concluiu <strong>{certificate.courseName}</strong>, com <strong>{totalHours} horas</strong> e média final <strong>{averageGrade}</strong>.</p>
         {certificate.honorTitle && (
-          <div className="mt-10 rounded-3xl border border-[#c9a84c] bg-white/65 px-8 py-6">
+          <div className="mt-10 rounded-3xl border border-[#c9a84c] bg-white px-8 py-6">
             <p className="text-xs font-black uppercase tracking-[0.32em] text-[#9a7528]">Destaque de honra</p>
-            <p className="mt-2 text-3xl font-black text-[#24190b]">{certificate.honorTitle}</p>
+            <p className="mt-2 text-3xl font-black text-black">{certificate.honorTitle}</p>
           </div>
         )}
       </main>
-      <footer className="relative z-10 flex items-end justify-between gap-8 text-left text-xs text-[#403626]">
+      <footer className="relative z-10 flex items-end justify-between gap-8 text-left text-xs text-black">
         <div>
           <p className="font-bold uppercase tracking-wide text-[#9a7528]">Autenticação</p>
-          <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[#d9bf75] bg-white/70 p-2">
+          <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[#d9bf75] bg-white p-2">
             <img src={createQrCodeUrl(verificationUrl)} alt="QR Code de validação" className="h-16 w-16 rounded bg-white p-1" crossOrigin="anonymous" />
-            <p className="max-w-[170px] text-[10px] leading-4">Escaneie para validar os dados públicos do certificado.</p>
+            <p className="max-w-[170px] text-[10px] leading-4 text-black">Escaneie para validar os dados públicos do certificado.</p>
           </div>
         </div>
         <div className="text-center">
           <img src={WR_SIGNATURE_IMAGE} alt="Assinatura da coordenação" className="mx-auto h-20 object-contain" crossOrigin="anonymous" />
-          <div className="mx-auto -mt-2 h-px w-56 bg-[#9a7528]" />
-          <p className="mt-2 text-sm font-bold">{certificate.coordinatorName}</p>
-          <p className="text-xs uppercase tracking-wide text-[#6f6049]">Coordenação pedagógica</p>
+          <div className="mx-auto -mt-2 h-px w-56 bg-black" />
+          <p className="mt-2 text-sm font-bold text-black">{certificate.coordinatorName}</p>
+          <p className="text-xs uppercase tracking-wide text-black">Coordenação pedagógica</p>
         </div>
       </footer>
     </article>
@@ -277,6 +285,7 @@ export default function AdminCertificateGenerator() {
     studentName: '',
     studentDocument: '',
     studentEmail: '',
+    studentAccessCode: '',
     courseName: COURSE_LABELS[session?.course] || 'Curso de Formação Livre',
     description: 'Certificado emitido manualmente pelo administrador para antecipação ou regularização da conclusão, conforme cargas horárias, aulas e notas registradas no verso.',
     coordinatorName: 'William Ribeiro',
@@ -286,8 +295,30 @@ export default function AdminCertificateGenerator() {
     issueDate: todayPtBr(),
   });
   const [classes, setClasses] = useState(INITIAL_CLASSES);
+  const [students, setStudents] = useState([]);
+  const [selectedStudentKey, setSelectedStudentKey] = useState('');
+  const [savedCertificateId, setSavedCertificateId] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isRescuing, setIsRescuing] = useState(false);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function loadStudents() {
+      try {
+        const records = await base44.entities.AccessCode.list('-created_date', 10000);
+        if (!isMounted) return;
+        setStudents(records.filter((record) => record.student_name || record.student_email || record.code));
+      } catch (error) {
+        console.error('Erro ao carregar alunos para certificado:', error);
+        toast.error('Não foi possível carregar a lista de alunos.');
+      }
+    }
+    loadStudents();
+    return () => { isMounted = false; };
+  }, []);
+
+  const selectedStudent = useMemo(() => students.find((student) => String(student.id || student.code) === selectedStudentKey), [selectedStudentKey, students]);
   const selectedClasses = useMemo(() => classes.filter((item) => item.selected), [classes]);
   const totalHours = useMemo(() => selectedClasses.reduce((sum, item) => sum + (Number(item.hours) || 0), 0), [selectedClasses]);
   const averageGrade = useMemo(() => {
@@ -295,7 +326,7 @@ export default function AdminCertificateGenerator() {
     const total = selectedClasses.reduce((sum, item) => sum + (Number(item.grade) || 0), 0);
     return (total / selectedClasses.length).toFixed(1);
   }, [selectedClasses]);
-  const verificationUrl = useMemo(() => createVerificationUrl(certificate, totalHours, averageGrade), [certificate, totalHours, averageGrade]);
+  const verificationUrl = useMemo(() => createVerificationUrl(certificate), [certificate]);
 
   const updateCertificate = (field, value) => setCertificate((prev) => ({ ...prev, [field]: value }));
   const updateClass = (id, field, value) => {
@@ -305,9 +336,123 @@ export default function AdminCertificateGenerator() {
     setClasses((prev) => [...prev, { id: createClassId(), selected: true, title: 'Nova aula', description: 'Descrição manual da aula ou módulo.', hours: 1, grade: 10 }]);
   };
   const removeClass = (id) => setClasses((prev) => prev.filter((item) => item.id !== id));
-  const renewVerificationCode = () => updateCertificate('verificationCode', createVerificationCode());
+  const renewVerificationCode = () => {
+    updateCertificate('verificationCode', createVerificationCode());
+    setSavedCertificateId(null);
+  };
 
-  const exportNodeAsImage = async (node, backgroundColor = '#fbf8ef') => {
+  const fillStudentData = (student) => {
+    if (!student) return;
+    setCertificate((prev) => ({
+      ...prev,
+      studentName: student.student_name || student.profile_name || prev.studentName,
+      studentEmail: student.student_email || prev.studentEmail,
+      studentAccessCode: student.code || prev.studentAccessCode,
+      courseName: COURSE_LABELS[student.course] || prev.courseName,
+    }));
+  };
+
+  const buildCertificatePayload = () => ({
+    verification_code: certificate.verificationCode.trim().toUpperCase(),
+    student_name: certificate.studentName.trim(),
+    student_document: certificate.studentDocument.trim(),
+    student_email: certificate.studentEmail.trim(),
+    student_access_code: certificate.studentAccessCode.trim(),
+    course_name: certificate.courseName.trim(),
+    course_slug: selectedStudent?.course || session?.course || '',
+    description: certificate.description,
+    coordinator_name: certificate.coordinatorName.trim(),
+    honor_title: certificate.honorTitle.trim(),
+    honor_description: certificate.honorDescription,
+    issue_date: certificate.issueDate.trim(),
+    total_hours: totalHours,
+    average_grade: averageGrade,
+    classes: classes.map(normalizeClassRecord),
+    verification_url: verificationUrl,
+  });
+
+  const applySavedRecord = (record) => {
+    setSavedCertificateId(record.id);
+    setCertificate({
+      studentName: record.student_name || '',
+      studentDocument: record.student_document || '',
+      studentEmail: record.student_email || '',
+      studentAccessCode: record.student_access_code || '',
+      courseName: record.course_name || COURSE_LABELS[session?.course] || 'Curso de Formação Livre',
+      description: record.description || '',
+      coordinatorName: record.coordinator_name || 'William Ribeiro',
+      honorTitle: record.honor_title || '',
+      honorDescription: record.honor_description || '',
+      verificationCode: record.verification_code || createVerificationCode(),
+      issueDate: record.issue_date || todayPtBr(),
+    });
+    setClasses(Array.isArray(record.classes) && record.classes.length ? record.classes.map(normalizeClassRecord) : INITIAL_CLASSES);
+  };
+
+  const saveCertificate = async () => {
+    if (!certificate.verificationCode.trim() || !certificate.studentName.trim()) {
+      toast.error('Informe pelo menos o nome do aluno e o código de autenticidade antes de salvar.');
+      return;
+    }
+    if (!selectedClasses.length) {
+      toast.error('Selecione pelo menos uma aula/carga antes de salvar.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const payload = buildCertificatePayload();
+      const existing = savedCertificateId
+        ? []
+        : await base44.entities.CertificateRecord.filter({ verification_code: payload.verification_code }, '-created_date', 1);
+      const record = savedCertificateId
+        ? await base44.entities.CertificateRecord.update(savedCertificateId, payload)
+        : existing[0]
+          ? await base44.entities.CertificateRecord.update(existing[0].id, payload)
+          : await base44.entities.CertificateRecord.create(payload);
+      setSavedCertificateId(record.id || savedCertificateId || existing[0]?.id || null);
+      toast.success('Certificado salvo no banco de dados.');
+    } catch (error) {
+      console.error('Erro ao salvar certificado:', error);
+      toast.error('Não foi possível salvar o certificado.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const rescueCertificateData = async () => {
+    const code = certificate.verificationCode.trim().toUpperCase();
+    const email = selectedStudent?.student_email || certificate.studentEmail.trim();
+    const accessCode = selectedStudent?.code || certificate.studentAccessCode.trim();
+
+    setIsRescuing(true);
+    try {
+      let records = [];
+      if (code) records = await base44.entities.CertificateRecord.filter({ verification_code: code }, '-created_date', 1);
+      if (!records.length && email) records = await base44.entities.CertificateRecord.filter({ student_email: email }, '-created_date', 1);
+      if (!records.length && accessCode) records = await base44.entities.CertificateRecord.filter({ student_access_code: accessCode }, '-created_date', 1);
+
+      if (records[0]) {
+        applySavedRecord(records[0]);
+        toast.success('Dados salvos do certificado foram resgatados.');
+        return;
+      }
+
+      if (selectedStudent) {
+        fillStudentData(selectedStudent);
+        toast.info('Nenhum certificado salvo encontrado; dados básicos do aluno selecionado foram preenchidos.');
+      } else {
+        toast.error('Selecione um aluno ou informe um código já salvo para resgatar dados.');
+      }
+    } catch (error) {
+      console.error('Erro ao resgatar certificado:', error);
+      toast.error('Não foi possível resgatar os dados do certificado.');
+    } finally {
+      setIsRescuing(false);
+    }
+  };
+
+  const exportNodeAsImage = async (node, backgroundColor = CERTIFICATE_BACKGROUND) => {
     const canvas = await html2canvas(node, { scale: 2, backgroundColor, useCORS: true });
     return canvas.toDataURL('image/png');
   };
@@ -368,6 +513,14 @@ export default function AdminCertificateGenerator() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={saveCertificate} disabled={isSaving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:pointer-events-none disabled:opacity-50">
+            <Save size={16} />
+            {isSaving ? 'Salvando...' : 'Salvar certificado'}
+          </button>
+          <button type="button" onClick={rescueCertificateData} disabled={isRescuing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-bold text-foreground transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-50">
+            <Search size={16} />
+            {isRescuing ? 'Resgatando...' : 'Resgatar dados'}
+          </button>
           <button type="button" onClick={generatePdf} disabled={isGenerating} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
             <Download size={16} />
             {isGenerating ? 'Gerando...' : 'Baixar PDF frente e verso'}
@@ -381,15 +534,37 @@ export default function AdminCertificateGenerator() {
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
         <aside className="space-y-4">
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <UserCheck size={18} className="text-primary" />
-              <h3 className="font-black text-foreground">Dados editáveis</h3>
+            <h3 className="mb-4 font-black text-foreground">Aluno selecionado</h3>
+            <div className="space-y-3">
+              <FormField label="Selecionar aluno" hint="Use Resgatar dados para buscar um certificado salvo deste aluno ou preencher dados básicos do cadastro.">
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={selectedStudentKey}
+                  onChange={(event) => {
+                    setSelectedStudentKey(event.target.value);
+                    const student = students.find((item) => String(item.id || item.code) === event.target.value);
+                    fillStudentData(student);
+                    setSavedCertificateId(null);
+                  }}
+                >
+                  <option value="">Selecione um aluno cadastrado</option>
+                  {students.map((student) => (
+                    <option key={student.id || student.code} value={student.id || student.code}>
+                      {student.student_name || student.profile_name || student.student_email || student.code} {student.course ? `· ${student.course}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
             </div>
-            <div className="space-y-4">
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <h3 className="mb-4 font-black text-foreground">Dados principais</h3>
+            <div className="space-y-3">
               <FormField label="Nome do aluno">
                 <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" value={certificate.studentName} onChange={(event) => updateCertificate('studentName', event.target.value)} placeholder="Nome completo" />
               </FormField>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <div className="grid grid-cols-2 gap-3">
                 <FormField label="CPF/RG" hint="Aparece somente no verso.">
                   <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" value={certificate.studentDocument} onChange={(event) => updateCertificate('studentDocument', event.target.value)} placeholder="Documento" />
                 </FormField>
