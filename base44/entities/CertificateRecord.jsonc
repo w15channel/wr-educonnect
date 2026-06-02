@@ -1,0 +1,104 @@
+{
+  "name": "CertificateRecord",
+  "type": "object",
+  "properties": {
+    "verification_code": {
+      "type": "string",
+      "description": "Código público único de autenticação do certificado"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome completo exibido no certificado"
+    },
+    "student_document": {
+      "type": "string",
+      "description": "CPF/RG do aluno, exibido apenas no verso administrativo"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "E-mail do aluno vinculado ao certificado"
+    },
+    "student_access_code": {
+      "type": "string",
+      "description": "Código de acesso do aluno vinculado ao certificado"
+    },
+    "course_name": {
+      "type": "string",
+      "description": "Nome do curso certificado"
+    },
+    "course_slug": {
+      "type": "string",
+      "description": "Identificador interno do curso"
+    },
+    "description": {
+      "type": "string",
+      "description": "Texto complementar do certificado"
+    },
+    "coordinator_name": {
+      "type": "string",
+      "description": "Nome da coordenação pedagógica"
+    },
+    "honor_title": {
+      "type": "string",
+      "description": "Título opcional de destaque/honra"
+    },
+    "honor_description": {
+      "type": "string",
+      "description": "Descrição opcional de destaque/honra"
+    },
+    "issue_date": {
+      "type": "string",
+      "description": "Data de emissão apresentada no certificado"
+    },
+    "total_hours": {
+      "type": "number",
+      "description": "Carga horária total calculada"
+    },
+    "average_grade": {
+      "type": "string",
+      "description": "Média final calculada"
+    },
+    "classes": {
+      "type": "array",
+      "description": "Aulas, cargas e notas salvas para reedição do certificado",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "selected": { "type": "boolean" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "hours": { "type": "number" },
+          "grade": { "type": "number" }
+        }
+      }
+    },
+    "verification_url": {
+      "type": "string",
+      "description": "URL pública de conferência do certificado"
+    }
+  },
+  "required": [
+    "verification_code",
+    "student_name",
+    "course_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Award, CheckCircle2, Search, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO } from '@/lib/brand';
 
 function readCertificateParams(search) {
@@ -16,13 +18,58 @@ function readCertificateParams(search) {
   };
 }
 
+function mapCertificateRecord(record) {
+  if (!record) return null;
+  return {
+    codigo: record.verification_code || '',
+    aluno: record.student_name || '',
+    curso: record.course_name || '',
+    carga: record.total_hours ? String(record.total_hours) : '',
+    media: record.average_grade || '',
+    emissao: record.issue_date || '',
+    honra: record.honor_title || '',
+  };
+}
+
 export default function CertificateVerifier() {
-  const certificateData = useMemo(() => readCertificateParams(window.location.search), []);
-  const [typedCode, setTypedCode] = useState(certificateData.codigo);
+  const certificateParams = useMemo(() => readCertificateParams(window.location.search), []);
+  const [certificateData, setCertificateData] = useState(certificateParams);
+  const [typedCode, setTypedCode] = useState(certificateParams.codigo);
+  const [isSearching, setIsSearching] = useState(false);
   const normalizedTypedCode = typedCode.trim().toUpperCase();
   const normalizedCertificateCode = certificateData.codigo.trim().toUpperCase();
   const hasCertificateData = Boolean(normalizedCertificateCode && certificateData.aluno && certificateData.curso);
   const isCodeConfirmed = hasCertificateData && normalizedTypedCode === normalizedCertificateCode;
+
+  const searchCertificateCode = async () => {
+    const code = normalizedTypedCode;
+    if (!code) {
+      toast.error('Digite um código de autenticidade para pesquisar.');
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const records = await base44.entities.CertificateRecord.filter({ verification_code: code }, '-created_date', 1);
+      const publicData = mapCertificateRecord(records[0]);
+      if (!publicData) {
+        setCertificateData({ codigo: code, aluno: '', curso: '', carga: '', media: '', emissao: '', honra: '' });
+        toast.error('Nenhum certificado foi encontrado para este código.');
+        return;
+      }
+      setCertificateData(publicData);
+      setTypedCode(publicData.codigo);
+      const url = new URL(window.location.href);
+      url.search = new URLSearchParams({ codigo: publicData.codigo }).toString();
+      window.history.replaceState({}, '', url.toString());
+      toast.success('Certificado encontrado no banco de dados.');
+    } catch (error) {
+      console.error('Erro ao pesquisar certificado:', error);
+      toast.error('Não foi possível pesquisar o código agora.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-10 text-white">
@@ -50,29 +97,42 @@ export default function CertificateVerifier() {
             </div>
             <div>
               <h2 className="text-xl font-black">Campo público de conferência</h2>
-              <p className="mt-1 text-sm text-slate-600">Digite ou cole o código exibido no certificado. Quando o QR Code é escaneado, o código já vem preenchido no link público.</p>
+              <p className="mt-1 text-sm text-slate-700">Digite ou cole o código exibido no certificado e clique em pesquisar código para buscar o registro salvo no banco de dados.</p>
             </div>
           </div>
 
           <label className="mt-5 block space-y-2">
-            <span className="text-xs font-black uppercase tracking-wide text-slate-500">Código de autenticidade</span>
+            <span className="text-xs font-black uppercase tracking-wide text-slate-700">Código de autenticidade</span>
             <input
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black uppercase tracking-widest outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-black uppercase tracking-widest text-black outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
               value={typedCode}
               onChange={(event) => setTypedCode(event.target.value.toUpperCase())}
-              placeholder="WR-2026-XXXXXXXX"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') searchCertificateCode();
+              }}
+              placeholder="WR-26-XXXX"
             />
           </label>
 
+          <button
+            type="button"
+            onClick={searchCertificateCode}
+            disabled={isSearching}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-black uppercase tracking-wide text-white transition hover:bg-slate-800 disabled:pointer-events-none disabled:opacity-60 sm:w-auto"
+          >
+            <Search size={18} />
+            {isSearching ? 'Pesquisando...' : 'Pesquisar código'}
+          </button>
+
           {!hasCertificateData && (
             <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              Informe um link de certificado válido com os dados de autenticação emitidos pela coordenação.
+              Informe um código válido e clique em pesquisar para consultar os dados públicos do certificado emitido pela coordenação.
             </div>
           )}
 
           {hasCertificateData && !isCodeConfirmed && (
             <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-              O código digitado não corresponde ao código de autenticidade deste link.
+              O código digitado não corresponde ao código de autenticidade carregado nesta página.
             </div>
           )}
 
@@ -82,27 +142,28 @@ export default function CertificateVerifier() {
                 <CheckCircle2 size={22} className="text-emerald-600" />
                 <h3 className="text-lg font-black">Certificado conferido</h3>
               </div>
-              <p className="mt-2 text-sm leading-6 text-emerald-900">Os dados públicos abaixo correspondem às informações de conclusão disponibilizadas no link de autenticidade do certificado.</p>
+              <p className="mt-2 text-sm leading-6 text-emerald-950">Os dados públicos abaixo correspondem às informações de conclusão salvas no banco de dados de autenticidade do certificado.</p>
               <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-slate-500">Aluno</dt><dd className="mt-1 font-bold text-slate-950">{certificateData.aluno}</dd></div>
-                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-slate-500">Curso</dt><dd className="mt-1 font-bold text-slate-950">{certificateData.curso}</dd></div>
-                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-slate-500">Carga horária</dt><dd className="mt-1 font-bold text-slate-950">{certificateData.carga} horas</dd></div>
-                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-slate-500">Média final</dt><dd className="mt-1 font-bold text-slate-950">{certificateData.media}</dd></div>
-                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-slate-500">Emissão</dt><dd className="mt-1 font-bold text-slate-950">{certificateData.emissao}</dd></div>
-                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-slate-500">Código</dt><dd className="mt-1 font-bold text-slate-950">{certificateData.codigo}</dd></div>
-                {certificateData.honra && <div className="rounded-2xl bg-white p-4 sm:col-span-2"><dt className="text-xs font-black uppercase tracking-wide text-slate-500">Destaque de honra</dt><dd className="mt-1 font-bold text-slate-950">{certificateData.honra}</dd></div>}
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Aluno</dt><dd className="mt-1 font-bold text-black">{certificateData.aluno}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Curso</dt><dd className="mt-1 font-bold text-black">{certificateData.curso}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Carga horária</dt><dd className="mt-1 font-bold text-black">{certificateData.carga} horas</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Média final</dt><dd className="mt-1 font-bold text-black">{certificateData.media}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Emissão</dt><dd className="mt-1 font-bold text-black">{certificateData.emissao}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Código</dt><dd className="mt-1 font-black tracking-widest text-black">{certificateData.codigo}</dd></div>
               </dl>
+              {certificateData.honra && (
+                <div className="mt-3 rounded-2xl bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-wide text-black">Destaque</p>
+                  <p className="mt-1 font-bold text-black">{certificateData.honra}</p>
+                </div>
+              )}
             </div>
           )}
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-5 text-sm leading-6 text-white/65">
-          <div className="flex items-center gap-2 text-white">
-            <Award size={18} className="text-amber-300" />
-            <h2 className="font-black">Observação de segurança</h2>
-          </div>
-          <p className="mt-2">Esta página confere os dados públicos vinculados ao QR Code/código do certificado. Em caso de divergência, solicite conferência administrativa junto à coordenação da {BRAND_LEGAL_NAME}.</p>
-        </section>
+        <footer className="flex items-center justify-center gap-2 text-sm text-white/60">
+          <Award size={16} /> WR Educacional · Validação pública de certificados
+        </footer>
       </main>
     </div>
   );
