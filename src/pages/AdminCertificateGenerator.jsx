@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE } from '@/lib/brand';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
-const ABED_LOGO = 'https://drive.google.com/uc?export=view&id=1fr4l-MTI1uCigt1knsSnJGET89_UvPAH';
+const ABED_LOGO = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png';
+const ABED_BLUE_FILTER = 'brightness(0) saturate(100%) invert(25%) sepia(78%) saturate(1037%) hue-rotate(183deg) brightness(91%) contrast(93%)';
 const VERIFICATION_PATH = '/validar-certificado';
 
 const COURSE_LABELS = {
@@ -20,8 +21,8 @@ function createClassId() {
 }
 
 function createVerificationCode() {
-  const randomPart = globalThis.crypto?.randomUUID?.().slice(0, 8) || Math.random().toString(36).slice(2, 10);
-  return `WR-${new Date().getFullYear()}-${randomPart.toUpperCase()}`;
+  const randomPart = globalThis.crypto?.randomUUID?.().replace(/-/g, '').slice(0, 4) || Math.random().toString(36).slice(2, 6);
+  return `WR-${String(new Date().getFullYear()).slice(-2)}-${randomPart.toUpperCase()}`;
 }
 
 const INITIAL_CLASSES = [
@@ -94,9 +95,9 @@ function FrontCertificate({ certificate, totalHours, averageGrade, verificationU
             <h1 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-[#24190b]">{certificate.courseName}</h1>
           </div>
         </div>
-        <div className="rounded-2xl bg-[#17120b] px-5 py-4 text-right text-white shadow-lg">
-          <img src={ABED_LOGO} alt="Logo ABED" className="ml-auto h-12 object-contain" crossOrigin="anonymous" />
-          <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-white/60">Associada ABED</p>
+        <div className="rounded-2xl border border-[#1d4f91]/25 bg-white/70 px-5 py-4 text-right shadow-lg">
+          <img src={ABED_LOGO} alt="Logo ABED" className="ml-auto h-12 object-contain" style={{ filter: ABED_BLUE_FILTER }} crossOrigin="anonymous" />
+          <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-[#1d4f91]">Associada ABED</p>
         </div>
       </header>
 
@@ -121,9 +122,11 @@ function FrontCertificate({ certificate, totalHours, averageGrade, verificationU
 
       <footer className="relative z-10 grid grid-cols-[1fr_1.2fr_1fr] items-end gap-8 pt-5 text-center text-[#403626]">
         <div className="text-left text-xs leading-5">
-          <p className="font-bold uppercase tracking-wide text-[#9a7528]">Autenticidade</p>
-          <p>Código: <strong>{certificate.verificationCode}</strong></p>
-          <p className="break-all">{verificationUrl}</p>
+          <p className="font-bold uppercase tracking-wide text-[#9a7528]">Autenticação</p>
+          <div className="mt-2 inline-flex items-center gap-3 rounded-xl border border-[#d9bf75] bg-white/70 p-2 shadow-sm">
+            <img src={createQrCodeUrl(verificationUrl)} alt="QR Code de validação" className="h-20 w-20 rounded bg-white p-1" crossOrigin="anonymous" />
+            <p className="max-w-[150px] text-[10px] leading-4 text-[#6f6049]">Escaneie para conferir a autenticidade pública deste certificado.</p>
+          </div>
         </div>
         <div>
           <img src={WR_SIGNATURE_IMAGE} alt="Assinatura da coordenação" className="mx-auto h-20 object-contain" crossOrigin="anonymous" />
@@ -193,8 +196,8 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
           <section className="rounded-2xl border border-[#d9bf75] bg-white/60 p-5 text-center">
             <h3 className="text-sm font-black uppercase tracking-[0.24em] text-[#9a7528]">Conferência externa</h3>
             <img src={createQrCodeUrl(verificationUrl)} alt="QR Code de validação" className="mx-auto mt-4 h-36 w-36 rounded-lg bg-white p-2" crossOrigin="anonymous" />
-            <p className="mt-3 text-xs leading-5 text-[#403626]">Escaneie o QR Code ou informe o código abaixo no campo público de autenticidade.</p>
-            <p className="mt-2 rounded-lg bg-[#24190b] px-3 py-2 text-sm font-black tracking-widest text-white">{certificate.verificationCode}</p>
+            <p className="mt-3 text-xs leading-5 text-[#403626]">Escaneie o QR Code da frente ou informe o código autenticador abaixo no autenticador público.</p>
+            <p className="mx-auto mt-2 inline-flex rounded-md bg-[#24190b] px-2.5 py-1.5 text-[11px] font-black tracking-[0.18em] text-white">{certificate.verificationCode}</p>
             <p className="mt-2 break-all text-[10px] text-[#6f6049]">{verificationUrl}</p>
           </section>
         </aside>
@@ -212,7 +215,9 @@ function SocialCertificate({ certificate, totalHours, averageGrade, verification
       <div className="absolute -bottom-28 -right-28 h-96 w-96 rounded-full bg-[#24190b]/10" />
       <header className="relative z-10 flex items-center justify-between">
         <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-24 w-24 object-contain" crossOrigin="anonymous" />
-        <img src={ABED_LOGO} alt="Logo ABED" className="h-16 object-contain rounded-xl bg-[#17120b] p-3" crossOrigin="anonymous" />
+        <div className="rounded-xl border border-[#1d4f91]/25 bg-white/70 p-3">
+          <img src={ABED_LOGO} alt="Logo ABED" className="h-16 object-contain" style={{ filter: ABED_BLUE_FILTER }} crossOrigin="anonymous" />
+        </div>
       </header>
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center">
         <p className="text-lg font-black uppercase tracking-[0.36em] text-[#9a7528]">Certificado de conclusão</p>
@@ -227,9 +232,11 @@ function SocialCertificate({ certificate, totalHours, averageGrade, verification
       </main>
       <footer className="relative z-10 flex items-end justify-between gap-8 text-left text-xs text-[#403626]">
         <div>
-          <p className="font-bold uppercase tracking-wide text-[#9a7528]">Autenticidade</p>
-          <p className="mt-1 font-black">{certificate.verificationCode}</p>
-          <p className="max-w-[460px] break-all">{verificationUrl}</p>
+          <p className="font-bold uppercase tracking-wide text-[#9a7528]">Autenticação</p>
+          <div className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[#d9bf75] bg-white/70 p-2">
+            <img src={createQrCodeUrl(verificationUrl)} alt="QR Code de validação" className="h-16 w-16 rounded bg-white p-1" crossOrigin="anonymous" />
+            <p className="max-w-[170px] text-[10px] leading-4">Escaneie para validar os dados públicos do certificado.</p>
+          </div>
         </div>
         <div className="text-center">
           <img src={WR_SIGNATURE_IMAGE} alt="Assinatura da coordenação" className="mx-auto h-20 object-contain" crossOrigin="anonymous" />
@@ -483,7 +490,7 @@ export default function AdminCertificateGenerator() {
 
         <main className="min-w-0 space-y-3">
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <strong>Prévia em tempo real:</strong> a frente não exibe CPF/RG, e-mail nem grade. Os dados sensíveis ficam no verso, junto do QR Code e do código público de validação.
+            <strong>Prévia em tempo real:</strong> a frente não exibe CPF/RG, e-mail, grade nem código autenticador. Ela traz apenas o QR Code; os dados sensíveis e o código público menor ficam no verso.
           </div>
           <CertificatePreview certificate={certificate} selectedClasses={selectedClasses} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} previewRef={previewRef} backRef={backRef} socialRef={socialRef} />
         </main>

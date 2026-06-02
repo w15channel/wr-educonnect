@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  GraduationCap, Lock, Key, Sparkles, Users, BookOpen, Video, Heart,
-  Star, ChevronRight, Shield, Award, CheckCircle, ExternalLink,
+  Key, Sparkles, Users, BookOpen, Video, Heart,
+  Star, ChevronRight, Shield, CheckCircle, ExternalLink,
   ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle, MessageCircle, Send,
-  Instagram, Clock, Gift } from
+  Instagram } from
 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { setSession } from '@/lib/customAuth';
@@ -371,7 +371,7 @@ export default function LandingPage({ onLogin }) {
           </a>
 
           <div className="hidden md:flex items-center gap-7 text-[11px] text-white/35 uppercase tracking-[0.18em] font-light">
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '/atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+            {[['Metodologia', '#metodologia'], ['Autenticação de Certificados', '/validar-certificado'], ['Atendimento Social', '/atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
               <a key={label} href={href} className="hover:text-white/70 transition-colors"
                 onMouseEnter={e => { e.currentTarget.style.color = G; }}
                 onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
@@ -398,7 +398,7 @@ export default function LandingPage({ onLogin }) {
 
         {mobileMenu && (
           <div className="md:hidden mx-5 mt-2 border px-5 py-5 space-y-3" style={{ background: BG3, borderColor: `${G}18` }}>
-            {[['Metodologia', '#metodologia'], ['Coordenação', '#professor'], ['Atendimento Social', '/atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
+            {[['Metodologia', '#metodologia'], ['Autenticação de Certificados', '/validar-certificado'], ['Atendimento Social', '/atendimento-social'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos']].map(([label, href]) =>
               <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/40 hover:text-white/70 py-2 text-[11px] uppercase tracking-[0.2em] transition-all">{label}</a>
             )}
             <div className="h-px" style={{ background: `${G}15` }} />
