@@ -20,6 +20,7 @@ const routeLabels = {
   '/tutor': 'Tutor Digital EDU',
   '/scorecontrol': 'Controle de Pontuação',
   '/certificadora': 'Certificação',
+  '/gerar-certificado': 'Gerar Certificado',
   '/ranking': 'Ranking Geral',
   '/monitores': 'Monitores',
   '/terapeuta': 'Terapeuta da Semana',

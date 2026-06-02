@@ -47,6 +47,7 @@ import DirectMessage from './pages/DirectMessage';
 import Classe from './pages/Classe';
 import Notifications from './pages/Notifications';
 import MonitorCertificate from './pages/MonitorCertificate';
+import AdminCertificateGenerator from './pages/AdminCertificateGenerator';
 import AtendimentoSocial from './pages/AtendimentoSocial';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
@@ -99,6 +100,7 @@ function ScopedRoutesTree() {
         <Route path="scorecontrol" element={<ScoreControl />} />
         <Route path="scores" element={<Navigate to="../scorecontrol" replace />} />
         <Route path="certificadora" element={<Certificadora />} />
+        <Route path="gerar-certificado" element={<AdminOnly><AdminCertificateGenerator /></AdminOnly>} />
         <Route path="ranking" element={<RankingGeral />} />
         <Route path="monitores" element={<Monitores />} />
         <Route path="monitor-certificate/:id" element={<MonitorCertificate />} />
@@ -191,6 +193,7 @@ const AuthenticatedApp = () => {
       <Route path="/tutor" element={redirectTo('/tutor')} />
       <Route path="/scores" element={redirectTo('/scorecontrol')} />
       <Route path="/certificadora" element={redirectTo('/certificadora')} />
+      <Route path="/gerar-certificado" element={redirectTo('/gerar-certificado')} />
       <Route path="/ranking" element={redirectTo('/ranking')} />
       <Route path="/monitores" element={redirectTo('/monitores')} />
       <Route path="/terapeuta" element={redirectTo('/terapeuta')} />

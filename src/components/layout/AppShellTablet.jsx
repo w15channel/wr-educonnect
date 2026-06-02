@@ -15,7 +15,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
-import { BarChart3, Play, Video, MessageSquare, LayoutGrid, ChevronLeft } from 'lucide-react';
+import { BarChart3, Play, Video, MessageSquare, LayoutGrid } from 'lucide-react';
 import Sidebar from './Sidebar';
 import NotificationsBell from '@/components/dashboard/NotificationsBell';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
@@ -34,7 +34,7 @@ const routeLabels = {
   '/live': 'Sala ao Vivo', '/tasks': 'Tarefas', '/forum': 'Fórum',
   '/students': 'Alunos', '/announcements': 'Avisos', '/profile': 'Perfil',
   '/calendar': 'Calendário', '/tuitions': 'Mensalidades', '/tutor': 'Tutor EDU',
-  '/scorecontrol': 'Pontuação', '/certificadora': 'Certificação',
+  '/scorecontrol': 'Pontuação', '/certificadora': 'Certificação', '/gerar-certificado': 'Gerar Certificado',
   '/ranking': 'Ranking', '/monitores': 'Monitores', '/terapeuta': 'Terapeuta',
   '/bestseller': 'Best Seller', '/historico': 'Histórico', '/classe': 'Classe',
   '/debates': 'Debates', '/tests': 'Provas', '/keys': 'Acessos',
