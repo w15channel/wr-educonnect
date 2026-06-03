@@ -50,6 +50,10 @@
       "type": "string",
       "description": "Data de emissão apresentada no certificado"
     },
+    "template_id": {
+      "type": "string",
+      "description": "Modelo visual selecionado no gerador manual"
+    },
     "total_hours": {
       "type": "number",
       "description": "Carga horária total calculada"

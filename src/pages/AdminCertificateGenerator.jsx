@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Award, Download, FileImage, FilePlus2, Plus, RefreshCw, Save, Search, Trash2 } from 'lucide-react';
+import { Award, Download, FileImage, FilePlus2, LayoutTemplate, Plus, RefreshCw, Save, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE } from '@/lib/brand';
@@ -14,6 +14,23 @@ const CERTIFICATE_BACKGROUND = '#ffffff';
 const CERTIFICATE_TEXT = '#000000';
 const CERTIFICATE_WIDTH_PX = 1123;
 const CERTIFICATE_HEIGHT_PX = 794;
+
+const CERTIFICATE_TEMPLATES = [
+  { id: 'classic-gold', name: 'Clássico Ouro', accent: '#b99744', soft: '#d9bf75', background: '#ffffff', text: '#000000', flourish: 'circles' },
+  { id: 'royal-blue', name: 'Azul Real', accent: '#1d4f91', soft: '#93b4df', background: '#f8fbff', text: '#0f172a', flourish: 'ribbon' },
+  { id: 'emerald', name: 'Esmeralda', accent: '#047857', soft: '#86efac', background: '#f7fef9', text: '#052e16', flourish: 'corner' },
+  { id: 'burgundy', name: 'Bordô', accent: '#8a1538', soft: '#e4a0b7', background: '#fff8fb', text: '#1f1117', flourish: 'circles' },
+  { id: 'graphite', name: 'Grafite', accent: '#334155', soft: '#cbd5e1', background: '#ffffff', text: '#0f172a', flourish: 'ribbon' },
+  { id: 'purple', name: 'Púrpura', accent: '#6d28d9', soft: '#c4b5fd', background: '#fbf8ff', text: '#1e1b4b', flourish: 'corner' },
+  { id: 'rose', name: 'Rose Gold', accent: '#be6f5d', soft: '#f2c6bd', background: '#fffaf8', text: '#2b1713', flourish: 'circles' },
+  { id: 'teal', name: 'Teal', accent: '#0f766e', soft: '#99f6e4', background: '#f7fffd', text: '#042f2e', flourish: 'ribbon' },
+  { id: 'navy', name: 'Marinho', accent: '#172554', soft: '#93c5fd', background: '#f8fbff', text: '#020617', flourish: 'corner' },
+  { id: 'minimal', name: 'Minimalista', accent: '#111827', soft: '#d1d5db', background: '#ffffff', text: '#111827', flourish: 'none' },
+];
+
+function getCertificateTemplate(templateId) {
+  return CERTIFICATE_TEMPLATES.find((template) => template.id === templateId) || CERTIFICATE_TEMPLATES[0];
+}
 
 const COURSE_LABELS = {
   tcc: 'Formação de Terapeuta em Terapia Comportamental',
@@ -79,6 +96,34 @@ async function invokeCertificateAction(payload) {
   return data;
 }
 
+function certificateRecordMatches(record, { code, email, accessCode }) {
+  const normalizedCode = normalizeVerificationCode(code);
+  const compactCode = normalizedCode.replace(/-/g, '');
+  const compactVariants = [compactCode, compactCode.replace(/^WR(\d{2})(\d+)$/, '$2')].filter(Boolean);
+  const recordCode = normalizeVerificationCode(record.verification_code);
+  const recordCompactCode = recordCode.replace(/-/g, '');
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const normalizedAccessCode = String(accessCode || '').trim().toLowerCase();
+  return (
+    (normalizedCode && (recordCode === normalizedCode || recordCompactCode && compactVariants.some((variant) => recordCompactCode === variant || recordCompactCode.endsWith(variant) || variant.endsWith(recordCompactCode)))) ||
+    (normalizedEmail && String(record.student_email || '').trim().toLowerCase() === normalizedEmail) ||
+    (normalizedAccessCode && String(record.student_access_code || '').trim().toLowerCase() === normalizedAccessCode)
+  );
+}
+
+async function searchCertificateRecordsDirect({ code, email, accessCode }) {
+  const records = await base44.entities.CertificateRecord.list('-created_date', 5000);
+  return records.filter((record) => certificateRecordMatches(record, { code, email, accessCode })).slice(0, 5);
+}
+
+async function saveCertificateRecordDirect(id, data) {
+  if (id) return base44.entities.CertificateRecord.update(id, data);
+  const existing = (await searchCertificateRecordsDirect({ code: data.verification_code }))[0];
+  return existing
+    ? base44.entities.CertificateRecord.update(existing.id, data)
+    : base44.entities.CertificateRecord.create(data);
+}
+
 function normalizeClassRecord(item) {
   return {
     id: item.id || createClassId(),
@@ -100,37 +145,55 @@ function FormField({ label, children, hint = null }) {
   );
 }
 
-function FrontCertificate({ certificate, totalHours, averageGrade, verificationUrl, previewRef }) {
+function FrontCertificate({ certificate, totalHours, averageGrade, verificationUrl, previewRef, template }) {
+  const templateStyle = template || getCertificateTemplate(certificate.templateId);
+  const flourish = templateStyle.flourish;
   return (
     <article
       ref={previewRef}
-      className="relative mx-auto flex h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12 shadow-2xl"
-      style={{ backgroundColor: CERTIFICATE_BACKGROUND, color: CERTIFICATE_TEXT }}
+      className="relative mx-auto flex h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12"
+      style={{ backgroundColor: templateStyle.background, color: templateStyle.text }}
     >
-      <div className="absolute inset-5 border-[3px] border-[#b99744]" />
-      <div className="absolute inset-8 border border-[#d9bf75]" />
-      <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#b99744]/10" />
-      <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-black/5" />
+      <div className="absolute inset-5 border-[3px]" style={{ borderColor: templateStyle.accent }} />
+      <div className="absolute inset-8 border" style={{ borderColor: templateStyle.soft }} />
+      {flourish === 'circles' && (
+        <>
+          <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full opacity-10" style={{ backgroundColor: templateStyle.accent }} />
+          <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-black/5" />
+        </>
+      )}
+      {flourish === 'ribbon' && (
+        <>
+          <div className="absolute left-0 top-0 h-3 w-full" style={{ backgroundColor: templateStyle.accent }} />
+          <div className="absolute bottom-0 right-0 h-3 w-full" style={{ backgroundColor: templateStyle.soft }} />
+        </>
+      )}
+      {flourish === 'corner' && (
+        <>
+          <div className="absolute right-10 top-10 h-24 w-24 border-r-8 border-t-8 opacity-70" style={{ borderColor: templateStyle.accent }} />
+          <div className="absolute bottom-10 left-10 h-24 w-24 border-b-8 border-l-8 opacity-70" style={{ borderColor: templateStyle.soft }} />
+        </>
+      )}
 
       <header className="relative z-10 flex items-start justify-between gap-8">
         <div className="flex items-center gap-4">
-          <div className="rounded-2xl border border-[#b99744]/70 bg-white p-2 shadow-lg ring-2 ring-[#d9bf75]/45">
+          <div className="rounded-2xl border bg-white p-2 shadow-lg ring-2" style={{ borderColor: templateStyle.accent, '--tw-ring-color': templateStyle.soft }}>
             <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-20 w-20 object-contain" crossOrigin="anonymous" />
           </div>
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.32em] text-[#9a7528]">Certificado de conclusão</p>
+            <p className="text-sm font-bold uppercase tracking-[0.32em] " style={{ color: templateStyle.accent }}>Certificado de conclusão</p>
             <h1 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-black">{certificate.courseName}</h1>
           </div>
         </div>
-        <div className="rounded-2xl border border-[#1d4f91]/70 bg-white px-5 py-4 text-right shadow-lg ring-2 ring-[#d9bf75]/45">
+        <div className="rounded-2xl border bg-white px-5 py-4 text-right shadow-lg ring-2" style={{ borderColor: templateStyle.accent }}>
           <img src={ABED_LOGO} alt="Logo ABED" className="ml-auto h-12 object-contain" style={{ filter: ABED_BLUE_FILTER }} crossOrigin="anonymous" />
-          <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-[#1d4f91]">Associada ABED</p>
+          <p className="mt-2 text-[10px] uppercase tracking-[0.25em] " style={{ color: templateStyle.accent }}>Associada ABED</p>
         </div>
       </header>
 
       <main className="relative z-10 flex flex-1 flex-col justify-center py-8 text-center">
         <p className="text-lg leading-8 text-black">Certificamos que</p>
-        <h2 className="mx-auto mt-3 max-w-4xl border-b-2 border-[#d9bf75] pb-2 text-5xl font-black uppercase tracking-wide text-black">
+        <h2 className="mx-auto mt-3 max-w-4xl border-b-2 pb-2 text-5xl font-black uppercase tracking-wide" style={{ borderColor: templateStyle.soft, color: templateStyle.text }}>
           {certificate.studentName || 'Nome completo do aluno'}
         </h2>
         <p className="mx-auto mt-5 max-w-4xl text-lg leading-9 text-black">
@@ -139,8 +202,8 @@ function FrontCertificate({ certificate, totalHours, averageGrade, verificationU
         <p className="mx-auto mt-3 max-w-4xl text-base leading-7 text-black">{certificate.description}</p>
 
         {certificate.honorTitle && (
-          <section className="mx-auto mt-7 max-w-3xl rounded-2xl border border-[#c9a84c] bg-white px-6 py-4 shadow-sm">
-            <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[#9a7528]">Destaque de honra</p>
+          <section className="mx-auto mt-7 max-w-3xl rounded-2xl border bg-white px-6 py-4 shadow-sm" style={{ borderColor: templateStyle.accent }}>
+            <p className="text-[11px] font-black uppercase tracking-[0.32em] " style={{ color: templateStyle.accent }}>Destaque de honra</p>
             <h3 className="mt-1 text-2xl font-black text-black">{certificate.honorTitle}</h3>
             {certificate.honorDescription && <p className="mt-2 text-sm leading-6 text-black">{certificate.honorDescription}</p>}
           </section>
@@ -149,8 +212,8 @@ function FrontCertificate({ certificate, totalHours, averageGrade, verificationU
 
       <footer className="relative z-10 grid grid-cols-[1fr_1.2fr_1fr] items-end gap-8 pt-5 text-center text-black">
         <div className="text-left text-xs leading-5">
-          <p className="font-bold uppercase tracking-wide text-[#9a7528]">Autenticação</p>
-          <div className="mt-2 inline-flex items-center gap-3 rounded-xl border border-[#d9bf75] bg-white p-2 shadow-sm">
+          <p className="font-bold uppercase tracking-wide " style={{ color: templateStyle.accent }}>Autenticação</p>
+          <div className="mt-2 inline-flex items-center gap-3 rounded-xl border bg-white p-2 shadow-sm" style={{ borderColor: templateStyle.soft }}>
             <img src={createQrCodeUrl(verificationUrl)} alt="QR Code de validação" className="h-20 w-20 rounded bg-white p-1" crossOrigin="anonymous" />
             <p className="max-w-[150px] text-[10px] leading-4 text-black">Escaneie para conferir a autenticidade pública deste certificado.</p>
           </div>
@@ -171,21 +234,22 @@ function FrontCertificate({ certificate, totalHours, averageGrade, verificationU
   );
 }
 
-function BackCertificate({ certificate, selectedClasses, totalHours, averageGrade, verificationUrl, backRef }) {
+function BackCertificate({ certificate, selectedClasses, totalHours, averageGrade, verificationUrl, backRef, template }) {
+  const templateStyle = template || getCertificateTemplate(certificate.templateId);
   return (
     <article
       ref={backRef}
-      className="relative mx-auto flex h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12 shadow-2xl"
-      style={{ backgroundColor: CERTIFICATE_BACKGROUND, color: CERTIFICATE_TEXT }}
+      className="relative mx-auto flex h-[794px] w-[1123px] flex-col overflow-hidden px-16 py-12"
+      style={{ backgroundColor: templateStyle.background, color: templateStyle.text }}
     >
-      <div className="absolute inset-5 border-[3px] border-[#b99744]" />
-      <div className="absolute inset-8 border border-[#d9bf75]" />
-      <header className="relative z-10 flex items-center justify-between border-b border-[#d9bf75] pb-5">
+      <div className="absolute inset-5 border-[3px]" style={{ borderColor: templateStyle.accent }} />
+      <div className="absolute inset-8 border" style={{ borderColor: templateStyle.soft }} />
+      <header className="relative z-10 flex items-center justify-between border-b pb-5" style={{ borderColor: templateStyle.soft }}>
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.32em] text-[#9a7528]">Verso do certificado</p>
+          <p className="text-sm font-bold uppercase tracking-[0.32em] " style={{ color: templateStyle.accent }}>Verso do certificado</p>
           <h2 className="mt-2 text-3xl font-black uppercase tracking-wide text-black">Registro acadêmico e validação</h2>
         </div>
-        <div className="rounded-2xl border border-[#b99744]/70 bg-white p-2 shadow-lg">
+        <div className="rounded-2xl border bg-white p-2 shadow-lg" style={{ borderColor: templateStyle.accent }}>
           <img src={WR_CERTIFICATE_LOGO} alt="Logo WR Terapia" className="h-16 w-16 object-contain" crossOrigin="anonymous" />
         </div>
       </header>
@@ -236,16 +300,16 @@ function BackCertificate({ certificate, selectedClasses, totalHours, averageGrad
   );
 }
 
-function CertificatePreview({ certificate, selectedClasses, totalHours, averageGrade, verificationUrl, previewRef, backRef }) {
+function CertificatePreview({ certificate, selectedClasses, totalHours, averageGrade, verificationUrl, previewRef, backRef, template }) {
   return (
     <div className="space-y-4 overflow-x-auto rounded-2xl border border-border bg-secondary/40 p-4">
       <div>
         <p className="mb-2 text-xs font-black uppercase tracking-wide text-muted-foreground">Frente</p>
-        <FrontCertificate certificate={certificate} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} previewRef={previewRef} />
+        <FrontCertificate certificate={certificate} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} previewRef={previewRef} template={template} />
       </div>
       <div>
         <p className="mb-2 text-xs font-black uppercase tracking-wide text-muted-foreground">Verso</p>
-        <BackCertificate certificate={certificate} selectedClasses={selectedClasses} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} backRef={backRef} />
+        <BackCertificate certificate={certificate} selectedClasses={selectedClasses} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} backRef={backRef} template={template} />
       </div>
       <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-900">
         O botão PNG 1ª página exporta exatamente a frente exibida acima, sem um layout social separado.
@@ -270,6 +334,7 @@ export default function AdminCertificateGenerator() {
     honorDescription: '',
     verificationCode: createVerificationCode(),
     issueDate: todayPtBr(),
+    templateId: CERTIFICATE_TEMPLATES[0].id,
   });
   const [classes, setClasses] = useState(INITIAL_CLASSES);
   const [students, setStudents] = useState([]);
@@ -303,6 +368,7 @@ export default function AdminCertificateGenerator() {
     const total = selectedClasses.reduce((sum, item) => sum + (Number(item.grade) || 0), 0);
     return (total / selectedClasses.length).toFixed(1);
   }, [selectedClasses]);
+  const selectedTemplate = useMemo(() => getCertificateTemplate(certificate.templateId), [certificate.templateId]);
   const verificationUrl = useMemo(() => createVerificationUrl(certificate), [certificate]);
 
   const updateCertificate = (field, value) => setCertificate((prev) => ({ ...prev, [field]: value }));
@@ -342,6 +408,7 @@ export default function AdminCertificateGenerator() {
     honor_title: certificate.honorTitle.trim(),
     honor_description: certificate.honorDescription,
     issue_date: certificate.issueDate.trim(),
+    template_id: certificate.templateId || CERTIFICATE_TEMPLATES[0].id,
     total_hours: totalHours,
     average_grade: averageGrade,
     classes: classes.map(normalizeClassRecord),
@@ -362,6 +429,7 @@ export default function AdminCertificateGenerator() {
       honorDescription: record.honor_description || '',
       verificationCode: record.verification_code || createVerificationCode(),
       issueDate: record.issue_date || todayPtBr(),
+      templateId: record.template_id || CERTIFICATE_TEMPLATES[0].id,
     });
     setClasses(Array.isArray(record.classes) && record.classes.length ? record.classes.map(normalizeClassRecord) : INITIAL_CLASSES);
   };
@@ -379,13 +447,20 @@ export default function AdminCertificateGenerator() {
     setIsSaving(true);
     try {
       const payload = buildCertificatePayload();
-      const { record } = await invokeCertificateAction({ action: 'certificateUpsert', id: savedCertificateId, data: payload });
+      let record = null;
+      try {
+        const result = await invokeCertificateAction({ action: 'certificateUpsert', id: savedCertificateId, data: payload });
+        record = result.record;
+      } catch (functionError) {
+        console.warn('Falha na função de certificado; usando salvamento direto como contingência:', functionError);
+        record = await saveCertificateRecordDirect(savedCertificateId, payload);
+      }
       setSavedCertificateId(record?.id || savedCertificateId || null);
       updateCertificate('verificationCode', record?.verification_code || payload.verification_code);
       toast.success('Certificado salvo no banco de dados.');
     } catch (error) {
       console.error('Erro ao salvar certificado:', error);
-      toast.error('Não foi possível salvar o certificado.');
+      toast.error(`Não foi possível salvar o certificado: ${error.message || 'verifique os dados e tente novamente.'}`);
     } finally {
       setIsSaving(false);
     }
@@ -398,12 +473,19 @@ export default function AdminCertificateGenerator() {
 
     setIsRescuing(true);
     try {
-      const { records = [] } = await invokeCertificateAction({
-        action: 'certificateSearch',
-        code,
-        student_email: email,
-        student_access_code: accessCode,
-      });
+      let records = [];
+      try {
+        const result = await invokeCertificateAction({
+          action: 'certificateSearch',
+          code,
+          student_email: email,
+          student_access_code: accessCode,
+        });
+        records = result.records || [];
+      } catch (functionError) {
+        console.warn('Falha na função de resgate; usando busca direta como contingência:', functionError);
+        records = await searchCertificateRecordsDirect({ code, email, accessCode });
+      }
 
       if (records[0]) {
         applySavedRecord(records[0]);
@@ -419,31 +501,42 @@ export default function AdminCertificateGenerator() {
       }
     } catch (error) {
       console.error('Erro ao resgatar certificado:', error);
-      toast.error('Não foi possível resgatar os dados do certificado.');
+      toast.error(`Não foi possível resgatar os dados do certificado: ${error.message || 'verifique o código e tente novamente.'}`);
     } finally {
       setIsRescuing(false);
     }
   };
 
-  const exportNodeAsImage = async (node, backgroundColor = CERTIFICATE_BACKGROUND) => {
+  const waitForImages = async (node) => {
+    const images = Array.from(node.querySelectorAll('img'));
+    await Promise.all(images.map((image) => {
+      if (image.complete && image.naturalWidth > 0) return Promise.resolve();
+      return new Promise((resolve) => {
+        image.addEventListener('load', resolve, { once: true });
+        image.addEventListener('error', resolve, { once: true });
+      });
+    }));
+  };
+
+  const exportNodeAsImage = async (node, backgroundColor = selectedTemplate.background) => {
+    await waitForImages(node);
+    const bounds = node.getBoundingClientRect();
     const canvas = await html2canvas(node, {
       scale: 2,
       backgroundColor,
       useCORS: true,
       allowTaint: false,
-      width: CERTIFICATE_WIDTH_PX,
-      height: CERTIFICATE_HEIGHT_PX,
-      windowWidth: CERTIFICATE_WIDTH_PX,
-      windowHeight: CERTIFICATE_HEIGHT_PX,
-      scrollX: 0,
-      scrollY: 0,
+      width: Math.round(bounds.width),
+      height: Math.round(bounds.height),
+      windowWidth: Math.max(document.documentElement.clientWidth, Math.ceil(bounds.right)),
+      windowHeight: Math.max(document.documentElement.clientHeight, Math.ceil(bounds.bottom)),
+      scrollX: -window.scrollX,
+      scrollY: -window.scrollY,
       onclone: (documentClone, element) => {
         element.style.width = `${CERTIFICATE_WIDTH_PX}px`;
         element.style.height = `${CERTIFICATE_HEIGHT_PX}px`;
         element.style.minHeight = `${CERTIFICATE_HEIGHT_PX}px`;
         element.style.transform = 'none';
-        element.style.margin = '0';
-        element.style.boxShadow = 'none';
       },
     });
     return canvas.toDataURL('image/png');
@@ -525,6 +618,43 @@ export default function AdminCertificateGenerator() {
 
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
         <aside className="space-y-4">
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <LayoutTemplate size={18} className="text-primary" />
+              <div>
+                <h3 className="font-black text-foreground">Modelos em PNG selecionáveis</h3>
+                <p className="text-xs text-muted-foreground">Escolha um dos 10 layouts; PDF e PNG usarão exatamente o modelo exibido na prévia.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {CERTIFICATE_TEMPLATES.map((template) => {
+                const isSelected = selectedTemplate.id === template.id;
+                return (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => updateCertificate('templateId', template.id)}
+                    className={`rounded-2xl border p-2 text-left transition ${isSelected ? 'border-primary bg-primary/10 ring-2 ring-primary/30' : 'border-border bg-background hover:bg-secondary'}`}
+                    aria-pressed={isSelected}
+                  >
+                    <div
+                      className="relative h-20 overflow-hidden rounded-xl border bg-white"
+                      style={{ backgroundColor: template.background, borderColor: template.accent }}
+                    >
+                      <div className="absolute inset-2 border" style={{ borderColor: template.soft }} />
+                      <div className="absolute left-3 top-3 h-3 w-12 rounded" style={{ backgroundColor: template.accent }} />
+                      <div className="absolute left-3 top-8 h-1.5 w-20 rounded" style={{ backgroundColor: template.soft }} />
+                      <div className="absolute bottom-3 left-3 h-1.5 w-10 rounded bg-slate-300" />
+                      <div className="absolute bottom-3 right-3 h-7 w-7 rounded-full border" style={{ borderColor: template.accent }} />
+                      <span className="absolute right-2 top-2 rounded bg-white/90 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide" style={{ color: template.accent }}>PNG</span>
+                    </div>
+                    <span className="mt-2 block text-xs font-black text-foreground">{template.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
             <h3 className="mb-4 font-black text-foreground">Aluno selecionado</h3>
             <div className="space-y-3">
@@ -659,7 +789,7 @@ export default function AdminCertificateGenerator() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <strong>Prévia em tempo real:</strong> a frente não exibe CPF/RG, e-mail, grade nem código autenticador. Ela traz apenas o QR Code; os dados sensíveis e o código público menor ficam no verso.
           </div>
-          <CertificatePreview certificate={certificate} selectedClasses={selectedClasses} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} previewRef={previewRef} backRef={backRef} />
+          <CertificatePreview certificate={certificate} selectedClasses={selectedClasses} totalHours={totalHours} averageGrade={averageGrade} verificationUrl={verificationUrl} previewRef={previewRef} backRef={backRef} template={selectedTemplate} />
         </main>
       </div>
     </div>
