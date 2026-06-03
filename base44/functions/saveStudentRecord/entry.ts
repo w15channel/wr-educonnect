@@ -24,10 +24,14 @@ function normalizeVerificationCode(value) {
 function certificateCodeVariants(value) {
   const normalized = normalizeVerificationCode(value);
   const compact = normalized.replace(/-/g, '');
+  const wrParts = normalized.match(/^WR-?(\d{2})-?(\d+)$/);
   return Array.from(new Set([
     normalized,
     compact,
     normalized.replace(/^WR(\d{2})(\d+)$/, 'WR-$1-$2'),
+    wrParts ? `WR-${wrParts[1]}-${wrParts[2]}` : '',
+    wrParts ? `WR${wrParts[1]}${wrParts[2]}` : '',
+    wrParts ? wrParts[2] : '',
   ].filter(Boolean)));
 }
 
@@ -62,6 +66,7 @@ async function findCertificateRecords(base44, payload = {}) {
       return (
         codes.includes(recordCode) ||
         compactCodes.includes(recordCompactCode) ||
+        (recordCompactCode && compactCodes.some((code) => recordCompactCode.endsWith(code) || code.endsWith(recordCompactCode))) ||
         (email && recordEmail === email) ||
         (accessCode && recordAccessCode === accessCode)
       );
