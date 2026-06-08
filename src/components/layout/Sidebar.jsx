@@ -62,6 +62,7 @@ const studentGroups = [
     label: 'Classe',
     items: [
       { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
+      { icon: Flame, label: 'Ofensivas', path: '/ofensivas', color: 'text-orange-500' },
       { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
       { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
       { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },

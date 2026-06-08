@@ -36,6 +36,7 @@ import RankingGeral from './pages/RankingGeral';
 import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
 import Ofensivas from './pages/Ofensivas';
+
 import MeuBestSeller from './pages/MeuBestSeller';
 import ClassChat from './pages/ClassChat';
 import HistoricoAcademico from './pages/HistoricoAcademico';
@@ -112,6 +113,7 @@ function ScopedRoutesTree() {
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="dm/:email" element={<DirectMessage />} />
         <Route path="classe" element={<Classe />} />
+        <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="ring" element={<Notifications />} />
       </Route>
     </Routes>
