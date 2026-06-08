@@ -31,7 +31,9 @@ export default function Apostila() {
   });
 
   const book = savedData?.[0];
-  const chapters = book?.chapters_data ? JSON.parse(book.chapters_data) : DEFAULT_CHAPTERS;
+  // Always use DEFAULT_CHAPTERS from code (source of truth); DB is only used to persist admin edits
+  const savedChapters = book?.chapters_data ? (() => { try { return JSON.parse(book.chapters_data); } catch { return null; } })() : null;
+  const chapters = savedChapters && savedChapters.length >= DEFAULT_CHAPTERS.length ? savedChapters : DEFAULT_CHAPTERS;
 
   const saveMutation = useMutation({
     mutationFn: async (newChapters) => {
