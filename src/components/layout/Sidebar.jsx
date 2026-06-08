@@ -7,7 +7,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
