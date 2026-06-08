@@ -1,20 +1,23 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { CERT_W, CERT_H, makeVerifUrl } from '@/pages/AdminCertificateGenerator';
 
-const CERT_BG_HQ = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/859b99017_BlueandGoldElegantParticipationCertificate5.png';
+const CERT_BG_HQ = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/c2484fbeb_certificado-concluso_OFICIAL.png';
 
-const POSITIONS_KEY = 'wr_cert_front_positions';
+// v2 key — forces reset when background changes
+const POSITIONS_KEY = 'wr_cert_front_positions_v2';
 
 function qrUrl(data) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&color=1a2d5a&bgcolor=FFFFFF&data=${encodeURIComponent(data)}`;
 }
 
-// Default positions as percentage of CERT_W / CERT_H
+// Default positions calibrated for the official certificate background
+// CERT_W=1052, CERT_H=744
+// QR positioned inside the bracket square at bottom-right corner of the new bg
 const DEFAULT_POSITIONS = {
-  gratification: { x: 526, y: 210 },  // center ~50%, ~28%
-  name:          { x: 526, y: 295 },  // center ~50%, ~40%
-  body:          { x: 400, y: 435 },  // center ~38%, ~58%
-  qr:            { x: 905, y: 608 },  // bottom-right square ~86%, ~82%
+  gratification: { x: 526, y: 195 },  // centered horizontally, below "CERTIFICADO" title
+  name:          { x: 526, y: 285 },  // student name in cursive, centered
+  body:          { x: 526, y: 430 },  // body text block, centered
+  qr:            { x: 890, y: 618 },  // inside the bracket square at bottom-right
 };
 
 function loadPositions() {

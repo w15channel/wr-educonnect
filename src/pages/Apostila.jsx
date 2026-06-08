@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Clock, Award } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
 import { MOD3 } from '@/lib/apostila/mod3';
@@ -22,6 +23,7 @@ export default function Apostila() {
   const [openLesson, setOpenLesson] = useState(null);
   const [editingLesson, setEditingLesson] = useState(null);
   const [editContent, setEditContent] = useState('');
+  const [printLesson, setPrintLesson] = useState(null); // { lesson, chapterTitle }
 
   const { data: savedData } = useQuery({
     queryKey: ['apostila-book'],
@@ -62,6 +64,13 @@ export default function Apostila() {
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-24">
+      {printLesson && (
+        <ApostilaPrintModal
+          lesson={printLesson.lesson}
+          chapterTitle={printLesson.chapterTitle}
+          onClose={() => setPrintLesson(null)}
+        />
+      )}
 
       {/* Header */}
       <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 p-6">
@@ -198,11 +207,21 @@ export default function Apostila() {
                                     {lesson.content || 'Conteúdo ainda não adicionado.'}
                                   </pre>
                                 </div>
-                                {isAdmin && (
-                                  <Button size="sm" variant="outline" onClick={() => handleEditLesson(chapter.id, lesson.id, lesson.content)}>
-                                    <Edit2 size={13} /> Editar conteúdo
+                                <div className="flex gap-2 flex-wrap">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setPrintLesson({ lesson, chapterTitle: chapter.title })}
+                                    className="gap-1.5"
+                                  >
+                                    <Printer size={13} /> Imprimir / PDF
                                   </Button>
-                                )}
+                                  {isAdmin && (
+                                    <Button size="sm" variant="outline" onClick={() => handleEditLesson(chapter.id, lesson.id, lesson.content)}>
+                                      <Edit2 size={13} /> Editar conteúdo
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>

@@ -8,7 +8,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import CertificateFront from '@/components/certificates/CertificateFront';
 import CertificateBack from '@/components/certificates/CertificateBack';
 
-const POSITIONS_KEY = 'wr_cert_front_positions';
+const POSITIONS_KEY = 'wr_cert_front_positions_v2';
 const DEFAULT_POSITIONS = {
   gratification: { x: 526, y: 210 },
   name:          { x: 526, y: 295 },
