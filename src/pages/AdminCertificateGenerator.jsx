@@ -1,12 +1,25 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Award, Download, FileImage, RefreshCw, Save, Search, Copy, ClipboardPaste, Plus, Trash2 } from 'lucide-react';
+import { Award, Download, FileImage, RefreshCw, Save, Search, Copy, ClipboardPaste, Plus, Trash2, Move, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import CertificateFront from '@/components/certificates/CertificateFront';
 import CertificateBack from '@/components/certificates/CertificateBack';
+
+const POSITIONS_KEY = 'wr_cert_front_positions';
+const DEFAULT_POSITIONS = {
+  gratification: { x: 526, y: 210 },
+  name:          { x: 526, y: 295 },
+  body:          { x: 526, y: 435 },
+  qr:            { x: 905, y: 608 },
+};
+function loadPositions() {
+  try { const r = localStorage.getItem(POSITIONS_KEY); if (r) return { ...DEFAULT_POSITIONS, ...JSON.parse(r) }; } catch {}
+  return { ...DEFAULT_POSITIONS };
+}
+function savePositions(pos) { localStorage.setItem(POSITIONS_KEY, JSON.stringify(pos)); }
 
 export const CERT_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/252c62186_BlueandGoldElegantParticipationCertificate5.png';
 export const CERT_W = 1052;
@@ -77,6 +90,23 @@ export default function AdminCertificateGenerator() {
   const [isSaving, setIsSaving] = useState(false);
   const [isRescuing, setIsRescuing] = useState(false);
   const [activeTab, setActiveTab] = useState('front'); // 'front' | 'back'
+  const [editMode, setEditMode] = useState(false);
+  const [positions, setPositions] = useState(loadPositions);
+
+  const handlePositionsChange = useCallback((next) => {
+    setPositions(next);
+  }, []);
+
+  const handleSavePositions = () => {
+    savePositions(positions);
+    toast.success('Posições salvas!');
+  };
+
+  const handleResetPositions = () => {
+    setPositions({ ...DEFAULT_POSITIONS });
+    savePositions({ ...DEFAULT_POSITIONS });
+    toast.success('Posições redefinidas.');
+  };
 
   useEffect(() => {
     base44.entities.AccessCode.list('-created_date', 10000)
@@ -391,27 +421,57 @@ export default function AdminCertificateGenerator() {
 
         {/* ── Preview ── */}
         <div className="min-w-0 space-y-3">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {['front', 'back'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`rounded-lg px-4 py-1.5 text-xs font-bold transition ${activeTab === tab ? 'bg-primary text-primary-foreground' : 'border border-border bg-background text-foreground hover:bg-secondary'}`}>
                 {tab === 'front' ? '🖼 Frente' : '↩ Verso'}
               </button>
             ))}
+
+            {activeTab === 'front' && (
+              <div className="flex gap-2 ml-auto items-center">
+                <button
+                  onClick={() => setEditMode(e => !e)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition border ${editMode ? 'bg-violet-600 border-violet-600 text-white' : 'border-border bg-background text-foreground hover:bg-secondary'}`}
+                >
+                  {editMode ? <><Lock size={12} /> Sair do modo edição</> : <><Move size={12} /> Arrastar elementos</>}
+                </button>
+                {editMode && (
+                  <>
+                    <button onClick={handleSavePositions} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">
+                      <Save size={12} /> Salvar posições
+                    </button>
+                    <button onClick={handleResetPositions} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs font-bold hover:bg-secondary">
+                      <RefreshCw size={12} /> Resetar
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
-          <div className="overflow-x-auto rounded-xl border border-border bg-secondary/40 p-3">
+
+          {editMode && activeTab === 'front' && (
+            <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs text-violet-300 flex items-center gap-2">
+              <Move size={13} />
+              Clique e arraste qualquer elemento para reposicioná-lo. Clique em <strong>Salvar posições</strong> quando terminar.
+            </div>
+          )}
+
+          <div className="overflow-x-auto rounded-xl border border-border bg-secondary/40 p-3" style={editMode ? { cursor: 'default' } : {}}>
             <div style={{ width: CERT_W }}>
               {activeTab === 'front'
-                ? <CertificateFront cert={cert} certRef={frontRef} />
+                ? <CertificateFront cert={cert} certRef={frontRef} editMode={editMode} positions={positions} onPositionsChange={handlePositionsChange} />
                 : <CertificateBack cert={cert} certRef={backRef} />
               }
             </div>
           </div>
+
           {/* Hidden opposite side for PDF export */}
           <div style={{ position: 'fixed', top: -9999, left: -9999, pointerEvents: 'none', zIndex: -1 }}>
             {activeTab === 'front'
               ? <CertificateBack cert={cert} certRef={backRef} />
-              : <CertificateFront cert={cert} certRef={frontRef} />
+              : <CertificateFront cert={cert} certRef={frontRef} editMode={false} positions={positions} onPositionsChange={handlePositionsChange} />
             }
           </div>
         </div>

@@ -1,12 +1,98 @@
-import React from 'react';
-import { CERT_BG, CERT_W, CERT_H, makeVerifUrl } from '@/pages/AdminCertificateGenerator';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { CERT_W, CERT_H, makeVerifUrl } from '@/pages/AdminCertificateGenerator';
+
+const CERT_BG_HQ = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/859b99017_BlueandGoldElegantParticipationCertificate5.png';
+
+const POSITIONS_KEY = 'wr_cert_front_positions';
 
 function qrUrl(data) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&color=1a2d5a&bgcolor=FFFFFF&data=${encodeURIComponent(data)}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&color=1a2d5a&bgcolor=FFFFFF&data=${encodeURIComponent(data)}`;
 }
 
-export default function CertificateFront({ cert, certRef }) {
+// Default positions as percentage of CERT_W / CERT_H
+const DEFAULT_POSITIONS = {
+  gratification: { x: 526, y: 210 },  // center ~50%, ~28%
+  name:          { x: 526, y: 295 },  // center ~50%, ~40%
+  body:          { x: 400, y: 435 },  // center ~38%, ~58%
+  qr:            { x: 905, y: 608 },  // bottom-right square ~86%, ~82%
+};
+
+function loadPositions() {
+  try {
+    const raw = localStorage.getItem(POSITIONS_KEY);
+    if (raw) return { ...DEFAULT_POSITIONS, ...JSON.parse(raw) };
+  } catch {}
+  return { ...DEFAULT_POSITIONS };
+}
+
+function savePositions(pos) {
+  localStorage.setItem(POSITIONS_KEY, JSON.stringify(pos));
+}
+
+// A single draggable element layer
+function DraggableElement({ id, x, y, onMove, editMode, children, anchor = 'center' }) {
+  const elRef = useRef(null);
+  const dragging = useRef(false);
+  const startMouse = useRef({ x: 0, y: 0 });
+  const startPos = useRef({ x, y });
+
+  const onMouseDown = useCallback((e) => {
+    if (!editMode) return;
+    e.preventDefault();
+    dragging.current = true;
+    startMouse.current = { x: e.clientX, y: e.clientY };
+    startPos.current = { x, y };
+
+    const onMouseMove = (me) => {
+      if (!dragging.current) return;
+      const rect = elRef.current?.parentElement?.getBoundingClientRect();
+      if (!rect) return;
+      const scaleX = CERT_W / rect.width;
+      const scaleY = CERT_H / rect.height;
+      const dx = (me.clientX - startMouse.current.x) * scaleX;
+      const dy = (me.clientY - startMouse.current.y) * scaleY;
+      onMove(id, startPos.current.x + dx, startPos.current.y + dy);
+    };
+    const onMouseUp = () => {
+      dragging.current = false;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }, [editMode, x, y, id, onMove]);
+
+  const transform = anchor === 'center' ? 'translate(-50%, -50%)' : anchor === 'top-center' ? 'translateX(-50%)' : 'none';
+
+  return (
+    <div
+      ref={elRef}
+      onMouseDown={onMouseDown}
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        transform,
+        cursor: editMode ? 'grab' : 'default',
+        userSelect: 'none',
+        outline: editMode ? '2px dashed rgba(91,94,244,0.7)' : 'none',
+        outlineOffset: 4,
+        borderRadius: 4,
+        zIndex: editMode ? 10 : 1,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export default function CertificateFront({ cert, certRef, editMode = false, positions, onPositionsChange }) {
   const verifUrl = makeVerifUrl(cert.verificationCode);
+
+  const handleMove = useCallback((id, nx, ny) => {
+    const next = { ...positions, [id]: { x: nx, y: ny } };
+    onPositionsChange?.(next);
+  }, [positions, onPositionsChange]);
 
   return (
     <div
@@ -15,22 +101,32 @@ export default function CertificateFront({ cert, certRef }) {
         width: CERT_W,
         height: CERT_H,
         position: 'relative',
-        backgroundImage: `url('${CERT_BG}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
         overflow: 'hidden',
         boxSizing: 'border-box',
         flexShrink: 0,
+        background: '#f5f5f5',
       }}
     >
-      {/* Gratification text — above name */}
-      <div style={{
-        position: 'absolute',
-        top: '28%',
-        left: '14%',
-        right: '14%',
-        textAlign: 'center',
-      }}>
+      {/* Background image — full quality, no CSS scaling artifacts */}
+      <img
+        src={CERT_BG_HQ}
+        alt=""
+        crossOrigin="anonymous"
+        draggable={false}
+        style={{
+          position: 'absolute',
+          top: 0, left: 0,
+          width: CERT_W,
+          height: CERT_H,
+          objectFit: 'cover',
+          display: 'block',
+          pointerEvents: 'none',
+          imageRendering: 'high-quality',
+        }}
+      />
+
+      {/* Gratification text */}
+      <DraggableElement id="gratification" editMode={editMode} x={positions.gratification.x} y={positions.gratification.y} onMove={handleMove} anchor="top-center">
         <div style={{
           fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontSize: 22,
@@ -38,100 +134,91 @@ export default function CertificateFront({ cert, certRef }) {
           letterSpacing: 1,
           fontStyle: 'italic',
           lineHeight: 1.4,
+          textAlign: 'center',
+          width: 700,
+          whiteSpace: 'pre-wrap',
         }}>
           {cert.gratificationText || 'É com imensa satisfação que certificamos que'}
         </div>
-      </div>
+      </DraggableElement>
 
-      {/* Student name — cursive */}
-      <div style={{
-        position: 'absolute',
-        top: '38%',
-        left: '10%',
-        right: '10%',
-        textAlign: 'center',
-      }}>
+      {/* Student name */}
+      <DraggableElement id="name" editMode={editMode} x={positions.name.x} y={positions.name.y} onMove={handleMove} anchor="top-center">
         <div style={{
           fontFamily: "'Pinyon Script', 'Brush Script MT', cursive",
           fontSize: 82,
           color: '#1a2d5a',
           lineHeight: 1.1,
           letterSpacing: 1,
+          textAlign: 'center',
+          width: 750,
+          whiteSpace: 'nowrap',
+          overflow: 'visible',
         }}>
           {cert.studentName || 'Nome Completo do Aluno'}
         </div>
-      </div>
+      </DraggableElement>
 
       {/* Body text block */}
-      <div style={{
-        position: 'absolute',
-        top: '60%',
-        left: '14%',
-        right: '32%', // leave space for QR on the right
-        textAlign: 'center',
-      }}>
-        <div style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontSize: 18,
-          color: '#1a2d5a',
-          lineHeight: 1.75,
-          letterSpacing: 0.3,
-        }}>
-          {cert.bodyText}
-        </div>
-        {cert.courseName && (
+      <DraggableElement id="body" editMode={editMode} x={positions.body.x} y={positions.body.y} onMove={handleMove} anchor="top-center">
+        <div style={{ textAlign: 'center', width: 620 }}>
           <div style={{
-            fontFamily: "'Cinzel', serif",
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 18,
+            color: '#1a2d5a',
+            lineHeight: 1.75,
+            letterSpacing: 0.3,
+            whiteSpace: 'pre-wrap',
+          }}>
+            {cert.bodyText}
+          </div>
+          {cert.courseName && (
+            <div style={{
+              fontFamily: "'Cinzel', serif",
+              fontSize: 15,
+              color: '#1a2d5a',
+              fontWeight: 700,
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginTop: 10,
+            }}>
+              {cert.courseName}
+            </div>
+          )}
+          <div style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
             fontSize: 15,
             color: '#1a2d5a',
-            fontWeight: 700,
-            letterSpacing: 2,
-            textTransform: 'uppercase',
-            marginTop: 10,
+            marginTop: 8,
+            opacity: 0.8,
+            letterSpacing: 0.3,
           }}>
-            {cert.courseName}
+            Carga horária: {cert.totalHours}h &nbsp;·&nbsp; Média final: {cert.averageGrade} &nbsp;·&nbsp; {cert.issueDate}
           </div>
-        )}
-        <div style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontSize: 15,
-          color: '#1a2d5a',
-          marginTop: 8,
-          opacity: 0.8,
-          letterSpacing: 0.3,
-        }}>
-          Carga horária: {cert.totalHours}h &nbsp;·&nbsp; Média final: {cert.averageGrade} &nbsp;·&nbsp; {cert.issueDate}
         </div>
-      </div>
+      </DraggableElement>
 
-      {/* QR Code — inside the black square frame bottom-right of the layout */}
-      {/* The square frame in the image is at approx right:3.5% bottom:3.5%, size ~120x120px */}
-      <div style={{
-        position: 'absolute',
-        bottom: '5%',
-        right: '4%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3,
-      }}>
-        <img
-          src={qrUrl(verifUrl)}
-          alt="QR Code"
-          crossOrigin="anonymous"
-          style={{ width: 106, height: 106, display: 'block', background: '#fff' }}
-        />
-        <div style={{
-          fontFamily: 'monospace',
-          fontSize: 8.5,
-          color: '#1a2d5a',
-          letterSpacing: 1.5,
-          fontWeight: 700,
-          textAlign: 'center',
-        }}>
-          {cert.verificationCode}
+      {/* QR Code */}
+      <DraggableElement id="qr" editMode={editMode} x={positions.qr.x} y={positions.qr.y} onMove={handleMove} anchor="center">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <img
+            src={qrUrl(verifUrl)}
+            alt="QR Code"
+            crossOrigin="anonymous"
+            style={{ width: 106, height: 106, display: 'block', background: '#fff', imageRendering: 'crisp-edges' }}
+          />
+          <div style={{
+            fontFamily: 'monospace',
+            fontSize: 8.5,
+            color: '#1a2d5a',
+            letterSpacing: 1.5,
+            fontWeight: 700,
+            textAlign: 'center',
+          }}>
+            {cert.verificationCode}
+          </div>
         </div>
-      </div>
+      </DraggableElement>
     </div>
   );
 }
