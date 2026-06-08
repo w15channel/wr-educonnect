@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight } from 'lucide-react';
+import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_SHORT_NAME } from '@/lib/brand';
 import { getSession } from '@/lib/customAuth';
 
@@ -11,6 +11,7 @@ const G = '#d4b96a';
 const DIPLOMA_MENU = [
   { icon: BookOpen, label: 'Aulas',              path: '/lessons',      color: 'text-purple-400' },
   { icon: FileText, label: 'Tarefas',             path: '/tasks',        color: 'text-orange-400' },
+  { icon: ScrollText, label: 'Apostila TCC',      path: '/apostila',     color: 'text-emerald-400' },
   { icon: DollarSign, label: 'Mensalidades',      path: '/tuitions',     color: 'text-teal-400' },
   { icon: History, label: 'Histórico Acadêmico',  path: '/historico',    color: 'text-cyan-400' },
   { icon: GraduationCap, label: 'Certificação',   path: '/certificadora',color: 'text-yellow-400' },

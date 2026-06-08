@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Play, Video, MessageSquare, LayoutGrid } from 'lucide-react';
+import { BarChart3, Play, Video, MessageSquare, LayoutGrid, BookOpen } from 'lucide-react';
 
 function getPrefix(pathname) {
   const parts = pathname.split('/').filter(Boolean);
@@ -12,19 +12,20 @@ function getPrefix(pathname) {
 
 // Root path for each tab (relative within scoped prefix)
 const tabs = [
-  { icon: BarChart3, label: 'Início',  root: '/dashboard' },
-  { icon: Play,      label: 'Aulas',   root: '/lessons' },
-  { icon: Video,     label: 'Live',    root: '/live' },
+  { icon: BarChart3, label: 'Início',   root: '/dashboard' },
+  { icon: Play,      label: 'Aulas',    root: '/lessons' },
+  { icon: BookOpen,  label: 'Apostila', root: '/apostila' },
   { icon: MessageSquare, label: 'Fórum', root: '/forum' },
-  { icon: LayoutGrid, label: 'Menu',   root: '__menu__' },
+  { icon: LayoutGrid, label: 'Menu',    root: '__menu__' },
 ];
 
 // Which tab "owns" a given pathname (after stripping the scoped prefix)
 function getOwnerTab(pathname, prefix) {
   const stripped = prefix && pathname.startsWith(prefix) ? pathname.slice(prefix.length) || '/' : pathname;
-  if (stripped.startsWith('/lessons')) return '/lessons';
-  if (stripped.startsWith('/live'))    return '/live';
-  if (stripped.startsWith('/forum'))   return '/forum';
+  if (stripped.startsWith('/lessons'))  return '/lessons';
+  if (stripped.startsWith('/live'))     return '/live';
+  if (stripped.startsWith('/apostila')) return '/apostila';
+  if (stripped.startsWith('/forum'))    return '/forum';
   if (stripped === '/dashboard' || stripped === '/' || stripped === '') return '/dashboard';
   return null;
 }

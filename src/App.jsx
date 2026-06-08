@@ -50,6 +50,7 @@ import Notifications from './pages/Notifications';
 import MonitorCertificate from './pages/MonitorCertificate';
 import MeuCertificado from './pages/MeuCertificado';
 import AdminCertificateGenerator from './pages/AdminCertificateGenerator';
+import Apostila from './pages/Apostila';
 import AtendimentoSocial from './pages/AtendimentoSocial';
 import CertificateVerifier from './pages/CertificateVerifier';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
@@ -172,6 +173,7 @@ const AuthenticatedApp = () => {
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="certificadora" element={<Certificadora />} />
+        <Route path="apostila" element={<Apostila />} />
         <Route path="profile" element={<Profile />} />
       </Route>
 
