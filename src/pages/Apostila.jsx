@@ -11,8 +11,11 @@ import { MOD2 } from '@/lib/apostila/mod2';
 import { MOD3 } from '@/lib/apostila/mod3';
 import { MOD4 } from '@/lib/apostila/mod4';
 import { MOD5 } from '@/lib/apostila/mod5';
+import { MOD6 } from '@/lib/apostila/mod6';
+import { MOD7 } from '@/lib/apostila/mod7';
+import { MOD8 } from '@/lib/apostila/mod8';
 
-const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5];
+const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8];
 
 export default function Apostila() {
   const { session } = useCustomAuth();
