@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Plus, Trash2 } from 'lucide-react';
+import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -198,7 +198,7 @@ export default function Students() {
     overdue: { label: 'Inadimplente', class: 'text-red-700 bg-red-100 border-red-200', icon: XCircle },
   };
 
-  const courseLabel = { tcc: 'TC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' }[activeCourse] || activeCourse;
+  const courseLabel = { tcc: 'Terapia TC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' }[activeCourse] || activeCourse;
 
   return (
     <div className="p-3 md:p-5 max-w-[1100px] mx-auto animate-fade-in-up">
@@ -220,7 +220,7 @@ export default function Students() {
               className="w-full h-10 rounded-xl border border-border bg-background text-foreground text-sm px-3"
             >
               <option value="">Escolher curso...</option>
-              <option value="tcc" disabled={enrollingCode?.course === 'tcc'}>Terapeuta TC</option>
+              <option value="tcc" disabled={enrollingCode?.course === 'tcc'}>Terapia TC</option>
               <option value="psicanalise" disabled={enrollingCode?.course === 'psicanalise'}>Psicanalista Freudiano</option>
               <option value="sexologia" disabled={enrollingCode?.course === 'sexologia'}>Sexólogo(a)</option>
             </select>
@@ -351,17 +351,13 @@ export default function Students() {
                             <SelectItem value="inactive">Inativo</SelectItem>
                           </SelectContent>
                         </Select>
-                        <button onClick={() => setEnrollingCode(code)} className="h-10 px-3 text-primary border border-primary/30 hover:bg-primary/10 rounded-xl transition-colors text-xs font-semibold" title="Matricular em outro curso">
-                           <Plus size={15} />
-                           Matricular
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                         <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="h-10 px-3 text-primary border border-border hover:bg-primary/10 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5">
+                        <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="h-10 px-3 text-primary border border-border hover:bg-primary/10 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5">
                            <Eye size={15} /> Detalhes
                          </button>
-                         <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="h-10 px-3 text-red-500 border border-red-200 hover:bg-red-100 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5" title="Remover aluno">
+                      </div>
+
+                      <div className="w-full">
+                         <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="w-full h-10 px-3 text-red-500 border border-red-200 hover:bg-red-100 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5" title="Remover aluno">
                            <Trash2 size={15} /> Remover
                          </button>
                       </div>
@@ -436,9 +432,6 @@ export default function Students() {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center gap-2">
-                                <button onClick={() => setEnrollingCode(code)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold" title="Matricular em outro curso">
-                                  <Plus size={13} /> Matricular
-                                </button>
                                 <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
                                   <Eye size={13} /> Detalhes
                                 </button>

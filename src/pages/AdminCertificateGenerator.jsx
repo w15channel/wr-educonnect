@@ -27,7 +27,7 @@ export const CERT_H = 744;
 const CLIPBOARD_KEY = 'wr_cert_clipboard';
 
 export const COURSE_LABELS = {
-  tcc: 'Formação Profissional em Terapia Comportamental',
+  tcc: 'Formação Profissional em Terapia TC',
   psicanalise: 'Formação Profissional em Psicanálise Freudiana',
   sexologia: 'Formação Profissional em Sexologia Integrativa',
 };
@@ -118,12 +118,16 @@ export default function AdminCertificateGenerator() {
 
   const fillStudent = (s) => {
     if (!s) return;
+    // Generate a unique verification code per student based on their access code
+    const studentCodeSuffix = (s.code || '').replace(/[^A-Z0-9]/g, '').slice(-4) || makeVerifCode().slice(-4);
+    const uniqueCode = `WR-${String(new Date().getFullYear()).slice(-2)}-${studentCodeSuffix}`;
     setCert(p => ({
       ...p,
       studentName: s.student_name || s.profile_name || p.studentName,
       studentEmail: s.student_email || p.studentEmail,
       studentAccessCode: s.code || p.studentAccessCode,
       courseName: COURSE_LABELS[s.course] || p.courseName,
+      verificationCode: uniqueCode,
     }));
     setSavedId(null);
   };
@@ -303,7 +307,7 @@ export default function AdminCertificateGenerator() {
             <div>
               <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Selecionar do cadastro</label>
               <select className={INPUT} value={studentKey} onChange={e => { setStudentKey(e.target.value); fillStudent(students.find(s => String(s.id || s.code) === e.target.value)); }}>
-                <option value="">Escolha um aluno…</option>
+                <option value="">Escolha um aluno… (código único gerado automaticamente)</option>
                 {students.map(s => (
                   <option key={s.id || s.code} value={s.id || s.code}>
                     {s.student_name || s.profile_name || s.student_email || s.code}{s.course ? ` · ${s.course}` : ''}
