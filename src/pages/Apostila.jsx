@@ -95,7 +95,7 @@ export default function Apostila() {
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
                 <GraduationCap size={12} className="text-violet-400" />
-                5 módulos
+                {chapters.length} módulos
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
                 <Award size={12} className="text-amber-400" />
@@ -189,10 +189,15 @@ export default function Apostila() {
                               <div className="space-y-3">
                                 <textarea
                                   value={editContent}
-                                  onChange={(e) => setEditContent(e.target.value)}
+                                  onChange={(e) => {
+                                    if (e.target.value.length <= 1800) setEditContent(e.target.value);
+                                  }}
                                   rows={16}
                                   className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring font-mono"
                                 />
+                                <div className={`text-xs font-medium text-right ${editContent.length >= 1800 ? 'text-red-500' : editContent.length >= 1600 ? 'text-amber-400' : 'text-muted-foreground'}`}>
+                                  {editContent.length} / 1800 caracteres
+                                </div>
                                 <div className="flex gap-2">
                                   <Button size="sm" onClick={() => handleSaveLesson(chapter.id, lesson.id)} disabled={saveMutation.isPending}>
                                     <Save size={13} /> {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
