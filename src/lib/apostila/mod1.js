@@ -8,158 +8,158 @@ export const MOD1 = {
   lessons: [
     {
       id: 'mod1-a1',
-      title: 'Aula 1 — Economia Psíquica e o Trade-off Comportamental',
-      content: `ECONOMIA PSÍQUICA E O TRADE-OFF COMPORTAMENTAL
+      title: 'Aula 1 — Relacionamentos Abusivos: Reconhecer, Nomear e Intervir',
+      content: `RELACIONAMENTOS ABUSIVOS: RECONHECER, NOMEAR E INTERVIR
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. O QUE É ECONOMIA PSÍQUICA NA PRÁTICA CLÍNICA
+1. O QUE TORNA UM RELACIONAMENTO ABUSIVO — NA PRÁTICA
 
-Todo comportamento humano envolve uma escolha — consciente ou não — sobre onde investir energia psíquica. Energia é limitada. O que o paciente investe em controle, não investe em afeto. O que investe em agradar, não investe em si. Reconhecer isso muda como você interpreta cada comportamento em sessão.
+O abuso não começa com agressão física. Começa com o apagamento gradual da identidade do outro. Controle de agenda, isolamento de amizades, dependência emocional fabricada, ciúme apresentado como amor. O paciente que vive isso raramente entra no consultório dizendo "estou num relacionamento abusivo" — ele entra dizendo "não sei o que tenho", "sou muito sensível" ou "ele/ela só age assim quando está com raiva."
 
-2. TRADE-OFF: TODA POTÊNCIA TEM UM CUSTO
+2. OS PADRÕES QUE O TERAPEUTA PRECISA RECONHECER EM SESSÃO
 
-Quando o paciente é extremamente assertivo, ele pagará o custo na capacidade de ceder. Quando é extremamente empático, pagará no autocuidado. Seu papel não é eliminar a potência — é identificar o que ela está custando e se esse custo é sustentável.
+Observe quando o paciente: justifica comportamentos do parceiro que causaram dano real; pede desculpa pelo comportamento do outro; sente culpa intensa após conflitos onde foi a vítima; demonstra hipervigilância ao falar do parceiro (mede as palavras, olha para os lados). Esses são padrões comportamentais concretos — não são "exagero emocional."
 
-3. A FÓRMULA DA UTILIDADE COMPORTAMENTAL (UC)
+3. A ARMADILHA DA AÇÃO CALOROSA INICIAL — O CICLO DO ABUSO
 
-UC = (T × HN) / EI. Tendência do eixo, multiplicada pela harmonia com o contexto, dividida pela resistência interna. Um comportamento só tem alta utilidade quando está alinhado com o que a situação real exige — não com o que o paciente está habituado a fazer.
+Todo relacionamento abusivo tem uma fase de encantamento intenso: presentes, atenção excessiva, declarações aceleradas de amor. Isso não é amor — é captura. Winnicott chamaria de ambiente falso: acolhedor na superfície, controlador na estrutura. O terapeuta precisa nomear esse padrão sem atacar o parceiro — porque o paciente ainda está emocionalmente vinculado.
 
-4. O MODELO NÃO-DESTRUTIVO NA SESSÃO
+4. COMO TRABALHAR COM UM PACIENTE QUE AINDA NÃO QUER SAIR
 
-Nunca patologize a potência dominante do paciente. A bravura não é problema — a crueldade sim. A empatia não é problema — a simbiose sim. Sua postura clínica é: identificar a virtude e perguntar qual modulação está faltando para ela não virar algoz.
+Não empurre para a saída. Esse é o erro mais comum. Seu trabalho não é decidir o futuro do relacionamento — é expandir a consciência do paciente sobre o que está acontecendo com ele. Pergunte: "O que você sente quando está com essa pessoa?" "O que você perdeu desde que esse relacionamento começou?" Essas perguntas movem o campo sem gerar resistência defensiva.
 
-5. LEITURA CLÍNICA DO TRADE-OFF
+5. FERRAMENTAS PRÁTICAS PARA USO DIRETO EM SESSÃO
 
-Na sessão, observe: onde o paciente coloca mais energia? O que ele evita a qualquer custo? Qual é o comportamento que ele repete mesmo quando não funciona? Essas perguntas revelam onde o trade-off está operando — e onde a intervenção precisa acontecer.
+Mapeamento de padrão: peça que o paciente descreva 3 situações de conflito recentes — você vai identificar o ciclo. Linha do tempo relacional: como era sua vida antes e depois? O que mudou nos amigos, na autoestima, na liberdade? Pergunta-espelho: "Se sua melhor amiga te descrevesse essa mesma situação, o que você diria a ela?" Isso rompe a defesa sem confrontação direta.
 
-6. REFERÊNCIAS APLICADAS
+6. O PAPEL DO TERAPEUTA: PRESENÇA SEM JULGAMENTO, CLAREZA SEM CRUELDADE
 
-Lewin: o comportamento é resultado do campo, não da pessoa em isolamento. Kohut: respeite o self do paciente antes de qualquer intervenção. Frankl: o sofrimento muitas vezes carrega uma mensagem de valor — não apague antes de escutar.`,
+Frankl nos lembra: o ser humano precisa encontrar sentido mesmo na dor. O paciente que ficou num relacionamento abusivo não é fraco — construiu uma estratégia de sobrevivência que fazia sentido naquele campo. Seu papel é oferecer um espaço onde ele possa enxergar com mais clareza, no ritmo dele — sem julgamento do passado e sem urgência artificial sobre o futuro.`,
     },
     {
       id: 'mod1-a2',
-      title: 'Aula 2 — Por Que Tipos e Arquétipos Não Funcionam na Clínica',
-      content: `POR QUE TIPOS E ARQUÉTIPOS NÃO FUNCIONAM NA CLÍNICA
+      title: 'Aula 2 — Autoimagem e Motivação para Ser Terapeuta',
+      content: `AUTOIMAGEM E MOTIVAÇÃO PARA SER TERAPEUTA
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. O PROBLEMA DE CLASSIFICAR PESSOAS
+1. COMO VOCÊ SE VÊ DEFINE COMO VOCÊ ATENDE
 
-MBTI, Eneagrama, arquétipos junguianos — todos têm um problema central: cristalizam o paciente em uma categoria. Na prática clínica isso é perigoso porque o paciente passa a usar o tipo como desculpa ("sou INFJ, não consigo lidar com conflito") ao invés de ferramenta de crescimento.
+A autoimagem do terapeuta não é assunto de autoajuda — é uma variável clínica. Kohut demonstrou que o terapeuta que não tem seu próprio self consolidado tende a usar o paciente para suprir necessidades não resolvidas: validação, admiração, sentimento de utilidade. Isso contamina o processo sem que ninguém perceba conscientemente.
 
-2. O COMPORTAMENTO MUDA COM O CAMPO
+2. VOCÊ VIVE PARA VOCÊ MESMO OU PARA A APROVAÇÃO DOS OUTROS?
 
-A mesma pessoa que é assertiva no trabalho pode ser completamente submissa em casa. Isso não é inconsistência — é a lei do campo de Lewin em operação. O comportamento é sempre uma resposta ao ambiente percebido. Tipos fixos não conseguem explicar isso.
+Essa é a pergunta que precede qualquer prática clínica séria. O terapeuta que depende da aprovação do paciente vai evitar confrontações necessárias, vai prolongar processos que deveriam ser encerrados, vai sentir ansiedade quando o paciente não melhora — não pela dor do paciente, mas pela ameaça à sua própria autoimagem.
 
-3. TRAÇOS ESTRUTURAIS VS. TRAÇOS CONTEXTUAIS
+3. A MOTIVAÇÃO PARA SER TERAPEUTA: HONESTIDADE RADICAL
 
-Na clínica, diferencie: o que o paciente faz em qualquer contexto (traço estrutural) do que ele faz só em situações específicas (traço contextual). Confundir os dois leva a diagnósticos errados e intervenções ineficazes.
+Muitos terapeutas escolheram a profissão a partir de feridas pessoais. Isso não é problema — é ponto de partida. O problema é quando essa origem não é examinada. O terapeuta que cura os outros para compensar o que não foi curado nele mesmo está operando com uma agenda invisível que interfere em cada sessão.
 
-4. A FALSA PERCEPÇÃO DE TRAÇOS CRUZADOS
+4. O QUE FAZER COM ISSO NA PRÁTICA
 
-Pacientes frequentemente atribuem a si mesmos traços do eixo oposto porque já foram forçados a usá-los. O controlador que passou anos sendo submisso por pressão familiar pode não se reconhecer como controlador. Você precisa enxergar além da adaptação.
+Faça a pergunta a si mesmo com honestidade: "Por que eu escolhi essa profissão?" Se a resposta incluir "porque ninguém fez por mim o que quero fazer pelos outros" — excelente. Isso é uma potência real. Agora adicione: "Esse movimento já está suficientemente elaborado para não contaminar o meu trabalho?" Terapia pessoal e supervisão não são opcionais — são a resposta prática a essa questão.
 
-5. O QUE USAR NO LUGAR: LEITURA VETORIAL DINÂMICA
+5. SER TERAPEUTA É POSSIBILITAR O QUE TALVEZ NINGUÉM TENHA FEITO POR VOCÊ
 
-Em vez de perguntar "que tipo você é?", pergunte: "em que situação você está operando agora, e qual eixo está preponderante nesse contexto?" Isso gera informação clínica real e acionável — não um rótulo.
+Winnicott chamou de "mãe suficientemente boa" — não perfeita, mas presente o suficiente. Você pode ser o primeiro ambiente verdadeiramente seguro que seu paciente encontrou na vida adulta. Para isso, você precisa estar inteiro o suficiente para segurar o campo sem desmoronar. Não precisa ser perfeito — precisa ser consciente de si.
 
-6. COMO ISSO MUDA A ABORDAGEM DO TERAPEUTA
+6. CONSTRUINDO A AUTOIMAGEM PROFISSIONAL NA PRÁTICA DIÁRIA
 
-Terapeutas que trabalham com tipos tendem a confirmar o padrão do paciente. Terapeutas que trabalham com eixos dinâmicos identificam onde o paciente pode se expandir. A diferença prática: um mantém o paciente onde está, o outro o move.`,
+Reserve tempo semanal para supervisão ou análise própria. Escreva depois de sessões difíceis — o que você sentiu, o que isso ativou em você. Não trate seu incômodo clínico como fraqueza — trate como dado. O terapeuta que se conhece é o terapeuta que não some quando o paciente mais precisa.`,
     },
     {
       id: 'mod1-a3',
-      title: 'Aula 3 — Os Três Eixos: Controle, Mediação e Submissão na Sessão',
-      content: `OS TRÊS EIXOS: CONTROLE, MEDIAÇÃO E SUBMISSÃO NA SESSÃO
+      title: 'Aula 3 — Modelo Cognitivo: Pensamentos, Emoções e Comportamento no Consultório',
+      content: `MODELO COGNITIVO: PENSAMENTOS, EMOÇÕES E COMPORTAMENTO NO CONSULTÓRIO
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. OS TRÊS EIXOS NA PRÁTICA — O QUE VOCÊ OBSERVA NA SESSÃO
+1. A TRÍADE QUE VOCÊ VÊ EM CADA SESSÃO
 
-Eixo do Controle: paciente fala com certeza, toma iniciativa, discorda do terapeuta, quer soluções rápidas. Eixo da Mediação: paciente busca conexão, pergunta "você concorda?", foca nas relações. Eixo da Submissão: paciente espera ser guiado, hesita, pede permissão, evita contrariar.
+Todo comportamento que o paciente traz tem três camadas: o que ele pensou, o que sentiu e o que fez. Essas três camadas se alimentam. O pensamento "não sou suficiente" gera a emoção vergonha, que gera o comportamento de evitação social. Você não pode mudar o comportamento sem entender de onde ele veio — e raramente ele veio de onde o paciente acha que veio.
 
-2. COMO IDENTIFICAR O EIXO PREPONDERANTE EM 5 MINUTOS
+2. COMO IDENTIFICAR O PENSAMENTO AUTOMÁTICO EM SESSÃO
 
-Observe: quem lidera a sessão? O paciente entra e conta o que quer falar (Controle), ou espera você perguntar (Submissão), ou traz o que aconteceu com os outros (Mediação)? A abertura da sessão revela muito. Não é diagnóstico definitivo — é hipótese de trabalho.
+O paciente não chega dizendo "tenho um pensamento automático de rejeição." Ele chega dizendo "não sei por que faço isso." Seu trabalho é ajudá-lo a rastrear. Pergunte: "O que passou pela sua cabeça exatamente antes de você fazer isso?" ou "Quando essa situação aconteceu, qual foi seu primeiro pensamento?" Esse rastreamento — feito com calma — é a ferramenta mais poderosa da abordagem cognitiva.
 
-3. AS POTÊNCIAS DE LUZ: O QUE CADA EIXO OFERECE DE MELHOR
+3. A NEUROPLASTICIDADE COMO ARGUMENTO CLÍNICO REAL
 
-Controle saudável: assertividade, decisividade, visão estratégica. Mediação saudável: empatia, diplomacia, colaboração. Submissão saudável: lealdade, humildade, disciplina. Cada paciente traz potências reais — seu trabalho é reconhecê-las antes de qualquer coisa.
+Engel nos ensina: o cérebro não é estático. Isso não é conversa motivacional — é biologia. Quando o paciente muda a forma de interpretar uma situação de forma consistente, ele literalmente reconfigura circuitos neurais. Você pode usar isso em sessão: "O que você está praticando agora não é só psicológico — está mudando a estrutura do seu cérebro." Isso dá esperança baseada em evidência, não em promessa vazia.
 
-4. A ESCALA 0–10 COMO FERRAMENTA CLÍNICA
+4. EMOÇÃO NÃO É INIMIGA — É DADO CLÍNICO
 
-Use a escala mentalmente durante a sessão. Um paciente no controle em 9 provavelmente está no limiar do algoz. Um paciente na submissão em 2 provavelmente está em colapso de identidade. Você não precisa verbalizar a escala — use-a para calibrar sua intervenção.
+Um dos maiores erros que o terapeuta iniciante comete é tentar reduzir a emoção do paciente rapidamente. A emoção não é o problema — ela é o mapa. Raiva intensa? Mapeie: o que está sendo ameaçado? Tristeza profunda? Mapeie: o que foi perdido? Medo paralisante? Mapeie: o que está em risco? A emoção aponta — você segue.
 
-5. EIXO PREPONDERANTE VS. EIXO COMPULSÓRIO NA QUEIXA
+5. COMPORTAMENTO COMO RESPOSTA QUE FAZ SENTIDO
 
-Pergunte-se: o sintoma que o paciente traz é o resultado do uso excessivo do eixo dominante, ou é o custo do uso forçado de um eixo não-natural? Muita exaustão clínica vem da segunda situação — o paciente que vive fora do próprio eixo por pressão externa.
+Lewin nos orienta: todo comportamento é uma resposta ao campo percebido. O paciente que agride não agressivo por natureza — está respondendo a um campo que ele interpreta como ameaçador. O paciente que evita não é preguiçoso — está respondendo a um campo que associa tentativa com fracasso. Entender o campo muda como você intervém.
 
-6. INTERVENÇÕES ESPECÍFICAS POR EIXO
+6. COMO USAR A TRÍADE NA PRÁTICA EM TRÊS PASSOS
 
-Para o Controle hipertrofiado: ofereça exercícios de escuta e receptividade. Para a Mediação hipertrofiada: fortaleça a assertividade e o limite. Para a Submissão hipertrofiada: trabalhe iniciativa e autodecisão gradualmente. A modulação, não a eliminação, é o objetivo.`,
+Passo 1 — Identifique o comportamento-problema com o paciente: o que você faz que não quer mais fazer? Passo 2 — Rastreie a emoção associada: o que você sente imediatamente antes? Passo 3 — Encontre o pensamento gerador: o que você acredita sobre si mesmo, sobre o outro ou sobre o mundo que produz essa emoção? Esses três passos, repetidos em casos diferentes, formam a base de toda intervenção cognitivo-comportamental eficaz.`,
     },
     {
       id: 'mod1-a4',
-      title: 'Aula 4 — A Lei dos Algozes: Reconhecer e Intervir',
-      content: `A LEI DOS ALGOZES: RECONHECER E INTERVIR
+      title: 'Aula 4 — O Domínio do Self e as Características Exclusivas do Paciente',
+      content: `O DOMÍNIO DO SELF E AS CARACTERÍSTICAS EXCLUSIVAS DO PACIENTE
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. O QUE É UM ALGOZ E COMO RECONHECÊ-LO EM SESSÃO
+1. O QUE DEFINE O SELF NA PRÁTICA CLÍNICA
 
-O algoz não é um traço ruim — é uma virtude sem freio. O paciente bravo que se tornou agressivo. O paciente empático que se tornou controlador disfarçado de prestativo. O paciente leal que se tornou fanático. Na sessão, você reconhece o algoz pelo padrão de consequências: o comportamento que "faz sentido" para o paciente, mas destrói o que ele mais valoriza.
+O self não é um conceito abstrato — é o conjunto de características que tornam aquela pessoa insubstituível: suas manias, seus valores, seus desafetos, seus jeitos únicos de estar no mundo. Lewin, Winnicott e Frankl convergem num ponto: quando essas características se dissolvem, o ser se fragmenta. O paciente que perdeu suas peculiaridades perdeu a si mesmo.
 
-2. A LISTA PRÁTICA DOS ALGOZES POR EIXO
+2. AS "MANIAS" SÃO FRONTEIRAS DE IDENTIDADE
 
-Controle: Bravura → Crueldade · Autonomia → Arrogância · Decisividade → Impulsividade. Mediação: Empatia → Simbiose · Altruísmo → Paternalismo · Flexibilidade → Falta de identidade. Submissão: Lealdade → Fanatismo · Humildade → Autodepreciação · Resiliência → Masoquismo. Memorize esta lista — você a usará toda semana.
+O que chamamos de mania — gostar de organizar gavetas de um jeito específico, odiar barulho em determinados momentos, ter rituais peculiares — são na verdade as fronteiras do self. Quando alguém ataca sistematicamente essas características ("você é neurótico", "isso é ridículo"), está atacando a identidade. O paciente que cede essas "manias" para agradar alguém está pagando um preço muito maior do que parece.
 
-3. A PERGUNTA QUE DESMONTA O ALGOZ
+3. A LIÇÃO DO ALZHEIMER: O QUE ACONTECE QUANDO O SELF SE APAGA
 
-Quando identificar um algoz, não confronte diretamente. Pergunte: "Quando você age assim, o que você está tentando proteger ou garantir?" Essa pergunta vai diretamente à potência de Luz subjacente — e muda o foco de problema para solução.
+Nas fases avançadas do Alzheimer, o que se perde não é apenas a memória — são as peculiaridades. O paciente para de gostar do que amava, para de reagir da forma característica. A família diz: "Ele não é mais ele." Isso nos ensina algo fundamental para a clínica: a saúde psíquica está diretamente ligada à preservação dessas singularidades. Quando um paciente chega apagado, pergunte o que ele foi perdendo ao longo do tempo.
 
-4. O MECANISMO DE PUTREFAÇÃO: POR QUE O ALGOZ AVANÇA
+4. FRANKL E A INSUBSTITUIBILIDADE COMO FONTE DE SENTIDO
 
-O algoz avança quando o ambiente reforça a potência sem oferecer modulação. O controlador que recebe apenas resultados positivos pela agressividade aprende que a crueldade funciona. Seu papel é oferecer um ambiente diferente — onde a virtude seja reconhecida e o excesso seja nomeado com cuidado.
+Frankl foi além: ele demonstrou que a busca de sentido está ancorada exatamente no que nos torna únicos. Você não pode ser substituído na sua existência — ninguém viveu exatamente o que você viveu, pensa exatamente como você pensa, ama exatamente o que você ama. Isso não é autoestima superficial — é a base existencial do sentido de vida. Na clínica, isso se torna uma pergunta concreta: "O que só você pode oferecer ao mundo?"
 
-5. LIMIARES DE ALGOZ: QUANDO O ESTRESSE ACELERA TUDO
+5. COMO TRABALHAR O SELF EM SESSÃO DE FORMA PRÁTICA
 
-Todo paciente tem limiares — pontos onde a pressão empurra o eixo para o algoz mais rapidamente. Estresse, fadiga, ameaça ao self (Kohut) e ausência de suporte reduzem o limiar. Isso explica por que o paciente "regride" em momentos difíceis — não é fraqueza, é campo desfavorável.
+Quando o paciente chega com baixa autoestima ou sensação de vazio, não vá direto para técnicas de afirmação. Explore: "Me conta três coisas que te definem que você nunca abriria mão, mesmo que todo mundo ao seu redor discordasse." Essa pergunta acessa o self real — não o self adaptado. O que aparece ali é o material clínico mais rico que você vai encontrar.
 
-6. COMO INTERVIR SEM DESTRUIR A POTÊNCIA
+6. O TERAPEUTA COMO GUARDIÃO DO SELF DO PACIENTE
 
-Nunca diga ao paciente que sua potência dominante é o problema. Diga: "Você tem uma capacidade real aqui — e ela está custando caro porque falta modulação de outro eixo." Depois, construa esse outro eixo gradualmente, em sessão e com práticas concretas entre as sessões.`,
+Seu papel em muitos momentos não é interpretar — é proteger. Proteger o self do paciente do apagamento gradual que muitas relações e ambientes produzem. Quando você diz "percebo que desde que isso começou, você parou de fazer o que amava" — você está devolvendo ao paciente a visão de si mesmo. Isso, muitas vezes, é exatamente o que transforma a sessão em ponto de virada.`,
     },
     {
       id: 'mod1-a5',
-      title: 'Aula 5 — Mapeamento de Campo: Lendo o Paciente nos Primeiros 15 Minutos',
-      content: `MAPEAMENTO DE CAMPO: LENDO O PACIENTE NOS PRIMEIROS 15 MINUTOS
+      title: 'Aula 5 — Lendo o Paciente no Campo: Os Primeiros 15 Minutos de Sessão',
+      content: `LENDO O PACIENTE NO CAMPO: OS PRIMEIROS 15 MINUTOS DE SESSÃO
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. O CAMPO DO PACIENTE COMEÇA ANTES DA PRIMEIRA PALAVRA
+1. O CAMPO COMEÇA ANTES DA PRIMEIRA PALAVRA
 
-Observe como o paciente chega: entra com energia e toma o espaço (Controle), ou entra discretamente e espera você começar (Submissão), ou entra sorrindo e perguntando como você está (Mediação)? O campo já está comunicando — antes de qualquer queixa formal.
+Observe como o paciente chega: entra com energia e ocupa o espaço, ou entra discreto e espera você começar, ou entra sorrindo e perguntando como você está? O corpo já comunica o padrão dominante antes de qualquer fala. Não é diagnóstico — é dado para calibrar sua postura desde o início.
 
-2. AS TRÊS PERGUNTAS DE ABERTURA QUE REVELAM O EIXO
+2. AS TRÊS PERGUNTAS QUE ABREM O CAMPO
 
-"O que te traz aqui?", "Como você descreveria o problema?" e "O que você espera da terapia?" As respostas revelam: o paciente que quer soluções (Controle), o que quer ser entendido (Mediação), ou o que quer ser guiado (Submissão). Não é regra absoluta — é dado para calibração.
+"O que te traz aqui?" "Como você descreveria o que está sentindo?" "O que você espera da terapia?" Essas três perguntas, feitas com calma e genuíno interesse, revelam muito: o paciente que quer solução rápida, o que quer ser entendido, o que quer ser guiado. Cada perfil pede uma forma diferente de presença do terapeuta.
 
-3. LEWIN NA SALA: MAPEANDO AS FORÇAS DO CAMPO
+3. O QUE O PACIENTE EVITA FALAR É TÃO IMPORTANTE QUANTO O QUE ELE FALA
 
-Durante a primeira sessão, mapeie mentalmente: quais são as forças que sustentam o problema? (crenças, relacionamentos, ambiente de trabalho, histórico familiar). Quais são as forças que poderiam mover o paciente? (vínculos saudáveis, motivações, valores). A terapia trabalha sobre esse mapa.
+O paciente que fala sobre tudo menos sobre sentimentos. O que fala sobre todos menos sobre si mesmo. O que concorda com tudo que você diz sem questionar nada. As ausências no discurso são dados de primeira ordem. Lewin chamaria de "barreiras de campo" — os pontos onde a energia para de fluir. Anote mentalmente onde o fluxo trava.
 
-4. HIPÓTESE DE EIXO PREPONDERANTE: COMO FORMAR E TESTAR
+4. FORMANDO A HIPÓTESE DE TRABALHO NOS PRIMEIROS 15 MINUTOS
 
-Após os primeiros 15 minutos, forme uma hipótese: "Meu paciente parece operar predominantemente no eixo do Controle." Depois, teste: ofereça uma intervenção que demande do eixo oposto e observe a resistência. Alta resistência confirma a hipótese. Baixa resistência pede revisão.
+Após a abertura, forme uma hipótese clínica inicial: qual é o padrão central que esse paciente traz? É um padrão de controle sem flexibilidade? De entrega sem limites? De submissão sem voz? Essa hipótese não é diagnóstico fixo — é bússola para as próximas sessões. Você a testa, ajusta e refina com o tempo.
 
-5. O QUE O PACIENTE EVITA FALAR É TÃO IMPORTANTE QUANTO O QUE FALA
+5. COMO TESTAR A HIPÓTESE AINDA NA PRIMEIRA SESSÃO
 
-O paciente que fala sobre tudo menos sobre sentimentos (Controle em excesso). O que fala sobre todos menos sobre si mesmo (Mediação em excesso). O que concorda com tudo e nunca discorda (Submissão em excesso). As ausências no discurso são dados clínicos de primeira ordem.
+Ofereça uma pequena intervenção que vai na direção oposta ao padrão que você identificou e observe a resposta. Para o paciente que parece hipercontrolador: faça uma pergunta aberta sobre como ele se sente — e observe o desconforto. Para o paciente muito submisso: pergunte o que ele realmente quer da terapia — e observe se ele consegue responder por si mesmo. A resistência confirma a hipótese. A ausência de resistência pede revisão.
 
-6. SÍNTESE DO MÓDULO 1: O TERAPEUTA COMO LEITOR DE CAMPO
+6. SÍNTESE: O TERAPEUTA COMO LEITOR DE CAMPO
 
-Ao final deste módulo, você deve sair de cada sessão sabendo responder: qual é o eixo preponderante deste paciente? Qual é o algoz em operação? Qual é o custo do trade-off atual? Essas três perguntas são a bússola clínica da abordagem vetorial — e você treinará isso em todo caso, toda semana.`,
+Ao final de cada primeira sessão, você deve conseguir responder: qual é o padrão central desse paciente? O que ele está evitando? O que ele mais precisa — e o que ele está pedindo são a mesma coisa? Essas três perguntas são a bússola do trabalho clínico que virá. Você não precisa de todas as respostas na primeira sessão — precisa das perguntas certas.`,
     },
   ],
 };
