@@ -4,10 +4,9 @@ import jsPDF from 'jspdf';
 import { Award, Download, FileImage, FilePlus2, LayoutTemplate, Plus, RefreshCw, Save, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
-import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE } from '@/lib/brand';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, ABED_LOGO } from '@/lib/brand';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
-const ABED_LOGO = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png';
 const ABED_BLUE_FILTER = 'brightness(0) saturate(100%) invert(25%) sepia(78%) saturate(1037%) hue-rotate(183deg) brightness(91%) contrast(93%)';
 const VERIFICATION_PATH = '/validar-certificado';
 const CERTIFICATE_BACKGROUND = '#ffffff';
@@ -117,11 +116,12 @@ async function searchCertificateRecordsDirect({ code, email, accessCode }) {
 }
 
 async function saveCertificateRecordDirect(id, data) {
-  if (id) return base44.entities.CertificateRecord.update(id, data);
+  const payload = { ...data, is_available_to_student: true };
+  if (id) return base44.entities.CertificateRecord.update(id, payload);
   const existing = (await searchCertificateRecordsDirect({ code: data.verification_code }))[0];
   return existing
-    ? base44.entities.CertificateRecord.update(existing.id, data)
-    : base44.entities.CertificateRecord.create(data);
+    ? base44.entities.CertificateRecord.update(existing.id, payload)
+    : base44.entities.CertificateRecord.create(payload);
 }
 
 function normalizeClassRecord(item) {

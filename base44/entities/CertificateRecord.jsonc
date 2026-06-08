@@ -1,0 +1,97 @@
+{
+  "name": "CertificateRecord",
+  "type": "object",
+  "properties": {
+    "verification_code": {
+      "type": "string",
+      "description": "C\u00f3digo \u00fanico de autenticidade do certificado"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome completo do aluno"
+    },
+    "student_document": {
+      "type": "string",
+      "description": "CPF ou RG do aluno"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "student_access_code": {
+      "type": "string",
+      "description": "C\u00f3digo de acesso do aluno na plataforma"
+    },
+    "course_name": {
+      "type": "string",
+      "description": "Nome do curso"
+    },
+    "course_slug": {
+      "type": "string",
+      "description": "Slug do curso (tcc, psicanalise, sexologia)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Texto complementar do certificado"
+    },
+    "coordinator_name": {
+      "type": "string",
+      "description": "Nome do coordenador que assinou"
+    },
+    "honor_title": {
+      "type": "string",
+      "description": "T\u00edtulo de honra (opcional)"
+    },
+    "honor_description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do destaque de honra"
+    },
+    "issue_date": {
+      "type": "string",
+      "description": "Data de emiss\u00e3o formatada em pt-BR"
+    },
+    "template_id": {
+      "type": "string",
+      "description": "ID do template de certificado usado"
+    },
+    "total_hours": {
+      "type": "number",
+      "description": "Carga hor\u00e1ria total do certificado"
+    },
+    "average_grade": {
+      "type": "string",
+      "description": "M\u00e9dia final do aluno"
+    },
+    "classes": {
+      "type": "array",
+      "description": "Lista de aulas, cargas e notas",
+      "items": {
+        "type": "object"
+      }
+    },
+    "verification_url": {
+      "type": "string",
+      "description": "URL p\u00fablica de verifica\u00e7\u00e3o do certificado"
+    },
+    "is_available_to_student": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o certificado est\u00e1 dispon\u00edvel para download pelo aluno"
+    }
+  },
+  "required": [
+    "verification_code",
+    "student_name",
+    "course_name"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "MonitorFeedback",
+  "type": "object",
+  "properties": {
+    "monitor_email": {
+      "type": "string",
+      "description": "Email do monitor avaliado"
+    },
+    "monitor_name": {
+      "type": "string",
+      "description": "Nome do monitor avaliado"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno que enviou feedback"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome do aluno que enviou feedback"
+    },
+    "course": {
+      "type": "string",
+      "enum": ["tcc", "psicanalise", "sexologia"],
+      "default": "tcc"
+    },
+    "rating": {
+      "type": "number",
+      "description": "Nota de 1 a 5"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Comentário opcional"
+    }
+  },
+  "required": ["monitor_email", "student_email", "rating"]
+}

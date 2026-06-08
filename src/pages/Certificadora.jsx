@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Award, BookOpen, FileText, Heart, Video, Bell } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
+import { Award, BookOpen, FileText, Heart, Video, Bell, Download } from 'lucide-react';
+import { useOutletContext, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -108,6 +108,19 @@ export default function Certificadora() {
   );
 
   const courseName = COURSE_NAMES[session?.course] || 'Seu Curso';
+  const location = useLocation();
+  const prefix = (() => {
+    const parts = location.pathname.split('/').filter(Boolean);
+    if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return `/${parts[0]}/${parts[1]}`;
+    return '';
+  })();
+
+  const { data: myCerts = [] } = useQuery({
+    queryKey: ['my-certs-check', session?.email],
+    queryFn: () => base44.entities.CertificateRecord.filter({ student_email: session?.email || '' }, '-created_date', 1),
+    enabled: !isTeacher && !!session?.email,
+  });
+  const hasCertificate = myCerts.length > 0;
 
   if (isTeacher) {
     return (
@@ -135,6 +148,25 @@ export default function Certificadora() {
           <p className="text-muted-foreground text-xs mt-0.5">{courseName}</p>
         </div>
       </div>
+
+      {/* Certificate available banner */}
+      {hasCertificate && (
+        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-300 rounded-2xl p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center shrink-0">
+            <Award size={20} className="text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-yellow-900">🎉 Seu certificado está disponível!</p>
+            <p className="text-xs text-yellow-700 mt-0.5">O professor já emitiu seu certificado. Clique para visualizar e baixar.</p>
+          </div>
+          <Link
+            to={`${prefix}/meu-certificado`}
+            className="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shrink-0"
+          >
+            <Download size={14} /> Ver certificado
+          </Link>
+        </div>
+      )}
 
       {/* Overall progress */}
       <div className="bg-card border border-border rounded-2xl p-5">

@@ -7,7 +7,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -23,12 +23,6 @@ const adminGroups = [
       { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
       { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
       { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
-    ],
-  },
-  {
-    label: 'Geral',
-    items: [
-      { icon: Flame, label: 'Ofensivas', path: '/ofensivas', color: 'text-orange-400' },
     ],
   },
   {
@@ -75,12 +69,6 @@ const studentGroups = [
     ],
   },
   {
-    label: 'Geral',
-    items: [
-      { icon: Flame, label: 'Ofensivas', path: '/ofensivas', color: 'text-orange-400' },
-    ],
-  },
-  {
     label: 'Comunidade',
     items: [
       { icon: Hash, label: 'Chat da Turma', path: '/chat', color: 'text-blue-400' },
@@ -107,6 +95,7 @@ const studentGroups = [
       { icon: BookOpen, label: 'Meu Best Seller', path: '/bestseller', color: 'text-emerald-400' },
       { icon: GraduationCap, label: 'Histórico Acadêmico', path: '/historico', color: 'text-cyan-400' },
       { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },
+      { icon: GraduationCap, label: 'Meu Certificado', path: '/meu-certificado', color: 'text-amber-400' },
     ],
   },
 ];
