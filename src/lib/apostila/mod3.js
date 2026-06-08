@@ -1,157 +1,49 @@
-// MÓDULO 3 — Psicopatologia Aplicada: Reconhecer, Compreender, Intervir
+// MÓDULO 3 — Modelo Cognitivo: Pensamentos, Emoções e Comportamento
+// Tema: Aula 03 do curso — genética, neuroplasticidade, tríade cognitiva e transformação interna
+// 6 tópicos clínicos práticos (1700-1750 chars cada) + referências
+
 export const MOD3 = {
   id: 'mod3',
-  title: 'Módulo 3 — Psicopatologia Aplicada',
-  subtitle: 'Reconhecer, Compreender e Intervir com Competência',
-  colorLight: 'text-rose-400',
-  bgLight: 'bg-rose-500/10',
+  title: 'Módulo 3 — Modelo Cognitivo na Prática Clínica',
+  subtitle: 'Pensamentos, Emoções, Comportamento e Neuroplasticidade',
+  colorLight: 'text-blue-400',
+  bgLight: 'bg-blue-500/10',
   lessons: [
     {
       id: 'mod3-aula1',
-      title: 'Aula 1 — Ansiedade: Da Teoria ao Consultório',
-      content: `TÓPICO 1 — ANSIEDADE COMO SINAL, NÃO COMO INIMIGO
+      title: 'Aula 3 — Modelo Cognitivo: Pensamentos, Emoções e Comportamento',
+      content: `TÓPICO 1 — A TRÍADE COGNITIVA: COMO PENSAMENTO GERA EMOÇÃO E COMPORTAMENTO
 
-A ansiedade é um dos quadros mais prevalentes na clínica. E também um dos mais mal manejados — tanto pelo paciente quanto por terapeutas que tentam eliminá-la rapidamente. Winnicott nos oferece uma perspectiva fundamental: a ansiedade, em sua forma original, é um sinal de que o self percebe ameaça. O problema não é a ansiedade — é quando o ambiente não ofereceu recursos para que o sujeito a processasse adequadamente.
+A tríade cognitiva é o mapa mais prático disponível para o terapeuta clínico: pensamentos produzem emoções que produzem comportamentos. A sequência parece simples — e é exatamente por isso que é poderosa. Quando você ajuda o paciente a identificar o pensamento que antecede a emoção, você encontra o ponto de alavancagem clínica. Exemplo direto: paciente sente ansiedade intensa toda vez que precisa falar em público. O comportamento é a evitação. A emoção é o medo. O pensamento subjacente? "Vão perceber que sou incompetente." Trabalhe o pensamento — não apenas a emoção ou o comportamento. Engel nos lembra que essa tríade não opera no vácuo — opera dentro de um campo biológico (estado do sistema nervoso), psicológico (história de experiências) e social (contexto onde o comportamento ocorre). O terapeuta cognitivo completo integra os três níveis. Winnicott adicionaria: alguns pensamentos automáticos negativos não são distorções cognitivas simples — são ecos de ambientes reais que não foram suficientemente bons. Antes de reestruturar o pensamento, entenda de onde veio.
 
-Na prática clínica, identifique o tipo de ansiedade antes de intervir:
-• Ansiedade de desempenho: medo de falhar diante de expectativas (internas ou externas). Frequentemente ligada a um self que aprendeu que só merece amor quando performa.
-• Ansiedade de abandono: ativada quando vínculos se sentem ameaçados. Kohut: self fragilizado que depende do outro para se regular.
-• Ansiedade existencial: o paciente não teme algo específico — teme o vazio, a morte, a falta de sentido. Frankl é a referência aqui.
-• Ansiedade somática: quando o corpo carrega o que a mente não processa. Engel: olhe para o todo.
+TÓPICO 2 — PENSAMENTOS AUTOMÁTICOS: IDENTIFICAR E TRABALHAR
 
-Intervenção prática: quando o paciente chega em crise ansiosa, não vá direto para técnicas de respiração. Primeiro, valide: "Faz sentido você estar assim. Seu sistema está tentando te proteger." Isso reduz a meta-ansiedade (a ansiedade sobre ter ansiedade) e abre espaço para o trabalho real.
+Pensamentos automáticos são avaliações rápidas e involuntárias que surgem diante de situações específicas. Aaron Beck os identificou como o nível mais acessível da estrutura cognitiva — acima das crenças intermediárias e das crenças nucleares. Na clínica, o caminho mais rápido para acessar um pensamento automático é perguntar, logo após o paciente descrever uma situação que o perturbou: "O que passou pela sua cabeça naquele momento?" Não "o que você sentiu" — o que passou pela cabeça. A distinção é fundamental. Pensamento e emoção têm funções diferentes no processo. Lewin: o pensamento automático é uma resposta ao campo percebido — não necessariamente ao campo real. O paciente que pensa "todo mundo me olha com julgamento numa festa" está respondendo ao campo que sua história construiu, não à festa real. Mudar o campo percebido é o trabalho cognitivo. Frankl adicionaria que alguns pensamentos automáticos carregam questões existenciais: "Para que me esforçar se nada tem sentido?" Esses precisam ser tratados no nível do sentido, não apenas da reestruturação cognitiva.
 
-TÓPICO 2 — TRABALHANDO A ANSIEDADE: FERRAMENTAS QUE FUNCIONAM
+TÓPICO 3 — CRENÇAS NUCLEARES: O FUNDO DO ICEBERG
 
-O tratamento da ansiedade na clínica integrativa combina regulação do sistema nervoso, ressignificação cognitiva e fortalecimento do self. Não é um protocolo rígido — é uma orquestração responsiva ao que o paciente precisa no momento.
+Se os pensamentos automáticos são a superfície, as crenças nucleares são o fundo. São convicções absolutas sobre si mesmo, os outros e o mundo — formadas precocemente e mantidas por décadas. As mais comuns: "Sou incompetente", "Sou indigno de amor", "O mundo é perigoso", "As pessoas vão me abandonar". Kohut explica a origem: quando o self não recebe espelhamento adequado na infância, as lacunas são preenchidas por crenças compensatórias negativas. A criança que não foi validada não conclui "meus pais têm dificuldades" — conclui "há algo errado comigo". Essa crença nuclear persiste no adulto com força de verdade absoluta, mesmo diante de evidências contrárias. Na clínica, não confronte a crença nuclear diretamente — ela resistirá. Construa evidências contrárias gradualmente. "Me conta uma situação recente onde você foi competente." "O que isso nos diz sobre a crença de que você é sempre incompetente?" O processo é lento e não-linear — mas é onde a mudança real acontece. Winnicott: o ambiente terapêutico precisa ser suficientemente bom para que o paciente arrisque questionar o que sempre acreditou.
 
-Lewin nos orienta: mapeie as forças que sustentam a ansiedade. Frequentemente encontramos crenças nucleares ("não sou capaz", "vou ser abandonado"), ambientes que reforçam a vigilância constante, e ausência de recursos para regulação. A terapia remove forças restritivas enquanto constrói recursos internos.
+TÓPICO 4 — NEUROPLASTICIDADE: O CÉREBRO QUE MUDA
 
-Ferramentas clínicas práticas:
-• Psicoeducação sobre o ciclo ansioso: mostre ao paciente como a evitação mantém a ansiedade. Não como lecture — como descoberta conjunta em sessão.
-• Exposição gradual ao que é evitado: não como desafio brutal, mas como experimentos cuidadosos dentro da janela de tolerância.
-• Identificação de gatilhos de campo: qual situação, pensamento ou memória dispara? Mapear o campo (Lewin) permite antecipar e preparar.
-• Ancoragem no presente: a ansiedade vive no futuro imaginado. Trazer o paciente ao presente rompe o loop.
-• Fortalecimento do self (Kohut): quanto mais coeso o self, mais o paciente suporta incerteza. O trabalho de base é sempre fortalecer quem ele é.`,
-    },
-    {
-      id: 'mod3-aula2',
-      title: 'Aula 2 — Depressão: Luto, Vazio e Retomada',
-      content: `TÓPICO 1 — DEPRESSÃO: O QUE ESTÁ SENDO PERDIDO?
+A neuroplasticidade é a capacidade do cérebro de se reorganizar em resposta a novas experiências e padrões de pensamento. Para o terapeuta clínico, isso é uma das notícias mais importantes da neurociência: o cérebro adulto não é fixo. Padrões de pensamento que se repetem ao longo de anos formaram vias neurais consolidadas — é por isso que mudar é difícil, não impossível. Engel: a biologia é ponto de partida, não destino. Quando o paciente aprende a identificar e questionar pensamentos automáticos, está literalmente reconfigurando circuitos neurais. A repetição de novos padrões cognitivos, ao longo do tempo, forma novas vias. A terapia cognitiva eficaz usa exatamente esse mecanismo. Na clínica prática, explique isso ao paciente — não como aula de neurociência, mas como esperança fundamentada: "Seu cérebro aprendeu a pensar dessa forma. Ele pode aprender de outras formas também. Leva tempo, mas funciona." Frankl complementa: a capacidade de mudar — mesmo o substrato biológico — é expressão da liberdade humana que nenhuma determinação elimina completamente.
 
-A depressão é quase sempre uma resposta a uma perda — real, simbólica ou antecipada. Pode ser a perda de uma pessoa, de um sonho, de uma identidade, de uma fase da vida, ou da esperança em si mesma. O terapeuta que consegue identificar o que foi perdido encontra a porta de entrada para o trabalho clínico real.
+TÓPICO 5 — REESTRUTURAÇÃO COGNITIVA: A TÉCNICA QUE FUNCIONA
 
-Winnicott nos ajuda a entender a depressão como colapso do self diante de um ambiente que não sustentou. O paciente deprimido muitas vezes foi a criança que teve que "ser forte" cedo demais, que não teve permissão de chorar, que aprendeu que sua tristeza era um peso para os outros. A depressão adulta é, com frequência, o luto represado de décadas.
+Reestruturação cognitiva é o processo de identificar pensamentos disfuncionais, examinar as evidências a favor e contra, e construir pensamentos alternativos mais adaptativos. Não é pensar positivo — é pensar de forma mais precisa e útil. O processo em sessão tem passos claros: 1) Identifique o pensamento automático. 2) Pergunte: "Quais evidências apoiam esse pensamento?" 3) Pergunte: "Quais evidências contradizem esse pensamento?" 4) Pergunte: "Existe uma perspectiva mais equilibrada?" 5) Avalie o impacto emocional do pensamento alternativo. Lewin: cada sessão de reestruturação cognitiva está modificando o campo perceptivo do paciente — mudando quais forças ele percebe como ativas em sua vida. Com o tempo, o campo interno muda. Winnicott adicionaria que a reestruturação funciona melhor dentro de um vínculo terapêutico seguro — o paciente precisa sentir que pode questionar suas crenças sem julgamento. Kohut: o terapeuta que espelha genuinamente o esforço do paciente no processo cognitivo fortalece o self ao mesmo tempo que trabalha o pensamento.
 
-Na sessão, evite a armadilha do otimismo prematuro. Frases como "mas você tem tantos motivos para ser feliz" são invalidantes e aumentam a vergonha. Em vez disso: "O que você perdeu que ainda não teve espaço para chorar?" Essa pergunta, feita com delicadeza, frequentemente abre um processo de luto genuíno que a medicação e as técnicas cognitivas sozinhas não alcançam.
+TÓPICO 6 — INTEGRAÇÃO CLÍNICA: COGNIÇÃO, EMOÇÃO E SENTIDO
 
-Frankl contribui: em alguns casos, a depressão carrega um vácuo existencial — o paciente não perdeu algo específico, perdeu o sentido. "Para que eu acordo de manhã?" Esse nível precisa ser abordado explicitamente, com cuidado e sem respostas prontas.
+O trabalho cognitivo isolado — sem integração emocional e existencial — produz mudanças intelectuais que raramente se traduzem em transformação real. O paciente aprende a fazer o registro de pensamento mas não sente diferente. Por quê? Porque a mudança cognitiva sem elaboração emocional e sem sentido não sustenta. Frankl nos ensina: o pensamento alternativo precisa ter um "para quê". "Posso pensar que sou capaz — mas capaz para construir o quê?" A motivação que ancora a mudança cognitiva é existencial. Engel: a reestruturação cognitiva produz melhores resultados quando o corpo também é incluído — respiração, postura, estado de ativação do sistema nervoso influenciam quais pensamentos são acessíveis. Um paciente hiperativado neurologicamente não consegue processar pensamentos alternativos — primeiro precisa regular. Kohut: o self fortalecido pela empatia terapêutica tem mais recursos para questionar crenças antigas. A ordem importa: vínculo, depois cognição, depois sentido. Os três juntos produzem transformação que dura.
 
-TÓPICO 2 — LUTO, ELABORAÇÃO E RETOMADA DO FLUXO VITAL
-
-O luto é o processo saudável de adaptação à perda. O problema clínico não é o luto em si — é o luto que travou: não processado, negado, apressado ou complicado por outros fatores. O terapeuta que sabe acompanhar o luto oferece ao paciente o que talvez nenhum outro espaço ofereça: permissão para sentir a dor completamente.
-
-Fases clínicas do acompanhamento do luto:
-• Acolhimento da dor: não corrija, não anime, não explique. Fique presente na dor com o paciente.
-• Validação da perda: o que foi perdido importa. Nomeie isso com o paciente. "Essa perda é real e faz sentido que doa tanto."
-• Exploração do vínculo com o que foi perdido: o que essa pessoa, situação ou fase significava? O luto é proporcional ao amor — e isso é humano.
-• Identificação do que permanece: não como consolo superficial, mas como reconhecimento genuíno. O vínculo com quem amamos não termina com a perda física.
-• Retomada gradual do investimento na vida: Frankl chama isso de abertura para novos valores experienciais — novas razões para estar vivo.
-
-Engel nos lembra: o luto também tem dimensão biológica (exaustão, imunidade reduzida, distúrbios do sono) e social (isolamento, perda de papéis). O cuidado integral cuida de todas as dimensões.`,
-    },
-    {
-      id: 'mod3-aula3',
-      title: 'Aula 3 — Trauma: Memória, Corpo e Reconstrução',
-      content: `TÓPICO 1 — O QUE É TRAUMA NA PERSPECTIVA INTEGRATIVA
-
-Trauma não é o evento — é o que o evento deixou dentro da pessoa. Duas pessoas podem viver a mesma experiência e uma desenvolver trauma enquanto a outra não. A diferença está no campo de suporte disponível no momento (Lewin), nos recursos do self (Kohut/Winnicott) e no sentido que a experiência pôde ou não ser integrada (Frankl).
-
-Clinicamente, o trauma se manifesta de formas diversas: memórias intrusivas, hipervigilância, evitação, dissociação, dificuldade de confiar, raiva desproporcional, sensações físicas inexplicáveis. O corpo carrega o trauma com frequência muito antes que a memória explícita seja acessada — Engel nos orienta a ouvir o corpo como parte do relato.
-
-Como acolher um paciente traumatizado:
-• Priorize segurança: antes de qualquer exploração do trauma, o paciente precisa sentir que a sessão é um espaço seguro. Isso pode levar semanas ou meses — e não é tempo perdido.
-• Não force a narrativa: "me conta o que aconteceu" pode ser retraumatizante. Trabalhe no ritmo do paciente.
-• Trabalhe no presente primeiro: habilidades de regulação, ancoragem, recursos internos. O passado só pode ser tocado com segurança quando o presente é estável.
-• Winnicott: o terapeuta como ambiente holding permite que o paciente revisita o trauma dentro de um campo seguro — talvez pela primeira vez.
-
-TÓPICO 2 — PROCESSAMENTO DO TRAUMA: DO FRAGMENTO À NARRATIVA INTEGRADA
-
-O trauma fragmenta a experiência — o paciente carrega pedaços sem conseguir montar o todo. O objetivo do trabalho terapêutico não é apagar a memória traumática, mas integrá-la numa narrativa coerente onde o paciente é protagonista, não vítima passiva.
-
-Frankl nos dá a estrutura: mesmo a experiência mais brutal pode ser integrada quando o sujeito encontra um modo de responder a ela que preserve sua dignidade e seu sentido. Isso não significa perdoar ou esquecer — significa encontrar um lugar interno para a experiência que não destrua o presente.
-
-Etapas clínicas do processamento:
-• Estabilização: recursos de regulação, construção de "espaço seguro interno" (imagem mental de lugar seguro que o paciente pode acessar quando sobrecarregado).
-• Processamento gradual: tocar a memória em doses toleráveis, dentro da janela de tolerância. Retornar ao presente entre os toques.
-• Reconsolidação: ajudar o paciente a construir uma narrativa do que aconteceu que inclua: o que viveu, como sobreviveu, o que aprendeu e quem se tornou. Esse é o eixo de Frankl.
-• Integração na vida presente: o trauma passa de identidade central ("sou uma pessoa traumatizada") a experiência vivida ("vivi algo difícil e sobrevivi"). Essa distinção é libertadora.`,
-    },
-    {
-      id: 'mod3-aula4',
-      title: 'Aula 4 — Transtornos de Personalidade na Clínica',
-      content: `TÓPICO 1 — PERSONALIDADE COMO PADRÃO DE CAMPO CONGELADO
-
-Os chamados transtornos de personalidade podem ser compreendidos, a partir da teoria do campo de Lewin, como padrões de campo que foram adaptativos em algum momento da vida e cristalizaram — continuam se repetindo mesmo quando o campo original não existe mais. Não é "defeito de caráter" — é uma organização que fez sentido para sobreviver e que precisa de novas experiências para se reorganizar.
-
-Kohut nos oferece a perspectiva mais clínica: os chamados transtornos de personalidade narcísica, borderline e esquizoide têm em comum uma ferida precoce no desenvolvimento do self — falhas graves no ambiente facilitador (Winnicott) que impediram a consolidação de um self coeso e regulado.
-
-Princípios práticos para trabalhar com esses pacientes:
-• Consistência: o maior presente que você pode dar é ser previsível. Sessões no mesmo horário, respostas consistentes, limites claros e mantidos com calma — não com rigidez punitiva.
-• Lentidão: não apresse insights. A mudança de padrão de personalidade é lenta e não-linear. Ciclos de progressão e regressão são normais.
-• Foco no aqui-agora: o que está acontecendo na relação terapêutica é o material mais rico. Não evite a transferência — trabalhe dentro dela.
-• Sem julgamento: esses pacientes foram, via de regra, altamente julgados. Sua presença consistente e não-julgadora é, em si mesma, transformadora.
-
-TÓPICO 2 — MANEJO CLÍNICO PRÁTICO: BORDERLINE, NARCISISMO E ESQUIZOIDE
-
-Cada organização de personalidade exige ajustes específicos na postura clínica. Conhecer essas diferenças é essencial para não provocar rupturas desnecessárias ou perder o vínculo.
-
-Paciente borderline (instabilidade emocional e relacional intensa):
-• O que precisa: consistência, limites claros, presença calorosa mas firme. Winnicott: holding estável. Kohut: espelhamento sem fusão.
-• Armadilha: ser sugado para a idealização e então para a desvalorização. Mantenha sua posição empática sem se perder.
-• Intervenção: trabalhe a tolerância à ambiguidade ("posso ser importante para você e também ter limitações") e a regulação emocional antes de exploração de conteúdo.
-
-Paciente narcísico (grandiosidade frágil, hipersensibilidade à crítica):
-• O que precisa: espelhamento genuíno (não bajulação), empatia para a dor por trás da grandiosidade.
-• Armadilha: confrontar a grandiosidade diretamente — gera colapso ou fuga.
-• Intervenção: valide o sofrimento que a grandiosidade tenta cobrir. A cura vem pelo fortalecimento do self real, não pela destruição do falso.
-
-Paciente esquizoide (retraimento, distância emocional):
-• O que precisa: espaço, respeito pela distância, aproximação gradual sem invasão.
-• Intervenção: respeite o ritmo. A presença não-invasiva do terapeuta, ao longo do tempo, é o que eventualmente cria confiança suficiente para o encontro.`,
-    },
-    {
-      id: 'mod3-aula5',
-      title: 'Aula 5 — Suicídio e Crise: Avaliação e Manejo',
-      content: `TÓPICO 1 — AVALIAÇÃO DE RISCO: A CONVERSA QUE SALVA VIDAS
-
-Muitos terapeutas evitam perguntar diretamente sobre suicídio com medo de "plantar a ideia". A pesquisa é inequívoca: perguntar não aumenta o risco — em geral, reduz. O paciente que sente que pode falar sobre isso sem ser internado ou julgado encontra alívio imediato e conexão.
-
-A avaliação de risco não é um formulário — é uma conversa clínica com intenção clara. Você precisa saber: há ideação? Com que frequência e intensidade? Há plano? Há meio disponível? Há tentativas anteriores? Há fatores protetores (filhos, religião, vínculos)?
-
-Como iniciar essa conversa de forma natural:
-• "Quando você diz que está exausto e que não aguenta mais, eu quero entender melhor — você já pensou em não querer estar aqui?"
-• Se confirmar: "Você pode me contar mais sobre esse pensamento?" — sem alarme, com curiosidade clínica e cuidado.
-• Se plano e meio: é crise. Protocolo de segurança imediato — não encerre a sessão sem um plano claro.
-
-Frankl nos orienta: mesmo na beira do abismo, as pessoas geralmente buscam razão para viver, não razão para morrer. Sua função é ajudá-las a encontrar essa razão — ou, quando ela não existe ainda, sustentá-las enquanto ela vai sendo construída.
-
-TÓPICO 2 — MANEJO DA CRISE E PÓS-CRISE: ESTABILIZAR E RECONSTRUIR
-
-Uma vez identificada a crise suicida, o trabalho tem duas fases distintas: estabilização imediata e reabilitação do sentido a médio prazo.
-
-Estabilização imediata:
-• Remova o acesso ao meio quando possível (peça que a família guarde medicamentos, por exemplo).
-• Construa um plano de segurança com o paciente — não para ele. "Se o pensamento intensificar, o que você vai fazer? Quem vai ligar? Para onde vai?"
-• Aumente a frequência de sessões temporariamente.
-• Envolva a rede de suporte com consentimento — o isolamento é fator de risco crítico.
-• Avalie necessidade de suporte psiquiátrico. Não é derrota — é integração biopsicossocial (Engel).
-
-Reabilitação do sentido (pós-crise):
-• Quando o paciente estiver estabilizado, o trabalho de Frankl começa: o que estava sendo protegido pela morte imaginada? Frequentemente é o fim da dor, o fim do fracasso, o fim da vergonha.
-• Trabalhe cada uma dessas fontes diretamente — não como problema a resolver, mas como sofrimento a ser acompanhado e ressignificado.
-• Kohut: fortaleça o self. Um self mais coeso resiste melhor às tempestades existenciais.
-• O objetivo não é que o paciente nunca mais sofra — é que ele desenvolva recursos internos suficientes para que o sofrimento não precise ser resolvido com a extinção da vida.`,
+REFERÊNCIAS
+Beck, A.T. (1979). Cognitive Therapy of Depression. Guilford Press.
+Engel, G.L. (1977). The need for a new medical model. Science, 196(4286), 129–136.
+Winnicott, D.W. (1965). The Maturational Processes and the Facilitating Environment. Hogarth Press.
+Kohut, H. (1977). The Restoration of the Self. International Universities Press.
+Frankl, V.E. (1959). Man's Search for Meaning. Beacon Press.
+Doidge, N. (2007). The Brain That Changes Itself. Viking.
+Lewin, K. (1951). Field Theory in Social Science. Harper & Row.`,
     },
   ],
 };
