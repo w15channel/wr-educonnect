@@ -24,11 +24,8 @@ const sortBySeq = (items = []) => [...items].sort((a, b) => {
 });
 
 function useScopedPrefix() {
-  const location = useLocation();
-  const parts = location.pathname.split('/').filter(Boolean);
-  // /degree/student/:slug
-  if (parts[0] === 'degree' && parts[1] === 'student' && parts[2]) return `/${parts[0]}/${parts[1]}/${parts[2]}`;
-  return '';
+  // Diploma routes are always under /degree/student/*
+  return '/degree/student';
 }
 
 export default function DiplomaDashboard() {

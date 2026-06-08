@@ -1,8 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
-import { setSession as persistSession, getSession } from '@/lib/customAuth';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import MobileHeader from './MobileHeader';
@@ -19,54 +17,27 @@ const pageVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-const PTR_THRESHOLD = 72; // px to pull before triggering refresh
-
-const SLUG_TO_COURSE = { tcc: 'tcc', psi: 'psicanalise', sex: 'sexologia' };
-const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
-
-function stripScopedPrefix(pathname) {
-  const parts = pathname.split('/').filter(Boolean);
-  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
-    return '/' + parts.slice(2).join('/');
-  }
-  return pathname;
-}
+const PTR_THRESHOLD = 72;
 
 export default function AppLayout() {
-  const { session, login } = useCustomAuth();
+  const { session } = useCustomAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const params = useParams();
   const queryClient = useQueryClient();
 
-  // Determine role/course from URL
-  const pathParts = location.pathname.split('/').filter(Boolean);
-  const urlRole = pathParts[0]; // 'student' or 'adm'
-  const urlCourseSlug = params.courseSlug || pathParts[1];
-  const urlCourse = SLUG_TO_COURSE[urlCourseSlug] || null;
-
-  // Guard: no session course → lobby. URL course != session course → sync session to URL course.
+  // Role guard: /adm/* only for admins, /student/* only for students
   useEffect(() => {
     if (!session) return;
-    if (!session.course && !urlCourse) {
-      navigate('/lobby');
-      return;
+    const pathname = location.pathname;
+    const isAdmin = session.role === 'admin';
+    if (pathname.startsWith('/adm/') && !isAdmin) {
+      navigate('/student/dashboard', { replace: true });
+    } else if (pathname.startsWith('/student/') && isAdmin) {
+      navigate('/adm/dashboard', { replace: true });
     }
-    // If URL has a valid course and it differs from session, update session to match URL
-    if (urlCourse && urlCourse !== session.course) {
-      const current = getSession();
-      persistSession({ ...current, course: urlCourse });
-      login();
-    }
-    // Role mismatch protection: if URL says /adm but user is student (or vice versa), redirect
-    const expectedRole = session.role === 'admin' ? 'adm' : 'student';
-    if (urlRole && (urlRole === 'adm' || urlRole === 'student') && urlRole !== expectedRole) {
-      const slug = COURSE_TO_SLUG[session.course] || 'tcc';
-      navigate(`/${expectedRole}/${slug}/dashboard`, { replace: true });
-    }
-  }, [session, urlCourse, urlRole, navigate, login]);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  }, [session, location.pathname, navigate]);
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const isStudent = session?.role === 'student';
   const sessionKey = session?.email || session?.code || '';
   const [showTutorial, setShowTutorial] = useState(false);
@@ -74,18 +45,15 @@ export default function AppLayout() {
   useEffect(() => {
     if (!isStudent || !sessionKey) return;
     const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
-    const tutDone = localStorage.getItem(tutKey);
-    if (!tutDone) { setShowTutorial(true); }
+    if (!localStorage.getItem(tutKey)) setShowTutorial(true);
   }, [isStudent, sessionKey]);
 
-
   const handleTutorialFinish = () => {
-    const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
-    localStorage.setItem(tutKey, '1');
+    localStorage.setItem(`${TUTORIAL_KEY}_${sessionKey}`, '1');
     setShowTutorial(false);
   };
 
-  // Pull-to-refresh state
+  // Pull-to-refresh
   const [pullY, setPullY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const touchStartY = useRef(0);
@@ -114,16 +82,14 @@ export default function AppLayout() {
       setRefreshing(true);
       setPullY(PTR_THRESHOLD);
       await queryClient.invalidateQueries();
-      setTimeout(() => {
-        setRefreshing(false);
-        setPullY(0);
-      }, 600);
+      setTimeout(() => { setRefreshing(false); setPullY(0); }, 600);
     } else {
       setPullY(0);
     }
   }, [pullY, refreshing, queryClient]);
 
   const showIndicator = pullY > 8;
+  const isCertPage = location.pathname.endsWith('/certificadora');
 
   return (
     <div className="flex h-screen bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
@@ -131,6 +97,7 @@ export default function AppLayout() {
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
       )}
+
       {/* Desktop sidebar */}
       <div className="hidden md:block shrink-0">
         <Sidebar session={session} />
@@ -142,17 +109,16 @@ export default function AppLayout() {
       </div>
 
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Mobile top header */}
         <MobileHeader />
 
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
-          {/* Pull-to-refresh indicator */}
           {showIndicator && (
             <div
               className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all pointer-events-none md:hidden"
               style={{ height: pullY, overflow: 'hidden' }}
             >
-              <div className={`w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary flex items-center justify-center ${refreshing ? 'animate-spin' : ''}`}
+              <div
+                className={`w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary flex items-center justify-center ${refreshing ? 'animate-spin' : ''}`}
                 style={{ transform: !refreshing ? `rotate(${(pullY / PTR_THRESHOLD) * 270}deg)` : undefined }}
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -172,7 +138,7 @@ export default function AppLayout() {
               data-scroll-container
               className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
               style={{
-                paddingBottom: window.innerWidth < 768 && stripScopedPrefix(location.pathname) !== '/certificadora' ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
+                paddingBottom: window.innerWidth < 768 && !isCertPage ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
                 transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
                 transition: isPulling.current ? 'none' : 'transform 0.3s ease',
               }}
@@ -180,14 +146,13 @@ export default function AppLayout() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <div className={stripScopedPrefix(location.pathname) === '/certificadora' ? 'flex-1 min-h-0 flex flex-col' : ''}>
+              <div className={isCertPage ? 'flex-1 min-h-0 flex flex-col' : ''}>
                 <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
               </div>
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Mobile bottom nav */}
         <BottomNav onMenuOpen={() => setSidebarOpen(true)} />
       </main>
     </div>

@@ -36,6 +36,7 @@ import RankingGeral from './pages/RankingGeral';
 import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
 import Ofensivas from './pages/Ofensivas';
+import Apostila from './pages/Apostila';
 
 import MeuBestSeller from './pages/MeuBestSeller';
 import ClassChat from './pages/ClassChat';
@@ -50,35 +51,21 @@ import Notifications from './pages/Notifications';
 import MonitorCertificate from './pages/MonitorCertificate';
 import MeuCertificado from './pages/MeuCertificado';
 import AdminCertificateGenerator from './pages/AdminCertificateGenerator';
-import Apostila from './pages/Apostila';
 import AtendimentoSocial from './pages/AtendimentoSocial';
 import CertificateVerifier from './pages/CertificateVerifier';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
-const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
-
-function buildScopedRedirect(session, sub) {
-  if (!session?.course) return '/lobby';
-  const r = session.role === 'admin' ? 'adm' : 'student';
-  const slug = COURSE_TO_SLUG[session.course] || 'tcc';
-  return `/${r}/${slug}${sub}`;
-}
-
-// All scoped routes used by both /student/:slug/* and /adm/:slug/*
+// Guard: admin-only pages redirect students to dashboard
 function AdminOnly({ children }) {
   const { session } = useCustomAuth();
-  const location = useLocation();
-  const parts = location.pathname.split('/').filter(Boolean);
-  const prefix = parts[0] && parts[1] ? `/${parts[0]}/${parts[1]}` : buildScopedRedirect(session, '');
-
   if (session?.role !== 'admin') {
-    return <Navigate to={`${prefix}/dashboard`} replace />;
+    return <Navigate to="/adm/dashboard" replace />;
   }
-
   return children;
 }
 
-function ScopedRoutesTree() {
+// All app routes — no courseSlug in URL, course comes from session
+function AppRoutesTree() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
@@ -115,6 +102,7 @@ function ScopedRoutesTree() {
         <Route path="dm/:email" element={<DirectMessage />} />
         <Route path="classe" element={<Classe />} />
         <Route path="ofensivas" element={<Ofensivas />} />
+        <Route path="apostila" element={<Apostila />} />
         <Route path="ring" element={<Notifications />} />
       </Route>
     </Routes>
@@ -125,6 +113,7 @@ const AuthenticatedApp = () => {
   const { session, loading, login } = useCustomAuth();
   const location = useLocation();
   const pathname = location.pathname;
+
   const handleLogin = (redirect) => {
     login();
     if (redirect && window.location.pathname !== '/' + redirect) {
@@ -143,6 +132,7 @@ const AuthenticatedApp = () => {
     );
   }
 
+  // Public pages — no auth required
   if (!session) {
     if (pathname === '/politica') return <PoliticaDeTrabalho />;
     if (pathname === '/ementa-cursos') return <CourseSyllabus />;
@@ -154,17 +144,15 @@ const AuthenticatedApp = () => {
     return <LandingPage onLogin={handleLogin} />;
   }
 
-  // Lobby for course selection (legacy + scoped)
-  if (pathname === '/lobby' || pathname === '/student/lobby' || pathname === '/adm/lobby') {
-    return <CourseLobby />;
-  }
+  if (pathname === '/lobby') return <CourseLobby />;
 
-  const redirectTo = (sub) => <Navigate to={buildScopedRedirect(session, sub)} replace />;
+  const isAdmin = session.role === 'admin';
+  const base = isAdmin ? '/adm' : '/student';
 
   return (
     <Routes>
-      {/* Diploma-only isolated routes */}
-      <Route path="/degree/student/:courseSlug/*" element={<DiplomaLayout />}>
+      {/* Diploma isolated shell */}
+      <Route path="/degree/student/*" element={<DiplomaLayout />}>
         <Route index element={<DiplomaDashboard />} />
         <Route path="dashboard" element={<DiplomaDashboard />} />
         <Route path="lessons" element={<Lessons />} />
@@ -177,38 +165,51 @@ const AuthenticatedApp = () => {
         <Route path="profile" element={<Profile />} />
       </Route>
 
-      {/* Scoped student routes */}
-      <Route path="/student/:courseSlug/*" element={<ScopedRoutesTree />} />
-      {/* Scoped admin routes */}
-      <Route path="/adm/:courseSlug/*" element={<ScopedRoutesTree />} />
+      {/* Main student routes */}
+      <Route path="/student/*" element={<AppRoutesTree />} />
 
-      {/* Legacy/root paths redirect to scoped layout */}
-      <Route path="/" element={redirectTo('/dashboard')} />
-      <Route path="/dashboard" element={redirectTo('/dashboard')} />
-      <Route path="/lessons" element={redirectTo('/lessons')} />
-      <Route path="/live" element={redirectTo('/live')} />
-      <Route path="/tasks" element={redirectTo('/tasks')} />
-      <Route path="/tests" element={redirectTo('/tests')} />
-      <Route path="/forum" element={redirectTo('/forum')} />
-      <Route path="/debates" element={redirectTo('/debates')} />
-      <Route path="/chat" element={redirectTo('/chat')} />
-      <Route path="/students" element={redirectTo('/students')} />
-      <Route path="/keys" element={redirectTo('/keys')} />
-      <Route path="/announcements" element={redirectTo('/announcements')} />
-      <Route path="/profile" element={redirectTo('/profile')} />
-      <Route path="/calendar" element={redirectTo('/calendar')} />
-      <Route path="/tuitions" element={redirectTo('/tuitions')} />
-      <Route path="/tutor" element={redirectTo('/tutor')} />
-      <Route path="/scores" element={redirectTo('/scorecontrol')} />
-      <Route path="/certificadora" element={redirectTo('/certificadora')} />
-      <Route path="/gerar-certificado" element={redirectTo('/gerar-certificado')} />
-      <Route path="/ranking" element={redirectTo('/ranking')} />
-      <Route path="/monitores" element={redirectTo('/monitores')} />
-      <Route path="/terapeuta" element={redirectTo('/terapeuta')} />
-      <Route path="/bestseller" element={redirectTo('/bestseller')} />
-      <Route path="/historico" element={redirectTo('/historico')} />
-      <Route path="/classe" element={redirectTo('/classe')} />
+      {/* Main admin routes */}
+      <Route path="/adm/*" element={<AppRoutesTree />} />
 
+      {/* Root & legacy redirects → flat paths */}
+      <Route path="/" element={<Navigate to={`${base}/dashboard`} replace />} />
+      <Route path="/dashboard" element={<Navigate to={`${base}/dashboard`} replace />} />
+      <Route path="/lessons" element={<Navigate to={`${base}/lessons`} replace />} />
+      <Route path="/live" element={<Navigate to={`${base}/live`} replace />} />
+      <Route path="/tasks" element={<Navigate to={`${base}/tasks`} replace />} />
+      <Route path="/tests" element={<Navigate to={`${base}/tests`} replace />} />
+      <Route path="/forum" element={<Navigate to={`${base}/forum`} replace />} />
+      <Route path="/debates" element={<Navigate to={`${base}/debates`} replace />} />
+      <Route path="/chat" element={<Navigate to={`${base}/chat`} replace />} />
+      <Route path="/students" element={<Navigate to={`${base}/students`} replace />} />
+      <Route path="/keys" element={<Navigate to={`${base}/keys`} replace />} />
+      <Route path="/announcements" element={<Navigate to={`${base}/announcements`} replace />} />
+      <Route path="/profile" element={<Navigate to={`${base}/profile`} replace />} />
+      <Route path="/calendar" element={<Navigate to={`${base}/calendar`} replace />} />
+      <Route path="/tuitions" element={<Navigate to={`${base}/tuitions`} replace />} />
+      <Route path="/tutor" element={<Navigate to={`${base}/tutor`} replace />} />
+      <Route path="/scores" element={<Navigate to={`${base}/scorecontrol`} replace />} />
+      <Route path="/scorecontrol" element={<Navigate to={`${base}/scorecontrol`} replace />} />
+      <Route path="/certificadora" element={<Navigate to={`${base}/certificadora`} replace />} />
+      <Route path="/gerar-certificado" element={<Navigate to={`${base}/gerar-certificado`} replace />} />
+      <Route path="/ranking" element={<Navigate to={`${base}/ranking`} replace />} />
+      <Route path="/monitores" element={<Navigate to={`${base}/monitores`} replace />} />
+      <Route path="/terapeuta" element={<Navigate to={`${base}/terapeuta`} replace />} />
+      <Route path="/bestseller" element={<Navigate to={`${base}/bestseller`} replace />} />
+      <Route path="/historico" element={<Navigate to={`${base}/historico`} replace />} />
+      <Route path="/classe" element={<Navigate to={`${base}/classe`} replace />} />
+      <Route path="/ofensivas" element={<Navigate to={`${base}/ofensivas`} replace />} />
+      <Route path="/apostila" element={<Navigate to={`${base}/apostila`} replace />} />
+
+      {/* Old scoped paths with courseSlug → strip slug */}
+      <Route path="/student/tcc/*" element={<Navigate to="/student/*" replace />} />
+      <Route path="/adm/tcc/*" element={<Navigate to="/adm/*" replace />} />
+      <Route path="/student/psi/*" element={<Navigate to="/student/*" replace />} />
+      <Route path="/adm/psi/*" element={<Navigate to="/adm/*" replace />} />
+      <Route path="/student/sex/*" element={<Navigate to="/student/*" replace />} />
+      <Route path="/adm/sex/*" element={<Navigate to="/adm/*" replace />} />
+
+      {/* Public pages */}
       <Route path="/politica" element={<PoliticaDeTrabalho />} />
       <Route path="/ementa-cursos" element={<CourseSyllabus />} />
       <Route path="/wr-tec" element={<WRTec />} />

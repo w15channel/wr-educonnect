@@ -268,8 +268,7 @@ export default function CourseLobby() {
     const current = getSession();
     setSession({ ...current, course: courseId });
     login();
-    const slug = COURSE_TO_SLUG[courseId] || 'tcc';
-    navigate(`/adm/${slug}/dashboard`);
+    navigate(`/adm/dashboard`);
   };
 
   const handleTermsAccept = () => {
@@ -282,12 +281,10 @@ export default function CourseLobby() {
     setSession({ ...current, study_mode: mode });
     login();
     setStudyModeStep('done');
-    const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
-    // Diploma → rota isolada com interface simplificada
     if (mode === 'diploma') {
-      navigate(`/degree/student/${slug}/dashboard`);
+      navigate(`/degree/student/dashboard`);
     } else {
-      navigate(`/student/${slug}/dashboard`);
+      navigate(`/student/dashboard`);
     }
   };
 
@@ -298,12 +295,11 @@ export default function CourseLobby() {
       setStudyModeStep('choosing');
       return;
     }
-    const slug = COURSE_TO_SLUG[userCourse] || 'tcc';
     const savedMode = getSession()?.study_mode;
     if (savedMode === 'diploma') {
-      navigate(`/degree/student/${slug}/dashboard`);
+      navigate(`/degree/student/dashboard`);
     } else {
-      navigate(`/student/${slug}/dashboard`);
+      navigate(`/student/dashboard`);
     }
   };
 

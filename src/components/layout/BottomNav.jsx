@@ -1,29 +1,19 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, Play, Video, MessageSquare, LayoutGrid, BookOpen } from 'lucide-react';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
 
-function getPrefix(pathname) {
-  const parts = pathname.split('/').filter(Boolean);
-  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
-    return `/${parts[0]}/${parts[1]}`;
-  }
-  return '';
-}
-
-// Root path for each tab (relative within scoped prefix)
 const tabs = [
-  { icon: BarChart3, label: 'Início',   root: '/dashboard' },
-  { icon: Play,      label: 'Aulas',    root: '/lessons' },
-  { icon: BookOpen,  label: 'Apostila', root: '/apostila' },
-  { icon: MessageSquare, label: 'Fórum', root: '/forum' },
-  { icon: LayoutGrid, label: 'Menu',    root: '__menu__' },
+  { icon: BarChart3,    label: 'Início',   root: '/dashboard' },
+  { icon: Play,         label: 'Aulas',   root: '/lessons' },
+  { icon: BookOpen,     label: 'Apostila', root: '/apostila' },
+  { icon: MessageSquare,label: 'Fórum',   root: '/forum' },
+  { icon: LayoutGrid,   label: 'Menu',    root: '__menu__' },
 ];
 
-// Which tab "owns" a given pathname (after stripping the scoped prefix)
-function getOwnerTab(pathname, prefix) {
-  const stripped = prefix && pathname.startsWith(prefix) ? pathname.slice(prefix.length) || '/' : pathname;
+function getOwnerTab(pathname, base) {
+  const stripped = pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
   if (stripped.startsWith('/lessons'))  return '/lessons';
-  if (stripped.startsWith('/live'))     return '/live';
   if (stripped.startsWith('/apostila')) return '/apostila';
   if (stripped.startsWith('/forum'))    return '/forum';
   if (stripped === '/dashboard' || stripped === '/' || stripped === '') return '/dashboard';
@@ -31,11 +21,9 @@ function getOwnerTab(pathname, prefix) {
 }
 
 const STACK_KEY = 'wr_tab_stacks';
-
 function loadStacks() {
   try { return JSON.parse(sessionStorage.getItem(STACK_KEY) || '{}'); } catch { return {}; }
 }
-
 function saveStack(root, path) {
   const stacks = loadStacks();
   stacks[root] = path;
@@ -45,20 +33,18 @@ function saveStack(root, path) {
 export default function BottomNav({ onMenuOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { session } = useCustomAuth();
 
-  const prefix = useMemo(() => getPrefix(location.pathname), [location.pathname]);
-  const currentOwner = getOwnerTab(location.pathname, prefix);
-  const scoped = (p) => prefix + p;
+  const base = session?.role === 'admin' ? '/adm' : '/student';
+  const currentOwner = getOwnerTab(location.pathname, base);
 
-  // Persist current path for its owning tab
   useEffect(() => {
     if (currentOwner) saveStack(currentOwner, location.pathname + location.search);
   }, [location.pathname, location.search, currentOwner]);
 
   const handleTabPress = (root) => {
-    const stacks = loadStacks();
+    const target = base + root;
     const isOnThisTab = currentOwner === root;
-    const target = scoped(root);
 
     if (isOnThisTab) {
       if (location.pathname !== target) {
@@ -67,7 +53,7 @@ export default function BottomNav({ onMenuOpen }) {
         document.querySelector('[data-scroll-container]')?.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else {
-      const saved = stacks[root];
+      const saved = loadStacks()[root];
       navigate(saved || target);
     }
   };

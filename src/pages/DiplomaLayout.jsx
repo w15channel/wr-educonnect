@@ -3,9 +3,8 @@ import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_SHORT_NAME } from '@/lib/brand';
-import { getSession } from '@/lib/customAuth';
 
-const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
+
 const G = '#d4b96a';
 
 const DIPLOMA_MENU = [
@@ -23,14 +22,7 @@ export default function DiplomaLayout() {
   const navigate = useNavigate();
   const { logout, session } = useCustomAuth();
 
-  const courseSlug = (() => {
-    const parts = location.pathname.split('/').filter(Boolean);
-    // /degree/student/:slug/...
-    if (parts[0] === 'degree' && parts[1] === 'student' && parts[2]) return parts[2];
-    return COURSE_TO_SLUG[getSession()?.course] || 'tcc';
-  })();
-
-  const prefix = `/degree/student/${courseSlug}`;
+  const prefix = `/degree/student`;
 
   const isActive = (path) => {
     const target = prefix + path;
@@ -125,7 +117,7 @@ export default function DiplomaLayout() {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden pt-0 md:pt-0 mt-[48px] md:mt-0">
-        <Outlet context={{ user: session, course: getSession()?.course, isDiplomaMode: true }} />
+        <Outlet context={{ user: session, course: session?.course, isDiplomaMode: true }} />
       </main>
 
       {/* Mobile bottom nav */}

@@ -31,8 +31,9 @@ const routeLabels = {
 
 function stripScopedPrefix(pathname) {
   const parts = pathname.split('/').filter(Boolean);
-  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
-    return '/' + parts.slice(2).join('/');
+  // New flat format: /student/dashboard or /adm/dashboard — strip just the role prefix
+  if (parts[0] === 'student' || parts[0] === 'adm') {
+    return '/' + parts.slice(1).join('/');
   }
   return pathname;
 }
