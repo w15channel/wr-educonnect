@@ -13,29 +13,29 @@ export const MOD2 = {
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. ESCUTA ATIVA NÃO É FICAR QUIETO — É PRESENÇA COM INTENÇÃO
+1. ESCUTAR É UMA HABILIDADE — NÃO UM DOM NATURAL
 
-Escutar com qualidade clínica é uma habilidade construída, não um dom. Significa ouvir o que é dito, o que não é dito, o que o corpo comunica e o que o silêncio carrega. Winnicott chamaria de "holding" — uma presença que sustenta sem invadir. Para muitos pacientes, ser realmente escutado pela primeira vez é a intervenção mais poderosa da terapia.
+Ficar quieto enquanto o paciente fala é o ponto de partida, não a chegada. Escuta ativa é uma postura intencional: você ouve o que é dito, o que não é dito, o que o corpo comunica e o que o silêncio carrega. Para muitos pacientes, ser verdadeiramente ouvido pela primeira vez já é, em si, uma intervenção terapêutica.
 
-2. TIPOS DE SILÊNCIO NA SESSÃO E O QUE CADA UM PEDE
+2. OS TIPOS DE SILÊNCIO E O QUE CADA UM PEDE
 
-Silêncio de processamento: o paciente está pensando — respeite, não preencha. Silêncio de resistência: o paciente trava porque o assunto ameaça o self — nomeie suavemente: "Percebo que ficou mais difícil falar." Silêncio de vergonha: o paciente não continua porque sente que irá se expor — valide antes de prosseguir.
+Silêncio de processamento: o paciente está pensando — não preencha, aguarde. Silêncio de resistência: ele trava porque o assunto ameaça algo — nomeie com suavidade: "Percebo que ficou mais difícil falar aqui." Silêncio de vergonha: ele para porque sente que irá se expor demais — valide antes de continuar. Cada silêncio pede uma resposta diferente.
 
-3. FERRAMENTAS PRÁTICAS DE ESCUTA ATIVA
+3. FERRAMENTAS CONCRETAS DE ESCUTA ATIVA
 
-Parafraseamento: devolva o que foi dito com suas próprias palavras. Reflexo emocional: nomeie a emoção que percebe no paciente. Escuta do corpo: observe tensão nos ombros, respiração presa, mudança de postura. Silêncio sustentado: aguarde. O próximo nível do paciente muitas vezes chega depois do desconforto do silêncio.
+Parafraseamento: devolva o que o paciente disse com suas próprias palavras — isso mostra que você realmente ouviu. Reflexo emocional: nomeie a emoção que percebe ("você fala disso com raiva"). Escuta do corpo: observe tensão nos ombros, respiração presa, postura fechada — o corpo conta o que as palavras evitam. Silêncio sustentado: espere. O próximo nível do paciente frequentemente vem após o desconforto da pausa.
 
 4. QUANDO O PACIENTE FALA MUITO SEM DIZER NADA
 
-O paciente que fala continuamente e de forma circular está, frequentemente, evitando o ponto real. Não interrompa para fazer perguntas — observe o padrão. Quando a abertura surgir, use: "De tudo que você disse, o que pesa mais?" Essa pergunta corta a defesa sem criar resistência.
+O paciente que fala de forma circular e acelerada está, em geral, evitando o ponto real. Não interrompa para fazer perguntas — observe o padrão. Quando surgir uma brecha, use: "De tudo que você disse, o que pesa mais?" Essa pergunta corta a defesa sem criar resistência e direciona o trabalho para o que realmente importa.
 
-5. A ESCUTA KOHUTIANA: ESPELHAR SEM SE PERDER
+5. A PRESENÇA DO TERAPEUTA COMO CAMPO
 
-Kohut ensinou que o espelhamento genuíno — o paciente se sentir visto e compreendido — fortalece o self. Mas isso exige que o terapeuta esteja presente como pessoa distinta, não como extensão do paciente. Você escuta profundamente e permanece você mesmo. Sem isso, a escuta vira fusão.
+Lewin nos ensinou que o estado interno do terapeuta não é neutro — ele é parte da sessão. Um terapeuta ansioso produz um campo ansioso. Um terapeuta genuinamente presente cria um campo de segurança que o paciente absorve antes de qualquer técnica ser usada. Sua regulação interna é a primeira intervenção de toda sessão.
 
-6. EXERCÍCIO CLÍNICO PARA DESENVOLVER A ESCUTA
+6. EXERCÍCIO PRÁTICO PARA DESENVOLVER A ESCUTA
 
-Antes de cada sessão: 2 minutos de silêncio intencional. Esvazie a agenda mental. Pergunte-se: "Estou disponível para esse paciente agora?" Durante a sessão: conte mentalmente até 5 antes de responder qualquer coisa. Essa pausa muda a qualidade de toda intervenção subsequente.`,
+Antes de cada sessão, reserve 2 minutos: sente, respire, esvazie a agenda mental. Durante a sessão, conte mentalmente até 5 antes de responder qualquer coisa. Essa pausa simples muda radicalmente a qualidade de toda intervenção que vem depois — porque você responde ao que o paciente disse, não ao que você já estava pensando em dizer.`,
     },
     {
       id: 'mod2-a2',
@@ -46,27 +46,27 @@ Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 
 1. A ANSIEDADE DO TERAPEUTA É PARTE DA SESSÃO
 
-Lewin nos ensinou que o campo do terapeuta influencia o campo do paciente. Um terapeuta ansioso produz um campo ansioso. O paciente, muitas vezes sem palavras, absorve o seu estado interno. Antes de qualquer técnica, você precisa aprender a reconhecer e manejar sua própria ansiedade em sessão.
+O campo do terapeuta influencia o campo do paciente — sempre. Um terapeuta ansioso produz um campo ansioso sem dizer uma palavra. O paciente absorve esse estado e frequentemente o interpreta como sinal de que "algo está muito errado comigo." Antes de qualquer técnica, você precisa aprender a reconhecer e manejar o que acontece em você durante a sessão.
 
-2. DE ONDE VEM A ANSIEDADE DO TERAPEUTA
+2. DE ONDE VEM A ANSIEDADE DO TERAPEUTA — NA PRÁTICA
 
-Medo de errar: pressão por ter a resposta certa. Ressonância com o conteúdo: o material do paciente ativa algo seu. Pacientes desafiadores: transferências intensas, ameaças ao setting, comportamentos imprevisíveis. Identificar a fonte já é metade do caminho para o manejo.
+Medo de errar: pressão interna por ter sempre a resposta certa. Ressonância com o conteúdo: o material do paciente ativa algo da sua própria história. Pacientes desafiadores: transferências intensas, comportamentos imprevisíveis, ameaças ao vínculo. Identificar a fonte da sua ansiedade não é fraqueza — é dado clínico sobre o campo que você está manejando.
 
 3. SINAIS DE QUE VOCÊ ESTÁ ANSIOSO EM SESSÃO
 
-Você começa a falar mais do que o usual. Você oferece interpretações prematuramente para fechar o desconforto. Você muda de assunto quando o tema fica pesado. Você sente urgência de "ajudar" antes de compreender. Esses são comportamentos de evitação do terapeuta — e o paciente percebe.
+Você começa a falar mais do que o usual. Oferece interpretações apressadas para fechar o desconforto. Muda de assunto quando o tema fica pesado. Sente urgência de "ajudar" antes de compreender. Esses são comportamentos de evitação — e o paciente percebe mesmo que não os nomeie.
 
-4. TÉCNICAS DE AUTORREGULAÇÃO DURANTE A SESSÃO
+4. COMO SE REGULAR DURANTE A SESSÃO SEM QUE O PACIENTE NOTE
 
-Âncora corporal: coloque os dois pés no chão, sinta o peso da cadeira — isso ativa o sistema parassimpático em segundos. Respiração diafragmática discreta: inspire pelo nariz em 4 tempos, expire lentamente. Postura de abertura: ombros relaxados, postura levemente inclinada para frente — corpo influencia estado interno.
+Âncora corporal: coloque os dois pés no chão e sinta o peso da cadeira — isso ativa o sistema nervoso parassimpático em segundos. Respiração discreta: inspire lentamente pelo nariz, expire com calma. Postura de abertura: ombros relaxados, levemente inclinado para frente. O corpo influencia o estado interno mais rápido do que qualquer pensamento racional.
 
-5. CONTRATRANSFERÊNCIA COMO DADO CLÍNICO
+5. CONTRATRANSFERÊNCIA: O QUE O SEU DESCONFORTO ESTÁ DIZENDO
 
-Sua ansiedade diante de um paciente específico é informação sobre o campo desse paciente. O paciente que te deixa com urgência de resolver provavelmente usa o Controle para pressionar os outros. O paciente que te deixa com sensação de inutilidade provavelmente faz isso com todos. Nomeie internamente — e use no trabalho clínico.
+A ansiedade que você sente diante de um paciente específico é informação clínica. O paciente que te deixa com urgência de resolver provavelmente pressiona todos ao seu redor da mesma forma. O que te deixa com sensação de inutilidade provavelmente faz isso com todo mundo. Não descarte o que você sente — use como dado para entender o campo do paciente.
 
-6. SUPERVISÃO COMO FERRAMENTA DE REGULAÇÃO ESTRUTURAL
+6. SUPERVISÃO É REGULAÇÃO ESTRUTURAL — NÃO É OPCIONAL
 
-Nenhuma técnica substitui supervisão regular. Casos que te perturbam cronicamente precisam de espaço de elaboração fora da sessão. Supervisão não é sinal de fraqueza — é o holding do terapeuta (Winnicott). Sem isso, o acúmulo de ressonâncias não processadas compromete sua presença com todos os pacientes.`,
+Nenhuma técnica substitui supervisão regular. Casos que te perturbam de forma crônica precisam de espaço de elaboração fora da sessão. Frankl diria: sem autoconhecimento, o terapeuta atende a si mesmo através do paciente — e isso é o contrário da cura. Cuide do seu campo para poder cuidar do campo do outro.`,
     },
     {
       id: 'mod2-a3',
@@ -75,91 +75,91 @@ Nenhuma técnica substitui supervisão regular. Casos que te perturbam cronicame
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. O AMBIENTE TERAPÊUTICO COMEÇA NA RECEPÇÃO
+1. O AMBIENTE TERAPÊUTICO COMEÇA ANTES DA PRIMEIRA TÉCNICA
 
-Winnicott chamou de "holding environment" — o conjunto de condições que permitem ao paciente existir e se expressar sem risco. Isso começa antes da primeira palavra técnica: como você recebe o paciente, o tom da sua voz, o espaço físico, a previsibilidade do setting. Para muitos pacientes, o ambiente é a primeira coisa que comunica "você está seguro aqui."
+Winnicott chamou de "holding environment" — o conjunto de condições que permite ao paciente existir e se expressar sem risco. Isso começa antes de qualquer palavra técnica: como você recebe o paciente, o tom da sua voz, a organização do espaço, a previsibilidade do setting. Para muitos pacientes, esse ambiente é a primeira experiência real de segurança que já tiveram com um adulto.
 
 2. A PRIMEIRA FRASE QUE ACOLHE SEM DIMINUIR
 
-Evite aberturas que já colocam o paciente na posição de problema: "Então, me conta o que está errado?" Prefira: "O que te trouxe aqui?" ou "Como posso te ajudar?" — e então ouça sem interromper os primeiros 3 a 5 minutos. Essa escuta inicial comunica mais do que qualquer técnica.
+Evite aberturas que já colocam o paciente na posição de "caso": "Então, me conta o que está errado com você?" Prefira: "O que te trouxe aqui?" ou "Como posso te ajudar?" — e depois ouça sem interromper os primeiros minutos. Essa escuta inicial comunica mais do que qualquer técnica: "você tem espaço aqui."
 
 3. VALIDAÇÃO COMO FERRAMENTA DE SEGURANÇA IMEDIATA
 
-Validar não é concordar — é reconhecer que a experiência do paciente faz sentido dado o que ele viveu. "Faz todo sentido você estar assim" ou "É compreensível que isso doa tanto" reduz a meta-ansiedade imediatamente. Kohut: o mirroring empático, mesmo que breve, já começa a fortalecer o self.
+Validar não é concordar — é reconhecer que a experiência do paciente faz sentido dado o que ele viveu. "Faz todo sentido você estar assim" ou "É compreensível que isso doa tanto" reduz a meta-ansiedade — a ansiedade sobre ter ansiedade — imediatamente. Esse reconhecimento abre o campo para o trabalho real.
 
-4. COMBINADOS PRÁTICOS QUE CRIAM PREVISIBILIDADE
+4. COMBINADOS QUE CRIAM PREVISIBILIDADE
 
-Explique como funcionam as sessões: tempo, frequência, confidencialidade, o que você espera do paciente e o que ele pode esperar de você. Previsibilidade é segurança — especialmente para pacientes com histórico de ambientes imprevisíveis. Um contrato claro, mesmo que informal, é holding em forma de estrutura.
+Explique como funcionam as sessões: tempo, frequência, sigilo, o que você espera do processo e o que o paciente pode esperar de você. Previsibilidade é segurança — especialmente para pacientes com histórico de ambientes caóticos ou imprevisíveis. Um contrato claro, mesmo que informal, é estrutura de suporte antes de qualquer intervenção.
 
 5. COMO MANEJAR O PACIENTE QUE NÃO CONFIA DE IMEDIATO
 
-Alguns pacientes chegam em defesa total — monossilábicos, desconfiados, testando você. Não force a abertura. Nomeie: "Percebo que pode ser difícil falar com alguém que você acabou de conhecer — isso é completamente compreensível." Essa validação da desconfiança é paradoxalmente o que começa a dissolvê-la.
+Alguns pacientes chegam fechados — monossilábicos, desconfiados, testando você. Não force a abertura. Nomeie: "Percebo que pode ser difícil falar com alguém que você acabou de conhecer — isso é completamente compreensível." Validar a desconfiança é, paradoxalmente, o que começa a dissolvê-la. Você está mostrando que enxerga o paciente, não apenas o problema.
 
 6. O QUE NUNCA FAZER NA PRIMEIRA SESSÃO
 
-Não dê diagnósticos prematuros. Não ofereça interpretações profundas antes de aliança estabelecida. Não demonstre pressa. Não minimize a queixa. Não tente impressionar com conhecimento. A primeira sessão é sobre fazer o paciente sentir que voltará — nada mais, nada menos.`,
+Não ofereça diagnósticos prematuros. Não dê interpretações profundas antes de aliança estabelecida. Não demonstre pressa para chegar a conclusões. Não minimize a queixa do paciente. A primeira sessão tem um único objetivo real: fazer com que o paciente queira voltar. Tudo que não serve a isso pode esperar.`,
     },
     {
       id: 'mod2-a4',
-      title: 'Aula 4 — Rupturas na Aliança: O Sinal Invisível e o Reparo',
-      content: `RUPTURAS NA ALIANÇA: O SINAL INVISÍVEL E O REPARO
+      title: 'Aula 4 — Rupturas na Aliança: Reconhecer o Sinal Invisível e Reparar',
+      content: `RUPTURAS NA ALIANÇA: RECONHECER O SINAL INVISÍVEL E REPARAR
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. RUPTURAS SÃO INEVITÁVEIS — O PROBLEMA É NÃO PERCEBÊ-LAS
+1. RUPTURAS SÃO INEVITÁVEIS — O PERIGO É NÃO PERCEBÊ-LAS
 
-Toda aliança terapêutica real passa por rupturas — momentos em que o paciente se sente não compreendido, julgado, abandonado ou decepcionado pelo terapeuta. Terapeutas iniciantes temem esses momentos. Kohut identificou-os como as oportunidades mais poderosas de cura — porque a maioria dos pacientes nunca viveu um conflito reparado com honestidade e cuidado.
+Toda aliança terapêutica real passa por rupturas — momentos em que o paciente se sente não compreendido, julgado ou decepcionado. Terapeutas iniciantes temem esses momentos. Kohut identificou-os como as oportunidades mais poderosas de cura — porque a maioria dos pacientes nunca viveu um conflito que foi reparado com honestidade e cuidado.
 
 2. OS SINAIS INVISÍVEIS DE RUPTURA
 
-O paciente que cancela sem explicação clara. O que chega mais quieto do que o usual. O que responde com "tudo bem" em tom de quem não está bem. O que para de trazer assuntos pesados. O que começa a chegar atrasado. Esses são sinais de afastamento — e a responsabilidade de perceber é do terapeuta, não do paciente.
+O paciente cancela sem explicação clara. Chega mais quieto do que o usual. Responde "tudo bem" em tom de quem não está bem. Para de trazer assuntos pesados. Começa a chegar atrasado. Esses são sinais de afastamento — e a responsabilidade de perceber é sua, não do paciente. Se você esperar ele trazer, provavelmente o processo vai terminar antes.
 
 3. COMO NOMEAR A RUPTURA SEM CRIAR MAIS TENSÃO
 
-Não espere o paciente trazer. Abra você: "Percebo que algo mudou entre nós nas últimas sessões — me ajuda a entender o que aconteceu?" Essa frase — dita sem defensividade — frequentemente libera o que estava represado. A maioria dos pacientes fica aliviada de poder falar sobre isso.
+Não espere o paciente trazer. Abra você: "Percebo que algo mudou entre nós nas últimas sessões — me ajuda a entender o que aconteceu?" Dito sem defensividade e com genuíno interesse, essa frase libera o que estava represado. A maioria dos pacientes fica aliviada de poder falar sobre isso — porque nunca imaginou que seria possível.
 
-4. O REPARO: O QUE FAZER QUANDO O ERRO FOI SEU
+4. QUANDO O ERRO FOI SEU — O QUE FAZER
 
-Se você disse algo insensível, interpretou de forma equivocada ou falhou na presença: reconheça diretamente. "Acho que fui insensível naquela sessão — lamento." Sem rodeios, sem justificativas longas. Essa simplicidade é extraordinariamente poderosa. O paciente aprende, na experiência, que relações podem sobreviver ao erro.
+Se você disse algo insensível, interpretou de forma equivocada ou simplesmente não esteve presente: reconheça diretamente. "Acho que fui insensível naquele momento — lamento." Sem rodeios, sem justificativas longas. Essa simplicidade é extraordinariamente poderosa. O paciente aprende — na experiência, não na teoria — que relações podem sobrevivir ao erro.
 
 5. O REPARO COMO EXPERIÊNCIA EMOCIONAL CORRETIVA
 
-Lewin: o campo relacional se reconstrói após a perturbação quando há força restauradora suficiente. O terapeuta que repara com honestidade oferece ao paciente uma experiência que muitos nunca tiveram — especialmente aqueles com histórico de vínculos onde o erro resultava em abandono ou punição.
+O terapeuta que repara com honestidade oferece ao paciente algo que muitos nunca tiveram: a experiência de que um conflito não precisa terminar em abandono ou punição. Isso não é só técnica — é uma nova referência relacional que o paciente vai carregar para todos os seus vínculos.
 
-6. COMO FORTALECER A ALIANÇA PREVENTIVAMENTE
+6. PREVENÇÃO: COMO CUIDAR DA ALIANÇA ANTES DA RUPTURA
 
-Não espere rupturas para trabalhar a aliança. Pergunte periodicamente: "Como você está se sentindo nesse processo? Tem algo que eu poderia fazer diferente?" Isso comunica que você está atento ao vínculo — e previne afastamentos silenciosos que terminam em abandono do processo.`,
+Não espere a ruptura para trabalhar o vínculo. Pergunte periodicamente: "Como você está se sentindo nesse processo? Tem algo que eu poderia fazer diferente?" Isso comunica que você está atento ao que acontece entre vocês — e previne os afastamentos silenciosos que terminam em abandono do processo sem que ninguém entenda por quê.`,
     },
     {
       id: 'mod2-a5',
-      title: 'Aula 5 — Técnicas de Reparo Imediato Após Falhas Clínicas',
-      content: `TÉCNICAS DE REPARO IMEDIATO APÓS FALHAS CLÍNICAS
+      title: 'Aula 5 — Encerramento de Sessão e de Processo: Como Terminar Bem',
+      content: `ENCERRAMENTO DE SESSÃO E DE PROCESSO: COMO TERMINAR BEM
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. FALHA CLÍNICA NÃO É SINÔNIMO DE MÁ PRÁTICA
+1. O ENCERRAMENTO DE SESSÃO É UMA INTERVENÇÃO — NÃO UMA FORMALIDADE
 
-Todo terapeuta falha. A questão não é se você vai falhar — é como você responde quando falha. Winnicott chamou de "suficientemente bom" o terapeuta que comete erros e os repara com consistência. O paciente não precisa de um terapeuta perfeito — precisa de um terapeuta que demonstre que o erro não é o fim do vínculo.
+Um encerramento bem feito consolida tudo que foi trabalhado. Um encerramento abrupto pode desfazer boa parte do que foi construído nos 50 minutos anteriores. Winnicott chamaria de "soltar sem abandonar" — o paciente precisa sair sentindo que o terapeuta continua presente mesmo quando não está fisicamente. Isso se constrói sessão a sessão.
 
-2. OS TIPOS DE FALHA MAIS COMUNS NA CLÍNICA
+2. ESTRUTURA PRÁTICA DOS ÚLTIMOS 5 MINUTOS
 
-Interpretação prematura: você ofereceu sentido antes de o paciente estar pronto para receber. Falta de sincronia emocional: você respondeu de forma técnica quando o paciente precisava de acolhimento. Limite impreciso: você foi rígido demais ou flexível demais. Ausência de presença: você estava fisicamente presente mas mentalmente ausente. Cada uma exige um reparo diferente.
+Sinalização: "Vamos ter mais uns 5 minutos" — prepare o paciente, não corte abruptamente. Consolidação: "Do que conversamos hoje, o que ficou mais com você?" — isso ancora o processamento e revela o que realmente tocou. Tarefa experiencial quando pertinente: não lição de casa teórica, mas uma pequena observação da vida real para a semana. Cuidado na saída: se o paciente abriu algo muito pesado, não o deixe sair sem ancoragem.
 
-3. REPARO IMEDIATO DENTRO DA SESSÃO
+3. COMO SABER SE O PROCESSO ESTÁ PRONTO PARA ENCERRAR
 
-Quando perceber a falha ainda na sessão, não espere. Interrompa o fluxo suavemente: "Espera — acho que o que eu disse não chegou do jeito certo. Vou tentar de novo." Isso modela para o paciente que corrigir o curso é possível e saudável — não é derrota, é responsabilidade.
+O paciente chegou aos objetivos que trouxe. Funciona bem no cotidiano sem depender das sessões para se regular. Consegue identificar e usar seus próprios recursos. A relação terapêutica ficou mais igualitária — menos transferência intensa, mais colaboração. Quando você percebe esses sinais, é hora de começar a trabalhar o encerramento conscientemente.
 
-4. REPARO NA SESSÃO SEGUINTE
+4. COMO CONDUZIR O ENCERRAMENTO DO PROCESSO
 
-Se a falha só ficou clara depois: comece a próxima sessão nomeando. "Fiquei pensando na nossa última conversa e quero voltar a algo que disse — sinto que não cheguei da forma certa." Esse cuidado retroativo é raro na experiência da maioria dos pacientes — e exatamente por isso tem tanto impacto no vínculo.
+Não encerre de uma semana para outra. Planeje de 4 a 8 semanas de encerramento consciente. Revise o percurso com o paciente: "Lembra como você estava quando começou? O que mudou?" Esse olhar para trás consolida a identidade transformada — e o paciente precisa ouvir de você o que ele conquistou.
 
-5. QUANDO O PACIENTE NÃO ACEITA O REPARO IMEDIATAMENTE
+5. A TRISTEZA DO ENCERRAMENTO É SAUDÁVEL — NÃO A APRESSE
 
-Alguns pacientes, especialmente os com padrões de desconfiança instalados, não conseguem receber o reparo de imediato. Não force. Ofereça, respeite o ritmo, e continue presente. Kohut: a consistência ao longo do tempo é o que reconstrói. O reparo não precisa ser aceito hoje para ser valioso amanhã.
+Encerrar algo significativo dói um pouco — e isso é correto. Não minimize, não apresse. O paciente que sente a perda do processo está sentindo que o que aconteceu aqui teve valor. Kohut diria: a elaboração saudável dessa perda é parte do trabalho, não um inconveniente do fim.
 
-6. O QUE O REPARO ENSINA AO PACIENTE SOBRE RELAÇÕES
+6. DEIXE A PORTA ABERTA SEM CRIAR DEPENDÊNCIA
 
-Cada reparo bem conduzido é uma aula experiencial: conflito não precisa destruir o vínculo. Pessoas que se importam cometem erros e continuam se importando. Frankl: encontrar sentido numa relação que sobreviveu ao erro é uma das experiências mais transformadoras que um ser humano pode ter — e você pode ser o primeiro a oferecer isso.`,
+"Se você precisar voltar em algum momento, estarei aqui." Essa frase simples é o holding de Winnicott em sua forma mais pura — suporte que não aprisiona. Frankl completaria: o paciente que sai com recursos internos consolidados não precisa voltar, mas sabe que pode. Essa distinção é a diferença entre autonomia e abandono.`,
     },
   ],
 };
