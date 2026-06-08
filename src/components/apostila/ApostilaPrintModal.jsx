@@ -1,91 +1,101 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Printer, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image } from 'lucide-react';
 import { toast } from 'sonner';
-import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-// ─── Background & pixel geometry (exact, as specified) ───────────────────────
-const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/ac615f227_Fundo_Apostila.png';
+// ─── Background (new, exact pixel spec) ──────────────────────────────────────
+const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
 
-// Full image dimensions (px)
+// Full image canvas (px)
 const IMG_W = 2250;
 const IMG_H = 1591;
 
-// Grey content square inside the image
+// Grey content square
 const SQUARE_W    = 2168;
 const SQUARE_H    = 1178;
-const SQUARE_LEFT = 41;          // (2250 - 2168) / 2
-const SQUARE_TOP  = 207;         // (1591 - 1178) / 2  →  206.5 → 207
+const SQUARE_LEFT = 41;   // (2250 - 2168) / 2
+const SQUARE_TOP  = 207;  // (1591 - 1178) / 2
 
-// "APOSTILA DE ESTUDOS" heading is already baked into the BG image.
-// It ends at approx Y=282 (measured: title top ≈235, height 47 → 235+47=282).
-// We add a small safety gap of 8px.
-const TITLE_BOTTOM_Y = 282 + 8;  // 290px from image top → content starts here
+// "APOSTILA DE ESTUDOS" baked into BG ends at ~282px from image top.
+// We add a small title block (lesson name + chapter + divider) in a 72px zone.
+const HEADER_ZONE_H = 72;
+const CONTENT_TOP   = SQUARE_TOP + HEADER_ZONE_H; // 279
 
-// Two equal columns, side-by-side, no gap, centred inside the square
-// Inner horizontal margin = (2168 - 2 × 1053) / 2 = 31px per side
-const INNER_MARGIN = 31;
-const COL_W        = 1053;
-const COL_GAP      = 0;          // columns touch; add gap by reducing col widths if desired
-const COL_LEFT_X   = SQUARE_LEFT + INNER_MARGIN;          // 72 from img left
-const COL_RIGHT_X  = COL_LEFT_X + COL_W;                  // 1125 from img left
-const COL_TOP_Y    = TITLE_BOTTOM_Y;                       // 290 from img top
-const COL_H        = SQUARE_TOP + SQUARE_H - COL_TOP_Y;   // 207+1178-290 = 1095px
+// Content area height (usable for text)
+const CONTENT_H = SQUARE_H - HEADER_ZONE_H; // 1106px
 
-// Typography — tuned for COL_W=1053 at 96dpi render
-const FONT_SIZE   = 17;           // px
-const LINE_HEIGHT = 1.9;          // ratio
-const LINE_PX     = Math.round(FONT_SIZE * LINE_HEIGHT);  // ~32px
-// Two columns combined lines per page
-const CHARS_PER_LINE  = Math.floor(COL_W / (FONT_SIZE * 0.50));   // ≈123 chars
-const LINES_PER_COL   = Math.floor(COL_H / LINE_PX);              // ≈34 lines
-const CHARS_PER_PAGE  = CHARS_PER_LINE * LINES_PER_COL * 2;       // ×2 cols
+// ── Two columns with 10% central gap ─────────────────────────────────────────
+// Total usable width inside square (minus 31px inner margin each side)
+const INNER_MARGIN   = 31;
+const USABLE_W       = SQUARE_W - INNER_MARGIN * 2; // 2106px
+const CENTER_GAP     = Math.round(USABLE_W * 0.10);  // 10% = ~211px
+const COL_W          = Math.round((USABLE_W - CENTER_GAP) / 2); // ~948px
+const COL_LEFT_X     = SQUARE_LEFT + INNER_MARGIN;          // 72
+const COL_RIGHT_X    = COL_LEFT_X + COL_W + CENTER_GAP;    // 72 + 948 + 211 = 1231
 
-// ─── Paginator ───────────────────────────────────────────────────────────────
-function paginateContent(content) {
+// Typography tuned to COL_W≈948 at IMG_W=2250
+const FONT_SIZE   = 18;    // px
+const LINE_HEIGHT = 1.85;
+const LINE_PX     = Math.round(FONT_SIZE * LINE_HEIGHT); // ~33px
+const MAX_LINES   = 20;
+// Max chars per column: ~20 lines at ~52 chars/line (18px Georgia, col 948px)
+const CHARS_PER_LINE = Math.floor(COL_W / (FONT_SIZE * 0.515)); // ~102
+const MAX_CHARS_PER_COL = CHARS_PER_LINE * MAX_LINES; // ~2040  (≥1700 spec)
+
+// Each page shows exactly 2 topics side-by-side (1 per column)
+// paginateTopics splits lesson.content into topics of ~1700 chars each
+// and pairs them: [[topic0, topic1], [topic2, topic3], [topic4, topic5]]
+
+/**
+ * Split content into 6 topics of ≥1700 chars, preserving paragraph breaks.
+ * Returns array of strings (up to 6).
+ */
+function splitIntoTopics(content, targetChars = 1700) {
   if (!content || !content.trim()) {
-    return ['Conteúdo desta aula será disponibilizado em breve.'];
+    return Array(6).fill('Conteúdo desta aula será disponibilizado em breve.');
   }
 
-  const paragraphs = content.split(/\n+/).map(p => p.trim()).filter(Boolean);
-  const pages = [];
-  let current = '';
+  // Split by double-newline (paragraphs) or by topic headings (numbered / bolded lines)
+  const paragraphs = content.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+
+  // Try to form 6 chunks of roughly equal size
+  const totalChars = content.replace(/\s+/g, ' ').length;
+  const chunkSize  = Math.max(targetChars, Math.ceil(totalChars / 6));
+
+  const topics = [];
+  let current  = '';
 
   for (const para of paragraphs) {
     const candidate = current ? current + '\n\n' + para : para;
-    if (candidate.length <= CHARS_PER_PAGE) {
-      current = candidate;
+    // Start a new topic when we've accumulated enough and haven't hit 6 yet
+    if (current.length >= chunkSize && topics.length < 5) {
+      topics.push(current.trim());
+      current = para;
     } else {
-      if (current) {
-        pages.push(current);
-        current = para.length <= CHARS_PER_PAGE ? para : '';
-        // Hard-split oversized paragraph
-        if (!current) {
-          let rem = para;
-          while (rem.length > 0) {
-            pages.push(rem.slice(0, CHARS_PER_PAGE));
-            rem = rem.slice(CHARS_PER_PAGE);
-          }
-        }
-      } else {
-        // First item already too big → hard split
-        let rem = para;
-        while (rem.length > 0) {
-          pages.push(rem.slice(0, CHARS_PER_PAGE));
-          rem = rem.slice(CHARS_PER_PAGE);
-        }
-      }
+      current = candidate;
     }
   }
-  if (current) pages.push(current);
-  return pages.length ? pages : [content];
+  if (current.trim()) topics.push(current.trim());
+
+  // Ensure exactly 6 topics (pad or merge)
+  while (topics.length < 6) topics.push('');
+  // If we ended up with more than 6, merge excess into topic 6
+  if (topics.length > 6) {
+    const extra = topics.splice(6);
+    topics[5] = topics[5] + '\n\n' + extra.join('\n\n');
+  }
+
+  return topics;
 }
 
-// ─── Single page renderer ────────────────────────────────────────────────────
-function ApostilaPageView({ lesson, chapterTitle, content, pageNum, totalPages, pageRef }) {
+// ─── Single page (2 topics side by side) ─────────────────────────────────────
+const ApostilaPage = React.forwardRef(function ApostilaPage(
+  { lesson, chapterTitle, topicLeft, topicRight, pageNum, totalPages },
+  ref
+) {
   return (
     <div
-      ref={pageRef}
+      ref={ref}
       style={{
         position: 'relative',
         width: IMG_W,
@@ -93,129 +103,10 @@ function ApostilaPageView({ lesson, chapterTitle, content, pageNum, totalPages, 
         overflow: 'hidden',
         background: '#fff',
         boxSizing: 'border-box',
+        flexShrink: 0,
       }}
     >
-      {/* Full-bleed background */}
-      <img
-        src={APOSTILA_BG}
-        alt=""
-        crossOrigin="anonymous"
-        draggable={false}
-        style={{
-          position: 'absolute',
-          top: 0, left: 0,
-          width: IMG_W, height: IMG_H,
-          objectFit: 'fill',          // exact pixel match, no scaling
-          pointerEvents: 'none',
-          zIndex: 0,
-          display: 'block',
-        }}
-      />
-
-      {/* Lesson title overlay — sits just above the content area inside the grey square */}
-      <div style={{
-        position: 'absolute',
-        top: SQUARE_TOP + 4,           // just inside the grey square
-        left: SQUARE_LEFT,
-        width: SQUARE_W,
-        zIndex: 2,
-        textAlign: 'center',
-        pointerEvents: 'none',
-      }}>
-        <div style={{
-          fontFamily: "'Cinzel', 'Trajan Pro', Georgia, serif",
-          fontSize: 20,
-          fontWeight: 700,
-          color: '#1a2d5a',
-          letterSpacing: 3,
-          textTransform: 'uppercase',
-        }}>
-          {lesson.title}
-          {pageNum > 1 && (
-            <span style={{ fontSize: 13, fontWeight: 400, color: '#7a6a3a', letterSpacing: 1, marginLeft: 14 }}>
-              · p. {pageNum}
-            </span>
-          )}
-        </div>
-        <div style={{
-          fontFamily: "Georgia, serif",
-          fontSize: 13,
-          color: '#7a6a3a',
-          letterSpacing: 3,
-          textTransform: 'uppercase',
-          marginTop: 3,
-        }}>
-          {chapterTitle}
-        </div>
-        {/* gold divider under lesson title */}
-        <div style={{ width: 90, height: 2, background: '#c9a84c', margin: '6px auto 0' }} />
-      </div>
-
-      {/* ── Two columns of content ── */}
-      {/* Left column */}
-      <div style={{
-        position: 'absolute',
-        top: COL_TOP_Y,
-        left: COL_LEFT_X,
-        width: COL_W,
-        height: COL_H,
-        overflow: 'hidden',
-        zIndex: 2,
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: FONT_SIZE,
-        lineHeight: LINE_HEIGHT,
-        color: '#1a2d5a',
-        textAlign: 'justify',
-        letterSpacing: 0.2,
-        hyphens: 'auto',
-        wordBreak: 'break-word',
-        whiteSpace: 'pre-wrap',
-      }}>
-        {content}
-      </div>
-
-      {/* Right column — CSS column-count trick: we render full text in left col
-          using CSS multi-column so text flows automatically into right col.
-          We achieve this by making the content container span both columns. */}
-
-      {/* Page number badge */}
-      <div style={{
-        position: 'absolute',
-        bottom: SQUARE_TOP - 10,    // inside footer area of bg image
-        right: SQUARE_LEFT + 20,
-        zIndex: 3,
-        fontFamily: "Georgia, serif",
-        fontSize: 12,
-        color: '#7a6a3a',
-        letterSpacing: 1,
-      }}>
-        {pageNum} / {totalPages}
-      </div>
-    </div>
-  );
-}
-
-// ─── Two-column aware page renderer (true CSS columns) ───────────────────────
-function ApostilaPageViewCols({ lesson, chapterTitle, content, pageNum, totalPages, pageRef }) {
-  // The content box spans from left of col1 to right of col2
-  const contentBoxLeft = COL_LEFT_X;
-  const contentBoxWidth = COL_W * 2 + COL_GAP;  // 2106px
-  const contentBoxTop = COL_TOP_Y;
-  const contentBoxHeight = COL_H;
-
-  return (
-    <div
-      ref={pageRef}
-      style={{
-        position: 'relative',
-        width: IMG_W,
-        height: IMG_H,
-        overflow: 'hidden',
-        background: '#fff',
-        boxSizing: 'border-box',
-      }}
-    >
-      {/* Background */}
+      {/* Full-bleed background — objectFit:fill keeps exact pixel alignment */}
       <img
         src={APOSTILA_BG}
         alt=""
@@ -232,34 +123,40 @@ function ApostilaPageViewCols({ lesson, chapterTitle, content, pageNum, totalPag
         }}
       />
 
-      {/* Lesson title — inside grey square, above content */}
+      {/* ── Header block (inside grey square, above text) ── */}
       <div style={{
         position: 'absolute',
-        top: SQUARE_TOP + 6,
+        top: SQUARE_TOP + 4,
         left: SQUARE_LEFT,
         width: SQUARE_W,
+        height: HEADER_ZONE_H - 4,
         zIndex: 2,
-        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingBottom: 6,
         pointerEvents: 'none',
       }}>
         <div style={{
           fontFamily: "'Cinzel', Georgia, serif",
-          fontSize: 21,
+          fontSize: 19,
           fontWeight: 700,
           color: '#1a2d5a',
           letterSpacing: 3,
           textTransform: 'uppercase',
+          lineHeight: 1.2,
         }}>
           {lesson.title}
           {pageNum > 1 && (
-            <span style={{ fontSize: 13, fontWeight: 400, color: '#7a6a3a', marginLeft: 14 }}>
-              · p. {pageNum}
+            <span style={{ fontSize: 12, fontWeight: 400, color: '#7a6a3a', marginLeft: 12 }}>
+              · Parte {pageNum}
             </span>
           )}
         </div>
         <div style={{
-          fontFamily: "Georgia, serif",
-          fontSize: 13,
+          fontFamily: 'Georgia, serif',
+          fontSize: 11,
           color: '#7a6a3a',
           letterSpacing: 3,
           textTransform: 'uppercase',
@@ -267,42 +164,60 @@ function ApostilaPageViewCols({ lesson, chapterTitle, content, pageNum, totalPag
         }}>
           {chapterTitle}
         </div>
-        <div style={{ width: 90, height: 2, background: '#c9a84c', margin: '5px auto 0' }} />
+        <div style={{ width: 80, height: 2, background: '#c9a84c', marginTop: 5 }} />
       </div>
 
-      {/* ── Content box spanning both columns ── */}
+      {/* ── Left column (topic A) ── */}
       <div style={{
         position: 'absolute',
-        top: contentBoxTop,
-        left: contentBoxLeft,
-        width: contentBoxWidth,
-        height: contentBoxHeight,
+        top: CONTENT_TOP,
+        left: COL_LEFT_X,
+        width: COL_W,
+        height: CONTENT_H,
         overflow: 'hidden',
         zIndex: 2,
-        // CSS two-column layout
-        columnCount: 2,
-        columnGap: COL_GAP,
-        columnFill: 'auto',
         fontFamily: "Georgia, 'Times New Roman', serif",
         fontSize: FONT_SIZE,
         lineHeight: LINE_HEIGHT,
         color: '#1a2d5a',
         textAlign: 'justify',
-        letterSpacing: 0.2,
+        letterSpacing: 0.3,
         hyphens: 'auto',
         wordBreak: 'break-word',
         whiteSpace: 'pre-wrap',
       }}>
-        {content}
+        {topicLeft || ''}
       </div>
 
-      {/* Page indicator */}
+      {/* ── Right column (topic B) ── */}
       <div style={{
         position: 'absolute',
-        bottom: 40,
-        right: SQUARE_LEFT + 30,
+        top: CONTENT_TOP,
+        left: COL_RIGHT_X,
+        width: COL_W,
+        height: CONTENT_H,
+        overflow: 'hidden',
+        zIndex: 2,
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: FONT_SIZE,
+        lineHeight: LINE_HEIGHT,
+        color: '#1a2d5a',
+        textAlign: 'justify',
+        letterSpacing: 0.3,
+        hyphens: 'auto',
+        wordBreak: 'break-word',
+        whiteSpace: 'pre-wrap',
+      }}>
+        {topicRight || ''}
+      </div>
+
+      {/* ── Page indicator ── */}
+      <div style={{
+        position: 'absolute',
+        bottom: 38,
+        right: SQUARE_LEFT + 28,
         zIndex: 3,
-        fontFamily: "Georgia, serif",
+        fontFamily: 'Georgia, serif',
         fontSize: 12,
         color: '#7a6a3a',
         letterSpacing: 1,
@@ -311,21 +226,29 @@ function ApostilaPageViewCols({ lesson, chapterTitle, content, pageNum, totalPag
       </div>
     </div>
   );
-}
+});
 
-// ─── Modal ───────────────────────────────────────────────────────────────────
+// ─── Modal ────────────────────────────────────────────────────────────────────
 export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
-  const [pages, setPages] = useState([]);
+  // 6 topics → 3 pages
+  const [topics, setTopics] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
-  const pageRefs = useRef([]);
+  // 3 refs, one per page
+  const pageRefs = useRef([React.createRef(), React.createRef(), React.createRef()]);
 
   useEffect(() => {
-    const paginated = paginateContent(lesson.content);
-    setPages(paginated);
+    setTopics(splitIntoTopics(lesson.content));
     setCurrentPage(0);
-    pageRefs.current = paginated.map(() => React.createRef());
   }, [lesson.content]);
+
+  // Pages: [[t0,t1], [t2,t3], [t4,t5]]
+  const pages = [
+    [topics[0] || '', topics[1] || ''],
+    [topics[2] || '', topics[3] || ''],
+    [topics[4] || '', topics[5] || ''],
+  ];
+  const totalPages = 3;
 
   const waitImages = (node) => {
     const imgs = Array.from(node.querySelectorAll('img'));
@@ -338,129 +261,164 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
 
   const captureNode = async (node) => {
     await waitImages(node);
-    return html2canvas(node, {
-      scale: 1,                // 1:1 → already high-res at IMG_W=2250
+    const canvas = await html2canvas(node, {
+      scale: 1,
       useCORS: true,
       allowTaint: false,
       width: IMG_W,
       height: IMG_H,
       backgroundColor: '#fff',
     });
+    return canvas;
   };
 
-  const handlePrint = async () => {
+  // Export current page as PNG (pixel-perfect, exactly what's visible)
+  const handleExportPng = async () => {
     setLoading(true);
     try {
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const pdfW = pdf.internal.pageSize.getWidth();   // 297mm
-      const pdfH = pdf.internal.pageSize.getHeight();  // 210mm
-
-      const allRefs = pageRefs.current.map(r => r?.current).filter(Boolean);
-
-      for (let i = 0; i < allRefs.length; i++) {
-        const canvas = await captureNode(allRefs[i]);
-        const imgData = canvas.toDataURL('image/jpeg', 0.92);
-        if (i > 0) pdf.addPage('a4', 'landscape');
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
-      }
-
-      const safeName = (lesson.title || 'aula')
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
-      pdf.save(`apostila-${safeName}.pdf`);
-      toast.success(`PDF gerado com ${pages.length} página${pages.length > 1 ? 's' : ''}!`);
+      const node = pageRefs.current[currentPage]?.current;
+      if (!node) { toast.error('Página não encontrada.'); return; }
+      const canvas = await captureNode(node);
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const safeName = (lesson.title || 'aula')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
+        a.href = url;
+        a.download = `apostila-${safeName}-p${currentPage + 1}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success('PNG exportado!');
+      }, 'image/png');
     } catch (e) {
-      toast.error('Erro ao gerar PDF: ' + (e.message || ''));
+      toast.error('Erro ao exportar PNG: ' + (e.message || ''));
     } finally {
       setLoading(false);
     }
   };
 
-  const total = pages.length;
-  // Preview: scale down so it fits viewport (max width ~90vw)
-  const PREVIEW_SCALE = Math.min(0.42, (window.innerWidth * 0.88) / IMG_W);
+  // Export all 3 pages as PNGs (sequentially)
+  const handleExportAllPng = async () => {
+    setLoading(true);
+    try {
+      const safeName = (lesson.title || 'aula')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
+
+      for (let i = 0; i < totalPages; i++) {
+        const node = pageRefs.current[i]?.current;
+        if (!node) continue;
+        const canvas = await captureNode(node);
+        await new Promise((resolve) => {
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `apostila-${safeName}-p${i + 1}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setTimeout(resolve, 400); // small delay between downloads
+          }, 'image/png');
+        });
+      }
+      toast.success('Todas as 3 páginas exportadas como PNG!');
+    } catch (e) {
+      toast.error('Erro: ' + (e.message || ''));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Visual preview scale
+  const SCALE = Math.min(0.40, (typeof window !== 'undefined' ? window.innerWidth * 0.86 : 900) / IMG_W);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm p-3">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/82 backdrop-blur-sm p-3">
       {/* Controls */}
       <div
-        className="flex items-center gap-3 mb-3 w-full"
-        style={{ maxWidth: IMG_W * PREVIEW_SCALE + 40 }}
+        className="flex flex-wrap items-center gap-2 mb-3 w-full justify-center"
+        style={{ maxWidth: IMG_W * SCALE + 40 }}
       >
         <button onClick={onClose} className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors shrink-0">
           <X size={15} /> Fechar
         </button>
 
-        {total > 1 && (
-          <div className="flex items-center gap-2 flex-1 justify-center">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-              disabled={currentPage === 0}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 transition"
-            >
-              <ChevronLeft size={15} className="text-white" />
-            </button>
-            <span className="text-white/70 text-sm min-w-[90px] text-center">
-              Pág. {currentPage + 1} / {total}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(total - 1, p + 1))}
-              disabled={currentPage >= total - 1}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 transition"
-            >
-              <ChevronRight size={15} className="text-white" />
-            </button>
-          </div>
-        )}
+        {/* Page nav */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+            disabled={currentPage === 0}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 transition"
+          >
+            <ChevronLeft size={15} className="text-white" />
+          </button>
+          <span className="text-white/70 text-sm min-w-[80px] text-center">
+            Pág. {currentPage + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={currentPage >= totalPages - 1}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 transition"
+          >
+            <ChevronRight size={15} className="text-white" />
+          </button>
+        </div>
 
-        {total <= 1 && <div className="flex-1" />}
-
+        {/* PNG exports */}
         <button
-          onClick={handlePrint}
-          disabled={loading || pages.length === 0}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors shrink-0"
+          onClick={handleExportPng}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold text-white hover:bg-white/20 disabled:opacity-50 transition-colors"
         >
-          {loading ? <Loader2 size={15} className="animate-spin" /> : <Printer size={15} />}
-          {loading ? 'Gerando...' : `PDF (${total} pág.)`}
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <Image size={14} />}
+          PNG (esta pág.)
+        </button>
+        <button
+          onClick={handleExportAllPng}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors"
+        >
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
+          PNG (3 páginas)
         </button>
       </div>
 
-      {/* Preview */}
+      {/* Preview — current page */}
       <div
         className="rounded-xl overflow-hidden border border-white/10 shadow-2xl"
-        style={{ width: IMG_W * PREVIEW_SCALE, height: IMG_H * PREVIEW_SCALE }}
+        style={{ width: IMG_W * SCALE, height: IMG_H * SCALE, flexShrink: 0 }}
       >
-        <div style={{
-          width: IMG_W,
-          height: IMG_H,
-          transform: `scale(${PREVIEW_SCALE})`,
-          transformOrigin: 'top left',
-        }}>
-          {pages.length > 0 && (
-            <ApostilaPageViewCols
-              lesson={lesson}
-              chapterTitle={chapterTitle}
-              content={pages[currentPage]}
-              pageNum={currentPage + 1}
-              totalPages={total}
-              pageRef={pageRefs.current[currentPage]}
-            />
-          )}
+        <div style={{ width: IMG_W, height: IMG_H, transform: `scale(${SCALE})`, transformOrigin: 'top left' }}>
+          <ApostilaPage
+            lesson={lesson}
+            chapterTitle={chapterTitle}
+            topicLeft={pages[currentPage][0]}
+            topicRight={pages[currentPage][1]}
+            pageNum={currentPage + 1}
+            totalPages={totalPages}
+            ref={pageRefs.current[currentPage]}
+          />
         </div>
       </div>
 
-      {/* Hidden pages for PDF capture */}
+      {/* Hidden pages for capture — all 3 always mounted */}
       <div style={{ position: 'fixed', top: -99999, left: -99999, pointerEvents: 'none', zIndex: -1 }}>
-        {pages.map((pageContent, i) =>
+        {pages.map((pair, i) =>
           i !== currentPage ? (
-            <ApostilaPageViewCols
+            <ApostilaPage
               key={i}
               lesson={lesson}
               chapterTitle={chapterTitle}
-              content={pageContent}
+              topicLeft={pair[0]}
+              topicRight={pair[1]}
               pageNum={i + 1}
-              totalPages={total}
-              pageRef={pageRefs.current[i]}
+              totalPages={totalPages}
+              ref={pageRefs.current[i]}
             />
           ) : null
         )}
