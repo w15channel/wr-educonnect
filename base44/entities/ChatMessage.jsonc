@@ -29,90 +29,9 @@
     "content"
   ],
   "rls": {
-    "create": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "read": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "$and": [
-            {
-              "data.session_id": {
-                "$regex": "^class_chat_"
-              }
-            },
-            {
-              "data.session_id": {
-                "$regex": "{{user.course}}"
-              }
-            }
-          ]
-        },
-        {
-          "$and": [
-            {
-              "data.session_id": {
-                "$regex": "^dm_"
-              }
-            },
-            {
-              "$or": [
-                {
-                  "data.session_id": {
-                    "$regex": "^dm_{{user.email}}_"
-                  }
-                },
-                {
-                  "data.session_id": {
-                    "$regex": "_{{user.email}}$"
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

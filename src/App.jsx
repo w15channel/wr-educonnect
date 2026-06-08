@@ -111,6 +111,7 @@ function ScopedRoutesTree() {
         <Route path="dm/:email" element={<DirectMessage />} />
         <Route path="classe" element={<Classe />} />
         <Route path="ring" element={<Notifications />} />
+        <Route path="ofensivas" element={<Ofensivas />} />
       </Route>
     </Routes>
   );
