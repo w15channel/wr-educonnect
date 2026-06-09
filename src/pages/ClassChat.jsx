@@ -85,7 +85,13 @@ export default function ClassChat() {
 
   const { data: messages = [] } = useQuery({
     queryKey: ['class-chat', userCourse],
-    queryFn: () => base44.entities.ChatMessage.filter({ session_id: CHAT_SESSION }, 'created_date', 300),
+    queryFn: async () => {
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'listChatMessages',
+        session_id: CHAT_SESSION,
+      });
+      return res.data?.records || [];
+    },
     refetchInterval: 3000,
   });
 

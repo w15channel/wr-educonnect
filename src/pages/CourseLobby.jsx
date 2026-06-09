@@ -41,6 +41,7 @@ const OFFER_COURSES = [
     price: 'R$ 270',
     period: '/mês até o fim do curso',
     tag: 'Em breve · Set/2026',
+    video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/19e8f76e8_generated_video.mp4',
     imgs: [
       'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
       'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
@@ -63,6 +64,7 @@ const OFFER_COURSES = [
     price: 'R$ 270',
     period: '/mês até o fim do curso',
     tag: 'Em breve · Set/2026',
+    video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/8af57bf56_generated_video.mp4',
     imgs: [
       'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
       'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
@@ -78,30 +80,18 @@ const OFFER_COURSES = [
 ];
 
 function OfferCard({ course: c, onReserve }) {
-  const [imgIdx, setImgIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setImgIdx(i => (i + 1) % c.imgs.length), 4000);
-    return () => clearInterval(t);
-  }, [c.imgs.length]);
-
   return (
     <div className="border flex flex-col overflow-hidden transition-all" style={{ borderColor: `${G}20` }}>
-      {/* Imagem rotativa */}
-      <div className="relative h-44 overflow-hidden">
-        {c.imgs.map((src, j) => (
-          <img key={j} src={src} alt={c.title}
-            className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${j === imgIdx ? 'opacity-100' : 'opacity-0'}`} />
-        ))}
+      {/* Vídeo animado */}
+      <div className="relative h-44 overflow-hidden bg-black">
+        <video
+          src={c.video}
+          className="absolute inset-0 w-full h-full object-cover brightness-75"
+          muted loop playsInline autoPlay
+        />
         <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG3}, ${BG3}10)` }} />
         <div className="absolute top-3 left-3 border px-2.5 py-1 text-[9px] font-light uppercase tracking-[0.2em]"
           style={{ borderColor: `${G}50`, color: G, background: `${BG}cc` }}>{c.tag}</div>
-        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 items-center">
-          {c.imgs.map((_, j) => (
-            <button key={j} onClick={() => setImgIdx(j)}
-              className="h-px transition-all"
-              style={{ width: j === imgIdx ? '1.5rem' : '0.75rem', background: j === imgIdx ? G : 'rgba(255,255,255,0.25)' }} />
-          ))}
-        </div>
       </div>
 
       {/* Conteúdo */}

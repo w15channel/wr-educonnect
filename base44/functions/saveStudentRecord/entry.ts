@@ -138,6 +138,13 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, record });
     }
 
+    if (action === 'listChatMessages') {
+      const sessionId = payload.session_id;
+      if (!sessionId) return Response.json({ error: 'session_id obrigatório.' }, { status: 400 });
+      const records = await base44.asServiceRole.entities.ChatMessage.filter({ session_id: sessionId }, 'created_date', 300);
+      return Response.json({ success: true, records });
+    }
+
     if (action === 'create') {
       const entity = payload.entity;
       if (!ALLOWED_ENTITIES.has(entity)) {
