@@ -35,12 +35,12 @@ const OFFER_COURSES = [
     id: 'psicanalise',
     title: 'Psicanalista Diplomado',
     subtitle: 'Formação em Psicanálise',
-    desc: 'Fundamentos da Psicanálise Freudiana e Lacaniana, prática clínica supervisionada e aprofundamento terapêutico. Ingresso previsto para 2027.',
+    desc: 'Fundamentos da Psicanálise Freudiana e Lacaniana, prática clínica supervisionada e aprofundamento terapêutico. Próxima turma: setembro de 2026.',
     originalPrice: 'R$ 450',
     firstMonthPrice: 'R$ 225',
     price: 'R$ 270',
     period: '/mês até o fim do curso',
-    tag: 'Em breve · 2027',
+    tag: 'Em breve · Set/2026',
     imgs: [
       'https://media.base44.com/images/public/69f55577840a3c93cee191be/056bf6bba_176702773849222.jpg',
       'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1400&q=85',
@@ -50,19 +50,19 @@ const OFFER_COURSES = [
       'Prática clínica supervisionada',
       'Certificação profissional reconhecida',
       'Análise de sonhos e processos inconscientes',
-      'Ingresso previsto para início de 2027',
+      'Próxima turma: setembro de 2026',
     ],
   },
   {
     id: 'sexologia',
     title: 'Sexólogo Integrativo',
     subtitle: 'Formação em Sexologia',
-    desc: 'Sexualidade humana com base científica, infidelidade conjugal e abordagem integrativa. Ingresso previsto para 2027.',
+    desc: 'Sexualidade humana com base científica, infidelidade conjugal e abordagem integrativa. Próxima turma: setembro de 2026.',
     originalPrice: 'R$ 450',
     firstMonthPrice: 'R$ 225',
     price: 'R$ 270',
     period: '/mês até o fim do curso',
-    tag: 'Em breve · 2027',
+    tag: 'Em breve · Set/2026',
     imgs: [
       'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1400&q=85',
       'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=1400&q=85',
@@ -72,7 +72,7 @@ const OFFER_COURSES = [
       'Infidelidade conjugal e vícios comportamentais',
       'Abordagem integrativa e sistêmica',
       'Certificação nacional e internacional',
-      'Ingresso previsto para meados de 2027',
+      'Próxima turma: setembro de 2026',
     ],
   },
 ];
@@ -511,8 +511,22 @@ export default function CourseLobby() {
           </p>
         </div>
 
-        {/* Course Card */}
-        <div className="max-w-md mx-auto w-full mb-8">
+        {/* Oferta dos outros cursos */}
+        <div className="max-w-2xl mx-auto w-full mb-10">
+          <div className="flex items-center gap-3 mb-5 justify-center">
+            <div className="h-px flex-1" style={{ background: `${G}20` }} />
+            <span className="text-[10px] uppercase tracking-[0.3em] font-light" style={{ color: `${G}60` }}>Próximas Formações</span>
+            <div className="h-px flex-1" style={{ background: `${G}20` }} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {OFFER_COURSES.map((c) => (
+              <OfferCard key={c.id} course={c} onReserve={openReserve} />
+            ))}
+          </div>
+        </div>
+
+        {/* Course Card — acesso do aluno */}
+        <div className="max-w-md mx-auto w-full">
           {COURSES.map((c) => (
             <CourseCard
               key={c.id}
@@ -526,36 +540,9 @@ export default function CourseLobby() {
           ))}
         </div>
 
-        {/* Enter CTA */}
-        <div className="max-w-xl mx-auto border p-5" style={{ borderColor: `${G}15`, background: BG3 }}>
-          <button
-            onClick={handleStudentEnter}
-            className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.22em] flex items-center justify-center gap-2 transition-all"
-            style={{ borderColor: `${G}60`, color: G }}
-            onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
-          >
-            Entrar no Portal do Aluno <ChevronRight size={13} />
-          </button>
-        </div>
-
-        <p className="text-center text-white/20 text-[10px] mt-8 font-light uppercase tracking-[0.15em]">
+        <p className="text-center text-white/20 text-[10px] mt-6 mb-4 font-light uppercase tracking-[0.15em]">
           Matriculado(a) em <span className="text-white/35">{COURSES.find(c => c.id === userCourse)?.title}</span> · Dúvidas? Fale com a coordenação.
         </p>
-
-        {/* Oferta dos outros cursos */}
-        <div className="max-w-2xl mx-auto w-full mt-10">
-          <div className="flex items-center gap-3 mb-5 justify-center">
-            <div className="h-px flex-1" style={{ background: `${G}20` }} />
-            <span className="text-[10px] uppercase tracking-[0.3em] font-light" style={{ color: `${G}60` }}>Próximas Formações</span>
-            <div className="h-px flex-1" style={{ background: `${G}20` }} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {OFFER_COURSES.map((c) => (
-              <OfferCard key={c.id} course={c} onReserve={openReserve} />
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Reserve Modal */}
