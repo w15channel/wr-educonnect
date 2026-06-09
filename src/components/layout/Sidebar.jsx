@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
-  CalendarDays, DollarSign, GraduationCap, Brain, Sparkles,
-  ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame
+  CalendarDays, DollarSign, Brain, Sparkles,
+  ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame,
+  ScrollText, ClipboardList, Medal, Star
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -18,43 +19,43 @@ const adminGroups = [
   {
     label: 'Classe',
     items: [
-      { icon: BarChart3,    label: 'Dashboard',           path: '/dashboard',          color: 'text-blue-400' },
-      { icon: Play,         label: 'Aulas',               path: '/lessons',            color: 'text-purple-400' },
-      { icon: Video,        label: 'Sala ao Vivo',        path: '/live',               color: 'text-red-400' },
-      { icon: FileText,     label: 'Tarefas',             path: '/tasks',              color: 'text-orange-400' },
-      { icon: GraduationCap,label: 'Provas',              path: '/tests',              color: 'text-violet-400' },
-      { icon: Flame,        label: 'Ofensivas',           path: '/ofensivas',          color: 'text-orange-500' },
+      { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
+      { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
+      { icon: Video,         label: 'Sala ao Vivo',           path: '/live',              color: 'text-red-400' },
+      { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
+      { icon: ClipboardList, label: 'Provas',                 path: '/tests',             color: 'text-violet-400' },
+      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
     ],
   },
   {
     label: 'Comunidade',
     items: [
-      { icon: UsersRound,   label: 'Chat da Turma',       path: '/chat',               color: 'text-blue-400' },
-      { icon: MessageSquare,label: 'Fórum de Dúvidas',   path: '/forum',              color: 'text-green-400' },
-      { icon: Hash,         label: 'Sala de Debates',     path: '/debates',            color: 'text-fuchsia-400' },
-      { icon: Heart,        label: 'Terapeuta da Semana', path: '/terapeuta',          color: 'text-pink-400' },
-      { icon: Crown,        label: 'Monitores',           path: '/monitores',          color: 'text-yellow-400' },
+      { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
+      { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
+      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
+      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-pink-400' },
+      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
     ],
   },
   {
     label: 'Gestão',
     items: [
-      { icon: Users,        label: 'Gestão de Alunos',   path: '/students',           color: 'text-indigo-400' },
-      { icon: Key,          label: 'Códigos de Acesso',  path: '/keys',               color: 'text-emerald-400' },
-      { icon: DollarSign,   label: 'Mensalidades',       path: '/tuitions',           color: 'text-teal-400' },
-      { icon: Trophy,       label: 'Controle de Pontuação', path: '/scorecontrol',    color: 'text-yellow-400' },
-      { icon: GraduationCap,label: 'Histórico Acadêmico', path: '/historico',         color: 'text-cyan-400' },
-      { icon: Bell,         label: 'Avisos',             path: '/announcements',      color: 'text-yellow-400' },
+      { icon: Users,         label: 'Gestão de Alunos',       path: '/students',          color: 'text-indigo-400' },
+      { icon: Key,           label: 'Códigos de Acesso',      path: '/keys',              color: 'text-emerald-400' },
+      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
+      { icon: Trophy,        label: 'Controle de Pontuação',  path: '/scorecontrol',      color: 'text-yellow-400' },
+      { icon: ScrollText,    label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
+      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
     ],
   },
   {
     label: 'Ferramentas',
     items: [
-      { icon: Brain,        label: 'Tutor Digital EDU',  path: '/tutor',              color: 'text-pink-400' },
-      { icon: CalendarDays, label: 'Calendário',         path: '/calendar',           color: 'text-cyan-400' },
-      { icon: BookOpen,     label: 'Apostila',           path: '/apostila',           color: 'text-emerald-400' },
-      { icon: Award,        label: 'Certificação',       path: '/certificadora',      color: 'text-yellow-400' },
-      { icon: FileText,     label: 'Gerar Certificado',  path: '/gerar-certificado',  color: 'text-amber-400' },
+      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
+      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-emerald-400' },
+      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
+      { icon: Award,         label: 'Gerar Certificado',      path: '/gerar-certificado', color: 'text-amber-300' },
     ],
   },
 ];
@@ -63,43 +64,44 @@ const studentGroups = [
   {
     label: 'Classe',
     items: [
-      { icon: BarChart3,    label: 'Dashboard',          path: '/dashboard',          color: 'text-blue-400' },
-      { icon: Flame,        label: 'Ofensivas',          path: '/ofensivas',          color: 'text-orange-500' },
-      { icon: Play,         label: 'Aulas',              path: '/lessons',            color: 'text-purple-400' },
-      { icon: Video,        label: 'Sala ao Vivo',       path: '/live',               color: 'text-red-400' },
-      { icon: FileText,     label: 'Tarefas',            path: '/tasks',              color: 'text-orange-400' },
-      { icon: GraduationCap,label: 'Provas',             path: '/tests',              color: 'text-violet-400' },
+      { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
+      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
+      { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
+      { icon: Video,         label: 'Sala ao Vivo',           path: '/live',              color: 'text-red-400' },
+      { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
+      { icon: ClipboardList, label: 'Provas',                 path: '/tests',             color: 'text-violet-400' },
     ],
   },
   {
     label: 'Comunidade',
     items: [
-      { icon: UsersRound,   label: 'Chat da Turma',      path: '/chat',               color: 'text-blue-400' },
-      { icon: MessageSquare,label: 'Fórum de Dúvidas',  path: '/forum',              color: 'text-green-400' },
-      { icon: Hash,         label: 'Sala de Debates',    path: '/debates',            color: 'text-fuchsia-400' },
-      { icon: Heart,        label: 'Terapeuta da Semana', path: '/terapeuta',         color: 'text-rose-400' },
-      { icon: Crown,        label: 'Monitores',          path: '/monitores',          color: 'text-yellow-400' },
-      { icon: UsersRound,   label: 'Classe',             path: '/classe',             color: 'text-sky-400' },
+      { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
+      { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
+      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
+      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-rose-400' },
+      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
+      { icon: Star,          label: 'Ranking Geral',          path: '/ranking',           color: 'text-yellow-300' },
+      { icon: Users,         label: 'Classe',                 path: '/classe',            color: 'text-sky-400' },
     ],
   },
   {
     label: 'Minha Área',
     items: [
-      { icon: Bell,         label: 'Avisos',             path: '/announcements',      color: 'text-yellow-400' },
-      { icon: DollarSign,   label: 'Mensalidades',       path: '/tuitions',           color: 'text-teal-400' },
-      { icon: CalendarDays, label: 'Calendário',         path: '/calendar',           color: 'text-cyan-400' },
-      { icon: User,         label: 'Meu Perfil',         path: '/profile',            color: 'text-indigo-400' },
+      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
+      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
+      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
+      { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-indigo-400' },
     ],
   },
   {
     label: 'Ferramentas',
     items: [
-      { icon: Brain,        label: 'Tutor Digital EDU',  path: '/tutor',              color: 'text-pink-400' },
-      { icon: BookOpen,     label: 'Meu Best Seller',    path: '/bestseller',         color: 'text-emerald-400' },
-      { icon: BookOpen,     label: 'Apostila',           path: '/apostila',           color: 'text-teal-400' },
-      { icon: GraduationCap,label: 'Histórico Acadêmico', path: '/historico',        color: 'text-cyan-400' },
-      { icon: Award,        label: 'Certificação',       path: '/certificadora',      color: 'text-yellow-400' },
-      { icon: GraduationCap,label: 'Meu Certificado',   path: '/meu-certificado',    color: 'text-amber-400' },
+      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
+      { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-emerald-400' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
+      { icon: Trophy,        label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
+      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
+      { icon: Award,         label: 'Meu Certificado',        path: '/meu-certificado',   color: 'text-amber-400' },
     ],
   },
 ];
@@ -129,9 +131,18 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   const groups = isAdmin ? adminGroups : studentGroups;
 
   // Collapsible group state — initially open the group that has the active route
+  // Also re-open group when location changes (e.g. user navigates to a new section)
   const [openGroups, setOpenGroups] = useState(() =>
     getInitialOpenGroups(groups, base, location.pathname)
   );
+
+  // Auto-expand the group of the active route whenever route changes
+  useEffect(() => {
+    const active = getInitialOpenGroups(groups, base, location.pathname);
+    if (Object.keys(active).length > 0) {
+      setOpenGroups(prev => ({ ...prev, ...active }));
+    }
+  }, [location.pathname]);
 
   const toggleGroup = (gi) => {
     setOpenGroups(prev => ({ ...prev, [gi]: !prev[gi] }));

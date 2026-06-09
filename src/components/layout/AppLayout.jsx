@@ -38,7 +38,8 @@ export default function AppLayout() {
   }, [session, location.pathname, navigate]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isStudent = session?.role === 'student';
+  // Custom auth: students are any non-admin role
+  const isStudent = session?.role !== 'admin';
   const sessionKey = session?.email || session?.code || '';
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -138,7 +139,7 @@ export default function AppLayout() {
               data-scroll-container
               className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
               style={{
-                paddingBottom: window.innerWidth < 768 && !isCertPage ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
+                paddingBottom: !isCertPage ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
                 transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
                 transition: isPulling.current ? 'none' : 'transform 0.3s ease',
               }}
@@ -147,7 +148,7 @@ export default function AppLayout() {
               onTouchEnd={handleTouchEnd}
             >
               <div className={isCertPage ? 'flex-1 min-h-0 flex flex-col' : ''}>
-                <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }} />
+                <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role !== 'admin' }} />
               </div>
             </motion.div>
           </AnimatePresence>

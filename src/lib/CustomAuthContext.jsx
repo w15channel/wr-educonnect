@@ -23,7 +23,7 @@ export function CustomAuthProvider({ children }) {
   };
 
   return (
-    <CustomAuthContext.Provider value={{ session, loading, login, logout, isAdmin: session?.role === 'admin', isStudent: session?.role === 'student' }}>
+    <CustomAuthContext.Provider value={{ session, loading, login, logout, isAdmin: session?.role === 'admin', isStudent: session?.role !== 'admin' }}>
       {children}
     </CustomAuthContext.Provider>
   );
