@@ -265,7 +265,7 @@ JSON exato:
       const questions = result?.questions || [];
       if (questions.length < 3) throw new Error('IA retornou perguntas insuficientes');
 
-      await base44.entities.DailyChallenge.create({
+      await base44.functions.invoke('createDailyChallenge', {
         date: today,
         course,
         lesson_ref: lesson?.title || topic,
