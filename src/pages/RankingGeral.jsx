@@ -1,27 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Trophy, Star, BookOpen, Video, FileText, MessageSquare, X, CheckCircle } from 'lucide-react';
+import { Trophy, Star, BookOpen, Video, FileText, MessageSquare, X, CheckCircle, RefreshCw } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
+// ─── Config ──────────────────────────────────────────────────────────────────
+
 const CATEGORY_CONFIG = {
-  lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
-  live_attendance: { label: 'Presença Live', icon: Video, color: 'bg-red-100 text-red-700' },
-  task: { label: 'Tarefa', icon: FileText, color: 'bg-orange-100 text-orange-700' },
-  quiz: { label: 'Prova', icon: Trophy, color: 'bg-blue-100 text-blue-700' },
-  forum: { label: 'Fórum', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
+  lesson:          { label: 'Aula Gravada',  icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
+  live_attendance: { label: 'Presença Live', icon: Video,          color: 'bg-red-100 text-red-700' },
+  task:            { label: 'Tarefa',        icon: FileText,       color: 'bg-orange-100 text-orange-700' },
+  quiz:            { label: 'Prova',         icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
+  forum:           { label: 'Fórum',         icon: MessageSquare,  color: 'bg-green-100 text-green-700' },
 };
+
+// For each AccessCode, which course field values map to it
+const COURSE_VALID = {
+  tcc:        (c) => !c.course || c.course === 'tcc',
+  psicanalise: (c) => c.course === 'psicanalise',
+  sexologia:  (c) => c.course === 'sexologia',
+};
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
 
 function StudentProfileModal({ code, scoreItems, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
   const avatarColor = code.profile_avatar_color || '#5b5ef4';
+
+  // Only verified items for this student
   const myItems = scoreItems.filter(s => s.student_email === email && s.verified);
-  const total = roundScore(code.pontuacao_total ?? myItems.reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
+
+  // Show live sum — never rely on stale cache here
+  const liveTotal = roundScore(myItems.reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
 
   const byCategory = {};
   myItems.forEach(item => {
@@ -49,7 +63,7 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
             <p className="text-xs text-muted-foreground truncate">{email}</p>
             <div className="flex items-center gap-1.5 mt-1.5">
               <Star size={14} className="text-yellow-400 fill-yellow-400" />
-              <span className="text-base font-black text-yellow-600">{formatScore(total)} pts</span>
+              <span className="text-base font-black text-yellow-600">{formatScore(liveTotal)} pts</span>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary transition-colors shrink-0">
@@ -57,7 +71,7 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
           </button>
         </div>
 
-        {/* Activities */}
+        {/* Activities by category */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {Object.keys(CATEGORY_CONFIG).map(cat => {
             const items = byCategory[cat] || [];
@@ -96,92 +110,159 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
   );
 }
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+const COURSE_LABELS = {
+  tcc: 'Terapia Cognitivo-Comportamental',
+  psicanalise: 'Psicanalista Freudiano',
+  sexologia: 'Sexólogo(a)',
+};
+
 export default function RankingGeral() {
   const { user: session } = useOutletContext();
   const [selected, setSelected] = useState(null);
-  const { course: routeCourse, codePrefix } = useCourseFilteredEmails();
+  // Admin without a course in session gets a course picker
+  const [adminCourseFilter, setAdminCourseFilter] = useState('tcc');
 
-  const { data: allScoreItems = [] } = useQuery({
-    queryKey: ['all-score-items-rank'],
-    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
+  // ── Fetch all data ──
+  const { data: allScoreItems = [], isLoading: loadingScores, refetch: refetchScores } = useQuery({
+    queryKey: ['ranking-score-items'],
+    queryFn: () => base44.entities.ScoreItem.list('-created_date', 5000),
+    staleTime: 0,   // always fresh on mount
   });
 
-  const { data: accessCodes = [] } = useQuery({
-    queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+  const { data: accessCodes = [], isLoading: loadingCodes, refetch: refetchCodes } = useQuery({
+    queryKey: ['ranking-access-codes'],
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 500),
+    staleTime: 0,
   });
 
-  // Course isolation: match by session course, with fallback for tcc (legacy codes without .course)
-  const activeCourse = routeCourse || session?.course || 'tcc';
-  const courseCodes = accessCodes.filter(c => {
-    if (!c.student_email) return false;
-    // Course match: treat missing/null course as 'tcc'
-    const codeCourse = c.course || 'tcc';
-    if (codeCourse !== activeCourse) return false;
-    if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
-    return true;
-  });
+  // ── Determine which course to show ──
+  // Student: always their session course
+  // Admin with session.course: that course
+  // Admin without session.course: use adminCourseFilter picker
+  const activeCourse = useMemo(() => {
+    if (session?.course) return session.course;
+    if (session?.role === 'admin') return adminCourseFilter;
+    return 'tcc';
+  }, [session, adminCourseFilter]);
 
-  // Ranking usa exclusivamente o cache persistido em AccessCode.pontuacao_total.
-  const participationMap = {};
-  allScoreItems.forEach(s => {
-    if (!s.student_email) return;
-    participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
-  });
+  // ── Filter access codes for this course ──
+  const courseCodes = useMemo(() => {
+    return accessCodes.filter(c => {
+      if (!c.student_email) return false;
+      if (!activeCourse) return true; // admin with no course scope: show all
+      const validator = COURSE_VALID[activeCourse];
+      return validator ? validator(c) : c.course === activeCourse;
+    });
+  }, [accessCodes, activeCourse]);
 
-  // Score fallback: if pontuacao_total is 0 or missing, sum ScoreItems live
-  const scoreItemsSumMap = {};
-  allScoreItems.forEach(s => {
-    if (!s.student_email || !s.verified) return;
-    scoreItemsSumMap[s.student_email] = roundScore((scoreItemsSumMap[s.student_email] || 0) + roundScore(s.score));
-  });
+  // Build a set of valid emails for this course (used to isolate ScoreItems)
+  const courseEmailSet = useMemo(() => new Set(courseCodes.map(c => c.student_email)), [courseCodes]);
 
-  // Build ranking from all course students (so even zero-score students show up)
-  const ranking = courseCodes.map(c => {
-    const cached = roundScore(c.pontuacao_total || 0);
-    const liveSum = roundScore(scoreItemsSumMap[c.student_email] || 0);
-    // Use the higher of cached vs live sum (avoids stale-cache zero issues)
-    const total = Math.max(cached, liveSum);
-    return {
-      email: c.student_email,
-      total,
-      count: participationMap[c.student_email] || 0,
-      enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
-      name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
-    };
-  }).sort((a, b) => {
-    // 1) Points desc
-    if (b.total !== a.total) return b.total - a.total;
-    // 2) When there are participations, tie-break by participation count desc
-    if (a.count > 0 || b.count > 0) {
-      if (b.count !== a.count) return b.count - a.count;
-    }
-    // 3) Enrollment order (earlier first)
-    if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
-    // 4) Alphabetical
-    return a.name.localeCompare(b.name);
-  });
+  // ── Aggregate scores — only verified, only from course students ──
+  const { scoreMap, participationMap } = useMemo(() => {
+    const scoreMap = {};
+    const participationMap = {};
+    allScoreItems.forEach(s => {
+      if (!s.student_email) return;
+      if (!courseEmailSet.has(s.student_email)) return; // isolate by course
+      participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
+      if (!s.verified) return;
+      scoreMap[s.student_email] = roundScore((scoreMap[s.student_email] || 0) + roundScore(s.score));
+    });
+    return { scoreMap, participationMap };
+  }, [allScoreItems, courseEmailSet]);
+
+  // ── Build and sort ranking ──
+  const ranking = useMemo(() => {
+    return courseCodes
+      .map(c => {
+        const liveSum = scoreMap[c.student_email] || 0;
+        // Use max(cached, live) — but prefer live since it's always accurate
+        const cached = roundScore(c.pontuacao_total || 0);
+        const total = roundScore(Math.max(cached, liveSum));
+        return {
+          email: c.student_email,
+          total,
+          count: participationMap[c.student_email] || 0,
+          enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
+          name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
+          code: c,
+        };
+      })
+      .sort((a, b) => {
+        if (b.total !== a.total) return b.total - a.total;
+        if (b.count !== a.count) return b.count - a.count;
+        if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
+        return a.name.localeCompare(b.name);
+      });
+  }, [courseCodes, scoreMap, participationMap]);
+
   const myPos = ranking.findIndex(r => r.email === session?.email) + 1;
+  const isLoading = loadingScores || loadingCodes;
+
+  const handleRefresh = () => {
+    refetchScores();
+    refetchCodes();
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="p-4 lg:p-7 max-w-3xl mx-auto animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shrink-0">
           <Trophy size={22} className="text-white" />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Ranking Geral</h2>
-          <p className="text-sm text-muted-foreground">Classificação pública por somatória de pontos — clique para ver o perfil</p>
+          <p className="text-sm text-muted-foreground">Classificação por somatória de pontos verificados</p>
         </div>
-        {myPos > 0 && (
-          <span className="ml-auto text-sm font-bold bg-primary/10 text-primary px-3 py-1.5 rounded-full border border-primary/20">
-            Você está em #{myPos}
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {myPos > 0 && (
+            <span className="text-sm font-bold bg-primary/10 text-primary px-3 py-1.5 rounded-full border border-primary/20">
+              #{myPos}
+            </span>
+          )}
+          <button
+            onClick={handleRefresh}
+            className="p-2 rounded-xl hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+            title="Atualizar ranking"
+          >
+            <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
-      {ranking.length === 0 ? (
+      {/* Admin course picker — only shown when admin has no scoped course */}
+      {session?.role === 'admin' && !session?.course && (
+        <div className="flex gap-2 mb-5 flex-wrap">
+          {Object.entries(COURSE_LABELS).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setAdminCourseFilter(key)}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${
+                adminCourseFilter === key
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Body */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="h-16 bg-muted rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      ) : ranking.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
           <Trophy size={48} className="mx-auto mb-4 opacity-20" />
           <p className="text-lg font-semibold">O ranking estará disponível após as primeiras notas</p>
@@ -189,17 +270,16 @@ export default function RankingGeral() {
       ) : (
         <div className="space-y-2">
           {ranking.map((r, i) => {
-            const code = accessCodes.find(c => c.student_email === r.email);
-            const displayName = code?.profile_name || code?.student_name || r.email;
-            const avatarColor = code?.profile_avatar_color || '#5b5ef4';
-            const photoUrl = code?.profile_photo_url || '';
+            const displayName = r.code?.profile_name || r.code?.student_name || r.email;
+            const avatarColor = r.code?.profile_avatar_color || '#5b5ef4';
+            const photoUrl = r.code?.profile_photo_url || '';
             const isMe = r.email === session?.email;
             const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
 
             return (
               <button
                 key={r.email}
-                onClick={() => code && setSelected(code)}
+                onClick={() => r.code && setSelected(r.code)}
                 className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border transition-all hover:shadow-md text-left ${
                   isMe
                     ? 'bg-primary/5 border-primary/25 hover:border-primary/40'
@@ -229,16 +309,16 @@ export default function RankingGeral() {
                   </div>
                 )}
 
-                {/* Name */}
+                {/* Name + count */}
                 <div className="flex-1 min-w-0">
-                 <p className={`text-sm font-bold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
-                   <ClickableStudent email={r.email}>{displayName}</ClickableStudent>
-                   {isMe && <span className="text-xs font-normal text-primary/70 ml-1">(você)</span>}
-                 </p>
-                  <p className="text-xs text-muted-foreground">{r.count} atividade(s) pontuada(s)</p>
+                  <p className={`text-sm font-bold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
+                    <ClickableStudent email={r.email}>{displayName}</ClickableStudent>
+                    {isMe && <span className="text-xs font-normal text-primary/70 ml-1">(você)</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{r.count} atividade(s)</p>
                 </div>
 
-                {/* Score */}
+                {/* Score badge */}
                 <div className="flex items-center gap-1.5 shrink-0 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
                   <Star size={12} className="text-yellow-500 fill-yellow-500" />
                   <span className="text-sm font-black text-yellow-700">{formatScore(r.total)}</span>
@@ -249,6 +329,7 @@ export default function RankingGeral() {
         </div>
       )}
 
+      {/* Student modal */}
       {selected && (
         <StudentProfileModal
           code={selected}

@@ -17,10 +17,10 @@ export default function Students() {
   const location = useLocation();
   const { user: session } = useOutletContext() || {};
 
-  // Build scoped prefix from current URL (/adm/:slug or /student/:slug)
+  // Build base prefix: /adm or /student (no slug — routes are now flat)
   const scopedPrefix = (() => {
     const parts = location.pathname.split('/').filter(Boolean);
-    if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return `/${parts[0]}/${parts[1]}`;
+    if (parts[0] === 'student' || parts[0] === 'adm') return `/${parts[0]}`;
     return '';
   })();
   const [search, setSearch] = useState('');

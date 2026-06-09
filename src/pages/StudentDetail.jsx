@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
@@ -26,8 +26,16 @@ const AVATAR_EMOJIS = ['🧠','🌱','💫','🔥','⚡','🌟','🎯','🧬','�
 export default function StudentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: session } = useOutletContext() || {};
   const { emails: courseEmails, codePrefix } = useCourseFilteredEmails();
+
+  // Derive role prefix (/adm or /student) without slug
+  const rolePrefix = (() => {
+    const parts = location.pathname.split('/').filter(Boolean);
+    if (parts[0] === 'student' || parts[0] === 'adm') return `/${parts[0]}`;
+    return '';
+  })();
 
   const { data: codes = [] } = useQuery({
     queryKey: ['access-codes'],
@@ -50,7 +58,9 @@ export default function StudentDetail() {
   });
 
   const code = codes.find(c => c.id === id);
-  const canViewCode = code && (!codePrefix || ((code.code || '').startsWith(codePrefix) && (!courseEmails || courseEmails.has(code.student_email || ''))));
+  // Admin: always allow; student: restrict to own course
+  const isAdmin = session?.role === 'admin';
+  const canViewCode = code && (isAdmin || !codePrefix || ((code.code || '').startsWith(codePrefix) && (!courseEmails || courseEmails.has(code.student_email || ''))));
 
   if (!code || !canViewCode) {
     return (
@@ -229,7 +239,7 @@ export default function StudentDetail() {
           {session?.email && code.student_email && session.email !== code.student_email && (
             <Button
               className="w-full gap-2"
-              onClick={() => navigate(`../dm/${encodeURIComponent(code.student_email)}`)}
+              onClick={() => navigate(`${rolePrefix}/dm/${encodeURIComponent(code.student_email)}`)}
             >
               <MessageCircle size={16} /> Enviar Mensagem Particular
             </Button>
