@@ -86,7 +86,7 @@ export default function DiplomaDashboard() {
           {greeting}, {firstName}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })} · Modalidade Diploma
+          {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })} · Modalidade Certificado
         </p>
       </div>
 

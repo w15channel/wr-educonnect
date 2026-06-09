@@ -427,7 +427,7 @@ export default function CourseLobby() {
               <div className="w-12 h-12 border flex items-center justify-center mb-4" style={{ borderColor: `${G}30` }}>
                 <GraduationCap size={22} style={{ color: G }} />
               </div>
-              <h3 className="font-light text-white text-base uppercase tracking-[0.15em] mb-2">Estudar pelo Diploma</h3>
+              <h3 className="font-light text-white text-base uppercase tracking-[0.15em] mb-2">Estudar pelo Certificado</h3>
               <p className="text-white/40 text-xs leading-relaxed font-light mb-4">
                 Acesse as aulas, tarefas e mensalidades no seu próprio ritmo, sem interagir com a classe ou ferramentas práticas.
               </p>

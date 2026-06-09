@@ -46,14 +46,14 @@ export default function DiplomaLayout() {
           </div>
           <div>
             <p className="text-[12px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME}</p>
-            <p className="text-[8px] text-[#c8bfa8]/30 font-light uppercase tracking-[0.15em]">Formação Diploma</p>
+            <p className="text-[8px] text-[#c8bfa8]/30 font-light uppercase tracking-[0.15em]">Formação Certificado</p>
           </div>
         </div>
 
         {/* Badge modo */}
         <div className="mx-3 mt-3 mb-1 border px-3 py-2 text-[9px] font-light uppercase tracking-[0.18em] text-center"
           style={{ borderColor: `${G}25`, color: `${G}80`, background: `${G}06` }}>
-          Modalidade · Somente Diploma
+          Modalidade · Somente Certificado
         </div>
 
         {/* Nav */}
@@ -92,7 +92,7 @@ export default function DiplomaLayout() {
             )}
             <div className="min-w-0 flex-1">
               <p className="text-[12px] font-light text-[#e8dfc8]/80 truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-[9px] text-[#c8bfa8]/30 uppercase tracking-[0.15em] font-light">Estudante · Diploma</p>
+              <p className="text-[9px] text-[#c8bfa8]/30 uppercase tracking-[0.15em] font-light">Estudante · Certificado</p>
             </div>
           </div>
           <button
@@ -108,7 +108,7 @@ export default function DiplomaLayout() {
       <div className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 py-3 bg-[#07080f] border-b border-[#151c30]">
         <div className="flex items-center gap-2">
           <img src={WR_PRIMARY_LOGO} alt="WR" className="w-6 h-6 object-contain" />
-          <span className="text-[11px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME} · Diploma</span>
+          <span className="text-[11px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME} · Certificado</span>
         </div>
         <button onClick={logout} className="text-white/30 hover:text-red-400/70 transition-colors p-1">
           <LogOut size={15} />
