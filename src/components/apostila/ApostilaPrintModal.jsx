@@ -15,8 +15,9 @@ const SQUARE_LEFT = 41;
 const SQUARE_TOP  = 207;
 
 const HEADER_ZONE_H = 72;
-const CONTENT_TOP   = SQUARE_TOP + HEADER_ZONE_H;
-const CONTENT_H     = SQUARE_H - HEADER_ZONE_H;
+const LINE_SHIFT    = Math.round(18 * 1.85); // ~33px — one line up
+const CONTENT_TOP   = SQUARE_TOP + HEADER_ZONE_H - LINE_SHIFT;
+const CONTENT_H     = SQUARE_H - HEADER_ZONE_H + LINE_SHIFT;
 
 const INNER_MARGIN = 31;
 const USABLE_W     = SQUARE_W - INNER_MARGIN * 2;
@@ -237,9 +238,9 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
 
   const captureNode = async (node) => {
     await waitImages(node);
-    // node is always IMG_W × IMG_H with no transform — capture at scale:1 → perfect output
-    const canvas = await html2canvas(node, {
-      scale: 1,
+    // Capture at 2× for crisp background + text, then downscale to native resolution
+    const hiRes = await html2canvas(node, {
+      scale: 2,
       useCORS: true,
       allowTaint: false,
       width: IMG_W,
@@ -252,8 +253,17 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       y: 0,
       backgroundColor: '#fff',
       logging: false,
+      imageTimeout: 15000,
     });
-    return canvas;
+    // Draw back to 1× canvas so the final PNG is exactly IMG_W × IMG_H
+    const out = document.createElement('canvas');
+    out.width  = IMG_W;
+    out.height = IMG_H;
+    const ctx = out.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(hiRes, 0, 0, IMG_W, IMG_H);
+    return out;
   };
 
   const safeName = (lesson.title || 'aula')
