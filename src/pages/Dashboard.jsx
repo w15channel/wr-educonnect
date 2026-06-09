@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import { Video, FileText, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
@@ -135,20 +136,20 @@ export default function Dashboard() {
     const cycleDate = new Date(EPOCH.getTime() + cycleNum * CYCLE_DAYS * 24 * 60 * 60 * 1000);
     const periodStart = format(cycleDate, 'yyyy-MM-dd');
     const periodEnd = format(addDays(cycleDate, CYCLE_DAYS - 1), 'yyyy-MM-dd');
-    const existing = await base44.entities.MonitorHistory.list('-period_start', 100);
+    const existing = await adminApi.list('MonitorHistory', { sort_by: '-period_start', limit: 100 });
     const currentCycle = existing.filter((m) => m.period_start === periodStart && (m.course === userCourse || !m.course));
-    for (const m of currentCycle) await base44.entities.MonitorHistory.delete(m.id);
-    const oldMonitorAnnouncements = await base44.entities.Announcement.filter({ course: userCourse || 'tcc' }, '-created_date', 300);
+    for (const m of currentCycle) await adminApi.delete('MonitorHistory', m.id);
+    const oldMonitorAnnouncements = await adminApi.list('Announcement', { filter: { course: userCourse || 'tcc' }, sort_by: '-created_date', limit: 300 });
     for (const announcement of oldMonitorAnnouncements) {
       const isMonitorNotice = Boolean(announcement.certificate_monitor_id) || (announcement.title || '').includes('Monitor(a) da Semana');
-      if (isMonitorNotice) await base44.entities.Announcement.delete(announcement.id);
+      if (isMonitorNotice) await adminApi.delete('Announcement', announcement.id);
     }
     const emailsArr = [...selectedMonitorEmails];
     for (let i = 0; i < emailsArr.length; i++) {
       const email = emailsArr[i];
       const code = accessCodes.find((c) => c.student_email === email);
       const studentName = code?.profile_name || code?.student_name || email;
-      const monitorRecord = await base44.entities.MonitorHistory.create({
+      const { record: monitorRecord } = await adminApi.create('MonitorHistory', {
         student_email: email,
         student_name: studentName,
         period_start: periodStart,
@@ -156,7 +157,7 @@ export default function Dashboard() {
         rank_position: i + 1,
         course: userCourse || 'tcc'
       });
-      await base44.entities.Announcement.create({
+      await adminApi.create('Announcement', {
         title: '🏅 Você é Monitor(a) da Semana!',
         content: `${studentName}, parabéns! Você foi selecionado(a) como ${i + 1}º monitor(a) da semana. Abra o link do certificado para baixar o PDF e escolher onde salvar no seu dispositivo.`,
         type: 'info',
@@ -363,9 +364,9 @@ export default function Dashboard() {
           dashboard_rank: index + 1,
           dashboard_course: userCourse,
         };
-        if (profile) await base44.entities.StudentProfile.update(profile.id, payload);
-        else await base44.entities.StudentProfile.create(payload);
-        if (code?.id) await base44.entities.AccessCode.update(code.id, { pontuacao_total: assignedPoints });
+        if (profile) await adminApi.update('StudentProfile', profile.id, payload);
+        else await adminApi.create('StudentProfile', payload);
+        if (code?.id) await adminApi.update('AccessCode', code.id, { pontuacao_total: assignedPoints });
       }
     },
     onSuccess: async () => {

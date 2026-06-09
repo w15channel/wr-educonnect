@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import { Bell, Plus, Trash2, AlertCircle, Info, AlertTriangle, Pencil, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,7 +80,7 @@ export default function Announcements() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Announcement.create({ ...data, course: activeCourse }),
+    mutationFn: (data) => adminApi.create('Announcement', { ...data, course: activeCourse }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['announcements-all'] });
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
@@ -89,7 +90,7 @@ export default function Announcements() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Announcement.update(id, data),
+    mutationFn: ({ id, data }) => adminApi.update('Announcement', id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['announcements-all'] });
       setShowForm(false);
@@ -99,7 +100,7 @@ export default function Announcements() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Announcement.delete(id),
+    mutationFn: (id) => adminApi.delete('Announcement', id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['announcements-all'] }),
   });
   const approveTestimonialMutation = useMutation({

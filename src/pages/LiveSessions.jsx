@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Video, MessageSquare, Send, Plus, Youtube, Wifi, WifiOff, Trash2, ExternalLink, ChevronLeft, Clock, Calendar, CheckCircle, UserCheck } from 'lucide-react';
@@ -59,7 +60,7 @@ export default function LiveSessions() {
   });
 
   const createSessionMutation = useMutation({
-    mutationFn: (data) => base44.entities.LiveSession.create({ ...data, course: activeCourse }),
+    mutationFn: (data) => adminApi.create('LiveSession', { ...data, course: activeCourse }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['live-sessions'] });
       setShowForm(false);
@@ -69,7 +70,7 @@ export default function LiveSessions() {
   });
 
   const updateSessionMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.LiveSession.update(id, data),
+    mutationFn: ({ id, data }) => adminApi.update('LiveSession', id, data),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['live-sessions'] });
       if (selectedSession && vars.id === selectedSession.id) {
@@ -79,12 +80,16 @@ export default function LiveSessions() {
   });
 
   const deleteSessionMutation = useMutation({
-    mutationFn: (id) => base44.entities.LiveSession.delete(id),
+    mutationFn: (id) => adminApi.delete('LiveSession', id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['live-sessions'] }); toast.success('Sessão removida.'); },
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (data) => base44.entities.ChatMessage.create(data),
+    mutationFn: (data) => base44.functions.invoke('saveStudentRecord', {
+      action: 'create',
+      entity: 'ChatMessage',
+      data,
+    }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chat', selectedSession?.id] }),
   });
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import {
   ClipboardList, CheckCircle, Star, Plus, Pencil, Trash2, Play, Send,
   MessageSquare, GraduationCap, FileText, ChevronDown, ChevronUp,
@@ -141,15 +142,15 @@ export default function Tasks({ mode = 'tasks' }) {
 
   // CRUD mutations
   const createMutation = useMutation({
-    mutationFn: d => base44.entities.Task.create(d),
+    mutationFn: d => adminApi.create('Task', d),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks'] }); setShowForm(false); setForm(EMPTY_FORM); toast.success('Trabalho criado!'); },
   });
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => adminApi.update('Task', id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tasks'] }); setEditingTask(null); setShowForm(false); setForm(EMPTY_FORM); toast.success('Atualizado!'); },
   });
   const deleteMutation = useMutation({
-    mutationFn: id => base44.entities.Task.delete(id),
+    mutationFn: id => adminApi.delete('Task', id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
   });
 

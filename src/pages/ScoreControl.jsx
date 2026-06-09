@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
 import { Trophy, ChevronLeft, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity } from 'lucide-react';
@@ -60,8 +61,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     mutationFn: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
       const existing = scoreItems.find((s) => s.category === category && s.ref_id === ref_id);
       const data = { student_email: email, category, ref_id, ref_title, score: roundScore(String(score).replace(',', '.')), max_score: roundScore(max_score), verified: true, notes: itemNotes || '' };
-      if (existing) return base44.entities.ScoreItem.update(existing.id, data);
-      return base44.entities.ScoreItem.create(data);
+      if (existing) return adminApi.update('ScoreItem', existing.id, data);
+      return adminApi.create('ScoreItem', data);
     },
     onMutate: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
       await queryClient.cancelQueries({ queryKey: ['score-items', email] });
@@ -131,8 +132,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     mutationFn: async () => {
       const profile = studentProfiles[0];
       const data = { student_email: email, full_name: displayName, points: roundScore(totalScore), pontuacao_total: roundScore(totalScore), dashboard_course: activeCourse };
-      if (profile) return base44.entities.StudentProfile.update(profile.id, data);
-      return base44.entities.StudentProfile.create(data);
+      if (profile) return adminApi.update('StudentProfile', profile.id, data);
+      return adminApi.create('StudentProfile', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student-profile-score', email] });
@@ -663,8 +664,8 @@ export default function ScoreControl() {
           dashboard_rank: index + 1,
           dashboard_course: activeCourse
         };
-        if (existing) await base44.entities.StudentProfile.update(existing.id, data);else
-        await base44.entities.StudentProfile.create(data);
+        if (existing) await adminApi.update('StudentProfile', existing.id, data);
+        else await adminApi.create('StudentProfile', data);
       }
       return rankedStudents.length;
     },
@@ -687,8 +688,8 @@ export default function ScoreControl() {
           dashboard_rank: index + 1,
           dashboard_course: activeCourse
         };
-        if (existing) await base44.entities.StudentProfile.update(existing.id, data);else
-        await base44.entities.StudentProfile.create(data);
+        if (existing) await adminApi.update('StudentProfile', existing.id, data);
+        else await adminApi.create('StudentProfile', data);
       }
     },
     onSuccess: async () => {

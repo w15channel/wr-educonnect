@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Play, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil, Link, Clock, FileDown, FileText, Globe, Video } from 'lucide-react';
@@ -67,24 +68,24 @@ export default function Lessons() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.RecordedLesson.create(data),
+    mutationFn: (data) => adminApi.create('RecordedLesson', data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['lessons'] }); setShowForm(false); setForm(EMPTY_FORM); toast.success('Aula criada!'); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.RecordedLesson.update(id, data),
+    mutationFn: ({ id, data }) => adminApi.update('RecordedLesson', id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['lessons'] }); setShowForm(false); setEditingLesson(null); setForm(EMPTY_FORM); toast.success('Aula atualizada!'); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.RecordedLesson.delete(id),
+    mutationFn: (id) => adminApi.delete('RecordedLesson', id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lessons'] }),
   });
   const updateUnlockMutation = useMutation({
     mutationFn: async (unlockUntil) => {
       const payload = { course: userCourse, type: 'unlock_rule', scope: 'lessons', title: `Unlock lessons ${userCourse}`, unlock_until: Number(unlockUntil) };
-      if (lessonUnlockRule?.id) return base44.entities.Announcement.update(lessonUnlockRule.id, payload);
-      return base44.entities.Announcement.create(payload);
+      if (lessonUnlockRule?.id) return adminApi.update('Announcement', lessonUnlockRule.id, payload);
+      return adminApi.create('Announcement', payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['unlock-rules-lessons', userCourse] });
