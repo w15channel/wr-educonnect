@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
-import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X, BookOpen, GraduationCap, Users } from 'lucide-react';
-import ServiceTermsModal from '@/components/onboarding/ServiceTermsModal';
+import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X, GraduationCap, Users } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
@@ -246,7 +245,7 @@ export default function CourseLobby() {
   const userCourse = session?.course || 'tcc';
 
   const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
-  const [termsAccepted, setTermsAccepted] = useState(localStorage.getItem('wr_terms_lobby_accepted') === 'yes');
+  const termsAccepted = true;
   const [reserveOpen, setReserveOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [leadMessages, setLeadMessages] = useState([]);
@@ -269,11 +268,6 @@ export default function CourseLobby() {
     setSession({ ...current, course: courseId });
     login();
     navigate(`/adm/dashboard`);
-  };
-
-  const handleTermsAccept = () => {
-    localStorage.setItem('wr_terms_lobby_accepted', 'yes');
-    setTermsAccepted(true);
   };
 
   const handleStudyModeSelect = (mode) => {
@@ -494,8 +488,6 @@ export default function CourseLobby() {
 
   return (
     <div className="app-shell-bg relative h-[100dvh] text-white overflow-y-auto overflow-x-hidden scrollbar-invisible" style={{ WebkitOverflowScrolling: 'touch' }}>
-      {!termsAccepted && <ServiceTermsModal studentName={session?.name || 'Aluno'} onAccept={handleTermsAccept} />}
-
       {/* Subtle cosmos gradient */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 20% 20%, rgba(212,185,106,0.04), transparent 45%), radial-gradient(circle at 80% 80%, rgba(212,185,106,0.03), transparent 45%)` }} />
@@ -534,17 +526,13 @@ export default function CourseLobby() {
           ))}
         </div>
 
-        {/* Terms + Enter CTA */}
+        {/* Enter CTA */}
         <div className="max-w-xl mx-auto border p-5" style={{ borderColor: `${G}15`, background: BG3 }}>
-          <p className="text-xs text-white/40 font-light leading-relaxed mb-4">
-            O Termo de Prestação de Serviços é exibido aqui no lobby antes do acesso ao portal. Ao entrar, você confirma que leu e aceita os termos.
-          </p>
           <button
             onClick={handleStudentEnter}
-            disabled={!termsAccepted}
-            className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.22em] flex items-center justify-center gap-2 transition-all disabled:opacity-30"
+            className="w-full py-3 border text-[11px] font-medium uppercase tracking-[0.22em] flex items-center justify-center gap-2 transition-all"
             style={{ borderColor: `${G}60`, color: G }}
-            onMouseEnter={e => { if (termsAccepted) { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; } }}
+            onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}
           >
             Entrar no Portal do Aluno <ChevronRight size={13} />
