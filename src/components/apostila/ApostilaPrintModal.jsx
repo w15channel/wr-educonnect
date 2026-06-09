@@ -261,32 +261,14 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
 
   const captureNode = async (node) => {
     await waitImages(node);
-    // Temporarily force the node to exact pixel size (undoes any CSS transform/scale)
-    const prevTransform = node.style.transform;
-    const prevPosition  = node.style.position;
-    const prevTop       = node.style.top;
-    const prevLeft      = node.style.left;
-    node.style.transform = 'none';
-    node.style.position  = 'fixed';
-    node.style.top       = '-99999px';
-    node.style.left      = '-99999px';
-    await new Promise(r => requestAnimationFrame(r)); // let browser repaint
     const canvas = await html2canvas(node, {
-      scale: 2,          // 2× for crisp output
+      scale: 1,
       useCORS: true,
       allowTaint: false,
       width: IMG_W,
       height: IMG_H,
-      scrollX: 0,
-      scrollY: 0,
-      backgroundColor: '#ffffff',
-      logging: false,
+      backgroundColor: '#fff',
     });
-    // Restore
-    node.style.transform = prevTransform;
-    node.style.position  = prevPosition;
-    node.style.top       = prevTop;
-    node.style.left      = prevLeft;
     return canvas;
   };
 
@@ -424,8 +406,8 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         </div>
       </div>
 
-      {/* Hidden pages for capture — rendered at full pixel size, no scaling */}
-      <div style={{ position: 'fixed', top: -99999, left: -99999, pointerEvents: 'none', zIndex: -1, transform: 'none' }}>
+      {/* Hidden pages for capture — all 3 always mounted */}
+      <div style={{ position: 'fixed', top: -99999, left: -99999, pointerEvents: 'none', zIndex: -1 }}>
         {pages.map((pair, i) =>
           i !== currentPage ? (
             <ApostilaPage
