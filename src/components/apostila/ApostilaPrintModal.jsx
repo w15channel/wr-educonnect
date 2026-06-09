@@ -3,62 +3,38 @@ import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image } from 'lucide-re
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
-// ─── Background (new, exact pixel spec) ──────────────────────────────────────
+// ─── Background ───────────────────────────────────────────────────────────────
 const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
 
-// Full image canvas (px)
 const IMG_W = 2250;
 const IMG_H = 1591;
 
-// Grey content square
 const SQUARE_W    = 2168;
 const SQUARE_H    = 1178;
-const SQUARE_LEFT = 41;   // (2250 - 2168) / 2
-const SQUARE_TOP  = 207;  // (1591 - 1178) / 2
+const SQUARE_LEFT = 41;
+const SQUARE_TOP  = 207;
 
-// "APOSTILA DE ESTUDOS" baked into BG ends at ~282px from image top.
-// We add a small title block (lesson name + chapter + divider) in a 72px zone.
 const HEADER_ZONE_H = 72;
-const CONTENT_TOP   = SQUARE_TOP + HEADER_ZONE_H; // 279
+const CONTENT_TOP   = SQUARE_TOP + HEADER_ZONE_H;
+const CONTENT_H     = SQUARE_H - HEADER_ZONE_H;
 
-// Content area height (usable for text)
-const CONTENT_H = SQUARE_H - HEADER_ZONE_H; // 1106px
+const INNER_MARGIN = 31;
+const USABLE_W     = SQUARE_W - INNER_MARGIN * 2;
+const CENTER_GAP   = Math.round(USABLE_W * 0.10);
+const COL_W        = Math.round((USABLE_W - CENTER_GAP) / 2);
+const COL_LEFT_X   = SQUARE_LEFT + INNER_MARGIN;
+const COL_RIGHT_X  = COL_LEFT_X + COL_W + CENTER_GAP;
 
-// ── Two columns with 10% central gap ─────────────────────────────────────────
-// Total usable width inside square (minus 31px inner margin each side)
-const INNER_MARGIN   = 31;
-const USABLE_W       = SQUARE_W - INNER_MARGIN * 2; // 2106px
-const CENTER_GAP     = Math.round(USABLE_W * 0.10);  // 10% = ~211px
-const COL_W          = Math.round((USABLE_W - CENTER_GAP) / 2); // ~948px
-const COL_LEFT_X     = SQUARE_LEFT + INNER_MARGIN;          // 72
-const COL_RIGHT_X    = COL_LEFT_X + COL_W + CENTER_GAP;    // 72 + 948 + 211 = 1231
-
-// Typography tuned to COL_W≈948 at IMG_W=2250
-const FONT_SIZE   = 18;    // px
+const FONT_SIZE   = 18;
 const LINE_HEIGHT = 1.85;
-const LINE_PX     = Math.round(FONT_SIZE * LINE_HEIGHT); // ~33px
-const MAX_LINES   = 20;
-// Max chars per column: ~20 lines at ~52 chars/line (18px Georgia, col 948px)
-const CHARS_PER_LINE = Math.floor(COL_W / (FONT_SIZE * 0.515)); // ~102
-const MAX_CHARS_PER_COL = CHARS_PER_LINE * MAX_LINES; // ~2040  (≥1700 spec)
 
-// Each page shows exactly 2 topics side-by-side (1 per column)
-// paginateTopics splits lesson.content into topics of ~1700 chars each
-// and pairs them: [[topic0, topic1], [topic2, topic3], [topic4, topic5]]
-
-/**
- * Split content into 6 topics of ≥1700 chars, preserving paragraph breaks.
- * Returns array of strings (up to 6).
- */
+// ─── Split content into 6 topics ─────────────────────────────────────────────
 function splitIntoTopics(content, targetChars = 1700) {
   if (!content || !content.trim()) {
     return Array(6).fill('Conteúdo desta aula será disponibilizado em breve.');
   }
 
-  // Split by double-newline (paragraphs) or by topic headings (numbered / bolded lines)
   const paragraphs = content.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-
-  // Try to form 6 chunks of roughly equal size
   const totalChars = content.replace(/\s+/g, ' ').length;
   const chunkSize  = Math.max(targetChars, Math.ceil(totalChars / 6));
 
@@ -67,7 +43,6 @@ function splitIntoTopics(content, targetChars = 1700) {
 
   for (const para of paragraphs) {
     const candidate = current ? current + '\n\n' + para : para;
-    // Start a new topic when we've accumulated enough and haven't hit 6 yet
     if (current.length >= chunkSize && topics.length < 5) {
       topics.push(current.trim());
       current = para;
@@ -77,9 +52,7 @@ function splitIntoTopics(content, targetChars = 1700) {
   }
   if (current.trim()) topics.push(current.trim());
 
-  // Ensure exactly 6 topics (pad or merge)
   while (topics.length < 6) topics.push('');
-  // If we ended up with more than 6, merge excess into topic 6
   if (topics.length > 6) {
     const extra = topics.splice(6);
     topics[5] = topics[5] + '\n\n' + extra.join('\n\n');
@@ -88,7 +61,8 @@ function splitIntoTopics(content, targetChars = 1700) {
   return topics;
 }
 
-// ─── Single page (2 topics side by side) ─────────────────────────────────────
+// ─── Page component ───────────────────────────────────────────────────────────
+// No transform/scale ever applied here — only raw pixel sizes
 const ApostilaPage = React.forwardRef(function ApostilaPage(
   { lesson, chapterTitle, topicLeft, topicRight, pageNum, totalPages },
   ref
@@ -104,9 +78,9 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         background: '#fff',
         boxSizing: 'border-box',
         flexShrink: 0,
+        // CRITICAL: no transform, no scale — full pixel size always
       }}
     >
-      {/* Full-bleed background — objectFit:fill keeps exact pixel alignment */}
       <img
         src={APOSTILA_BG}
         alt=""
@@ -123,7 +97,7 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         }}
       />
 
-      {/* ── Header block (inside grey square, above text) ── */}
+      {/* Header */}
       <div style={{
         position: 'absolute',
         top: SQUARE_TOP + 4,
@@ -167,7 +141,7 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         <div style={{ width: 80, height: 2, background: '#c9a84c', marginTop: 5 }} />
       </div>
 
-      {/* ── Left column (topic A) ── */}
+      {/* Left column */}
       <div style={{
         position: 'absolute',
         top: CONTENT_TOP,
@@ -189,7 +163,7 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         {topicLeft || ''}
       </div>
 
-      {/* ── Right column (topic B) ── */}
+      {/* Right column */}
       <div style={{
         position: 'absolute',
         top: CONTENT_TOP,
@@ -211,7 +185,7 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         {topicRight || ''}
       </div>
 
-      {/* ── Page indicator ── */}
+      {/* Page number */}
       <div style={{
         position: 'absolute',
         bottom: 38,
@@ -230,11 +204,11 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
-  // 6 topics → 3 pages
   const [topics, setTopics] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
-  // 3 refs, one per page
+
+  // Refs for capture — always full-size, never scaled
   const pageRefs = useRef([React.createRef(), React.createRef(), React.createRef()]);
 
   useEffect(() => {
@@ -242,13 +216,15 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     setCurrentPage(0);
   }, [lesson.content]);
 
-  // Pages: [[t0,t1], [t2,t3], [t4,t5]]
   const pages = [
     [topics[0] || '', topics[1] || ''],
     [topics[2] || '', topics[3] || ''],
     [topics[4] || '', topics[5] || ''],
   ];
   const totalPages = 3;
+
+  // Visual scale for preview only — NOT applied to capture nodes
+  const SCALE = Math.min(0.40, (typeof window !== 'undefined' ? window.innerWidth * 0.86 : 900) / IMG_W);
 
   const waitImages = (node) => {
     const imgs = Array.from(node.querySelectorAll('img'));
@@ -261,6 +237,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
 
   const captureNode = async (node) => {
     await waitImages(node);
+    // node is always IMG_W × IMG_H with no transform — capture at scale:1 → perfect output
     const canvas = await html2canvas(node, {
       scale: 1,
       useCORS: true,
@@ -279,7 +256,10 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     return canvas;
   };
 
-  // Export current page as PNG (pixel-perfect, exactly what's visible)
+  const safeName = (lesson.title || 'aula')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
+
   const handleExportPng = async () => {
     setLoading(true);
     try {
@@ -289,9 +269,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const safeName = (lesson.title || 'aula')
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
         a.href = url;
         a.download = `apostila-${safeName}-p${currentPage + 1}.png`;
         document.body.appendChild(a);
@@ -307,14 +284,9 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     }
   };
 
-  // Export all 3 pages as PNGs (sequentially)
   const handleExportAllPng = async () => {
     setLoading(true);
     try {
-      const safeName = (lesson.title || 'aula')
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
-
       for (let i = 0; i < totalPages; i++) {
         const node = pageRefs.current[i]?.current;
         if (!node) continue;
@@ -329,7 +301,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            setTimeout(resolve, 400); // small delay between downloads
+            setTimeout(resolve, 400);
           }, 'image/png');
         });
       }
@@ -340,9 +312,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       setLoading(false);
     }
   };
-
-  // Visual preview scale
-  const SCALE = Math.min(0.40, (typeof window !== 'undefined' ? window.innerWidth * 0.86 : 900) / IMG_W);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/82 backdrop-blur-sm p-3">
@@ -355,7 +324,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
           <X size={15} /> Fechar
         </button>
 
-        {/* Page nav */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
@@ -376,7 +344,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
           </button>
         </div>
 
-        {/* PNG exports */}
         <button
           onClick={handleExportPng}
           disabled={loading}
@@ -395,12 +362,13 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         </button>
       </div>
 
-      {/* Preview — current page */}
+      {/* ── PREVIEW ONLY — visual scale via CSS, no ref ── */}
       <div
         className="rounded-xl overflow-hidden border border-white/10 shadow-2xl"
         style={{ width: IMG_W * SCALE, height: IMG_H * SCALE, flexShrink: 0 }}
       >
-        <div style={{ width: IMG_W, height: IMG_H, transform: `scale(${SCALE})`, transformOrigin: 'top left' }}>
+        <div style={{ width: IMG_W, height: IMG_H, transform: `scale(${SCALE})`, transformOrigin: 'top left', pointerEvents: 'none' }}>
+          {/* Preview page — NO ref, just visual */}
           <ApostilaPage
             lesson={lesson}
             chapterTitle={chapterTitle}
@@ -408,28 +376,35 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
             topicRight={pages[currentPage][1]}
             pageNum={currentPage + 1}
             totalPages={totalPages}
-            ref={pageRefs.current[currentPage]}
           />
         </div>
       </div>
 
-      {/* Hidden pages for capture — rendered off-screen without fixed positioning */}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, overflow: 'visible', pointerEvents: 'none', zIndex: -1, opacity: 0 }}>
-        {pages.map((pair, i) =>
-          i !== currentPage ? (
-            <div key={i} style={{ position: 'absolute', top: 0, left: 0 }}>
-              <ApostilaPage
-                lesson={lesson}
-                chapterTitle={chapterTitle}
-                topicLeft={pair[0]}
-                topicRight={pair[1]}
-                pageNum={i + 1}
-                totalPages={totalPages}
-                ref={pageRefs.current[i]}
-              />
-            </div>
-          ) : null
-        )}
+      {/* ── CAPTURE NODES — full pixel size, off-screen, NO transform, WITH refs ── */}
+      <div
+        style={{
+          position: 'fixed',
+          left: -9999,
+          top: 0,
+          width: IMG_W,
+          pointerEvents: 'none',
+          zIndex: -10,
+          opacity: 0,
+          // NO transform here — ever
+        }}
+      >
+        {pages.map((pair, i) => (
+          <ApostilaPage
+            key={i}
+            lesson={lesson}
+            chapterTitle={chapterTitle}
+            topicLeft={pair[0]}
+            topicRight={pair[1]}
+            pageNum={i + 1}
+            totalPages={totalPages}
+            ref={pageRefs.current[i]}
+          />
+        ))}
       </div>
     </div>
   );
