@@ -80,8 +80,8 @@ function SubmissionRow({ sub, task }) {
         </p>
       )}
 
-      {/* Comment/text answer */}
-      {sub.comment && (
+      {/* Comment/text answer — filter out upload metadata strings */}
+      {sub.comment && !/^Aluno:/.test(sub.comment) && (
         <div className="bg-secondary/40 rounded-xl p-3 mb-4 border border-border">
           <p className="text-[10px] font-bold text-muted-foreground mb-1 flex items-center gap-1">
             <MessageSquare size={10} /> Resposta do aluno

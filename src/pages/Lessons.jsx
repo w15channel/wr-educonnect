@@ -6,6 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Play, Plus, Trash2, ExternalLink, CheckCircle, Circle, MessageSquare, BookOpen, ChevronDown, ChevronUp, Pencil, Link, Clock, FileDown, FileText, Globe, Video } from 'lucide-react';
+import LessonProgressPanel from '@/components/lessons/LessonProgressPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +32,7 @@ export default function Lessons() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [expandedLesson, setExpandedLesson] = useState(null);
+  const [viewProgressLesson, setViewProgressLesson] = useState(null);
   const [commentDraft, setCommentDraft] = useState({});
   const [summaryDraft, setSummaryDraft] = useState({});
   const [uploadStatus, setUploadStatus] = useState({});
@@ -230,6 +232,11 @@ export default function Lessons() {
     if (editingLesson) updateMutation.mutate({ id: editingLesson.id, data: { ...form, course: userCourse } });
     else createMutation.mutate({ ...form, course: userCourse, order: lessons.length + 1 });
   };
+
+  // Teacher: show progress panel for a lesson
+  if (viewProgressLesson) {
+    return <LessonProgressPanel lesson={viewProgressLesson} onBack={() => setViewProgressLesson(null)} />;
+  }
 
   return (
     <div className="app-page app-page--wide animate-fade-in-up">
@@ -460,6 +467,13 @@ export default function Lessons() {
                   <div className="flex items-center gap-1 shrink-0">
                     {isTeacher ? (
                       <>
+                        <button
+                          onClick={() => setViewProgressLesson(lesson)}
+                          className="text-muted-foreground hover:text-primary p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg transition-colors border border-border text-xs font-semibold gap-1"
+                          title="Ver comentários dos alunos"
+                        >
+                          <MessageSquare size={13} />
+                        </button>
                         <button onClick={() => openEdit(lesson)} className="text-muted-foreground hover:text-primary p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg transition-colors">
                           <Pencil size={13} />
                         </button>
@@ -573,6 +587,29 @@ export default function Lessons() {
                             </a>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Teacher: summary of student interactions */}
+                    {isTeacher && (
+                      <div className="px-4 pb-4 pt-3 border-t border-border">
+                        {(() => {
+                          const entries = getLessonProgressEntries(lesson.id);
+                          if (entries.length === 0) return (
+                            <p className="text-xs text-muted-foreground italic">Nenhum aluno interagiu com esta aula ainda.</p>
+                          );
+                          return (
+                            <div>
+                              <p className="text-xs font-bold text-muted-foreground mb-2">{entries.length} interação(ões) de alunos</p>
+                              <button
+                                onClick={() => setViewProgressLesson(lesson)}
+                                className="text-xs text-primary hover:underline font-semibold flex items-center gap-1"
+                              >
+                                <MessageSquare size={11} /> Ver todos os comentários e resumos →
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 

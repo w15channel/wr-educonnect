@@ -111,12 +111,15 @@ export default function RankingGeral() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
-  // Course isolation: /sex/ exibe somente alunos SEX-
-  const activeCourse = routeCourse || session?.course;
+  // Course isolation: match by session course, with fallback for tcc (legacy codes without .course)
+  const activeCourse = routeCourse || session?.course || 'tcc';
   const courseCodes = accessCodes.filter(c => {
-    if (activeCourse && c.course !== activeCourse && !(activeCourse === 'tcc' && !c.course)) return false;
+    if (!c.student_email) return false;
+    // Course match: treat missing/null course as 'tcc'
+    const codeCourse = c.course || 'tcc';
+    if (codeCourse !== activeCourse) return false;
     if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
-    return !!c.student_email;
+    return true;
   });
 
   // Ranking usa exclusivamente o cache persistido em AccessCode.pontuacao_total.
@@ -126,14 +129,27 @@ export default function RankingGeral() {
     participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
   });
 
+  // Score fallback: if pontuacao_total is 0 or missing, sum ScoreItems live
+  const scoreItemsSumMap = {};
+  allScoreItems.forEach(s => {
+    if (!s.student_email || !s.verified) return;
+    scoreItemsSumMap[s.student_email] = roundScore((scoreItemsSumMap[s.student_email] || 0) + roundScore(s.score));
+  });
+
   // Build ranking from all course students (so even zero-score students show up)
-  const ranking = courseCodes.map(c => ({
-    email: c.student_email,
-    total: roundScore(c.pontuacao_total || 0),
-    count: participationMap[c.student_email] || 0,
-    enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
-    name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
-  })).sort((a, b) => {
+  const ranking = courseCodes.map(c => {
+    const cached = roundScore(c.pontuacao_total || 0);
+    const liveSum = roundScore(scoreItemsSumMap[c.student_email] || 0);
+    // Use the higher of cached vs live sum (avoids stale-cache zero issues)
+    const total = Math.max(cached, liveSum);
+    return {
+      email: c.student_email,
+      total,
+      count: participationMap[c.student_email] || 0,
+      enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
+      name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
+    };
+  }).sort((a, b) => {
     // 1) Points desc
     if (b.total !== a.total) return b.total - a.total;
     // 2) When there are participations, tie-break by participation count desc
