@@ -267,7 +267,14 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       allowTaint: false,
       width: IMG_W,
       height: IMG_H,
+      windowWidth: IMG_W,
+      windowHeight: IMG_H,
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0,
       backgroundColor: '#fff',
+      logging: false,
     });
     return canvas;
   };
@@ -406,20 +413,21 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         </div>
       </div>
 
-      {/* Hidden pages for capture — all 3 always mounted */}
-      <div style={{ position: 'fixed', top: -99999, left: -99999, pointerEvents: 'none', zIndex: -1 }}>
+      {/* Hidden pages for capture — rendered off-screen without fixed positioning */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, overflow: 'visible', pointerEvents: 'none', zIndex: -1, opacity: 0 }}>
         {pages.map((pair, i) =>
           i !== currentPage ? (
-            <ApostilaPage
-              key={i}
-              lesson={lesson}
-              chapterTitle={chapterTitle}
-              topicLeft={pair[0]}
-              topicRight={pair[1]}
-              pageNum={i + 1}
-              totalPages={totalPages}
-              ref={pageRefs.current[i]}
-            />
+            <div key={i} style={{ position: 'absolute', top: 0, left: 0 }}>
+              <ApostilaPage
+                lesson={lesson}
+                chapterTitle={chapterTitle}
+                topicLeft={pair[0]}
+                topicRight={pair[1]}
+                pageNum={i + 1}
+                totalPages={totalPages}
+                ref={pageRefs.current[i]}
+              />
+            </div>
           ) : null
         )}
       </div>
