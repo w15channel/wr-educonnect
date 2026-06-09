@@ -195,13 +195,13 @@ export default function Apostila() {
                                 <textarea
                                   value={editContent}
                                   onChange={(e) => {
-                                    if (e.target.value.length <= 1800) setEditContent(e.target.value);
+                                    if (e.target.value.length <= 10800) setEditContent(e.target.value);
                                   }}
-                                  rows={16}
+                                  rows={28}
                                   className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring font-mono"
                                 />
-                                <div className={`text-xs font-medium text-right ${editContent.length >= 1800 ? 'text-red-500' : editContent.length >= 1600 ? 'text-amber-400' : 'text-muted-foreground'}`}>
-                                  {editContent.length} / 1800 caracteres
+                                <div className={`text-xs font-medium text-right ${editContent.length >= 10800 ? 'text-red-500' : editContent.length >= 10000 ? 'text-amber-400' : 'text-muted-foreground'}`}>
+                                  {editContent.length} / 10800 caracteres (6 tópicos × ~1800)
                                 </div>
                                 <div className="flex gap-2">
                                   <Button size="sm" onClick={() => handleSaveLesson(chapter.id, lesson.id)} disabled={saveMutation.isPending}>
