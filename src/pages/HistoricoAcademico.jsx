@@ -14,8 +14,7 @@ import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, formatDocumentIssuer } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
-
-const HOURS_MAP = { lesson: 2, live_attendance: 2, task: 1, quiz: 1.5, forum: 0.5, therapist: 1 };
+import { HOURS_MAP } from '@/lib/buildStudentAcademicData';
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
 function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, onClose }) {

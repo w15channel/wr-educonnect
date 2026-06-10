@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Award, Download, FileImage, RefreshCw, Save, Search, Copy, ClipboardPaste, Plus, Trash2, Move, Lock } from 'lucide-react';
+import { Award, Download, FileImage, RefreshCw, Save, Search, Copy, ClipboardPaste, Plus, Trash2, Move, Lock, Loader2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import CertificateFront from '@/components/certificates/CertificateFront';
 import CertificateBack from '@/components/certificates/CertificateBack';
+import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 
 const POSITIONS_KEY = 'wr_cert_front_positions_v2';
 const DEFAULT_POSITIONS = {
@@ -89,6 +90,7 @@ export default function AdminCertificateGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isRescuing, setIsRescuing] = useState(false);
+  const [isLoadingAcademic, setIsLoadingAcademic] = useState(false);
   const [activeTab, setActiveTab] = useState('front'); // 'front' | 'back'
   const [editMode, setEditMode] = useState(false);
   const [positions, setPositions] = useState(loadPositions);
@@ -116,20 +118,58 @@ export default function AdminCertificateGenerator() {
 
   const upd = (field, value) => setCert(p => ({ ...p, [field]: value }));
 
-  const fillStudent = (s) => {
+  const fillStudent = async (s) => {
     if (!s) return;
     // Generate a unique verification code per student based on their access code
     const studentCodeSuffix = (s.code || '').replace(/[^A-Z0-9]/g, '').slice(-4) || makeVerifCode().slice(-4);
     const uniqueCode = `WR-${String(new Date().getFullYear()).slice(-2)}-${studentCodeSuffix}`;
+    const course = s.course || 'tcc';
+
+    // Base fields first
     setCert(p => ({
       ...p,
       studentName: s.student_name || s.profile_name || p.studentName,
       studentEmail: s.student_email || p.studentEmail,
       studentAccessCode: s.code || p.studentAccessCode,
-      courseName: COURSE_LABELS[s.course] || p.courseName,
+      courseName: COURSE_LABELS[course] || p.courseName,
       verificationCode: uniqueCode,
     }));
     setSavedId(null);
+
+    // Load academic data from HistoricoAcademico logic
+    if (s.student_email) {
+      setIsLoadingAcademic(true);
+      try {
+        const [scoreItems, lessons, liveSessions, tasks, pairings] = await Promise.all([
+          base44.entities.ScoreItem.filter({ student_email: s.student_email }, '-created_date', 2000),
+          base44.entities.RecordedLesson.filter({ course }, 'order', 200),
+          base44.entities.LiveSession.filter({ course }, '-scheduled_at', 50),
+          base44.entities.Task.filter({ course }, '-created_date', 200),
+          base44.entities.TherapistPairing.list('-pairing_date', 200),
+        ]);
+
+        const { totalHours, averageGrade, classes } = buildStudentAcademicData({
+          studentEmail: s.student_email,
+          scoreItems,
+          lessons,
+          liveSessions,
+          tasks,
+          pairings,
+        });
+
+        setCert(p => ({
+          ...p,
+          totalHours: totalHours || p.totalHours,
+          averageGrade: averageGrade || p.averageGrade,
+          classes: classes.length > 0 ? classes : p.classes,
+        }));
+        toast.success(`Dados acadêmicos carregados: ${totalHours}h · média ${averageGrade}`);
+      } catch (e) {
+        toast.error('Não foi possível carregar dados acadêmicos: ' + e.message);
+      } finally {
+        setIsLoadingAcademic(false);
+      }
+    }
   };
 
   const updClass = (id, field, value) =>
@@ -306,7 +346,7 @@ export default function AdminCertificateGenerator() {
             <h3 className="text-sm font-black text-foreground">Aluno</h3>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Selecionar do cadastro</label>
-              <select className={INPUT} value={studentKey} onChange={e => { setStudentKey(e.target.value); fillStudent(students.find(s => String(s.id || s.code) === e.target.value)); }}>
+              <select className={INPUT} value={studentKey} onChange={e => { const v = e.target.value; setStudentKey(v); fillStudent(students.find(s => String(s.id || s.code) === v)); }}>
                 <option value="">Escolha um aluno… (código único gerado automaticamente)</option>
                 {students.map(s => (
                   <option key={s.id || s.code} value={s.id || s.code}>
@@ -348,11 +388,15 @@ export default function AdminCertificateGenerator() {
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Carga (h)</label>
+                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                  Carga (h) {isLoadingAcademic && <Loader2 size={10} className="animate-spin text-primary" />}
+                </label>
                 <input className={INPUT} type="number" value={cert.totalHours} onChange={e => upd('totalHours', e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Média</label>
+                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                  Média {isLoadingAcademic && <Loader2 size={10} className="animate-spin text-primary" />}
+                </label>
                 <input className={INPUT} value={cert.averageGrade} onChange={e => upd('averageGrade', e.target.value)} />
               </div>
               <div>
@@ -375,10 +419,18 @@ export default function AdminCertificateGenerator() {
           <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-foreground">Verso — Aulas</h3>
-              <button onClick={addClass} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-xs font-bold hover:bg-secondary">
-                <Plus size={12} /> Adicionar
-              </button>
+              <div className="flex items-center gap-1.5">
+                {isLoadingAcademic && <span className="flex items-center gap-1 text-[10px] text-primary font-bold"><Loader2 size={10} className="animate-spin" /> Carregando...</span>}
+                <button onClick={addClass} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-xs font-bold hover:bg-secondary">
+                  <Plus size={12} /> Adicionar
+                </button>
+              </div>
             </div>
+            {!isLoadingAcademic && studentKey && (
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 font-bold">
+                <BookOpen size={10} /> Dados preenchidos automaticamente do Histórico Acadêmico
+              </div>
+            )}
             {cert.classes.map((cls, i) => (
               <div key={cls.id} className="rounded-lg border border-border bg-background p-3 space-y-2">
                 <div className="flex items-center justify-between">
