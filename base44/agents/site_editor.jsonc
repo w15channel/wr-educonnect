@@ -13,7 +13,11 @@
   "memory_config": {
     "enabled": true,
     "scope": "both",
+    "include_other_conversation_context": false,
     "instructions": null
   },
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "line_greeting": "",
   "name": "site_editor"
 }
