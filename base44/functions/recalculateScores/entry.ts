@@ -1,6 +1,19 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const COURSES = ['tcc', 'psicanalise', 'sexologia'];
+
+async function fetchAllPages(entityQuery, sort, pageSize = 5000) {
+  let all = [];
+  let skip = 0;
+  while (true) {
+    const page = await entityQuery(sort, pageSize, skip);
+    if (!page || page.length === 0) break;
+    all = all.concat(page);
+    if (page.length < pageSize) break;
+    skip += pageSize;
+  }
+  return all;
+}
 const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 const BONUS_BY_RANK = { 1: 0.5, 2: 0.3, 3: 0.2 };
@@ -71,45 +84,29 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.LiveAttendance.list('-created_date', 10000),
       base44.asServiceRole.entities.ForumPost.list('-created_date', 10000),
       base44.asServiceRole.entities.ForumReply.list('-created_date', 10000),
-      base44.asServiceRole.entities.ScoreItem.list('-created_date', 20000),
+      fetchAllPages((sort, limit, skip) => base44.asServiceRole.entities.ScoreItem.list(sort, limit, skip), '-created_date'),
       base44.asServiceRole.entities.StudentProfile.list('-updated_date', 10000),
       base44.asServiceRole.entities.User.list('-created_date', 10000).catch(() => []),
       base44.asServiceRole.entities.MonitorHistory.list('-period_start', 1000),
     ]);
 
-    // ── Deduplicate ScoreItems in-memory before building the map ──────────────
-    // If duplicates exist (same email+category+ref_id), keep the best one
-    // (verified > highest score > most recently updated) and delete the rest now.
-    {
-      const dupGroups = new Map();
-      for (const item of scoreItems) {
-        if (!item.student_email || !item.category || !item.ref_id) continue;
-        const k = scoreKey(item.student_email, item.category, item.ref_id);
-        if (!dupGroups.has(k)) dupGroups.set(k, []);
-        dupGroups.get(k).push(item);
-      }
-      for (const [, members] of dupGroups) {
-        if (members.length <= 1) continue;
-        members.sort((a, b) => {
-          if (a.verified !== b.verified) return b.verified ? 1 : -1;
-          if (b.score !== a.score) return (Number(b.score) || 0) - (Number(a.score) || 0);
-          const aT = new Date(a.updated_date || a.created_date || 0).getTime();
-          const bT = new Date(b.updated_date || b.created_date || 0).getTime();
-          return bT - aT;
-        });
-        const [, ...dupes] = members;
-        for (const dupe of dupes) {
-          await base44.asServiceRole.entities.ScoreItem.delete(dupe.id).catch(() => null);
-        }
-        // Remove dupes from the scoreItems array so the map is clean
-        for (const dupe of dupes) {
-          const idx = scoreItems.indexOf(dupe);
-          if (idx >= 0) scoreItems.splice(idx, 1);
-        }
-      }
+    // ── Build existingScores Map: deduplicate in-memory, keep best record ─────
+    // When multiple records share the same (email, category, ref_id), keep the best one
+    // (verified > highest score > most recently updated). Do NOT delete here to avoid
+    // rate-limit bursts — the upsertScore function will update the kept record in-place,
+    // and orphan duplicates become unreachable and harmless.
+    const existingScores = new Map();
+    for (const item of scoreItems) {
+      if (!item.student_email || !item.category || !item.ref_id) continue;
+      const k = scoreKey(item.student_email, item.category, item.ref_id);
+      const prev = existingScores.get(k);
+      if (!prev) { existingScores.set(k, item); continue; }
+      // Keep verified > higher score > more recent
+      const prevWins =
+        (prev.verified && !item.verified) ||
+        (prev.verified === item.verified && (Number(prev.score) || 0) >= (Number(item.score) || 0));
+      if (!prevWins) existingScores.set(k, item);
     }
-
-    const existingScores = new Map(scoreItems.map((item) => [scoreKey(item.student_email, item.category, item.ref_id), item]));
     const postById = new Map(forumPosts.map((post) => [post.id, post]));
     const period = getCurrentPeriod();
     let createdScores = 0;

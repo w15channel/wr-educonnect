@@ -190,15 +190,16 @@ export default function RankingGeral() {
   }, [allScoreItems]);
 
   // ── Aggregate scores — only verified, only from course students ──
+  // participationMap counts only VERIFIED items (same gate as scoreMap)
   const { scoreMap, participationMap } = useMemo(() => {
     const scoreMap = {};
     const participationMap = {};
     deduplicatedScoreItems.forEach(s => {
       if (!s.student_email) return;
       if (!courseEmailSet.has(s.student_email)) return; // isolate by course
-      participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
-      if (!s.verified) return;
+      if (!s.verified) return; // only verified items count for both score and participation
       scoreMap[s.student_email] = roundScore((scoreMap[s.student_email] || 0) + roundScore(s.score));
+      participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
     });
     return { scoreMap, participationMap };
   }, [deduplicatedScoreItems, courseEmailSet]);

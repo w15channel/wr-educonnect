@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 function roundScore(value) {
   const numeric = Number(value);
@@ -58,8 +58,22 @@ Deno.serve(async (req) => {
         : [],
     ]);
 
-    const totals = new Map();
+    // Deduplicate ScoreItems in-memory before summing to prevent inflated totals
+    const deduped = new Map(); // key → best item
     for (const item of scoreItems) {
+      if (!item.student_email || !item.category || !item.ref_id) continue;
+      const key = `${item.student_email}|${item.category}|${item.ref_id}`;
+      const prev = deduped.get(key);
+      if (!prev) { deduped.set(key, item); continue; }
+      // keep verified > higher score > more recent
+      const prevWins =
+        (prev.verified && !item.verified) ||
+        (prev.verified === item.verified && (Number(prev.score) || 0) >= (Number(item.score) || 0));
+      if (!prevWins) deduped.set(key, item);
+    }
+
+    const totals = new Map();
+    for (const item of deduped.values()) {
       if (!item.verified || !item.student_email) continue;
       totals.set(item.student_email, addRounded(totals.get(item.student_email) || 0, item.score));
     }

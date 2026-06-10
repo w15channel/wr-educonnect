@@ -614,11 +614,13 @@ export default function ScoreControl() {
     const lessonCount = lessonProgresses.filter((p) => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched).length;
     const liveCount = attendances.filter((a) => a.student_email === email && liveSessionIds.has(a.session_id)).length;
     const taskCount = submissions.filter((s) => s.student_email === email && taskIds.has(s.task_id)).length;
-    const postCount = forumPosts.filter((p) => p.author_email === email).length;
+    // Only count forum posts from this course
+    const postCount = forumPosts.filter((p) => p.author_email === email && forumPostIds.has(p.id)).length;
     const forumParentById = new Map(forumPosts.map((p) => [p.id, p]));
     const replyCount = forumReplies.filter((r) => {
       const parentPost = forumParentById.get(r.post_id);
-      return r.author_email === email && parentPost && parentPost.author_email !== email;
+      // Only count replies to course-specific posts
+      return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostIds.has(parentPost.id);
     }).length;
     const monitorCount = monitorHistory.filter((m) => m.student_email === email).length;
     const count = lessonCount + liveCount + taskCount + postCount + replyCount + monitorCount;
