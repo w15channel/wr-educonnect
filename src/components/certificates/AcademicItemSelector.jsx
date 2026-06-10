@@ -162,7 +162,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
           <Square size={10} /> Limpar
         </button>
         <div className="ml-auto text-[10px] text-muted-foreground self-center">
-          Nota Total: <span className="font-black text-primary">{formatScore(totalScore)}</span>
+          Média: <span className="font-black text-primary">{averageGrade}</span>
         </div>
       </div>
 

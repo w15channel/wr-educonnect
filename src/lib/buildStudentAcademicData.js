@@ -1,32 +1,24 @@
 /**
  * buildStudentAcademicData
  * ─────────────────────────
- * Computes a student's academic summary from raw entity data.
- * Used by HistoricoAcademico, AcademicItemSelector, and the certificate generator.
+ * Computes a student's academic summary from raw entity data —
+ * the same logic used by HistoricoAcademico — so it can be reused
+ * by the certificate generator and any future consumer.
  *
- * GROUPING RULES (for `classes` / document output):
- *   - Aulas Gravadas  → grouped by module (lesson title prefix before " - " or first word)
- *                       label: "Módulo X — N aulas assistidas"
- *                       hours: sum; score: sum of points; max: sum of max
- *   - Trabalhos (task/quiz) → ONE row "Trabalhos de Classe"
- *                             hours: sum; score: sum; max: sum
- *   - Aulas ao Vivo → ONE row "Aulas ao Vivo"
- *                     hours: sum; score: sum; max: sum
- *   - Other categories → kept as-is
- *
- * HOURS_MAP (per item):
- *   lesson           → 2h
- *   live_attendance  → 2h
- *   task             → 0.5h  (30 min)
- *   quiz             → 1.5h
- *   forum            → 0.5h
- *   therapist        → 1h
+ * @param {object} params
+ * @param {string}   params.studentEmail
+ * @param {Array}    params.scoreItems       - all ScoreItems (will be filtered)
+ * @param {Array}    params.lessons          - RecordedLesson list for the course
+ * @param {Array}    params.liveSessions     - LiveSession list for the course
+ * @param {Array}    params.tasks            - Task list for the course
+ * @param {Array}    params.pairings         - TherapistPairing list (all)
+ * @returns {object} { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes }
  */
 
 export const HOURS_MAP = {
   lesson: 2,
   live_attendance: 2,
-  task: 0.5,
+  task: 1,
   quiz: 1.5,
   forum: 0.5,
   therapist: 1,
@@ -36,21 +28,6 @@ function roundScore(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return 0;
   return Math.round((n + Number.EPSILON) * 1000) / 1000;
-}
-
-/**
- * Extract module label from a lesson title.
- * Tries to detect "Módulo X" or "Mod. X" prefix; falls back to first word.
- */
-function extractModule(title) {
-  if (!title) return 'Módulo';
-  // Match "Módulo X", "Modulo X", "Mod. X", "Mod X" at the start (case-insensitive)
-  const modMatch = title.match(/^(m[oó]d(?:ulo)?\.?\s*\d+)/i);
-  if (modMatch) return modMatch[1].trim();
-  // Alternatively split on " - " or " – "
-  const dashMatch = title.split(/\s+[-–]\s+/)[0];
-  if (dashMatch && dashMatch.length < 40) return dashMatch.trim();
-  return title.slice(0, 30).trim();
 }
 
 export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, liveSessions, tasks, pairings }) {
@@ -67,7 +44,6 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
       key: `lesson_${l.id}`,
       category: 'Aula Gravada',
       title: l.title,
-      moduleLabel: extractModule(l.title),
       score: si?.score ?? null,
       max: 10,
       hours: HOURS_MAP.lesson,
@@ -135,91 +111,29 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
       ? String(Math.round((totalScore / totalMaxScore) * 1000) / 10)
       : '0';
 
-  // notaTotal: sum of all points on a 0–N scale (NOT a mathematical average)
-  const notaTotal = String(roundScore(totalScore)).replace('.', ',');
+  // averageGrade on a 0–10 scale using ratio
+  const avgRaw = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 10 : 0;
+  const averageGrade = String(Math.round(avgRaw * 10) / 10).replace('.', ',');
 
-  // ── Build `classes` array for certificate back / historico document ──
-  // Rules:
-  //   1. task + quiz → ONE merged row "Trabalhos de Classe"
-  //   2. live_attendance → ONE merged row "Aulas ao Vivo"
-  //   3. lesson → grouped by module label (e.g. "Módulo 1")
-  //   4. Others → per category
-
-  const taskRows    = evaluatedRows.filter(r => r.category === 'Tarefa' || r.category === 'Prova');
-  const liveRows    = evaluatedRows.filter(r => r.category === 'Aula ao Vivo');
-  const lessonRows  = evaluatedRows.filter(r => r.category === 'Aula Gravada');
-  const otherRows   = evaluatedRows.filter(r =>
-    r.category !== 'Tarefa' && r.category !== 'Prova' &&
-    r.category !== 'Aula ao Vivo' && r.category !== 'Aula Gravada'
-  );
+  // Build `classes` array for the certificate back page:
+  // Group evaluated rows by category label with summed hours and averaged grade
+  const categoryMap = {};
+  evaluatedRows.forEach((r) => {
+    if (!categoryMap[r.category]) {
+      categoryMap[r.category] = { title: r.category, hours: 0, scoreSum: 0, maxSum: 0, count: 0 };
+    }
+    categoryMap[r.category].hours += r.hours;
+    categoryMap[r.category].scoreSum += r.score !== null ? r.score : 0;
+    categoryMap[r.category].maxSum += r.max;
+    categoryMap[r.category].count += 1;
+  });
 
   let uid = 0;
-  const classes = [];
-
-  // Lessons grouped by module
-  const moduleMap = {};
-  lessonRows.forEach((r) => {
-    const mod = r.moduleLabel || extractModule(r.title);
-    if (!moduleMap[mod]) moduleMap[mod] = { hours: 0, scoreSum: 0, maxSum: 0, count: 0 };
-    moduleMap[mod].hours    += r.hours;
-    moduleMap[mod].scoreSum += r.score !== null ? r.score : 0;
-    moduleMap[mod].maxSum   += r.max;
-    moduleMap[mod].count    += 1;
-  });
-  Object.entries(moduleMap).forEach(([mod, data]) => {
-    classes.push({
-      id: String(++uid),
-      title: `${mod} — ${data.count} aula${data.count > 1 ? 's' : ''} assistida${data.count > 1 ? 's' : ''}`,
-      hours: data.hours,
-      grade: String(roundScore(data.scoreSum)).replace('.', ','),
-      pointsLabel: true, // signal to renderer that this is a points sum, not an average
-    });
+  const classes = Object.values(categoryMap).map((c) => {
+    const gradeNum = c.maxSum > 0 ? (c.scoreSum / c.maxSum) * 10 : 0;
+    const gradeStr = String(Math.round(gradeNum * 10) / 10).replace('.', ',');
+    return { id: String(++uid), title: c.title, hours: c.hours, grade: gradeStr };
   });
 
-  // Live sessions — single merged row
-  if (liveRows.length > 0) {
-    const liveHours = liveRows.reduce((s, r) => s + r.hours, 0);
-    const liveScore = roundScore(liveRows.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0));
-    classes.push({
-      id: String(++uid),
-      title: `Aulas ao Vivo — ${liveRows.length} presença${liveRows.length > 1 ? 's' : ''} confirmada${liveRows.length > 1 ? 's' : ''}`,
-      hours: liveHours,
-      grade: String(liveScore).replace('.', ','),
-      pointsLabel: true,
-    });
-  }
-
-  // Tasks+Quizzes — single merged row
-  if (taskRows.length > 0) {
-    const taskHours = taskRows.reduce((s, r) => s + r.hours, 0);
-    const taskScore = roundScore(taskRows.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0));
-    classes.push({
-      id: String(++uid),
-      title: `Trabalhos de Classe — ${taskRows.length} entrega${taskRows.length > 1 ? 's' : ''}`,
-      hours: taskHours,
-      grade: String(taskScore).replace('.', ','),
-      pointsLabel: true,
-    });
-  }
-
-  // Other categories (therapist, etc.) — per category as before
-  const otherCatMap = {};
-  otherRows.forEach((r) => {
-    if (!otherCatMap[r.category]) otherCatMap[r.category] = { hours: 0, scoreSum: 0, maxSum: 0, count: 0 };
-    otherCatMap[r.category].hours    += r.hours;
-    otherCatMap[r.category].scoreSum += r.score !== null ? r.score : 0;
-    otherCatMap[r.category].maxSum   += r.max;
-    otherCatMap[r.category].count    += 1;
-  });
-  Object.entries(otherCatMap).forEach(([cat, data]) => {
-    classes.push({
-      id: String(++uid),
-      title: cat,
-      hours: data.hours,
-      grade: String(roundScore(data.scoreSum)).replace('.', ','),
-      pointsLabel: true,
-    });
-  });
-
-  return { rows, totalHours, totalScore, totalMaxScore, approvalRate, notaTotal, classes };
+  return { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes };
 }
