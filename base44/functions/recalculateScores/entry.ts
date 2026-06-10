@@ -241,12 +241,21 @@ Deno.serve(async (req) => {
         monitorsDefined++;
       }
 
-      // ── Clean up legacy 'therapist' category ScoreItems (invalid category, causes double-counting) ──
+      // ── Clean up invalid ScoreItems for this course ──────────────────────
+      // 1. Legacy 'therapist' category (invalid, causes double-counting)
+      // 2. live_attendance items whose ref_id is not a real LiveSession in this course
+      const liveSessionIds = new Set(courseLives.map((l) => l.id));
       for (const item of scoreItems) {
-        if (item.category === 'therapist' && courseEmails.has(item.student_email)) {
+        if (!courseEmails.has(item.student_email)) continue;
+        const key = scoreKey(item.student_email, item.category, item.ref_id);
+
+        const isLegacyTherapist = item.category === 'therapist';
+        const isOrphanLiveAttendance =
+          item.category === 'live_attendance' && !liveSessionIds.has(item.ref_id);
+
+        if (isLegacyTherapist || isOrphanLiveAttendance) {
           await base44.asServiceRole.entities.ScoreItem.delete(item.id).catch(() => null);
-          // Remove from map so it won't be counted
-          existingScores.delete(scoreKey(item.student_email, item.category, item.ref_id));
+          existingScores.delete(key);
         }
       }
 
