@@ -358,8 +358,12 @@ export default function LandingPage({ onLogin }) {
     <div className="site-page scrollbar-invisible text-white" style={{ background: BG }}>
 
       {/* NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${navScrolled ? 'py-3 border-b backdrop-blur-xl' : 'py-5'}`}
-        style={navScrolled ? { background: `${BG}f2`, borderColor: `${G}18` } : {}}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${navScrolled ? 'border-b backdrop-blur-xl' : ''}`}
+        style={{
+          paddingTop: `calc(${navScrolled ? '0.75rem' : '1.25rem'} + env(safe-area-inset-top, 0px))`,
+          paddingBottom: navScrolled ? '0.75rem' : '1.25rem',
+          ...(navScrolled ? { background: `${BG}f2`, borderColor: `${G}18` } : {}),
+        }}>
         <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between">
           <a href="#top" className="flex items-center gap-3 min-w-0 group">
             <div className="w-9 h-9 border flex items-center justify-center group-hover:border-[#c9a227]/60 transition-colors" style={{ borderColor: `${G}30` }}>
@@ -419,7 +423,7 @@ export default function LandingPage({ onLogin }) {
         <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${BG}e0 0%, #0d0d11cc 50%, ${BG}d8 100%)` }} />
         <div className="absolute inset-x-0 bottom-0 h-56" style={{ background: `linear-gradient(to top, ${BG}, transparent)` }} />
 
-        <div className="site-container relative z-10 text-center pt-28">
+        <div className="site-container relative z-10 text-center" style={{ paddingTop: 'calc(7rem + env(safe-area-inset-top, 0px))' }}>
           <div className="inline-flex items-center gap-3 mb-8">
             <div className="h-px w-10" style={{ background: `${G}50` }} />
             <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Instituto de Desenvolvimento Humano</span>

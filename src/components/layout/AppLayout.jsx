@@ -93,7 +93,7 @@ export default function AppLayout() {
   const isCertPage = location.pathname.endsWith('/certificadora');
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden pt-[env(safe-area-inset-top)] md:pt-0">
+    <div className="flex h-screen bg-background overflow-hidden md:pt-0">
       <MobileSplash />
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />

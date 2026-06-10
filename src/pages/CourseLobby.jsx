@@ -320,7 +320,7 @@ export default function CourseLobby() {
   };
 
   const Header = () => (
-    <div className="border-b px-6 py-4" style={{ borderColor: `${G}12`, background: `${BG}f5` }}>
+    <div className="border-b px-6" style={{ borderColor: `${G}12`, background: `${BG}f5`, paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))', paddingBottom: '1rem' }}>
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 border flex items-center justify-center" style={{ borderColor: `${G}30` }}>
