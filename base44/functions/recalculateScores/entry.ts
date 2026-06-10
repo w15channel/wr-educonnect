@@ -241,6 +241,15 @@ Deno.serve(async (req) => {
         monitorsDefined++;
       }
 
+      // ── Clean up legacy 'therapist' category ScoreItems (invalid category, causes double-counting) ──
+      for (const item of scoreItems) {
+        if (item.category === 'therapist' && courseEmails.has(item.student_email)) {
+          await base44.asServiceRole.entities.ScoreItem.delete(item.id).catch(() => null);
+          // Remove from map so it won't be counted
+          existingScores.delete(scoreKey(item.student_email, item.category, item.ref_id));
+        }
+      }
+
       // ── Upsert all ScoreItems for this course ────────────────────────────
       const calculatedTotals = new Map(courseCodes.map((c) => [c.student_email, 0]));
       const addCalc = (email, pts) => calculatedTotals.set(email, roundScore((calculatedTotals.get(email) || 0) + roundScore(pts)));
@@ -359,9 +368,18 @@ Deno.serve(async (req) => {
         .sort((a, b) => b.total !== a.total ? b.total - a.total : a.name.localeCompare(b.name, 'pt-BR'));
 
       for (const [idx, item] of finalRanking.entries()) {
-        const existingProfile = studentProfiles.find(
-          (p) => p.student_email === item.code.student_email && sameCourse(p, course)
+        // FIX: StudentProfile uses dashboard_course (not course). Match by email + dashboard_course.
+        // Also prefer the profile that has a code_id set (the "real" one) to avoid duplicates.
+        const matchingProfiles = studentProfiles.filter(
+          (p) => p.student_email === item.code.student_email &&
+                 (p.dashboard_course === course || (!p.dashboard_course && course === 'tcc'))
         );
+        // Pick the one with code_id if multiple exist (i.e. the "real" profile), else first match
+        const existingProfile = matchingProfiles.find((p) => p.code_id) || matchingProfiles[0];
+        // Delete any extra duplicate profiles for this student+course
+        for (const dup of matchingProfiles.filter((p) => existingProfile && p.id !== existingProfile.id)) {
+          await base44.asServiceRole.entities.StudentProfile.delete(dup.id).catch(() => null);
+        }
         const profilePayload = {
           student_email: item.code.student_email,
           full_name: displayName(item.code),
