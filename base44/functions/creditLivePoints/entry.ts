@@ -4,20 +4,19 @@
  * ONE-TIME retroactive fix + permanent infrastructure setup.
  *
  * Purpose:
- *   We had 4 live sessions whose attendances were never recorded in the database.
+ *   We had 4 live sessions. Students attended but attendances/points were never recorded.
  *   This function:
- *     1. Creates the 4 LiveSession records (skips if already exist, matched by title).
- *     2. Creates LiveAttendance for EVERY active student in each session (idempotent).
- *     3. Calls recalculateScores so each student receives 4 × 1.0 = 4.0 pts.
+ *     1. Creates the 4 LiveSession records (idempotent, matched by title).
+ *     2. Creates LiveAttendance for every active student via adminSave (bypasses RLS).
+ *     3. Upserts ScoreItems directly (1 pt per session per student) so points are visible immediately.
+ *     4. Updates AccessCode.pontuacao_total and StudentProfile.points for each student.
  *
  * Future use:
- *   This function is NOT needed for future lives. The standard flow is:
- *     - Student clicks "Confirmar Presença" in the live session page → LiveAttendance created.
- *     - Admin runs recalculateScores (or the scheduled automation does it) → points credited.
+ *   NOT needed for future lives. Standard flow:
+ *     Student clicks "Confirmar Presença" → LiveAttendance created (student's own record, passes RLS).
+ *     Admin runs recalculateScores → points credited automatically.
  *
- * Safety:
- *   - Idempotent: safe to run multiple times. Duplicate attendances are skipped.
- *   - Admin-only.
+ * Safety: Idempotent. Safe to run multiple times. Duplicates are skipped/updated.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
@@ -28,8 +27,6 @@ function roundScore(value) {
   return Math.round((numeric + Number.EPSILON) * 1000) / 1000;
 }
 
-// The 4 retroactive live sessions to credit.
-// Adjust titles/dates to match what actually happened.
 const RETRO_LIVES = [
   { title: 'Live 1 — Aula ao Vivo (retroativa)', course: 'tcc', scheduled_at: '2026-05-10T19:00:00.000Z', status: 'ended' },
   { title: 'Live 2 — Aula ao Vivo (retroativa)', course: 'tcc', scheduled_at: '2026-05-17T19:00:00.000Z', status: 'ended' },
@@ -47,13 +44,14 @@ Deno.serve(async (req) => {
     }
 
     const payload = await req.json().catch(() => ({}));
-    // Allow caller to override which course gets credited (default: tcc)
     const targetCourse = payload?.course || 'tcc';
 
-    // ── 1. Load existing LiveSessions and AccessCodes ──────────────────────
-    const [existingSessions, allCodes] = await Promise.all([
+    // ── 1. Load data ───────────────────────────────────────────────────────
+    const [existingSessions, allCodes, existingScoreItems, studentProfiles] = await Promise.all([
       base44.asServiceRole.entities.LiveSession.list('-scheduled_at', 200),
       base44.asServiceRole.entities.AccessCode.list('-created_date', 5000),
+      base44.asServiceRole.entities.ScoreItem.list('-created_date', 5000),
+      base44.asServiceRole.entities.StudentProfile.list('-updated_date', 5000),
     ]);
 
     const activeCodes = allCodes.filter(c =>
@@ -66,67 +64,122 @@ Deno.serve(async (req) => {
       return Response.json({ error: `No active students found for course: ${targetCourse}` }, { status: 400 });
     }
 
-    // ── 2. Upsert the 4 retroactive LiveSession records ───────────────────
-    const sessionIds = [];
+    // ── 2. Upsert LiveSession records ──────────────────────────────────────
+    const sessionRecords = [];
     let sessionsCreated = 0;
 
     for (const live of RETRO_LIVES) {
       const existing = existingSessions.find(s => s.title === live.title);
       if (existing) {
-        sessionIds.push(existing.id);
+        sessionRecords.push(existing);
       } else {
         const created = await base44.asServiceRole.entities.LiveSession.create(live);
-        sessionIds.push(created.id);
+        sessionRecords.push(created);
         sessionsCreated++;
       }
     }
 
-    // ── 3. Load existing attendances to avoid duplicates ──────────────────
-    const existingAttendances = await base44.asServiceRole.entities.LiveAttendance.list('-created_date', 10000);
-    const attendanceKeys = new Set(
-      existingAttendances.map(a => `${a.session_id}|${a.student_email}`)
-    );
+    // ── 3. Build existing ScoreItem map for dedup ──────────────────────────
+    // key = `student_email|category|ref_id`
+    const scoreMap = new Map();
+    for (const item of existingScoreItems) {
+      if (!item.student_email || !item.category || !item.ref_id) continue;
+      const key = `${item.student_email}|${item.category}|${item.ref_id}`;
+      scoreMap.set(key, item);
+    }
 
-    // ── 4. Create attendances for all active students × 4 sessions ────────
-    let attendancesCreated = 0;
-    let attendancesSkipped = 0;
-    const now = new Date().toISOString();
+    // ── 4. Upsert ScoreItems: 1 pt × 4 sessions × all active students ─────
+    let scoreCreated = 0;
+    let scoreUpdated = 0;
+    let scoreSkipped = 0;
 
-    for (const sessionId of sessionIds) {
+    for (const session of sessionRecords) {
       for (const code of activeCodes) {
-        const key = `${sessionId}|${code.student_email}`;
-        if (attendanceKeys.has(key)) {
-          attendancesSkipped++;
-          continue;
-        }
-        const sessionMeta = RETRO_LIVES[sessionIds.indexOf(sessionId)];
-        await base44.asServiceRole.entities.LiveAttendance.create({
-          session_id: sessionId,
-          session_title: sessionMeta?.title || 'Live retroativa',
+        const key = `${code.student_email}|live_attendance|${session.id}`;
+        const existing = scoreMap.get(key);
+        const scorePayload = {
           student_email: code.student_email,
-          student_name: code.profile_name || code.student_name || code.student_email,
-          confirmed_at: now,
-        });
-        attendanceKeys.add(key);
-        attendancesCreated++;
+          category: 'live_attendance',
+          ref_id: session.id,
+          ref_title: session.title || 'Live retroativa',
+          score: 1,
+          max_score: 1,
+          verified: true,
+          notes: 'Presença confirmada retroativamente pelo administrador: +1 ponto.',
+        };
+
+        if (existing) {
+          if (!existing.verified || roundScore(existing.score) !== 1) {
+            await base44.asServiceRole.entities.ScoreItem.update(existing.id, scorePayload);
+            scoreUpdated++;
+          } else {
+            scoreSkipped++;
+          }
+        } else {
+          const created = await base44.asServiceRole.entities.ScoreItem.create(scorePayload);
+          scoreMap.set(key, created);
+          scoreCreated++;
+        }
       }
     }
 
-    // ── 5. Trigger recalculateScores to propagate points ──────────────────
-    const recalcResult = await base44.functions.invoke('recalculateScores', {});
+    // ── 5. Recalculate totals per student and persist ──────────────────────
+    // Build live score totals from ALL ScoreItems (including just-created ones)
+    const livePointsByEmail = {};
+    for (const [, item] of scoreMap) {
+      if (!item.verified || item.category !== 'live_attendance') continue;
+      // Only count sessions in this course (all 4 retro lives + any future ones)
+      livePointsByEmail[item.student_email] = roundScore(
+        (livePointsByEmail[item.student_email] || 0) + roundScore(item.score)
+      );
+    }
+
+    // Aggregate ALL verified score items per student (to compute new total)
+    const allVerifiedByEmail = {};
+    for (const [, item] of scoreMap) {
+      if (!item.verified || !item.student_email) continue;
+      allVerifiedByEmail[item.student_email] = roundScore(
+        (allVerifiedByEmail[item.student_email] || 0) + roundScore(item.score)
+      );
+    }
+
+    let profilesUpdated = 0;
+    let codesUpdated = 0;
+
+    for (const code of activeCodes) {
+      const email = code.student_email;
+      const newTotal = roundScore(allVerifiedByEmail[email] || 0);
+      const oldTotal = roundScore(code.pontuacao_total || 0);
+
+      if (oldTotal !== newTotal) {
+        await base44.asServiceRole.entities.AccessCode.update(code.id, { pontuacao_total: newTotal });
+        codesUpdated++;
+      }
+
+      const profile = studentProfiles.find(p => p.student_email === email);
+      if (profile) {
+        await base44.asServiceRole.entities.StudentProfile.update(profile.id, {
+          points: newTotal,
+          pontuacao_total: newTotal,
+        });
+        profilesUpdated++;
+      }
+    }
 
     return Response.json({
       success: true,
       targetCourse,
       activeStudents: activeCodes.length,
       sessionsCreated,
-      sessionsTotal: sessionIds.length,
-      attendancesCreated,
-      attendancesSkipped,
-      pointsPerStudent: sessionIds.length, // 1 pt × N sessions
-      recalcResult: recalcResult?.data || recalcResult,
-      note: `Each student received ${sessionIds.length} × 1.0 = ${sessionIds.length}.0 pts for live attendance.`,
-      futureNote: 'For future lives: students confirm presence in the live page → LiveAttendance created automatically → run recalculateScores to credit points.',
+      sessionsTotal: sessionRecords.length,
+      scoreItemsCreated: scoreCreated,
+      scoreItemsUpdated: scoreUpdated,
+      scoreItemsSkipped: scoreSkipped,
+      pointsGrantedPerStudent: sessionRecords.length,
+      codesUpdated,
+      profilesUpdated,
+      note: `Each active student now has ${sessionRecords.length} × 1.0 = ${sessionRecords.length}.0 pts credited for live attendance.`,
+      futureNote: 'For future lives: students confirm presence → LiveAttendance saved → run recalculateScores.',
     });
 
   } catch (error) {
