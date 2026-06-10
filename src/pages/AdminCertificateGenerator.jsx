@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Award, Download, FileImage, RefreshCw, Save, Search, Copy, ClipboardPaste, Plus, Trash2, Move, Lock, Loader2, BookOpen } from 'lucide-react';
+import { Award, Download, FileImage, RefreshCw, Save, Search, Copy, ClipboardPaste, Move, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import CertificateFront from '@/components/certificates/CertificateFront';
 import CertificateBack from '@/components/certificates/CertificateBack';
-import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
+import AcademicItemSelector from '@/components/certificates/AcademicItemSelector';
 
 const POSITIONS_KEY = 'wr_cert_front_positions_v2';
 const DEFAULT_POSITIONS = {
@@ -90,10 +90,12 @@ export default function AdminCertificateGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isRescuing, setIsRescuing] = useState(false);
-  const [isLoadingAcademic, setIsLoadingAcademic] = useState(false);
   const [activeTab, setActiveTab] = useState('front'); // 'front' | 'back'
   const [editMode, setEditMode] = useState(false);
   const [positions, setPositions] = useState(loadPositions);
+  // Academic selector state
+  const [selectedStudent, setSelectedStudent] = useState(null); // { email, course }
+  const [selectorKey, setSelectorKey] = useState(0); // force remount on student change
 
   const handlePositionsChange = useCallback((next) => {
     setPositions(next);
@@ -118,14 +120,12 @@ export default function AdminCertificateGenerator() {
 
   const upd = (field, value) => setCert(p => ({ ...p, [field]: value }));
 
-  const fillStudent = async (s) => {
+  const fillStudent = (s) => {
     if (!s) return;
-    // Generate a unique verification code per student based on their access code
     const studentCodeSuffix = (s.code || '').replace(/[^A-Z0-9]/g, '').slice(-4) || makeVerifCode().slice(-4);
     const uniqueCode = `WR-${String(new Date().getFullYear()).slice(-2)}-${studentCodeSuffix}`;
     const course = s.course || 'tcc';
 
-    // Base fields first
     setCert(p => ({
       ...p,
       studentName: s.student_name || s.profile_name || p.studentName,
@@ -135,49 +135,34 @@ export default function AdminCertificateGenerator() {
       verificationCode: uniqueCode,
     }));
     setSavedId(null);
-
-    // Load academic data from HistoricoAcademico logic
-    if (s.student_email) {
-      setIsLoadingAcademic(true);
-      try {
-        const [scoreItems, lessons, liveSessions, tasks, pairings] = await Promise.all([
-          base44.entities.ScoreItem.filter({ student_email: s.student_email }, '-created_date', 2000),
-          base44.entities.RecordedLesson.filter({ course }, 'order', 200),
-          base44.entities.LiveSession.filter({ course }, '-scheduled_at', 50),
-          base44.entities.Task.filter({ course }, '-created_date', 200),
-          base44.entities.TherapistPairing.list('-pairing_date', 200),
-        ]);
-
-        const { totalHours, averageGrade, classes } = buildStudentAcademicData({
-          studentEmail: s.student_email,
-          scoreItems,
-          lessons,
-          liveSessions,
-          tasks,
-          pairings,
-        });
-
-        setCert(p => ({
-          ...p,
-          totalHours: totalHours || p.totalHours,
-          averageGrade: averageGrade || p.averageGrade,
-          classes: classes.length > 0 ? classes : p.classes,
-        }));
-        toast.success(`Dados acadêmicos carregados: ${totalHours}h · média ${averageGrade}`);
-      } catch (e) {
-        toast.error('Não foi possível carregar dados acadêmicos: ' + e.message);
-      } finally {
-        setIsLoadingAcademic(false);
-      }
-    }
+    // Trigger AcademicItemSelector to load for this student
+    setSelectedStudent({ email: s.student_email, course });
+    setSelectorKey(k => k + 1);
   };
 
-  const updClass = (id, field, value) =>
-    setCert(p => ({ ...p, classes: p.classes.map(c => c.id === id ? { ...c, [field]: value } : c) }));
-  const addClass = () =>
-    setCert(p => ({ ...p, classes: [...p.classes, { id: uid(), title: 'Nova Aula', hours: 4, grade: '10,0' }] }));
-  const delClass = (id) =>
-    setCert(p => ({ ...p, classes: p.classes.filter(c => c.id !== id) }));
+  // Called by AcademicItemSelector whenever selection changes
+  const handleAcademicSelection = useCallback(({ selectedRows }) => {
+    const evalRows = selectedRows.filter(r => r.status === 'Avaliado');
+    const totalHours = evalRows.reduce((s, r) => s + r.hours, 0);
+    const totalScore = evalRows.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0);
+    const totalMax   = evalRows.reduce((s, r) => s + r.max, 0);
+    const avgRaw     = totalMax > 0 ? (totalScore / totalMax) * 10 : 0;
+    const averageGrade = String(Math.round(avgRaw * 10) / 10).replace('.', ',');
+
+    // Build classes: one row per selected item (title, hours, grade)
+    const classes = selectedRows.map((r, i) => ({
+      id: String(i + 1),
+      title: r.title,
+      hours: r.hours,
+      grade: r.score !== null
+        ? String(Math.round((r.score / r.max) * 10 * 10) / 10).replace('.', ',')
+        : '—',
+    }));
+
+    setCert(p => ({ ...p, totalHours, averageGrade, classes }));
+  }, []);
+
+
 
   const copyToClipboard = () => {
     const data = { courseName: cert.courseName, gratificationText: cert.gratificationText, bodyText: cert.bodyText, totalHours: cert.totalHours, averageGrade: cert.averageGrade, issueDate: cert.issueDate, classes: cert.classes };
@@ -388,15 +373,11 @@ export default function AdminCertificateGenerator() {
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                  Carga (h) {isLoadingAcademic && <Loader2 size={10} className="animate-spin text-primary" />}
-                </label>
+                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Carga (h)</label>
                 <input className={INPUT} type="number" value={cert.totalHours} onChange={e => upd('totalHours', e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                  Média {isLoadingAcademic && <Loader2 size={10} className="animate-spin text-primary" />}
-                </label>
+                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Média</label>
                 <input className={INPUT} value={cert.averageGrade} onChange={e => upd('averageGrade', e.target.value)} />
               </div>
               <div>
@@ -415,35 +396,26 @@ export default function AdminCertificateGenerator() {
             </div>
           </section>
 
-          {/* Verso — aulas */}
+          {/* Verso — atividades acadêmicas com seletor */}
           <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-foreground">Verso — Aulas</h3>
-              <div className="flex items-center gap-1.5">
-                {isLoadingAcademic && <span className="flex items-center gap-1 text-[10px] text-primary font-bold"><Loader2 size={10} className="animate-spin" /> Carregando...</span>}
-                <button onClick={addClass} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-xs font-bold hover:bg-secondary">
-                  <Plus size={12} /> Adicionar
-                </button>
-              </div>
+            <div>
+              <h3 className="text-sm font-black text-foreground">Verso — Atividades Acadêmicas</h3>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Selecione quais atividades aparecem no verso do certificado. Pontuação e horas são calculadas automaticamente.
+              </p>
             </div>
-            {!isLoadingAcademic && studentKey && (
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 font-bold">
-                <BookOpen size={10} /> Dados preenchidos automaticamente do Histórico Acadêmico
-              </div>
+            {selectedStudent ? (
+              <AcademicItemSelector
+                key={selectorKey}
+                studentEmail={selectedStudent.email}
+                course={selectedStudent.course}
+                onSelectionChange={handleAcademicSelection}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-4">
+                Selecione um aluno acima para carregar as atividades.
+              </p>
             )}
-            {cert.classes.map((cls, i) => (
-              <div key={cls.id} className="rounded-lg border border-border bg-background p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-muted-foreground">Aula {i + 1}</span>
-                  <button onClick={() => delClass(cls.id)} className="text-muted-foreground hover:text-red-500 transition"><Trash2 size={13} /></button>
-                </div>
-                <input className={INPUT} value={cls.title} onChange={e => updClass(cls.id, 'title', e.target.value)} placeholder="Título da aula" />
-                <div className="grid grid-cols-2 gap-2">
-                  <input className={INPUT} type="number" value={cls.hours} onChange={e => updClass(cls.id, 'hours', e.target.value)} placeholder="Horas" />
-                  <input className={INPUT} value={cls.grade} onChange={e => updClass(cls.id, 'grade', e.target.value)} placeholder="Nota" />
-                </div>
-              </div>
-            ))}
           </section>
 
           {/* Verso — destaque */}
