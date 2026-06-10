@@ -136,10 +136,12 @@ export default function RankingGeral() {
   const [adminCourseFilter, setAdminCourseFilter] = useState('tcc');
 
   // ── Fetch all data ──
+  // Source of truth: pontuacao_total from AccessCode (set by admin via ScoreControl/Dashboard)
+  // Same model as Dashboard ranking widget
   const { data: allScoreItems = [], isLoading: loadingScores, refetch: refetchScores } = useQuery({
     queryKey: ['ranking-score-items'],
     queryFn: () => base44.entities.ScoreItem.list('-created_date', 5000),
-    staleTime: 0,   // always fresh on mount
+    staleTime: 0,
   });
 
   const { data: accessCodes = [], isLoading: loadingCodes, refetch: refetchCodes } = useQuery({
@@ -148,10 +150,13 @@ export default function RankingGeral() {
     staleTime: 0,
   });
 
+  const { data: publishedProfiles = [], isLoading: loadingProfiles, refetch: refetchProfiles } = useQuery({
+    queryKey: ['ranking-published-profiles'],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 500),
+    staleTime: 0,
+  });
+
   // ── Determine which course to show ──
-  // Student: always their session course
-  // Admin with session.course: that course
-  // Admin without session.course: use adminCourseFilter picker
   const activeCourse = useMemo(() => {
     if (session?.course) return session.course;
     if (session?.role === 'admin') return adminCourseFilter;
@@ -162,25 +167,37 @@ export default function RankingGeral() {
   const courseCodes = useMemo(() => {
     return accessCodes.filter(c => {
       if (!c.student_email) return false;
-      if (!activeCourse) return true; // admin with no course scope: show all
+      if (!activeCourse) return true;
       const validator = COURSE_VALID[activeCourse];
       return validator ? validator(c) : c.course === activeCourse;
     });
   }, [accessCodes, activeCourse]);
 
-  // Build a set of valid emails for this course (used to isolate ScoreItems)
-  const courseEmailSet = useMemo(() => new Set(courseCodes.map(c => c.student_email)), [courseCodes]);
+  // ── Published score & rank maps (from StudentProfile — same as Dashboard) ──
+  const { publishedScoreMap, publishedRankMap } = useMemo(() => {
+    const publishedScoreMap = {};
+    const publishedRankMap = {};
+    publishedProfiles.forEach(p => {
+      const isSameCourse = !p.dashboard_course || p.dashboard_course === activeCourse;
+      if (!isSameCourse || !p.student_email) return;
+      if (typeof p.points === 'number' && publishedScoreMap[p.student_email] === undefined) {
+        publishedScoreMap[p.student_email] = p.points;
+      }
+      if (typeof p.dashboard_rank === 'number' && publishedRankMap[p.student_email] === undefined) {
+        publishedRankMap[p.student_email] = p.dashboard_rank;
+      }
+    });
+    return { publishedScoreMap, publishedRankMap };
+  }, [publishedProfiles, activeCourse]);
 
-  // ── Deduplicate ScoreItems defensively before aggregating ──
-  // Guard against race-condition duplicates: keep best item per (email|category|ref_id)
+  // ── Live deduplicated score items (for participation count & modal detail) ──
   const deduplicatedScoreItems = useMemo(() => {
-    const seen = new Map(); // key → best ScoreItem
+    const seen = new Map();
     for (const s of allScoreItems) {
       if (!s.student_email || !s.category || !s.ref_id) continue;
       const key = `${s.student_email}|${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
-      // Keep verified over unverified; higher score; more recent
       const prevWins =
         (prev.verified && !s.verified) ||
         (prev.verified === s.verified && (Number(prev.score) || 0) >= (Number(s.score) || 0));
@@ -189,31 +206,30 @@ export default function RankingGeral() {
     return [...seen.values()];
   }, [allScoreItems]);
 
-  // ── Aggregate scores — only verified, only from course students ──
-  // participationMap counts only VERIFIED items (same gate as scoreMap)
-  const { scoreMap, participationMap } = useMemo(() => {
-    const scoreMap = {};
-    const participationMap = {};
+  // Participation count: only verified items from this course
+  const courseEmailSet = useMemo(() => new Set(courseCodes.map(c => c.student_email)), [courseCodes]);
+  const participationMap = useMemo(() => {
+    const map = {};
     deduplicatedScoreItems.forEach(s => {
-      if (!s.student_email) return;
-      if (!courseEmailSet.has(s.student_email)) return; // isolate by course
-      if (!s.verified) return; // only verified items count for both score and participation
-      scoreMap[s.student_email] = roundScore((scoreMap[s.student_email] || 0) + roundScore(s.score));
-      participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
+      if (!s.student_email || !courseEmailSet.has(s.student_email) || !s.verified) return;
+      map[s.student_email] = (map[s.student_email] || 0) + 1;
     });
-    return { scoreMap, participationMap };
+    return map;
   }, [deduplicatedScoreItems, courseEmailSet]);
 
-  // ── Build and sort ranking ──
+  // ── Build and sort ranking — identical sort logic to Dashboard ──
+  // Primary sort: publishedRank (admin-set order)
+  // Fallback: pontuacao_total from AccessCode → publishedScoreMap → 0
   const ranking = useMemo(() => {
     return courseCodes
       .map(c => {
-        // Always use the live deduplicated sum — never the stale cache
-        const liveSum = scoreMap[c.student_email] || 0;
-        const total = roundScore(liveSum);
+        // Use the same source-of-truth as Dashboard: pontuacao_total on AccessCode
+        const total = roundScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0);
+        const publishedRank = publishedRankMap[c.student_email] ?? Number.MAX_SAFE_INTEGER;
         return {
           email: c.student_email,
           total,
+          publishedRank,
           count: participationMap[c.student_email] || 0,
           enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
           name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
@@ -221,19 +237,25 @@ export default function RankingGeral() {
         };
       })
       .sort((a, b) => {
+        // Respect admin-published rank order first (same as Dashboard)
+        if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
+        // Then by points
         if (b.total !== a.total) return b.total - a.total;
+        // Then participation count
         if (b.count !== a.count) return b.count - a.count;
+        // Then enrollment date (earlier = higher)
         if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
         return a.name.localeCompare(b.name);
       });
-  }, [courseCodes, scoreMap, participationMap]);
+  }, [courseCodes, publishedScoreMap, publishedRankMap, participationMap]);
 
   const myPos = ranking.findIndex(r => r.email === session?.email) + 1;
-  const isLoading = loadingScores || loadingCodes;
+  const isLoading = loadingScores || loadingCodes || loadingProfiles;
 
   const handleRefresh = () => {
     refetchScores();
     refetchCodes();
+    refetchProfiles();
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
