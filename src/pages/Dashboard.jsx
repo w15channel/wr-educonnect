@@ -235,7 +235,7 @@ export default function Dashboard() {
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200)
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 500)
   });
 
   const { data: lessons = [] } = useQuery({
@@ -294,13 +294,10 @@ export default function Dashboard() {
   const watchedCount = progresses.filter((p) => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round(watchedCount / lessons.length * 100) : 0;
 
-  // Ranking — isolated by course + code prefix (matches /ranking page logic)
-  const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
-  const expectedPrefix = COURSE_PREFIX[userCourse];
+  // Ranking — isolated by course only (prefix filter removed: causes students to be invisible)
   const courseCodes = accessCodes.filter((c) => {
     if (!c.student_email) return false;
     if (userCourse && c.course !== userCourse && !(userCourse === 'tcc' && !c.course)) return false;
-    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
     return true;
   });
   const scoreMap = Object.fromEntries(courseCodes.map((code) => [code.student_email, roundScore(code.pontuacao_total ?? publishedScoreMap[code.student_email] ?? 0)]));
