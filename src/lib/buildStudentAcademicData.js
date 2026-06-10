@@ -1,27 +1,28 @@
 /**
  * buildStudentAcademicData
  * ─────────────────────────
- * Computes a student's academic summary from raw entity data —
- * the same logic used by HistoricoAcademico — so it can be reused
- * by the certificate generator and any future consumer.
+ * Computes a student's academic summary from raw entity data.
+ * Used by HistoricoAcademico, CertificateGenerator, and AcademicItemSelector.
  *
  * @param {object} params
  * @param {string}   params.studentEmail
- * @param {Array}    params.scoreItems       - all ScoreItems (will be filtered)
- * @param {Array}    params.lessons          - RecordedLesson list for the course
- * @param {Array}    params.liveSessions     - LiveSession list for the course
- * @param {Array}    params.tasks            - Task list for the course
- * @param {Array}    params.pairings         - TherapistPairing list (all)
+ * @param {Array}    params.scoreItems         - all ScoreItems (filtered internally)
+ * @param {Array}    params.lessons            - RecordedLesson list for the course
+ * @param {Array}    params.liveSessions       - LiveSession list for the course
+ * @param {Array}    params.tasks              - Task list for the course
+ * @param {Array}    params.pairings           - TherapistPairing list (all)
+ * @param {Array}    [params.challengeResponses] - DailyChallengeResponse list (all)
  * @returns {object} { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes }
  */
 
 export const HOURS_MAP = {
   lesson: 2,
   live_attendance: 2,
-  task: 1,
+  task: 0.5,   // 30 minutos por entrega
   quiz: 1.5,
   forum: 0.5,
   therapist: 1,
+  ofensiva: 0, // pontos apenas, sem CH
 };
 
 function roundScore(v) {
@@ -30,7 +31,15 @@ function roundScore(v) {
   return Math.round((n + Number.EPSILON) * 1000) / 1000;
 }
 
-export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, liveSessions, tasks, pairings }) {
+export function buildStudentAcademicData({
+  studentEmail,
+  scoreItems,
+  lessons,
+  liveSessions,
+  tasks,
+  pairings,
+  challengeResponses = [],
+}) {
   const verifiedScores = scoreItems.filter(
     (s) => s.student_email === studentEmail && s.verified
   );
@@ -48,6 +57,7 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
       max: 10,
       hours: HOURS_MAP.lesson,
       status: si ? 'Avaliado' : 'Pendente',
+      notes: si?.notes || '',
     });
   });
 
@@ -62,6 +72,7 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
       max: 1,
       hours: HOURS_MAP.live_attendance,
       status: si ? 'Avaliado' : 'Pendente',
+      notes: si?.notes || '',
     });
   });
 
@@ -77,24 +88,47 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
       max: t.max_grade || 10,
       hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task,
       status: si ? 'Avaliado' : 'Pendente',
+      notes: si?.notes || '',
     });
   });
 
-  // ── Terapeuta da semana ──
+  // ── Terapeuta da semana (via ScoreItems de categoria task com ref therapist_pairing:) ──
   const myPairings = pairings.filter(
     (p) => p.therapist_email === studentEmail || p.patient_email === studentEmail
   );
   myPairings.forEach((p, i) => {
     const role = p.therapist_email === studentEmail ? 'Terapeuta' : 'Paciente';
-    const si = verifiedScores.find((s) => s.category === 'therapist' && s.ref_id === p.id);
+    const refId = `therapist_pairing:${p.id}:${role === 'Terapeuta' ? 'therapist' : 'patient'}`;
+    const si = verifiedScores.find((s) => s.category === 'task' && s.ref_id === refId);
     rows.push({
-      key: `therapist_${p.id}`,
+      key: `therapist_${p.id}_${role}`,
       category: 'Terapia da Semana',
       title: `Sessão ${i + 1} (${role})`,
       score: si?.score ?? null,
       max: 10,
       hours: HOURS_MAP.therapist,
       status: si ? 'Avaliado' : 'Pendente',
+      notes: si?.notes || '',
+    });
+  });
+
+  // ── Ofensivas Diárias ──
+  const myResponses = challengeResponses.filter(
+    (r) => r.student_email === studentEmail && (r.points_earned || 0) > 0
+  );
+  myResponses.forEach((r) => {
+    const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
+    // Procura também pelo ScoreItem correspondente (categoria forum, ref_id = refId)
+    const si = verifiedScores.find((s) => s.category === 'forum' && s.ref_id === refId);
+    rows.push({
+      key: `ofensiva_${r.challenge_id}`,
+      category: 'Ofensiva Diária',
+      title: `Ofensiva ${r.date || 'sem data'}`,
+      score: si?.score ?? roundScore(r.points_earned || 0),
+      max: si?.max_score ?? 1,
+      hours: HOURS_MAP.ofensiva,
+      status: 'Avaliado',
+      notes: si?.notes || `${r.questions_answered || 0} perguntas respondidas`,
     });
   });
 
@@ -114,25 +148,62 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
   // averageGrade = nota total (soma dos pontos obtidos, não uma média)
   const averageGrade = String(Math.round(totalScore * 10) / 10).replace('.', ',');
 
-  // Build `classes` array for the certificate back page:
-  // Group evaluated rows by category label with summed hours and averaged grade
-  const categoryMap = {};
+  // ── classes para verso do certificado ──
+  // Aulas Gravadas: listadas individualmente
+  // Aulas ao Vivo:  uma linha única "Aulas ao Vivo" com somatória
+  // Tarefas:        uma linha única "Tarefas de Classe" com somatória
+  // Provas:         uma linha única "Provas" com somatória
+  // Terapia da Semana: uma linha única com somatória
+  // Ofensivas:      uma linha única "Ofensivas Diárias" com somatória
+
+  const GROUPED_CATEGORIES = new Set(['Aula ao Vivo', 'Tarefa', 'Prova', 'Terapia da Semana', 'Ofensiva Diária']);
+  const GROUP_LABELS = {
+    'Aula ao Vivo': 'Aulas ao Vivo',
+    'Tarefa': 'Tarefas de Classe',
+    'Prova': 'Provas',
+    'Terapia da Semana': 'Terapia da Semana',
+    'Ofensiva Diária': 'Ofensivas Diárias',
+  };
+
+  const classesMap = {}; // key -> { title, hours, scoreSum, maxSum }
+  let uid = 0;
+
   evaluatedRows.forEach((r) => {
-    if (!categoryMap[r.category]) {
-      categoryMap[r.category] = { title: r.category, hours: 0, scoreSum: 0, maxSum: 0, count: 0 };
+    if (r.category === 'Aula Gravada') {
+      // individual
+      uid++;
+      classesMap[`individual_${uid}`] = {
+        title: r.title,
+        hours: r.hours,
+        scoreSum: r.score !== null ? r.score : 0,
+        maxSum: r.max,
+        id: String(uid),
+      };
+    } else if (GROUPED_CATEGORIES.has(r.category)) {
+      const groupKey = `group_${r.category}`;
+      if (!classesMap[groupKey]) {
+        uid++;
+        classesMap[groupKey] = {
+          title: GROUP_LABELS[r.category] || r.category,
+          hours: 0,
+          scoreSum: 0,
+          maxSum: 0,
+          id: String(uid),
+        };
+      }
+      classesMap[groupKey].hours += r.hours;
+      classesMap[groupKey].scoreSum += r.score !== null ? r.score : 0;
+      classesMap[groupKey].maxSum += r.max;
     }
-    categoryMap[r.category].hours += r.hours;
-    categoryMap[r.category].scoreSum += r.score !== null ? r.score : 0;
-    categoryMap[r.category].maxSum += r.max;
-    categoryMap[r.category].count += 1;
   });
 
-  let uid = 0;
-  const classes = Object.values(categoryMap).map((c) => {
-    const gradeNum = c.maxSum > 0 ? (c.scoreSum / c.maxSum) * 10 : 0;
-    const gradeStr = String(Math.round(gradeNum * 10) / 10).replace('.', ',');
-    return { id: String(++uid), title: c.title, hours: c.hours, grade: gradeStr };
-  });
+  const classes = Object.values(classesMap).map((c) => ({
+    id: c.id,
+    title: c.title,
+    hours: c.hours,
+    // Nota total = soma dos pontos (não média)
+    grade: String(Math.round(c.scoreSum * 10) / 10).replace('.', ','),
+  }));
 
   return { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes };
 }

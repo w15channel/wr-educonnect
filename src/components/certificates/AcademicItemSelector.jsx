@@ -4,13 +4,12 @@
  * Replica the HistoricoAcademico item-selection UX inside the certificate
  * generator. Fetches all course activities for a given student_email,
  * renders grouped checkboxes, shows running totals, and calls onSelectionChange
- * with { selectedItems: Set<key>, rows: all rows, selectedRows: Row[] }
- * whenever the selection changes.
+ * with { selectedItems, rows, selectedRows } whenever the selection changes.
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { CheckSquare, Square, Loader2, BookOpen, Video, ClipboardList, TestTube, Heart, Flame } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { HOURS_MAP, buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
+import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 import { formatScore } from '@/lib/scoreUtils';
 
 const CATEGORY_ICONS = {
@@ -19,12 +18,14 @@ const CATEGORY_ICONS = {
   'Tarefa':            <ClipboardList size={11} />,
   'Prova':             <TestTube size={11} />,
   'Terapia da Semana': <Heart size={11} />,
+  'Ofensiva Diária':   <Flame size={11} />,
 };
 
 function ItemRow({ row, checked, onToggle }) {
   const scoreLabel = row.score !== null
     ? `${formatScore(row.score)} / ${formatScore(row.max)} pts`
     : 'Sem nota ainda';
+  const hoursLabel = row.hours > 0 ? `${row.hours}h` : '—';
   return (
     <div
       onClick={onToggle}
@@ -40,8 +41,11 @@ function ItemRow({ row, checked, onToggle }) {
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold text-foreground leading-tight">{row.title}</p>
         <p className={`text-[10px] mt-0.5 ${row.status === 'Avaliado' ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-          {row.status} · {row.hours}h · {scoreLabel}
+          {row.status} · {hoursLabel} · {scoreLabel}
         </p>
+        {row.notes && (
+          <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{row.notes}</p>
+        )}
       </div>
     </div>
   );
@@ -62,8 +66,9 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
       base44.entities.LiveSession.filter({ course }, '-scheduled_at', 50),
       base44.entities.Task.filter({ course }, '-created_date', 200),
       base44.entities.TherapistPairing.list('-pairing_date', 200),
+      base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail }, '-date', 500),
     ])
-      .then(([scoreItems, lessons, liveSessions, tasks, pairings]) => {
+      .then(([scoreItems, lessons, liveSessions, tasks, pairings, challengeResponses]) => {
         const { rows: allRows } = buildStudentAcademicData({
           studentEmail,
           scoreItems,
@@ -71,6 +76,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
           liveSessions,
           tasks,
           pairings,
+          challengeResponses,
         });
         setRows(allRows);
         // Auto-select all evaluated items by default
@@ -106,7 +112,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
   const totalScore   = evalSelected.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0);
   const totalMax     = evalSelected.reduce((s, r) => s + r.max, 0);
   const approvalRate = totalMax > 0 ? Math.round((totalScore / totalMax) * 1000) / 10 : 0;
-  // Nota total = soma dos pontos obtidos (não uma média proporcional)
+  // Nota total = soma dos pontos obtidos
   const averageGrade = String(Math.round(totalScore * 10) / 10).replace('.', ',');
 
   // Group rows by category for display
@@ -170,7 +176,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
       {Object.entries(grouped).map(([cat, items]) => (
         <div key={cat}>
           <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="text-muted-foreground">{CATEGORY_ICONS[cat]}</span>
+            <span className="text-muted-foreground">{CATEGORY_ICONS[cat] || null}</span>
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{cat}</p>
             <span className="text-[9px] text-muted-foreground">({items.filter(r => selectedItems.has(r.key)).length}/{items.length})</span>
           </div>

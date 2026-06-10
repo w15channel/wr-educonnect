@@ -15,9 +15,10 @@ import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, formatDocumentIssuer } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { HOURS_MAP } from '@/lib/buildStudentAcademicData';
+import { Flame } from 'lucide-react';
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
-function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, onClose }) {
+function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, onClose, isAdmin = false }) {
   const certRef = useRef(null);
   const emissionDate = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const emissionTime = format(new Date(), "HH:mm:ss");
@@ -161,27 +162,33 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
             <tr style={{ background: '#1e3a5f' }}>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', letterSpacing: 0.5 }}>Atividade</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold' }}>Categoria</th>
-              <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>Nota</th>
+              <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>Pontos</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>CH</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>Situação</th>
+              {isAdmin && <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold' }}>Origem / Notas</th>}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={5} style={{ padding: '16px 8px', textAlign: 'center', color: '#aaa', fontSize: 10 }}>Nenhuma atividade selecionada para este histórico.</td></tr>
+              <tr><td colSpan={isAdmin ? 6 : 5} style={{ padding: '16px 8px', textAlign: 'center', color: '#aaa', fontSize: 10 }}>Nenhuma atividade selecionada para este histórico.</td></tr>
             ) : rows.map((r, i) => (
               <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <td style={{ padding: '5px 8px', color: '#1e3a5f', maxWidth: 200 }}>{r.title}</td>
                 <td style={{ padding: '5px 8px', color: '#555' }}>{r.category}</td>
-                <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 'bold', color: r.score !== '—' ? '#1e3a5f' : '#aaa' }}>
-                  {r.score !== '—' ? `${formatScore(r.score)}/${formatScore(r.max)}` : '—'}
+                <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 'bold', color: (r.score !== null && r.score !== '—') ? '#1e3a5f' : '#aaa' }}>
+                  {(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)}` : '—'}
                 </td>
-                <td style={{ padding: '5px 8px', textAlign: 'center', color: '#555' }}>{r.hours}h</td>
+                <td style={{ padding: '5px 8px', textAlign: 'center', color: '#555' }}>{r.hours > 0 ? `${r.hours}h` : '—'}</td>
                 <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                   <span style={{ fontSize: 9, fontWeight: 'bold', padding: '2px 8px', borderRadius: 20, background: r.status === 'Avaliado' ? '#dcfce7' : '#fef9c3', color: r.status === 'Avaliado' ? '#166534' : '#854d0e' }}>
                     {r.status}
                   </span>
                 </td>
+                {isAdmin && (
+                  <td style={{ padding: '5px 8px', color: '#777', fontSize: 9, maxWidth: 240 }}>
+                    {r.notes || '—'}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -270,6 +277,7 @@ export default function HistoricoAcademico() {
   });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
+  const { data: challengeResponses = [] } = useQuery({ queryKey: ['challenge-responses-all'], queryFn: () => base44.entities.DailyChallengeResponse.list('-date', 2000) });
 
   useEffect(() => {
     if (!isTeacher && session?.email && codes.length > 0) {
@@ -307,8 +315,18 @@ export default function HistoricoAcademico() {
     const myPairings = pairings.filter(p => p.therapist_email === student.email || p.patient_email === student.email);
     myPairings.forEach((p, i) => {
       const role = p.therapist_email === student.email ? 'Terapeuta' : 'Paciente';
-      const si = verifiedScores.find(s => s.category === 'therapist' && s.ref_id === p.id);
-      rows.push({ key: `therapist_${p.id}`, category: 'Terapia da Semana', title: `Sessão ${i + 1} (${role})`, score: si?.score ?? '—', max: 10, hours: HOURS_MAP.therapist, status: si ? 'Avaliado' : 'Pendente' });
+      const refId = `therapist_pairing:${p.id}:${role === 'Terapeuta' ? 'therapist' : 'patient'}`;
+      const si = verifiedScores.find(s => s.category === 'task' && s.ref_id === refId);
+      rows.push({ key: `therapist_${p.id}_${role}`, category: 'Terapia da Semana', title: `Sessão ${i + 1} (${role})`, score: si?.score ?? '—', max: 10, hours: HOURS_MAP.therapist, status: si ? 'Avaliado' : 'Pendente', notes: si?.notes || '' });
+    });
+
+    // Ofensivas Diárias
+    const myResponses = challengeResponses.filter(r => r.student_email === student.email && (r.points_earned || 0) > 0);
+    myResponses.forEach(r => {
+      const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
+      const si = verifiedScores.find(s => s.category === 'forum' && s.ref_id === refId);
+      const pts = si?.score ?? (r.points_earned || 0);
+      rows.push({ key: `ofensiva_${r.challenge_id}`, category: 'Ofensiva Diária', title: `Ofensiva ${r.date || 'sem data'}`, score: pts, max: si?.max_score ?? 1, hours: 0, status: 'Avaliado', notes: si?.notes || `${r.questions_answered || 0} perguntas respondidas` });
     });
 
     return rows;
@@ -426,7 +444,7 @@ export default function HistoricoAcademico() {
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {items.map(r => (
-                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}`} />
+                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status}${r.hours > 0 ? ` · ${r.hours}h` : ''} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />
               ))}
             </div>
           </div>
@@ -441,7 +459,7 @@ export default function HistoricoAcademico() {
     return (
       <div className="p-4 lg:p-7 max-w-4xl mx-auto">
         <button onClick={() => setShowDocument(false)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">← Voltar para Seleção</button>
-        <AcademicRecord student={selectedStudent} rows={selectedRows} totalScore={totalScore} totalMaxScore={totalMaxScore} totalHours={totalHours} approvalRate={approvalRate} onClose={() => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); }} />
+        <AcademicRecord student={selectedStudent} rows={selectedRows} totalScore={totalScore} totalMaxScore={totalMaxScore} totalHours={totalHours} approvalRate={approvalRate} isAdmin={isTeacher} onClose={() => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); }} />
       </div>
     );
   }
@@ -474,7 +492,7 @@ export default function HistoricoAcademico() {
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${r.hours}h · ${r.score !== '—' ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}`} />)}
+              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status}${r.hours > 0 ? ` · ${r.hours}h` : ''} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />)}
             </div>
           </div>
         ))}

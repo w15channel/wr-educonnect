@@ -145,17 +145,38 @@ export default function AdminCertificateGenerator() {
     const evalRows = selectedRows.filter(r => r.status === 'Avaliado');
     const totalHours = evalRows.reduce((s, r) => s + r.hours, 0);
     const totalScore = evalRows.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0);
-    // Nota total = soma dos pontos obtidos (não uma média proporcional)
+    // Nota total = soma dos pontos obtidos
     const averageGrade = String(Math.round(totalScore * 10) / 10).replace('.', ',');
 
-    // Build classes: one row per selected item (title, hours, grade)
-    const classes = selectedRows.map((r, i) => ({
-      id: String(i + 1),
-      title: r.title,
-      hours: r.hours,
-      grade: r.score !== null
-        ? String(Math.round((r.score / r.max) * 10 * 10) / 10).replace('.', ',')
-        : '—',
+    // Build classes for certificate back: group by category (same logic as buildStudentAcademicData)
+    const GROUPED_CATEGORIES = new Set(['Aula ao Vivo', 'Tarefa', 'Prova', 'Terapia da Semana', 'Ofensiva Diária']);
+    const GROUP_LABELS = {
+      'Aula ao Vivo': 'Aulas ao Vivo',
+      'Tarefa': 'Tarefas de Classe',
+      'Prova': 'Provas',
+      'Terapia da Semana': 'Terapia da Semana',
+      'Ofensiva Diária': 'Ofensivas Diárias',
+    };
+
+    const classesMap = {};
+    let uid = 0;
+    evalRows.forEach(r => {
+      if (r.category === 'Aula Gravada') {
+        uid++;
+        classesMap[`individual_${uid}`] = { id: String(uid), title: r.title, hours: r.hours, scoreSum: r.score !== null ? r.score : 0 };
+      } else if (GROUPED_CATEGORIES.has(r.category)) {
+        const gk = `group_${r.category}`;
+        if (!classesMap[gk]) { uid++; classesMap[gk] = { id: String(uid), title: GROUP_LABELS[r.category] || r.category, hours: 0, scoreSum: 0 }; }
+        classesMap[gk].hours += r.hours;
+        classesMap[gk].scoreSum += r.score !== null ? r.score : 0;
+      }
+    });
+
+    const classes = Object.values(classesMap).map(c => ({
+      id: c.id,
+      title: c.title,
+      hours: c.hours,
+      grade: String(Math.round(c.scoreSum * 10) / 10).replace('.', ','),
     }));
 
     setCert(p => ({ ...p, totalHours, averageGrade, classes }));

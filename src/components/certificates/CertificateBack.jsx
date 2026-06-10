@@ -59,7 +59,7 @@ export default function CertificateBack({ cert, certRef }) {
 
           {/* Table header */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px', gap: 6, borderBottom: `1px solid ${GOLD}`, paddingBottom: 5, marginBottom: 4 }}>
-            {['Aula / Módulo', 'Horas', 'Nota'].map(h => (
+            {['Aula / Módulo', 'Horas', 'Pontos'].map(h => (
               <span key={h} style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, fontWeight: 900, color: NAVY, letterSpacing: 1, textTransform: 'uppercase' }}>{h}</span>
             ))}
           </div>
