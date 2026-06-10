@@ -9,35 +9,34 @@
     --font-inter: 'Inter', sans-serif;
     --font-jakarta: 'Plus Jakarta Sans', sans-serif;
 
-    /* WR-EDU — Cosmos & Ouro Pálido */
-    /* Light mode: cosmos escuro como base */
-    --background: 228 42% 5%;
-    --foreground: 38 40% 88%;
-    --card: 228 38% 8%;
-    --card-foreground: 38 40% 88%;
-    --popover: 228 38% 8%;
-    --popover-foreground: 38 40% 88%;
-    --primary: 42 58% 63%;
+    /* WR-EDU — Tema Claro (padrão) */
+    --background: 228 30% 97%;
+    --foreground: 228 40% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 228 40% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 228 40% 12%;
+    --primary: 42 58% 50%;
     --primary-foreground: 228 42% 5%;
-    --secondary: 228 32% 12%;
-    --secondary-foreground: 38 30% 75%;
-    --muted: 228 32% 11%;
-    --muted-foreground: 228 18% 52%;
-    --accent: 228 45% 28%;
-    --accent-foreground: 38 40% 88%;
+    --secondary: 228 20% 92%;
+    --secondary-foreground: 228 30% 30%;
+    --muted: 228 20% 93%;
+    --muted-foreground: 228 18% 46%;
+    --accent: 228 35% 86%;
+    --accent-foreground: 228 40% 20%;
     --destructive: 0 62% 48%;
     --destructive-foreground: 0 0% 98%;
-    --border: 228 30% 14%;
-    --input: 228 30% 14%;
-    --ring: 42 58% 63%;
-    --chart-1: 42 58% 63%;
-    --chart-2: 200 50% 55%;
-    --chart-3: 30 70% 55%;
-    --chart-4: 260 50% 60%;
-    --chart-5: 340 60% 55%;
+    --border: 228 20% 87%;
+    --input: 228 20% 87%;
+    --ring: 42 58% 50%;
+    --chart-1: 42 58% 50%;
+    --chart-2: 200 50% 45%;
+    --chart-3: 30 70% 50%;
+    --chart-4: 260 50% 55%;
+    --chart-5: 340 60% 50%;
     --radius: 0.875rem;
 
-    /* Sidebar — cosmos profundo */
+    /* Sidebar — cosmos profundo (sidebar é sempre escura) */
     --sidebar-background: 228 45% 4%;
     --sidebar-foreground: 38 30% 80%;
     --sidebar-primary: 42 58% 63%;
@@ -48,6 +47,7 @@
     --sidebar-ring: 42 58% 63%;
   }
 
+  /* Tema Escuro — Cosmos & Ouro Pálido */
   .dark {
     --background: 228 42% 5%;
     --foreground: 38 40% 88%;
@@ -73,38 +73,6 @@
     --chart-3: 30 70% 55%;
     --chart-4: 260 50% 60%;
     --chart-5: 340 60% 55%;
-    --sidebar-background: 228 45% 4%;
-    --sidebar-foreground: 38 30% 80%;
-    --sidebar-primary: 42 58% 63%;
-    --sidebar-primary-foreground: 228 45% 4%;
-    --sidebar-accent: 228 38% 10%;
-    --sidebar-accent-foreground: 38 30% 80%;
-    --sidebar-border: 228 32% 10%;
-    --sidebar-ring: 42 58% 63%;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: 228 42% 5%;
-    --foreground: 38 40% 88%;
-    --card: 228 38% 8%;
-    --card-foreground: 38 40% 88%;
-    --popover: 228 38% 8%;
-    --popover-foreground: 38 40% 88%;
-    --primary: 42 58% 63%;
-    --primary-foreground: 228 42% 5%;
-    --secondary: 228 32% 12%;
-    --secondary-foreground: 38 30% 75%;
-    --muted: 228 32% 11%;
-    --muted-foreground: 228 18% 52%;
-    --accent: 228 45% 28%;
-    --accent-foreground: 38 40% 88%;
-    --destructive: 0 62% 48%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 228 30% 14%;
-    --input: 228 30% 14%;
-    --ring: 42 58% 63%;
     --sidebar-background: 228 45% 4%;
     --sidebar-foreground: 38 30% 80%;
     --sidebar-primary: 42 58% 63%;
@@ -147,12 +115,12 @@
     -webkit-tap-highlight-color: transparent;
   }
   input, textarea, select {
-    background-color: #0f1220 !important;
-    color: #e8dfc8 !important;
+    background-color: hsl(var(--input)) !important;
+    color: hsl(var(--foreground)) !important;
     font-size: 16px;
   }
   input::placeholder, textarea::placeholder {
-    color: #6b7a9a !important;
+    color: hsl(var(--muted-foreground)) !important;
   }
 }
 
@@ -203,6 +171,13 @@
       radial-gradient(62rem 46rem at -8% -12%, rgba(91, 94, 244, 0.24), transparent 62%),
       radial-gradient(50rem 38rem at 112% 6%, rgba(29, 184, 158, 0.18), transparent 58%),
       linear-gradient(180deg, #080b14 0%, #0d1120 45%, #080b14 100%);
+  }
+  :root:not(.dark) .app-shell-bg {
+    background-color: #eef0f7;
+    background-image:
+      radial-gradient(62rem 46rem at -8% -12%, rgba(91, 94, 244, 0.08), transparent 62%),
+      radial-gradient(50rem 38rem at 112% 6%, rgba(29, 184, 158, 0.06), transparent 58%),
+      linear-gradient(180deg, #eef0f7 0%, #f3f4fb 45%, #eef0f7 100%);
   }
 }
 

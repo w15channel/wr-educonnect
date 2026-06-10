@@ -5,6 +5,23 @@ import NotificationsBell from '@/components/dashboard/NotificationsBell';
 import { Moon, Sun } from 'lucide-react';
 import { BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
+// ── Shared theme util (used by MobileHeader + Sidebar)
+export function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'dark') {
+    root.classList.add('dark');
+    root.classList.remove('light');
+  } else {
+    root.classList.remove('dark');
+    root.classList.add('light');
+  }
+  localStorage.setItem('wr_theme', theme);
+}
+
+export function getStoredTheme() {
+  return localStorage.getItem('wr_theme') || 'dark';
+}
+
 const routeLabels = {
   '/dashboard': 'Dashboard',
   '/lessons': 'Aulas',
@@ -45,13 +62,10 @@ export default function MobileHeader() {
   const baseSub = '/' + sub.split('/').filter(Boolean)[0];
   const label = routeLabels[sub] || routeLabels[baseSub] || BRAND_LEGAL_NAME;
 
-  const [theme, setTheme] = useState(() => localStorage.getItem('wr_theme') || 'light');
+  const [theme, setTheme] = useState(() => getStoredTheme());
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle('dark', theme === 'dark');
-    root.classList.toggle('light', theme === 'light');
-    localStorage.setItem('wr_theme', theme);
+    applyTheme(theme);
   }, [theme]);
 
   const toggleTheme = () => setTheme((prev) => prev === 'dark' ? 'light' : 'dark');

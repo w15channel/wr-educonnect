@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { applyTheme, getStoredTheme } from '@/components/layout/MobileHeader';
 
 import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, Brain, Sparkles,
   ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame,
-  ScrollText, ClipboardList, Medal, Star
+  ScrollText, ClipboardList, Medal, Star, Moon, Sun
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -125,6 +126,13 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { logout } = useCustomAuth();
+  const [theme, setTheme] = useState(() => getStoredTheme());
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    applyTheme(next);
+  };
 
   const isAdmin = session?.role === 'admin';
   const base = isAdmin ? '/adm' : '/student';
@@ -311,13 +319,22 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
             </div>
             <Sparkles size={11} className="text-white/15 shrink-0" />
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 text-white/30 hover:text-red-400 w-full px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
-          >
-            <LogOut size={13} />
-            Sair da conta
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 text-white/30 hover:text-red-400 flex-1 px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
+            >
+              <LogOut size={13} />
+              Sair da conta
+            </button>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              className="p-2 rounded-xl text-white/30 hover:text-white/70 hover:bg-white/8 transition-colors shrink-0"
+            >
+              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            </button>
+          </div>
         </div>
       </aside>
     </>
