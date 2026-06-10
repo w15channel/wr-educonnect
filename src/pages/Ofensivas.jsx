@@ -1,151 +1,171 @@
-import React, { useState, useEffect } from 'react';
-import { useOutletContext, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
-  Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send, Trophy, X
+  Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send, Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// Pontuação por posição: 1=0.1, 2=0.1, 3=0.5(baú), 4=0.1, 5=0.1
-const QUESTION_POINTS = [0.1, 0.1, 0.5, 0.1, 0.1];
-const TOTAL_POINTS = QUESTION_POINTS.reduce((a, b) => a + b, 0); // 1.0
+// ─── Schema: 8 perguntas ──────────────────────────────────────────────────────
+// q1(0.1) q2(0.1) q3-baú(0.2) q4(0.1) q5(0.1) q6-baú(0.2) q7(0.1) q8(0.1) = 1.0
+const QUESTION_SCHEMA = [
+  { id: 'q1', type: 'normal', points: 0.1 },
+  { id: 'q2', type: 'normal', points: 0.1 },
+  { id: 'q3', type: 'chest',  points: 0.2 },
+  { id: 'q4', type: 'normal', points: 0.1 },
+  { id: 'q5', type: 'normal', points: 0.1 },
+  { id: 'q6', type: 'chest',  points: 0.2 },
+  { id: 'q7', type: 'normal', points: 0.1 },
+  { id: 'q8', type: 'normal', points: 0.1 },
+];
+const TOTAL_POINTS = 1.0;
 
-function useScopedPrefix() {
-  const location = useLocation();
-  const parts = location.pathname.split('/').filter(Boolean);
-  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return `/${parts[0]}/${parts[1]}`;
-  return '';
-}
+// Zigzag X offsets for 8 nodes (px)
+const TRAIL_X = [0, 70, 0, -70, 0, 70, 0, -70];
 
-// Posições em zigue-zague para as 5 bolinhas (centro, direita, centro, esquerda, centro)
-const TRAIL_POSITIONS = [
-  { x: 'center', offset: 0 },
-  { x: 'right',  offset: 60 },
-  { x: 'center', offset: 0 },   // baú
-  { x: 'left',   offset: -60 },
-  { x: 'center', offset: 0 },
+// Streak bonuses
+const STREAK_BONUSES = [
+  { days: 5,  bonus: 5,  label: '5 dias',  emoji: '🔥' },
+  { days: 10, bonus: 15, label: '10 dias', emoji: '💎' },
+  { days: 20, bonus: 30, label: '20 dias', emoji: '👑' },
 ];
 
-// Mascote corujinha SVG simples
-function Owl() {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="text-5xl select-none" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.18))' }}>🦉</div>
-    </div>
-  );
+// ─── Fireworks ─────────────────────────────────────────────────────────────────
+function Fireworks({ onDone }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const particles = [];
+    const colors = ['#FFD700','#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD'];
+
+    function burst(x, y) {
+      for (let i = 0; i < 60; i++) {
+        const angle = (Math.PI * 2 * i) / 60;
+        const speed = 2 + Math.random() * 5;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: 3 + Math.random() * 4,
+          alpha: 1,
+          decay: 0.012 + Math.random() * 0.008,
+        });
+      }
+    }
+
+    const cx = canvas.width / 2, cy = canvas.height / 2;
+    burst(cx, cy - 80);
+    setTimeout(() => burst(cx - 100, cy - 140), 200);
+    setTimeout(() => burst(cx + 100, cy - 140), 400);
+    setTimeout(() => burst(cx - 60, cy - 60), 600);
+    setTimeout(() => burst(cx + 60, cy - 60), 800);
+
+    let raf;
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.alpha -= p.decay;
+        if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (particles.length > 0) raf = requestAnimationFrame(animate);
+      else setTimeout(onDone, 400);
+    }
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return <canvas ref={canvasRef} className="fixed inset-0 z-50 pointer-events-none" style={{ width: '100vw', height: '100vh' }} />;
 }
 
-// Bolinha da trilha
-function TrailNode({ question, idx, answered, locked, isChest, onPress }) {
-  const pts = QUESTION_POINTS[idx];
+// ─── Trail Node ────────────────────────────────────────────────────────────────
+function TrailNode({ question, idx, answered, locked, isChest, onPress, points }) {
+  const offsetX = TRAIL_X[idx] ?? 0;
 
-  // Bolinha do baú
   if (isChest) {
     return (
       <button
         onClick={() => !locked && onPress()}
         disabled={locked}
-        className={`relative flex flex-col items-center group transition-transform active:scale-95 ${locked ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
-        style={{ marginLeft: TRAIL_POSITIONS[idx].offset }}
+        style={{ marginLeft: offsetX }}
+        className={`relative flex flex-col items-center transition-transform active:scale-95 ${locked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105'}`}
       >
-        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg border-4 transition-all ${
-          answered
-            ? 'bg-yellow-400 border-yellow-300 shadow-yellow-400/40'
-            : locked
-            ? 'bg-secondary border-border'
-            : 'bg-amber-500 border-amber-400 shadow-amber-400/40'
+        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-xl border-4 transition-all ${
+          answered ? 'bg-yellow-400 border-yellow-300 shadow-yellow-400/40'
+          : locked ? 'bg-secondary border-border'
+          : 'bg-amber-500 border-amber-400 shadow-amber-400/50'
         }`}>
-          {answered ? (
-            <CheckCircle size={32} className="text-white" />
-          ) : locked ? (
-            <Lock size={28} className="text-muted-foreground" />
-          ) : (
-            <span className="text-4xl">🗝️</span>
-          )}
+          {answered ? <CheckCircle size={32} className="text-white" />
+           : locked ? <Lock size={24} className="text-muted-foreground" />
+           : <span className="text-4xl">🗝️</span>}
         </div>
         {!locked && !answered && (
-          <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-amber-300 shadow">
-            +{pts}
-          </div>
+          <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-amber-300 shadow-lg">+{points}</div>
         )}
-        {answered && (
-          <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-green-300 shadow">
-            ✓
-          </div>
-        )}
-        <span className={`mt-2 text-[11px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-amber-400'}`}>
-          Baú do Saber
-        </span>
-        <span className="text-[10px] text-muted-foreground/70">+{pts} pts</span>
+        {answered && <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-green-300">✓</div>}
+        <span className={`mt-1.5 text-[11px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-amber-400'}`}>Baú do Saber</span>
+        <span className="text-[10px] text-muted-foreground/60">+{points} pts</span>
       </button>
     );
   }
 
-  // Bolinha normal
   return (
     <button
       onClick={() => !locked && onPress()}
       disabled={locked}
-      className={`relative flex flex-col items-center group transition-transform active:scale-95 ${locked ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
-      style={{ marginLeft: TRAIL_POSITIONS[idx].offset }}
+      style={{ marginLeft: offsetX }}
+      className={`relative flex flex-col items-center transition-transform active:scale-95 ${locked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105'}`}
     >
       <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 transition-all ${
-        answered
-          ? 'bg-green-500 border-green-400 shadow-green-400/40'
-          : locked
-          ? 'bg-secondary border-border'
-          : 'bg-primary border-primary/70 shadow-primary/30'
+        answered ? 'bg-green-500 border-green-400 shadow-green-400/40'
+        : locked ? 'bg-secondary border-border'
+        : 'bg-primary border-primary/70 shadow-primary/30'
       }`}>
-        {answered ? (
-          <CheckCircle size={26} className="text-white" />
-        ) : locked ? (
-          <Lock size={20} className="text-muted-foreground" />
-        ) : (
-          <Flame size={24} className="text-white" />
-        )}
+        {answered ? <CheckCircle size={24} className="text-white" />
+         : locked ? <Lock size={18} className="text-muted-foreground" />
+         : <Flame size={22} className="text-white" />}
       </div>
       {!locked && !answered && (
-        <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-primary/50 shadow">
-          +{pts}
-        </div>
+        <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-primary/50 shadow">+{points}</div>
       )}
-      {answered && (
-        <div className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">
-          ✓
-        </div>
-      )}
-      <span className={`mt-1.5 text-[10px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-foreground/70'}`}>
-        {answered ? 'Feita' : locked ? 'Bloqueada' : `Pergunta ${idx + 1}`}
+      {answered && <div className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">✓</div>}
+      <span className={`mt-1 text-[10px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-foreground/60'}`}>
+        {answered ? 'Feita' : locked ? 'Bloqueada' : `Nº ${idx + 1}`}
       </span>
-      <span className="text-[10px] text-muted-foreground/60">+{pts} pts</span>
+      <span className="text-[10px] text-muted-foreground/50">+{points}</span>
     </button>
   );
 }
 
-// Conector vertical entre bolinhas
 function Connector({ answered }) {
   return (
-    <div className="flex justify-center my-1">
-      <div className={`w-1 h-8 rounded-full ${answered ? 'bg-green-400' : 'bg-border'}`} />
+    <div className="flex justify-center my-0.5">
+      <div className={`w-1 h-7 rounded-full transition-colors ${answered ? 'bg-green-400' : 'bg-border'}`} />
     </div>
   );
 }
 
-// Popup de pergunta
-function QuestionModal({ question, idx, isChest, pointsValue, answered, savedAnswer, open, onClose, onSubmit, isPending }) {
+// ─── Question Modal ────────────────────────────────────────────────────────────
+function QuestionModal({ question, idx, isChest, points, answered, savedAnswer, open, onClose, onSubmit, isPending }) {
   const [answer, setAnswer] = useState('');
-
-  React.useEffect(() => {
-    if (open) setAnswer('');
-  }, [open]);
+  useEffect(() => { if (open) setAnswer(''); }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -155,26 +175,22 @@ function QuestionModal({ question, idx, isChest, pointsValue, answered, savedAns
             {isChest ? <span className="text-xl">🗝️</span> : <Flame size={16} className="text-orange-500" />}
             {isChest ? 'Baú do Saber' : `Pergunta ${idx + 1}`}
             <span className="ml-auto text-xs font-bold text-yellow-500 flex items-center gap-0.5">
-              <Star size={11} className="fill-yellow-400" /> +{pointsValue} pts
+              <Star size={11} className="fill-yellow-400" /> +{points} pts
             </span>
           </DialogTitle>
         </DialogHeader>
-
         <div className="space-y-4 mt-1">
           {isChest && (
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-xs text-amber-500 font-semibold flex items-center gap-1.5">
-              🗝️ Pergunta desafio! Vale mais pontos — reflita com cuidado.
+              🗝️ Pergunta desafio! Reflita com cuidado — vale mais pontos.
             </div>
           )}
-
           <p className="text-sm font-semibold text-foreground leading-relaxed">{question?.text}</p>
-
           {question?.hint && (
             <p className="text-xs text-muted-foreground italic flex gap-1.5">
               <span>💡</span> {question.hint}
             </p>
           )}
-
           {answered ? (
             <div className="bg-green-500/10 border border-green-400/30 rounded-xl p-3 space-y-1">
               <p className="text-xs font-bold text-green-500 flex items-center gap-1"><CheckCircle size={11} /> Resposta registrada!</p>
@@ -190,13 +206,9 @@ function QuestionModal({ question, idx, isChest, pointsValue, answered, savedAns
                 className="text-sm"
                 autoFocus
               />
-              <Button
-                className="w-full gap-2"
-                disabled={!answer.trim() || isPending}
-                onClick={() => onSubmit(answer)}
-              >
+              <Button className="w-full gap-2" disabled={!answer.trim() || isPending} onClick={() => onSubmit(answer)}>
                 {isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                Registrar · +{pointsValue} pts
+                Registrar · +{points} pts
               </Button>
             </>
           )}
@@ -206,121 +218,30 @@ function QuestionModal({ question, idx, isChest, pointsValue, answered, savedAns
   );
 }
 
-// Painel admin para gerar novo desafio
-function GenerateChallengePanel({ lessons, course, onGenerated }) {
-  const [selectedLesson, setSelectedLesson] = useState('');
-  const [customTopic, setCustomTopic] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const queryClient = useQueryClient();
-  const today = format(new Date(), 'yyyy-MM-dd');
-
-  const handleGenerate = async () => {
-    const lesson = lessons.find(l => l.id === selectedLesson);
-    const topic = customTopic.trim() || lesson?.title || 'comportamento humano e emoções';
-    const lessonDesc = lesson?.description || '';
-    setGenerating(true);
-    try {
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Você é professor de psicologia/comportamento humano. Gere 5 perguntas de reflexão para alunos de curso online.
-
-Tema: "${topic}"
-${lessonDesc ? `Descrição: "${lessonDesc}"` : ''}
-
-Regras:
-- Linguagem simples, acessível, cotidiana
-- Perguntas 1, 2, 4 e 5: reflexão rápida e leve (fáceis)
-- Pergunta 3 (BAÚ): mais reflexiva, exige mais elaboração, maior dificuldade
-- Cada pergunta: máximo 2 linhas
-- Cada pergunta tem uma dica curta (hint)
-- Não repita temas
-
-JSON exato:
-{
-  "questions": [
-    { "id": "q1", "text": "...", "hint": "..." },
-    { "id": "q2", "text": "...", "hint": "..." },
-    { "id": "q3", "text": "...", "hint": "..." },
-    { "id": "q4", "text": "...", "hint": "..." },
-    { "id": "q5", "text": "...", "hint": "..." }
-  ]
-}`,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            questions: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: { type: 'string' },
-                  text: { type: 'string' },
-                  hint: { type: 'string' }
-                }
-              }
-            }
-          }
-        }
-      });
-
-      const questions = result?.questions || [];
-      if (questions.length < 3) throw new Error('IA retornou perguntas insuficientes');
-
-      await base44.functions.invoke('createDailyChallenge', {
-        date: today,
-        course,
-        lesson_ref: lesson?.title || topic,
-        lesson_id: selectedLesson || null,
-        questions: questions.slice(0, 5),
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ['daily-challenge'] });
-      toast.success('🔥 Nova ofensiva gerada!');
-      onGenerated();
-    } catch (err) {
-      toast.error('Erro: ' + (err.message || 'tente novamente'));
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const courseLessons = lessons.filter(l => l.course === course);
-
+// ─── Streak Badge ──────────────────────────────────────────────────────────────
+function StreakBadge({ streak }) {
+  const nextBonus = STREAK_BONUSES.find(b => b.days > streak);
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="text-xs font-bold text-foreground mb-1">Aula de referência</p>
-        <Select value={selectedLesson} onValueChange={setSelectedLesson}>
-          <SelectTrigger><SelectValue placeholder="Selecionar aula..." /></SelectTrigger>
-          <SelectContent>
-            {courseLessons.map(l => (
-              <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 rounded-2xl px-4 py-3">
+      <div className="flex flex-col items-center shrink-0">
+        <span className="text-2xl">🔥</span>
+        <span className="text-[10px] font-bold text-orange-500 mt-0.5">{streak}d</span>
       </div>
-      <div>
-        <p className="text-xs font-bold text-foreground mb-1">Ou tema livre</p>
-        <Textarea
-          placeholder="Ex: emoções, autoconhecimento, relacionamentos..."
-          value={customTopic}
-          onChange={e => setCustomTopic(e.target.value)}
-          rows={2}
-          className="text-sm"
-        />
+      <div className="flex-1 min-w-0">
+        {nextBonus ? (
+          <p className="text-xs text-muted-foreground">
+            Mais {nextBonus.days - streak} dia{nextBonus.days - streak !== 1 ? 's' : ''} para ganhar
+            <span className="font-bold text-yellow-500"> +{nextBonus.bonus} pts {nextBonus.emoji}</span>
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">Sequência máxima desbloqueada! 👑</p>
+        )}
       </div>
-      <Button
-        onClick={handleGenerate}
-        disabled={generating || (!selectedLesson && !customTopic.trim())}
-        className="w-full gap-2"
-      >
-        {generating
-          ? <><Loader2 size={14} className="animate-spin" /> Gerando com IA...</>
-          : <><Zap size={14} /> Gerar 5 Perguntas com IA</>}
-      </Button>
     </div>
   );
 }
 
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function Ofensivas() {
   const ctx = useOutletContext() || {};
   const { session: authSession } = useCustomAuth();
@@ -332,11 +253,14 @@ export default function Ofensivas() {
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayLabel = format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });
 
-  const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState({});
-  const [showGenerate, setShowGenerate] = useState(false);
-  const [activeQuestion, setActiveQuestion] = useState(null); // idx of open modal
+  const [activeQuestion, setActiveQuestion] = useState(null);
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
+  const [bonusEarned, setBonusEarned] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
+  // ── Fetch ────────────────────────────────────────────────────────────────
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ['daily-challenge', userCourse, today],
     queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: today }, '-created_date', 5),
@@ -353,15 +277,13 @@ export default function Ofensivas() {
     enabled: !!challenge?.id && !!session?.email,
   });
 
-  const myResponseRecord = myResponse?.[0] || null;
-  const answeredMap = {};
-  (myResponseRecord?.answers || []).forEach(a => { answeredMap[a.question_id] = a.answer; });
-  const answeredCount = Object.keys(answeredMap).length;
-
-  const { data: allChallenges = [] } = useQuery({
-    queryKey: ['all-challenges', userCourse],
-    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse }, '-created_date', 30),
-    enabled: isTeacher,
+  const { data: recentResponses = [] } = useQuery({
+    queryKey: ['all-my-responses', session?.email, userCourse],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter(
+      { student_email: session?.email || '', course: userCourse },
+      '-created_date', 60
+    ),
+    enabled: !!session?.email && !isTeacher,
   });
 
   const { data: allResponses = [] } = useQuery({
@@ -370,50 +292,77 @@ export default function Ofensivas() {
     enabled: isTeacher && !!challenge?.id,
   });
 
-  const { data: lessons = [] } = useQuery({
-    queryKey: ['lessons-ref', userCourse],
-    queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 100),
+  const { data: allChallenges = [] } = useQuery({
+    queryKey: ['all-challenges', userCourse],
+    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse }, '-created_date', 30),
     enabled: isTeacher,
   });
 
+  const myResponseRecord = myResponse?.[0] || null;
+  const answeredMap = {};
+  (myResponseRecord?.answers || []).forEach(a => { answeredMap[a.question_id] = a.answer; });
+  const answeredCount = Object.keys(answeredMap).length;
+  const isComplete = answeredCount >= 8;
+
+  // ── Streak ───────────────────────────────────────────────────────────────
+  const streak = useMemo(() => {
+    const completedDates = new Set(
+      recentResponses.filter(r => (r.questions_answered || 0) >= 8).map(r => r.date)
+    );
+    let count = 0;
+    let checkDate = new Date();
+    while (true) {
+      const dateStr = format(checkDate, 'yyyy-MM-dd');
+      if (completedDates.has(dateStr)) {
+        count++;
+        checkDate = new Date(checkDate.getTime() - 86400000);
+      } else break;
+    }
+    return count;
+  }, [recentResponses]);
+
+  // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmitAnswer = async (questionId, answer) => {
-    if (!answer?.trim()) return;
+    if (!answer?.trim() || !challenge) return;
     setSubmitting(prev => ({ ...prev, [questionId]: true }));
     try {
       const currentAnswers = myResponseRecord?.answers || [];
       const updatedAnswers = [...currentAnswers.filter(a => a.question_id !== questionId), { question_id: questionId, answer }];
       const newCount = updatedAnswers.length;
-      // Calcular pontos baseados nas posições respondidas
+
       const questions = challenge?.questions || [];
       let pts = 0;
       updatedAnswers.forEach(a => {
         const qIdx = questions.findIndex(q => q.id === a.question_id);
-        if (qIdx >= 0) pts += QUESTION_POINTS[qIdx] || 0.1;
+        if (qIdx >= 0) pts += QUESTION_SCHEMA[qIdx]?.points ?? questions[qIdx]?.points ?? 0.1;
       });
+      pts = Math.round(pts * 1000) / 1000;
 
       if (myResponseRecord) {
-        await base44.entities.DailyChallengeResponse.update(myResponseRecord.id, {
-          answers: updatedAnswers,
-          questions_answered: newCount,
-          points_earned: pts,
-        });
+        await base44.entities.DailyChallengeResponse.update(myResponseRecord.id, { answers: updatedAnswers, questions_answered: newCount, points_earned: pts });
       } else {
         await base44.entities.DailyChallengeResponse.create({
-          challenge_id: challenge.id,
-          date: today,
-          course: userCourse,
-          student_email: session?.email || '',
-          student_name: session?.name || session?.full_name || '',
-          answers: updatedAnswers,
-          questions_answered: newCount,
-          points_earned: pts,
+          challenge_id: challenge.id, date: today, course: userCourse,
+          student_email: session?.email || '', student_name: session?.name || session?.full_name || '',
+          answers: updatedAnswers, questions_answered: newCount, points_earned: pts,
         });
       }
 
       await queryClient.invalidateQueries({ queryKey: ['daily-response'] });
-      const pointsEarned = QUESTION_POINTS[activeQuestion] || 0.1;
+      await queryClient.invalidateQueries({ queryKey: ['all-my-responses'] });
+
+      const qIdx = questions.findIndex(q => q.id === questionId);
+      const pointsEarned = QUESTION_SCHEMA[qIdx]?.points ?? 0.1;
       toast.success(`🔥 +${pointsEarned} pts!`);
       setActiveQuestion(null);
+
+      if (newCount >= 8) {
+        setJustCompleted(true);
+        setShowFireworks(true);
+        const newStreak = streak + 1;
+        const bonus = STREAK_BONUSES.slice().reverse().find(b => newStreak === b.days);
+        if (bonus) { setBonusEarned(bonus); toast.success(`${bonus.emoji} Bônus de sequência: +${bonus.bonus} pts!`); }
+      }
     } catch (err) {
       toast.error('Erro: ' + (err.message || 'tente novamente'));
     } finally {
@@ -421,20 +370,32 @@ export default function Ofensivas() {
     }
   };
 
+  // ── Admin generate ────────────────────────────────────────────────────────
+  const handleGenerate = async (force = false) => {
+    setGenerating(true);
+    try {
+      await base44.functions.invoke('createDailyChallenge', { course: userCourse, force });
+      await queryClient.invalidateQueries({ queryKey: ['daily-challenge'] });
+      toast.success('🔥 Nova ofensiva gerada com IA!');
+    } catch (err) {
+      toast.error('Erro: ' + (err.message || 'tente novamente'));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 size={28} className="animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-24"><Loader2 size={28} className="animate-spin text-primary" /></div>;
   }
 
   const questions = challenge?.questions || [];
 
   return (
     <div className="p-3 md:p-5 max-w-[560px] mx-auto animate-fade-in-up">
+      {showFireworks && <Fireworks onDone={() => setShowFireworks(false)} />}
+
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-6">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             <Flame size={22} className="text-orange-500" /> Ofensivas Diárias
@@ -442,79 +403,103 @@ export default function Ofensivas() {
           <p className="text-muted-foreground text-sm mt-0.5 capitalize">{todayLabel}</p>
         </div>
         {isTeacher && (
-          <Button onClick={() => setShowGenerate(true)} className="gap-2 h-9 text-sm shrink-0 bg-orange-500 hover:bg-orange-600">
-            <Zap size={15} /> Atualizar Ofensiva
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => handleGenerate(false)} disabled={generating || !!challenge} size="sm" className="gap-1.5 bg-orange-500 hover:bg-orange-600 text-white shrink-0">
+              {generating ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
+              {challenge ? 'Ativa ✓' : 'Gerar'}
+            </Button>
+            {challenge && (
+              <Button onClick={() => handleGenerate(true)} disabled={generating} size="sm" variant="outline" className="shrink-0">
+                Regenerar
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* SEM DESAFIO */}
+      {/* No challenge */}
       {!challenge && (
         <div className="text-center py-20 text-muted-foreground bg-card border border-border rounded-2xl">
           <Flame size={48} className="mx-auto mb-4 opacity-20" />
           <p className="text-lg font-bold">Nenhuma ofensiva para hoje</p>
           <p className="text-sm mt-1 text-muted-foreground/70">
-            {isTeacher
-              ? 'Clique em "Atualizar Ofensiva" para gerar as perguntas do dia.'
-              : 'O professor ainda não liberou a ofensiva de hoje. Volte mais tarde!'}
+            {isTeacher ? 'Clique em "Gerar" para criar a ofensiva com IA.' : 'A ofensiva será gerada automaticamente. Volte mais tarde!'}
           </p>
         </div>
       )}
 
-      {/* TRILHA DO TESOURO — alunos */}
+      {/* ── STUDENT VIEW ── */}
       {!isTeacher && challenge && (
         <div>
-          {/* Tema da ofensiva */}
+          {streak > 0 && <div className="mb-4"><StreakBadge streak={streak} /></div>}
+
+          {/* Streak milestone chips */}
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+            {STREAK_BONUSES.map(b => (
+              <div key={b.days} className={`shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border text-center transition-all ${streak >= b.days ? 'bg-yellow-500/15 border-yellow-400/30' : 'bg-card border-border opacity-50'}`}>
+                <span className="text-lg">{b.emoji}</span>
+                <span className="text-[10px] font-bold text-foreground">{b.label}</span>
+                <span className="text-[10px] text-yellow-500 font-bold">+{b.bonus} pts</span>
+                {streak >= b.days && <span className="text-[9px] text-green-500">Ganho ✓</span>}
+              </div>
+            ))}
+          </div>
+
+          {/* Topic */}
           {challenge.lesson_ref && (
-            <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 text-xs text-orange-500 font-semibold mb-6">
+            <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 text-xs text-orange-500 font-semibold mb-4">
               <BookOpen size={13} /> {challenge.lesson_ref}
             </div>
           )}
 
-          {/* Pontuação total */}
-          <div className="flex items-center justify-center gap-4 mb-6">
-            {[0,1,2,3,4].map(i => {
-              const q = questions[i];
-              const isAnswered = q && !!answeredMap[q?.id];
-              return (
-                <div key={i} className="flex flex-col items-center gap-0.5">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all ${
-                    isAnswered ? 'bg-green-500 border-green-400 text-white' : 'bg-secondary border-border text-muted-foreground'
-                  }`}>
-                    {isAnswered ? '✓' : i + 1}
-                  </div>
-                  <span className="text-[9px] text-muted-foreground">{QUESTION_POINTS[i]}</span>
+          {/* Complete banner */}
+          {isComplete && (
+            <div className="bg-gradient-to-br from-yellow-500/15 to-amber-500/10 border border-yellow-400/30 rounded-2xl p-5 text-center mb-4">
+              <div className="text-4xl mb-2">🏆</div>
+              <p className="font-black text-xl text-foreground">{justCompleted ? 'Parabéns! Ofensiva Completa! 🔥' : 'Ofensiva do Dia Concluída! ✅'}</p>
+              <p className="text-sm text-muted-foreground mt-1">+{TOTAL_POINTS.toFixed(1)} pts ganhos · Sequência: <span className="font-bold text-orange-500">{streak} dia{streak !== 1 ? 's' : ''} 🔥</span></p>
+              {bonusEarned && (
+                <div className="mt-3 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-4 py-2 inline-block">
+                  <p className="font-black text-yellow-500 text-sm">{bonusEarned.emoji} Bônus: +{bonusEarned.bonus} pts!</p>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* MAPA DO TESOURO */}
-          {answeredCount >= 5 && (
-            <div className="bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border border-yellow-400/30 rounded-2xl p-5 text-center mb-6">
-              <Trophy size={36} className="mx-auto mb-2 text-yellow-400" />
-              <p className="font-black text-lg text-foreground">Ofensiva Completa! 🔥</p>
-              <p className="text-sm text-muted-foreground mt-1">+{TOTAL_POINTS.toFixed(1)} pts ganhos hoje. Volte amanhã!</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">Volte amanhã para manter sua sequência!</p>
             </div>
           )}
 
-          <div className="relative flex flex-col items-center py-4 select-none" style={{ minHeight: 480 }}>
-            {/* Mascote no topo */}
-            <div className="mb-4">
-              <Owl />
-              {answeredCount < 5 && (
-                <div className="mt-2 bg-card border border-border rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground text-center shadow">
-                  {answeredCount === 0 ? 'Toque numa bolinha para começar!' : `${5 - answeredCount} pergunta${5 - answeredCount !== 1 ? 's' : ''} restante${5 - answeredCount !== 1 ? 's' : ''}`}
+          {/* Progress dots */}
+          {!isComplete && (
+            <div className="flex items-center justify-center gap-1.5 mb-5 flex-wrap">
+              {QUESTION_SCHEMA.map((s, i) => {
+                const q = questions[i];
+                const isAnswered = q && !!answeredMap[q?.id];
+                return (
+                  <div key={i} className={`flex flex-col items-center gap-0.5 ${s.type === 'chest' ? 'mx-1' : ''}`}>
+                    <div className={`rounded-full flex items-center justify-center border-2 text-[10px] font-bold transition-all ${s.type === 'chest' ? 'w-9 h-9 rounded-xl' : 'w-7 h-7'} ${isAnswered ? 'bg-green-500 border-green-400 text-white' : 'bg-secondary border-border text-muted-foreground'}`}>
+                      {isAnswered ? '✓' : s.type === 'chest' ? '🗝️' : i + 1}
+                    </div>
+                    <span className={`text-[9px] font-bold ${s.type === 'chest' ? 'text-amber-400' : 'text-muted-foreground/60'}`}>{s.points}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Trail */}
+          <div className="relative flex flex-col items-center py-4 select-none" style={{ minHeight: 680 }}>
+            <div className="mb-5 flex flex-col items-center">
+              <div className="text-5xl" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.18))' }}>🦉</div>
+              {!isComplete && (
+                <div className="mt-2 bg-card border border-border rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground text-center shadow max-w-[200px]">
+                  {answeredCount === 0 ? 'Toque numa bolinha! 🔥' : `${8 - answeredCount} pergunta${8 - answeredCount !== 1 ? 's' : ''} restante${8 - answeredCount !== 1 ? 's' : ''}`}
                 </div>
               )}
             </div>
 
-            {/* Trilha */}
-            {questions.map((q, idx) => {
+            {questions.slice(0, 8).map((q, idx) => {
               const isAnswered = !!answeredMap[q.id];
               const isLocked = idx > 0 && !answeredMap[questions[idx - 1]?.id];
-              const isChest = idx === 2;
-              const pts = QUESTION_POINTS[idx];
+              const schema = QUESTION_SCHEMA[idx];
 
               return (
                 <React.Fragment key={q.id}>
@@ -523,24 +508,23 @@ export default function Ofensivas() {
                     idx={idx}
                     answered={isAnswered}
                     locked={isLocked}
-                    isChest={isChest}
+                    isChest={schema?.type === 'chest'}
+                    points={schema?.points ?? q.points ?? 0.1}
                     onPress={() => setActiveQuestion(idx)}
                   />
-                  {idx < questions.length - 1 && (
-                    <Connector answered={isAnswered} />
-                  )}
+                  {idx < Math.min(questions.length, 8) - 1 && <Connector answered={isAnswered} />}
                 </React.Fragment>
               );
             })}
           </div>
 
-          {/* Modal da pergunta ativa */}
+          {/* Question modal */}
           {activeQuestion !== null && questions[activeQuestion] && (
             <QuestionModal
               question={questions[activeQuestion]}
               idx={activeQuestion}
-              isChest={activeQuestion === 2}
-              pointsValue={QUESTION_POINTS[activeQuestion]}
+              isChest={QUESTION_SCHEMA[activeQuestion]?.type === 'chest'}
+              points={QUESTION_SCHEMA[activeQuestion]?.points ?? questions[activeQuestion]?.points ?? 0.1}
               answered={!!answeredMap[questions[activeQuestion]?.id]}
               savedAnswer={answeredMap[questions[activeQuestion]?.id]}
               open={activeQuestion !== null}
@@ -552,7 +536,7 @@ export default function Ofensivas() {
         </div>
       )}
 
-      {/* VISÃO PROFESSOR */}
+      {/* ── TEACHER VIEW ── */}
       {isTeacher && challenge && (
         <div className="space-y-4">
           <div className="bg-card border border-border rounded-2xl p-4">
@@ -563,7 +547,7 @@ export default function Ofensivas() {
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Users size={12} />
-                <span>{allResponses.length} aluno{allResponses.length !== 1 ? 's' : ''}</span>
+                <span>{allResponses.length} participante{allResponses.length !== 1 ? 's' : ''}</span>
               </div>
             </div>
             {challenge.lesson_ref && (
@@ -572,15 +556,19 @@ export default function Ofensivas() {
               </p>
             )}
             <div className="space-y-2">
-              {(challenge.questions || []).map((q, i) => (
-                <div key={q.id} className={`flex items-start gap-2 p-2.5 rounded-xl text-xs ${i === 2 ? 'bg-amber-500/10 border border-amber-400/20' : 'bg-secondary/30'}`}>
-                  <span className={`font-black shrink-0 ${i === 2 ? 'text-amber-400' : 'text-primary'}`}>{i === 2 ? '🗝️' : `${i + 1}.`}</span>
-                  <div className="flex-1">
-                    <span className="text-foreground">{q.text}</span>
-                    {i === 2 && <span className="ml-1 text-amber-400 font-bold">(Baú · +0.5pts)</span>}
+              {(challenge.questions || []).map((q, i) => {
+                const schema = QUESTION_SCHEMA[i];
+                const isChest = schema?.type === 'chest';
+                return (
+                  <div key={q.id} className={`flex items-start gap-2 p-2.5 rounded-xl text-xs ${isChest ? 'bg-amber-500/10 border border-amber-400/20' : 'bg-secondary/30'}`}>
+                    <span className={`font-black shrink-0 ${isChest ? 'text-amber-400' : 'text-primary'}`}>{isChest ? '🗝️' : `${i + 1}.`}</span>
+                    <div className="flex-1">
+                      <span className="text-foreground">{q.text}</span>
+                      <span className={`ml-1 font-bold text-[10px] ${isChest ? 'text-amber-400' : 'text-muted-foreground'}`}>(+{schema?.points ?? 0.1}pts)</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -592,9 +580,9 @@ export default function Ofensivas() {
                   <div key={r.id} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-xl text-xs">
                     <span className="font-semibold text-foreground truncate">{r.student_name || r.student_email}</span>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-muted-foreground">{r.questions_answered || 0}/5</span>
+                      <span className="text-muted-foreground">{r.questions_answered || 0}/8</span>
                       <span className="text-yellow-500 font-bold flex items-center gap-0.5">
-                        <Star size={9} className="fill-yellow-400" /> +{(r.points_earned || 0).toFixed(1)}
+                        <Star size={9} className="fill-yellow-400" /> +{(r.points_earned || 0).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -606,7 +594,7 @@ export default function Ofensivas() {
           {allChallenges.length > 1 && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <h3 className="font-bold text-sm mb-3">Histórico</h3>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {allChallenges.map(c => (
                   <div key={c.id} className={`flex items-center justify-between p-2 rounded-xl text-xs ${c.date === today ? 'bg-orange-500/10 border border-orange-400/20' : 'bg-secondary/30'}`}>
                     <span className="font-semibold">{c.date}</span>
@@ -619,19 +607,6 @@ export default function Ofensivas() {
           )}
         </div>
       )}
-
-      {/* Dialog: Gerar nova ofensiva */}
-      <Dialog open={showGenerate} onOpenChange={setShowGenerate}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Zap size={16} className="text-orange-500" /> Gerar Nova Ofensiva
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground -mt-2 mb-1">A IA vai gerar 5 perguntas (posição 3 = Baú, mais difícil, +0.5pts).</p>
-          <GenerateChallengePanel lessons={lessons} course={userCourse} onGenerated={() => setShowGenerate(false)} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
