@@ -145,9 +145,8 @@ export default function AdminCertificateGenerator() {
     const evalRows = selectedRows.filter(r => r.status === 'Avaliado');
     const totalHours = evalRows.reduce((s, r) => s + r.hours, 0);
     const totalScore = evalRows.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0);
-    const totalMax   = evalRows.reduce((s, r) => s + r.max, 0);
-    const avgRaw     = totalMax > 0 ? (totalScore / totalMax) * 10 : 0;
-    const averageGrade = String(Math.round(avgRaw * 10) / 10).replace('.', ',');
+    // Nota total = soma dos pontos obtidos (não uma média proporcional)
+    const averageGrade = String(Math.round(totalScore * 10) / 10).replace('.', ',');
 
     // Build classes: one row per selected item (title, hours, grade)
     const classes = selectedRows.map((r, i) => ({

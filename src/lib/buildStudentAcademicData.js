@@ -111,9 +111,8 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
       ? String(Math.round((totalScore / totalMaxScore) * 1000) / 10)
       : '0';
 
-  // averageGrade on a 0–10 scale using ratio
-  const avgRaw = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 10 : 0;
-  const averageGrade = String(Math.round(avgRaw * 10) / 10).replace('.', ',');
+  // averageGrade = nota total (soma dos pontos obtidos, não uma média)
+  const averageGrade = String(Math.round(totalScore * 10) / 10).replace('.', ',');
 
   // Build `classes` array for the certificate back page:
   // Group evaluated rows by category label with summed hours and averaged grade
