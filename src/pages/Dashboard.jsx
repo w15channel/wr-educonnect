@@ -847,6 +847,40 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
 
       })()}
 
+      {/* Ofensiva CTA — Widget animado */}
+      {!isTeacher && (() => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        return (
+          <button
+            onClick={() => navigate(scoped('/ofensivas'))}
+            className="w-full group relative overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-red-500/10 p-5 text-left hover:border-orange-500/60 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-200"
+          >
+            {/* Animated background pulse */}
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent animate-pulse rounded-2xl" />
+            {/* Spark sparkles decorative */}
+            <div className="absolute top-3 right-12 text-yellow-400 opacity-60 text-lg animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
+            <div className="absolute top-6 right-6 text-orange-400 opacity-40 text-sm animate-bounce" style={{ animationDelay: '0.7s' }}>🔥</div>
+            <div className="absolute bottom-4 right-8 text-amber-400 opacity-30 text-xs animate-bounce" style={{ animationDelay: '1.1s' }}>⭐</div>
+            <div className="relative flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/30 shrink-0 group-hover:scale-110 transition-transform duration-200">
+                <span className="text-2xl">🔥</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="font-black text-base text-foreground">Ofensiva do Dia</p>
+                  <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full animate-pulse">NOVO</span>
+                </div>
+                <p className="text-xs text-muted-foreground">8 perguntas · até <span className="font-bold text-orange-400">+1,0 pt</span> hoje</p>
+                <p className="text-[11px] text-orange-500/80 mt-1 font-semibold">Sequências de 5, 10 e 20 dias ganham bônus! 🏆</p>
+              </div>
+              <div className="flex items-center gap-1 text-xs font-bold bg-orange-500 text-white px-3 py-1.5 rounded-xl shrink-0 group-hover:bg-orange-600 transition-colors">
+                Jogar <ArrowRight size={12} />
+              </div>
+            </div>
+          </button>
+        );
+      })()}
+
       {/* Serviços */}
       {!isTeacher && <ServicosCard />}
 
