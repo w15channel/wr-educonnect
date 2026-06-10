@@ -1,5 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCORING RULES — canonical reference (update here, propagates everywhere)
+// ─────────────────────────────────────────────────────────────────────────────
+// lesson              watched        +10.0 pts  (per lesson)
+// live_attendance     confirmed      + 1.0 pts  (per live session)
+// task / quiz         submitted      +10.0 pts  (+ monitor bonus if applicable)
+// forum post          created        + 0.1 pts  (includes debates space)
+// forum reply         to colleague   + 0.5 pts  (includes debates space)
+// therapist_pairing   submitted eval +10.0 pts  (per role per pairing — therapist + patient separately)
+// ofensiva            points_earned  variable   (sum of DailyChallengeResponse.points_earned per day)
+// ═══════════════════════════════════════════════════════════════════════════════
+
 const COURSES = ['tcc', 'psicanalise', 'sexologia'];
 
 async function fetchAllPages(entityQuery, sort, pageSize = 5000) {
@@ -14,6 +26,7 @@ async function fetchAllPages(entityQuery, sort, pageSize = 5000) {
   }
   return all;
 }
+
 const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 const BONUS_BY_RANK = { 1: 0.5, 2: 0.3, 3: 0.2 };
@@ -60,6 +73,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
+    // ── Fetch all data in parallel ──────────────────────────────────────────
     const [
       accessCodes,
       lessons,
@@ -74,6 +88,8 @@ Deno.serve(async (req) => {
       studentProfiles,
       users,
       monitorHistory,
+      therapistPairings,
+      challengeResponses,
     ] = await Promise.all([
       base44.asServiceRole.entities.AccessCode.list('-created_date', 5000),
       base44.asServiceRole.entities.RecordedLesson.list('order', 5000),
@@ -88,25 +104,25 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.StudentProfile.list('-updated_date', 10000),
       base44.asServiceRole.entities.User.list('-created_date', 10000).catch(() => []),
       base44.asServiceRole.entities.MonitorHistory.list('-period_start', 1000),
+      // Terapeuta da Semana — all pairings with at least one submitted evaluation
+      base44.asServiceRole.entities.TherapistPairing.list('-pairing_date', 5000),
+      // Ofensivas — all student challenge responses
+      fetchAllPages((sort, limit, skip) => base44.asServiceRole.entities.DailyChallengeResponse.list(sort, limit, skip), '-created_date'),
     ]);
 
-    // ── Build existingScores Map: deduplicate in-memory, keep best record ─────
-    // When multiple records share the same (email, category, ref_id), keep the best one
-    // (verified > highest score > most recently updated). Do NOT delete here to avoid
-    // rate-limit bursts — the upsertScore function will update the kept record in-place,
-    // and orphan duplicates become unreachable and harmless.
+    // ── Build existingScores Map: deduplicate in-memory ───────────────────
     const existingScores = new Map();
     for (const item of scoreItems) {
       if (!item.student_email || !item.category || !item.ref_id) continue;
       const k = scoreKey(item.student_email, item.category, item.ref_id);
       const prev = existingScores.get(k);
       if (!prev) { existingScores.set(k, item); continue; }
-      // Keep verified > higher score > more recent
       const prevWins =
         (prev.verified && !item.verified) ||
         (prev.verified === item.verified && (Number(prev.score) || 0) >= (Number(item.score) || 0));
       if (!prevWins) existingScores.set(k, item);
     }
+
     const postById = new Map(forumPosts.map((post) => [post.id, post]));
     const period = getCurrentPeriod();
     let createdScores = 0;
@@ -118,7 +134,7 @@ Deno.serve(async (req) => {
 
     const upsertScore = async ({ studentEmail, category, refId, refTitle, score, maxScore, notes }) => {
       if (!studentEmail || !refId) return;
-      const payload = {
+      const p = {
         student_email: studentEmail,
         category,
         ref_id: refId,
@@ -131,72 +147,88 @@ Deno.serve(async (req) => {
       const key = scoreKey(studentEmail, category, refId);
       const existing = existingScores.get(key);
       if (existing) {
-        const changed = roundScore(existing.score) !== payload.score || roundScore(existing.max_score) !== payload.max_score || existing.verified !== true || existing.notes !== payload.notes;
+        const changed =
+          roundScore(existing.score) !== p.score ||
+          roundScore(existing.max_score) !== p.max_score ||
+          existing.verified !== true ||
+          existing.notes !== p.notes;
         if (changed) {
-          const updated = await base44.asServiceRole.entities.ScoreItem.update(existing.id, payload);
+          const updated = await base44.asServiceRole.entities.ScoreItem.update(existing.id, p);
           existingScores.set(key, updated);
           updatedScores++;
         }
       } else {
-        const created = await base44.asServiceRole.entities.ScoreItem.create(payload);
+        const created = await base44.asServiceRole.entities.ScoreItem.create(p);
         existingScores.set(key, created);
         createdScores++;
       }
     };
 
+    // ── Per-course processing ─────────────────────────────────────────────
     for (const course of COURSES) {
       const courseCodes = accessCodes
         .filter((code) => code.student_email && code.is_active !== false && sameCourse(code, course))
         .sort((a, b) => displayName(a).localeCompare(displayName(b), 'pt-BR'));
       const courseEmails = new Set(courseCodes.map((code) => code.student_email));
-      const courseLessons = lessons.filter((lesson) => sameCourse(lesson, course));
-      const courseTasks = tasks.filter((task) => sameCourse(task, course));
-      const courseLives = liveSessions.filter((live) => sameCourse(live, course));
-      const coursePosts = forumPosts.filter((post) => sameCourse(post, course));
 
-      const lessonMap = new Map(courseLessons.map((lesson) => [lesson.id, lesson]));
-      const taskMap = new Map(courseTasks.map((task) => [task.id, task]));
-      const liveMap = new Map(courseLives.map((live) => [live.id, live]));
-      const coursePostIds = new Set(coursePosts.map((post) => post.id));
-      const baseTotals = new Map(courseCodes.map((code) => [code.student_email, 0]));
-      const addBase = (email, points) => baseTotals.set(email, roundScore(roundScore(baseTotals.get(email) || 0) + roundScore(points)));
+      const courseLessons   = lessons.filter((l) => sameCourse(l, course));
+      const courseTasks     = tasks.filter((t) => sameCourse(t, course));
+      const courseLives     = liveSessions.filter((l) => sameCourse(l, course));
+      // Forum + Debates: both spaces share the same course field — already covers debates
+      const coursePosts     = forumPosts.filter((p) => sameCourse(p, course));
 
-      progresses.forEach((progress) => {
-        if (progress.watched && courseEmails.has(progress.student_email) && lessonMap.has(progress.lesson_id)) addBase(progress.student_email, 10);
+      const lessonMap = new Map(courseLessons.map((l) => [l.id, l]));
+      const taskMap   = new Map(courseTasks.map((t) => [t.id, t]));
+      const liveMap   = new Map(courseLives.map((l) => [l.id, l]));
+      const coursePostIds = new Set(coursePosts.map((p) => p.id));
+
+      // ── Base totals for monitor pre-ranking (fast, no async) ─────────────
+      const baseTotals = new Map(courseCodes.map((c) => [c.student_email, 0]));
+      const addBase = (email, pts) => baseTotals.set(email, roundScore((baseTotals.get(email) || 0) + roundScore(pts)));
+
+      progresses.forEach((p) => {
+        if (p.watched && courseEmails.has(p.student_email) && lessonMap.has(p.lesson_id)) addBase(p.student_email, 10);
       });
-      attendances.forEach((attendance) => {
-        if (courseEmails.has(attendance.student_email) && liveMap.has(attendance.session_id)) addBase(attendance.student_email, 1);
+      attendances.forEach((a) => {
+        if (courseEmails.has(a.student_email) && liveMap.has(a.session_id)) addBase(a.student_email, 1);
       });
-      submissions.forEach((submission) => {
-        if (courseEmails.has(submission.student_email) && taskMap.has(submission.task_id)) addBase(submission.student_email, 10);
+      submissions.forEach((s) => {
+        if (courseEmails.has(s.student_email) && taskMap.has(s.task_id)) addBase(s.student_email, 10);
       });
-      coursePosts.forEach((post) => {
-        if (courseEmails.has(post.author_email)) addBase(post.author_email, 0.1);
+      coursePosts.forEach((p) => {
+        if (courseEmails.has(p.author_email)) addBase(p.author_email, 0.1);
       });
-      forumReplies.forEach((reply) => {
-        const parentPost = postById.get(reply.post_id);
-        if (parentPost && coursePostIds.has(parentPost.id) && courseEmails.has(reply.author_email) && parentPost.author_email !== reply.author_email) {
-          addBase(reply.author_email, 0.5);
+      forumReplies.forEach((r) => {
+        const parent = postById.get(r.post_id);
+        if (parent && coursePostIds.has(parent.id) && courseEmails.has(r.author_email) && parent.author_email !== r.author_email) {
+          addBase(r.author_email, 0.5);
+        }
+      });
+      // Therapist pairings in this course (match by student emails in course)
+      therapistPairings.forEach((p) => {
+        if (courseEmails.has(p.therapist_email) && p.therapist_submitted) addBase(p.therapist_email, 10);
+        if (courseEmails.has(p.patient_email)   && p.patient_submitted)   addBase(p.patient_email,   10);
+      });
+      // Ofensivas
+      challengeResponses.forEach((r) => {
+        if (courseEmails.has(r.student_email) && sameCourse(r, course)) {
+          addBase(r.student_email, roundScore(r.points_earned || 0));
         }
       });
 
-      const rankingBase = courseCodes.map((code) => ({
-        code,
-        total: baseTotals.get(code.student_email) || 0,
-        name: displayName(code).toLowerCase(),
-      })).sort((a, b) => {
-        if (b.total !== a.total) return b.total - a.total;
-        return a.name.localeCompare(b.name, 'pt-BR');
-      });
+      // ── Monitor selection ────────────────────────────────────────────────
+      const rankingBase = courseCodes
+        .map((c) => ({ code: c, total: baseTotals.get(c.student_email) || 0, name: displayName(c).toLowerCase() }))
+        .sort((a, b) => b.total !== a.total ? b.total - a.total : a.name.localeCompare(b.name, 'pt-BR'));
 
-      const currentMonitors = monitorHistory.filter((monitor) => monitor.period_start === period.start && sameCourse(monitor, course));
-      for (const monitor of currentMonitors) {
-        await base44.asServiceRole.entities.MonitorHistory.delete(monitor.id).catch(() => null);
+      const currentMonitors = monitorHistory.filter((m) => m.period_start === period.start && sameCourse(m, course));
+      for (const m of currentMonitors) {
+        await base44.asServiceRole.entities.MonitorHistory.delete(m.id).catch(() => null);
       }
 
       const bonusByEmail = new Map();
-      for (const [index, item] of rankingBase.slice(0, 3).entries()) {
-        const rank = index + 1;
+      for (const [idx, item] of rankingBase.slice(0, 3).entries()) {
+        const rank = idx + 1;
         bonusByEmail.set(item.code.student_email, BONUS_BY_RANK[rank] || 0);
         await base44.asServiceRole.entities.MonitorHistory.create({
           student_email: item.code.student_email,
@@ -209,70 +241,133 @@ Deno.serve(async (req) => {
         monitorsDefined++;
       }
 
-      const calculatedTotals = new Map(courseCodes.map((code) => [code.student_email, 0]));
-      const addCalculated = (email, points) => calculatedTotals.set(email, roundScore(roundScore(calculatedTotals.get(email) || 0) + roundScore(points)));
+      // ── Upsert all ScoreItems for this course ────────────────────────────
+      const calculatedTotals = new Map(courseCodes.map((c) => [c.student_email, 0]));
+      const addCalc = (email, pts) => calculatedTotals.set(email, roundScore((calculatedTotals.get(email) || 0) + roundScore(pts)));
 
-      for (const progress of progresses) {
-        const lesson = lessonMap.get(progress.lesson_id);
-        if (!progress.watched || !courseEmails.has(progress.student_email) || !lesson) continue;
-        await upsertScore({ studentEmail: progress.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: 10, maxScore: 10, notes: 'Aula assistida por completo: +10 pontos.' });
-        addCalculated(progress.student_email, 10);
+      // Lessons
+      for (const p of progresses) {
+        const lesson = lessonMap.get(p.lesson_id);
+        if (!p.watched || !courseEmails.has(p.student_email) || !lesson) continue;
+        await upsertScore({ studentEmail: p.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: 10, maxScore: 10, notes: 'Aula assistida por completo: +10 pontos.' });
+        addCalc(p.student_email, 10);
       }
 
-      for (const attendance of attendances) {
-        const live = liveMap.get(attendance.session_id);
-        if (!courseEmails.has(attendance.student_email) || !live) continue;
-        await upsertScore({ studentEmail: attendance.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || attendance.session_title || 'Presença em live', score: 1, maxScore: 1, notes: 'Presença confirmada em live: +1 ponto.' });
-        addCalculated(attendance.student_email, 1);
+      // Live attendance
+      for (const a of attendances) {
+        const live = liveMap.get(a.session_id);
+        if (!courseEmails.has(a.student_email) || !live) continue;
+        await upsertScore({ studentEmail: a.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || a.session_title || 'Presença em live', score: 1, maxScore: 1, notes: 'Presença confirmada em live: +1 ponto.' });
+        addCalc(a.student_email, 1);
       }
 
-      for (const submission of submissions) {
-        const task = taskMap.get(submission.task_id);
-        if (!courseEmails.has(submission.student_email) || !task) continue;
-        const bonus = bonusByEmail.get(submission.student_email) || 0;
+      // Task/quiz submissions
+      for (const s of submissions) {
+        const task = taskMap.get(s.task_id);
+        if (!courseEmails.has(s.student_email) || !task) continue;
+        const bonus = bonusByEmail.get(s.student_email) || 0;
         const score = 10 + bonus;
         const category = task.type === 'quiz' ? 'quiz' : 'task';
         const feedback = bonus > 0
           ? `Entrega recebida e pontuada: 10 pontos + ${String(roundScore(bonus)).replace('.', ',')} de bônus de monitor/ranking.`
           : 'Entrega recebida e pontuada conforme a regra universal: +10 pontos.';
-        await upsertScore({ studentEmail: submission.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
-        addCalculated(submission.student_email, score);
-        if (submission.status !== 'graded' || roundScore(submission.grade) !== roundScore(score) || submission.feedback !== feedback) {
-          await base44.asServiceRole.entities.TaskSubmission.update(submission.id, { grade: roundScore(score), feedback, status: 'graded' });
+        await upsertScore({ studentEmail: s.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
+        addCalc(s.student_email, score);
+        if (s.status !== 'graded' || roundScore(s.grade) !== roundScore(score) || s.feedback !== feedback) {
+          await base44.asServiceRole.entities.TaskSubmission.update(s.id, { grade: roundScore(score), feedback, status: 'graded' });
           correctedSubmissions++;
         }
       }
 
+      // Forum posts (fórum + debates — same course filter covers both spaces)
       for (const post of coursePosts) {
         if (!courseEmails.has(post.author_email)) continue;
-        await upsertScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: 'Comentário/Pergunta no Fórum', score: 0.1, maxScore: 0.1, notes: 'Comentário ou pergunta criada no fórum: +0,1 ponto.' });
-        addCalculated(post.author_email, 0.1);
+        const space = post.space === 'debates' ? 'Sala de Debates' : 'Fórum';
+        await upsertScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: `Comentário/Pergunta — ${space}`, score: 0.1, maxScore: 0.1, notes: `Publicação criada na ${space}: +0,1 ponto.` });
+        addCalc(post.author_email, 0.1);
       }
 
+      // Forum replies to colleagues (fórum + debates)
       for (const reply of forumReplies) {
-        const parentPost = postById.get(reply.post_id);
-        if (!parentPost || !coursePostIds.has(parentPost.id) || !courseEmails.has(reply.author_email) || parentPost.author_email === reply.author_email) continue;
-        await upsertScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: 'Resposta em pergunta de colega', score: 0.5, maxScore: 0.5, notes: 'Resposta em pergunta aberta por colega no fórum: +0,5 ponto.' });
-        addCalculated(reply.author_email, 0.5);
+        const parent = postById.get(reply.post_id);
+        if (!parent || !coursePostIds.has(parent.id) || !courseEmails.has(reply.author_email) || parent.author_email === reply.author_email) continue;
+        const space = reply.space === 'debates' ? 'Sala de Debates' : 'Fórum';
+        await upsertScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: `Resposta a colega — ${space}`, score: 0.5, maxScore: 0.5, notes: `Resposta em pergunta aberta por colega na ${space}: +0,5 ponto.` });
+        addCalc(reply.author_email, 0.5);
       }
 
-      const finalRanking = courseCodes.map((code) => ({
-        code,
-        total: calculatedTotals.get(code.student_email) || 0,
-        name: displayName(code).toLowerCase(),
-      })).sort((a, b) => {
-        if (b.total !== a.total) return b.total - a.total;
-        return a.name.localeCompare(b.name, 'pt-BR');
-      });
+      // ── Terapeuta da Semana: +10 pts per submitted evaluation ────────────
+      // ref_id = `therapist_pairing:{pairingId}:{role}` — unique per person per pairing
+      for (const pairing of therapistPairings) {
+        const pairingInCourse =
+          courseEmails.has(pairing.therapist_email) || courseEmails.has(pairing.patient_email);
+        if (!pairingInCourse) continue;
 
-      for (const [index, item] of finalRanking.entries()) {
-        const existingProfile = studentProfiles.find((profile) => profile.student_email === item.code.student_email && sameCourse(profile, course));
+        if (courseEmails.has(pairing.therapist_email) && pairing.therapist_submitted) {
+          const refId = `therapist_pairing:${pairing.id}:therapist`;
+          const dateStr = pairing.pairing_date || 'data não informada';
+          await upsertScore({
+            studentEmail: pairing.therapist_email,
+            category: 'task',
+            refId,
+            refTitle: `Relato Terapeuta da Semana (${dateStr})`,
+            score: 10,
+            maxScore: 10,
+            notes: 'Relato enviado como terapeuta na atividade Terapeuta da Semana: +10 pontos.',
+          });
+          addCalc(pairing.therapist_email, 10);
+        }
+
+        if (courseEmails.has(pairing.patient_email) && pairing.patient_submitted) {
+          const refId = `therapist_pairing:${pairing.id}:patient`;
+          const dateStr = pairing.pairing_date || 'data não informada';
+          await upsertScore({
+            studentEmail: pairing.patient_email,
+            category: 'task',
+            refId,
+            refTitle: `Relato Terapeuta da Semana — Paciente (${dateStr})`,
+            score: 10,
+            maxScore: 10,
+            notes: 'Relato enviado como paciente na atividade Terapeuta da Semana: +10 pontos.',
+          });
+          addCalc(pairing.patient_email, 10);
+        }
+      }
+
+      // ── Ofensivas Diárias: sum points_earned per DailyChallengeResponse ──
+      // ref_id = `ofensiva:{challengeId}:{studentEmail}` — unique per student per challenge
+      const courseResponses = challengeResponses.filter((r) => courseEmails.has(r.student_email) && sameCourse(r, course));
+      for (const r of courseResponses) {
+        const pts = roundScore(r.points_earned || 0);
+        if (pts <= 0) continue;
+        const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
+        await upsertScore({
+          studentEmail: r.student_email,
+          category: 'forum', // reuse forum category — same engagement model
+          refId,
+          refTitle: `Ofensiva Diária (${r.date || 'data'})`,
+          score: pts,
+          maxScore: 1.0,
+          notes: `Ofensiva diária concluída — ${r.questions_answered || 0}/5 perguntas respondidas: +${pts.toFixed(3)} ponto(s).`,
+        });
+        addCalc(r.student_email, pts);
+      }
+
+      // ── Final ranking + persist ──────────────────────────────────────────
+      const finalRanking = courseCodes
+        .map((c) => ({ code: c, total: calculatedTotals.get(c.student_email) || 0, name: displayName(c).toLowerCase() }))
+        .sort((a, b) => b.total !== a.total ? b.total - a.total : a.name.localeCompare(b.name, 'pt-BR'));
+
+      for (const [idx, item] of finalRanking.entries()) {
+        const existingProfile = studentProfiles.find(
+          (p) => p.student_email === item.code.student_email && sameCourse(p, course)
+        );
         const profilePayload = {
           student_email: item.code.student_email,
           full_name: displayName(item.code),
           points: roundScore(item.total),
           pontuacao_total: roundScore(item.total),
-          dashboard_rank: index + 1,
+          dashboard_rank: idx + 1,
           dashboard_course: course,
         };
         if (existingProfile) await base44.asServiceRole.entities.StudentProfile.update(existingProfile.id, profilePayload);
@@ -284,7 +379,7 @@ Deno.serve(async (req) => {
           scoreCachesUpdated++;
         }
 
-        for (const cachedUser of users.filter((cached) => cached.email === item.code.student_email)) {
+        for (const cachedUser of users.filter((u) => u.email === item.code.student_email)) {
           if (roundScore(cachedUser.pontuacao_total) !== roundScore(item.total)) {
             await base44.asServiceRole.entities.User.update(cachedUser.id, { pontuacao_total: roundScore(item.total) });
             scoreCachesUpdated++;
@@ -295,14 +390,17 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
+      // ── Canonical scoring rules — single source of truth ──────────────
       rules: {
-        lesson: 10,
-        task_or_quiz_submission: 10,
-        forum_post: 0.1,
-        forum_reply_to_colleague: 0.5,
-        live_attendance: 1,
-        monitor_bonus_by_rank: BONUS_BY_RANK,
-        monitor_cycle_days: CYCLE_DAYS,
+        lesson_watched:               { pts: 10,    note: 'por aula assistida' },
+        live_attendance:              { pts: 1,     note: 'por presença confirmada em live' },
+        task_or_quiz_submission:      { pts: 10,    note: 'por entrega (+ bônus de monitor se aplicável)' },
+        forum_post:                   { pts: 0.1,   note: 'por post criado no fórum ou sala de debates' },
+        forum_reply_to_colleague:     { pts: 0.5,   note: 'por resposta a colega no fórum ou sala de debates' },
+        therapist_week_submitted:     { pts: 10,    note: 'por relato enviado (como terapeuta OU paciente)' },
+        ofensiva_diaria:              { pts: '0–1', note: 'soma dos points_earned do DailyChallengeResponse do dia' },
+        monitor_bonus_by_rank:        BONUS_BY_RANK,
+        monitor_cycle_days:           CYCLE_DAYS,
       },
       createdScores,
       updatedScores,

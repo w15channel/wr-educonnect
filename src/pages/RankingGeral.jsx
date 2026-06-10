@@ -2,18 +2,18 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, Video, FileText, MessageSquare, X, CheckCircle, RefreshCw } from 'lucide-react';
+import { Trophy, Star, BookOpen, Video, FileText, MessageSquare, X, CheckCircle, RefreshCw, Heart, Flame } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const CATEGORY_CONFIG = {
-  lesson:          { label: 'Aula Gravada',  icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
-  live_attendance: { label: 'Presença Live', icon: Video,          color: 'bg-red-100 text-red-700' },
-  task:            { label: 'Tarefa',        icon: FileText,       color: 'bg-orange-100 text-orange-700' },
-  quiz:            { label: 'Prova',         icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
-  forum:           { label: 'Fórum',         icon: MessageSquare,  color: 'bg-green-100 text-green-700' },
+  lesson:          { label: 'Aula Gravada',          icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
+  live_attendance: { label: 'Presença Live',          icon: Video,          color: 'bg-red-100 text-red-700' },
+  task:            { label: 'Tarefa / Terapeuta',     icon: FileText,       color: 'bg-orange-100 text-orange-700' },
+  quiz:            { label: 'Prova',                  icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
+  forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
 };
 
 // For each AccessCode, which course field values map to it
@@ -192,16 +192,47 @@ export default function RankingGeral() {
     queryFn: () => base44.entities.ForumReply.list('-created_date', 5000),
   });
 
+  // Terapeuta da Semana & Ofensivas — for courseItemRefIds
+  const { data: allPairings = [] } = useQuery({
+    queryKey: ['ranking-pairings'],
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 2000),
+  });
+  const { data: allChallengeResponses = [] } = useQuery({
+    queryKey: ['ranking-challenge-responses', activeCourseForQuery],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourseForQuery }, '-created_date', 5000),
+  });
+
   // Build the set of all ref_ids valid for this course
+  // This must mirror every ref_id pattern used in recalculateScores.
   const courseItemRefIds = useMemo(() => {
     const set = new Set();
+    // Standard entities
     courseLessons.forEach(l => set.add(l.id));
     courseTasks.forEach(t => set.add(t.id));
     courseLiveSessions.forEach(l => set.add(l.id));
     courseForumPosts.forEach(p => set.add(p.id));
     allForumReplies.forEach(r => set.add(r.id));
+    // Terapeuta da Semana: ref_id = `therapist_pairing:{id}:{role}`
+    const courseEmailSet = new Set(
+      accessCodes
+        .filter(c => {
+          if (!c.student_email) return false;
+          const v = COURSE_VALID[activeCourseForQuery];
+          return v ? v(c) : c.course === activeCourseForQuery;
+        })
+        .map(c => c.student_email)
+    );
+    allPairings.forEach(p => {
+      if (courseEmailSet.has(p.therapist_email)) set.add(`therapist_pairing:${p.id}:therapist`);
+      if (courseEmailSet.has(p.patient_email))   set.add(`therapist_pairing:${p.id}:patient`);
+    });
+    // Ofensivas: ref_id = `ofensiva:{challengeId}:{studentEmail}`
+    allChallengeResponses.forEach(r => {
+      set.add(`ofensiva:${r.challenge_id}:${r.student_email}`);
+    });
     return set;
-  }, [courseLessons, courseTasks, courseLiveSessions, courseForumPosts, allForumReplies]);
+  }, [courseLessons, courseTasks, courseLiveSessions, courseForumPosts, allForumReplies,
+      allPairings, allChallengeResponses, accessCodes, activeCourseForQuery]);
 
   // ── Determine which course to show (same as activeCourseForQuery above) ──
   const activeCourse = activeCourseForQuery;
