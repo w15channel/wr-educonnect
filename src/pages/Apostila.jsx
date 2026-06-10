@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked } from 'lucide-react';
+import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
@@ -19,6 +20,8 @@ import { MOD10 } from '@/lib/apostila/mod10';
 
 const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
 
+const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
+
 export default function Apostila() {
   const { session } = useCustomAuth();
   const isAdmin = session?.role === 'admin';
@@ -28,7 +31,27 @@ export default function Apostila() {
   const [openLesson, setOpenLesson] = useState(null);
   const [editingLesson, setEditingLesson] = useState(null);
   const [editContent, setEditContent] = useState('');
-  const [printLesson, setPrintLesson] = useState(null); // { lesson, chapterTitle }
+  const [printLesson, setPrintLesson] = useState(null);
+  const [celebrating, setCelebrating] = useState(false);
+  const [celebrationMsg, setCelebrationMsg] = useState('');
+
+  // Persisted read completions: Set of "chapterId__lessonId"
+  const [readLessons, setReadLessons] = useState(() => {
+    const key = APOSTILA_READ_KEY(session?.email || session?.code || 'guest', session?.course || 'tcc');
+    try { const r = localStorage.getItem(key); return r ? new Set(JSON.parse(r)) : new Set(); } catch { return new Set(); }
+  });
+
+  const markRead = (chapterId, lessonId) => {
+    const key = APOSTILA_READ_KEY(session?.email || session?.code || 'guest', session?.course || 'tcc');
+    const readKey = `${chapterId}__${lessonId}`;
+    if (readLessons.has(readKey)) return;
+    const next = new Set(readLessons);
+    next.add(readKey);
+    setReadLessons(next);
+    localStorage.setItem(key, JSON.stringify([...next]));
+    setCelebrationMsg('Aula concluída! Continue assim! 📖✨');
+    setCelebrating(true);
+  };
 
   const { data: savedData } = useQuery({
     queryKey: ['apostila-book'],
@@ -68,9 +91,11 @@ export default function Apostila() {
   };
 
   const totalLessons = chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
+  const totalRead = readLessons.size;
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-24">
+      {celebrating && <ParticipationCelebration message={celebrationMsg} onClose={() => setCelebrating(false)} />}
       {printLesson && (
         <ApostilaPrintModal
           lesson={printLesson.lesson}
@@ -106,6 +131,12 @@ export default function Apostila() {
                 <Award size={12} className="text-amber-400" />
                 Formação Profissional
               </div>
+              {!isAdmin && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+                  <BookMarked size={12} className="text-emerald-400" />
+                  {totalRead}/{totalLessons} lidas
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -170,17 +201,20 @@ export default function Apostila() {
                     const isOpen = openLesson === key;
                     const isEditing = editingLesson === key;
 
+                    const lessonReadKey = `${chapter.id}__${lesson.id}`;
+                    const isRead = readLessons.has(lessonReadKey);
                     return (
                       <div key={lesson.id}>
                         <button
                           onClick={() => setOpenLesson(isOpen ? null : key)}
-                          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-secondary/30 transition-colors text-left"
+                          className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-secondary/30 transition-colors text-left ${isRead ? 'bg-emerald-500/5' : ''}`}
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className={`w-6 h-6 rounded-lg ${bgLight} flex items-center justify-center shrink-0`}>
-                              <BookOpen size={11} className={colorLight} />
+                            <div className={`w-6 h-6 rounded-lg ${isRead ? 'bg-emerald-500/20' : bgLight} flex items-center justify-center shrink-0`}>
+                              {isRead ? <CheckCircle size={11} className="text-emerald-500" /> : <BookOpen size={11} className={colorLight} />}
                             </div>
-                            <span className="text-sm text-foreground font-medium leading-tight truncate">{lesson.title}</span>
+                            <span className={`text-sm font-medium leading-tight truncate ${isRead ? 'text-emerald-600' : 'text-foreground'}`}>{lesson.title}</span>
+                            {isRead && <span className="text-[10px] text-emerald-500 font-bold shrink-0">✓ Lida</span>}
                           </div>
                           {isOpen
                             ? <ChevronDown size={14} className="text-muted-foreground shrink-0 ml-2" />
@@ -219,7 +253,7 @@ export default function Apostila() {
                                     {lesson.content || 'Conteúdo ainda não adicionado.'}
                                   </pre>
                                 </div>
-                                <div className="flex gap-2 flex-wrap">
+                                <div className="flex gap-2 flex-wrap items-center">
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -232,6 +266,20 @@ export default function Apostila() {
                                     <Button size="sm" variant="outline" onClick={() => handleEditLesson(chapter.id, lesson.id, lesson.content)}>
                                       <Edit2 size={13} /> Editar conteúdo
                                     </Button>
+                                  )}
+                                  {!isAdmin && (
+                                    readLessons.has(`${chapter.id}__${lesson.id}`) ? (
+                                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
+                                        <CheckCircle size={13} /> Leitura concluída!
+                                      </span>
+                                    ) : (
+                                      <button
+                                        onClick={() => markRead(chapter.id, lesson.id)}
+                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-all active:scale-95"
+                                      >
+                                        <BookMarked size={13} /> Marcar como lida
+                                      </button>
+                                    )
                                   )}
                                 </div>
                               </div>

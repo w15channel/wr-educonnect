@@ -4,20 +4,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { MessageSquare, Send, ChevronDown, ChevronUp, Trash2, Star, BookOpen, Pencil, Check, X } from 'lucide-react';
-import { ClickableStudent } from '@/components/shared/StudentProfileCard';
+import { MessageSquare, Send, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
+import PostCard from '@/components/shared/PostCard';
+import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 
 const LESSON_TOPICS = [
   'Geral', 'Introdução à Terapia', 'Escuta Ativa', 'Técnicas Terapêuticas',
-  'Ética Profissional', 'Terapia Familiar',
-  'Psicologia Positiva', 'Sexualidade', 'Traumas e Cura', 'Outro'
+  'Ética Profissional', 'Terapia Familiar', 'Psicologia Positiva', 'Sexualidade', 'Traumas e Cura', 'Outro'
 ];
 
 export default function Forum() {
@@ -28,9 +25,11 @@ export default function Forum() {
   const [topic, setTopic] = useState('Geral');
   const [filterTopic, setFilterTopic] = useState('Todos');
   const [expandedPost, setExpandedPost] = useState(null);
-  const [replyText, setReplyText] = useState('');
-  const [editingReply, setEditingReply] = useState(null); // { id, content }
-  const [editingPost, setEditingPost] = useState(null); // { id, content }
+  const [replyTexts, setReplyTexts] = useState({}); // postId -> text
+  const [editingReply, setEditingReply] = useState(null);
+  const [editingPost, setEditingPost] = useState(null);
+  const [celebrating, setCelebrating] = useState(false);
+  const [celebrationMsg, setCelebrationMsg] = useState('');
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
@@ -45,64 +44,44 @@ export default function Forum() {
     queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'forum' }, '-created_date', 100),
   });
 
-  const { data: replies = [] } = useQuery({
-    queryKey: ['forum-replies', expandedPost],
-    queryFn: () => base44.entities.ForumReply.filter({ post_id: expandedPost, course: userCourse, space: 'forum' }, 'created_date', 100),
-    enabled: !!expandedPost,
+  const { data: allReplies = [] } = useQuery({
+    queryKey: ['forum-replies-all', userCourse],
+    queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'forum' }, 'created_date', 500),
   });
+
+  const getRepliesForPost = (postId) => allReplies.filter(r => r.post_id === postId);
+
+  const triggerCelebration = (msg) => {
+    setCelebrationMsg(msg);
+    setCelebrating(true);
+  };
 
   const createPostMutation = useMutation({
     mutationFn: async (data) => {
       const res = await base44.functions.invoke('saveStudentRecord', {
-        action: 'create',
-        entity: 'ForumPost',
-        data: {
-          content: data.content,
-          topic: data.topic,
-          author_name: session?.name || 'Anônimo',
-          author_email: session?.email || session?.code || '',
-          author_role: isTeacher ? 'teacher' : 'student',
-          course: userCourse,
-          space: 'forum',
-          reply_count: 0,
-        },
+        action: 'create', entity: 'ForumPost',
+        data: { content: data.content, topic: data.topic, author_name: session?.name || 'Anônimo', author_email: session?.email || session?.code || '', author_role: isTeacher ? 'teacher' : 'student', course: userCourse, space: 'forum', reply_count: 0 },
       });
       return res.data.record;
     },
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: ['forum-posts', userCourse] });
       const previous = queryClient.getQueryData(['forum-posts', userCourse]);
-      const optimistic = {
-        id: `optimistic-${Date.now()}`,
-        content: data.content,
-        topic: data.topic,
-        author_name: session?.name || 'Anônimo',
-        author_email: session?.email || '',
-        author_role: isTeacher ? 'teacher' : 'student',
-        reply_count: 0,
-        space: 'forum',
+      queryClient.setQueryData(['forum-posts', userCourse], old => [{
+        id: `optimistic-${Date.now()}`, content: data.content, topic: data.topic,
+        author_name: session?.name || 'Anônimo', author_email: session?.email || '',
+        author_role: isTeacher ? 'teacher' : 'student', reply_count: 0, space: 'forum',
         created_date: new Date().toISOString(),
-      };
-      queryClient.setQueryData(['forum-posts', userCourse], old => [optimistic, ...(old || [])]);
+      }, ...(old || [])]);
       setNewPost('');
       return { previous };
     },
-    onError: (_err, _data, context) => {
-      if (context?.previous) queryClient.setQueryData(['forum-posts', userCourse], context.previous);
-    },
+    onError: (_err, _data, context) => { if (context?.previous) queryClient.setQueryData(['forum-posts', userCourse], context.previous); },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['forum-posts'] }),
     onSuccess: async (post) => {
-      // +0,100 ponto por publicar pergunta no fórum
+      triggerCelebration('Pergunta publicada! A turma vai te ajudar! 💬');
       if (post?.id && !post.id.startsWith('optimistic-')) {
-        await base44.entities.ScoreItem.create({
-          student_email: session?.email || '',
-          category: 'forum',
-          ref_id: post.id,
-          ref_title: 'Pergunta no Fórum',
-          score: 0.1,
-          max_score: 0.1,
-          verified: true,
-        });
+        await base44.entities.ScoreItem.create({ student_email: session?.email || '', category: 'forum', ref_id: post.id, ref_title: 'Pergunta no Fórum', score: 0.1, max_score: 0.1, verified: true });
         await base44.functions.invoke('populateScoreCache', { student_email: session?.email || '' });
         queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       }
@@ -114,88 +93,45 @@ export default function Forum() {
       const post = posts.find(p => p.id === postId);
       await base44.functions.invoke('saveStudentRecord', { action: 'updateForumReplyCount', post_id: postId, reply_count: (post?.reply_count || 0) + 1 });
       const res = await base44.functions.invoke('saveStudentRecord', {
-        action: 'create',
-        entity: 'ForumReply',
-        data: {
-          post_id: postId,
-          content,
-          author_name: session?.name || 'Anônimo',
-          author_email: session?.email || session?.code || '',
-          author_role: isTeacher ? 'teacher' : 'student',
-          course: userCourse,
-          space: 'forum',
-        },
+        action: 'create', entity: 'ForumReply',
+        data: { post_id: postId, content, author_name: session?.name || 'Anônimo', author_email: session?.email || session?.code || '', author_role: isTeacher ? 'teacher' : 'student', course: userCourse, space: 'forum' },
       });
       return res.data.record;
     },
     onSuccess: async (reply) => {
-      queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] });
+      queryClient.invalidateQueries({ queryKey: ['forum-replies-all', userCourse] });
       queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
-      setReplyText('');
+      setReplyTexts(prev => ({ ...prev, [reply?.post_id]: '' }));
       const parentPost = posts.find(p => p.id === reply?.post_id);
-      const isReplyToColleague = parentPost?.author_email && parentPost.author_email !== (session?.email || '');
-      if (isReplyToColleague) {
-        // +0,5 ponto por resposta em pergunta aberta por colega no fórum
-        await base44.entities.ScoreItem.create({
-          student_email: session?.email || '',
-          category: 'forum',
-          ref_id: reply?.id || `reply-${Date.now()}`,
-          ref_title: 'Resposta em pergunta de colega',
-          score: 0.5,
-          max_score: 0.5,
-          verified: true,
-          notes: 'Resposta em pergunta aberta por colega no fórum: +0,5 ponto.',
-        });
+      const isColleague = parentPost?.author_email && parentPost.author_email !== (session?.email || '');
+      triggerCelebration(isColleague ? 'Incrível! +0,500 ponto por ajudar um colega! 🌟' : 'Resposta enviada! Parabéns pela participação! 🎉');
+      if (isColleague) {
+        await base44.entities.ScoreItem.create({ student_email: session?.email || '', category: 'forum', ref_id: reply?.id || `reply-${Date.now()}`, ref_title: 'Resposta em pergunta de colega', score: 0.5, max_score: 0.5, verified: true, notes: 'Resposta em pergunta aberta por colega no fórum: +0,5 ponto.' });
         await base44.functions.invoke('populateScoreCache', { student_email: session?.email || '' });
         queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-        toast.success('Resposta enviada! +0,500 ponto de participação');
-      } else {
-        toast.success('Resposta enviada!');
       }
     },
   });
 
-  const deletePostMutation = useMutation({
-    mutationFn: (id) => base44.entities.ForumPost.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['forum-posts'] }),
-  });
-
-  const updatePostMutation = useMutation({
-    mutationFn: ({ id, content }) => base44.entities.ForumPost.update(id, { content }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['forum-posts'] }); setEditingPost(null); },
-  });
-
-  const deleteReplyMutation = useMutation({
-    mutationFn: (id) => base44.entities.ForumReply.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] }),
-  });
-
-  const updateReplyMutation = useMutation({
-    mutationFn: ({ id, content }) => base44.entities.ForumReply.update(id, { content }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['forum-replies', expandedPost] }); setEditingReply(null); },
-  });
-
-  const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
+  const deletePostMutation = useMutation({ mutationFn: (id) => base44.entities.ForumPost.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['forum-posts'] }) });
+  const updatePostMutation = useMutation({ mutationFn: ({ id, content }) => base44.entities.ForumPost.update(id, { content }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['forum-posts'] }); setEditingPost(null); } });
+  const deleteReplyMutation = useMutation({ mutationFn: (id) => base44.entities.ForumReply.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['forum-replies-all', userCourse] }) });
+  const updateReplyMutation = useMutation({ mutationFn: ({ id, content }) => base44.entities.ForumReply.update(id, { content }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['forum-replies-all', userCourse] }); setEditingReply(null); } });
 
   const getUserAvatar = (authorEmail, authorRole) => {
     const code = accessCodes.find(c => c.student_email === authorEmail);
-    return {
-      photoUrl: code?.profile_photo_url || '',
-      avatarColor: code?.profile_avatar_color || (authorRole === 'teacher' ? '#5b5ef4' : '#7c3aed'),
-    };
+    return { photoUrl: code?.profile_photo_url || '', avatarColor: code?.profile_avatar_color || (authorRole === 'teacher' ? '#5b5ef4' : '#7c3aed') };
   };
 
-  const handlePostSubmit = (e) => {
-    e.preventDefault();
-    if (!newPost.trim()) return;
-    createPostMutation.mutate({ content: newPost, topic });
-  };
+  const myAv = getUserAvatar(session?.email, session?.role);
+  const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
 
-  const sequencedPosts = sortBySequence(posts);
-  const filteredPosts = filterTopic === 'Todos' ? sequencedPosts : sequencedPosts.filter(p => p.topic === filterTopic);
+  const filteredPosts = filterTopic === 'Todos' ? sortBySequence(posts) : sortBySequence(posts).filter(p => p.topic === filterTopic);
 
   return (
     <div className="app-page app-page--narrow animate-fade-in-up">
+      {celebrating && <ParticipationCelebration message={celebrationMsg} onClose={() => setCelebrating(false)} />}
+
       <div className="mb-5">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Fórum de Dúvidas</h2>
         <p className="text-muted-foreground text-sm mt-0.5">Faça perguntas e compartilhe conhecimento (+0,500 ponto por resposta em dúvida de colega)</p>
@@ -204,42 +140,22 @@ export default function Forum() {
       {/* New Post */}
       <div className="bg-card rounded-2xl border border-border p-5 mb-5">
         <div className="flex items-start gap-3">
-          {(() => {
-            const av = getUserAvatar(session?.email, session?.role);
-            return av.photoUrl ? (
-              <img src={av.photoUrl} alt={session?.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
-            ) : (
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style={{ backgroundColor: av.avatarColor }}>
-                {initials(session?.name)}
-              </div>
-            );
-          })()}
+          {myAv.photoUrl
+            ? <img src={myAv.photoUrl} alt={session?.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+            : <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style={{ backgroundColor: myAv.avatarColor }}>{initials(session?.name)}</div>
+          }
           <div className="flex-1">
-            <form onSubmit={handlePostSubmit} className="space-y-3">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Tema da dúvida</label>
-                  <Select value={topic} onValueChange={setTopic}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LESSON_TOPICS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <form onSubmit={e => { e.preventDefault(); if (newPost.trim()) createPostMutation.mutate({ content: newPost, topic }); }} className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Tema da dúvida</label>
+                <Select value={topic} onValueChange={setTopic}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>{LESSON_TOPICS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
-              <Textarea
-                placeholder="Faça uma pergunta para a turma ou professor..."
-                value={newPost}
-                onChange={e => setNewPost(e.target.value)}
-                className="resize-none text-sm"
-                rows={2}
-              />
+              <Textarea placeholder="Faça uma pergunta para a turma ou professor..." value={newPost} onChange={e => setNewPost(e.target.value)} className="resize-none text-sm" rows={2} />
               <div className="flex justify-end">
-                <Button type="submit" disabled={!newPost.trim()} className="gap-2 h-9 text-sm">
-                  <Send size={14} /> Publicar
-                </Button>
+                <Button type="submit" disabled={!newPost.trim()} className="gap-2 h-9 text-sm"><Send size={14} /> Publicar</Button>
               </div>
             </form>
           </div>
@@ -249,21 +165,13 @@ export default function Forum() {
       {/* Topic filter */}
       <div className="flex gap-2 flex-wrap mb-4">
         {['Todos', ...LESSON_TOPICS.slice(0, 6)].map(t => (
-          <button
-            key={t}
-            onClick={() => setFilterTopic(t)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              filterTopic === t
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-secondary text-muted-foreground hover:bg-secondary/70 hover:text-foreground'
-            }`}
-          >
+          <button key={t} onClick={() => setFilterTopic(t)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${filterTopic === t ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-secondary text-muted-foreground hover:bg-secondary/70 hover:text-foreground'}`}>
             {t}
           </button>
         ))}
       </div>
 
-      {/* Posts */}
       {filteredPosts.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <MessageSquare size={48} className="mx-auto mb-4 opacity-20" />
@@ -272,132 +180,35 @@ export default function Forum() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredPosts.map(post => {
-            const av = getUserAvatar(post.author_email, post.author_role);
-            return (
-              <div key={post.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-                <div className="p-4 sm:p-5">
-                  <div className="flex items-start gap-3">
-                    {av.photoUrl ? (
-                      <img src={av.photoUrl} alt={post.author_name} className="w-9 h-9 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: av.avatarColor }}>
-                        {initials(post.author_name)}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                       <ClickableStudent email={post.author_email} className="font-bold text-sm text-foreground">{post.author_name}</ClickableStudent>
-                        {post.author_role === 'teacher' && (
-                          <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] py-0 px-1.5">Professor</Badge>
-                        )}
-                        {post.topic && (
-                          <span className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <BookOpen size={9} /> {post.topic}
-                          </span>
-                        )}
-                        <span className="text-[10px] text-muted-foreground ml-auto">{format(new Date(post.created_date), 'dd/MM HH:mm')}</span>
-                      </div>
-                      {editingPost?.id === post.id ? (
-                        <div className="flex gap-2 mt-1">
-                          <Textarea value={editingPost.content} onChange={e => setEditingPost({ ...editingPost, content: e.target.value })} className="resize-none text-sm flex-1" rows={2} />
-                          <div className="flex flex-col gap-1">
-                            <button onClick={() => updatePostMutation.mutate({ id: post.id, content: editingPost.content })} className="text-green-600 hover:text-green-700 p-1"><Check size={14} /></button>
-                            <button onClick={() => setEditingPost(null)} className="text-muted-foreground hover:text-foreground p-1"><X size={14} /></button>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-foreground/80 leading-relaxed">{post.content}</p>
-                      )}
-                    </div>
-                    {(isTeacher || post.author_email === session?.email) && (
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={() => setEditingPost({ id: post.id, content: post.content })} className="text-muted-foreground hover:text-primary min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg transition-colors">
-                          <Pencil size={12} />
-                        </button>
-                        <button onClick={() => deletePostMutation.mutate(post.id)} className="text-muted-foreground hover:text-destructive min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg transition-colors">
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t border-border px-4 sm:px-5 py-2.5 flex items-center gap-4 bg-secondary/20">
-                  <button
-                    onClick={() => setExpandedPost(expandedPost === post.id ? null : post.id)}
-                    className="text-xs font-semibold text-muted-foreground hover:text-primary flex items-center gap-1.5 transition-colors"
-                  >
-                    <MessageSquare size={13} />
-                    {post.reply_count || 0} {post.reply_count === 1 ? 'Resposta' : 'Respostas'}
-                    {expandedPost === post.id ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                  </button>
-                  {(post.reply_count || 0) > 0 && (
-                    <span className="flex items-center gap-1 text-[10px] text-yellow-500 font-semibold">
-                      <Star size={10} className="fill-yellow-400" /> {post.reply_count} respostas
-                    </span>
-                  )}
-                </div>
-
-                {expandedPost === post.id && (
-                  <div className="border-t border-border bg-secondary/10 p-4 space-y-3">
-                    {replies.map(reply => {
-                      const rav = getUserAvatar(reply.author_email, reply.author_role);
-                      return (
-                        <div key={reply.id} className="flex gap-3 pl-2">
-                          {rav.photoUrl ? (
-                            <img src={rav.photoUrl} alt={reply.author_name} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                          ) : (
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: rav.avatarColor }}>
-                              {initials(reply.author_name)}
-                            </div>
-                          )}
-                          <div className="flex-1 bg-card rounded-xl p-3 border border-border">
-                            <div className="flex items-center gap-2 mb-1">
-                              <ClickableStudent email={reply.author_email} className="font-bold text-xs text-foreground">{reply.author_name}</ClickableStudent>
-                              {reply.author_role === 'teacher' && <Badge className="bg-primary/10 text-primary text-[9px] py-0 px-1">Prof.</Badge>}
-                              <span className="text-[10px] text-muted-foreground ml-auto flex items-center gap-1">
-                                {format(new Date(reply.created_date), 'dd/MM HH:mm')}
-                                {(isTeacher || reply.author_email === session?.email) && (
-                                  <>
-                                    <button onClick={() => setEditingReply({ id: reply.id, content: reply.content })} className="text-muted-foreground hover:text-primary ml-1"><Pencil size={10} /></button>
-                                    <button onClick={() => deleteReplyMutation.mutate(reply.id)} className="text-muted-foreground hover:text-destructive"><Trash2 size={10} /></button>
-                                  </>
-                                )}
-                              </span>
-                            </div>
-                            {editingReply?.id === reply.id ? (
-                              <div className="flex gap-2 mt-1">
-                                <Input value={editingReply.content} onChange={e => setEditingReply({ ...editingReply, content: e.target.value })} className="flex-1 h-8 text-sm" />
-                                <button onClick={() => updateReplyMutation.mutate({ id: reply.id, content: editingReply.content })} className="text-green-600 hover:text-green-700"><Check size={14} /></button>
-                                <button onClick={() => setEditingReply(null)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
-                              </div>
-                            ) : (
-                              <p className="text-sm text-foreground/80">{reply.content}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <form
-                      onSubmit={e => { e.preventDefault(); if (replyText.trim()) createReplyMutation.mutate({ postId: post.id, content: replyText }); }}
-                      className="flex gap-2 pt-1"
-                    >
-                      <Input
-                        placeholder="Responder a esta pergunta..."
-                        value={replyText}
-                        onChange={e => setReplyText(e.target.value)}
-                        className="flex-1 h-9 text-sm"
-                      />
-                      <Button type="submit" size="sm" className="h-9 w-9 p-0 shrink-0">
-                        <Send size={13} />
-                      </Button>
-                    </form>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {filteredPosts.map(post => (
+            <PostCard
+              key={post.id}
+              post={post}
+              replies={getRepliesForPost(post.id)}
+              isTeacher={isTeacher}
+              myEmail={session?.email}
+              myName={session?.name}
+              myAvatarColor={myAv.avatarColor}
+              myPhotoUrl={myAv.photoUrl}
+              getAvatar={getUserAvatar}
+              replyText={replyTexts[post.id] || ''}
+              setReplyText={(v) => setReplyTexts(prev => ({ ...prev, [post.id]: v }))}
+              isExpanded={expandedPost === post.id}
+              onToggleExpand={() => setExpandedPost(expandedPost === post.id ? null : post.id)}
+              onSubmitReply={(postId, content) => createReplyMutation.mutate({ postId, content })}
+              onDeletePost={deletePostMutation.mutate}
+              onEditPost={(p) => setEditingPost(p)}
+              onDeleteReply={deleteReplyMutation.mutate}
+              onEditReply={(r) => setEditingReply(r)}
+              editingPost={editingPost}
+              setEditingPost={setEditingPost}
+              editingReply={editingReply}
+              setEditingReply={setEditingReply}
+              onUpdatePost={(id, content) => updatePostMutation.mutate({ id, content })}
+              onUpdateReply={(id, content) => updateReplyMutation.mutate({ id, content })}
+              replyPlaceholder="Responder a esta pergunta..."
+            />
+          ))}
         </div>
       )}
     </div>
