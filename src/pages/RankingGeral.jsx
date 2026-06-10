@@ -25,17 +25,23 @@ const COURSE_VALID = {
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-function StudentProfileModal({ code, scoreItems, onClose }) {
+// courseItems: already-filtered ScoreItems for this student's course (passed from parent)
+// publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
+function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTotal, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
   const avatarColor = code.profile_avatar_color || '#5b5ef4';
 
-  // Only verified items for this student — deduplicated by (category|ref_id)
+  // Only verified items for this student, deduplicated by (category|ref_id),
+  // AND restricted to ref_ids that belong to this course (courseItemRefIds set).
+  // This prevents cross-course ScoreItems from inflating the modal total.
   const myItems = useMemo(() => {
     const seen = new Map();
     for (const s of scoreItems) {
       if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
+      // If courseItemRefIds is provided, enforce course isolation
+      if (courseItemRefIds && !courseItemRefIds.has(s.ref_id)) continue;
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
@@ -43,10 +49,12 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
       if (!prevWins) seen.set(key, s);
     }
     return [...seen.values()];
-  }, [scoreItems, email]);
+  }, [scoreItems, email, courseItemRefIds]);
 
-  // Show live sum — never rely on stale cache here
-  const liveTotal = roundScore(myItems.reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
+  // Use the admin-published total (same as outer list) as the authoritative total.
+  // Fall back to live sum only when no published value exists yet.
+  const liveSum = roundScore(myItems.reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
+  const liveTotal = (publishedTotal != null && publishedTotal > 0) ? publishedTotal : liveSum;
 
   const byCategory = {};
   myItems.forEach(item => {
@@ -156,12 +164,47 @@ export default function RankingGeral() {
     staleTime: 0,
   });
 
-  // ── Determine which course to show ──
-  const activeCourse = useMemo(() => {
+  // ── Course entity ref sets — used to isolate ScoreItems by course in the modal ──
+  // These are the ref_ids that are valid for the active course.
+  const activeCourseForQuery = useMemo(() => {
     if (session?.course) return session.course;
-    if (session?.role === 'admin') return adminCourseFilter;
-    return 'tcc';
+    return adminCourseFilter || 'tcc';
   }, [session, adminCourseFilter]);
+
+  const { data: courseLessons = [] } = useQuery({
+    queryKey: ['ranking-lessons', activeCourseForQuery],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourseForQuery }, 'order', 500),
+  });
+  const { data: courseTasks = [] } = useQuery({
+    queryKey: ['ranking-tasks', activeCourseForQuery],
+    queryFn: () => base44.entities.Task.filter({ course: activeCourseForQuery }, '-created_date', 500),
+  });
+  const { data: courseLiveSessions = [] } = useQuery({
+    queryKey: ['ranking-lives', activeCourseForQuery],
+    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourseForQuery }, '-scheduled_at', 200),
+  });
+  const { data: courseForumPosts = [] } = useQuery({
+    queryKey: ['ranking-forum', activeCourseForQuery],
+    queryFn: () => base44.entities.ForumPost.filter({ course: activeCourseForQuery }, '-created_date', 2000),
+  });
+  const { data: allForumReplies = [] } = useQuery({
+    queryKey: ['ranking-forum-replies'],
+    queryFn: () => base44.entities.ForumReply.list('-created_date', 5000),
+  });
+
+  // Build the set of all ref_ids valid for this course
+  const courseItemRefIds = useMemo(() => {
+    const set = new Set();
+    courseLessons.forEach(l => set.add(l.id));
+    courseTasks.forEach(t => set.add(t.id));
+    courseLiveSessions.forEach(l => set.add(l.id));
+    courseForumPosts.forEach(p => set.add(p.id));
+    allForumReplies.forEach(r => set.add(r.id));
+    return set;
+  }, [courseLessons, courseTasks, courseLiveSessions, courseForumPosts, allForumReplies]);
+
+  // ── Determine which course to show (same as activeCourseForQuery above) ──
+  const activeCourse = activeCourseForQuery;
 
   // ── Filter access codes for this course ──
   const courseCodes = useMemo(() => {
@@ -206,16 +249,18 @@ export default function RankingGeral() {
     return [...seen.values()];
   }, [allScoreItems]);
 
-  // Participation count: only verified items from this course
+  // Participation count: only verified items from this course (both email AND ref_id scoped)
   const courseEmailSet = useMemo(() => new Set(courseCodes.map(c => c.student_email)), [courseCodes]);
   const participationMap = useMemo(() => {
     const map = {};
     deduplicatedScoreItems.forEach(s => {
       if (!s.student_email || !courseEmailSet.has(s.student_email) || !s.verified) return;
+      // Only count items whose ref_id belongs to this course (avoid cross-course inflation)
+      if (courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) return;
       map[s.student_email] = (map[s.student_email] || 0) + 1;
     });
     return map;
-  }, [deduplicatedScoreItems, courseEmailSet]);
+  }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds]);
 
   // ── Build and sort ranking — identical sort logic to Dashboard ──
   // Primary sort: publishedRank (admin-set order)
@@ -385,6 +430,8 @@ export default function RankingGeral() {
         <StudentProfileModal
           code={selected}
           scoreItems={allScoreItems}
+          courseItemRefIds={courseItemRefIds}
+          publishedTotal={roundScore(selected.pontuacao_total ?? publishedScoreMap[selected.student_email] ?? 0)}
           onClose={() => setSelected(null)}
         />
       )}
