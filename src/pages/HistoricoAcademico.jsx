@@ -161,7 +161,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
             <tr style={{ background: '#1e3a5f' }}>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', letterSpacing: 0.5 }}>Atividade</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold' }}>Categoria</th>
-              <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>Nota</th>
+              <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>Pontos</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>CH</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>Situação</th>
             </tr>
@@ -194,7 +194,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
             <p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours} horas/aula</p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Pontuação Final</span>
+            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Nota Total</span>
             <p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} pts</p>
           </div>
         </div>
@@ -301,6 +301,7 @@ export default function HistoricoAcademico() {
     tasks.forEach(t => {
       const cat = t.type === 'quiz' ? 'quiz' : 'task';
       const si = verifiedScores.find(s => s.category === cat && s.ref_id === t.id);
+      // HOURS_MAP.task = 0.5h (30 min per task)
       rows.push({ key: `${cat}_${t.id}`, category: t.type === 'quiz' ? 'Prova' : 'Tarefa', title: t.title, score: si?.score ?? '—', max: t.max_grade || 10, hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task, status: si ? 'Avaliado' : 'Pendente' });
     });
 
@@ -397,7 +398,7 @@ export default function HistoricoAcademico() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Itens selecionados', value: selectedItems.size },
-            { label: 'Pontuação', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` },
+            { label: 'Nota Total', value: `${formatScore(totalScore)} pts` },
             { label: 'Aproveitamento', value: `${approvalRate}%` },
             { label: 'Carga Horária', value: `${totalHours}h` },
           ].map(item => (

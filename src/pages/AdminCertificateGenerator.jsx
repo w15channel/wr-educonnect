@@ -144,22 +144,67 @@ export default function AdminCertificateGenerator() {
   const handleAcademicSelection = useCallback(({ selectedRows }) => {
     const evalRows = selectedRows.filter(r => r.status === 'Avaliado');
     const totalHours = evalRows.reduce((s, r) => s + r.hours, 0);
-    const totalScore = evalRows.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0);
-    const totalMax   = evalRows.reduce((s, r) => s + r.max, 0);
-    const avgRaw     = totalMax > 0 ? (totalScore / totalMax) * 10 : 0;
-    const averageGrade = String(Math.round(avgRaw * 10) / 10).replace('.', ',');
+    const totalScore = Math.round(evalRows.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0) * 1000) / 1000;
+    // notaTotal = soma de pontos (não média matemática)
+    const notaTotal = String(totalScore).replace('.', ',');
 
-    // Build classes: one row per selected item (title, hours, grade)
-    const classes = selectedRows.map((r, i) => ({
-      id: String(i + 1),
-      title: r.title,
-      hours: r.hours,
-      grade: r.score !== null
-        ? String(Math.round((r.score / r.max) * 10 * 10) / 10).replace('.', ',')
-        : '—',
-    }));
+    // Build classes using shared grouping from buildStudentAcademicData logic:
+    // Tasks+Quizzes → "Trabalhos de Classe" (one row)
+    // Lives → "Aulas ao Vivo" (one row)
+    // Lessons → grouped by module prefix
+    // Others → per category
+    function extractModule(title) {
+      if (!title) return 'Módulo';
+      const modMatch = title.match(/^(m[oó]d(?:ulo)?\.?\s*\d+)/i);
+      if (modMatch) return modMatch[1].trim();
+      const dashMatch = title.split(/\s+[-–]\s+/)[0];
+      if (dashMatch && dashMatch.length < 40) return dashMatch.trim();
+      return title.slice(0, 30).trim();
+    }
 
-    setCert(p => ({ ...p, totalHours, averageGrade, classes }));
+    const taskRows   = evalRows.filter(r => r.category === 'Tarefa' || r.category === 'Prova');
+    const liveRows   = evalRows.filter(r => r.category === 'Aula ao Vivo');
+    const lessonRows = evalRows.filter(r => r.category === 'Aula Gravada');
+    const otherRows  = evalRows.filter(r => !['Tarefa','Prova','Aula ao Vivo','Aula Gravada'].includes(r.category));
+
+    let uid = 0;
+    const classes = [];
+
+    // Lessons by module
+    const modMap = {};
+    lessonRows.forEach(r => {
+      const mod = extractModule(r.title);
+      if (!modMap[mod]) modMap[mod] = { hours: 0, scoreSum: 0, count: 0 };
+      modMap[mod].hours    += r.hours;
+      modMap[mod].scoreSum += r.score !== null ? r.score : 0;
+      modMap[mod].count    += 1;
+    });
+    Object.entries(modMap).forEach(([mod, data]) => {
+      classes.push({ id: String(++uid), title: `${mod} — ${data.count} aula${data.count > 1 ? 's' : ''} assistida${data.count > 1 ? 's' : ''}`, hours: data.hours, grade: String(Math.round(data.scoreSum * 1000) / 1000).replace('.', ',') });
+    });
+
+    // Lives
+    if (liveRows.length > 0) {
+      classes.push({ id: String(++uid), title: `Aulas ao Vivo — ${liveRows.length} presença${liveRows.length > 1 ? 's' : ''} confirmada${liveRows.length > 1 ? 's' : ''}`, hours: liveRows.reduce((s,r) => s+r.hours, 0), grade: String(Math.round(liveRows.reduce((s,r)=>s+(r.score??0),0)*1000)/1000).replace('.', ',') });
+    }
+
+    // Tasks
+    if (taskRows.length > 0) {
+      classes.push({ id: String(++uid), title: `Trabalhos de Classe — ${taskRows.length} entrega${taskRows.length > 1 ? 's' : ''}`, hours: taskRows.reduce((s,r) => s+r.hours, 0), grade: String(Math.round(taskRows.reduce((s,r)=>s+(r.score??0),0)*1000)/1000).replace('.', ',') });
+    }
+
+    // Others
+    const otherCatMap = {};
+    otherRows.forEach(r => {
+      if (!otherCatMap[r.category]) otherCatMap[r.category] = { hours: 0, scoreSum: 0 };
+      otherCatMap[r.category].hours    += r.hours;
+      otherCatMap[r.category].scoreSum += r.score !== null ? r.score : 0;
+    });
+    Object.entries(otherCatMap).forEach(([cat, data]) => {
+      classes.push({ id: String(++uid), title: cat, hours: data.hours, grade: String(Math.round(data.scoreSum*1000)/1000).replace('.', ',') });
+    });
+
+    setCert(p => ({ ...p, totalHours, averageGrade: notaTotal, classes }));
   }, []);
 
 
@@ -377,7 +422,7 @@ export default function AdminCertificateGenerator() {
                 <input className={INPUT} type="number" value={cert.totalHours} onChange={e => upd('totalHours', e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Média</label>
+                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Nota Total</label>
                 <input className={INPUT} value={cert.averageGrade} onChange={e => upd('averageGrade', e.target.value)} />
               </div>
               <div>

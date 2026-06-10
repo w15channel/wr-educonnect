@@ -21,6 +21,7 @@ const adminGroups = [
     label: 'Classe',
     items: [
       { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-emerald-400' },
       { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
       { icon: Video,         label: 'Sala ao Vivo',           path: '/live',              color: 'text-red-400' },
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
@@ -54,7 +55,6 @@ const adminGroups = [
     items: [
       { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
       { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
-      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-emerald-400' },
       { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
       { icon: Award,         label: 'Gerar Certificado',      path: '/gerar-certificado', color: 'text-amber-300' },
     ],
@@ -66,6 +66,7 @@ const studentGroups = [
     label: 'Classe',
     items: [
       { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
       { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
       { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
       { icon: Video,         label: 'Sala ao Vivo',           path: '/live',              color: 'text-red-400' },
@@ -99,7 +100,6 @@ const studentGroups = [
     items: [
       { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
       { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-emerald-400' },
-      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
       { icon: Trophy,        label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
       { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
       { icon: Award,         label: 'Meu Certificado',        path: '/meu-certificado',   color: 'text-amber-400' },
