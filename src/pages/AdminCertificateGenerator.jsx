@@ -148,7 +148,7 @@ export default function AdminCertificateGenerator() {
           base44.entities.TherapistPairing.list('-pairing_date', 200),
         ]);
 
-        const { totalHours, totalScore, averageGrade, classes } = buildStudentAcademicData({
+        const { totalHours, averageGrade, classes } = buildStudentAcademicData({
           studentEmail: s.student_email,
           scoreItems,
           lessons,
@@ -159,11 +159,11 @@ export default function AdminCertificateGenerator() {
 
         setCert(p => ({
           ...p,
-          totalHours: totalHours > 0 ? totalHours : p.totalHours,
-          averageGrade: totalScore > 0 ? averageGrade : p.averageGrade,
+          totalHours: totalHours || p.totalHours,
+          averageGrade: averageGrade || p.averageGrade,
           classes: classes.length > 0 ? classes : p.classes,
         }));
-        toast.success(`${totalHours}h · pontos: ${totalScore} · média ${averageGrade}`);
+        toast.success(`Dados acadêmicos carregados: ${totalHours}h · média ${averageGrade}`);
       } catch (e) {
         toast.error('Não foi possível carregar dados acadêmicos: ' + e.message);
       } finally {

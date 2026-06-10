@@ -5,14 +5,14 @@
  * the same logic used by HistoricoAcademico — so it can be reused
  * by the certificate generator and any future consumer.
  *
- * Returns:
- *  - rows        : detailed rows per activity (for Histórico)
- *  - totalHours  : total evaluated hours (sum of all evaluated activities)
- *  - totalScore  : sum of evaluated scores
- *  - totalMaxScore: sum of max scores for evaluated activities
- *  - approvalRate: percentage string
- *  - averageGrade: grade string on 0–10 scale (e.g. "9,5")
- *  - classes     : grouped-by-category rows for the certificate back page
+ * @param {object} params
+ * @param {string}   params.studentEmail
+ * @param {Array}    params.scoreItems       - all ScoreItems (will be filtered)
+ * @param {Array}    params.lessons          - RecordedLesson list for the course
+ * @param {Array}    params.liveSessions     - LiveSession list for the course
+ * @param {Array}    params.tasks            - Task list for the course
+ * @param {Array}    params.pairings         - TherapistPairing list (all)
+ * @returns {object} { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes }
  */
 
 export const HOURS_MAP = {
@@ -115,11 +115,9 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
   const avgRaw = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 10 : 0;
   const averageGrade = String(Math.round(avgRaw * 10) / 10).replace('.', ',');
 
-  // ── classes: grouped by category for certificate back page ──
-  // Each entry = one category row with summed hours and proportional grade
-  const categoryOrder = ['Aula Gravada', 'Aula ao Vivo', 'Tarefa', 'Prova', 'Terapia da Semana'];
+  // Build `classes` array for the certificate back page:
+  // Group evaluated rows by category label with summed hours and averaged grade
   const categoryMap = {};
-
   evaluatedRows.forEach((r) => {
     if (!categoryMap[r.category]) {
       categoryMap[r.category] = { title: r.category, hours: 0, scoreSum: 0, maxSum: 0, count: 0 };
@@ -131,24 +129,11 @@ export function buildStudentAcademicData({ studentEmail, scoreItems, lessons, li
   });
 
   let uid = 0;
-  const classes = categoryOrder
-    .filter((cat) => categoryMap[cat])
-    .map((cat) => {
-      const c = categoryMap[cat];
-      const gradeNum = c.maxSum > 0 ? (c.scoreSum / c.maxSum) * 10 : 0;
-      const gradeStr = String(Math.round(gradeNum * 10) / 10).replace('.', ',');
-      return { id: String(++uid), title: c.title, hours: c.hours, grade: gradeStr };
-    });
-
-  // Also add any categories not in the canonical order
-  Object.keys(categoryMap)
-    .filter((cat) => !categoryOrder.includes(cat))
-    .forEach((cat) => {
-      const c = categoryMap[cat];
-      const gradeNum = c.maxSum > 0 ? (c.scoreSum / c.maxSum) * 10 : 0;
-      const gradeStr = String(Math.round(gradeNum * 10) / 10).replace('.', ',');
-      classes.push({ id: String(++uid), title: c.title, hours: c.hours, grade: gradeStr });
-    });
+  const classes = Object.values(categoryMap).map((c) => {
+    const gradeNum = c.maxSum > 0 ? (c.scoreSum / c.maxSum) * 10 : 0;
+    const gradeStr = String(Math.round(gradeNum * 10) / 10).replace('.', ',');
+    return { id: String(++uid), title: c.title, hours: c.hours, grade: gradeStr };
+  });
 
   return { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes };
 }
