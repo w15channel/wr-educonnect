@@ -377,7 +377,7 @@ export default function AdminCertificateGenerator() {
                 <input className={INPUT} type="number" value={cert.totalHours} onChange={e => upd('totalHours', e.target.value)} />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Média</label>
+                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Nota Total</label>
                 <input className={INPUT} value={cert.averageGrade} onChange={e => upd('averageGrade', e.target.value)} />
               </div>
               <div>

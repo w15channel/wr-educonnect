@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { applyTheme } from '@/components/layout/MobileHeader';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
@@ -251,6 +252,8 @@ export default function CourseLobby() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(LOBBY_MUSIC_KEY, 'off');
+    // Lobby sempre entra em modo escuro
+    applyTheme('dark');
   }, []);
 
   const handleAdminSelectCourse = (courseId) => {

@@ -86,7 +86,7 @@ export default function CertificateBack({ cert, certRef }) {
               <div style={{ fontSize: 20, fontWeight: 900, color: WHITE, fontFamily: 'Arial, sans-serif' }}>{totalClassHours}h</div>
             </div>
             <div style={{ flex: 1, textAlign: 'center', background: NAVY, borderRadius: 6, padding: '6px 4px' }}>
-              <div style={{ fontSize: 7.5, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>Média Final</div>
+              <div style={{ fontSize: 7.5, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>Nota Total</div>
               <div style={{ fontSize: 20, fontWeight: 900, color: WHITE, fontFamily: 'Arial, sans-serif' }}>{cert.averageGrade}</div>
             </div>
           </div>

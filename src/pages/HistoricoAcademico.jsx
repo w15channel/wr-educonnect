@@ -411,6 +411,7 @@ export default function HistoricoAcademico() {
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={selectAll} className="h-8 text-xs gap-1.5">
             <CheckSquare size={13} /> Selecionar Tudo
+            
           </Button>
           <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5">
             <Square size={13} /> Limpar

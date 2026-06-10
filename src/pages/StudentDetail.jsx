@@ -204,7 +204,7 @@ export default function StudentDetail() {
             </div>
             <div className="bg-primary/5 rounded-xl p-3 text-center border border-primary/10">
               <p className="text-2xl font-black text-primary">{avg}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold">Média</p>
+              <p className="text-[10px] text-muted-foreground font-semibold">Nota Total</p>
             </div>
             <div className="bg-yellow-500/10 rounded-xl p-3 text-center border border-yellow-500/20">
               <p className="text-2xl font-black text-yellow-500">{formatScore(total)}</p>
