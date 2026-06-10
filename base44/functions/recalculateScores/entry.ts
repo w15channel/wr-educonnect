@@ -77,6 +77,38 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.MonitorHistory.list('-period_start', 1000),
     ]);
 
+    // ── Deduplicate ScoreItems in-memory before building the map ──────────────
+    // If duplicates exist (same email+category+ref_id), keep the best one
+    // (verified > highest score > most recently updated) and delete the rest now.
+    {
+      const dupGroups = new Map();
+      for (const item of scoreItems) {
+        if (!item.student_email || !item.category || !item.ref_id) continue;
+        const k = scoreKey(item.student_email, item.category, item.ref_id);
+        if (!dupGroups.has(k)) dupGroups.set(k, []);
+        dupGroups.get(k).push(item);
+      }
+      for (const [, members] of dupGroups) {
+        if (members.length <= 1) continue;
+        members.sort((a, b) => {
+          if (a.verified !== b.verified) return b.verified ? 1 : -1;
+          if (b.score !== a.score) return (Number(b.score) || 0) - (Number(a.score) || 0);
+          const aT = new Date(a.updated_date || a.created_date || 0).getTime();
+          const bT = new Date(b.updated_date || b.created_date || 0).getTime();
+          return bT - aT;
+        });
+        const [, ...dupes] = members;
+        for (const dupe of dupes) {
+          await base44.asServiceRole.entities.ScoreItem.delete(dupe.id).catch(() => null);
+        }
+        // Remove dupes from the scoreItems array so the map is clean
+        for (const dupe of dupes) {
+          const idx = scoreItems.indexOf(dupe);
+          if (idx >= 0) scoreItems.splice(idx, 1);
+        }
+      }
+    }
+
     const existingScores = new Map(scoreItems.map((item) => [scoreKey(item.student_email, item.category, item.ref_id), item]));
     const postById = new Map(forumPosts.map((post) => [post.id, post]));
     const period = getCurrentPeriod();

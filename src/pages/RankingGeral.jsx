@@ -31,8 +31,19 @@ function StudentProfileModal({ code, scoreItems, onClose }) {
   const photoUrl = code.profile_photo_url || '';
   const avatarColor = code.profile_avatar_color || '#5b5ef4';
 
-  // Only verified items for this student
-  const myItems = scoreItems.filter(s => s.student_email === email && s.verified);
+  // Only verified items for this student — deduplicated by (category|ref_id)
+  const myItems = useMemo(() => {
+    const seen = new Map();
+    for (const s of scoreItems) {
+      if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
+      const key = `${s.category}|${s.ref_id}`;
+      const prev = seen.get(key);
+      if (!prev) { seen.set(key, s); continue; }
+      const prevWins = (Number(prev.score) || 0) >= (Number(s.score) || 0);
+      if (!prevWins) seen.set(key, s);
+    }
+    return [...seen.values()];
+  }, [scoreItems, email]);
 
   // Show live sum — never rely on stale cache here
   const liveTotal = roundScore(myItems.reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
@@ -160,11 +171,29 @@ export default function RankingGeral() {
   // Build a set of valid emails for this course (used to isolate ScoreItems)
   const courseEmailSet = useMemo(() => new Set(courseCodes.map(c => c.student_email)), [courseCodes]);
 
+  // ── Deduplicate ScoreItems defensively before aggregating ──
+  // Guard against race-condition duplicates: keep best item per (email|category|ref_id)
+  const deduplicatedScoreItems = useMemo(() => {
+    const seen = new Map(); // key → best ScoreItem
+    for (const s of allScoreItems) {
+      if (!s.student_email || !s.category || !s.ref_id) continue;
+      const key = `${s.student_email}|${s.category}|${s.ref_id}`;
+      const prev = seen.get(key);
+      if (!prev) { seen.set(key, s); continue; }
+      // Keep verified over unverified; higher score; more recent
+      const prevWins =
+        (prev.verified && !s.verified) ||
+        (prev.verified === s.verified && (Number(prev.score) || 0) >= (Number(s.score) || 0));
+      if (!prevWins) seen.set(key, s);
+    }
+    return [...seen.values()];
+  }, [allScoreItems]);
+
   // ── Aggregate scores — only verified, only from course students ──
   const { scoreMap, participationMap } = useMemo(() => {
     const scoreMap = {};
     const participationMap = {};
-    allScoreItems.forEach(s => {
+    deduplicatedScoreItems.forEach(s => {
       if (!s.student_email) return;
       if (!courseEmailSet.has(s.student_email)) return; // isolate by course
       participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
@@ -172,16 +201,15 @@ export default function RankingGeral() {
       scoreMap[s.student_email] = roundScore((scoreMap[s.student_email] || 0) + roundScore(s.score));
     });
     return { scoreMap, participationMap };
-  }, [allScoreItems, courseEmailSet]);
+  }, [deduplicatedScoreItems, courseEmailSet]);
 
   // ── Build and sort ranking ──
   const ranking = useMemo(() => {
     return courseCodes
       .map(c => {
+        // Always use the live deduplicated sum — never the stale cache
         const liveSum = scoreMap[c.student_email] || 0;
-        // Use max(cached, live) — but prefer live since it's always accurate
-        const cached = roundScore(c.pontuacao_total || 0);
-        const total = roundScore(Math.max(cached, liveSum));
+        const total = roundScore(liveSum);
         return {
           email: c.student_email,
           total,
