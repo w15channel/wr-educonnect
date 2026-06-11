@@ -20,7 +20,11 @@
     },
     "course": {
       "type": "string",
-      "enum": ["tcc", "psicanalise", "sexologia"],
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
       "default": "tcc"
     },
     "rating": {
@@ -29,8 +33,56 @@
     },
     "comment": {
       "type": "string",
-      "description": "Comentário opcional"
+      "description": "Coment\u00e1rio opcional"
     }
   },
-  "required": ["monitor_email", "student_email", "rating"]
+  "required": [
+    "monitor_email",
+    "student_email",
+    "rating"
+  ],
+  "rls": {
+    "create": {
+      "data.student_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.monitor_email": "{{user.email}}"
+        },
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
