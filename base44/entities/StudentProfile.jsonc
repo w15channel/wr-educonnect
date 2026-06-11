@@ -76,6 +76,9 @@
   ],
   "rls": {
     "create": {
+      "data.student_email": "{{user.email}}"
+    },
+    "read": {
       "$or": [
         {
           "data.student_email": "{{user.email}}"
@@ -87,7 +90,6 @@
         }
       ]
     },
-    "read": true,
     "update": {
       "$or": [
         {
