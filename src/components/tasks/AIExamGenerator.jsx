@@ -315,7 +315,7 @@ ${sourceContent}`;
       )}
 
       {/* ── Step 1: Configurações ── */}
-      {step === 1 && selectedMod && (
+      {step === 1 && (selectedMod || useCustomText) && (
         <div className="space-y-5">
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <h3 className="text-sm font-black text-foreground flex items-center gap-2">
