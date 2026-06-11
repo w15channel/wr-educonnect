@@ -12,6 +12,7 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { buildStudentAcademicData, HOURS_MAP } from '@/lib/buildStudentAcademicData';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, formatDocumentIssuer } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { HOURS_MAP } from '@/lib/buildStudentAcademicData';
@@ -275,6 +276,14 @@ export default function HistoricoAcademico() {
     queryKey: ['tasks', studentCourse],
     queryFn: () => base44.entities.Task.filter({ course: studentCourse }, '-created_date', 200),
   });
+  const { data: exams = [] } = useQuery({
+    queryKey: ['exams', studentCourse],
+    queryFn: () => base44.entities.Exam.filter({ course: studentCourse }, '-created_date', 500),
+  });
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['exam-submissions-all'],
+    queryFn: () => base44.entities.ExamSubmission.list('-submitted_at', 2000),
+  });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
   const { data: challengeResponses = [] } = useQuery({ queryKey: ['challenge-responses-all'], queryFn: () => base44.entities.DailyChallengeResponse.list('-date', 2000) });
@@ -291,45 +300,29 @@ export default function HistoricoAcademico() {
     }
   }, [isTeacher, session, codes]);
 
-  // Build all possible rows for a student
+  // Build all possible rows for a student using buildStudentAcademicData
   function buildAllRows(student) {
     const verifiedScores = scoreItems.filter(s => s.student_email === student.email && s.verified);
-    const rows = [];
-
-    lessons.forEach(l => {
-      const si = verifiedScores.find(s => s.category === 'lesson' && s.ref_id === l.id);
-      rows.push({ key: `lesson_${l.id}`, category: 'Aula Gravada', title: l.title, score: si?.score ?? '—', max: 10, hours: HOURS_MAP.lesson, status: si ? 'Avaliado' : 'Pendente' });
+    const examsForCourse = exams.filter(e => e.course === studentCourse);
+    const examSubsForStudent = examSubmissions.filter(s => s.student_email === student.email && s.status === 'graded');
+    
+    const { rows } = buildStudentAcademicData({
+      studentEmail: student.email,
+      scoreItems,
+      lessons,
+      liveSessions,
+      tasks,
+      exams: examsForCourse,
+      examSubs: examSubsForStudent,
+      pairings,
+      challengeResponses,
     });
-
-    liveSessions.forEach(l => {
-      const si = verifiedScores.find(s => s.category === 'live_attendance' && s.ref_id === l.id);
-      rows.push({ key: `live_attendance_${l.id}`, category: 'Aula ao Vivo', title: l.title, score: si?.score ?? '—', max: 5, hours: HOURS_MAP.live_attendance, status: si ? 'Avaliado' : 'Pendente' });
-    });
-
-    tasks.forEach(t => {
-      const cat = t.type === 'quiz' ? 'quiz' : 'task';
-      const si = verifiedScores.find(s => s.category === cat && s.ref_id === t.id);
-      rows.push({ key: `${cat}_${t.id}`, category: t.type === 'quiz' ? 'Prova' : 'Tarefa', title: t.title, score: si?.score ?? '—', max: t.max_grade || 10, hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task, status: si ? 'Avaliado' : 'Pendente' });
-    });
-
-    const myPairings = pairings.filter(p => p.therapist_email === student.email || p.patient_email === student.email);
-    myPairings.forEach((p, i) => {
-      const role = p.therapist_email === student.email ? 'Terapeuta' : 'Paciente';
-      const refId = `therapist_pairing:${p.id}:${role === 'Terapeuta' ? 'therapist' : 'patient'}`;
-      const si = verifiedScores.find(s => s.category === 'task' && s.ref_id === refId);
-      rows.push({ key: `therapist_${p.id}_${role}`, category: 'Terapia da Semana', title: `Sessão ${i + 1} (${role})`, score: si?.score ?? '—', max: 10, hours: HOURS_MAP.therapist, status: si ? 'Avaliado' : 'Pendente', notes: si?.notes || '' });
-    });
-
-    // Ofensivas Diárias
-    const myResponses = challengeResponses.filter(r => r.student_email === student.email && (r.points_earned || 0) > 0);
-    myResponses.forEach(r => {
-      const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
-      const si = verifiedScores.find(s => s.category === 'forum' && s.ref_id === refId);
-      const pts = si?.score ?? (r.points_earned || 0);
-      rows.push({ key: `ofensiva_${r.challenge_id}`, category: 'Ofensiva Diária', title: `Ofensiva ${r.date || 'sem data'}`, score: pts, max: si?.max_score ?? 1, hours: 0, status: 'Avaliado', notes: si?.notes || `${r.questions_answered || 0} perguntas respondidas` });
-    });
-
-    return rows;
+    
+    return rows.map(r => ({
+      ...r,
+      score: r.score === null ? '—' : r.score,
+      status: r.status || 'Pendente',
+    }));
   }
 
   function openSelector(student) {

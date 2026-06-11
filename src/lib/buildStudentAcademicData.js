@@ -10,6 +10,8 @@
  * @param {Array}    params.lessons            - RecordedLesson list for the course
  * @param {Array}    params.liveSessions       - LiveSession list for the course
  * @param {Array}    params.tasks              - Task list for the course
+ * @param {Array}    params.exams              - Exam list for the course
+ * @param {Array}    params.examSubs           - ExamSubmission list for the student
  * @param {Array}    params.pairings           - TherapistPairing list (all)
  * @param {Array}    [params.challengeResponses] - DailyChallengeResponse list (all)
  * @returns {object} { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes }
@@ -20,6 +22,7 @@ export const HOURS_MAP = {
   live_attendance: 2,
   task: 0.5,   // 30 minutos por entrega
   quiz: 1.5,
+  exam: 2,     // 2 horas por prova
   forum: 0.5,
   therapist: 1,
   ofensiva: 0, // pontos apenas, sem CH
@@ -37,6 +40,8 @@ export function buildStudentAcademicData({
   lessons,
   liveSessions,
   tasks,
+  exams = [],
+  examSubs = [],
   pairings,
   challengeResponses = [],
 }) {
@@ -76,7 +81,7 @@ export function buildStudentAcademicData({
     });
   });
 
-  // ── Tarefas / Provas ──
+  // ── Tarefas / Provas (Task entity) ──
   tasks.forEach((t) => {
     const cat = t.type === 'quiz' ? 'quiz' : 'task';
     const si = verifiedScores.find((s) => s.category === cat && s.ref_id === t.id);
@@ -91,6 +96,25 @@ export function buildStudentAcademicData({
       notes: si?.notes || '',
     });
   });
+
+  // ── Provas (Exam entity via ExamSubmission) ──
+  if (exams && exams.length > 0 && examSubs && examSubs.length > 0) {
+    examSubs.forEach((sub) => {
+      const exam = exams.find((e) => e.id === sub.exam_id);
+      if (!exam || sub.status !== 'graded') return;
+      const si = verifiedScores.find((s) => s.category === 'exam' && s.ref_id === exam.id);
+      rows.push({
+        key: `exam_${exam.id}`,
+        category: 'Prova',
+        title: exam.title,
+        score: sub.grade ?? si?.score ?? null,
+        max: exam.max_grade || 10,
+        hours: HOURS_MAP.exam,
+        status: 'Avaliado',
+        notes: sub.feedback || si?.notes || '',
+      });
+    });
+  }
 
   // ── Terapeuta da semana (via ScoreItems de categoria task com ref therapist_pairing:) ──
   const myPairings = pairings.filter(

@@ -31,13 +31,13 @@ Deno.serve(async (req) => {
     // Create or update ScoreItem for the exam
     const existingScores = await base44.asServiceRole.entities.ScoreItem.filter({
       student_email,
-      category: 'quiz',
+      category: 'exam',
       ref_id: exam_id,
     });
 
     const scoreData = {
       student_email,
-      category: 'quiz',
+      category: 'exam',
       ref_id: exam_id,
       ref_title: exam.title,
       score: roundScore(grade),

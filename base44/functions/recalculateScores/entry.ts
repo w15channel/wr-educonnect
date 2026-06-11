@@ -6,6 +6,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // lesson              watched        +10.0 pts  (per lesson)
 // live_attendance     confirmed      + 1.0 pts  (per live session)
 // task / quiz         submitted      +10.0 pts  (+ monitor bonus if applicable)
+// exam                graded         + grade    (exam grade 0-10, from ExamSubmission)
 // forum post          created        + 0.1 pts  (includes debates space)
 // forum reply         to colleague   + 0.5 pts  (includes debates space)
 // therapist_pairing   submitted eval +10.0 pts  (per role per pairing — therapist + patient separately)
@@ -80,6 +81,7 @@ Deno.serve(async (req) => {
       progresses,
       tasks,
       submissions,
+      examSubmissions,
       liveSessions,
       attendances,
       forumPosts,
@@ -96,6 +98,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.LessonProgress.list('-created_date', 10000),
       base44.asServiceRole.entities.Task.list('-created_date', 5000),
       base44.asServiceRole.entities.TaskSubmission.list('-created_date', 10000),
+      base44.asServiceRole.entities.ExamSubmission.list('-submitted_at', 10000),
       base44.asServiceRole.entities.LiveSession.list('-scheduled_at', 5000),
       base44.asServiceRole.entities.LiveAttendance.list('-created_date', 10000),
       base44.asServiceRole.entities.ForumPost.list('-created_date', 10000),
@@ -196,11 +199,14 @@ Deno.serve(async (req) => {
 
       const courseLessons   = lessons.filter((l) => sameCourse(l, course));
       const courseTasks     = tasks.filter((t) => sameCourse(t, course));
+      const courseExams     = await base44.asServiceRole.entities.Exam.filter({ course }, '-created_date', 500);
+      const courseExamSubs  = examSubmissions.filter((s) => sameCourse(s, course) && s.status === 'graded');
       const courseLives     = liveSessions.filter((l) => sameCourse(l, course));
       const coursePosts     = forumPosts.filter((p) => sameCourse(p, course));
 
       const lessonMap = new Map(courseLessons.map((l) => [l.id, l]));
       const taskMap   = new Map(courseTasks.map((t) => [t.id, t]));
+      const examMap   = new Map(courseExams.map((e) => [e.id, e]));
       const liveMap   = new Map(courseLives.map((l) => [l.id, l]));
       const coursePostIds = new Set(coursePosts.map((p) => p.id));
 
@@ -312,6 +318,24 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Exam submissions (graded exams from ExamSubmission entity)
+      for (const sub of courseExamSubs) {
+        const exam = examMap.get(sub.exam_id);
+        if (!courseEmails.has(sub.student_email) || !exam || sub.status !== 'graded') continue;
+        const grade = roundScore(sub.grade || 0);
+        const refId = `exam:${sub.exam_id}`;
+        queueScore({ 
+          studentEmail: sub.student_email, 
+          category: 'exam', 
+          refId, 
+          refTitle: exam.title, 
+          score: grade, 
+          maxScore: exam.max_grade || 10, 
+          notes: sub.feedback || `Prova corrigida: ${grade}/${exam.max_grade || 10} pontos.` 
+        });
+        addCalc(sub.student_email, grade);
+      }
+
       // Forum posts
       for (const post of coursePosts) {
         if (!courseEmails.has(post.author_email)) continue;
@@ -412,6 +436,7 @@ Deno.serve(async (req) => {
         lesson_watched:               { pts: 10,    note: 'por aula assistida' },
         live_attendance:              { pts: 1,     note: 'por presença confirmada em live' },
         task_or_quiz_submission:      { pts: 10,    note: 'por entrega (+ bônus de monitor se aplicável)' },
+        exam_graded:                  { pts: '0–10', note: 'nota da prova (ExamSubmission) — valor real atribuído pelo professor' },
         forum_post:                   { pts: 0.1,   note: 'por post criado no fórum ou sala de debates' },
         forum_reply_to_colleague:     { pts: 0.5,   note: 'por resposta a colega no fórum ou sala de debates' },
         therapist_week_submitted:     { pts: 10,    note: 'por relato enviado (como terapeuta OU paciente)' },
