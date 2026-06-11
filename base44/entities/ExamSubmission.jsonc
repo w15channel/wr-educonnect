@@ -1,0 +1,109 @@
+{
+  "name": "ExamSubmission",
+  "type": "object",
+  "properties": {
+    "exam_id": {
+      "type": "string",
+      "description": "ID da prova"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome do aluno"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso da prova"
+    },
+    "quiz_answers": {
+      "type": "array",
+      "description": "Respostas do aluno \u2014 cada item \u00e9 \u00edndice (escolha) ou {text: string} (escrita)",
+      "items": {}
+    },
+    "grade": {
+      "type": "number",
+      "description": "Nota atribu\u00edda pelo professor (0-10)"
+    },
+    "feedback": {
+      "type": "string",
+      "description": "Feedback do professor"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "graded"
+      ],
+      "default": "submitted",
+      "description": "Status da corre\u00e7\u00e3o"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de envio da prova"
+    },
+    "graded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data da corre\u00e7\u00e3o"
+    },
+    "graded_by": {
+      "type": "string",
+      "description": "Email do professor que corrigiu"
+    },
+    "time_spent_seconds": {
+      "type": "number",
+      "description": "Tempo gasto em segundos"
+    },
+    "tab_switch_detected": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o aluno saiu da aba durante a prova"
+    }
+  },
+  "required": [
+    "exam_id",
+    "student_email"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

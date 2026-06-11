@@ -24,10 +24,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json().catch(() => ({}));
-    const isAutomation = ['scheduled', 'entity'].includes(payload?.automation?.type);
+    
+    // Check if this is a scheduled automation call
+    const isScheduledAutomation = payload?.automation?.type === 'scheduled';
 
     // Manual call with payload — preserve original behavior
-    if (!isAutomation) {
+    if (!isScheduledAutomation) {
       const { date, course, lesson_ref, lesson_id, questions } = payload;
       if (!date || !course || !questions || questions.length < 3) {
         return Response.json({ error: 'Dados inválidos' }, { status: 400 });
