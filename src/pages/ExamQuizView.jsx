@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useOutletContext } from 'react-router-dom';
-import QuizView from '@/components/tasks/QuizView';
+import ExamQuizRenderer from '@/components/exams/ExamQuizView';
 
 export default function ExamQuizView() {
   const { id } = useParams();
@@ -43,6 +43,5 @@ export default function ExamQuizView() {
     );
   }
 
-  // QuizView expects a task-like object with quiz_questions
-  return <QuizView task={exam} user={session} onBack={handleBack} />;
+  return <ExamQuizRenderer exam={exam} user={session} onBack={handleBack} />;
 }

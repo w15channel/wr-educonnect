@@ -15,7 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import { formatScore } from '@/lib/scoreUtils';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ExamEditor from '../components/exams/ExamEditor';
-import ExamGrader from '../components/exams/ExamGrader';
+import ExamSubmissionGrader from '../components/exams/ExamSubmissionGrader';
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -30,28 +30,27 @@ function SubmittedView({ submission }) {
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
-          <CheckCircle size={12} /> Realizada
+          <CheckCircle size={12} /> Enviada
         </span>
-        {submission.grade != null && (
+        {submission.grade != null ? (
           <span className="text-sm font-black text-foreground bg-secondary px-3 py-1.5 rounded-xl border border-border">
             Nota: {formatScore(submission.grade)}
           </span>
+        ) : (
+          <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+            ⏳ Aguardando correção
+          </span>
         )}
         {submission.feedback && (
-          <button
-            onClick={() => setOpen(!open)}
-            className="inline-flex items-center gap-1 text-xs text-primary border border-primary/20 px-2.5 py-1.5 rounded-xl hover:bg-primary/5 transition-colors"
-          >
+          <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-1 text-xs text-primary border border-primary/20 px-2.5 py-1.5 rounded-xl hover:bg-primary/5 transition-colors">
             <Eye size={11} /> {open ? 'Ocultar' : 'Ver feedback'}
           </button>
         )}
       </div>
       {open && submission.feedback && (
-        <div className="bg-secondary/40 border border-border rounded-xl p-3 space-y-2 text-xs">
-          <div className="border-t border-border pt-2">
-            <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Feedback:</p>
-            <p className="text-muted-foreground">{submission.feedback}</p>
-          </div>
+        <div className="bg-secondary/40 border border-border rounded-xl p-3 text-xs">
+          <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Feedback:</p>
+          <p className="text-muted-foreground">{submission.feedback}</p>
         </div>
       )}
     </div>
@@ -84,21 +83,18 @@ export default function Exams() {
   const normalizeEmail = (v = '') => String(v || '').trim().toLowerCase();
   const studentEmails = [session?.email, session?.code].filter(Boolean).map(normalizeEmail);
 
-  // Load submissions for exams (reuse TaskSubmission entity with task_id pointing to exam id)
+  // Load exam submissions from new dedicated entity
   const { data: submissions = [] } = useQuery({
-    queryKey: ['exam-submissions-mine', isTeacher ? 'all' : studentEmails.join('|')],
+    queryKey: ['exam-submissions', userCourse],
     queryFn: async () => {
-      const records = await base44.entities.TaskSubmission.filter({ course: userCourse }, '-created_date', 3000);
-      // exam submissions are identified by task_id matching an exam id
-      const examIds = new Set(exams.map(e => e.id));
-      const filtered = records.filter(s => examIds.has(s.task_id));
-      return isTeacher ? filtered : filtered.filter(s => studentEmails.includes(normalizeEmail(s.student_email)));
+      const records = await base44.entities.ExamSubmission.filter({ course: userCourse }, '-submitted_at', 3000);
+      return isTeacher ? records : records.filter(s => studentEmails.includes(normalizeEmail(s.student_email)));
     },
     enabled: exams.length > 0,
   });
 
   const submissionByExamId = {};
-  submissions.forEach(s => { if (!submissionByExamId[s.task_id]) submissionByExamId[s.task_id] = s; });
+  submissions.forEach(s => { if (!submissionByExamId[s.exam_id]) submissionByExamId[s.exam_id] = s; });
 
   const deleteMutation = useMutation({
     mutationFn: id => adminApi.delete('Exam', id),
@@ -118,10 +114,10 @@ export default function Exams() {
     return <ExamEditor exam={editingExam} onBack={() => { setShowEditor(false); setEditingExam(null); }} course={userCourse} />;
   }
 
-  if (gradingSubmission && gradingSubmission.task_id) {
-    const exam = exams.find(e => e.id === gradingSubmission.task_id);
+  if (gradingSubmission && gradingSubmission.exam_id) {
+    const exam = exams.find(e => e.id === gradingSubmission.exam_id);
     if (exam) {
-      return <ExamGrader submission={gradingSubmission} exam={exam} onBack={() => setGradingSubmission(null)} />;
+      return <ExamSubmissionGrader submission={gradingSubmission} exam={exam} onBack={() => setGradingSubmission(null)} />;
     }
   }
 
@@ -239,7 +235,7 @@ export default function Exams() {
                   {isTeacher && (
                     <div className="flex gap-1 shrink-0 items-center">
                       <span className="text-xs text-muted-foreground px-2 py-1 border border-border rounded-lg shrink-0">
-                        {submissions.filter(s => s.task_id === exam.id).length} entregas
+                        {submissions.filter(s => s.exam_id === exam.id).length} entregas
                       </span>
                       <button
                         onClick={e => { e.stopPropagation(); setEditingExam(exam); setShowEditor(true); }}
