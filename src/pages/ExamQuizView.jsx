@@ -2,14 +2,15 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { getSession } from '@/lib/customAuth';
+import { useOutletContext } from 'react-router-dom';
 import QuizView from '@/components/tasks/QuizView';
 
 export default function ExamQuizView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const session = getSession();
+  // Use outlet context (same pattern as all other pages) so session works on published site
+  const { user: session } = useOutletContext();
 
   const { data: exams = [], isLoading } = useQuery({
     queryKey: ['exams'],

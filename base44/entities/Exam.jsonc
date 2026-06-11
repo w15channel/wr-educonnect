@@ -53,7 +53,8 @@
             }
           },
           "correct_index": {
-            "type": "number"
+            "type": "number",
+            "description": "\u00cdndice da resposta correta (somente m\u00faltipla escolha)"
           }
         }
       }
