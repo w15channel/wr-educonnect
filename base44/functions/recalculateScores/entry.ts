@@ -104,9 +104,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.StudentProfile.list('-updated_date', 10000),
       base44.asServiceRole.entities.User.list('-created_date', 10000).catch(() => []),
       base44.asServiceRole.entities.MonitorHistory.list('-period_start', 1000),
-      // Terapeuta da Semana — all pairings with at least one submitted evaluation
       base44.asServiceRole.entities.TherapistPairing.list('-pairing_date', 5000),
-      // Ofensivas — all student challenge responses
       fetchAllPages((sort, limit, skip) => base44.asServiceRole.entities.DailyChallengeResponse.list(sort, limit, skip), '-created_date'),
     ]);
 
@@ -132,7 +130,11 @@ Deno.serve(async (req) => {
     let profilesUpdated = 0;
     let scoreCachesUpdated = 0;
 
-    const upsertScore = async ({ studentEmail, category, refId, refTitle, score, maxScore, notes }) => {
+    // Batch queues to avoid rate limits
+    const scoreCreates = [];
+    const scoreUpdates = [];
+    
+    const queueScore = ({ studentEmail, category, refId, refTitle, score, maxScore, notes }) => {
       if (!studentEmail || !refId) return;
       const p = {
         student_email: studentEmail,
@@ -153,14 +155,35 @@ Deno.serve(async (req) => {
           existing.verified !== true ||
           existing.notes !== p.notes;
         if (changed) {
-          const updated = await base44.asServiceRole.entities.ScoreItem.update(existing.id, p);
-          existingScores.set(key, updated);
-          updatedScores++;
+          scoreUpdates.push({ id: existing.id, data: p, key });
         }
       } else {
-        const created = await base44.asServiceRole.entities.ScoreItem.create(p);
-        existingScores.set(key, created);
-        createdScores++;
+        scoreCreates.push({ data: p, key });
+      }
+    };
+
+    const flushScoreBatches = async () => {
+      // Process creates in batches of 50 with delays
+      for (let i = 0; i < scoreCreates.length; i += 50) {
+        const batch = scoreCreates.slice(i, i + 50);
+        const results = await Promise.all(batch.map(async ({ data, key }) => {
+          const created = await base44.asServiceRole.entities.ScoreItem.create(data);
+          return { key, data: created };
+        }));
+        results.forEach(({ key, data }) => existingScores.set(key, data));
+        createdScores += batch.length;
+        if (i + 50 < scoreCreates.length) await new Promise(r => setTimeout(r, 300));
+      }
+      // Process updates in batches of 50 with delays
+      for (let i = 0; i < scoreUpdates.length; i += 50) {
+        const batch = scoreUpdates.slice(i, i + 50);
+        const results = await Promise.all(batch.map(async ({ id, data, key }) => {
+          const updated = await base44.asServiceRole.entities.ScoreItem.update(id, data);
+          return { key, data: updated };
+        }));
+        results.forEach(({ key, data }) => existingScores.set(key, data));
+        updatedScores += batch.length;
+        if (i + 50 < scoreUpdates.length) await new Promise(r => setTimeout(r, 300));
       }
     };
 
@@ -174,7 +197,6 @@ Deno.serve(async (req) => {
       const courseLessons   = lessons.filter((l) => sameCourse(l, course));
       const courseTasks     = tasks.filter((t) => sameCourse(t, course));
       const courseLives     = liveSessions.filter((l) => sameCourse(l, course));
-      // Forum + Debates: both spaces share the same course field — already covers debates
       const coursePosts     = forumPosts.filter((p) => sameCourse(p, course));
 
       const lessonMap = new Map(courseLessons.map((l) => [l.id, l]));
@@ -182,7 +204,7 @@ Deno.serve(async (req) => {
       const liveMap   = new Map(courseLives.map((l) => [l.id, l]));
       const coursePostIds = new Set(coursePosts.map((p) => p.id));
 
-      // ── Base totals for monitor pre-ranking (fast, no async) ─────────────
+      // ── Base totals for monitor pre-ranking ─────────────────────────────
       const baseTotals = new Map(courseCodes.map((c) => [c.student_email, 0]));
       const addBase = (email, pts) => baseTotals.set(email, roundScore((baseTotals.get(email) || 0) + roundScore(pts)));
 
@@ -204,12 +226,10 @@ Deno.serve(async (req) => {
           addBase(r.author_email, 0.5);
         }
       });
-      // Therapist pairings in this course (match by student emails in course)
       therapistPairings.forEach((p) => {
         if (courseEmails.has(p.therapist_email) && p.therapist_submitted) addBase(p.therapist_email, 10);
         if (courseEmails.has(p.patient_email)   && p.patient_submitted)   addBase(p.patient_email,   10);
       });
-      // Ofensivas
       challengeResponses.forEach((r) => {
         if (courseEmails.has(r.student_email) && sameCourse(r, course)) {
           addBase(r.student_email, roundScore(r.points_earned || 0));
@@ -241,25 +261,20 @@ Deno.serve(async (req) => {
         monitorsDefined++;
       }
 
-      // ── Clean up invalid ScoreItems for this course ──────────────────────
-      // 1. Legacy 'therapist' category (invalid, causes double-counting)
-      // 2. live_attendance items whose ref_id is not a real LiveSession in this course
+      // ── Clean up invalid ScoreItems ─────────────────────────────────────
       const liveSessionIds = new Set(courseLives.map((l) => l.id));
       for (const item of scoreItems) {
         if (!courseEmails.has(item.student_email)) continue;
         const key = scoreKey(item.student_email, item.category, item.ref_id);
-
         const isLegacyTherapist = item.category === 'therapist';
-        const isOrphanLiveAttendance =
-          item.category === 'live_attendance' && !liveSessionIds.has(item.ref_id);
-
+        const isOrphanLiveAttendance = item.category === 'live_attendance' && !liveSessionIds.has(item.ref_id);
         if (isLegacyTherapist || isOrphanLiveAttendance) {
           await base44.asServiceRole.entities.ScoreItem.delete(item.id).catch(() => null);
           existingScores.delete(key);
         }
       }
 
-      // ── Upsert all ScoreItems for this course ────────────────────────────
+      // ── Queue all ScoreItems for this course ────────────────────────────
       const calculatedTotals = new Map(courseCodes.map((c) => [c.student_email, 0]));
       const addCalc = (email, pts) => calculatedTotals.set(email, roundScore((calculatedTotals.get(email) || 0) + roundScore(pts)));
 
@@ -267,7 +282,7 @@ Deno.serve(async (req) => {
       for (const p of progresses) {
         const lesson = lessonMap.get(p.lesson_id);
         if (!p.watched || !courseEmails.has(p.student_email) || !lesson) continue;
-        await upsertScore({ studentEmail: p.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: 10, maxScore: 10, notes: 'Aula assistida por completo: +10 pontos.' });
+        queueScore({ studentEmail: p.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: 10, maxScore: 10, notes: 'Aula assistida por completo: +10 pontos.' });
         addCalc(p.student_email, 10);
       }
 
@@ -275,7 +290,7 @@ Deno.serve(async (req) => {
       for (const a of attendances) {
         const live = liveMap.get(a.session_id);
         if (!courseEmails.has(a.student_email) || !live) continue;
-        await upsertScore({ studentEmail: a.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || a.session_title || 'Presença em live', score: 1, maxScore: 1, notes: 'Presença confirmada em live: +1 ponto.' });
+        queueScore({ studentEmail: a.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || a.session_title || 'Presença em live', score: 1, maxScore: 1, notes: 'Presença confirmada em live: +1 ponto.' });
         addCalc(a.student_email, 1);
       }
 
@@ -289,7 +304,7 @@ Deno.serve(async (req) => {
         const feedback = bonus > 0
           ? `Entrega recebida e pontuada: 10 pontos + ${String(roundScore(bonus)).replace('.', ',')} de bônus de monitor/ranking.`
           : 'Entrega recebida e pontuada conforme a regra universal: +10 pontos.';
-        await upsertScore({ studentEmail: s.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
+        queueScore({ studentEmail: s.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
         addCalc(s.student_email, score);
         if (s.status !== 'graded' || roundScore(s.grade) !== roundScore(score) || s.feedback !== feedback) {
           await base44.asServiceRole.entities.TaskSubmission.update(s.id, { grade: roundScore(score), feedback, status: 'graded' });
@@ -297,79 +312,55 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Forum posts (fórum + debates — same course filter covers both spaces)
+      // Forum posts
       for (const post of coursePosts) {
         if (!courseEmails.has(post.author_email)) continue;
         const space = post.space === 'debates' ? 'Sala de Debates' : 'Fórum';
-        await upsertScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: `Comentário/Pergunta — ${space}`, score: 0.1, maxScore: 0.1, notes: `Publicação criada na ${space}: +0,1 ponto.` });
+        queueScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: `Comentário/Pergunta — ${space}`, score: 0.1, maxScore: 0.1, notes: `Publicação criada na ${space}: +0,1 ponto.` });
         addCalc(post.author_email, 0.1);
       }
 
-      // Forum replies to colleagues (fórum + debates)
+      // Forum replies
       for (const reply of forumReplies) {
         const parent = postById.get(reply.post_id);
         if (!parent || !coursePostIds.has(parent.id) || !courseEmails.has(reply.author_email) || parent.author_email === reply.author_email) continue;
         const space = reply.space === 'debates' ? 'Sala de Debates' : 'Fórum';
-        await upsertScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: `Resposta a colega — ${space}`, score: 0.5, maxScore: 0.5, notes: `Resposta em pergunta aberta por colega na ${space}: +0,5 ponto.` });
+        queueScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: `Resposta a colega — ${space}`, score: 0.5, maxScore: 0.5, notes: `Resposta em pergunta aberta por colega na ${space}: +0,5 ponto.` });
         addCalc(reply.author_email, 0.5);
       }
 
-      // ── Terapeuta da Semana: +10 pts per submitted evaluation ────────────
-      // ref_id = `therapist_pairing:{pairingId}:{role}` — unique per person per pairing
+      // Therapist pairings
       for (const pairing of therapistPairings) {
-        const pairingInCourse =
-          courseEmails.has(pairing.therapist_email) || courseEmails.has(pairing.patient_email);
+        const pairingInCourse = courseEmails.has(pairing.therapist_email) || courseEmails.has(pairing.patient_email);
         if (!pairingInCourse) continue;
 
         if (courseEmails.has(pairing.therapist_email) && pairing.therapist_submitted) {
           const refId = `therapist_pairing:${pairing.id}:therapist`;
           const dateStr = pairing.pairing_date || 'data não informada';
-          await upsertScore({
-            studentEmail: pairing.therapist_email,
-            category: 'task',
-            refId,
-            refTitle: `Relato Terapeuta da Semana (${dateStr})`,
-            score: 10,
-            maxScore: 10,
-            notes: 'Relato enviado como terapeuta na atividade Terapeuta da Semana: +10 pontos.',
-          });
+          queueScore({ studentEmail: pairing.therapist_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana (${dateStr})`, score: 10, maxScore: 10, notes: 'Relato enviado como terapeuta na atividade Terapeuta da Semana: +10 pontos.' });
           addCalc(pairing.therapist_email, 10);
         }
 
         if (courseEmails.has(pairing.patient_email) && pairing.patient_submitted) {
           const refId = `therapist_pairing:${pairing.id}:patient`;
           const dateStr = pairing.pairing_date || 'data não informada';
-          await upsertScore({
-            studentEmail: pairing.patient_email,
-            category: 'task',
-            refId,
-            refTitle: `Relato Terapeuta da Semana — Paciente (${dateStr})`,
-            score: 10,
-            maxScore: 10,
-            notes: 'Relato enviado como paciente na atividade Terapeuta da Semana: +10 pontos.',
-          });
+          queueScore({ studentEmail: pairing.patient_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana — Paciente (${dateStr})`, score: 10, maxScore: 10, notes: 'Relato enviado como paciente na atividade Terapeuta da Semana: +10 pontos.' });
           addCalc(pairing.patient_email, 10);
         }
       }
 
-      // ── Ofensivas Diárias: sum points_earned per DailyChallengeResponse ──
-      // ref_id = `ofensiva:{challengeId}:{studentEmail}` — unique per student per challenge
+      // Ofensivas Diárias
       const courseResponses = challengeResponses.filter((r) => courseEmails.has(r.student_email) && sameCourse(r, course));
       for (const r of courseResponses) {
         const pts = roundScore(r.points_earned || 0);
         if (pts <= 0) continue;
         const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
-        await upsertScore({
-          studentEmail: r.student_email,
-          category: 'forum', // reuse forum category — same engagement model
-          refId,
-          refTitle: `Ofensiva Diária (${r.date || 'data'})`,
-          score: pts,
-          maxScore: 1.0,
-          notes: `Ofensiva diária concluída — ${r.questions_answered || 0}/5 perguntas respondidas: +${pts.toFixed(3)} ponto(s).`,
-        });
+        queueScore({ studentEmail: r.student_email, category: 'forum', refId, refTitle: `Ofensiva Diária (${r.date || 'data'})`, score: pts, maxScore: 1.0, notes: `Ofensiva diária concluída — ${r.questions_answered || 0}/5 perguntas respondidas: +${pts.toFixed(3)} ponto(s).` });
         addCalc(r.student_email, pts);
       }
+
+      // ── Flush batched ScoreItem operations ──────────────────────────────
+      await flushScoreBatches();
 
       // ── Final ranking + persist ──────────────────────────────────────────
       const finalRanking = courseCodes
@@ -377,15 +368,10 @@ Deno.serve(async (req) => {
         .sort((a, b) => b.total !== a.total ? b.total - a.total : a.name.localeCompare(b.name, 'pt-BR'));
 
       for (const [idx, item] of finalRanking.entries()) {
-        // FIX: StudentProfile uses dashboard_course (not course). Match by email + dashboard_course.
-        // Also prefer the profile that has a code_id set (the "real" one) to avoid duplicates.
         const matchingProfiles = studentProfiles.filter(
-          (p) => p.student_email === item.code.student_email &&
-                 (p.dashboard_course === course || (!p.dashboard_course && course === 'tcc'))
+          (p) => p.student_email === item.code.student_email && (p.dashboard_course === course || (!p.dashboard_course && course === 'tcc'))
         );
-        // Pick the one with code_id if multiple exist (i.e. the "real" profile), else first match
         const existingProfile = matchingProfiles.find((p) => p.code_id) || matchingProfiles[0];
-        // Delete any extra duplicate profiles for this student+course
         for (const dup of matchingProfiles.filter((p) => existingProfile && p.id !== existingProfile.id)) {
           await base44.asServiceRole.entities.StudentProfile.delete(dup.id).catch(() => null);
         }
@@ -413,11 +399,15 @@ Deno.serve(async (req) => {
           }
         }
       }
+
+      // Delay between courses to avoid rate limiting
+      if (course !== COURSES[COURSES.length - 1]) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
 
     return Response.json({
       success: true,
-      // ── Canonical scoring rules — single source of truth ──────────────
       rules: {
         lesson_watched:               { pts: 10,    note: 'por aula assistida' },
         live_attendance:              { pts: 1,     note: 'por presença confirmada em live' },
