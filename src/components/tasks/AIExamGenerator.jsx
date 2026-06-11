@@ -61,9 +61,9 @@ export default function AIExamGenerator({ onBack, course }) {
   const [examDescription, setExamDescription] = useState('');
 
   const saveMutation = useMutation({
-    mutationFn: (data) => adminApi.create('Task', data),
+    mutationFn: (data) => adminApi.create('Exam', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
       toast.success('Prova publicada com sucesso!');
       onBack();
     },
@@ -181,11 +181,13 @@ ${moduleContent}`;
     saveMutation.mutate({
       title: examTitle,
       description: examDescription,
-      type: 'quiz',
       deadline: deadline || null,
       max_grade: Number(maxGrade),
       course: course || 'tcc',
       quiz_questions: generatedQuestions,
+      module_ref: selectedMod?.id || '',
+      generated_by_ai: true,
+      is_published: true,
     });
   };
 

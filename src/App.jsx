@@ -37,6 +37,8 @@ import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
 import Ofensivas from './pages/Ofensivas';
 import Apostila from './pages/Apostila';
+import Exams from './pages/Exams';
+import ExamQuizView from './pages/ExamQuizView';
 
 import MeuBestSeller from './pages/MeuBestSeller';
 import ClassChat from './pages/ClassChat';
@@ -75,6 +77,8 @@ function AppRoutesTree() {
         <Route path="live" element={<LiveSessions />} />
         <Route path="tasks" element={<Tasks mode="tasks" />} />
         <Route path="tests" element={<Tests />} />
+        <Route path="exams" element={<Exams />} />
+        <Route path="exams/quiz/:id" element={<ExamQuizView />} />
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
         <Route path="tasks/builder/:id" element={<TaskExamBuilder />} />
         <Route path="forum" element={<Forum />} />
@@ -177,7 +181,9 @@ const AuthenticatedApp = () => {
       <Route path="/lessons" element={<Navigate to={`${base}/lessons`} replace />} />
       <Route path="/live" element={<Navigate to={`${base}/live`} replace />} />
       <Route path="/tasks" element={<Navigate to={`${base}/tasks`} replace />} />
-      <Route path="/tests" element={<Navigate to={`${base}/tests`} replace />} />
+      <Route path="/tests" element={<Navigate to={`${base}/exams`} replace />} />
+      <Route path="/exams" element={<Navigate to={`${base}/exams`} replace />} />
+      <Route path="/exams" element={<Navigate to={`${base}/exams`} replace />} />
       <Route path="/forum" element={<Navigate to={`${base}/forum`} replace />} />
       <Route path="/debates" element={<Navigate to={`${base}/debates`} replace />} />
       <Route path="/chat" element={<Navigate to={`${base}/chat`} replace />} />
