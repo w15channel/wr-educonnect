@@ -191,7 +191,7 @@ export default function Exams() {
               <div key={exam.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200/50' : 'border-border hover:shadow-md'}`}>
                 <div
                   className="flex items-center gap-3 p-4 cursor-pointer select-none"
-                  onClick={() => !isTeacher && setExpandedId(isExpanded ? null : exam.id)}
+                  onClick={() => setExpandedId(isExpanded ? null : exam.id)}
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${isDone ? 'bg-green-500 border-green-400 text-white' : 'bg-secondary border-border text-foreground'}`}>
                     {isDone ? <CheckCircle size={18} /> : <GraduationCap size={16} />}
@@ -253,39 +253,39 @@ export default function Exams() {
                   )}
                 </div>
 
-                {isExpanded && !isTeacher && (
-                  <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 bg-secondary/10">
-                    {exam.description && <p className="text-sm text-muted-foreground leading-relaxed">{exam.description}</p>}
+                {isExpanded && (
+                <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 bg-secondary/10">
+                {exam.description && <p className="text-sm text-muted-foreground leading-relaxed">{exam.description}</p>}
 
-                    {isPastDeadline && !isDone ? (
-                      <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                        <AlertCircle size={15} /> Prazo encerrado para esta prova.
-                      </div>
-                    ) : isDone ? (
-                      isTeacher ? (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            className="gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                            onClick={() => setGradingSubmission(submission)}
-                          >
-                            <Award size={13} /> Corrigir
-                          </Button>
-                          <SubmittedView submission={submission} />
-                        </div>
-                      ) : (
-                        <SubmittedView submission={submission} />
-                      )
-                    ) : (
+                {isPastDeadline && !isDone ? (
+                  <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                    <AlertCircle size={15} /> Prazo encerrado para esta prova.
+                  </div>
+                ) : isDone ? (
+                  isTeacher ? (
+                    <div className="flex items-center gap-3">
                       <Button
                         size="sm"
-                        className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white"
-                        onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
+                        className="gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold"
+                        onClick={() => setGradingSubmission(submission)}
                       >
-                        <Play size={13} /> Iniciar Prova
+                        <Award size={13} /> Corrigir Prova
                       </Button>
-                    )}
-                  </div>
+                      <SubmittedView submission={submission} />
+                    </div>
+                  ) : (
+                    <SubmittedView submission={submission} />
+                  )
+                ) : (
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
+                    onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
+                  >
+                    <Play size={13} /> Iniciar Prova
+                  </Button>
+                )}
+                </div>
                 )}
               </div>
             );
