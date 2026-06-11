@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import {
   GraduationCap, CheckCircle, Star, Plus, Pencil, Trash2, Play,
-  ChevronDown, ChevronUp, Trophy, Eye, Award, Sparkles, AlertCircle, Edit
+  ChevronDown, ChevronUp, Trophy, Eye, Award, Sparkles, AlertCircle, Edit, HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +70,7 @@ export default function Exams() {
   const [showEditor, setShowEditor] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
   const [gradingSubmission, setGradingSubmission] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState('all');
 
   // Load all exams for this course
   const { data: exams = [], isLoading } = useQuery({
@@ -93,8 +94,25 @@ export default function Exams() {
     enabled: exams.length > 0,
   });
 
+  // Get unique students for filter
+  const uniqueStudents = useMemo(() => {
+    if (!isTeacher) return [];
+    const map = new Map();
+    submissions.forEach(s => {
+      if (!map.has(s.student_email)) {
+        map.set(s.student_email, { email: s.student_email, name: s.student_name });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [submissions, isTeacher]);
+
+  // Filter submissions by selected student
+  const filteredSubmissions = selectedStudent === 'all' 
+    ? submissions 
+    : submissions.filter(s => normalizeEmail(s.student_email) === normalizeEmail(selectedStudent));
+
   const submissionByExamId = {};
-  submissions.forEach(s => { if (!submissionByExamId[s.exam_id]) submissionByExamId[s.exam_id] = s; });
+  filteredSubmissions.forEach(s => { if (!submissionByExamId[s.exam_id]) submissionByExamId[s.exam_id] = s; });
 
   const deleteMutation = useMutation({
     mutationFn: id => adminApi.delete('Exam', id),
@@ -139,7 +157,17 @@ export default function Exams() {
         </div>
 
         {isTeacher && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <select
+              value={selectedStudent}
+              onChange={e => setSelectedStudent(e.target.value)}
+              className="h-9 text-sm shrink-0 border border-border rounded-lg bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="all">Todos os alunos</option>
+              {uniqueStudents.map(student => (
+                <option key={student.email} value={student.email}>{student.name}</option>
+              ))}
+            </select>
             <Button
               onClick={() => { setEditingExam(null); setShowEditor(true); }}
               className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white font-bold"
@@ -193,8 +221,14 @@ export default function Exams() {
                   className="flex items-center gap-3 p-4 cursor-pointer select-none"
                   onClick={() => setExpandedId(isExpanded ? null : exam.id)}
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${isDone ? 'bg-green-500 border-green-400 text-white' : 'bg-secondary border-border text-foreground'}`}>
-                    {isDone ? <CheckCircle size={18} /> : <GraduationCap size={16} />}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${
+                    isDone 
+                      ? submission?.status === 'graded' 
+                        ? 'bg-green-500 border-green-400 text-white' 
+                        : 'bg-amber-500 border-amber-400 text-white'
+                      : 'bg-secondary border-border text-foreground'
+                  }`}>
+                    {isDone ? (submission?.status === 'graded' ? <CheckCircle size={18} /> : <HelpCircle size={16} />) : <GraduationCap size={16} />}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -207,15 +241,15 @@ export default function Exams() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {isDone && <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200 py-0 px-1.5">✓ Realizada</Badge>}
+                      {isDone && submission?.status === 'graded' && (
+                        <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200 py-0 px-1.5">✓ Corrigida</Badge>
+                      )}
+                      {isDone && submission?.status === 'submitted' && (
+                        <Badge className="text-[9px] bg-amber-100 text-amber-700 border-amber-200 py-0 px-1.5">⏳ Pendente</Badge>
+                      )}
                       {isDone && submission?.grade != null && (
                         <span className="text-[10px] text-yellow-600 font-bold flex items-center gap-0.5">
                           <Star size={9} className="fill-yellow-500" /> {formatScore(submission.grade)}
-                        </span>
-                      )}
-                      {isDone && submission?.grade == null && (
-                        <span className="text-[10px] text-amber-600 font-bold flex items-center gap-0.5">
-                          ⏳ Aguardando correção
                         </span>
                       )}
                       {exam.quiz_questions?.length > 0 && (
