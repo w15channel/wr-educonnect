@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import {
   GraduationCap, CheckCircle, Star, Plus, Pencil, Trash2, Play,
-  ChevronDown, ChevronUp, Trophy, Eye, Award, Sparkles, AlertCircle
+  ChevronDown, ChevronUp, Trophy, Eye, Award, Sparkles, AlertCircle, Edit
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatScore } from '@/lib/scoreUtils';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
+import ExamEditor from '../components/exams/ExamEditor';
+import ExamGrader from '../components/exams/ExamGrader';
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -66,6 +68,9 @@ export default function Exams() {
 
   const [expandedId, setExpandedId] = useState(null);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editingExam, setEditingExam] = useState(null);
+  const [gradingSubmission, setGradingSubmission] = useState(null);
 
   // Load all exams for this course
   const { data: exams = [], isLoading } = useQuery({
@@ -109,6 +114,17 @@ export default function Exams() {
     return <AIExamGenerator onBack={() => setShowAIGenerator(false)} course={userCourse} />;
   }
 
+  if (showEditor || editingExam) {
+    return <ExamEditor exam={editingExam} onBack={() => { setShowEditor(false); setEditingExam(null); }} course={userCourse} />;
+  }
+
+  if (gradingSubmission && gradingSubmission.task_id) {
+    const exam = exams.find(e => e.id === gradingSubmission.task_id);
+    if (exam) {
+      return <ExamGrader submission={gradingSubmission} exam={exam} onBack={() => setGradingSubmission(null)} />;
+    }
+  }
+
   return (
     <div className="p-3 md:p-5 max-w-[900px] mx-auto animate-fade-in-up">
       {/* Header */}
@@ -127,12 +143,20 @@ export default function Exams() {
         </div>
 
         {isTeacher && (
-          <Button
-            onClick={() => setShowAIGenerator(true)}
-            className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
-          >
-            <Sparkles size={14} /> Gerar com IA
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => { setEditingExam(null); setShowEditor(true); }}
+              className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white font-bold"
+            >
+              <Pencil size={14} /> Criar Manual
+            </Button>
+            <Button
+              onClick={() => setShowAIGenerator(true)}
+              className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
+            >
+              <Sparkles size={14} /> Gerar com IA
+            </Button>
+          </div>
         )}
       </div>
 
@@ -193,6 +217,11 @@ export default function Exams() {
                           <Star size={9} className="fill-yellow-500" /> {formatScore(submission.grade)}
                         </span>
                       )}
+                      {isDone && submission?.grade == null && (
+                        <span className="text-[10px] text-amber-600 font-bold flex items-center gap-0.5">
+                          ⏳ Aguardando correção
+                        </span>
+                      )}
                       {exam.quiz_questions?.length > 0 && (
                         <span className="text-[10px] text-muted-foreground">{exam.quiz_questions.length} questões · {exam.max_grade} pts</span>
                       )}
@@ -208,10 +237,16 @@ export default function Exams() {
                   {!isTeacher && <div className="shrink-0 text-muted-foreground">{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>}
 
                   {isTeacher && (
-                    <div className="flex gap-1 shrink-0">
-                      <span className="text-xs text-muted-foreground px-2 py-1 border border-border rounded-lg">
+                    <div className="flex gap-1 shrink-0 items-center">
+                      <span className="text-xs text-muted-foreground px-2 py-1 border border-border rounded-lg shrink-0">
                         {submissions.filter(s => s.task_id === exam.id).length} entregas
                       </span>
+                      <button
+                        onClick={e => { e.stopPropagation(); setEditingExam(exam); setShowEditor(true); }}
+                        className="p-2 text-muted-foreground hover:text-primary rounded-lg"
+                      >
+                        <Edit size={13} />
+                      </button>
                       <button
                         onClick={e => { e.stopPropagation(); deleteMutation.mutate(exam.id); }}
                         className="p-2 text-muted-foreground hover:text-destructive rounded-lg"
@@ -231,7 +266,20 @@ export default function Exams() {
                         <AlertCircle size={15} /> Prazo encerrado para esta prova.
                       </div>
                     ) : isDone ? (
-                      <SubmittedView submission={submission} />
+                      isTeacher ? (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                            onClick={() => setGradingSubmission(submission)}
+                          >
+                            <Award size={13} /> Corrigir
+                          </Button>
+                          <SubmittedView submission={submission} />
+                        </div>
+                      ) : (
+                        <SubmittedView submission={submission} />
+                      )
                     ) : (
                       <Button
                         size="sm"

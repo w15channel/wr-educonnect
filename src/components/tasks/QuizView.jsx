@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ArrowLeft, PartyPopper } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
@@ -12,6 +13,45 @@ export default function QuizView({ task, user, onBack }) {
   const [score, setScore] = useState(null);
 
   const questions = task.quiz_questions || [];
+
+  // Confetti animation on submit
+  useEffect(() => {
+    if (submitted) {
+      const duration = 3000;
+      const end = Date.now() + duration;
+
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#5b5ef4', '#1db89e', '#f59e0b', '#10b981'],
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#5b5ef4', '#1db89e', '#f59e0b', '#10b981'],
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+
+      frame();
+
+      // Big burst in the center
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#5b5ef4', '#1db89e', '#f59e0b', '#10b981', '#ec4899'],
+      });
+    }
+  }, [submitted]);
 
   const handleSelect = (qIndex, optIndex) => {
     setAnswers(prev => ({ ...prev, [qIndex]: optIndex }));
@@ -80,20 +120,42 @@ export default function QuizView({ task, user, onBack }) {
       {task.description && <p className="text-sm text-muted-foreground mb-5">{task.description}</p>}
 
       {submitted ? (
-        <div className="bg-card p-8 rounded-2xl border border-border text-center">
-          <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-foreground">Prova Enviada!</h3>
+        <div className="bg-card p-8 rounded-2xl border border-border text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-emerald-500 to-amber-500"></div>
+          <div className="flex justify-center mb-4">
+            <div className="relative">
+              <CheckCircle size={64} className="text-green-500" />
+              <PartyPopper size={32} className="text-yellow-500 absolute -top-4 -right-4 animate-bounce" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-black text-foreground mb-2">🎉 Parabéns pela Entrega!</h3>
           {score !== null ? (
             <>
-              <p className="text-muted-foreground text-sm mt-2">Nota nas questões objetivas:</p>
-              <p className="text-3xl font-bold text-primary mt-1">{formatScore(score)} / {formatScore(task.max_grade || 10)}</p>
+              <p className="text-muted-foreground text-sm mt-2">Nota parcial nas questões objetivas:</p>
+              <p className="text-4xl font-black text-primary mt-2">{formatScore(score)} / {formatScore(task.max_grade || 10)}</p>
               {questions.some(q => q.answer_type === 'text') && (
-                <p className="text-xs text-muted-foreground mt-3">As questões dissertativas serão corrigidas pelo professor.</p>
+                <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                  <p className="text-sm text-amber-400 font-bold">📝 Questões dissertativas pendentes</p>
+                  <p className="text-xs text-amber-300/70 mt-1">O professor irá corrigir suas respostas escritas em breve.</p>
+                </div>
               )}
             </>
           ) : (
-            <p className="text-sm text-muted-foreground mt-2">Suas respostas foram enviadas e serão corrigidas pelo professor.</p>
+            <div className="mt-4 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Suas respostas foram enviadas com sucesso!
+              </p>
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                <p className="text-sm text-emerald-400 font-bold">⏳ Nota em breve</p>
+                <p className="text-xs text-emerald-300/70 mt-1">
+                  O professor irá corrigir sua prova e a nota será publicada em breve.
+                </p>
+              </div>
+            </div>
           )}
+          <p className="text-xs text-muted-foreground/60 mt-6">
+            Você já pode fechar esta janela ou voltar para a lista de provas.
+          </p>
         </div>
       ) : (
         <div className="space-y-5">

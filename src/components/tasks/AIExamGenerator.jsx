@@ -51,6 +51,8 @@ export default function AIExamGenerator({ onBack, course }) {
 
   const [step, setStep] = useState(0);
   const [selectedMod, setSelectedMod] = useState(null);
+  const [useCustomText, setUseCustomText] = useState(false);
+  const [customText, setCustomText] = useState('');
   const [format, setFormat] = useState('choice'); // 'choice' | 'text' | 'mixed'
   const [questionCount, setQuestionCount] = useState(10);
   const [deadline, setDeadline] = useState('');
@@ -79,12 +81,21 @@ export default function AIExamGenerator({ onBack, course }) {
     setStep(1);
   };
 
+  const handleUseCustomText = () => {
+    setUseCustomText(true);
+    setExamTitle('Prova — Conteúdo Personalizado');
+    setExamDescription('Prova gerada com base no texto fornecido. Leia com atenção cada questão antes de responder.');
+    setStep(1);
+  };
+
   const handleGenerate = async () => {
-    if (!selectedMod) return;
+    if (!selectedMod && !useCustomText) return;
     setGenerating(true);
     setStep(2);
 
-    const moduleContent = buildModuleContent(selectedMod);
+    const moduleContent = useCustomText && customText.trim()
+      ? customText.trim()
+      : buildModuleContent(selectedMod);
     const formatInstruction = format === 'choice'
       ? 'Todas as questões devem ser de MÚLTIPLA ESCOLHA com 4 alternativas (A, B, C, D). Apenas uma alternativa deve ser correta. Indique o índice da correta (0=A, 1=B, 2=C, 3=D).'
       : format === 'text'
@@ -92,6 +103,8 @@ export default function AIExamGenerator({ onBack, course }) {
       : 'Metade das questões deve ser de MÚLTIPLA ESCOLHA (4 alternativas, 1 correta), e a outra metade DISCURSIVA.';
 
     const safeCount = Math.min(questionCount, 20);
+    const sourceTitle = useCustomText ? 'Texto Personalizado' : selectedMod.title;
+    const sourceContent = moduleContent;
     const prompt = `Você é professor especialista em terapia comportamental. Crie EXATAMENTE ${safeCount} questões de prova com base no conteúdo abaixo.
 
 REGRAS OBRIGATÓRIAS:
@@ -101,8 +114,8 @@ REGRAS OBRIGATÓRIAS:
 4. Para discursiva: "options" = [] e "correct_index" = null.
 5. Retorne APENAS um JSON com a chave "questions" contendo um array de ${safeCount} objetos com os campos: question (string), answer_type ("choice" ou "text"), options (array), correct_index (number ou null).
 
-CONTEÚDO — ${selectedMod.title}:
-${moduleContent}`;
+CONTEÚDO — ${sourceTitle}:
+${sourceContent}`;
 
     const schema = {
       type: 'object',
@@ -204,7 +217,7 @@ ${moduleContent}`;
       max_grade: Number(maxGrade),
       course: course || 'tcc',
       quiz_questions: sanitizedQuestions,
-      module_ref: selectedMod?.id || '',
+      module_ref: useCustomText ? 'custom' : (selectedMod?.id || ''),
       generated_by_ai: true,
       is_published: true,
     });
@@ -261,8 +274,29 @@ ${moduleContent}`;
       {/* ── Step 0: Módulo ── */}
       {step === 0 && (
         <div className="space-y-3">
-          <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Selecione o módulo da prova</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Selecione a origem do conteúdo</p>
+          
+          <button
+            onClick={handleUseCustomText}
+            className="w-full text-left bg-card border-2 border-primary/30 rounded-2xl p-5 hover:border-primary/60 hover:shadow-lg transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-3">
+              <FileText size={18} className="text-white" />
+            </div>
+            <p className="font-black text-sm text-foreground leading-tight mb-1 group-hover:text-primary transition-colors">📄 Texto Personalizado</p>
+            <p className="text-xs text-muted-foreground">Cole qualquer texto para a IA gerar questões baseadas nele</p>
+          </button>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">ou escolha um módulo</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
             {ALL_MODULES.map(mod => (
               <button
                 key={mod.id}
@@ -304,7 +338,18 @@ ${moduleContent}`;
 
           {/* Format */}
           <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-            <h3 className="text-sm font-black text-foreground">Formato das Questões</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-black text-foreground">Formato das Questões</h3>
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={useCustomText}
+                  onChange={e => setUseCustomText(e.target.checked)}
+                  className="rounded border-border"
+                />
+                <span className="text-muted-foreground">Usar texto personalizado</span>
+              </label>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { value: 'choice', icon: <List size={18} />, label: 'Múltipla Escolha', desc: 'Todas com 4 alternativas' },
@@ -322,6 +367,24 @@ ${moduleContent}`;
                 </button>
               ))}
             </div>
+
+            {useCustomText && (
+              <div className="mt-4">
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1.5">
+                  📄 Cole o Texto Base para a IA
+                </label>
+                <textarea
+                  value={customText}
+                  onChange={e => setCustomText(e.target.value)}
+                  rows={8}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none font-mono"
+                  placeholder="Cole aqui o texto completo que será usado como base para gerar as questões. A IA analisará este conteúdo para criar perguntas relevantes..."
+                />
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  💡 Dica: Para melhores resultados, inclua de 500 a 5000 caracteres de conteúdo bem estruturado.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Numeric settings */}
@@ -348,21 +411,46 @@ ${moduleContent}`;
             </div>
           </div>
 
-          <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 flex items-start gap-3">
-            <Sparkles size={16} className="text-violet-400 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-xs font-black text-violet-300">Módulo selecionado: {selectedMod.title}</p>
-              <p className="text-[11px] text-violet-300/70 mt-0.5">
-                {selectedMod.lessons.length} aulas serão analisadas pela IA para gerar {questionCount} questões cobrindo todo o conteúdo do módulo.
-              </p>
+          {useCustomText ? (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-start gap-3">
+              <FileText size={16} className="text-amber-400 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs font-black text-amber-300">Texto Personalizado</p>
+                <p className="text-[11px] text-amber-300/70 mt-0.5">
+                  {customText.length} caracteres serão analisados pela IA para gerar {questionCount} questões.
+                </p>
+                {customText.length < 100 && (
+                  <p className="text-[10px] text-amber-400 mt-1">⚠️ Texto muito curto. Mínimo recomendado: 100 caracteres.</p>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 flex items-start gap-3">
+              <Sparkles size={16} className="text-violet-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs font-black text-violet-300">Módulo selecionado: {selectedMod.title}</p>
+                <p className="text-[11px] text-violet-300/70 mt-0.5">
+                  {selectedMod.lessons.length} aulas serão analisadas pela IA para gerar {questionCount} questões cobrindo todo o conteúdo do módulo.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setStep(0)} className="gap-2">
-              <ChevronLeft size={14} /> Trocar módulo
-            </Button>
-            <Button onClick={handleGenerate} className="flex-1 gap-2 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-black">
+            {useCustomText ? (
+              <Button variant="outline" onClick={() => { setUseCustomText(false); setCustomText(''); }} className="gap-2">
+                <ChevronLeft size={14} /> Usar módulo
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => setStep(0)} className="gap-2">
+                <ChevronLeft size={14} /> Trocar módulo
+              </Button>
+            )}
+            <Button
+              onClick={handleGenerate}
+              disabled={useCustomText && customText.length < 50}
+              className="flex-1 gap-2 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-black"
+            >
               <Sparkles size={15} /> Gerar Questões com IA
             </Button>
           </div>
@@ -380,7 +468,9 @@ ${moduleContent}`;
           </div>
           <div className="text-center">
             <p className="text-lg font-black text-foreground mb-1">Gerando questões com IA...</p>
-            <p className="text-sm text-muted-foreground">Analisando o conteúdo completo do {selectedMod?.title}</p>
+            <p className="text-sm text-muted-foreground">
+              {useCustomText ? 'Analisando texto personalizado' : `Analisando o conteúdo completo do ${selectedMod?.title}`}
+            </p>
             <p className="text-xs text-muted-foreground/60 mt-1">Isso pode levar até 30 segundos</p>
           </div>
           <Loader2 size={24} className="text-violet-400 animate-spin" />
