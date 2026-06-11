@@ -18,7 +18,7 @@ import AIExamGenerator from '../components/tasks/AIExamGenerator';
 function useScopedPrefix() {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
-  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return `/${parts[0]}/${parts[1]}`;
+  if (parts[0] === 'student' || parts[0] === 'adm') return `/${parts[0]}`;
   return '';
 }
 
