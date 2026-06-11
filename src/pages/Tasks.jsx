@@ -6,7 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import {
   ClipboardList, CheckCircle, Star, Plus, Pencil, Trash2, Play, Send,
   MessageSquare, GraduationCap, FileText, ChevronDown, ChevronUp,
-  Trophy, Eye, Award
+  Trophy, Eye, Award, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatScore } from '@/lib/scoreUtils';
 import SubmissionsList from '../components/tasks/SubmissionsList';
+import AIExamGenerator from '../components/tasks/AIExamGenerator';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 10, quiz_questions: [] };
@@ -113,6 +114,7 @@ export default function Tasks({ mode = 'tasks' }) {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', userCourse],
@@ -226,6 +228,7 @@ export default function Tasks({ mode = 'tasks' }) {
   };
 
   if (viewSubmissions) return <SubmissionsList task={viewSubmissions} onBack={() => setViewSubmissions(null)} />;
+  if (showAIGenerator && mode === 'tests') return <AIExamGenerator onBack={() => setShowAIGenerator(false)} course={userCourse} />;
 
   return (
     <div className="p-3 md:p-5 max-w-[900px] mx-auto animate-fade-in-up">
@@ -242,9 +245,19 @@ export default function Tasks({ mode = 'tasks' }) {
         </div>
 
         {isTeacher && (
+          <div className="flex gap-2 items-center">
+            {mode === 'tests' && (
+              <Button
+                variant="outline"
+                onClick={() => setShowAIGenerator(true)}
+                className="gap-2 h-9 text-sm shrink-0 border-violet-500/40 text-violet-400 hover:bg-violet-500/10 hover:text-violet-300"
+              >
+                <Sparkles size={14} /> Gerar com IA
+              </Button>
+            )}
           <Dialog open={showForm} onOpenChange={v => { setShowForm(v); if (!v) { setEditingTask(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
-              <Button className="gap-2 h-9 text-sm shrink-0"><Plus size={15} /> Nova Tarefa</Button>
+              <Button className="gap-2 h-9 text-sm shrink-0"><Plus size={15} /> {mode === 'tests' ? 'Nova Prova Manual' : 'Nova Tarefa'}</Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle></DialogHeader>
@@ -266,6 +279,7 @@ export default function Tasks({ mode = 'tasks' }) {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
 
