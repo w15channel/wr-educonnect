@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
-import { Trophy, ChevronLeft, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ const CATEGORY_CONFIG = {
   live_attendance: { label: 'Presença Live', icon: Video, color: 'bg-red-100 text-red-700' },
   task: { label: 'Tarefa', icon: FileText, color: 'bg-orange-100 text-orange-700' },
   quiz: { label: 'Prova', icon: Trophy, color: 'bg-blue-100 text-blue-700' },
+  exam: { label: 'Prova do Módulo', icon: GraduationCap, color: 'bg-indigo-100 text-indigo-700' },
   forum: { label: 'Fórum', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
   therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' }
 };
@@ -38,6 +39,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 100)
   });
   const { data: submissions = [] } = useQuery({ queryKey: ['submissions-student', email], queryFn: () => base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 200) });
+  const { data: examSubs = [] } = useQuery({ queryKey: ['exam-subs-student', email], queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email, course: activeCourse }, '-submitted_at', 200) });
+  const { data: exams = [] } = useQuery({ queryKey: ['exams-score-detail', activeCourse], queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 100) });
   const { data: attendances = [] } = useQuery({ queryKey: ['attendances', email], queryFn: () => base44.entities.LiveAttendance.filter({ student_email: email }, '-created_date', 100) });
   const { data: liveSessions = [] } = useQuery({
     queryKey: ['live-sessions-score-detail', activeCourse],
@@ -102,6 +105,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
   const lessonIds = new Set(lessons.map((l) => l.id));
   const taskIds = new Set(tasks.map((t) => t.id));
+  const examIds = new Set(exams.map((e) => e.id));
   const liveSessionIds = new Set(liveSessions.map((l) => l.id));
   const studentForumPosts = forumPosts.filter((p) => p.author_email === email);
   const forumPostIds = new Set(studentForumPosts.map((p) => p.id));
@@ -123,6 +127,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   s.category === 'lesson' && lessonIds.has(s.ref_id) ||
   s.category === 'live_attendance' && liveSessionIds.has(s.ref_id) ||
   (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
+  s.category === 'exam' && examIds.has(s.ref_id) ||
   s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id)) ||
   s.category === 'therapist' && myPairings.some((p) => p.id === s.ref_id))
   ).
@@ -146,6 +151,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   { key: 'lessons', label: 'Aulas', icon: BookOpen },
   { key: 'lives', label: 'Presenças', icon: Video },
   { key: 'tasks', label: 'Tarefas', icon: FileText },
+  { key: 'exams', label: 'Provas', icon: GraduationCap },
   { key: 'forum', label: 'Fórum', icon: MessageSquare },
   { key: 'therapist', label: 'Terapeutas', icon: Heart }];
 
@@ -163,6 +169,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       const sub = submissions.find((s) => s.task_id === task.id);
       return sub && !scoreItems.find((s) => (s.category === 'task' || s.category === 'quiz') && s.ref_id === task.id && s.verified);
     }),
+    exams: examSubs.some((sub) => sub.status === 'submitted' && !scoreItems.find((s) => s.category === 'exam' && s.ref_id === exams.find(e => e.id === sub.exam_id)?.id && s.verified)),
     forum: [...studentForumPosts, ...scorableForumReplies].some((item) =>
     !scoreItems.find((s) => s.category === 'forum' && s.ref_id === item.id && s.verified)
     ),
@@ -188,29 +195,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
           <h2 className="text-xl font-bold text-foreground truncate">{displayName}</h2>
           <p className="text-xs text-muted-foreground">{email}</p>
         </div>
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         
       </div>
 
@@ -353,6 +337,53 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                     }
                         </div>
                   )}
+                    </div>
+                }
+                </ScoreRow>);
+
+          })}
+          </>
+        }
+
+        {activeSection === 'exams' &&
+        <>
+            {exams.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma prova do módulo criada.</p>}
+            {exams.map((exam) => {
+            const sub = examSubs.find((s) => s.exam_id === exam.id);
+            const scoreItem = getScoreItem('exam', exam.id);
+            return (
+              <ScoreRow
+                key={exam.id}
+                category="exam"
+                icon={CATEGORY_CONFIG.exam.icon}
+                refId={exam.id}
+                refTitle={exam.title}
+                maxScore={exam.max_grade || 10}
+                item={scoreItem}
+                needsCorrection={sub && sub.status === 'submitted' && !scoreItem}
+                onSave={(data) => updateScoreMutation.mutate(data)}
+                saving={updateScoreMutation.isPending}
+                readOnly={!isTeacher}>
+                
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    <Badge variant="secondary" className="text-[10px] bg-indigo-100 text-indigo-700">Prova do Módulo</Badge>
+                    {exam.module_ref && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold">{exam.module_ref}</span>}
+                    {sub ?
+                  <>
+                        {sub.status === 'graded' ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">✅ Corrigida</span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">⏳ Aguardando correção</span>
+                        )}
+                        {sub.grade != null && <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota: {formatScore(sub.grade)}</span>}
+                      </> :
+
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold">❌ Não realizada</span>
+                  }
+                  </div>
+                  {sub?.feedback &&
+                <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Feedback: </span>{sub.feedback}
                     </div>
                 }
                 </ScoreRow>);
@@ -614,12 +645,10 @@ export default function ScoreControl() {
     const lessonCount = lessonProgresses.filter((p) => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched).length;
     const liveCount = attendances.filter((a) => a.student_email === email && liveSessionIds.has(a.session_id)).length;
     const taskCount = submissions.filter((s) => s.student_email === email && taskIds.has(s.task_id)).length;
-    // Only count forum posts from this course
     const postCount = forumPosts.filter((p) => p.author_email === email && forumPostIds.has(p.id)).length;
     const forumParentById = new Map(forumPosts.map((p) => [p.id, p]));
     const replyCount = forumReplies.filter((r) => {
       const parentPost = forumParentById.get(r.post_id);
-      // Only count replies to course-specific posts
       return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostIds.has(parentPost.id);
     }).length;
     const monitorCount = monitorHistory.filter((m) => m.student_email === email).length;
@@ -718,10 +747,10 @@ export default function ScoreControl() {
             <p className="text-muted-foreground text-sm mt-0.5">{isTeacher ? 'Verifique e pontue as atividades de cada aluno' : 'Classificação dos alunos por posição'}</p>
           </div>
         </div>
-        {isTeacher && pendingCount > 0 &&
+        {isTeacher && (courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0) > 0 &&
         <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-center gap-2">
             <Clock size={14} className="text-orange-500 shrink-0" />
-            <p className="text-xs text-orange-800 font-semibold">{pendingCount} atividade(s) aguardando verificação e pontuação</p>
+            <p className="text-xs text-orange-800 font-semibold">{courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0} atividade(s) aguardando verificação e pontuação</p>
           </div>
         }
       </div>
@@ -733,7 +762,7 @@ export default function ScoreControl() {
         </div>
         <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-auto overflow-x-auto pb-1">
           <ArrowUpDown size={13} className="text-muted-foreground" />
-          {sortOptions.map(([val, label]) =>
+          {[['alpha', 'A–Z'], ['points', 'Classificação'], ['participations', 'Participações'], ['pending', 'Pendências']].map(([val, label]) =>
 
           <button key={val} onClick={() => setSortBy(val)}
           className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${sortBy === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
