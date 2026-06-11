@@ -67,6 +67,9 @@ export default function AIExamGenerator({ onBack, course }) {
       toast.success('Prova publicada com sucesso!');
       onBack();
     },
+    onError: (err) => {
+      toast.error(`Erro ao publicar prova: ${err.message}`);
+    },
   });
 
   const handleSelectModule = (mod) => {
@@ -178,13 +181,29 @@ ${moduleContent}`;
 
   const handlePublish = () => {
     if (!generatedQuestions?.length) return;
+
+    // Sanitize questions: for text/discursive questions, omit correct_index entirely
+    // (Base44 schema rejects null for number fields, causing silent save failures)
+    const sanitizedQuestions = generatedQuestions.map(q => {
+      const clean = {
+        question: q.question,
+        answer_type: q.answer_type || 'text',
+        options: Array.isArray(q.options) ? q.options : [],
+      };
+      // Only include correct_index for choice questions with a valid index
+      if (clean.answer_type === 'choice' && q.correct_index != null) {
+        clean.correct_index = q.correct_index;
+      }
+      return clean;
+    });
+
     saveMutation.mutate({
       title: examTitle,
       description: examDescription,
-      deadline: deadline || null,
+      deadline: deadline || undefined,
       max_grade: Number(maxGrade),
       course: course || 'tcc',
-      quiz_questions: generatedQuestions,
+      quiz_questions: sanitizedQuestions,
       module_ref: selectedMod?.id || '',
       generated_by_ai: true,
       is_published: true,
