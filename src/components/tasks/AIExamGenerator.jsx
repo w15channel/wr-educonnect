@@ -32,9 +32,15 @@ import { MOD10 } from '@/lib/apostila/mod10';
 
 const ALL_MODULES = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
 
-// Build full module content string from all lessons
+// Build module content — limit to ~6000 chars per lesson to avoid LLM context overflow
 function buildModuleContent(mod) {
-  return mod.lessons.map(l => `=== ${l.title} ===\n\n${l.content}`).join('\n\n\n');
+  const MAX_CHARS_PER_LESSON = 4000;
+  return mod.lessons.map(l => {
+    const content = l.content.length > MAX_CHARS_PER_LESSON
+      ? l.content.slice(0, MAX_CHARS_PER_LESSON) + '\n[...conteúdo resumido]'
+      : l.content;
+    return `=== ${l.title} ===\n\n${content}`;
+  }).join('\n\n---\n\n');
 }
 
 // Generation steps for the stepper UI
@@ -82,35 +88,32 @@ export default function AIExamGenerator({ onBack, course }) {
       ? 'Todas as questões devem ser DISCURSIVAS. O aluno deve responder por escrito. Não inclua alternativas.'
       : 'Metade das questões deve ser de MÚLTIPLA ESCOLHA (4 alternativas, 1 correta), e a outra metade DISCURSIVA.';
 
-    const prompt = `Você é um professor especialista em terapia comportamental e desenvolvimento humano. Com base EXCLUSIVAMENTE no conteúdo da apostila abaixo, crie ${questionCount} questões de prova de alta qualidade.
+    const safeCount = Math.min(questionCount, 20);
+    const prompt = `Você é professor especialista em terapia comportamental. Crie EXATAMENTE ${safeCount} questões de prova com base no conteúdo abaixo.
 
-REGRAS:
-- Baseie-se SOMENTE no conteúdo fornecido. Não invente conceitos que não estejam no texto.
-- Cada questão deve testar compreensão profunda, não apenas memorização superficial.
-- As questões devem cobrir os diferentes tópicos e aulas do módulo de forma equilibrada.
-- Linguagem clara, objetiva e profissional.
-- ${formatInstruction}
-- Para múltipla escolha: as alternativas incorretas devem ser plausíveis (não óbvias).
-- Para questões discursivas: o campo "options" deve ser um array vazio [] e correct_index deve ser null.
+REGRAS OBRIGATÓRIAS:
+1. Baseie-se SOMENTE no conteúdo fornecido.
+2. ${formatInstruction}
+3. Para múltipla escolha: gere 4 alternativas por questão, com apenas 1 correta. O campo "correct_index" deve ser 0, 1, 2 ou 3.
+4. Para discursiva: "options" = [] e "correct_index" = null.
+5. Retorne APENAS um JSON com a chave "questions" contendo um array de ${safeCount} objetos com os campos: question (string), answer_type ("choice" ou "text"), options (array), correct_index (number ou null).
 
-CONTEÚDO DA APOSTILA — ${selectedMod.title}:
-
-${moduleContent}
-
-Gere exatamente ${questionCount} questões.`;
+CONTEÚDO — ${selectedMod.title}:
+${moduleContent}`;
 
     const schema = {
       type: 'object',
       properties: {
         questions: {
           type: 'array',
+          description: `Array com exatamente ${Math.min(questionCount, 20)} questões`,
           items: {
             type: 'object',
             properties: {
-              question: { type: 'string', description: 'Enunciado da questão' },
+              question: { type: 'string' },
               answer_type: { type: 'string', enum: ['choice', 'text'] },
-              options: { type: 'array', items: { type: 'string' }, description: 'Alternativas para múltipla escolha. Vazio para discursiva.' },
-              correct_index: { type: ['number', 'null'], description: 'Índice da alternativa correta (0-3). Null para discursiva.' },
+              options: { type: 'array', items: { type: 'string' } },
+              correct_index: { type: 'number', nullable: true },
             },
             required: ['question', 'answer_type', 'options'],
           },
@@ -125,10 +128,48 @@ Gere exatamente ${questionCount} questões.`;
         response_json_schema: schema,
         model: 'claude_sonnet_4_6',
       });
-      setGeneratedQuestions(result.questions || []);
+
+      // Defensive extraction: LLM wraps response in {response: {questions:[...]}}
+      let questions = null;
+      if (Array.isArray(result)) {
+        questions = result;
+      } else if (result && Array.isArray(result.questions)) {
+        questions = result.questions;
+      } else if (result?.response && Array.isArray(result.response.questions)) {
+        // This is the actual LLM return format: {response: {questions: [...]}}
+        questions = result.response.questions;
+      } else if (result?.response && typeof result.response === 'object') {
+        const firstArray = Object.values(result.response).find(v => Array.isArray(v));
+        if (firstArray) questions = firstArray;
+      } else if (result && typeof result === 'object') {
+        // Last resort: walk all values recursively one level deep
+        for (const val of Object.values(result)) {
+          if (Array.isArray(val)) { questions = val; break; }
+          if (val && typeof val === 'object') {
+            const nested = Object.values(val).find(v => Array.isArray(v));
+            if (nested) { questions = nested; break; }
+          }
+        }
+      }
+
+      if (!questions || questions.length === 0) {
+        toast.error(`Nenhuma questão foi gerada. Resposta recebida: ${JSON.stringify(result).slice(0, 200)}`);
+        setStep(1);
+        return;
+      }
+
+      // Normalize each question: ensure answer_type, options and correct_index exist
+      const normalized = questions.map(q => ({
+        question: q.question || q.text || q.enunciado || '',
+        answer_type: q.answer_type || (q.options && q.options.length > 0 ? 'choice' : 'text'),
+        options: Array.isArray(q.options) ? q.options : [],
+        correct_index: q.correct_index ?? q.correctIndex ?? null,
+      }));
+
+      setGeneratedQuestions(normalized);
       setStep(3);
     } catch (e) {
-      toast.error('Erro ao gerar questões. Tente novamente.');
+      toast.error(`Erro ao gerar questões: ${e.message}`);
       setStep(1);
     } finally {
       setGenerating(false);
@@ -207,7 +248,7 @@ Gere exatamente ${questionCount} questões.`;
                 onClick={() => handleSelectModule(mod)}
                 className="text-left bg-card border border-border rounded-2xl p-4 hover:border-primary/40 hover:shadow-md transition-all group"
               >
-                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${mod.color} flex items-center justify-center mb-3`}>
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${mod.color || 'from-slate-500 to-slate-700'} flex items-center justify-center mb-3`}>
                   <GraduationCap size={16} className="text-white" />
                 </div>
                 <p className="font-black text-sm text-foreground leading-tight mb-1 group-hover:text-primary transition-colors">{mod.title}</p>
