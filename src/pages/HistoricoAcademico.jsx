@@ -12,10 +12,9 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
-import { buildStudentAcademicData, HOURS_MAP } from '@/lib/buildStudentAcademicData';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, formatDocumentIssuer } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
-import { HOURS_MAP } from '@/lib/buildStudentAcademicData';
+import { HOURS_MAP, buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 import { Flame } from 'lucide-react';
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
