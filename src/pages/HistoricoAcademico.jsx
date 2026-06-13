@@ -222,7 +222,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         {/* Footer */}
         <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 20, paddingTop: 10, textAlign: 'center' }}>
           <p style={{ fontSize: 8, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
-            Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/001-40 · {emissionDate} às {emissionTime}
+            Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/0001-40 · {emissionDate} às {emissionTime}
           </p>
         </div>
         </div>
