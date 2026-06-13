@@ -1,6 +1,6 @@
 export const BRAND_SHORT_NAME = 'WR-EDU';
 export const BRAND_LEGAL_NAME = 'WR-EDU Instituto de Desenvolvimento Humano';
-export const BRAND_CNPJ = '62.213.790/001-40';
+export const BRAND_CNPJ = '62.213.790/0001-40';
 export const BRAND_DOCUMENT_LINE = `${BRAND_LEGAL_NAME} · CNPJ ${BRAND_CNPJ}`;
 
 export const WR_PRIMARY_LOGO =
