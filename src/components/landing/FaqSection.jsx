@@ -30,6 +30,10 @@ const FAQS = [
     a: 'Sim. Não existe fidelidade mínima obrigatória. Caso queira interromper, basta comunicar com até 5 dias de antecedência ao próximo ciclo de cobrança. O acesso ao material já pago é mantido até o final do período em curso.'
   },
   {
+    q: 'Como funciona a iniciativa social do curso?',
+    a: 'Alunos selecionados por grupos de encaminhamento e pelo projeto ABERTAMENTE podem participar com uma contribuição mensal pessoal, voluntária e sem valor mínimo, de acordo com suas possibilidades financeiras. Não há cobranças posteriores nem distinção financeira ou social entre participantes. Quem deseja apoiar a permanência do projeto também pode contribuir com doações mensais de valor livre.'
+  },
+  {
     q: 'O que é o Atendimento Terapêutico Social?',
     a: 'É uma iniciativa de responsabilidade social onde atendimentos clínicos são oferecidos por R$ 35,00 para pessoas em vulnerabilidade financeira. Faz parte da missão da instituição de tornar a saúde mental acessível, independentemente da renda do paciente.'
   },
