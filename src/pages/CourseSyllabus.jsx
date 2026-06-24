@@ -17,6 +17,7 @@ import {
   Zap
 } from 'lucide-react';
 import { BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
+import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
 
 const courses = [
   {
@@ -109,6 +110,7 @@ export default function CourseSyllabus() {
               <p className="text-white/65 text-lg leading-relaxed max-w-2xl mb-8">
                 Estes são valores de matrícula antecipada com bolsa de 30% aplicada em todos os cursos. As vagas são limitadas para preservar acompanhamento próximo, prática orientada e qualidade real de formação.
               </p>
+              <SocialInitiativeNotice className="mb-8 max-w-2xl" />
               <div className="flex flex-col sm:flex-row gap-3">
                 <a href="#ementas" className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-black px-7 py-4 rounded-2xl shadow-2xl shadow-[#5b5ef4]/30 hover:opacity-95 transition-all">
                   Ver conteúdos abordados <ChevronRight size={18} />
@@ -200,6 +202,7 @@ export default function CourseSyllabus() {
                         </div>
                       ))}
                     </div>
+                    <SocialInitiativeNotice compact className="mt-6" />
                     <a href={`https://wa.me/5541992531598?text=${encodeURIComponent(`Olá! Quero saber mais sobre o curso ${course.title} e a matrícula antecipada com bolsa de 30%.`)}`} target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-black text-sm text-white bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] hover:opacity-95 transition-all">
                       Reservar oportunidade <ChevronRight size={16} />
                     </a>

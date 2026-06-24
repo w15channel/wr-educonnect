@@ -9,6 +9,7 @@ import { base44 } from '@/api/base44Client';
 import { setSession } from '@/lib/customAuth';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import FaqSection from '@/components/landing/FaqSection';
+import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
 const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
@@ -699,6 +700,7 @@ export default function LandingPage({ onLogin }) {
             <SectionLabel>Formações</SectionLabel>
             <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Oferta de Matrícula<span className="block font-light italic" style={{ color: G }}>Antecipada</span></h2>
             <p className="text-white/35 mt-3 max-w-2xl mx-auto text-sm font-light">Entre na primeira turma com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto mantido até o final do curso.</p>
+            <SocialInitiativeNotice className="mx-auto mt-6 max-w-3xl text-left" />
 
             {/* Timer oferta */}
             <div className="mt-8 mx-auto max-w-2xl border p-6" style={{ borderColor: `${G}20`, background: BG3 }}>
@@ -785,6 +787,7 @@ export default function LandingPage({ onLogin }) {
                       <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
                       <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
                       <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
+                      <SocialInitiativeNotice compact className="mt-4 rounded-none" />
                     </div>
                     <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 border text-[11px] text-white/40 font-light uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:text-white/60 transition-all" style={{ borderColor: `${G}12` }}>
                       <BookOpen size={11} /> Ver ementa do curso

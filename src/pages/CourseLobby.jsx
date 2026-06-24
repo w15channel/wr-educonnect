@@ -6,6 +6,7 @@ import { setSession, getSession } from '@/lib/customAuth';
 import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X, GraduationCap, Users } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
+import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
 
 const G = '#d4b96a';
 const BG = '#07080f';
@@ -118,6 +119,7 @@ function OfferCard({ course: c, onReserve }) {
           <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
           <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
           <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
+          <SocialInitiativeNotice compact className="mt-4 rounded-none" />
         </div>
 
         <button
