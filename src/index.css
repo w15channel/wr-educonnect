@@ -292,3 +292,32 @@
     padding-block: clamp(1.1rem, 1.5vw, 2rem);
   }
 }
+/* Rich text editor used by the Apostila admin screen. */
+.apostila-rich-editor .ql-toolbar {
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.apostila-rich-editor .ql-container {
+  min-height: 580px;
+  border: 0;
+  background: transparent;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+  color: #1a2d5a;
+}
+
+.apostila-rich-editor .ql-editor {
+  min-height: 580px;
+  padding: 112px 48px 54px;
+  line-height: 1.85;
+  text-align: justify;
+}
+
+.apostila-content p,
+.apostila-content ol,
+.apostila-content ul,
+.apostila-content blockquote {
+  margin-bottom: 0.75rem;
+}

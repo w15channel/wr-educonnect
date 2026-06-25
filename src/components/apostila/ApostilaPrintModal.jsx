@@ -30,20 +30,31 @@ const FONT_SIZE   = 18;
 const LINE_HEIGHT = 1.85;
 
 // ─── Split content into 6 topics ─────────────────────────────────────────────
+const isHtmlContent = (value = '') => /<[^>]+>/.test(value);
+
+const plainTextToHtml = (value = '') => value
+  .split(/\n{2,}/)
+  .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+  .join('');
+
 function splitIntoTopics(content, targetChars = 1700) {
   if (!content || !content.trim()) {
-    return Array(6).fill('Conteúdo desta aula será disponibilizado em breve.');
+    return Array(6).fill('<p>Conteúdo desta aula será disponibilizado em breve.</p>');
   }
 
-  const paragraphs = content.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-  const totalChars = content.replace(/\s+/g, ' ').length;
+  const htmlContent = isHtmlContent(content) ? content : plainTextToHtml(content);
+  const paragraphs = htmlContent
+    .split(/(?=<\/?(?:p|h[1-6]|ul|ol|blockquote)\b)/i)
+    .map(p => p.trim())
+    .filter(Boolean);
+  const totalChars = htmlContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').length;
   const chunkSize  = Math.max(targetChars, Math.ceil(totalChars / 6));
 
   const topics = [];
   let current  = '';
 
   for (const para of paragraphs) {
-    const candidate = current ? current + '\n\n' + para : para;
+    const candidate = current ? current + para : para;
     if (current.length >= chunkSize && topics.length < 5) {
       topics.push(current.trim());
       current = para;
@@ -56,7 +67,7 @@ function splitIntoTopics(content, targetChars = 1700) {
   while (topics.length < 6) topics.push('');
   if (topics.length > 6) {
     const extra = topics.splice(6);
-    topics[5] = topics[5] + '\n\n' + extra.join('\n\n');
+    topics[5] = topics[5] + extra.join('');
   }
 
   return topics;
@@ -159,10 +170,9 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         letterSpacing: 0.3,
         hyphens: 'auto',
         wordBreak: 'break-word',
-        whiteSpace: 'pre-wrap',
-      }}>
-        {topicLeft || ''}
-      </div>
+      }}
+      dangerouslySetInnerHTML={{ __html: topicLeft || '' }}
+      />
 
       {/* Right column */}
       <div style={{
@@ -181,10 +191,9 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         letterSpacing: 0.3,
         hyphens: 'auto',
         wordBreak: 'break-word',
-        whiteSpace: 'pre-wrap',
-      }}>
-        {topicRight || ''}
-      </div>
+      }}
+      dangerouslySetInnerHTML={{ __html: topicRight || '' }}
+      />
 
       {/* Page number */}
       <div style={{

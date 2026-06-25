@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Palette } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { adminApi } from '@/lib/adminApi';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
@@ -21,6 +24,38 @@ import { MOD10 } from '@/lib/apostila/mod10';
 const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
 
 const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
+
+const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
+const EDITOR_PREVIEW_WIDTH = 900;
+const EDITOR_PREVIEW_HEIGHT = 636;
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ color: [] }, { background: [] }],
+    [{ align: [] }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['blockquote', 'link'],
+    ['clean'],
+  ],
+};
+
+const quillFormats = [
+  'header', 'font', 'size', 'bold', 'italic', 'underline', 'strike',
+  'color', 'background', 'align', 'list', 'bullet', 'blockquote', 'link',
+];
+
+const isHtmlContent = (value = '') => /<[^>]+>/.test(value);
+
+const plainTextToHtml = (value = '') => value
+  .split(/\n{2,}/)
+  .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
+  .join('');
+
+const getLessonHtml = (value = '') => (isHtmlContent(value) ? value : plainTextToHtml(value));
+
 
 export default function Apostila() {
   const { session } = useCustomAuth();
@@ -66,19 +101,22 @@ export default function Apostila() {
   const saveMutation = useMutation({
     mutationFn: async (newChapters) => {
       const payload = { title: 'Apostila TCC', chapters_data: JSON.stringify(newChapters) };
-      if (book) return base44.entities.Book.update(book.id, payload);
-      return base44.entities.Book.create(payload);
+      if (book) return adminApi.update('Book', book.id, payload);
+      return adminApi.create('Book', { ...payload, author_email: session?.email || 'admin@wr-educonnect.local' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apostila-book'] });
       toast.success('Apostila salva!');
       setEditingLesson(null);
     },
+    onError: (error) => {
+      toast.error(`Erro ao salvar apostila: ${error.message || 'tente novamente.'}`);
+    },
   });
 
   const handleEditLesson = (chapterId, lessonId, content) => {
     setEditingLesson(`${chapterId}__${lessonId}`);
-    setEditContent(content || '');
+    setEditContent(getLessonHtml(content || ''));
   };
 
   const handleSaveLesson = (chapterId, lessonId) => {
@@ -226,16 +264,42 @@ export default function Apostila() {
                           <div className="px-5 pb-5 bg-secondary/10">
                             {isEditing ? (
                               <div className="space-y-3">
-                                <textarea
-                                  value={editContent}
-                                  onChange={(e) => {
-                                    if (e.target.value.length <= 10800) setEditContent(e.target.value);
-                                  }}
-                                  rows={28}
-                                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-                                />
-                                <div className={`text-xs font-medium text-right ${editContent.length >= 10800 ? 'text-red-500' : editContent.length >= 10000 ? 'text-amber-400' : 'text-muted-foreground'}`}>
-                                  {editContent.length} / 10800 caracteres (6 tópicos × ~1800)
+                                <div className="rounded-2xl border border-emerald-500/20 bg-slate-950/70 p-3 shadow-inner">
+                                  <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-300">
+                                      <Palette size={12} /> Edição sobre o fundo da apostila
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1">
+                                      <Type size={12} /> Fonte, tamanho, cor e alinhamento disponíveis
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1">
+                                      <AlignLeft size={12} /> Use a visualização para ajustar quebras e posicionamento
+                                    </span>
+                                  </div>
+                                  <div
+                                    className="apostila-rich-editor overflow-hidden rounded-xl border border-white/10 bg-white shadow-2xl"
+                                    style={{
+                                      width: '100%',
+                                      maxWidth: EDITOR_PREVIEW_WIDTH,
+                                      minHeight: EDITOR_PREVIEW_HEIGHT,
+                                      margin: '0 auto',
+                                      backgroundImage: `url(${APOSTILA_BG})`,
+                                      backgroundSize: '100% 100%',
+                                      backgroundRepeat: 'no-repeat',
+                                    }}
+                                  >
+                                    <ReactQuill
+                                      theme="snow"
+                                      value={editContent}
+                                      onChange={setEditContent}
+                                      modules={quillModules}
+                                      formats={quillFormats}
+                                      placeholder="Digite e formate o conteúdo da aula aqui..."
+                                    />
+                                  </div>
+                                </div>
+                                <div className="text-xs font-medium text-right text-muted-foreground">
+                                  {editContent.replace(/<[^>]*>/g, '').length} caracteres de texto
                                 </div>
                                 <div className="flex gap-2">
                                   <Button size="sm" onClick={() => handleSaveLesson(chapter.id, lesson.id)} disabled={saveMutation.isPending}>
@@ -249,9 +313,10 @@ export default function Apostila() {
                             ) : (
                               <div className="space-y-3">
                                 <div className={`rounded-xl border ${bgLight} border-opacity-30 p-4`} style={{ borderColor: 'transparent', background: 'rgba(0,0,0,0.15)' }}>
-                                  <pre className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed font-sans">
-                                    {lesson.content || 'Conteúdo ainda não adicionado.'}
-                                  </pre>
+                                  <div
+                                    className="apostila-content text-sm text-foreground/90 leading-relaxed font-sans"
+                                    dangerouslySetInnerHTML={{ __html: lesson.content ? getLessonHtml(lesson.content) : 'Conteúdo ainda não adicionado.' }}
+                                  />
                                 </div>
                                 <div className="flex gap-2 flex-wrap items-center">
                                   <Button
