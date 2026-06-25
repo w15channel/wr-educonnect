@@ -17,7 +17,7 @@
     },
     "lesson_ref": {
       "type": "string",
-      "description": "Tema da semana ou aula de refer\u00eancia usada para gerar as perguntas"
+      "description": "Módulo e tema de referência usados para selecionar as perguntas"
     },
     "lesson_id": {
       "type": "string",
@@ -25,7 +25,7 @@
     },
     "questions": {
       "type": "array",
-      "description": "8 perguntas geradas para o dia com base no tema da semana e nas 5 abordagens dispon\u00edveis",
+      "description": "8 perguntas selecionadas para o dia com base no módulo e tema escolhidos",
       "items": {
         "type": "object",
         "properties": {
@@ -43,7 +43,7 @@
     },
     "created_by_admin": {
       "type": "string",
-      "description": "Email do admin que gerou"
+      "description": "Origem da geração ou email do admin"
     }
   },
   "required": [
