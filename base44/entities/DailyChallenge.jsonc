@@ -17,7 +17,7 @@
     },
     "lesson_ref": {
       "type": "string",
-      "description": "T\u00edtulo da aula de refer\u00eancia usada para gerar as perguntas"
+      "description": "Tema da semana ou aula de refer\u00eancia usada para gerar as perguntas"
     },
     "lesson_id": {
       "type": "string",
@@ -25,7 +25,7 @@
     },
     "questions": {
       "type": "array",
-      "description": "5 perguntas geradas para o dia",
+      "description": "8 perguntas geradas para o dia com base no tema da semana e nas 5 abordagens dispon\u00edveis",
       "items": {
         "type": "object",
         "properties": {

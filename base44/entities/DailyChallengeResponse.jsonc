@@ -43,7 +43,7 @@
     "questions_answered": {
       "type": "number",
       "default": 0,
-      "description": "Quantas perguntas respondidas (m\u00e1x 5)"
+      "description": "Quantas perguntas respondidas (m\u00e1x 8)"
     },
     "points_earned": {
       "type": "number",

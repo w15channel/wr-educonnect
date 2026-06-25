@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
-  Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send, Trophy
+  Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,6 +35,14 @@ const STREAK_BONUSES = [
   { days: 5,  bonus: 5,  label: '5 dias',  emoji: '🔥' },
   { days: 10, bonus: 15, label: '10 dias', emoji: '💎' },
   { days: 20, bonus: 30, label: '20 dias', emoji: '👑' },
+];
+
+const WEEKLY_THEMES = [
+  { id: 'introducao-ofensivas', title: 'Introdução às Ofensivas', approaches: ['Conceito central', 'Uso prático', 'Ritmo de estudo', 'Engajamento inicial', 'Reflexão profissional'] },
+  { id: 'vinculo-terapeutico', title: 'Vínculo Terapêutico', approaches: ['Conceito central', 'Aplicação em sessão', 'Sinais do paciente', 'Intervenção prática', 'Ética e limites'] },
+  { id: 'formulacao-de-caso', title: 'Formulação de Caso', approaches: ['Conceito central', 'Hipóteses clínicas', 'Padrões do caso', 'Plano de intervenção', 'Revisão clínica'] },
+  { id: 'escuta-clinica', title: 'Escuta Clínica', approaches: ['Conceito central', 'Escuta verbal', 'Leitura emocional', 'Perguntas terapêuticas', 'Postura profissional'] },
+  { id: 'intervencoes-comportamentais', title: 'Intervenções Comportamentais', approaches: ['Conceito central', 'Planejamento de tarefa', 'Monitoramento', 'Manejo de resistência', 'Generalização'] },
 ];
 
 // ─── Fireworks ─────────────────────────────────────────────────────────────────
@@ -259,6 +267,7 @@ export default function Ofensivas() {
   const [justCompleted, setJustCompleted] = useState(false);
   const [bonusEarned, setBonusEarned] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [selectedThemeId, setSelectedThemeId] = useState(WEEKLY_THEMES[0].id);
 
   // ── Fetch ────────────────────────────────────────────────────────────────
   const { data: challenges = [], isLoading } = useQuery({
@@ -374,7 +383,7 @@ export default function Ofensivas() {
   const handleGenerate = async (force = false) => {
     setGenerating(true);
     try {
-      await base44.functions.invoke('createDailyChallenge', { course: userCourse, force });
+      await base44.functions.invoke('createDailyChallenge', { course: userCourse, force, theme_id: selectedThemeId });
       await queryClient.invalidateQueries({ queryKey: ['daily-challenge'] });
       toast.success('🔥 Nova ofensiva gerada com IA!');
     } catch (err) {
@@ -419,12 +428,29 @@ export default function Ofensivas() {
 
       {/* No challenge */}
       {!challenge && (
-        <div className="text-center py-20 text-muted-foreground bg-card border border-border rounded-2xl">
+        <div className="text-center py-12 px-4 text-muted-foreground bg-card border border-border rounded-2xl">
           <Flame size={48} className="mx-auto mb-4 opacity-20" />
           <p className="text-lg font-bold">Nenhuma ofensiva para hoje</p>
-          <p className="text-sm mt-1 text-muted-foreground/70">
-            {isTeacher ? 'Clique em "Gerar" para criar a ofensiva com IA.' : 'A ofensiva será gerada automaticamente. Volte mais tarde!'}
-          </p>
+          {isTeacher ? (
+            <div className="mt-4 space-y-4">
+              <p className="text-sm text-muted-foreground/70">Escolha o tema da semana e clique em "Gerar". As 8 perguntas serão criadas com base nas 5 abordagens do tema.</p>
+              <div className="grid gap-2 text-left">
+                {WEEKLY_THEMES.map(theme => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setSelectedThemeId(theme.id)}
+                    className={`rounded-xl border p-3 transition-colors ${selectedThemeId === theme.id ? 'border-orange-400 bg-orange-500/10' : 'border-border bg-secondary/30 hover:bg-secondary/60'}`}
+                  >
+                    <span className="block text-sm font-bold text-foreground">{theme.title}</span>
+                    <span className="block text-[11px] text-muted-foreground mt-1">{theme.approaches.join(' · ')}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm mt-1 text-muted-foreground/70">A ofensiva será gerada automaticamente. Volte mais tarde!</p>
+          )}
         </div>
       )}
 
@@ -569,6 +595,24 @@ export default function Ofensivas() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <h3 className="font-bold text-sm mb-2">Tema da próxima geração</h3>
+            <p className="text-xs text-muted-foreground mb-3">Ao regenerar, a IA usará o tema selecionado e distribuirá as perguntas nas 5 abordagens.</p>
+            <div className="grid gap-2">
+              {WEEKLY_THEMES.map(theme => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => setSelectedThemeId(theme.id)}
+                  className={`rounded-xl border p-2.5 text-left transition-colors ${selectedThemeId === theme.id ? 'border-orange-400 bg-orange-500/10' : 'border-border bg-secondary/30 hover:bg-secondary/60'}`}
+                >
+                  <span className="block text-xs font-bold text-foreground">{theme.title}</span>
+                  <span className="block text-[10px] text-muted-foreground mt-1">{theme.approaches.join(' · ')}</span>
+                </button>
+              ))}
             </div>
           </div>
 
