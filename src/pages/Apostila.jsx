@@ -307,7 +307,7 @@ export default function Apostila() {
         <div className="mt-5 pt-5 border-t border-emerald-500/15">
           <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Fundamentação teórica</p>
           <div className="flex flex-wrap gap-2">
-            {['Winnicott', 'Kurt Lewin', 'Heinz Kohut', 'George Engel', 'Viktor Frankl'].map((t) => (
+            {['Donald Winnicott ', 'Kurt Lewin', 'Heinz Kohut', 'George Engel', 'Viktor Frankl'].map((t) => (
               <span key={t} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-medium">
                 {t}
               </span>
