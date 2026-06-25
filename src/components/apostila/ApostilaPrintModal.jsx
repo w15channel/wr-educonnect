@@ -28,6 +28,7 @@ const COL_RIGHT_X  = COL_LEFT_X + COL_W + CENTER_GAP;
 
 const FONT_SIZE   = 18;
 const LINE_HEIGHT = 1.85;
+const TOPIC_TARGET_CHARS = 2500;
 
 const POSITIONS_KEY = 'wr_apostila_print_text_position_v1';
 const DEFAULT_TEXT_POSITION = { x: 0, y: 0 };
@@ -106,9 +107,48 @@ const plainTextToHtml = (value = '') => value
   .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
   .join('');
 
-function splitIntoTopics(content, targetChars = 1700) {
+const getVisibleText = (value = '') => value
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/&nbsp;/g, ' ')
+  .replace(/&amp;/g, '&')
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const visibleCharCount = (value = '') => getVisibleText(value).length;
+
+function buildExpansionParagraph(topic, index, minChars) {
+  const plain = getVisibleText(topic);
+  const topicTitle = plain.match(/^(?:\d+[.)-]?\s*)?([^.!?]{18,120})/)?.[1]?.trim() || `tópico ${index + 1}`;
+  const supportSentences = [
+    'Na prática clínica, este tópico deve ser lido como um roteiro de observação e não apenas como explicação teórica.',
+    `Ao estudar ${topicTitle.toLowerCase()}, observe quais comportamentos aparecem, quais consequências os mantêm e quais alternativas podem ser treinadas com segurança.`,
+    'O aluno pode transformar o conteúdo em perguntas para sessão: o que antecedeu a resposta, que emoção foi evitada, que ganho imediato surgiu e qual custo apareceu depois.',
+    'Essa leitura ajuda a conectar conceito, escuta e intervenção, mantendo a postura ética, gradual e respeitosa com a história do paciente.',
+    'Quando houver dúvida, retorne ao caso concreto, descreva fatos observáveis, separe interpretação de evidência e formule uma hipótese provisória para ser testada nas próximas sessões.',
+    'O objetivo é que cada página impressa funcione como material completo de consulta, com densidade suficiente para revisão, debate em aula e aplicação supervisionada.',
+  ];
+
+  let paragraph = `<p><strong>Ampliação para estudo e aplicação.</strong> ${supportSentences.join(' ')}</p>`;
+
+  while (visibleCharCount(topic + paragraph) < minChars) {
+    paragraph += '<p>Retome este ponto com atenção ao vínculo terapêutico: nomeie o padrão sem rotular a pessoa, valide a função que ele teve na história do paciente e construa pequenos passos de mudança. A meta não é forçar insight imediato, mas criar repertório para que o paciente reconheça escolhas possíveis, tolere desconfortos graduais e experimente respostas mais saudáveis no cotidiano.</p>';
+  }
+
+  return paragraph;
+}
+
+function normalizeTopicLength(topic, index, targetChars = TOPIC_TARGET_CHARS) {
+  const normalizedTopic = topic?.trim() || '<p>Conteúdo desta aula será disponibilizado em breve.</p>';
+
+  if (visibleCharCount(normalizedTopic) >= targetChars) return normalizedTopic;
+  return `${normalizedTopic}${buildExpansionParagraph(normalizedTopic, index, targetChars)}`;
+}
+
+function splitIntoTopics(content, targetChars = TOPIC_TARGET_CHARS) {
   if (!content || !content.trim()) {
-    return Array(6).fill('<p>Conteúdo desta aula será disponibilizado em breve.</p>');
+    return Array.from({ length: 6 }, (_, index) => normalizeTopicLength('', index, targetChars));
   }
 
   const htmlContent = isHtmlContent(content) ? content : plainTextToHtml(content);
@@ -116,7 +156,7 @@ function splitIntoTopics(content, targetChars = 1700) {
     .split(/(?=<\/?(?:p|h[1-6]|ul|ol|blockquote)\b)/i)
     .map(p => p.trim())
     .filter(Boolean);
-  const totalChars = htmlContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').length;
+  const totalChars = visibleCharCount(htmlContent);
   const chunkSize  = Math.max(targetChars, Math.ceil(totalChars / 6));
 
   const topics = [];
@@ -139,7 +179,7 @@ function splitIntoTopics(content, targetChars = 1700) {
     topics[5] = topics[5] + extra.join('');
   }
 
-  return topics;
+  return topics.map((topic, index) => normalizeTopicLength(topic, index, targetChars));
 }
 
 // ─── Page component ───────────────────────────────────────────────────────────
