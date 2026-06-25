@@ -138,6 +138,14 @@ function ymd(date) {
   return date.toISOString().slice(0, 10);
 }
 
+function normalizePayload(raw) {
+  return raw?.data && typeof raw.data === 'object' ? raw.data : raw;
+}
+
+function makeLessonRef(moduleTitle, lessonTitle) {
+  return `${moduleTitle} - ${lessonTitle}`;
+}
+
 function addDays(dateStr, offset) {
   const date = new Date(`${dateStr}T00:00:00.000Z`);
   date.setUTCDate(date.getUTCDate() + offset);
@@ -173,7 +181,8 @@ function buildQuestions(topic, dayOffset = 0) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const payload = await req.json().catch(() => ({}));
+    const rawPayload = await req.json().catch(() => ({}));
+    const payload = normalizePayload(rawPayload);
     
     // Check if this is a scheduled automation call
     const isScheduledAutomation = payload?.automation?.type === 'scheduled';
@@ -188,7 +197,6 @@ Deno.serve(async (req) => {
           lesson_ref: lesson_ref || null,
           lesson_id: lesson_id || null,
           questions: questions.slice(0, 8),
-          created_by_admin: 'manual',
         });
         return Response.json({ success: true, id: record.id });
       }
@@ -226,10 +234,9 @@ Deno.serve(async (req) => {
       const record = await base44.asServiceRole.entities.DailyChallenge.create({
         date: today,
         course,
-        lesson_ref: `${selected.module.title} • ${lessonTitle}`,
+        lesson_ref: makeLessonRef(selected.module.title, lessonTitle),
         lesson_id: lessonId,
         questions: formattedQuestions,
-        created_by_admin: 'automation-preset',
       });
       created.push({ course, id: record.id });
     }
@@ -251,7 +258,7 @@ async function generateChallengeForCourse(base44, course, force = false, moduleI
   const safeDuration = clampDuration(durationDays);
   const selectedModule = findModule(moduleId);
   const [selectedLessonId, selectedLessonTitle] = findLesson(selectedModule, lessonId);
-  const lessonRef = `${selectedModule.title} • ${selectedLessonTitle}`;
+  const lessonRef = makeLessonRef(selectedModule.title, selectedLessonTitle);
   const results = [];
 
   for (let offset = 0; offset < safeDuration; offset += 1) {
@@ -263,7 +270,6 @@ async function generateChallengeForCourse(base44, course, force = false, moduleI
       lesson_ref: lessonRef,
       lesson_id: selectedLessonId,
       questions: buildQuestions(selectedLessonTitle, offset),
-      created_by_admin: 'manual-preset',
     };
 
     if (existing?.length && force) {
