@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, SkipForward, Volume2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2 } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -86,6 +86,8 @@ export default function Apostila() {
   const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, rate: 1, isPlaying: false });
   const utteranceRef = useRef(null);
   const readerRef = useRef(reader);
+  const readerSessionRef = useRef(0);
+  const intentionalStopRef = useRef(false);
 
   useEffect(() => {
     readerRef.current = reader;
@@ -138,15 +140,22 @@ export default function Apostila() {
     return Object.fromEntries(entries);
   }, [chapters]);
 
-  const stopReader = () => {
+  const stopReader = (lessonKey = readerRef.current.lessonKey) => {
+    intentionalStopRef.current = true;
+    readerSessionRef.current += 1;
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
     utteranceRef.current = null;
-    setReader((current) => ({ ...current, isPlaying: false }));
+    setReader((current) => ({
+      ...current,
+      lessonKey: lessonKey || current.lessonKey,
+      paragraphIndex: 0,
+      isPlaying: false,
+    }));
   };
 
-  const speakParagraph = (lessonKey, paragraphIndex, rate = readerRef.current.rate) => {
+  const speakParagraph = (lessonKey, paragraphIndex, rate = readerRef.current.rate, options = {}) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       toast.error('Leitor de texto não disponível neste dispositivo.');
       return;
@@ -155,27 +164,40 @@ export default function Apostila() {
     const paragraphs = paragraphsByLesson[lessonKey] || [];
     const text = paragraphs[paragraphIndex];
     if (!text) {
+      intentionalStopRef.current = true;
       window.speechSynthesis.cancel();
       setReader((current) => ({ ...current, lessonKey, paragraphIndex: 0, isPlaying: false }));
       return;
     }
 
-    window.speechSynthesis.cancel();
+    const sessionId = options.sessionId ?? readerSessionRef.current + 1;
+    readerSessionRef.current = sessionId;
+    if (!options.skipCancel) {
+      intentionalStopRef.current = true;
+      window.speechSynthesis.cancel();
+    }
+    intentionalStopRef.current = false;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'pt-BR';
     utterance.rate = rate;
     utterance.onend = () => {
       const current = readerRef.current;
-      if (current.lessonKey !== lessonKey || !current.isPlaying) return;
+      if (readerSessionRef.current !== sessionId || current.lessonKey !== lessonKey || !current.isPlaying) return;
       const nextIndex = paragraphIndex + 1;
       if (nextIndex < paragraphs.length) {
         setReader((state) => ({ ...state, lessonKey, paragraphIndex: nextIndex, isPlaying: true }));
-        speakParagraph(lessonKey, nextIndex, current.rate);
+        window.setTimeout(() => {
+          const latest = readerRef.current;
+          if (readerSessionRef.current === sessionId && latest.lessonKey === lessonKey && latest.isPlaying) {
+            speakParagraph(lessonKey, nextIndex, latest.rate, { skipCancel: true, sessionId });
+          }
+        }, 80);
       } else {
         setReader((state) => ({ ...state, lessonKey, paragraphIndex: 0, isPlaying: false }));
       }
     };
     utterance.onerror = () => {
+      if (intentionalStopRef.current || readerSessionRef.current !== sessionId) return;
       setReader((state) => ({ ...state, isPlaying: false }));
       toast.error('Não foi possível continuar a leitura em voz alta.');
     };
@@ -452,6 +474,15 @@ export default function Apostila() {
                                       >
                                         {isReaderActive && reader.isPlaying ? <Pause size={13} /> : <Play size={13} />}
                                         {isReaderActive && reader.isPlaying ? 'Pausar' : 'Play'}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => stopReader(key)}
+                                        disabled={!lessonParagraphs.length || !isReaderActive}
+                                        className="gap-1.5"
+                                      >
+                                        <Square size={13} /> Stop
                                       </Button>
                                       <Button
                                         size="sm"
