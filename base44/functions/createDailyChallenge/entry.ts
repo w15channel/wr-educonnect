@@ -4,11 +4,11 @@ const COURSES = ['tcc', 'psicanalise', 'sexologia'];
 
 const WEEKLY_THEMES = [
   {
-    id: 'introducao-ofensivas',
-    title: 'Introdução às Ofensivas',
+    id: 'introducao-terapia-comportamental',
+    title: 'Introdução à Terapia Comportamental',
     lesson_id: 'mod1-a1',
-    lesson_ref: 'Aula 1 — Boas-vindas às Ofensivas: Método, Engajamento e Ritmo de Estudo',
-    approaches: ['conceito central', 'uso prático da ferramenta', 'ritmo de estudo', 'engajamento inicial', 'reflexão profissional'],
+    lesson_ref: 'Aula 1 — Introdução à Terapia Comportamental: o Olhar que Transforma Vidas',
+    approaches: ['conceito central', 'função do comportamento', 'ambiente e aprendizagem', 'olhar clínico', 'pertencimento à formação'],
   },
   {
     id: 'vinculo-terapeutico',

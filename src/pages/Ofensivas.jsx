@@ -38,7 +38,7 @@ const STREAK_BONUSES = [
 ];
 
 const WEEKLY_THEMES = [
-  { id: 'introducao-ofensivas', title: 'Introdução às Ofensivas', approaches: ['Conceito central', 'Uso prático', 'Ritmo de estudo', 'Engajamento inicial', 'Reflexão profissional'] },
+  { id: 'introducao-terapia-comportamental', title: 'Introdução à Terapia Comportamental', approaches: ['Conceito central', 'Função do comportamento', 'Ambiente e aprendizagem', 'Olhar clínico', 'Pertencimento à formação'] },
   { id: 'vinculo-terapeutico', title: 'Vínculo Terapêutico', approaches: ['Conceito central', 'Aplicação em sessão', 'Sinais do paciente', 'Intervenção prática', 'Ética e limites'] },
   { id: 'formulacao-de-caso', title: 'Formulação de Caso', approaches: ['Conceito central', 'Hipóteses clínicas', 'Padrões do caso', 'Plano de intervenção', 'Revisão clínica'] },
   { id: 'escuta-clinica', title: 'Escuta Clínica', approaches: ['Conceito central', 'Escuta verbal', 'Leitura emocional', 'Perguntas terapêuticas', 'Postura profissional'] },
