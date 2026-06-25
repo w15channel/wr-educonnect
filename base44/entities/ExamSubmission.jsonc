@@ -75,7 +75,7 @@
     "student_email"
   ],
   "rls": {
-    "create": true,
+    "create": null,
     "read": {
       "$or": [
         {
