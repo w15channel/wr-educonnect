@@ -48,10 +48,10 @@
     "read": {
       "$or": [
         {
-          "data.monitor_email": "{{user.email}}"
+          "data.student_email": "{{user.email}}"
         },
         {
-          "data.student_email": "{{user.email}}"
+          "data.monitor_email": "{{user.email}}"
         },
         {
           "user_condition": {
