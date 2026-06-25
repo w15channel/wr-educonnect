@@ -76,7 +76,7 @@
   ],
   "rls": {
     "create": null,
-    "read": null,
+    "read": true,
     "update": null,
     "delete": null
   }
