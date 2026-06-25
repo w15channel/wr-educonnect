@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, SkipForward, Volume2 } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -53,6 +53,24 @@ const plainTextToHtml = (value = '') => value
 const getLessonHtml = (value = '') => (isHtmlContent(value) ? value : plainTextToHtml(value));
 
 
+const extractLessonParagraphs = (html = '') => {
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
+    return html.replace(/<[^>]*>/g, ' ').split(/\n{2,}/).map((text) => text.trim()).filter(Boolean);
+  }
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const blocks = Array.from(doc.body.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'));
+  const paragraphs = (blocks.length ? blocks : Array.from(doc.body.childNodes))
+    .map((node) => node.textContent?.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+
+  const fallback = doc.body.textContent?.replace(/\s+/g, ' ').trim();
+  return paragraphs.length ? paragraphs : (fallback ? [fallback] : []);
+};
+
+const READER_RATES = [1, 1.5, 2];
+
+
 export default function Apostila() {
   const { session } = useCustomAuth();
   const isAdmin = session?.role === 'admin';
@@ -65,6 +83,19 @@ export default function Apostila() {
   const [printLesson, setPrintLesson] = useState(null);
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState('');
+  const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, rate: 1, isPlaying: false });
+  const utteranceRef = useRef(null);
+  const readerRef = useRef(reader);
+
+  useEffect(() => {
+    readerRef.current = reader;
+  }, [reader]);
+
+  useEffect(() => () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
 
   // Persisted read completions: Set of "chapterId__lessonId"
   const [readLessons, setReadLessons] = useState(() => {
@@ -93,6 +124,103 @@ export default function Apostila() {
   // Always use DEFAULT_CHAPTERS from code (source of truth); DB is only used to persist admin edits
   const savedChapters = book?.chapters_data ? (() => { try { return JSON.parse(book.chapters_data); } catch { return null; } })() : null;
   const chapters = savedChapters && savedChapters.length >= DEFAULT_CHAPTERS.length ? savedChapters : DEFAULT_CHAPTERS;
+
+  const paragraphsByLesson = useMemo(() => {
+    const entries = [];
+    chapters.forEach((chapter) => {
+      chapter.lessons.forEach((lesson) => {
+        entries.push([
+          `${chapter.id}__${lesson.id}`,
+          extractLessonParagraphs(getLessonHtml(lesson.content || 'Conteúdo ainda não adicionado.')),
+        ]);
+      });
+    });
+    return Object.fromEntries(entries);
+  }, [chapters]);
+
+  const stopReader = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    utteranceRef.current = null;
+    setReader((current) => ({ ...current, isPlaying: false }));
+  };
+
+  const speakParagraph = (lessonKey, paragraphIndex, rate = readerRef.current.rate) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      toast.error('Leitor de texto não disponível neste dispositivo.');
+      return;
+    }
+
+    const paragraphs = paragraphsByLesson[lessonKey] || [];
+    const text = paragraphs[paragraphIndex];
+    if (!text) {
+      window.speechSynthesis.cancel();
+      setReader((current) => ({ ...current, lessonKey, paragraphIndex: 0, isPlaying: false }));
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = rate;
+    utterance.onend = () => {
+      const current = readerRef.current;
+      if (current.lessonKey !== lessonKey || !current.isPlaying) return;
+      const nextIndex = paragraphIndex + 1;
+      if (nextIndex < paragraphs.length) {
+        setReader((state) => ({ ...state, lessonKey, paragraphIndex: nextIndex, isPlaying: true }));
+        speakParagraph(lessonKey, nextIndex, current.rate);
+      } else {
+        setReader((state) => ({ ...state, lessonKey, paragraphIndex: 0, isPlaying: false }));
+      }
+    };
+    utterance.onerror = () => {
+      setReader((state) => ({ ...state, isPlaying: false }));
+      toast.error('Não foi possível continuar a leitura em voz alta.');
+    };
+
+    utteranceRef.current = utterance;
+    setReader((current) => ({ ...current, lessonKey, paragraphIndex, rate, isPlaying: true }));
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const toggleReaderPlayback = (lessonKey) => {
+    const paragraphs = paragraphsByLesson[lessonKey] || [];
+    if (!paragraphs.length) {
+      toast.error('Esta aula não possui texto para leitura em voz alta.');
+      return;
+    }
+
+    if (reader.lessonKey === lessonKey && reader.isPlaying) {
+      window.speechSynthesis?.pause();
+      setReader((current) => ({ ...current, isPlaying: false }));
+      return;
+    }
+
+    if (reader.lessonKey === lessonKey && utteranceRef.current && window.speechSynthesis?.paused) {
+      window.speechSynthesis.resume();
+      setReader((current) => ({ ...current, isPlaying: true }));
+      return;
+    }
+
+    speakParagraph(lessonKey, reader.lessonKey === lessonKey ? reader.paragraphIndex : 0, reader.rate);
+  };
+
+  const skipReaderParagraph = (lessonKey) => {
+    const paragraphs = paragraphsByLesson[lessonKey] || [];
+    if (!paragraphs.length) return;
+    const currentIndex = reader.lessonKey === lessonKey ? reader.paragraphIndex : 0;
+    const nextIndex = currentIndex + 1 >= paragraphs.length ? 0 : currentIndex + 1;
+    speakParagraph(lessonKey, nextIndex, reader.rate);
+  };
+
+  const changeReaderRate = (lessonKey, rate) => {
+    setReader((current) => ({ ...current, lessonKey, rate }));
+    if (reader.lessonKey === lessonKey && reader.isPlaying) {
+      speakParagraph(lessonKey, reader.paragraphIndex, rate);
+    }
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (newChapters) => {
@@ -237,10 +365,16 @@ export default function Apostila() {
 
                     const lessonReadKey = `${chapter.id}__${lesson.id}`;
                     const isRead = readLessons.has(lessonReadKey);
+                    const lessonParagraphs = paragraphsByLesson[key] || [];
+                    const isReaderActive = reader.lessonKey === key;
+                    const currentParagraphNumber = isReaderActive ? reader.paragraphIndex + 1 : 1;
                     return (
                       <div key={lesson.id}>
                         <button
-                          onClick={() => setOpenLesson(isOpen ? null : key)}
+                          onClick={() => {
+                            if (reader.lessonKey === key) stopReader();
+                            setOpenLesson(isOpen ? null : key);
+                          }}
                           className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-secondary/30 transition-colors text-left ${isRead ? 'bg-emerald-500/5' : ''}`}
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -299,6 +433,51 @@ export default function Apostila() {
                               </div>
                             ) : (
                               <div className="space-y-3">
+                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
+                                      <Volume2 size={16} />
+                                      Leitor da apostila
+                                      <span className="text-xs font-normal text-muted-foreground">
+                                        Parágrafo {Math.min(currentParagraphNumber, lessonParagraphs.length || 1)}/{lessonParagraphs.length || 1}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => toggleReaderPlayback(key)}
+                                        disabled={!lessonParagraphs.length}
+                                        className="gap-1.5"
+                                      >
+                                        {isReaderActive && reader.isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                                        {isReaderActive && reader.isPlaying ? 'Pausar' : 'Play'}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => skipReaderParagraph(key)}
+                                        disabled={!lessonParagraphs.length}
+                                        className="gap-1.5"
+                                      >
+                                        <SkipForward size={13} /> Avançar parágrafo
+                                      </Button>
+                                      <div className="flex items-center gap-1 rounded-lg border border-border bg-background/70 p-1" aria-label="Velocidade de leitura">
+                                        {READER_RATES.map((rate) => (
+                                          <button
+                                            key={rate}
+                                            type="button"
+                                            onClick={() => changeReaderRate(key, rate)}
+                                            className={`rounded-md px-2 py-1 text-xs font-bold transition-colors ${reader.rate === rate ? 'bg-emerald-500 text-white' : 'text-muted-foreground hover:bg-secondary'}`}
+                                            aria-pressed={reader.rate === rate}
+                                          >
+                                            {rate.toFixed(1)}x
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                                 <div className={`rounded-xl border ${bgLight} border-opacity-30 p-4`} style={{ borderColor: 'transparent', background: 'rgba(0,0,0,0.15)' }}>
                                   <div
                                     className="apostila-content text-sm text-foreground/90 leading-relaxed font-sans"
