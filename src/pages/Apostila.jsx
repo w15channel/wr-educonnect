@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Palette } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -24,10 +24,6 @@ import { MOD10 } from '@/lib/apostila/mod10';
 const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
 
 const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
-
-const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
-const EDITOR_PREVIEW_WIDTH = 900;
-const EDITOR_PREVIEW_HEIGHT = 636;
 
 const quillModules = {
   toolbar: [
@@ -267,7 +263,7 @@ export default function Apostila() {
                                 <div className="rounded-2xl border border-emerald-500/20 bg-slate-950/70 p-3 shadow-inner">
                                   <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-300">
-                                      <Palette size={12} /> Edição sobre o fundo da apostila
+                                      <Edit2 size={12} /> Edição do conteúdo da apostila
                                     </span>
                                     <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1">
                                       <Type size={12} /> Fonte, tamanho, cor e alinhamento disponíveis
@@ -278,15 +274,6 @@ export default function Apostila() {
                                   </div>
                                   <div
                                     className="apostila-rich-editor overflow-hidden rounded-xl border border-white/10 bg-white shadow-2xl"
-                                    style={{
-                                      width: '100%',
-                                      maxWidth: EDITOR_PREVIEW_WIDTH,
-                                      minHeight: EDITOR_PREVIEW_HEIGHT,
-                                      margin: '0 auto',
-                                      backgroundImage: `url(${APOSTILA_BG})`,
-                                      backgroundSize: '100% 100%',
-                                      backgroundRepeat: 'no-repeat',
-                                    }}
                                   >
                                     <ReactQuill
                                       theme="snow"

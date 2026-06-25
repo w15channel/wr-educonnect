@@ -45,6 +45,10 @@
       "type": "string",
       "description": "Refer\u00eancias bibliogr\u00e1ficas (formato ABNT)"
     },
+    "chapters_data": {
+      "type": "string",
+      "description": "JSON serializado dos m\u00f3dulos e aulas da apostila editados pelo admin"
+    },
     "status": {
       "type": "string",
       "enum": [

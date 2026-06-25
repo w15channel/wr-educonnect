@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image, Move, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 
@@ -28,6 +28,75 @@ const COL_RIGHT_X  = COL_LEFT_X + COL_W + CENTER_GAP;
 
 const FONT_SIZE   = 18;
 const LINE_HEIGHT = 1.85;
+
+const POSITIONS_KEY = 'wr_apostila_print_text_position_v1';
+const DEFAULT_TEXT_POSITION = { x: 0, y: 0 };
+
+function loadTextPosition() {
+  try {
+    const raw = localStorage.getItem(POSITIONS_KEY);
+    if (raw) return { ...DEFAULT_TEXT_POSITION, ...JSON.parse(raw) };
+  } catch {}
+  return { ...DEFAULT_TEXT_POSITION };
+}
+
+function saveTextPosition(position) {
+  localStorage.setItem(POSITIONS_KEY, JSON.stringify(position));
+}
+
+function DraggableTextLayer({ position, editMode, onMove, children }) {
+  const layerRef = useRef(null);
+  const dragging = useRef(false);
+  const startMouse = useRef({ x: 0, y: 0 });
+  const startPosition = useRef(position);
+
+  const onMouseDown = useCallback((e) => {
+    if (!editMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragging.current = true;
+    startMouse.current = { x: e.clientX, y: e.clientY };
+    startPosition.current = position;
+
+    const onMouseMove = (me) => {
+      if (!dragging.current) return;
+      const rect = layerRef.current?.parentElement?.getBoundingClientRect();
+      if (!rect) return;
+      const scaleX = IMG_W / rect.width;
+      const scaleY = IMG_H / rect.height;
+      onMove({
+        x: Math.round(startPosition.current.x + (me.clientX - startMouse.current.x) * scaleX),
+        y: Math.round(startPosition.current.y + (me.clientY - startMouse.current.y) * scaleY),
+      });
+    };
+    const onMouseUp = () => {
+      dragging.current = false;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }, [editMode, onMove, position]);
+
+  return (
+    <div
+      ref={layerRef}
+      onMouseDown={onMouseDown}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        zIndex: 2,
+        cursor: editMode ? 'grab' : 'default',
+        outline: editMode ? '3px dashed rgba(16, 185, 129, 0.85)' : 'none',
+        outlineOffset: -CONTENT_TOP,
+        userSelect: editMode ? 'none' : 'auto',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 // ─── Split content into 6 topics ─────────────────────────────────────────────
 const isHtmlContent = (value = '') => /<[^>]+>/.test(value);
@@ -76,7 +145,7 @@ function splitIntoTopics(content, targetChars = 1700) {
 // ─── Page component ───────────────────────────────────────────────────────────
 // No transform/scale ever applied here — only raw pixel sizes
 const ApostilaPage = React.forwardRef(function ApostilaPage(
-  { lesson, chapterTitle, topicLeft, topicRight, pageNum, totalPages },
+  { lesson, chapterTitle, topicLeft, topicRight, pageNum, totalPages, textPosition = DEFAULT_TEXT_POSITION, editMode = false, onTextPositionChange },
   ref
 ) {
   return (
@@ -153,47 +222,47 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         <div style={{ width: 80, height: 2, background: '#c9a84c', marginTop: 5 }} />
       </div>
 
-      {/* Left column */}
-      <div style={{
-        position: 'absolute',
-        top: CONTENT_TOP,
-        left: COL_LEFT_X,
-        width: COL_W,
-        height: CONTENT_H,
-        overflow: 'hidden',
-        zIndex: 2,
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: FONT_SIZE,
-        lineHeight: LINE_HEIGHT,
-        color: '#1a2d5a',
-        textAlign: 'justify',
-        letterSpacing: 0.3,
-        hyphens: 'auto',
-        wordBreak: 'break-word',
-      }}
-      dangerouslySetInnerHTML={{ __html: topicLeft || '' }}
-      />
+      <DraggableTextLayer position={textPosition} editMode={editMode} onMove={onTextPositionChange}>
+        {/* Left column */}
+        <div style={{
+          position: 'absolute',
+          top: CONTENT_TOP,
+          left: COL_LEFT_X,
+          width: COL_W,
+          height: CONTENT_H,
+          overflow: 'hidden',
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: FONT_SIZE,
+          lineHeight: LINE_HEIGHT,
+          color: '#1a2d5a',
+          textAlign: 'justify',
+          letterSpacing: 0.3,
+          hyphens: 'auto',
+          wordBreak: 'break-word',
+        }}
+        dangerouslySetInnerHTML={{ __html: topicLeft || '' }}
+        />
 
-      {/* Right column */}
-      <div style={{
-        position: 'absolute',
-        top: CONTENT_TOP,
-        left: COL_RIGHT_X,
-        width: COL_W,
-        height: CONTENT_H,
-        overflow: 'hidden',
-        zIndex: 2,
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: FONT_SIZE,
-        lineHeight: LINE_HEIGHT,
-        color: '#1a2d5a',
-        textAlign: 'justify',
-        letterSpacing: 0.3,
-        hyphens: 'auto',
-        wordBreak: 'break-word',
-      }}
-      dangerouslySetInnerHTML={{ __html: topicRight || '' }}
-      />
+        {/* Right column */}
+        <div style={{
+          position: 'absolute',
+          top: CONTENT_TOP,
+          left: COL_RIGHT_X,
+          width: COL_W,
+          height: CONTENT_H,
+          overflow: 'hidden',
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: FONT_SIZE,
+          lineHeight: LINE_HEIGHT,
+          color: '#1a2d5a',
+          textAlign: 'justify',
+          letterSpacing: 0.3,
+          hyphens: 'auto',
+          wordBreak: 'break-word',
+        }}
+        dangerouslySetInnerHTML={{ __html: topicRight || '' }}
+        />
+      </DraggableTextLayer>
 
       {/* Page number */}
       <div style={{
@@ -217,6 +286,8 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
   const [topics, setTopics] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [textPosition, setTextPosition] = useState(loadTextPosition);
 
   // Refs for capture — always full-size, never scaled
   const pageRefs = useRef([React.createRef(), React.createRef(), React.createRef()]);
@@ -232,6 +303,17 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     [topics[4] || '', topics[5] || ''],
   ];
   const totalPages = 3;
+
+  const handleSaveTextPosition = () => {
+    saveTextPosition(textPosition);
+    toast.success('Posição do texto salva!');
+  };
+
+  const handleResetTextPosition = () => {
+    setTextPosition(DEFAULT_TEXT_POSITION);
+    saveTextPosition(DEFAULT_TEXT_POSITION);
+    toast.success('Posição do texto redefinida.');
+  };
 
   // Visual scale for preview only — NOT applied to capture nodes
   const SCALE = Math.min(0.40, (typeof window !== 'undefined' ? window.innerWidth * 0.86 : 900) / IMG_W);
@@ -364,6 +446,30 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         </div>
 
         <button
+          onClick={() => setEditMode((value) => !value)}
+          className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-bold transition-colors ${editMode ? 'border-emerald-400 bg-emerald-500/20 text-emerald-100' : 'border-white/20 bg-white/10 text-white hover:bg-white/20'}`}
+        >
+          <Move size={14} /> {editMode ? 'Movendo texto' : 'Mover texto'}
+        </button>
+        {editMode && (
+          <>
+            <button
+              onClick={handleSaveTextPosition}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
+            >
+              <Save size={14} /> Salvar posição
+            </button>
+            <button
+              onClick={handleResetTextPosition}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold text-white hover:bg-white/20 transition-colors"
+            >
+              <RotateCcw size={14} /> Resetar
+            </button>
+            <span className="text-xs text-white/60">X: {textPosition.x}px · Y: {textPosition.y}px</span>
+          </>
+        )}
+
+        <button
           onClick={handleExportPng}
           disabled={loading}
           className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold text-white hover:bg-white/20 disabled:opacity-50 transition-colors"
@@ -386,7 +492,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         className="rounded-xl overflow-hidden border border-white/10 shadow-2xl"
         style={{ width: IMG_W * SCALE, height: IMG_H * SCALE, flexShrink: 0 }}
       >
-        <div style={{ width: IMG_W, height: IMG_H, transform: `scale(${SCALE})`, transformOrigin: 'top left', pointerEvents: 'none' }}>
+        <div style={{ width: IMG_W, height: IMG_H, transform: `scale(${SCALE})`, transformOrigin: 'top left', pointerEvents: editMode ? 'auto' : 'none' }}>
           {/* Preview page — NO ref, just visual */}
           <ApostilaPage
             lesson={lesson}
@@ -395,6 +501,9 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
             topicRight={pages[currentPage][1]}
             pageNum={currentPage + 1}
             totalPages={totalPages}
+            textPosition={textPosition}
+            editMode={editMode}
+            onTextPositionChange={setTextPosition}
           />
         </div>
       </div>
@@ -422,6 +531,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
             pageNum={i + 1}
             totalPages={totalPages}
             ref={pageRefs.current[i]}
+            textPosition={textPosition}
           />
         ))}
       </div>
