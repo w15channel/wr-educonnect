@@ -12,6 +12,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { MOD1 } from '@/lib/apostila/mod1';
+import { MOD2 } from '@/lib/apostila/mod2';
+import { MOD3 } from '@/lib/apostila/mod3';
+import { MOD4 } from '@/lib/apostila/mod4';
+import { MOD5 } from '@/lib/apostila/mod5';
+import { MOD6 } from '@/lib/apostila/mod6';
+import { MOD7 } from '@/lib/apostila/mod7';
+import { MOD8 } from '@/lib/apostila/mod8';
+import { MOD9 } from '@/lib/apostila/mod9';
+import { MOD10 } from '@/lib/apostila/mod10';
 
 // ─── Schema: 8 perguntas ──────────────────────────────────────────────────────
 // q1(0.1) q2(0.1) q3-baú(0.2) q4(0.1) q5(0.1) q6-baú(0.2) q7(0.1) q8(0.1) = 1.0
@@ -37,12 +47,17 @@ const STREAK_BONUSES = [
   { days: 20, bonus: 30, label: '20 dias', emoji: '👑' },
 ];
 
-const WEEKLY_THEMES = [
-  { id: 'introducao-terapia-comportamental', title: 'Introdução à Terapia Comportamental', approaches: ['Conceito central', 'Função do comportamento', 'Ambiente e aprendizagem', 'Olhar clínico', 'Pertencimento à formação'] },
-  { id: 'vinculo-terapeutico', title: 'Vínculo Terapêutico', approaches: ['Conceito central', 'Aplicação em sessão', 'Sinais do paciente', 'Intervenção prática', 'Ética e limites'] },
-  { id: 'formulacao-de-caso', title: 'Formulação de Caso', approaches: ['Conceito central', 'Hipóteses clínicas', 'Padrões do caso', 'Plano de intervenção', 'Revisão clínica'] },
-  { id: 'escuta-clinica', title: 'Escuta Clínica', approaches: ['Conceito central', 'Escuta verbal', 'Leitura emocional', 'Perguntas terapêuticas', 'Postura profissional'] },
-  { id: 'intervencoes-comportamentais', title: 'Intervenções Comportamentais', approaches: ['Conceito central', 'Planejamento de tarefa', 'Monitoramento', 'Manejo de resistência', 'Generalização'] },
+const APOSTILA_MODULES = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10].map(mod => ({
+  id: mod.id,
+  title: mod.title,
+  lessons: mod.lessons.map(lesson => ({ id: lesson.id, title: lesson.title })),
+}));
+
+const DURATION_OPTIONS = [
+  { value: 1, label: '1 dia' },
+  { value: 3, label: '3 dias' },
+  { value: 5, label: '5 dias' },
+  { value: 7, label: '7 dias' },
 ];
 
 // ─── Fireworks ─────────────────────────────────────────────────────────────────
@@ -267,7 +282,18 @@ export default function Ofensivas() {
   const [justCompleted, setJustCompleted] = useState(false);
   const [bonusEarned, setBonusEarned] = useState(null);
   const [generating, setGenerating] = useState(false);
-  const [selectedThemeId, setSelectedThemeId] = useState(WEEKLY_THEMES[0].id);
+  const [selectedModuleId, setSelectedModuleId] = useState(APOSTILA_MODULES[0].id);
+  const [selectedLessonId, setSelectedLessonId] = useState(APOSTILA_MODULES[0].lessons[0].id);
+  const [durationDays, setDurationDays] = useState(1);
+
+  const selectedModule = APOSTILA_MODULES.find(module => module.id === selectedModuleId) || APOSTILA_MODULES[0];
+  const selectedLesson = selectedModule.lessons.find(lesson => lesson.id === selectedLessonId) || selectedModule.lessons[0];
+
+  useEffect(() => {
+    if (!selectedModule.lessons.some(lesson => lesson.id === selectedLessonId)) {
+      setSelectedLessonId(selectedModule.lessons[0].id);
+    }
+  }, [selectedModuleId, selectedLessonId, selectedModule.lessons]);
 
   // ── Fetch ────────────────────────────────────────────────────────────────
   const { data: challenges = [], isLoading } = useQuery({
@@ -383,11 +409,21 @@ export default function Ofensivas() {
   const handleGenerate = async (force = false) => {
     setGenerating(true);
     try {
-      await base44.functions.invoke('createDailyChallenge', { course: userCourse, force, theme_id: selectedThemeId });
+      const result = await base44.functions.invoke('createDailyChallenge', {
+        course: userCourse,
+        force,
+        module_id: selectedModuleId,
+        lesson_id: selectedLesson?.id,
+        duration_days: durationDays,
+      });
       await queryClient.invalidateQueries({ queryKey: ['daily-challenge'] });
-      toast.success('🔥 Nova ofensiva gerada com IA!');
+      const payload = result?.data || result || {};
+      const created = payload.created || 0;
+      const updated = payload.updated || 0;
+      const skipped = payload.skipped || 0;
+      toast.success(`🔥 Ofensiva gerada: ${created} criada(s), ${updated} atualizada(s), ${skipped} mantida(s).`);
     } catch (err) {
-      toast.error('Erro: ' + (err.message || 'tente novamente'));
+      toast.error('Erro: ' + (err?.response?.data?.error || err.message || 'tente novamente'));
     } finally {
       setGenerating(false);
     }
@@ -398,6 +434,49 @@ export default function Ofensivas() {
   }
 
   const questions = challenge?.questions || [];
+  const generationControls = (
+    <div className="grid gap-3 text-left">
+      <label className="grid gap-1.5">
+        <span className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">1. Módulo</span>
+        <select
+          value={selectedModuleId}
+          onChange={e => setSelectedModuleId(e.target.value)}
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-orange-400"
+        >
+          {APOSTILA_MODULES.map(module => (
+            <option key={module.id} value={module.id}>{module.title}</option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1.5">
+        <span className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">2. Tema</span>
+        <select
+          value={selectedLesson?.id || ''}
+          onChange={e => setSelectedLessonId(e.target.value)}
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-orange-400"
+        >
+          {selectedModule.lessons.map(lesson => (
+            <option key={lesson.id} value={lesson.id}>{lesson.title}</option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1.5">
+        <span className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">3. Duração</span>
+        <select
+          value={durationDays}
+          onChange={e => setDurationDays(Number(e.target.value))}
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-orange-400"
+        >
+          {DURATION_OPTIONS.map(option => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+      </label>
+      <p className="text-[11px] text-muted-foreground">
+        Serão usadas perguntas pré-salvas, sem consumo de créditos de IA. A duração cria uma ofensiva por dia a partir de hoje.
+      </p>
+    </div>
+  );
 
   return (
     <div className="p-3 md:p-5 max-w-[560px] mx-auto animate-fade-in-up">
@@ -413,13 +492,13 @@ export default function Ofensivas() {
         </div>
         {isTeacher && (
           <div className="flex gap-2">
-            <Button onClick={() => handleGenerate(false)} disabled={generating || !!challenge} size="sm" className="gap-1.5 bg-orange-500 hover:bg-orange-600 text-white shrink-0">
+            <Button onClick={() => handleGenerate(false)} disabled={generating} size="sm" className="gap-1.5 bg-orange-500 hover:bg-orange-600 text-white shrink-0">
               {generating ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
-              {challenge ? 'Ativa ✓' : 'Gerar'}
+              {challenge ? 'Gerar período' : 'Gerar'}
             </Button>
             {challenge && (
               <Button onClick={() => handleGenerate(true)} disabled={generating} size="sm" variant="outline" className="shrink-0">
-                Regenerar
+                Regenerar período
               </Button>
             )}
           </div>
@@ -433,20 +512,8 @@ export default function Ofensivas() {
           <p className="text-lg font-bold">Nenhuma ofensiva para hoje</p>
           {isTeacher ? (
             <div className="mt-4 space-y-4">
-              <p className="text-sm text-muted-foreground/70">Escolha o tema da semana e clique em "Gerar". As 8 perguntas serão criadas com base nas 5 abordagens do tema.</p>
-              <div className="grid gap-2 text-left">
-                {WEEKLY_THEMES.map(theme => (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    onClick={() => setSelectedThemeId(theme.id)}
-                    className={`rounded-xl border p-3 transition-colors ${selectedThemeId === theme.id ? 'border-orange-400 bg-orange-500/10' : 'border-border bg-secondary/30 hover:bg-secondary/60'}`}
-                  >
-                    <span className="block text-sm font-bold text-foreground">{theme.title}</span>
-                    <span className="block text-[11px] text-muted-foreground mt-1">{theme.approaches.join(' · ')}</span>
-                  </button>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground/70">Escolha o módulo, o tema e a duração. Ao gerar, o sistema seleciona perguntas pré-salvas para cada dia do período.</p>
+              {generationControls}
             </div>
           ) : (
             <p className="text-sm mt-1 text-muted-foreground/70">A ofensiva será gerada automaticamente. Volte mais tarde!</p>
@@ -599,21 +666,9 @@ export default function Ofensivas() {
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="font-bold text-sm mb-2">Tema da próxima geração</h3>
-            <p className="text-xs text-muted-foreground mb-3">Ao regenerar, a IA usará o tema selecionado e distribuirá as perguntas nas 5 abordagens.</p>
-            <div className="grid gap-2">
-              {WEEKLY_THEMES.map(theme => (
-                <button
-                  key={theme.id}
-                  type="button"
-                  onClick={() => setSelectedThemeId(theme.id)}
-                  className={`rounded-xl border p-2.5 text-left transition-colors ${selectedThemeId === theme.id ? 'border-orange-400 bg-orange-500/10' : 'border-border bg-secondary/30 hover:bg-secondary/60'}`}
-                >
-                  <span className="block text-xs font-bold text-foreground">{theme.title}</span>
-                  <span className="block text-[10px] text-muted-foreground mt-1">{theme.approaches.join(' · ')}</span>
-                </button>
-              ))}
-            </div>
+            <h3 className="font-bold text-sm mb-2">Próxima geração</h3>
+            <p className="text-xs text-muted-foreground mb-3">Selecione módulo, tema e duração. O botão "Gerar período" mantém dias já existentes; "Regenerar período" substitui as ofensivas do período.</p>
+            {generationControls}
           </div>
 
           {allResponses.length > 0 && (
