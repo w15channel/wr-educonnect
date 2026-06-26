@@ -22,6 +22,8 @@ import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
 
 const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
+const APOSTILA_BOOK_ID = 'apostila-tcc';
+const APOSTILA_BOOK_TITLE = 'Apostila TCC';
 
 const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
 
@@ -117,15 +119,25 @@ export default function Apostila() {
     setCelebrating(true);
   };
 
-  const { data: savedData } = useQuery({
-    queryKey: ['apostila-book'],
-    queryFn: () => base44.entities.Book.filter({ title: 'Apostila TCC' }, '-created_date', 1),
+  const { data: savedLessons = [] } = useQuery({
+    queryKey: ['apostila-lessons', APOSTILA_BOOK_ID],
+    queryFn: () => base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID }, 'order', 500),
   });
 
-  const book = savedData?.[0];
-  // Always use DEFAULT_CHAPTERS from code (source of truth); DB is only used to persist admin edits
-  const savedChapters = book?.chapters_data ? (() => { try { return JSON.parse(book.chapters_data); } catch { return null; } })() : null;
-  const chapters = savedChapters && savedChapters.length >= DEFAULT_CHAPTERS.length ? savedChapters : DEFAULT_CHAPTERS;
+  const savedLessonByKey = useMemo(() => {
+    return new Map((savedLessons || []).map((lesson) => [`${lesson.chapter_id}__${lesson.lesson_id}`, lesson]));
+  }, [savedLessons]);
+
+  // DEFAULT_CHAPTERS remains the local fallback, while edited lesson content is loaded from BookChapter rows on the server.
+  const chapters = useMemo(() => DEFAULT_CHAPTERS.map((chapter) => ({
+    ...chapter,
+    lessons: chapter.lessons.map((lesson) => {
+      const savedLesson = savedLessonByKey.get(`${chapter.id}__${lesson.id}`);
+      return savedLesson
+        ? { ...lesson, title: savedLesson.title || lesson.title, content: savedLesson.content ?? lesson.content }
+        : lesson;
+    }),
+  })), [savedLessonByKey]);
 
   const paragraphsByLesson = useMemo(() => {
     const entries = [];
@@ -245,14 +257,30 @@ export default function Apostila() {
   };
 
   const saveMutation = useMutation({
-    mutationFn: async (newChapters) => {
-      const payload = { title: 'Apostila TCC', chapters_data: JSON.stringify(newChapters) };
-      if (book) return adminApi.update('Book', book.id, payload);
-      return adminApi.create('Book', { ...payload, author_email: session?.email || 'admin@wr-educonnect.local' });
+    mutationFn: async ({ chapterId, lessonId, content }) => {
+      const chapterIndex = DEFAULT_CHAPTERS.findIndex((chapter) => chapter.id === chapterId);
+      const chapter = DEFAULT_CHAPTERS[chapterIndex];
+      const lessonIndex = chapter?.lessons.findIndex((lesson) => lesson.id === lessonId) ?? -1;
+      const defaultLesson = lessonIndex >= 0 ? chapter.lessons[lessonIndex] : null;
+      const existingLesson = savedLessonByKey.get(`${chapterId}__${lessonId}`);
+      const payload = {
+        book_id: APOSTILA_BOOK_ID,
+        book_title: APOSTILA_BOOK_TITLE,
+        author_email: session?.email || 'admin@wr-educonnect.local',
+        chapter_id: chapterId,
+        chapter_title: chapter?.title || chapterId,
+        lesson_id: lessonId,
+        title: defaultLesson?.title || 'Aula da apostila',
+        content,
+        order: ((chapterIndex >= 0 ? chapterIndex : 0) * 100) + (lessonIndex >= 0 ? lessonIndex + 1 : 1),
+      };
+
+      if (existingLesson?.id) return adminApi.update('BookChapter', existingLesson.id, payload);
+      return adminApi.create('BookChapter', payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['apostila-book'] });
-      toast.success('Apostila salva!');
+      queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
+      toast.success('Apostila salva no servidor!');
       setEditingLesson(null);
     },
     onError: (error) => {
@@ -266,12 +294,7 @@ export default function Apostila() {
   };
 
   const handleSaveLesson = (chapterId, lessonId) => {
-    const updated = chapters.map((ch) =>
-      ch.id === chapterId
-        ? { ...ch, lessons: ch.lessons.map((l) => l.id === lessonId ? { ...l, content: editContent } : l) }
-        : ch
-    );
-    saveMutation.mutate(updated);
+    saveMutation.mutate({ chapterId, lessonId, content: editContent });
   };
 
   const totalLessons = chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
