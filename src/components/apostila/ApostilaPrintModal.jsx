@@ -154,16 +154,70 @@ function normalizeTopicContent(topic) {
   return topic?.trim() || '';
 }
 
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const formatPlainTopic = (value = '') => value
+  .split(/\n{2,}/)
+  .map((paragraph) => paragraph.trim())
+  .filter(Boolean)
+  .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
+  .join('');
+
+function splitPlainContentByNumberedTopics(content) {
+  const source = String(content || '').replace(/\r\n?/g, '\n').trim();
+  if (!source || isHtmlContent(source)) return null;
+
+  const matches = [...source.matchAll(/^\s*([1-6])[.)]\s+.+$/gm)];
+  const sequentialMatches = matches
+    .filter((match, index) => Number(match[1]) === index + 1)
+    .slice(0, 6);
+
+  if (sequentialMatches.length < 6) return null;
+
+  return sequentialMatches.map((match, index) => {
+    const start = match.index;
+    const end = sequentialMatches[index + 1]?.index ?? source.length;
+    return formatPlainTopic(source.slice(start, end).trim());
+  });
+}
+
+function splitHtmlContentByNumberedTopics(paragraphs) {
+  const topicStarts = paragraphs
+    .map((paragraph, index) => ({ index, match: getVisibleText(paragraph).match(/^([1-6])[.)]\s+/) }))
+    .filter(({ match }) => Boolean(match))
+    .filter(({ match }, index) => Number(match[1]) === index + 1)
+    .slice(0, 6);
+
+  if (topicStarts.length < 6) return null;
+
+  return topicStarts.map(({ index: start }, topicIndex) => {
+    const end = topicStarts[topicIndex + 1]?.index ?? paragraphs.length;
+    return paragraphs.slice(start, end).join('');
+  });
+}
+
 function splitIntoTopics(content, targetChars = TOPIC_TARGET_CHARS) {
   if (!content || !content.trim()) {
     return Array.from({ length: 6 }, () => '');
   }
+
+  const numberedTopics = splitPlainContentByNumberedTopics(content);
+  if (numberedTopics) return numberedTopics.map((topic) => normalizeTopicContent(topic));
 
   const htmlContent = isHtmlContent(content) ? content : plainTextToHtml(content);
   const paragraphs = htmlContent
     .split(/(?=<\/?(?:p|h[1-6]|ul|ol|blockquote)\b)/i)
     .map(p => p.trim())
     .filter(Boolean);
+
+  const htmlNumberedTopics = splitHtmlContentByNumberedTopics(paragraphs);
+  if (htmlNumberedTopics) return htmlNumberedTopics.map((topic) => normalizeTopicContent(topic));
+
   const totalChars = visibleCharCount(htmlContent);
   const chunkSize  = Math.max(targetChars, Math.ceil(totalChars / 6));
 
