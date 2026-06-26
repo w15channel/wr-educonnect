@@ -48,6 +48,64 @@ Deno.serve(async (req) => {
       return Response.json({ error: `Entidade '${entity}' não encontrada.` }, { status: 400 });
     }
 
+    if (action === 'upsertBookChapter') {
+      if (entity !== 'BookChapter') {
+        return Response.json({ error: 'upsertBookChapter aceita apenas BookChapter.' }, { status: 400 });
+      }
+
+      const chapterData = cleanObject(data || {});
+      if (!chapterData.book_id || !chapterData.chapter_id || !chapterData.lesson_id) {
+        return Response.json({ error: 'book_id, chapter_id e lesson_id são obrigatórios para salvar a aula da apostila.' }, { status: 400 });
+      }
+
+      const existing = id
+        ? null
+        : (await entityStore.filter({
+          book_id: chapterData.book_id,
+          chapter_id: chapterData.chapter_id,
+          lesson_id: chapterData.lesson_id,
+        }, '-updated_date', 1))[0];
+
+      const recordId = id || existing?.id;
+      const record = recordId
+        ? await entityStore.update(recordId, chapterData)
+        : await entityStore.create(chapterData);
+      return Response.json({ success: true, record });
+    }
+
+    if (action === 'syncBookChapters') {
+      if (entity !== 'BookChapter') {
+        return Response.json({ error: 'syncBookChapters aceita apenas BookChapter.' }, { status: 400 });
+      }
+
+      const chapters = Array.isArray(data?.chapters) ? data.chapters : [];
+      const createOnly = data?.createOnly !== false;
+      if (chapters.length > 500) {
+        return Response.json({ error: 'Limite de 500 aulas por sincronização.' }, { status: 400 });
+      }
+
+      const records = [];
+      for (const rawChapter of chapters) {
+        const chapterData = cleanObject(rawChapter || {});
+        if (!chapterData.book_id || !chapterData.chapter_id || !chapterData.lesson_id) continue;
+
+        const existing = (await entityStore.filter({
+          book_id: chapterData.book_id,
+          chapter_id: chapterData.chapter_id,
+          lesson_id: chapterData.lesson_id,
+        }, '-updated_date', 1))[0];
+
+        if (existing?.id) {
+          if (!createOnly) records.push(await entityStore.update(existing.id, chapterData));
+          else records.push(existing);
+        } else {
+          records.push(await entityStore.create(chapterData));
+        }
+      }
+
+      return Response.json({ success: true, records });
+    }
+
     if (action === 'create') {
       const record = await entityStore.create(cleanObject(data || {}));
       return Response.json({ success: true, record });

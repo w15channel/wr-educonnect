@@ -119,10 +119,40 @@ export default function Apostila() {
     setCelebrating(true);
   };
 
-  const { data: savedLessons = [] } = useQuery({
+  const { data: savedLessons = [], isFetched: savedLessonsFetched } = useQuery({
     queryKey: ['apostila-lessons', APOSTILA_BOOK_ID],
     queryFn: () => base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID }, 'order', 500),
   });
+
+  const defaultServerLessons = useMemo(() => DEFAULT_CHAPTERS.flatMap((chapter, chapterIndex) =>
+    chapter.lessons.map((lesson, lessonIndex) => ({
+      book_id: APOSTILA_BOOK_ID,
+      book_title: APOSTILA_BOOK_TITLE,
+      author_email: session?.email || 'admin@wr-educonnect.local',
+      chapter_id: chapter.id,
+      chapter_title: chapter.title,
+      lesson_id: lesson.id,
+      title: lesson.title || 'Aula da apostila',
+      content: getLessonHtml(lesson.content || ''),
+      order: (chapterIndex * 100) + lessonIndex + 1,
+    }))), [session?.email]);
+
+  useEffect(() => {
+    if (!isAdmin || !savedLessonsFetched || !defaultServerLessons.length) return;
+
+    const savedKeys = new Set((savedLessons || []).map((lesson) => `${lesson.chapter_id}__${lesson.lesson_id}`));
+    const missingLessons = defaultServerLessons.filter((lesson) => !savedKeys.has(`${lesson.chapter_id}__${lesson.lesson_id}`));
+    if (!missingLessons.length) return;
+
+    adminApi.syncBookChapters(missingLessons, { createOnly: true })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
+        toast.success('Aulas da apostila sincronizadas com o servidor.');
+      })
+      .catch((error) => {
+        toast.error(`Erro ao sincronizar aulas no servidor: ${error.message || 'tente novamente.'}`);
+      });
+  }, [defaultServerLessons, isAdmin, queryClient, savedLessons, savedLessonsFetched]);
 
   const savedLessonByKey = useMemo(() => {
     return new Map((savedLessons || []).map((lesson) => [`${lesson.chapter_id}__${lesson.lesson_id}`, lesson]));
@@ -275,8 +305,7 @@ export default function Apostila() {
         order: ((chapterIndex >= 0 ? chapterIndex : 0) * 100) + (lessonIndex >= 0 ? lessonIndex + 1 : 1),
       };
 
-      if (existingLesson?.id) return adminApi.update('BookChapter', existingLesson.id, payload);
-      return adminApi.create('BookChapter', payload);
+      return adminApi.upsertBookChapter(payload, existingLesson?.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });

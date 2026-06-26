@@ -16,7 +16,12 @@ function getAdminEmail() {
 
 async function adminSave(params) {
   const admin_email = getAdminEmail();
-  const res = await base44.functions.invoke('adminSave', { ...params, admin_email });
+  let res;
+  try {
+    res = await base44.functions.invoke('adminSave', { ...params, admin_email });
+  } catch (error) {
+    throw new Error(error.response?.data?.error || error.message || 'Erro desconhecido no adminSave');
+  }
   if (!res.data?.success) {
     throw new Error(res.data?.error || 'Erro desconhecido no adminSave');
   }
@@ -29,4 +34,8 @@ export const adminApi = {
   delete: (entity, id) => adminSave({ action: 'delete', entity, id }),
   list: (entity, { filter, sort_by, limit } = {}) =>
     adminSave({ action: 'list', entity, filter, sort_by, limit }).then(r => r.records || []),
+  upsertBookChapter: (data, id) =>
+    adminSave({ action: 'upsertBookChapter', entity: 'BookChapter', data, id }).then(r => r.record),
+  syncBookChapters: (chapters, { createOnly = true } = {}) =>
+    adminSave({ action: 'syncBookChapters', entity: 'BookChapter', data: { chapters, createOnly } }).then(r => r.records || []),
 };
