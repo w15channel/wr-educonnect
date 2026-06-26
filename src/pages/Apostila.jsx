@@ -1,12 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2 } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { adminApi } from '@/lib/adminApi';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
@@ -20,6 +23,8 @@ import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
 
 const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
+const APOSTILA_BOOK_ID = 'apostila-tcc';
+const APOSTILA_BOOK_TITLE = 'Apostila TCC';
 
 const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
 const APOSTILA_BOOK_ID = 'apostila-tcc';
@@ -54,6 +59,52 @@ async function resolveStoredLesson(record) {
   }
 }
 
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ color: [] }, { background: [] }],
+    [{ align: [] }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['blockquote', 'link'],
+    ['clean'],
+  ],
+};
+
+const quillFormats = [
+  'header', 'font', 'size', 'bold', 'italic', 'underline', 'strike',
+  'color', 'background', 'align', 'list', 'bullet', 'blockquote', 'link',
+];
+
+const isHtmlContent = (value = '') => /<[^>]+>/.test(value);
+
+const plainTextToHtml = (value = '') => value
+  .split(/\n{2,}/)
+  .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
+  .join('');
+
+const getLessonHtml = (value = '') => (isHtmlContent(value) ? value : plainTextToHtml(value));
+
+
+const extractLessonParagraphs = (html = '') => {
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
+    return html.replace(/<[^>]*>/g, ' ').split(/\n{2,}/).map((text) => text.trim()).filter(Boolean);
+  }
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const blocks = Array.from(doc.body.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'));
+  const paragraphs = (blocks.length ? blocks : Array.from(doc.body.childNodes))
+    .map((node) => node.textContent?.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+
+  const fallback = doc.body.textContent?.replace(/\s+/g, ' ').trim();
+  return paragraphs.length ? paragraphs : (fallback ? [fallback] : []);
+};
+
+const READER_RATES = [1, 1.5, 2];
+
+
 export default function Apostila() {
   const { session } = useCustomAuth();
   const isAdmin = session?.role === 'admin';
@@ -66,6 +117,21 @@ export default function Apostila() {
   const [printLesson, setPrintLesson] = useState(null);
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState('');
+  const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, rate: 1, isPlaying: false });
+  const utteranceRef = useRef(null);
+  const readerRef = useRef(reader);
+  const readerSessionRef = useRef(0);
+  const intentionalStopRef = useRef(false);
+
+  useEffect(() => {
+    readerRef.current = reader;
+  }, [reader]);
+
+  useEffect(() => () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
 
   // Persisted read completions: Set of "chapterId__lessonId"
   const [readLessons, setReadLessons] = useState(() => {
@@ -85,76 +151,193 @@ export default function Apostila() {
     setCelebrating(true);
   };
 
-  const { data: storedLessons = [] } = useQuery({
+  const { data: savedLessons = [], isFetched: savedLessonsFetched } = useQuery({
     queryKey: ['apostila-lessons', APOSTILA_BOOK_ID],
-    queryFn: async () => {
-      const records = await base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID }, 'order', 200);
-      return Promise.all((records || []).map(resolveStoredLesson));
-    },
+    queryFn: () => base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID }, 'order', 500),
   });
 
-  const storedLessonByKey = useMemo(() => {
-    return new Map(storedLessons.map((lesson) => [`${lesson.chapter_id}__${lesson.lesson_id}`, lesson]));
-  }, [storedLessons]);
+  const defaultServerLessons = useMemo(() => DEFAULT_CHAPTERS.flatMap((chapter, chapterIndex) =>
+    chapter.lessons.map((lesson, lessonIndex) => ({
+      book_id: APOSTILA_BOOK_ID,
+      book_title: APOSTILA_BOOK_TITLE,
+      author_email: session?.email || 'admin@wr-educonnect.local',
+      chapter_id: chapter.id,
+      chapter_title: chapter.title,
+      lesson_id: lesson.id,
+      title: lesson.title || 'Aula da apostila',
+      content: getLessonHtml(lesson.content || ''),
+      order: (chapterIndex * 100) + lessonIndex + 1,
+    }))), [session?.email]);
 
-  const chapters = useMemo(() => {
-    return DEFAULT_CHAPTERS.map((chapter) => ({
-      ...chapter,
-      lessons: chapter.lessons.map((lesson) => {
-        const storedLesson = storedLessonByKey.get(`${chapter.id}__${lesson.id}`);
-        if (!storedLesson) return lesson;
+  useEffect(() => {
+    if (!isAdmin || !savedLessonsFetched || !defaultServerLessons.length) return;
 
-        return {
-          ...lesson,
-          content: storedLesson.content || lesson.content || '',
-          server_id: storedLesson.id,
-          content_url: storedLesson.content_url || '',
-          content_storage: storedLesson.content_storage || 'inline',
-        };
-      }),
+    const savedKeys = new Set((savedLessons || []).map((lesson) => `${lesson.chapter_id}__${lesson.lesson_id}`));
+    const missingLessons = defaultServerLessons.filter((lesson) => !savedKeys.has(`${lesson.chapter_id}__${lesson.lesson_id}`));
+    if (!missingLessons.length) return;
+
+    adminApi.syncBookChapters(missingLessons, { createOnly: true })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
+        toast.success('Aulas da apostila sincronizadas com o servidor.');
+      })
+      .catch((error) => {
+        toast.error(`Erro ao sincronizar aulas no servidor: ${error.message || 'tente novamente.'}`);
+      });
+  }, [defaultServerLessons, isAdmin, queryClient, savedLessons, savedLessonsFetched]);
+
+  const savedLessonByKey = useMemo(() => {
+    return new Map((savedLessons || []).map((lesson) => [`${lesson.chapter_id}__${lesson.lesson_id}`, lesson]));
+  }, [savedLessons]);
+
+  // DEFAULT_CHAPTERS remains the local fallback, while edited lesson content is loaded from BookChapter rows on the server.
+  const chapters = useMemo(() => DEFAULT_CHAPTERS.map((chapter) => ({
+    ...chapter,
+    lessons: chapter.lessons.map((lesson) => {
+      const savedLesson = savedLessonByKey.get(`${chapter.id}__${lesson.id}`);
+      return savedLesson
+        ? { ...lesson, title: savedLesson.title || lesson.title, content: savedLesson.content ?? lesson.content }
+        : lesson;
+    }),
+  })), [savedLessonByKey]);
+
+  const paragraphsByLesson = useMemo(() => {
+    const entries = [];
+    chapters.forEach((chapter) => {
+      chapter.lessons.forEach((lesson) => {
+        entries.push([
+          `${chapter.id}__${lesson.id}`,
+          extractLessonParagraphs(getLessonHtml(lesson.content || 'Conteúdo ainda não adicionado.')),
+        ]);
+      });
+    });
+    return Object.fromEntries(entries);
+  }, [chapters]);
+
+  const stopReader = (lessonKey = readerRef.current.lessonKey) => {
+    intentionalStopRef.current = true;
+    readerSessionRef.current += 1;
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    utteranceRef.current = null;
+    setReader((current) => ({
+      ...current,
+      lessonKey: lessonKey || current.lessonKey,
+      paragraphIndex: 0,
+      isPlaying: false,
     }));
-  }, [storedLessonByKey]);
+  };
+
+  const speakParagraph = (lessonKey, paragraphIndex, rate = readerRef.current.rate, options = {}) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      toast.error('Leitor de texto não disponível neste dispositivo.');
+      return;
+    }
+
+    const paragraphs = paragraphsByLesson[lessonKey] || [];
+    const text = paragraphs[paragraphIndex];
+    if (!text) {
+      intentionalStopRef.current = true;
+      window.speechSynthesis.cancel();
+      setReader((current) => ({ ...current, lessonKey, paragraphIndex: 0, isPlaying: false }));
+      return;
+    }
+
+    const sessionId = options.sessionId ?? readerSessionRef.current + 1;
+    readerSessionRef.current = sessionId;
+    if (!options.skipCancel) {
+      intentionalStopRef.current = true;
+      window.speechSynthesis.cancel();
+    }
+    intentionalStopRef.current = false;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = rate;
+    utterance.onend = () => {
+      const current = readerRef.current;
+      if (readerSessionRef.current !== sessionId || current.lessonKey !== lessonKey || !current.isPlaying) return;
+      const nextIndex = paragraphIndex + 1;
+      if (nextIndex < paragraphs.length) {
+        setReader((state) => ({ ...state, lessonKey, paragraphIndex: nextIndex, isPlaying: true }));
+        window.setTimeout(() => {
+          const latest = readerRef.current;
+          if (readerSessionRef.current === sessionId && latest.lessonKey === lessonKey && latest.isPlaying) {
+            speakParagraph(lessonKey, nextIndex, latest.rate, { skipCancel: true, sessionId });
+          }
+        }, 80);
+      } else {
+        setReader((state) => ({ ...state, lessonKey, paragraphIndex: 0, isPlaying: false }));
+      }
+    };
+    utterance.onerror = () => {
+      if (intentionalStopRef.current || readerSessionRef.current !== sessionId) return;
+      setReader((state) => ({ ...state, isPlaying: false }));
+      toast.error('Não foi possível continuar a leitura em voz alta.');
+    };
+
+    utteranceRef.current = utterance;
+    setReader((current) => ({ ...current, lessonKey, paragraphIndex, rate, isPlaying: true }));
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const toggleReaderPlayback = (lessonKey) => {
+    const paragraphs = paragraphsByLesson[lessonKey] || [];
+    if (!paragraphs.length) {
+      toast.error('Esta aula não possui texto para leitura em voz alta.');
+      return;
+    }
+
+    if (reader.lessonKey === lessonKey && reader.isPlaying) {
+      window.speechSynthesis?.pause();
+      setReader((current) => ({ ...current, isPlaying: false }));
+      return;
+    }
+
+    if (reader.lessonKey === lessonKey && utteranceRef.current && window.speechSynthesis?.paused) {
+      window.speechSynthesis.resume();
+      setReader((current) => ({ ...current, isPlaying: true }));
+      return;
+    }
+
+    speakParagraph(lessonKey, reader.lessonKey === lessonKey ? reader.paragraphIndex : 0, reader.rate);
+  };
+
+  const skipReaderParagraph = (lessonKey) => {
+    const paragraphs = paragraphsByLesson[lessonKey] || [];
+    if (!paragraphs.length) return;
+    const currentIndex = reader.lessonKey === lessonKey ? reader.paragraphIndex : 0;
+    const nextIndex = currentIndex + 1 >= paragraphs.length ? 0 : currentIndex + 1;
+    speakParagraph(lessonKey, nextIndex, reader.rate);
+  };
+
+  const changeReaderRate = (lessonKey, rate) => {
+    setReader((current) => ({ ...current, lessonKey, rate }));
+    if (reader.lessonKey === lessonKey && reader.isPlaying) {
+      speakParagraph(lessonKey, reader.paragraphIndex, rate);
+    }
+  };
 
   const saveMutation = useMutation({
-    mutationFn: async (newChapters) => {
-      const existingByKey = new Map(storedLessons.map((lesson) => [`${lesson.chapter_id}__${lesson.lesson_id}`, lesson]));
-      const operations = [];
+    mutationFn: async ({ chapterId, lessonId, content }) => {
+      const chapterIndex = DEFAULT_CHAPTERS.findIndex((chapter) => chapter.id === chapterId);
+      const chapter = DEFAULT_CHAPTERS[chapterIndex];
+      const lessonIndex = chapter?.lessons.findIndex((lesson) => lesson.id === lessonId) ?? -1;
+      const defaultLesson = lessonIndex >= 0 ? chapter.lessons[lessonIndex] : null;
+      const existingLesson = savedLessonByKey.get(`${chapterId}__${lessonId}`);
+      const payload = {
+        book_id: APOSTILA_BOOK_ID,
+        book_title: APOSTILA_BOOK_TITLE,
+        author_email: session?.email || 'admin@wr-educonnect.local',
+        chapter_id: chapterId,
+        chapter_title: chapter?.title || chapterId,
+        lesson_id: lessonId,
+        title: defaultLesson?.title || 'Aula da apostila',
+        content,
+        order: ((chapterIndex >= 0 ? chapterIndex : 0) * 100) + (lessonIndex >= 0 ? lessonIndex + 1 : 1),
+      };
 
-      newChapters.forEach((chapter, chapterIndex) => {
-        chapter.lessons.forEach((lesson, lessonIndex) => {
-          operations.push({ chapter, lesson, order: chapterIndex * 100 + lessonIndex + 1 });
-        });
-      });
-
-      for (const { chapter, lesson, order } of operations) {
-        const key = `${chapter.id}__${lesson.id}`;
-        const existing = existingByKey.get(key);
-        const lessonContent = lesson.content || '';
-        const shouldUpload = lessonContent.length > INLINE_CONTENT_LIMIT;
-        const contentUrl = shouldUpload
-          ? (existing?.content_url && existing.content === lessonContent
-            ? existing.content_url
-            : await uploadLessonContent(chapter.id, lesson.id, lessonContent))
-          : '';
-
-        const payload = {
-          book_id: APOSTILA_BOOK_ID,
-          author_email: existing?.author_email || APOSTILA_AUTHOR_EMAIL,
-          title: lesson.title,
-          content: shouldUpload ? '' : lessonContent,
-          content_url: contentUrl,
-          content_storage: shouldUpload ? 'file' : 'inline',
-          chapter_id: chapter.id,
-          chapter_title: chapter.title,
-          lesson_id: lesson.id,
-          lesson_title: lesson.title,
-          course: 'tcc',
-          order,
-        };
-
-        if (existing?.id) await adminApi.update('BookChapter', existing.id, payload);
-        else await adminApi.create('BookChapter', payload);
-      }
+      return adminApi.upsertBookChapter(payload, existingLesson?.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
@@ -162,22 +345,17 @@ export default function Apostila() {
       setEditingLesson(null);
     },
     onError: (error) => {
-      toast.error(`Erro ao salvar apostila: ${error.message}`);
+      toast.error(`Erro ao salvar apostila: ${error.message || 'tente novamente.'}`);
     },
   });
 
   const handleEditLesson = (chapterId, lessonId, content) => {
     setEditingLesson(`${chapterId}__${lessonId}`);
-    setEditContent(content || '');
+    setEditContent(getLessonHtml(content || ''));
   };
 
   const handleSaveLesson = (chapterId, lessonId) => {
-    const updated = chapters.map((ch) =>
-      ch.id === chapterId
-        ? { ...ch, lessons: ch.lessons.map((l) => l.id === lessonId ? { ...l, content: editContent } : l) }
-        : ch
-    );
-    saveMutation.mutate(updated);
+    saveMutation.mutate({ chapterId, lessonId, content: editContent });
   };
 
   const totalLessons = chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
@@ -235,7 +413,7 @@ export default function Apostila() {
         <div className="mt-5 pt-5 border-t border-emerald-500/15">
           <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Fundamentação teórica</p>
           <div className="flex flex-wrap gap-2">
-            {['Winnicott', 'Kurt Lewin', 'Heinz Kohut', 'George Engel', 'Viktor Frankl'].map((t) => (
+            {['Donald Winnicott ', 'Kurt Lewin', 'Heinz Kohut', 'George Engel', 'Viktor Frankl'].map((t) => (
               <span key={t} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-medium">
                 {t}
               </span>
@@ -293,10 +471,16 @@ export default function Apostila() {
 
                     const lessonReadKey = `${chapter.id}__${lesson.id}`;
                     const isRead = readLessons.has(lessonReadKey);
+                    const lessonParagraphs = paragraphsByLesson[key] || [];
+                    const isReaderActive = reader.lessonKey === key;
+                    const currentParagraphNumber = isReaderActive ? reader.paragraphIndex + 1 : 1;
                     return (
                       <div key={lesson.id}>
                         <button
-                          onClick={() => setOpenLesson(isOpen ? null : key)}
+                          onClick={() => {
+                            if (reader.lessonKey === key) stopReader();
+                            setOpenLesson(isOpen ? null : key);
+                          }}
                           className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-secondary/30 transition-colors text-left ${isRead ? 'bg-emerald-500/5' : ''}`}
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -316,16 +500,33 @@ export default function Apostila() {
                           <div className="px-5 pb-5 bg-secondary/10">
                             {isEditing ? (
                               <div className="space-y-3">
-                                <textarea
-                                  value={editContent}
-                                  onChange={(e) => {
-                                    if (e.target.value.length <= 10800) setEditContent(e.target.value);
-                                  }}
-                                  rows={28}
-                                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-                                />
-                                <div className={`text-xs font-medium text-right ${editContent.length >= 10800 ? 'text-red-500' : editContent.length >= 10000 ? 'text-amber-400' : 'text-muted-foreground'}`}>
-                                  {editContent.length} / 10800 caracteres (6 tópicos × ~1800)
+                                <div className="rounded-2xl border border-emerald-500/20 bg-slate-950/70 p-3 shadow-inner">
+                                  <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-300">
+                                      <Edit2 size={12} /> Edição do conteúdo da apostila
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1">
+                                      <Type size={12} /> Fonte, tamanho, cor e alinhamento disponíveis
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1">
+                                      <AlignLeft size={12} /> Use a visualização para ajustar quebras e posicionamento
+                                    </span>
+                                  </div>
+                                  <div
+                                    className="apostila-rich-editor overflow-hidden rounded-xl border border-white/10 bg-white shadow-2xl"
+                                  >
+                                    <ReactQuill
+                                      theme="snow"
+                                      value={editContent}
+                                      onChange={setEditContent}
+                                      modules={quillModules}
+                                      formats={quillFormats}
+                                      placeholder="Digite e formate o conteúdo da aula aqui..."
+                                    />
+                                  </div>
+                                </div>
+                                <div className="text-xs font-medium text-right text-muted-foreground">
+                                  {editContent.replace(/<[^>]*>/g, '').length} caracteres de texto
                                 </div>
                                 <div className="flex gap-2">
                                   <Button size="sm" onClick={() => handleSaveLesson(chapter.id, lesson.id)} disabled={saveMutation.isPending}>
@@ -338,10 +539,65 @@ export default function Apostila() {
                               </div>
                             ) : (
                               <div className="space-y-3">
+                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
+                                      <Volume2 size={16} />
+                                      Leitor da apostila
+                                      <span className="text-xs font-normal text-muted-foreground">
+                                        Parágrafo {Math.min(currentParagraphNumber, lessonParagraphs.length || 1)}/{lessonParagraphs.length || 1}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => toggleReaderPlayback(key)}
+                                        disabled={!lessonParagraphs.length}
+                                        className="gap-1.5"
+                                      >
+                                        {isReaderActive && reader.isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                                        {isReaderActive && reader.isPlaying ? 'Pausar' : 'Play'}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => stopReader(key)}
+                                        disabled={!lessonParagraphs.length || !isReaderActive}
+                                        className="gap-1.5"
+                                      >
+                                        <Square size={13} /> Stop
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => skipReaderParagraph(key)}
+                                        disabled={!lessonParagraphs.length}
+                                        className="gap-1.5"
+                                      >
+                                        <SkipForward size={13} /> Avançar parágrafo
+                                      </Button>
+                                      <div className="flex items-center gap-1 rounded-lg border border-border bg-background/70 p-1" aria-label="Velocidade de leitura">
+                                        {READER_RATES.map((rate) => (
+                                          <button
+                                            key={rate}
+                                            type="button"
+                                            onClick={() => changeReaderRate(key, rate)}
+                                            className={`rounded-md px-2 py-1 text-xs font-bold transition-colors ${reader.rate === rate ? 'bg-emerald-500 text-white' : 'text-muted-foreground hover:bg-secondary'}`}
+                                            aria-pressed={reader.rate === rate}
+                                          >
+                                            {rate.toFixed(1)}x
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                                 <div className={`rounded-xl border ${bgLight} border-opacity-30 p-4`} style={{ borderColor: 'transparent', background: 'rgba(0,0,0,0.15)' }}>
-                                  <pre className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed font-sans">
-                                    {lesson.content || 'Conteúdo ainda não adicionado.'}
-                                  </pre>
+                                  <div
+                                    className="apostila-content text-sm text-foreground/90 leading-relaxed font-sans"
+                                    dangerouslySetInnerHTML={{ __html: lesson.content ? getLessonHtml(lesson.content) : 'Conteúdo ainda não adicionado.' }}
+                                  />
                                 </div>
                                 <div className="flex gap-2 flex-wrap items-center">
                                   <Button

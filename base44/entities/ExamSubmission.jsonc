@@ -75,19 +75,8 @@
     "student_email"
   ],
   "rls": {
-    "create": true,
-    "read": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": null,
+    "read": true,
     "update": {
       "$or": [
         {
