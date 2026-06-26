@@ -9,7 +9,6 @@ import 'react-quill/dist/quill.snow.css';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { adminApi } from '@/lib/adminApi';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
@@ -27,7 +26,6 @@ const APOSTILA_BOOK_ID = 'apostila-tcc';
 const APOSTILA_BOOK_TITLE = 'Apostila TCC';
 
 const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
-const APOSTILA_BOOK_ID = 'apostila-tcc';
 const APOSTILA_AUTHOR_EMAIL = 'apostila@wr-edu.local';
 const INLINE_CONTENT_LIMIT = 6000;
 
@@ -57,6 +55,23 @@ async function resolveStoredLesson(record) {
   } catch {
     return { ...record, content: record.content || '' };
   }
+}
+
+async function buildStoredContentPayload(chapterId, lessonId, content) {
+  const lessonContent = content || '';
+  if (lessonContent.length <= INLINE_CONTENT_LIMIT) {
+    return {
+      content: lessonContent,
+      content_url: '',
+      content_storage: 'inline',
+    };
+  }
+
+  return {
+    content: '',
+    content_url: await uploadLessonContent(chapterId, lessonId, lessonContent),
+    content_storage: 'file',
+  };
 }
 
 const quillModules = {
@@ -153,14 +168,17 @@ export default function Apostila() {
 
   const { data: savedLessons = [], isFetched: savedLessonsFetched } = useQuery({
     queryKey: ['apostila-lessons', APOSTILA_BOOK_ID],
-    queryFn: () => base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID }, 'order', 500),
+    queryFn: async () => {
+      const records = await base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID }, 'order', 500);
+      return Promise.all((records || []).map(resolveStoredLesson));
+    },
   });
 
   const defaultServerLessons = useMemo(() => DEFAULT_CHAPTERS.flatMap((chapter, chapterIndex) =>
     chapter.lessons.map((lesson, lessonIndex) => ({
       book_id: APOSTILA_BOOK_ID,
       book_title: APOSTILA_BOOK_TITLE,
-      author_email: session?.email || 'admin@wr-educonnect.local',
+      author_email: session?.email || APOSTILA_AUTHOR_EMAIL,
       chapter_id: chapter.id,
       chapter_title: chapter.title,
       lesson_id: lesson.id,
@@ -176,7 +194,11 @@ export default function Apostila() {
     const missingLessons = defaultServerLessons.filter((lesson) => !savedKeys.has(`${lesson.chapter_id}__${lesson.lesson_id}`));
     if (!missingLessons.length) return;
 
-    adminApi.syncBookChapters(missingLessons, { createOnly: true })
+    Promise.all(missingLessons.map(async (lesson) => ({
+      ...lesson,
+      ...(await buildStoredContentPayload(lesson.chapter_id, lesson.lesson_id, lesson.content)),
+    })))
+      .then((preparedLessons) => adminApi.syncBookChapters(preparedLessons, { createOnly: true }))
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
         toast.success('Aulas da apostila sincronizadas com o servidor.');
@@ -325,15 +347,22 @@ export default function Apostila() {
       const lessonIndex = chapter?.lessons.findIndex((lesson) => lesson.id === lessonId) ?? -1;
       const defaultLesson = lessonIndex >= 0 ? chapter.lessons[lessonIndex] : null;
       const existingLesson = savedLessonByKey.get(`${chapterId}__${lessonId}`);
+      const storedContent = existingLesson?.content === content && existingLesson?.content_url
+        ? {
+          content: existingLesson.content_storage === 'file' ? '' : content,
+          content_url: existingLesson.content_url,
+          content_storage: existingLesson.content_storage || 'file',
+        }
+        : await buildStoredContentPayload(chapterId, lessonId, content);
       const payload = {
         book_id: APOSTILA_BOOK_ID,
         book_title: APOSTILA_BOOK_TITLE,
-        author_email: session?.email || 'admin@wr-educonnect.local',
+        author_email: session?.email || APOSTILA_AUTHOR_EMAIL,
         chapter_id: chapterId,
         chapter_title: chapter?.title || chapterId,
         lesson_id: lessonId,
         title: defaultLesson?.title || 'Aula da apostila',
-        content,
+        ...storedContent,
         order: ((chapterIndex >= 0 ? chapterIndex : 0) * 100) + (lessonIndex >= 0 ? lessonIndex + 1 : 1),
       };
 
