@@ -132,7 +132,7 @@ O controle hipertrofiado quase sempre protege um self que foi profundamente amea
     },
     {
       id: 'mod3-a5',
-      title: 'Aula 5 — Como Transformar Bravura em Assertividade: Da Agressão à Precisão',
+      title: 'Aula 5 — Como Confrontar Dependencia Resultando Em Autossuficiencia: Da Agressão à Precisão',
       content: `COMO TRANSFORMAR BRAVURA EM ASSERTIVIDADE: DA AGRESSÃO À PRECISÃO
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
