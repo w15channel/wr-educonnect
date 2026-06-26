@@ -356,7 +356,6 @@ A relação terapêutica, quando vivida assim, transcende as técnicas. É um en
 
 O legado da terapia não são apenas as técnicas aprendidas, mas a experiência de ter sido visto. O paciente leva consigo a certeza de que sua identidade importa. Ele pode enfrentar o mundo com mais autenticidade. O terapeuta permanece como uma referência interna. Uma voz que diz: “Você é valioso do jeito que é”. Esse é o presente mais duradouro que uma terapia pode oferecer.
 `,
-```javascript
     },
     {
       id: 'mod1-a5',
@@ -442,4 +441,3 @@ O olhar treinado, as perguntas certas, a leitura das ausências, a hipótese bem
     },
   ],
 };
-```
