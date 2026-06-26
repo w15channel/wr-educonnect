@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2 } from 'lucide-react';
 import ReactQuill from 'react-quill';
@@ -26,6 +27,37 @@ const APOSTILA_BOOK_ID = 'apostila-tcc';
 const APOSTILA_BOOK_TITLE = 'Apostila TCC';
 
 const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
+const APOSTILA_BOOK_ID = 'apostila-tcc';
+const APOSTILA_AUTHOR_EMAIL = 'apostila@wr-edu.local';
+const INLINE_CONTENT_LIMIT = 6000;
+
+function safeFilePart(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+}
+
+async function uploadLessonContent(chapterId, lessonId, content) {
+  const name = `apostila-${safeFilePart(chapterId)}-${safeFilePart(lessonId)}.txt`;
+  const file = new File([content || ''], name, { type: 'text/plain;charset=utf-8' });
+  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+  return file_url;
+}
+
+async function resolveStoredLesson(record) {
+  if (!record?.content_url) return record;
+
+  try {
+    const response = await fetch(record.content_url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return { ...record, content: await response.text() };
+  } catch {
+    return { ...record, content: record.content || '' };
+  }
+}
 
 const quillModules = {
   toolbar: [
