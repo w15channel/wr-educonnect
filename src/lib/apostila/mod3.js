@@ -133,7 +133,7 @@ O controle hipertrofiado quase sempre protege um self que foi profundamente amea
     {
       id: 'mod3-a5',
       title: 'Aula 5 — Como Transformar Dependência Em Autossuficiência: Da Limitação à Autonomia',
-      content: COMO TRANSFORMAR DEPENDÊNCIA EM AUTOSSUFICIÊNCIA: DA LIMITAÇÃO À AUTONOMIA
+      content: `COMO TRANSFORMAR DEPENDÊNCIA EM AUTOSSUFICIÊNCIA: DA LIMITAÇÃO À AUTONOMIA
 Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
