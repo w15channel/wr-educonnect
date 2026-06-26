@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked } from 'lucide-react';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -21,6 +22,37 @@ import { MOD10 } from '@/lib/apostila/mod10';
 const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
 
 const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
+const APOSTILA_BOOK_ID = 'apostila-tcc';
+const APOSTILA_AUTHOR_EMAIL = 'apostila@wr-edu.local';
+const INLINE_CONTENT_LIMIT = 6000;
+
+function safeFilePart(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+}
+
+async function uploadLessonContent(chapterId, lessonId, content) {
+  const name = `apostila-${safeFilePart(chapterId)}-${safeFilePart(lessonId)}.txt`;
+  const file = new File([content || ''], name, { type: 'text/plain;charset=utf-8' });
+  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+  return file_url;
+}
+
+async function resolveStoredLesson(record) {
+  if (!record?.content_url) return record;
+
+  try {
+    const response = await fetch(record.content_url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return { ...record, content: await response.text() };
+  } catch {
+    return { ...record, content: record.content || '' };
+  }
+}
 
 export default function Apostila() {
   const { session } = useCustomAuth();
@@ -53,26 +85,84 @@ export default function Apostila() {
     setCelebrating(true);
   };
 
-  const { data: savedData } = useQuery({
-    queryKey: ['apostila-book'],
-    queryFn: () => base44.entities.Book.filter({ title: 'Apostila TCC' }, '-created_date', 1),
+  const { data: storedLessons = [] } = useQuery({
+    queryKey: ['apostila-lessons', APOSTILA_BOOK_ID],
+    queryFn: async () => {
+      const records = await base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID }, 'order', 200);
+      return Promise.all((records || []).map(resolveStoredLesson));
+    },
   });
 
-  const book = savedData?.[0];
-  // Always use DEFAULT_CHAPTERS from code (source of truth); DB is only used to persist admin edits
-  const savedChapters = book?.chapters_data ? (() => { try { return JSON.parse(book.chapters_data); } catch { return null; } })() : null;
-  const chapters = savedChapters && savedChapters.length >= DEFAULT_CHAPTERS.length ? savedChapters : DEFAULT_CHAPTERS;
+  const storedLessonByKey = useMemo(() => {
+    return new Map(storedLessons.map((lesson) => [`${lesson.chapter_id}__${lesson.lesson_id}`, lesson]));
+  }, [storedLessons]);
+
+  const chapters = useMemo(() => {
+    return DEFAULT_CHAPTERS.map((chapter) => ({
+      ...chapter,
+      lessons: chapter.lessons.map((lesson) => {
+        const storedLesson = storedLessonByKey.get(`${chapter.id}__${lesson.id}`);
+        if (!storedLesson) return lesson;
+
+        return {
+          ...lesson,
+          content: storedLesson.content || lesson.content || '',
+          server_id: storedLesson.id,
+          content_url: storedLesson.content_url || '',
+          content_storage: storedLesson.content_storage || 'inline',
+        };
+      }),
+    }));
+  }, [storedLessonByKey]);
 
   const saveMutation = useMutation({
     mutationFn: async (newChapters) => {
-      const payload = { title: 'Apostila TCC', chapters_data: JSON.stringify(newChapters) };
-      if (book) return base44.entities.Book.update(book.id, payload);
-      return base44.entities.Book.create(payload);
+      const existingByKey = new Map(storedLessons.map((lesson) => [`${lesson.chapter_id}__${lesson.lesson_id}`, lesson]));
+      const operations = [];
+
+      newChapters.forEach((chapter, chapterIndex) => {
+        chapter.lessons.forEach((lesson, lessonIndex) => {
+          operations.push({ chapter, lesson, order: chapterIndex * 100 + lessonIndex + 1 });
+        });
+      });
+
+      for (const { chapter, lesson, order } of operations) {
+        const key = `${chapter.id}__${lesson.id}`;
+        const existing = existingByKey.get(key);
+        const lessonContent = lesson.content || '';
+        const shouldUpload = lessonContent.length > INLINE_CONTENT_LIMIT;
+        const contentUrl = shouldUpload
+          ? (existing?.content_url && existing.content === lessonContent
+            ? existing.content_url
+            : await uploadLessonContent(chapter.id, lesson.id, lessonContent))
+          : '';
+
+        const payload = {
+          book_id: APOSTILA_BOOK_ID,
+          author_email: existing?.author_email || APOSTILA_AUTHOR_EMAIL,
+          title: lesson.title,
+          content: shouldUpload ? '' : lessonContent,
+          content_url: contentUrl,
+          content_storage: shouldUpload ? 'file' : 'inline',
+          chapter_id: chapter.id,
+          chapter_title: chapter.title,
+          lesson_id: lesson.id,
+          lesson_title: lesson.title,
+          course: 'tcc',
+          order,
+        };
+
+        if (existing?.id) await adminApi.update('BookChapter', existing.id, payload);
+        else await adminApi.create('BookChapter', payload);
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['apostila-book'] });
-      toast.success('Apostila salva!');
+      queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
+      toast.success('Apostila salva no servidor!');
       setEditingLesson(null);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao salvar apostila: ${error.message}`);
     },
   });
 

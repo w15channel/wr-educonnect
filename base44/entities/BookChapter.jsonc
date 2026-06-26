@@ -18,6 +18,45 @@
       "type": "string",
       "description": "Conte\u00fado do cap\u00edtulo (HTML rich text)"
     },
+    "content_url": {
+      "type": "string",
+      "description": "URL do arquivo de conte\u00fado quando o texto for grande demais para salvar inline"
+    },
+    "content_storage": {
+      "type": "string",
+      "enum": [
+        "inline",
+        "file"
+      ],
+      "default": "inline",
+      "description": "Onde o conte\u00fado principal foi armazenado"
+    },
+    "chapter_id": {
+      "type": "string",
+      "description": "Identificador est\u00e1vel do m\u00f3dulo da apostila"
+    },
+    "chapter_title": {
+      "type": "string",
+      "description": "T\u00edtulo do m\u00f3dulo da apostila"
+    },
+    "lesson_id": {
+      "type": "string",
+      "description": "Identificador est\u00e1vel da aula dentro do m\u00f3dulo"
+    },
+    "lesson_title": {
+      "type": "string",
+      "description": "T\u00edtulo original da aula"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso ao qual a aula da apostila pertence"
+    },
     "order": {
       "type": "number",
       "default": 1,
@@ -44,6 +83,9 @@
     },
     "read": {
       "$or": [
+        {
+          "data.book_id": "apostila-tcc"
+        },
         {
           "data.author_email": "{{user.email}}"
         },
