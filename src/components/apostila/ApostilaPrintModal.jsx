@@ -30,22 +30,54 @@ const FONT_SIZE   = 18;
 const LINE_HEIGHT = 1.85;
 const TOPIC_TARGET_CHARS = 2500;
 
-const POSITIONS_KEY = 'wr_apostila_print_text_position_v1';
-const DEFAULT_TEXT_POSITION = { x: 0, y: 0 };
+const POSITIONS_KEY = 'wr_apostila_print_layout_positions_v2';
+const LEGACY_TEXT_POSITION_KEY = 'wr_apostila_print_text_position_v1';
+const DEFAULT_LAYER_POSITION = { x: 0, y: 0 };
+const DEFAULT_POSITIONS = {
+  title: { ...DEFAULT_LAYER_POSITION },
+  text: { ...DEFAULT_LAYER_POSITION },
+};
 
-function loadTextPosition() {
+function normalizePosition(value) {
+  return {
+    x: Number.isFinite(value?.x) ? value.x : 0,
+    y: Number.isFinite(value?.y) ? value.y : 0,
+  };
+}
+
+function loadPrintPositions() {
   try {
     const raw = localStorage.getItem(POSITIONS_KEY);
-    if (raw) return { ...DEFAULT_TEXT_POSITION, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        title: normalizePosition(parsed.title),
+        text: normalizePosition(parsed.text),
+      };
+    }
+
+    const legacyTextPosition = localStorage.getItem(LEGACY_TEXT_POSITION_KEY);
+    if (legacyTextPosition) {
+      return {
+        ...DEFAULT_POSITIONS,
+        text: normalizePosition(JSON.parse(legacyTextPosition)),
+      };
+    }
   } catch {}
-  return { ...DEFAULT_TEXT_POSITION };
+  return {
+    title: { ...DEFAULT_LAYER_POSITION },
+    text: { ...DEFAULT_LAYER_POSITION },
+  };
 }
 
-function saveTextPosition(position) {
-  localStorage.setItem(POSITIONS_KEY, JSON.stringify(position));
+function savePrintPositions(positions) {
+  localStorage.setItem(POSITIONS_KEY, JSON.stringify({
+    title: normalizePosition(positions.title),
+    text: normalizePosition(positions.text),
+  }));
 }
 
-function DraggableTextLayer({ position, editMode, onMove, children }) {
+function DraggableTextLayer({ position, editMode, onMove, zIndex = 2, children }) {
   const layerRef = useRef(null);
   const dragging = useRef(false);
   const startMouse = useRef({ x: 0, y: 0 });
@@ -87,7 +119,7 @@ function DraggableTextLayer({ position, editMode, onMove, children }) {
         position: 'absolute',
         inset: 0,
         transform: `translate(${position.x}px, ${position.y}px)`,
-        zIndex: 2,
+        zIndex,
         cursor: editMode ? 'grab' : 'default',
         outline: editMode ? '3px dashed rgba(16, 185, 129, 0.85)' : 'none',
         outlineOffset: -CONTENT_TOP,
@@ -185,7 +217,7 @@ function splitIntoTopics(content, targetChars = TOPIC_TARGET_CHARS) {
 // ─── Page component ───────────────────────────────────────────────────────────
 // No transform/scale ever applied here — only raw pixel sizes
 const ApostilaPage = React.forwardRef(function ApostilaPage(
-  { lesson, chapterTitle, topicLeft, topicRight, pageNum, totalPages, textPosition = DEFAULT_TEXT_POSITION, editMode = false, onTextPositionChange },
+  { lesson, chapterTitle, topicLeft, topicRight, pageNum, totalPages, positions = DEFAULT_POSITIONS, editMode = false, onPositionChange },
   ref
 ) {
   return (
@@ -219,6 +251,12 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
       />
 
       {/* Header */}
+      <DraggableTextLayer
+        position={positions.title}
+        editMode={editMode}
+        onMove={(nextPosition) => onPositionChange?.('title', nextPosition)}
+        zIndex={4}
+      >
       <div style={{
         position: 'absolute',
         top: SQUARE_TOP + 4,
@@ -261,8 +299,14 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         </div>
         <div style={{ width: 80, height: 2, background: '#c9a84c', marginTop: 5 }} />
       </div>
+      </DraggableTextLayer>
 
-      <DraggableTextLayer position={textPosition} editMode={editMode} onMove={onTextPositionChange}>
+      <DraggableTextLayer
+        position={positions.text}
+        editMode={editMode}
+        onMove={(nextPosition) => onPositionChange?.('text', nextPosition)}
+        zIndex={2}
+      >
         {/* Left column */}
         <div style={{
           position: 'absolute',
@@ -327,7 +371,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [textPosition, setTextPosition] = useState(loadTextPosition);
+  const [positions, setPositions] = useState(loadPrintPositions);
 
   // Refs for capture — always full-size, never scaled
   const pageRefs = useRef([React.createRef(), React.createRef(), React.createRef()]);
@@ -344,15 +388,27 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
   ];
   const totalPages = 3;
 
-  const handleSaveTextPosition = () => {
-    saveTextPosition(textPosition);
-    toast.success('Posição do texto salva!');
+  const handlePositionChange = (layer, nextPosition) => {
+    setPositions((current) => ({
+      ...current,
+      [layer]: normalizePosition(nextPosition),
+    }));
   };
 
-  const handleResetTextPosition = () => {
-    setTextPosition(DEFAULT_TEXT_POSITION);
-    saveTextPosition(DEFAULT_TEXT_POSITION);
-    toast.success('Posição do texto redefinida.');
+  const handleSavePositions = () => {
+    savePrintPositions(positions);
+    toast.success('Posições salvas para este modelo.');
+  };
+
+  const handleApplyPositionsToAll = () => {
+    savePrintPositions(positions);
+    toast.success('Posições aplicadas e salvas para todos os modelos.');
+  };
+
+  const handleResetPositions = () => {
+    setPositions(DEFAULT_POSITIONS);
+    savePrintPositions(DEFAULT_POSITIONS);
+    toast.success('Posições redefinidas.');
   };
 
   // Visual scale for preview only — NOT applied to capture nodes
@@ -489,23 +545,29 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
           onClick={() => setEditMode((value) => !value)}
           className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-bold transition-colors ${editMode ? 'border-emerald-400 bg-emerald-500/20 text-emerald-100' : 'border-white/20 bg-white/10 text-white hover:bg-white/20'}`}
         >
-          <Move size={14} /> {editMode ? 'Movendo texto' : 'Mover texto'}
+          <Move size={14} /> {editMode ? 'Movendo itens' : 'Mover itens'}
         </button>
         {editMode && (
           <>
             <button
-              onClick={handleSaveTextPosition}
+              onClick={handleSavePositions}
               className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
             >
-              <Save size={14} /> Salvar posição
+              <Save size={14} /> Salvar posições
             </button>
             <button
-              onClick={handleResetTextPosition}
+              onClick={handleApplyPositionsToAll}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors"
+            >
+              <Save size={14} /> Reposicionar para todos
+            </button>
+            <button
+              onClick={handleResetPositions}
               className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold text-white hover:bg-white/20 transition-colors"
             >
               <RotateCcw size={14} /> Resetar
             </button>
-            <span className="text-xs text-white/60">X: {textPosition.x}px · Y: {textPosition.y}px</span>
+            <span className="text-xs text-white/60">Título X: {positions.title.x}px · Y: {positions.title.y}px | Texto X: {positions.text.x}px · Y: {positions.text.y}px</span>
           </>
         )}
 
@@ -541,9 +603,9 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
             topicRight={pages[currentPage][1]}
             pageNum={currentPage + 1}
             totalPages={totalPages}
-            textPosition={textPosition}
+            positions={positions}
             editMode={editMode}
-            onTextPositionChange={setTextPosition}
+            onPositionChange={handlePositionChange}
           />
         </div>
       </div>
@@ -571,7 +633,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
             pageNum={i + 1}
             totalPages={totalPages}
             ref={pageRefs.current[i]}
-            textPosition={textPosition}
+            positions={positions}
           />
         ))}
       </div>
