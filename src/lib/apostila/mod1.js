@@ -98,7 +98,6 @@ Quando conduzir uma sessão, traga a mesma atitude investigativa. Ao ouvir a nar
 Entretanto, a prática isolada tem limites; por isso, busque supervisão regular, compartilhe casos e receba feedback construtivo. A ética profissional exige que você verifique suas próprias motivações, confirme se a intervenção está alinhada aos valores do cliente e respeite os limites de competência. A aprendizagem contínua, através de leituras, workshops e discussões, mantém o olhar afiado e atualizado com as descobertas mais recentes da ciência comportamental.
 
 Se você aplicou, ainda que de forma simples, as perguntas sugeridas nas primeiras sessões, já deu o primeiro passo para transformar o olhar clínico em hábito. Lembre‑se de que a Terapia Comportamental não oferece soluções instantâneas, mas um método estruturado para investigar, compreender e, finalmente, mudar padrões que mantêm sofrimento. Continue cultivando curiosidade, responsabilidade e compaixão; a cada encontro, você se aproximará ainda mais da capacidade de guiar pessoas rumo a histórias mais saudáveis.`,
-```javascript
     },
     {
       id: 'mod1-a2',
@@ -518,4 +517,3 @@ A clareza sobre a direção não significa rigidez ou apego a um plano que não 
     },
   ],
 };
-```
