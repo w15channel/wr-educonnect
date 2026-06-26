@@ -33,7 +33,7 @@ const MODULE_BANK = [
       ['mod3-a2', 'Aula 2 — Intenção Paradoxal: Quebrando Ciclos que se Autoperpetua'],
       ['mod3-a3', 'Aula 3 — O Uso Estratégico do Silêncio para Provocar Autorregulação'],
       ['mod3-a4', 'Aula 4 — Manejo do Paciente Hipercontrolador: Protocolo Prático'],
-      ['mod3-a5', 'Aula 5 — Como Confrontar Dependencia Resultando Em Autossuficiencia: Da Agressão à Precisão'],
+      ['mod3-a5', 'Aula 5 — Como Transformar Dependência Em Autossuficiência: Da Limitação à Autonomia'],
     ],
   },
   {
