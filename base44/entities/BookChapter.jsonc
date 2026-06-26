@@ -12,16 +12,32 @@
     },
     "title": {
       "type": "string",
-      "description": "T\u00edtulo do cap\u00edtulo"
+      "description": "Título do capítulo"
     },
     "content": {
       "type": "string",
-      "description": "Conte\u00fado do cap\u00edtulo (HTML rich text)"
+      "description": "Conteúdo do capítulo (HTML rich text)"
     },
     "order": {
       "type": "number",
       "default": 1,
-      "description": "Ordem do cap\u00edtulo"
+      "description": "Ordem do capítulo"
+    },
+    "book_title": {
+      "type": "string",
+      "description": "Título do livro/apostila"
+    },
+    "chapter_id": {
+      "type": "string",
+      "description": "Identificador estável do módulo da apostila"
+    },
+    "chapter_title": {
+      "type": "string",
+      "description": "Título do módulo da apostila"
+    },
+    "lesson_id": {
+      "type": "string",
+      "description": "Identificador estável da aula dentro do módulo"
     }
   },
   "required": [
@@ -42,18 +58,7 @@
         }
       ]
     },
-    "read": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": true,
     "update": {
       "$or": [
         {
