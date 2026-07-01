@@ -5,30 +5,29 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
 
-// ─── Background ───────────────────────────────────────────────────────────────
 const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
 
 const IMG_W = 2250;
 const IMG_H = 1591;
 
-const SQUARE_W    = 2168;
-const SQUARE_H    = 1178;
+const SQUARE_W = 2168;
+const SQUARE_H = 1178;
 const SQUARE_LEFT = 41;
-const SQUARE_TOP  = 207;
+const SQUARE_TOP = 207;
 
 const HEADER_ZONE_H = 72;
-const LINE_SHIFT    = Math.round(18 * 1.85); // ~33px — one line up
-const CONTENT_TOP   = SQUARE_TOP + HEADER_ZONE_H - LINE_SHIFT;
-const CONTENT_H     = SQUARE_H - HEADER_ZONE_H + LINE_SHIFT;
+const LINE_SHIFT = Math.round(18 * 1.85);
+const CONTENT_TOP = SQUARE_TOP + HEADER_ZONE_H - LINE_SHIFT;
+const CONTENT_H = SQUARE_H - HEADER_ZONE_H + LINE_SHIFT;
 
 const INNER_MARGIN = 31;
-const USABLE_W     = SQUARE_W - INNER_MARGIN * 2;
-const CENTER_GAP   = Math.round(USABLE_W * 0.10);
-const COL_W        = Math.round((USABLE_W - CENTER_GAP) / 2);
-const COL_LEFT_X   = SQUARE_LEFT + INNER_MARGIN;
-const COL_RIGHT_X  = COL_LEFT_X + COL_W + CENTER_GAP;
+const USABLE_W = SQUARE_W - INNER_MARGIN * 2;
+const CENTER_GAP = Math.round(USABLE_W * 0.10);
+const COL_W = Math.round((USABLE_W - CENTER_GAP) / 2);
+const COL_LEFT_X = SQUARE_LEFT + INNER_MARGIN;
+const COL_RIGHT_X = COL_LEFT_X + COL_W + CENTER_GAP;
 
-const FONT_SIZE   = 18;
+const FONT_SIZE = 18;
 const LINE_HEIGHT = 1.85;
 const TOPIC_TARGET_CHARS = 2500;
 
@@ -38,7 +37,6 @@ const PDF_PAGE_MARGIN = 52;
 const PDF_MARGIN_LEFT = PDF_PAGE_MARGIN;
 const PDF_MARGIN_RIGHT = PDF_PAGE_MARGIN;
 const PDF_FRAME_MARGIN = 22;
-const PDF_CONTENT_WIDTH = PDF_PAGE_WIDTH_PT - PDF_MARGIN_LEFT - PDF_MARGIN_RIGHT;
 const PDF_BODY_FONT_SIZE = 10.8;
 const PDF_BODY_LINE_HEIGHT = PDF_BODY_FONT_SIZE * 1.45;
 const PDF_PARAGRAPH_GAP = 8;
@@ -48,6 +46,9 @@ const PDF_HEADING_BEFORE_GAP = 16;
 const PDF_HEADING_AFTER_GAP = 5;
 const PDF_HEADING_KEEP_WITH_BODY_LINES = 3;
 const PDF_FOOTER_FONT_SIZE = 7.6;
+const PDF_MIN_LINES_TO_START_LONG_BLOCK = 2;
+const PDF_DENSE_PARAGRAPH_MIN_CHARS = 850;
+const PDF_DENSE_PARAGRAPH_TARGET_SENTENCES = 4;
 
 const HIGHLIGHT_TERMS = [
   'padrão comportamental',
@@ -58,8 +59,6 @@ const HIGHLIGHT_TERMS = [
 ];
 
 const stripUnsafePrintCharacters = (value = '') => String(value)
-  // Keep line breaks and tabs, but remove binary/control characters that can be
-  // emitted by the PDF text renderer as visible percent-control artifacts.
   .replace(/^[^\p{L}\p{N}<#*]+(?=\s*(?:=====\s*Page|\d+[.)]|[A-ZÁÉÍÓÚÂÊÔÃÕÇ]))/gmu, '')
   .replace(/^\s*=====\s*Page\s*\d+\s*=====\s*$/gmi, '')
   .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '')
@@ -138,11 +137,54 @@ function splitNumberedHeadingLead(paragraph = '') {
   return [heading, body];
 }
 
+const removeDuplicateParagraphs = (paragraphs = []) => {
+  const seen = new Set();
+  return paragraphs.filter((paragraph) => {
+    const key = normalizeParagraphKey(paragraph);
+    if (!key) return false;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+function splitDenseParagraph(paragraph = '') {
+  const cleanParagraph = normalizeExtractedApostilaText(paragraph).replace(/[ \t]+/g, ' ').trim();
+  if (!cleanParagraph || isApostilaPdfTopicHeading(cleanParagraph) || cleanParagraph.length < PDF_DENSE_PARAGRAPH_MIN_CHARS) {
+    return cleanParagraph ? [cleanParagraph] : [];
+  }
+
+  const sentences = cleanParagraph
+    .match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g)
+    ?.map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  if (!sentences || sentences.length <= PDF_DENSE_PARAGRAPH_TARGET_SENTENCES + 1) {
+    return [cleanParagraph];
+  }
+
+  const chunks = [];
+  let current = [];
+  for (const sentence of sentences) {
+    current.push(sentence);
+    const currentText = current.join(' ');
+    if (current.length >= PDF_DENSE_PARAGRAPH_TARGET_SENTENCES || currentText.length >= PDF_DENSE_PARAGRAPH_MIN_CHARS) {
+      chunks.push(currentText);
+      current = [];
+    }
+  }
+  if (current.length) chunks.push(current.join(' '));
+  return chunks;
+}
+
 function getPrintableParagraphs(printableText = '') {
-  const paragraphs = removeDuplicateParagraphs(breakEmbeddedNumberedTopics(removePrintablePreamble(printableText))
+  const paragraphs = breakEmbeddedNumberedTopics(removePrintablePreamble(printableText))
     .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim()));
-  return paragraphs.flatMap(splitNumberedHeadingLead).filter(Boolean);
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .flatMap(splitNumberedHeadingLead)
+    .flatMap(splitDenseParagraph);
+  return removeDuplicateParagraphs(paragraphs).filter(Boolean);
 }
 
 const joinArtificialLineBreaks = (value = '') => normalizeExtractedApostilaText(value)
@@ -161,17 +203,6 @@ const joinArtificialLineBreaks = (value = '') => normalizeExtractedApostilaText(
     }, '');
   })
   .join('\n\n');
-
-const removeDuplicateParagraphs = (paragraphs = []) => {
-  const seen = new Set();
-  return paragraphs.filter((paragraph) => {
-    const key = normalizeParagraphKey(paragraph);
-    if (!key) return false;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
 
 const POSITIONS_KEY = 'wr_apostila_print_layout_positions_v2';
 const LEGACY_TEXT_POSITION_KEY = 'wr_apostila_print_text_position_v1';
@@ -274,7 +305,6 @@ function DraggableTextLayer({ position, editMode, onMove, zIndex = 2, children }
   );
 }
 
-// ─── Split content into 6 topics ─────────────────────────────────────────────
 const isHtmlContent = (value = '') => /<[^>]+>/.test(value);
 
 const plainTextToHtml = (value = '') => value
@@ -292,10 +322,7 @@ const getVisibleText = (value = '') => value
   .trim();
 
 const visibleCharCount = (value = '') => getVisibleText(value).length;
-
-function normalizeTopicContent(topic) {
-  return topic?.trim() || '';
-}
+const normalizeTopicContent = (topic) => topic?.trim() || '';
 
 const escapeHtml = (value = '') => String(value)
   .replace(/&/g, '&amp;')
@@ -403,6 +430,25 @@ function assertNoOverflow(pdf, line, maxWidth, context) {
   return true;
 }
 
+function splitLongToken(pdf, token, maxWidth) {
+  const cleanToken = String(token || '').trim();
+  if (!cleanToken || pdf.getTextWidth(cleanToken) <= maxWidth) return [cleanToken].filter(Boolean);
+
+  const parts = [];
+  let current = '';
+  for (const char of cleanToken) {
+    const candidate = `${current}${char}`;
+    if (current && pdf.getTextWidth(candidate) > maxWidth) {
+      parts.push(current);
+      current = char;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) parts.push(current);
+  return parts;
+}
+
 function wrapText(pdf, text, maxWidth, context = 'texto') {
   const source = normalizeExtractedApostilaText(text).replace(/[ \t]+/g, ' ').trim();
   if (!source) return [];
@@ -418,15 +464,9 @@ function wrapText(pdf, text, maxWidth, context = 'texto') {
       continue;
     }
 
-    const words = line.split(/\s+/).filter(Boolean);
+    const words = line.split(/\s+/).filter(Boolean).flatMap((word) => splitLongToken(pdf, word, maxWidth));
     let current = '';
     for (const word of words) {
-      if (pdf.getTextWidth(word) > maxWidth) {
-        if (current) safeLines.push(current);
-        safeLines.push(word);
-        current = '';
-        continue;
-      }
       const candidate = current ? `${current} ${word}` : word;
       if (pdf.getTextWidth(candidate) <= maxWidth) {
         current = candidate;
@@ -446,8 +486,18 @@ function getBlockHeight(lines, lineHeight) {
   return lines.length * lineHeight;
 }
 
-function ensureFits(pdf, cursor, layout, height, onPageBreak) {
+function ensureFits(pdf, cursor, layout, height, onPageBreak, options = {}) {
   if (cursor.y + height <= layout.contentBottom) return cursor;
+
+  const fullPageCapacity = layout.contentBottom - layout.contentTop;
+  const remaining = layout.contentBottom - cursor.y;
+  const minLinesToStart = options.minLinesToStart ?? PDF_MIN_LINES_TO_START_LONG_BLOCK;
+  const minStartHeight = layout.lineHeight * minLinesToStart;
+
+  if (height > fullPageCapacity && (remaining >= minStartHeight || cursor.y <= layout.contentTop + 0.25)) {
+    return cursor;
+  }
+
   pdf.addPage('a4', 'portrait');
   const nextLayout = onPageBreak?.() || layout;
   return { y: nextLayout.contentTop };
@@ -459,7 +509,7 @@ function getSingleLineFittingText(pdf, text, maxWidth, context) {
     if (source) assertNoOverflow(pdf, source, maxWidth, context);
     return source;
   }
-  const ellipsis = '…';
+  const ellipsis = '...';
   let fitted = source;
   while (fitted.length > 0 && pdf.getTextWidth(`${fitted}${ellipsis}`) > maxWidth) {
     fitted = fitted.slice(0, -1).trimEnd();
@@ -565,13 +615,13 @@ function drawApostilaPdfFooter({ pdf, pageWidth, pageHeight, pageNumber, totalPa
   const layout = createApostilaPdfLayout(pageWidth, pageHeight, pageNumber);
   const footerY = layout.footerY;
   const pageText = `Página ${pageNumber} de ${totalPages}`;
+  setFooterFont(pdf);
   const pageTextWidth = pdf.getTextWidth(pageText);
   const leftMaxWidth = layout.contentWidth - pageTextWidth - 18;
 
   pdf.setDrawColor(226, 232, 240);
   pdf.setLineWidth(0.25);
   pdf.line(layout.marginLeft, footerY - 13, pageWidth - layout.marginRight, footerY - 13);
-  setFooterFont(pdf);
   pdf.setTextColor(120, 126, 138);
   const issuer = getSingleLineFittingText(pdf, formatDocumentIssuer(), leftMaxWidth, 'rodapé institucional')
     || getSingleLineFittingText(pdf, `Documento emitido digitalmente pela WR-EDU · CNPJ ${BRAND_CNPJ}`, leftMaxWidth, 'rodapé institucional curto');
@@ -617,7 +667,9 @@ function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak,
   const metrics = getParagraphPdfMetrics({ pdf, paragraph: cleanParagraph, layout, isHeading });
   let activeCursor = forcePageBreak
     ? ensureFits(pdf, { y: layout.contentBottom + 1 }, layout, metrics.height, onPageBreak)
-    : ensureFits(pdf, cursor, layout, metrics.height, onPageBreak);
+    : ensureFits(pdf, cursor, layout, metrics.height, onPageBreak, {
+        minLinesToStart: isHeading ? PDF_HEADING_KEEP_WITH_BODY_LINES : PDF_MIN_LINES_TO_START_LONG_BLOCK,
+      });
   let y = activeCursor.y + metrics.beforeGap;
 
   if (isHeading) setTitleFont(pdf); else setBodyFont(pdf);
@@ -690,10 +742,10 @@ function splitIntoTopics(content, targetChars = TOPIC_TARGET_CHARS) {
   if (htmlNumberedTopics) return htmlNumberedTopics.map((topic) => normalizeTopicContent(topic));
 
   const totalChars = visibleCharCount(htmlContent);
-  const chunkSize  = Math.max(targetChars, Math.ceil(totalChars / 6));
+  const chunkSize = Math.max(targetChars, Math.ceil(totalChars / 6));
 
   const topics = [];
-  let current  = '';
+  let current = '';
 
   for (const para of paragraphs) {
     const candidate = current ? current + para : para;
@@ -715,8 +767,6 @@ function splitIntoTopics(content, targetChars = TOPIC_TARGET_CHARS) {
   return topics.map((topic) => normalizeTopicContent(topic));
 }
 
-// ─── Page component ───────────────────────────────────────────────────────────
-// No transform/scale ever applied here — only raw pixel sizes
 const ApostilaPage = React.forwardRef(function ApostilaPage(
   { lesson, chapterTitle, topicLeft, topicRight, pageNum, totalPages, positions = DEFAULT_POSITIONS, editMode = false, onPositionChange },
   ref
@@ -732,7 +782,6 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         background: '#fff',
         boxSizing: 'border-box',
         flexShrink: 0,
-        // CRITICAL: no transform, no scale — full pixel size always
       }}
     >
       <img
@@ -742,15 +791,16 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         draggable={false}
         style={{
           position: 'absolute',
-          top: 0, left: 0,
-          width: IMG_W, height: IMG_H,
+          top: 0,
+          left: 0,
+          width: IMG_W,
+          height: IMG_H,
           objectFit: 'fill',
           pointerEvents: 'none',
           zIndex: 0,
           display: 'block',
         }}
       />
-
 
       <style>{`
         .apostila-print-column h2 {
@@ -783,55 +833,54 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         }
       `}</style>
 
-      {/* Header */}
       <DraggableTextLayer
         position={positions.title}
         editMode={editMode}
         onMove={(nextPosition) => onPositionChange?.('title', nextPosition)}
         zIndex={4}
       >
-      <div style={{
-        position: 'absolute',
-        top: SQUARE_TOP + 4,
-        left: SQUARE_LEFT,
-        width: SQUARE_W,
-        height: HEADER_ZONE_H - 4,
-        zIndex: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        paddingBottom: 6,
-        pointerEvents: 'none',
-      }}>
         <div style={{
-          fontFamily: "'Cinzel', Georgia, serif",
-          fontSize: 19,
-          fontWeight: 700,
-          color: '#1a2d5a',
-          letterSpacing: 3,
-          textTransform: 'uppercase',
-          lineHeight: 1.2,
+          position: 'absolute',
+          top: SQUARE_TOP + 4,
+          left: SQUARE_LEFT,
+          width: SQUARE_W,
+          height: HEADER_ZONE_H - 4,
+          zIndex: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          paddingBottom: 6,
+          pointerEvents: 'none',
         }}>
-          {lesson.title}
-          {pageNum > 1 && (
-            <span style={{ fontSize: 12, fontWeight: 400, color: '#7a6a3a', marginLeft: 12 }}>
-              · Parte {pageNum}
-            </span>
-          )}
+          <div style={{
+            fontFamily: "'Cinzel', Georgia, serif",
+            fontSize: 19,
+            fontWeight: 700,
+            color: '#1a2d5a',
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            lineHeight: 1.2,
+          }}>
+            {lesson.title}
+            {pageNum > 1 && (
+              <span style={{ fontSize: 12, fontWeight: 400, color: '#7a6a3a', marginLeft: 12 }}>
+                · Parte {pageNum}
+              </span>
+            )}
+          </div>
+          <div style={{
+            fontFamily: 'Georgia, serif',
+            fontSize: 11,
+            color: '#7a6a3a',
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            marginTop: 2,
+          }}>
+            {chapterTitle}
+          </div>
+          <div style={{ width: 80, height: 2, background: '#c9a84c', marginTop: 5 }} />
         </div>
-        <div style={{
-          fontFamily: 'Georgia, serif',
-          fontSize: 11,
-          color: '#7a6a3a',
-          letterSpacing: 3,
-          textTransform: 'uppercase',
-          marginTop: 2,
-        }}>
-          {chapterTitle}
-        </div>
-        <div style={{ width: 80, height: 2, background: '#c9a84c', marginTop: 5 }} />
-      </div>
       </DraggableTextLayer>
 
       <DraggableTextLayer
@@ -840,52 +889,51 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         onMove={(nextPosition) => onPositionChange?.('text', nextPosition)}
         zIndex={2}
       >
-        {/* Left column */}
-        <div style={{
-          position: 'absolute',
-          top: CONTENT_TOP,
-          left: COL_LEFT_X,
-          width: COL_W,
-          height: CONTENT_H,
-          overflow: 'hidden',
-          fontFamily: "Arial, Verdana, sans-serif",
-          fontSize: FONT_SIZE,
-          lineHeight: LINE_HEIGHT,
-          color: '#1a2d5a',
-          textAlign: 'left',
-          letterSpacing: 0,
-          hyphens: 'none',
-          wordBreak: 'normal',
-          overflowWrap: 'normal',
-        }}
-        className="apostila-print-column"
-        dangerouslySetInnerHTML={{ __html: topicLeft || '' }}
+        <div
+          style={{
+            position: 'absolute',
+            top: CONTENT_TOP,
+            left: COL_LEFT_X,
+            width: COL_W,
+            height: CONTENT_H,
+            overflow: 'hidden',
+            fontFamily: 'Arial, Verdana, sans-serif',
+            fontSize: FONT_SIZE,
+            lineHeight: LINE_HEIGHT,
+            color: '#1a2d5a',
+            textAlign: 'left',
+            letterSpacing: 0,
+            hyphens: 'none',
+            wordBreak: 'normal',
+            overflowWrap: 'normal',
+          }}
+          className="apostila-print-column"
+          dangerouslySetInnerHTML={{ __html: topicLeft || '' }}
         />
 
-        {/* Right column */}
-        <div style={{
-          position: 'absolute',
-          top: CONTENT_TOP,
-          left: COL_RIGHT_X,
-          width: COL_W,
-          height: CONTENT_H,
-          overflow: 'hidden',
-          fontFamily: "Arial, Verdana, sans-serif",
-          fontSize: FONT_SIZE,
-          lineHeight: LINE_HEIGHT,
-          color: '#1a2d5a',
-          textAlign: 'left',
-          letterSpacing: 0,
-          hyphens: 'none',
-          wordBreak: 'normal',
-          overflowWrap: 'normal',
-        }}
-        className="apostila-print-column"
-        dangerouslySetInnerHTML={{ __html: topicRight || '' }}
+        <div
+          style={{
+            position: 'absolute',
+            top: CONTENT_TOP,
+            left: COL_RIGHT_X,
+            width: COL_W,
+            height: CONTENT_H,
+            overflow: 'hidden',
+            fontFamily: 'Arial, Verdana, sans-serif',
+            fontSize: FONT_SIZE,
+            lineHeight: LINE_HEIGHT,
+            color: '#1a2d5a',
+            textAlign: 'left',
+            letterSpacing: 0,
+            hyphens: 'none',
+            wordBreak: 'normal',
+            overflowWrap: 'normal',
+          }}
+          className="apostila-print-column"
+          dangerouslySetInnerHTML={{ __html: topicRight || '' }}
         />
       </DraggableTextLayer>
 
-      {/* Page number */}
       <div style={{
         position: 'absolute',
         bottom: 38,
@@ -902,7 +950,6 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
   );
 });
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
 export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
   const [topics, setTopics] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -910,7 +957,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
   const [editMode, setEditMode] = useState(false);
   const [positions, setPositions] = useState(loadPrintPositions);
 
-  // Refs for capture — always full-size, never scaled
   const pageRefs = useRef([React.createRef(), React.createRef(), React.createRef()]);
 
   useEffect(() => {
@@ -948,7 +994,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     toast.success('Posições redefinidas.');
   };
 
-  // Visual scale for preview only — NOT applied to capture nodes
   const SCALE = Math.min(0.40, (typeof window !== 'undefined' ? window.innerWidth * 0.86 : 900) / IMG_W);
 
   const waitImages = (node) => {
@@ -962,7 +1007,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
 
   const captureNode = async (node) => {
     await waitImages(node);
-    // Capture at 2× for crisp background + text, then downscale to native resolution
     const hiRes = await html2canvas(node, {
       scale: 2,
       useCORS: true,
@@ -979,9 +1023,8 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       logging: false,
       imageTimeout: 15000,
     });
-    // Draw back to 1× canvas so the final PNG is exactly IMG_W × IMG_H
     const out = document.createElement('canvas');
-    out.width  = IMG_W;
+    out.width = IMG_W;
     out.height = IMG_H;
     const ctx = out.getContext('2d');
     ctx.imageSmoothingEnabled = true;
@@ -998,7 +1041,10 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     setLoading(true);
     try {
       const node = pageRefs.current[currentPage]?.current;
-      if (!node) { toast.error('Página não encontrada.'); return; }
+      if (!node) {
+        toast.error('Página não encontrada.');
+        return;
+      }
       const canvas = await captureNode(node);
       canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
@@ -1018,7 +1064,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     }
   };
 
-
   const handleExportTextPdf = async () => {
     setLoading(true);
     try {
@@ -1028,7 +1073,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       const logoDataUrl = await imageUrlToDataUrl(WR_CERTIFICATE_LOGO);
       let layout = createApostilaPdfLayout(pageWidth, pageHeight, 1);
 
-      const printableText = htmlToPrintableText(normalizeExtractedApostilaText(lesson.content));
+      const printableText = htmlToPrintableText(lesson.content);
       const paragraphs = getPrintableParagraphs(printableText);
 
       pdf.setProperties({
@@ -1081,7 +1126,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       }
 
       pdf.save(`apostila-${safeName}-a4-retrato.pdf`);
-      toast.success('PDF A4 retrato exportado com o novo layout!');
+      toast.success('PDF A4 retrato exportado com layout corrigido!');
     } catch (e) {
       toast.error('Erro ao exportar PDF: ' + (e.message || ''));
     } finally {
@@ -1120,7 +1165,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/82 backdrop-blur-sm p-3">
-      {/* Controls */}
       <div
         className="flex flex-wrap items-center gap-2 mb-3 w-full justify-center"
         style={{ maxWidth: IMG_W * SCALE + 40 }}
@@ -1205,13 +1249,11 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         </button>
       </div>
 
-      {/* ── PREVIEW ONLY — visual scale via CSS, no ref ── */}
       <div
         className="rounded-xl overflow-hidden border border-white/10 shadow-2xl"
         style={{ width: IMG_W * SCALE, height: IMG_H * SCALE, flexShrink: 0 }}
       >
         <div style={{ width: IMG_W, height: IMG_H, transform: `scale(${SCALE})`, transformOrigin: 'top left', pointerEvents: editMode ? 'auto' : 'none' }}>
-          {/* Preview page — NO ref, just visual */}
           <ApostilaPage
             lesson={lesson}
             chapterTitle={chapterTitle}
@@ -1226,7 +1268,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         </div>
       </div>
 
-      {/* ── CAPTURE NODES — full pixel size, off-screen, NO transform, WITH refs ── */}
       <div
         style={{
           position: 'fixed',
@@ -1236,7 +1277,6 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
           pointerEvents: 'none',
           zIndex: -10,
           opacity: 0,
-          // NO transform here — ever
         }}
       >
         {pages.map((pair, i) => (
