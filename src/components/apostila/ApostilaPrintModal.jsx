@@ -34,19 +34,19 @@ const TOPIC_TARGET_CHARS = 2500;
 
 const PDF_PAGE_WIDTH_PT = 595.28;
 const PDF_PAGE_HEIGHT_PT = 841.89;
-const PDF_PAGE_MARGIN = 70.87; // 2.5 cm in PostScript points for A4 portrait exports.
+const PDF_PAGE_MARGIN = 52;
 const PDF_MARGIN_LEFT = PDF_PAGE_MARGIN;
 const PDF_MARGIN_RIGHT = PDF_PAGE_MARGIN;
 const PDF_FRAME_MARGIN = 22;
 const PDF_CONTENT_WIDTH = PDF_PAGE_WIDTH_PT - PDF_MARGIN_LEFT - PDF_MARGIN_RIGHT;
-const PDF_BODY_FONT_SIZE = 11;
-const PDF_BODY_LINE_HEIGHT = PDF_BODY_FONT_SIZE * 1.5;
-const PDF_PARAGRAPH_GAP = 7;
-const PDF_HEADING_FONT_SIZE = 13.5;
+const PDF_BODY_FONT_SIZE = 10.8;
+const PDF_BODY_LINE_HEIGHT = PDF_BODY_FONT_SIZE * 1.45;
+const PDF_PARAGRAPH_GAP = 8;
+const PDF_HEADING_FONT_SIZE = 12.8;
 const PDF_HEADING_LINE_HEIGHT = PDF_HEADING_FONT_SIZE * 1.35;
-const PDF_HEADING_BEFORE_GAP = 15;
+const PDF_HEADING_BEFORE_GAP = 16;
 const PDF_HEADING_AFTER_GAP = 8;
-const PDF_FOOTER_FONT_SIZE = 7.4;
+const PDF_FOOTER_FONT_SIZE = 7.6;
 
 const HIGHLIGHT_TERMS = [
   'padrão comportamental',
@@ -83,6 +83,8 @@ const normalizeParagraphKey = (value = '') => normalizeExtractedApostilaText(val
   .replace(/\s+/g, ' ')
   .trim();
 
+const isNumberedTopicTitleLine = (line = '') => /^\s*\d{1,2}[.)]\s+\S/.test(line.trim()) && line.trim().length <= 120;
+
 const joinArtificialLineBreaks = (value = '') => normalizeExtractedApostilaText(value)
   .split(/\n{2,}/)
   .map((paragraph) => {
@@ -92,6 +94,8 @@ const joinArtificialLineBreaks = (value = '') => normalizeExtractedApostilaText(
     return lines.reduce((current, line, index) => {
       if (index === 0) return line;
       if (/-$/.test(current)) return `${current.slice(0, -1)}${line}`;
+      if (isNumberedTopicTitleLine(current)) return `${current}\n\n${line}`;
+      if (isNumberedTopicTitleLine(line)) return `${current}\n\n${line}`;
       if (/^\s*(?:[•-]|\d+[.)])\s+/.test(line)) return `${current}\n${line}`;
       return `${current} ${line}`;
     }, '');
@@ -339,22 +343,6 @@ function assertNoOverflow(pdf, line, maxWidth, context) {
   return true;
 }
 
-function splitLongWordSafely(pdf, word, maxWidth) {
-  const chunks = [];
-  let chunk = '';
-  for (const char of String(word)) {
-    const candidate = `${chunk}${char}`;
-    if (chunk && pdf.getTextWidth(candidate) > maxWidth) {
-      chunks.push(chunk);
-      chunk = char;
-    } else {
-      chunk = candidate;
-    }
-  }
-  if (chunk) chunks.push(chunk);
-  return chunks;
-}
-
 function wrapText(pdf, text, maxWidth, context = 'texto') {
   const source = normalizeExtractedApostilaText(text).replace(/[ \t]+/g, ' ').trim();
   if (!source) return [];
@@ -374,11 +362,9 @@ function wrapText(pdf, text, maxWidth, context = 'texto') {
     let current = '';
     for (const word of words) {
       if (pdf.getTextWidth(word) > maxWidth) {
-        if (current) {
-          safeLines.push(current);
-          current = '';
-        }
-        safeLines.push(...splitLongWordSafely(pdf, word, maxWidth));
+        if (current) safeLines.push(current);
+        safeLines.push(word);
+        current = '';
         continue;
       }
       const candidate = current ? `${current} ${word}` : word;
@@ -403,8 +389,8 @@ function getBlockHeight(lines, lineHeight) {
 function ensureFits(pdf, cursor, layout, height, onPageBreak) {
   if (cursor.y + height <= layout.contentBottom) return cursor;
   pdf.addPage('a4', 'portrait');
-  onPageBreak?.();
-  return { y: layout.contentTop };
+  const nextLayout = onPageBreak?.() || layout;
+  return { y: nextLayout.contentTop };
 }
 
 function getSingleLineFittingText(pdf, text, maxWidth, context) {
@@ -425,8 +411,8 @@ function getSingleLineFittingText(pdf, text, maxWidth, context) {
 
 function createApostilaPdfLayout(pageWidth, pageHeight, pageNumber = 1) {
   const isFirstPage = pageNumber === 1;
-  const headerHeight = isFirstPage ? 150 : 62;
-  const footerHeight = 50;
+  const headerHeight = isFirstPage ? 128 : 50;
+  const footerY = pageHeight - PDF_FRAME_MARGIN - 18;
   return {
     pageWidth,
     pageHeight,
@@ -435,10 +421,10 @@ function createApostilaPdfLayout(pageWidth, pageHeight, pageNumber = 1) {
     contentWidth: pageWidth - PDF_MARGIN_LEFT - PDF_MARGIN_RIGHT,
     pageTop: PDF_FRAME_MARGIN,
     headerHeight,
-    footerHeight,
-    contentTop: PDF_FRAME_MARGIN + headerHeight,
-    contentBottom: pageHeight - PDF_FRAME_MARGIN - footerHeight,
-    footerY: pageHeight - 35,
+    footerHeight: pageHeight - footerY,
+    contentTop: PDF_FRAME_MARGIN + headerHeight + (isFirstPage ? 4 : 8),
+    contentBottom: footerY - 32,
+    footerY,
     lineHeight: PDF_BODY_LINE_HEIGHT,
     paragraphGap: PDF_PARAGRAPH_GAP,
   };
@@ -462,13 +448,13 @@ function drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, les
   pdf.rect(PDF_FRAME_MARGIN + 4, PDF_FRAME_MARGIN + 4, pageWidth - (PDF_FRAME_MARGIN + 4) * 2, pageHeight - (PDF_FRAME_MARGIN + 4) * 2);
 
   if (isFirstPage) {
-    if (logoDataUrl) pdf.addImage(logoDataUrl, 'PNG', layout.marginLeft, 34, 34, 34, undefined, 'FAST');
+    if (logoDataUrl) pdf.addImage(logoDataUrl, 'PNG', layout.marginLeft, 30, 30, 30, undefined, 'FAST');
 
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(9.5);
     pdf.setTextColor(...navy);
     wrapText(pdf, BRAND_LEGAL_NAME, layout.contentWidth - 88, 'cabeçalho institucional').forEach((line, index) => {
-      pdf.text(line, centerX, 40 + index * 11.5, { align: 'center' });
+      pdf.text(line, centerX, 36 + index * 11.5, { align: 'center' });
     });
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8.2);
@@ -477,30 +463,30 @@ function drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, les
 
     pdf.setDrawColor(...navy);
     pdf.setLineWidth(0.35);
-    pdf.line(layout.marginLeft, 82, pageWidth - layout.marginRight, 82);
+    pdf.line(layout.marginLeft, 72, pageWidth - layout.marginRight, 72);
 
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8.5);
     pdf.setTextColor(122, 106, 58);
-    pdf.text('APOSTILA DE ESTUDOS', centerX, 96, { align: 'center' });
+    pdf.text('APOSTILA DE ESTUDOS', centerX, 86, { align: 'center' });
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(14);
     pdf.setTextColor(...navy);
     wrapText(pdf, lessonTitle || 'Aula da apostila', layout.contentWidth, 'título da aula').slice(0, 2).forEach((line, index) => {
-      pdf.text(line, centerX, 113 + index * 16, { align: 'center' });
+      pdf.text(line, centerX, 103 + index * 14, { align: 'center' });
     });
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8.5);
     pdf.setTextColor(122, 106, 58);
     const chapter = getSingleLineFittingText(pdf, chapterTitle || 'Apostila', layout.contentWidth, 'módulo no cabeçalho');
-    pdf.text(chapter, centerX, 146, { align: 'center' });
+    pdf.text(chapter, centerX, 132, { align: 'center' });
     pdf.setDrawColor(...gold);
     pdf.setLineWidth(0.6);
-    pdf.line(centerX - 42, 158, centerX + 42, 158);
+    pdf.line(centerX - 42, 142, centerX + 42, 142);
     return;
   }
 
-  if (logoDataUrl) pdf.addImage(logoDataUrl, 'PNG', layout.marginLeft, 32, 20, 20, undefined, 'FAST');
+  if (logoDataUrl) pdf.addImage(logoDataUrl, 'PNG', layout.marginLeft, 30, 18, 18, undefined, 'FAST');
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(8.6);
   pdf.setTextColor(...navy);
@@ -509,10 +495,10 @@ function drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, les
   pdf.setFontSize(8);
   pdf.setTextColor(122, 106, 58);
   const shortTitle = getSingleLineFittingText(pdf, lessonTitle || 'Aula da apostila', 190, 'cabeçalho compacto título');
-  pdf.text(shortTitle, pageWidth - layout.marginRight, 43, { align: 'right' });
+  pdf.text(shortTitle, pageWidth - layout.marginRight, 42, { align: 'right' });
   pdf.setDrawColor(...navy);
   pdf.setLineWidth(0.3);
-  pdf.line(layout.marginLeft, 62, pageWidth - layout.marginRight, 62);
+  pdf.line(layout.marginLeft, 58, pageWidth - layout.marginRight, 58);
 }
 
 function drawApostilaPdfFooter({ pdf, pageWidth, pageHeight, pageNumber, totalPages }) {
@@ -578,16 +564,7 @@ function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak,
       pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
     }
     assertNoOverflow(pdf, line, layout.contentWidth, isHeading ? 'título de tópico' : 'corpo');
-    const shouldJustify = !isHeading && lineIndex < metrics.lines.length - 1;
-    if (shouldJustify) {
-      pdf.text(line, layout.marginLeft, y, {
-        baseline: 'alphabetic',
-        align: 'justify',
-        maxWidth: layout.contentWidth,
-      });
-    } else {
-      pdf.text(line, layout.marginLeft, y, { baseline: 'alphabetic' });
-    }
+    pdf.text(line, layout.marginLeft, y, { baseline: 'alphabetic' });
     y += metrics.lineHeight;
   }
 
@@ -717,6 +694,9 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
           color: #1a2d5a;
           text-align: left;
           letter-spacing: 0;
+          hyphens: none;
+          overflow-wrap: normal;
+          word-break: normal;
         }
         .apostila-print-column p {
           margin: 0 0 16px;
@@ -724,6 +704,10 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
           font-size: ${FONT_SIZE}px;
           line-height: ${LINE_HEIGHT};
           letter-spacing: 0;
+          text-align: left;
+          hyphens: none;
+          overflow-wrap: normal;
+          word-break: normal;
         }
         .apostila-print-column strong {
           font-weight: 800;
@@ -800,10 +784,11 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
           fontSize: FONT_SIZE,
           lineHeight: LINE_HEIGHT,
           color: '#1a2d5a',
-          textAlign: 'justify',
+          textAlign: 'left',
           letterSpacing: 0,
-          hyphens: 'auto',
-          wordBreak: 'break-word',
+          hyphens: 'none',
+          wordBreak: 'normal',
+          overflowWrap: 'normal',
         }}
         className="apostila-print-column"
         dangerouslySetInnerHTML={{ __html: topicLeft || '' }}
@@ -821,10 +806,11 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
           fontSize: FONT_SIZE,
           lineHeight: LINE_HEIGHT,
           color: '#1a2d5a',
-          textAlign: 'justify',
+          textAlign: 'left',
           letterSpacing: 0,
-          hyphens: 'auto',
-          wordBreak: 'break-word',
+          hyphens: 'none',
+          wordBreak: 'normal',
+          overflowWrap: 'normal',
         }}
         className="apostila-print-column"
         dangerouslySetInnerHTML={{ __html: topicRight || '' }}
@@ -840,9 +826,9 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         fontFamily: 'Georgia, serif',
         fontSize: 12,
         color: '#7a6a3a',
-        letterSpacing: 1,
+        letterSpacing: 0,
       }}>
-        {pageNum} / {totalPages}
+        Página {pageNum} de {totalPages}
       </div>
     </div>
   );
@@ -995,6 +981,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle, pageNumber: activePageNumber });
         setBodyFont(pdf);
         pdf.setTextColor(38, 52, 64);
+        return layout;
       };
 
       if (paragraphs.length === 0) {
