@@ -34,12 +34,13 @@ const TOPIC_TARGET_CHARS = 2500;
 
 const PDF_PAGE_WIDTH_PT = 595.28;
 const PDF_PAGE_HEIGHT_PT = 841.89;
-const PDF_MARGIN_LEFT = 52;
-const PDF_MARGIN_RIGHT = 52;
+const PDF_PAGE_MARGIN = 70.87; // 2.5 cm in PostScript points for A4 portrait exports.
+const PDF_MARGIN_LEFT = PDF_PAGE_MARGIN;
+const PDF_MARGIN_RIGHT = PDF_PAGE_MARGIN;
 const PDF_FRAME_MARGIN = 22;
 const PDF_CONTENT_WIDTH = PDF_PAGE_WIDTH_PT - PDF_MARGIN_LEFT - PDF_MARGIN_RIGHT;
 const PDF_BODY_FONT_SIZE = 11;
-const PDF_BODY_LINE_HEIGHT = PDF_BODY_FONT_SIZE * 1.4;
+const PDF_BODY_LINE_HEIGHT = PDF_BODY_FONT_SIZE * 1.5;
 const PDF_PARAGRAPH_GAP = 7;
 const PDF_HEADING_FONT_SIZE = 13.5;
 const PDF_HEADING_LINE_HEIGHT = PDF_HEADING_FONT_SIZE * 1.35;
@@ -74,6 +75,39 @@ const normalizeExtractedApostilaText = (value = '') => repairSpacedLetters(strip
   .replace(/[ \t]+\n/g, '\n')
   .replace(/\n{3,}/g, '\n\n')
   .trim();
+
+const normalizeParagraphKey = (value = '') => normalizeExtractedApostilaText(value)
+  .toLocaleLowerCase('pt-BR')
+  .replace(/[“”]/g, '"')
+  .replace(/[‘’]/g, "'")
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const joinArtificialLineBreaks = (value = '') => normalizeExtractedApostilaText(value)
+  .split(/\n{2,}/)
+  .map((paragraph) => {
+    const lines = paragraph.split('\n').map((line) => line.trim()).filter(Boolean);
+    if (lines.length <= 1) return paragraph.trim();
+
+    return lines.reduce((current, line, index) => {
+      if (index === 0) return line;
+      if (/-$/.test(current)) return `${current.slice(0, -1)}${line}`;
+      if (/^\s*(?:[•-]|\d+[.)])\s+/.test(line)) return `${current}\n${line}`;
+      return `${current} ${line}`;
+    }, '');
+  })
+  .join('\n\n');
+
+const removeDuplicateParagraphs = (paragraphs = []) => {
+  const seen = new Set();
+  return paragraphs.filter((paragraph) => {
+    const key = normalizeParagraphKey(paragraph);
+    if (!key) return false;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
 
 const POSITIONS_KEY = 'wr_apostila_print_layout_positions_v2';
 const LEGACY_TEXT_POSITION_KEY = 'wr_apostila_print_text_position_v1';
@@ -250,12 +284,12 @@ function htmlToPrintableText(value = '') {
         .replace(/<[^>]*>/g, '')
     : source;
 
-  return stripUnsafePrintCharacters(decodeHtmlEntities(withBreaks))
+  return joinArtificialLineBreaks(stripUnsafePrintCharacters(decodeHtmlEntities(withBreaks))
     .replace(/\r\n?/g, '\n')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]{2,}/g, ' ')
-    .trim();
+    .trim());
 }
 
 async function imageUrlToDataUrl(url) {
@@ -535,7 +569,8 @@ function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak,
   if (isHeading) setTitleFont(pdf); else setBodyFont(pdf);
   pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
 
-  for (const line of metrics.lines) {
+  for (let lineIndex = 0; lineIndex < metrics.lines.length; lineIndex += 1) {
+    const line = metrics.lines[lineIndex];
     if (y + metrics.lineHeight > layout.contentBottom) {
       activeCursor = ensureFits(pdf, { y: layout.contentBottom + 1 }, layout, metrics.lineHeight, onPageBreak);
       y = activeCursor.y;
@@ -543,7 +578,16 @@ function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak,
       pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
     }
     assertNoOverflow(pdf, line, layout.contentWidth, isHeading ? 'título de tópico' : 'corpo');
-    pdf.text(line, layout.marginLeft, y, { baseline: 'alphabetic' });
+    const shouldJustify = !isHeading && lineIndex < metrics.lines.length - 1;
+    if (shouldJustify) {
+      pdf.text(line, layout.marginLeft, y, {
+        baseline: 'alphabetic',
+        align: 'justify',
+        maxWidth: layout.contentWidth,
+      });
+    } else {
+      pdf.text(line, layout.marginLeft, y, { baseline: 'alphabetic' });
+    }
     y += metrics.lineHeight;
   }
 
@@ -931,7 +975,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       let layout = createApostilaPdfLayout(pageWidth, pageHeight, 1);
 
       const printableText = htmlToPrintableText(normalizeExtractedApostilaText(lesson.content));
-      const paragraphs = printableText.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
+      const paragraphs = removeDuplicateParagraphs(printableText.split(/\n{2,}/).map((paragraph) => paragraph.trim()));
 
       pdf.setProperties({
         title: `${lesson.title || 'Aula da apostila'} — ${chapterTitle || 'Apostila'}`,
