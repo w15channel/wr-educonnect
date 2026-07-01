@@ -70,7 +70,14 @@ const repairSpacedLetters = (value = '') => String(value).replace(
   (match) => match.replace(/\s+/g, '')
 );
 
-const normalizeExtractedApostilaText = (value = '') => repairSpacedLetters(stripUnsafePrintCharacters(value))
+const normalizePdfSafeCharacters = (value = '') => String(value)
+  .replace(/\u00A0/g, ' ')
+  .replace(/[\u2010-\u2015\u2212]/g, '-')
+  .replace(/[“”„]/g, '"')
+  .replace(/[‘’‚]/g, "'")
+  .replace(/\u2022/g, '-');
+
+const normalizeExtractedApostilaText = (value = '') => repairSpacedLetters(normalizePdfSafeCharacters(stripUnsafePrintCharacters(value)))
   .replace(/\r\n?/g, '\n')
   .replace(/[ \t]+\n/g, '\n')
   .replace(/\n{3,}/g, '\n\n')
@@ -84,6 +91,53 @@ const normalizeParagraphKey = (value = '') => normalizeExtractedApostilaText(val
   .trim();
 
 const isNumberedTopicTitleLine = (line = '') => /^\s*\d{1,2}[.)]\s+\S/.test(line.trim()) && line.trim().length <= 120;
+const hasLowercaseLetter = (value = '') => /[\p{Ll}]/u.test(value);
+const isUppercaseTopicTitle = (value = '') => {
+  const cleanValue = normalizeExtractedApostilaText(value)
+    .replace(/^\d{1,2}[.)]\s+/, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+  return cleanValue.length >= 8 && cleanValue.length <= 150 && !hasLowercaseLetter(cleanValue);
+};
+
+function removePrintablePreamble(value = '') {
+  const source = normalizeExtractedApostilaText(value);
+  const firstTopic = source.match(/^\s*1[.)]\s+/m);
+  if (!firstTopic || firstTopic.index > 700) return source;
+  return source.slice(firstTopic.index).trim();
+}
+
+function splitNumberedHeadingLead(paragraph = '') {
+  const source = normalizeExtractedApostilaText(paragraph).trim();
+  if (!/^\d{1,2}[.)]\s+/.test(source)) return [source].filter(Boolean);
+
+  const lines = source.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length > 1 && isNumberedTopicTitleLine(lines[0]) && isUppercaseTopicTitle(lines[0])) {
+    return [lines[0], lines.slice(1).join(' ')].filter(Boolean);
+  }
+
+  const flat = source.replace(/\s+/g, ' ').trim();
+  const numberedPrefix = flat.match(/^\d{1,2}[.)]\s+/)?.[0] || '';
+  if (!numberedPrefix) return [source].filter(Boolean);
+
+  const textAfterNumber = flat.slice(numberedPrefix.length);
+  const sentenceCaseBoundary = [...textAfterNumber.matchAll(/\s+(?=(?:[\p{Lu}][\p{Ll}])|(?:[AEOÀÁÉÍÓÚ]\s+[\p{Ll}]))/gu)]
+    .find((match) => match.index >= 18);
+  if (!sentenceCaseBoundary) return [source].filter(Boolean);
+
+  const splitAt = numberedPrefix.length + sentenceCaseBoundary.index;
+  const heading = flat.slice(0, splitAt).trim();
+  const body = flat.slice(splitAt).trim();
+  if (!body || !isUppercaseTopicTitle(heading)) return [source].filter(Boolean);
+  return [heading, body];
+}
+
+function getPrintableParagraphs(printableText = '') {
+  const paragraphs = removeDuplicateParagraphs(removePrintablePreamble(printableText)
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim()));
+  return paragraphs.flatMap(splitNumberedHeadingLead).filter(Boolean);
+}
 
 const joinArtificialLineBreaks = (value = '') => normalizeExtractedApostilaText(value)
   .split(/\n{2,}/)
@@ -522,6 +576,9 @@ function drawApostilaPdfFooter({ pdf, pageWidth, pageHeight, pageNumber, totalPa
 
 function isApostilaPdfTopicHeading(paragraph) {
   const cleanParagraph = normalizeExtractedApostilaText(paragraph).replace(/[ \t]+/g, ' ').trim();
+  if (/^\d{1,2}[.)]\s+/.test(cleanParagraph)) {
+    return isUppercaseTopicTitle(cleanParagraph);
+  }
   return /^\d+[.)]\s+/.test(cleanParagraph) || /^[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9 ,:;—–-]{18,}$/.test(cleanParagraph);
 }
 
@@ -961,7 +1018,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       let layout = createApostilaPdfLayout(pageWidth, pageHeight, 1);
 
       const printableText = htmlToPrintableText(normalizeExtractedApostilaText(lesson.content));
-      const paragraphs = removeDuplicateParagraphs(printableText.split(/\n{2,}/).map((paragraph) => paragraph.trim()));
+      const paragraphs = getPrintableParagraphs(printableText);
 
       pdf.setProperties({
         title: `${lesson.title || 'Aula da apostila'} — ${chapterTitle || 'Apostila'}`,
