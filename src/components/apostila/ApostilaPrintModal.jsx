@@ -3,7 +3,7 @@ import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image, Move, RotateCcw,
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
 
 // ─── Background ───────────────────────────────────────────────────────────────
 const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
@@ -32,12 +32,20 @@ const FONT_SIZE   = 18;
 const LINE_HEIGHT = 1.85;
 const TOPIC_TARGET_CHARS = 2500;
 
-const PDF_FONT_SIZE = 10.8;
-const PDF_LINE_HEIGHT = 5.7;
-const PDF_PARAGRAPH_GAP = 3.2;
-const PDF_HEADING_FONT_SIZE = 12.8;
-const PDF_HEADING_BEFORE_GAP = 5.2;
-const PDF_HEADING_AFTER_GAP = 3.0;
+const PDF_PAGE_WIDTH_PT = 595.28;
+const PDF_PAGE_HEIGHT_PT = 841.89;
+const PDF_MARGIN_LEFT = 52;
+const PDF_MARGIN_RIGHT = 52;
+const PDF_FRAME_MARGIN = 22;
+const PDF_CONTENT_WIDTH = PDF_PAGE_WIDTH_PT - PDF_MARGIN_LEFT - PDF_MARGIN_RIGHT;
+const PDF_BODY_FONT_SIZE = 11;
+const PDF_BODY_LINE_HEIGHT = PDF_BODY_FONT_SIZE * 1.4;
+const PDF_PARAGRAPH_GAP = 7;
+const PDF_HEADING_FONT_SIZE = 13.5;
+const PDF_HEADING_LINE_HEIGHT = PDF_HEADING_FONT_SIZE * 1.35;
+const PDF_HEADING_BEFORE_GAP = 15;
+const PDF_HEADING_AFTER_GAP = 8;
+const PDF_FOOTER_FONT_SIZE = 7.4;
 
 const HIGHLIGHT_TERMS = [
   'padrão comportamental',
@@ -266,89 +274,230 @@ async function imageUrlToDataUrl(url) {
   }
 }
 
+function resetPdfTextSpacing(pdf) {
+  if (typeof pdf.setCharSpace === 'function') pdf.setCharSpace(0);
+}
+
+function setBodyFont(pdf) {
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(PDF_BODY_FONT_SIZE);
+  resetPdfTextSpacing(pdf);
+}
+
+function setTitleFont(pdf) {
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(PDF_HEADING_FONT_SIZE);
+  resetPdfTextSpacing(pdf);
+}
+
+function setFooterFont(pdf) {
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(PDF_FOOTER_FONT_SIZE);
+  resetPdfTextSpacing(pdf);
+}
+
+function assertNoOverflow(pdf, line, maxWidth, context) {
+  const width = pdf.getTextWidth(line);
+  if (width > maxWidth + 0.25) {
+    console.error(`[Apostila PDF] Overflow horizontal em ${context}: ${width.toFixed(2)}pt > ${maxWidth.toFixed(2)}pt`, line);
+    return false;
+  }
+  return true;
+}
+
+function splitLongWordSafely(pdf, word, maxWidth) {
+  const chunks = [];
+  let chunk = '';
+  for (const char of String(word)) {
+    const candidate = `${chunk}${char}`;
+    if (chunk && pdf.getTextWidth(candidate) > maxWidth) {
+      chunks.push(chunk);
+      chunk = char;
+    } else {
+      chunk = candidate;
+    }
+  }
+  if (chunk) chunks.push(chunk);
+  return chunks;
+}
+
+function wrapText(pdf, text, maxWidth, context = 'texto') {
+  const source = normalizeExtractedApostilaText(text).replace(/[ \t]+/g, ' ').trim();
+  if (!source) return [];
+
+  const preliminaryLines = pdf.splitTextToSize(source, maxWidth)
+    .map((line) => stripUnsafePrintCharacters(line).replace(/[ \t]+/g, ' ').trim())
+    .filter(Boolean);
+
+  const safeLines = [];
+  for (const line of preliminaryLines) {
+    if (assertNoOverflow(pdf, line, maxWidth, context)) {
+      safeLines.push(line);
+      continue;
+    }
+
+    const words = line.split(/\s+/).filter(Boolean);
+    let current = '';
+    for (const word of words) {
+      if (pdf.getTextWidth(word) > maxWidth) {
+        if (current) {
+          safeLines.push(current);
+          current = '';
+        }
+        safeLines.push(...splitLongWordSafely(pdf, word, maxWidth));
+        continue;
+      }
+      const candidate = current ? `${current} ${word}` : word;
+      if (pdf.getTextWidth(candidate) <= maxWidth) {
+        current = candidate;
+      } else {
+        if (current) safeLines.push(current);
+        current = word;
+      }
+    }
+    if (current) safeLines.push(current);
+  }
+
+  safeLines.forEach((line) => assertNoOverflow(pdf, line, maxWidth, context));
+  return safeLines;
+}
+
+function getBlockHeight(lines, lineHeight) {
+  return lines.length * lineHeight;
+}
+
+function ensureFits(pdf, cursor, layout, height, onPageBreak) {
+  if (cursor.y + height <= layout.contentBottom) return cursor;
+  pdf.addPage('a4', 'portrait');
+  onPageBreak?.();
+  return { y: layout.contentTop };
+}
+
+function getSingleLineFittingText(pdf, text, maxWidth, context) {
+  const source = normalizeExtractedApostilaText(text).replace(/[ \t]+/g, ' ').trim();
+  if (!source || pdf.getTextWidth(source) <= maxWidth) {
+    if (source) assertNoOverflow(pdf, source, maxWidth, context);
+    return source;
+  }
+  const ellipsis = '…';
+  let fitted = source;
+  while (fitted.length > 0 && pdf.getTextWidth(`${fitted}${ellipsis}`) > maxWidth) {
+    fitted = fitted.slice(0, -1).trimEnd();
+  }
+  const result = fitted ? `${fitted}${ellipsis}` : ellipsis;
+  assertNoOverflow(pdf, result, maxWidth, context);
+  return result;
+}
+
+function createApostilaPdfLayout(pageWidth, pageHeight, pageNumber = 1) {
+  const isFirstPage = pageNumber === 1;
+  const headerHeight = isFirstPage ? 150 : 62;
+  const footerHeight = 50;
+  return {
+    pageWidth,
+    pageHeight,
+    marginLeft: PDF_MARGIN_LEFT,
+    marginRight: PDF_MARGIN_RIGHT,
+    contentWidth: pageWidth - PDF_MARGIN_LEFT - PDF_MARGIN_RIGHT,
+    pageTop: PDF_FRAME_MARGIN,
+    headerHeight,
+    footerHeight,
+    contentTop: PDF_FRAME_MARGIN + headerHeight,
+    contentBottom: pageHeight - PDF_FRAME_MARGIN - footerHeight,
+    footerY: pageHeight - 35,
+    lineHeight: PDF_BODY_LINE_HEIGHT,
+    paragraphGap: PDF_PARAGRAPH_GAP,
+  };
+}
+
 function drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle, chapterTitle, pageNumber = 1 }) {
   const navy = [30, 58, 95];
   const gold = [201, 168, 76];
   const lightBlue = [240, 244, 248];
   const isFirstPage = pageNumber === 1;
+  const layout = createApostilaPdfLayout(pageWidth, pageHeight, pageNumber);
+  const centerX = layout.marginLeft + layout.contentWidth / 2;
 
   pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
   pdf.setDrawColor(...navy);
-  pdf.setLineWidth(0.65);
-  pdf.rect(7, 7, pageWidth - 14, pageHeight - 14);
+  pdf.setLineWidth(0.55);
+  pdf.rect(PDF_FRAME_MARGIN, PDF_FRAME_MARGIN, pageWidth - PDF_FRAME_MARGIN * 2, pageHeight - PDF_FRAME_MARGIN * 2);
   pdf.setDrawColor(...lightBlue);
-  pdf.setLineWidth(1.8);
-  pdf.rect(9.2, 9.2, pageWidth - 18.4, pageHeight - 18.4);
-  pdf.setDrawColor(...navy);
-  pdf.setLineWidth(0.3);
-  pdf.rect(11, 11, pageWidth - 22, pageHeight - 22);
+  pdf.setLineWidth(1.1);
+  pdf.rect(PDF_FRAME_MARGIN + 4, PDF_FRAME_MARGIN + 4, pageWidth - (PDF_FRAME_MARGIN + 4) * 2, pageHeight - (PDF_FRAME_MARGIN + 4) * 2);
 
   if (isFirstPage) {
-    if (logoDataUrl) {
-      pdf.addImage(logoDataUrl, 'PNG', 18, 14, 16, 16, undefined, 'FAST');
-    }
+    if (logoDataUrl) pdf.addImage(logoDataUrl, 'PNG', layout.marginLeft, 34, 34, 34, undefined, 'FAST');
 
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8);
+    pdf.setFontSize(9.5);
     pdf.setTextColor(...navy);
-    pdf.text(BRAND_LEGAL_NAME, pageWidth / 2, 17, { align: 'center' });
+    wrapText(pdf, BRAND_LEGAL_NAME, layout.contentWidth - 88, 'cabeçalho institucional').forEach((line, index) => {
+      pdf.text(line, centerX, 40 + index * 11.5, { align: 'center' });
+    });
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7);
+    pdf.setFontSize(8.2);
     pdf.setTextColor(136, 136, 136);
-    pdf.text('Terapia · Educação · Desenvolvimento Pessoal', pageWidth / 2, 22, { align: 'center' });
+    pdf.text('Terapia · Educação · Desenvolvimento Pessoal', centerX, 62, { align: 'center' });
 
     pdf.setDrawColor(...navy);
     pdf.setLineWidth(0.35);
-    pdf.line(18, 34, pageWidth - 18, 34);
+    pdf.line(layout.marginLeft, 82, pageWidth - layout.marginRight, 82);
 
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7.5);
+    pdf.setFontSize(8.5);
     pdf.setTextColor(122, 106, 58);
-    pdf.text('APOSTILA DE ESTUDOS', pageWidth / 2, 40, { align: 'center' });
+    pdf.text('APOSTILA DE ESTUDOS', centerX, 96, { align: 'center' });
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(12.5);
+    pdf.setFontSize(14);
     pdf.setTextColor(...navy);
-    pdf.text(lessonTitle || 'Aula da apostila', pageWidth / 2, 47, { align: 'center', maxWidth: pageWidth - 44 });
+    wrapText(pdf, lessonTitle || 'Aula da apostila', layout.contentWidth, 'título da aula').slice(0, 2).forEach((line, index) => {
+      pdf.text(line, centerX, 113 + index * 16, { align: 'center' });
+    });
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
+    pdf.setFontSize(8.5);
     pdf.setTextColor(122, 106, 58);
-    pdf.text(chapterTitle || 'Apostila', pageWidth / 2, 53, { align: 'center', maxWidth: pageWidth - 44 });
+    const chapter = getSingleLineFittingText(pdf, chapterTitle || 'Apostila', layout.contentWidth, 'módulo no cabeçalho');
+    pdf.text(chapter, centerX, 146, { align: 'center' });
     pdf.setDrawColor(...gold);
-    pdf.setLineWidth(0.55);
-    pdf.line(pageWidth / 2 - 18, 58, pageWidth / 2 + 18, 58);
+    pdf.setLineWidth(0.6);
+    pdf.line(centerX - 42, 158, centerX + 42, 158);
     return;
   }
 
-  if (logoDataUrl) {
-    pdf.addImage(logoDataUrl, 'PNG', 18, 13, 10, 10, undefined, 'FAST');
-  }
+  if (logoDataUrl) pdf.addImage(logoDataUrl, 'PNG', layout.marginLeft, 32, 20, 20, undefined, 'FAST');
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(7.8);
+  pdf.setFontSize(8.6);
   pdf.setTextColor(...navy);
-  pdf.text(BRAND_LEGAL_NAME, 31, 17);
+  pdf.text(getSingleLineFittingText(pdf, BRAND_LEGAL_NAME, 245, 'cabeçalho compacto institucional'), layout.marginLeft + 27, 43);
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(7.4);
+  pdf.setFontSize(8);
   pdf.setTextColor(122, 106, 58);
-  pdf.text(lessonTitle || 'Aula da apostila', pageWidth - 18, 17, { align: 'right', maxWidth: 92 });
+  const shortTitle = getSingleLineFittingText(pdf, lessonTitle || 'Aula da apostila', 190, 'cabeçalho compacto título');
+  pdf.text(shortTitle, pageWidth - layout.marginRight, 43, { align: 'right' });
   pdf.setDrawColor(...navy);
   pdf.setLineWidth(0.3);
-  pdf.line(18, 27, pageWidth - 18, 27);
+  pdf.line(layout.marginLeft, 62, pageWidth - layout.marginRight, 62);
 }
 
 function drawApostilaPdfFooter({ pdf, pageWidth, pageHeight, pageNumber, totalPages }) {
-  const footerY = pageHeight - 18;
-  const leftText = formatDocumentIssuer();
+  const layout = createApostilaPdfLayout(pageWidth, pageHeight, pageNumber);
+  const footerY = layout.footerY;
   const pageText = `Página ${pageNumber} de ${totalPages}`;
+  const pageTextWidth = pdf.getTextWidth(pageText);
+  const leftMaxWidth = layout.contentWidth - pageTextWidth - 18;
 
   pdf.setDrawColor(226, 232, 240);
   pdf.setLineWidth(0.25);
-  pdf.line(18, footerY - 5, pageWidth - 18, footerY - 5);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(7.2);
-  pdf.setTextColor(136, 136, 136);
-  pdf.text(leftText, 18, footerY, { maxWidth: pageWidth - 78 });
-  pdf.text(pageText, pageWidth - 18, footerY, { align: 'right' });
+  pdf.line(layout.marginLeft, footerY - 13, pageWidth - layout.marginRight, footerY - 13);
+  setFooterFont(pdf);
+  pdf.setTextColor(120, 126, 138);
+  const issuer = getSingleLineFittingText(pdf, formatDocumentIssuer(), leftMaxWidth, 'rodapé institucional')
+    || getSingleLineFittingText(pdf, `Documento emitido digitalmente pela WR-EDU · CNPJ ${BRAND_CNPJ}`, leftMaxWidth, 'rodapé institucional curto');
+  pdf.text(issuer, layout.marginLeft, footerY);
+  assertNoOverflow(pdf, pageText, pageTextWidth, 'numeração do rodapé');
+  pdf.text(pageText, pageWidth - layout.marginRight, footerY, { align: 'right' });
 }
 
 function isApostilaPdfTopicHeading(paragraph) {
@@ -356,23 +505,20 @@ function isApostilaPdfTopicHeading(paragraph) {
   return /^\d+[.)]\s+/.test(cleanParagraph) || /^[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9 ,:;—–-]{18,}$/.test(cleanParagraph);
 }
 
-function getWrappedPdfLines(pdf, text, maxWidth) {
-  return pdf.splitTextToSize(text, maxWidth)
-    .map((line) => stripUnsafePrintCharacters(line).replace(/[ \t]+/g, ' ').trimEnd())
-    .filter(Boolean);
+function getParagraphPdfMetrics({ pdf, paragraph, layout, isHeading = isApostilaPdfTopicHeading(paragraph) }) {
+  const cleanParagraph = normalizeExtractedApostilaText(paragraph).replace(/[ \t]+/g, ' ').trim();
+  if (!cleanParagraph) return { lines: [], height: 0, lineHeight: layout.lineHeight, beforeGap: 0, afterGap: 0 };
+  if (isHeading) setTitleFont(pdf); else setBodyFont(pdf);
+  pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
+  const lineHeight = isHeading ? PDF_HEADING_LINE_HEIGHT : layout.lineHeight;
+  const lines = wrapText(pdf, cleanParagraph, layout.contentWidth, isHeading ? 'título de tópico' : 'corpo');
+  const beforeGap = isHeading ? PDF_HEADING_BEFORE_GAP : 0;
+  const afterGap = isHeading ? PDF_HEADING_AFTER_GAP : layout.paragraphGap;
+  return { lines, height: beforeGap + getBlockHeight(lines, lineHeight) + afterGap, lineHeight, beforeGap, afterGap };
 }
 
-function getParagraphPdfHeight({ pdf, paragraph, layout, isHeading = isApostilaPdfTopicHeading(paragraph) }) {
-  const cleanParagraph = normalizeExtractedApostilaText(paragraph).replace(/[ \t]+/g, ' ').trim();
-  if (!cleanParagraph) return 0;
-
-  pdf.setFont('helvetica', isHeading ? 'bold' : 'normal');
-  pdf.setFontSize(isHeading ? PDF_HEADING_FONT_SIZE : PDF_FONT_SIZE);
-  const lineHeight = isHeading ? PDF_LINE_HEIGHT + 0.7 : layout.lineHeight;
-  const lines = getWrappedPdfLines(pdf, cleanParagraph, layout.contentWidth);
-  return (isHeading ? PDF_HEADING_BEFORE_GAP : 0)
-    + (lines.length * lineHeight)
-    + (isHeading ? PDF_HEADING_AFTER_GAP : layout.paragraphGap);
+function getParagraphPdfHeight(args) {
+  return getParagraphPdfMetrics(args).height;
 }
 
 function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak, forcePageBreak = false }) {
@@ -380,33 +526,28 @@ function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak,
   if (!cleanParagraph) return cursor;
 
   const isHeading = isApostilaPdfTopicHeading(cleanParagraph);
-  pdf.setFont('helvetica', isHeading ? 'bold' : 'normal');
-  pdf.setFontSize(isHeading ? PDF_HEADING_FONT_SIZE : PDF_FONT_SIZE);
+  const metrics = getParagraphPdfMetrics({ pdf, paragraph: cleanParagraph, layout, isHeading });
+  let activeCursor = forcePageBreak
+    ? ensureFits(pdf, { y: layout.contentBottom + 1 }, layout, metrics.height, onPageBreak)
+    : ensureFits(pdf, cursor, layout, metrics.height, onPageBreak);
+  let y = activeCursor.y + metrics.beforeGap;
+
+  if (isHeading) setTitleFont(pdf); else setBodyFont(pdf);
   pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
-  const activeLineHeight = isHeading ? PDF_LINE_HEIGHT + 0.7 : layout.lineHeight;
-  const lines = getWrappedPdfLines(pdf, cleanParagraph, layout.contentWidth);
-  let { y } = cursor;
 
-  const startNewPage = () => {
-    pdf.addPage('a4', 'portrait');
-    onPageBreak?.();
-    y = layout.contentTop;
-  };
-
-  if (forcePageBreak) startNewPage();
-  if (isHeading) y += PDF_HEADING_BEFORE_GAP;
-
-  for (const line of lines) {
-    if (y + activeLineHeight > layout.pageBottom) startNewPage();
-
-    pdf.text(line, layout.marginX, y, {
-      baseline: 'alphabetic',
-      maxWidth: layout.contentWidth,
-    });
-    y += activeLineHeight;
+  for (const line of metrics.lines) {
+    if (y + metrics.lineHeight > layout.contentBottom) {
+      activeCursor = ensureFits(pdf, { y: layout.contentBottom + 1 }, layout, metrics.lineHeight, onPageBreak);
+      y = activeCursor.y;
+      if (isHeading) setTitleFont(pdf); else setBodyFont(pdf);
+      pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
+    }
+    assertNoOverflow(pdf, line, layout.contentWidth, isHeading ? 'título de tópico' : 'corpo');
+    pdf.text(line, layout.marginLeft, y, { baseline: 'alphabetic' });
+    y += metrics.lineHeight;
   }
 
-  return { y: y + (isHeading ? PDF_HEADING_AFTER_GAP : layout.paragraphGap) };
+  return { y: y + metrics.afterGap };
 }
 
 function splitPlainContentByNumberedTopics(content) {
@@ -783,20 +924,11 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
   const handleExportTextPdf = async () => {
     setLoading(true);
     try {
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PDF_PAGE_WIDTH_PT, PDF_PAGE_HEIGHT_PT], putOnlyUsedFonts: true });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const logoDataUrl = await imageUrlToDataUrl(WR_CERTIFICATE_LOGO);
-      const layout = {
-        marginX: 19,
-        firstContentTop: 66,
-        compactContentTop: 36,
-        contentTop: 66,
-        pageBottom: pageHeight - 32,
-        lineHeight: PDF_LINE_HEIGHT,
-        paragraphGap: PDF_PARAGRAPH_GAP,
-      };
-      layout.contentWidth = pageWidth - layout.marginX * 2;
+      let layout = createApostilaPdfLayout(pageWidth, pageHeight, 1);
 
       const printableText = htmlToPrintableText(normalizeExtractedApostilaText(lesson.content));
       const paragraphs = printableText.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
@@ -808,23 +940,23 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       });
 
       drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle, pageNumber: 1 });
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(PDF_FONT_SIZE);
-      pdf.setTextColor(30, 58, 95);
+      setBodyFont(pdf);
+      pdf.setTextColor(38, 52, 64);
 
       let activePageNumber = 1;
       let cursor = { y: layout.contentTop };
       const prepareTextPage = () => {
         activePageNumber += 1;
-        layout.contentTop = layout.compactContentTop;
+        layout = createApostilaPdfLayout(pageWidth, pageHeight, activePageNumber);
         drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle, pageNumber: activePageNumber });
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(PDF_FONT_SIZE);
+        setBodyFont(pdf);
         pdf.setTextColor(38, 52, 64);
       };
 
       if (paragraphs.length === 0) {
-        pdf.text('Esta aula ainda não possui conteúdo para exportar.', layout.marginX, cursor.y);
+        setBodyFont(pdf);
+        const emptyLines = wrapText(pdf, 'Esta aula ainda não possui conteúdo para exportar.', layout.contentWidth, 'mensagem vazia');
+        emptyLines.forEach((line, lineIndex) => pdf.text(line, layout.marginLeft, cursor.y + lineIndex * layout.lineHeight));
       } else {
         for (let index = 0; index < paragraphs.length; index += 1) {
           const paragraph = paragraphs[index];
@@ -835,7 +967,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
             const nextParagraph = paragraphs.slice(index + 1).find((candidate) => !isApostilaPdfTopicHeading(candidate));
             const headingAndFirstParagraphHeight = getParagraphPdfHeight({ pdf, paragraph, layout, isHeading: true })
               + (nextParagraph ? getParagraphPdfHeight({ pdf, paragraph: nextParagraph, layout, isHeading: false }) : 0);
-            forcePageBreak = cursor.y + headingAndFirstParagraphHeight > layout.pageBottom;
+            forcePageBreak = cursor.y + headingAndFirstParagraphHeight > layout.contentBottom;
           }
 
           cursor = addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak: prepareTextPage, forcePageBreak });
