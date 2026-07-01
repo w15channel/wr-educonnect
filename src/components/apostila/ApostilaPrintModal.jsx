@@ -3,6 +3,7 @@ import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image, Move, RotateCcw,
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
 
 // ─── Background ───────────────────────────────────────────────────────────────
 const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
@@ -204,29 +205,104 @@ function htmlToPrintableText(value = '') {
     .trim();
 }
 
-function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout }) {
-  const lines = pdf.splitTextToSize(paragraph, layout.columnWidth);
-  let { x, y, column, page } = cursor;
+async function imageUrlToDataUrl(url) {
+  try {
+    const response = await fetch(url, { mode: 'cors' });
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle, chapterTitle }) {
+  const navy = [30, 58, 95];
+  const gold = [201, 168, 76];
+  const lightBlue = [240, 244, 248];
+
+  pdf.setFillColor(255, 255, 255);
+  pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+  pdf.setDrawColor(...navy);
+  pdf.setLineWidth(0.7);
+  pdf.rect(7, 7, pageWidth - 14, pageHeight - 14);
+  pdf.setDrawColor(...lightBlue);
+  pdf.setLineWidth(2.1);
+  pdf.rect(9.2, 9.2, pageWidth - 18.4, pageHeight - 18.4);
+  pdf.setDrawColor(...navy);
+  pdf.setLineWidth(0.35);
+  pdf.rect(11, 11, pageWidth - 22, pageHeight - 22);
+
+  if (logoDataUrl) {
+    pdf.addImage(logoDataUrl, 'PNG', 18, 15, 18, 18, undefined, 'FAST');
+  }
+
+  pdf.setFont('times', 'bold');
+  pdf.setFontSize(8);
+  pdf.setTextColor(...navy);
+  pdf.text(BRAND_LEGAL_NAME, pageWidth / 2, 18, { align: 'center' });
+  pdf.setFont('times', 'normal');
+  pdf.setFontSize(7);
+  pdf.setTextColor(136, 136, 136);
+  pdf.text('Terapia · Educação · Desenvolvimento Pessoal', pageWidth / 2, 23, { align: 'center' });
+
+  pdf.setDrawColor(...navy);
+  pdf.setLineWidth(0.45);
+  pdf.line(18, 38, pageWidth - 18, 38);
+
+  pdf.setFont('times', 'normal');
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(122, 106, 58);
+  pdf.text('APOSTILA DE ESTUDOS', pageWidth / 2, 45, { align: 'center', charSpace: 1.2 });
+  pdf.setFont('times', 'bold');
+  pdf.setFontSize(13);
+  pdf.setTextColor(...navy);
+  pdf.text(lessonTitle || 'Aula da apostila', pageWidth / 2, 52, { align: 'center', maxWidth: pageWidth - 44 });
+  pdf.setFont('times', 'normal');
+  pdf.setFontSize(8);
+  pdf.setTextColor(122, 106, 58);
+  pdf.text(chapterTitle || 'Apostila', pageWidth / 2, 58, { align: 'center', maxWidth: pageWidth - 44 });
+  pdf.setDrawColor(...gold);
+  pdf.setLineWidth(0.7);
+  pdf.line(pageWidth / 2 - 20, 63, pageWidth / 2 + 20, 63);
+}
+
+function drawApostilaPdfFooter({ pdf, pageWidth, pageHeight, pageNumber, totalPages }) {
+  pdf.setDrawColor(226, 232, 240);
+  pdf.setLineWidth(0.25);
+  pdf.line(18, pageHeight - 23, pageWidth - 18, pageHeight - 23);
+  pdf.setFont('times', 'normal');
+  pdf.setFontSize(7);
+  pdf.setTextColor(136, 136, 136);
+  pdf.text(formatDocumentIssuer(`Página ${pageNumber} de ${totalPages}`), 18, pageHeight - 16, { maxWidth: pageWidth - 56 });
+  pdf.setFont('times', 'bold');
+  pdf.setTextColor(122, 106, 58);
+  pdf.text(`${pageNumber} / ${totalPages}`, pageWidth - 18, pageHeight - 16, { align: 'right' });
+  pdf.setFont('times', 'normal');
+  pdf.setTextColor(136, 136, 136);
+  pdf.text(`CNPJ: ${BRAND_CNPJ}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+}
+
+function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak }) {
+  const lines = pdf.splitTextToSize(paragraph, layout.contentWidth);
+  let { y } = cursor;
 
   for (const line of lines) {
     if (y + layout.lineHeight > layout.pageBottom) {
-      if (column === 0) {
-        column = 1;
-        x = layout.rightColumnX;
-        y = layout.contentTop;
-      } else {
-        pdf.addPage('a4', 'landscape');
-        page += 1;
-        column = 0;
-        x = layout.leftColumnX;
-        y = layout.contentTop;
-      }
+      pdf.addPage('a4', 'portrait');
+      onPageBreak?.();
+      y = layout.contentTop;
     }
-    pdf.text(line, x, y);
+    pdf.text(line, layout.marginX, y, { maxWidth: layout.contentWidth, align: 'justify' });
     y += layout.lineHeight;
   }
 
-  return { x, y: y + layout.paragraphGap, column, page };
+  return { y: y + layout.paragraphGap };
 }
 
 
@@ -574,69 +650,60 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
   };
 
 
-  const handleExportTextPdf = () => {
+  const handleExportTextPdf = async () => {
     setLoading(true);
     try {
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      const logoDataUrl = await imageUrlToDataUrl(WR_CERTIFICATE_LOGO);
       const layout = {
-        marginX: 18,
-        contentTop: 34,
-        pageBottom: pageHeight - 18,
-        gutter: 10,
-        lineHeight: 5.1,
-        paragraphGap: 2.4,
+        marginX: 22,
+        contentTop: 74,
+        pageBottom: pageHeight - 28,
+        lineHeight: 5.6,
+        paragraphGap: 3.2,
       };
-      layout.columnWidth = (pageWidth - layout.marginX * 2 - layout.gutter) / 2;
-      layout.leftColumnX = layout.marginX;
-      layout.rightColumnX = layout.marginX + layout.columnWidth + layout.gutter;
+      layout.contentWidth = pageWidth - layout.marginX * 2;
 
       const printableText = htmlToPrintableText(lesson.content);
       const paragraphs = printableText.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
 
       pdf.setProperties({
         title: `${lesson.title || 'Aula da apostila'} — ${chapterTitle || 'Apostila'}`,
-        subject: 'Apostila de estudos em PDF textual',
+        subject: 'Apostila de estudos em PDF A4 retrato',
         creator: 'WR EduConnect',
       });
-      pdf.setFont('times', 'bold');
-      pdf.setFontSize(15);
-      pdf.text(lesson.title || 'Aula da apostila', pageWidth / 2, 16, { align: 'center' });
-      pdf.setFont('times', 'normal');
-      pdf.setFontSize(9);
-      pdf.text(chapterTitle || 'Apostila de estudos', pageWidth / 2, 22, { align: 'center' });
-      pdf.setDrawColor(201, 168, 76);
-      pdf.line(pageWidth / 2 - 22, 26, pageWidth / 2 + 22, 26);
-      pdf.setFontSize(10.5);
-      pdf.setTextColor(26, 45, 90);
 
-      let cursor = {
-        x: layout.leftColumnX,
-        y: layout.contentTop,
-        column: 0,
-        page: 1,
+      drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle });
+      pdf.setFont('times', 'normal');
+      pdf.setFontSize(11);
+      pdf.setTextColor(30, 58, 95);
+
+      let cursor = { y: layout.contentTop };
+      const prepareTextPage = () => {
+        drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle });
+        pdf.setFont('times', 'normal');
+        pdf.setFontSize(11);
+        pdf.setTextColor(30, 58, 95);
       };
 
       if (paragraphs.length === 0) {
-        pdf.text('Esta aula ainda não possui conteúdo para exportar.', cursor.x, cursor.y);
+        pdf.text('Esta aula ainda não possui conteúdo para exportar.', layout.marginX, cursor.y);
       } else {
         for (const paragraph of paragraphs) {
-          cursor = addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout });
+          cursor = addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak: prepareTextPage });
         }
       }
 
       const total = pdf.getNumberOfPages();
       for (let i = 1; i <= total; i += 1) {
         pdf.setPage(i);
-        pdf.setFont('times', 'normal');
-        pdf.setFontSize(8);
-        pdf.setTextColor(122, 106, 58);
-        pdf.text(`${i} / ${total}`, pageWidth - layout.marginX, pageHeight - 9, { align: 'right' });
+        drawApostilaPdfFooter({ pdf, pageWidth, pageHeight, pageNumber: i, totalPages: total });
       }
 
-      pdf.save(`apostila-${safeName}-texto.pdf`);
-      toast.success('PDF textual exportado e ajustado às páginas!');
+      pdf.save(`apostila-${safeName}-a4-retrato.pdf`);
+      toast.success('PDF A4 retrato exportado com o novo layout!');
     } catch (e) {
       toast.error('Erro ao exportar PDF: ' + (e.message || ''));
     } finally {
@@ -748,7 +815,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
           className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
-          PDF texto
+          PDF A4 retrato
         </button>
         <button
           onClick={handleExportAllPng}
