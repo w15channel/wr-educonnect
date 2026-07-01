@@ -31,7 +31,7 @@ const DEFAULT_POSITIONS = {
   qr: { x: 905, y: 608 },
 };
 
-export const CERT_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/252c62186_BlueandGoldElegantParticipationCertificate5.png';
+export const CERT_BG = 'https://drive.google.com/file/d/1dPpaAG0DutbJ-kqMNFchf64Mh6TKgCaf/view?usp=drive_link';
 export const CERT_W = 1052;
 export const CERT_H = 744;
 
