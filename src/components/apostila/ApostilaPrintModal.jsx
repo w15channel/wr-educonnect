@@ -32,6 +32,17 @@ const FONT_SIZE   = 18;
 const LINE_HEIGHT = 1.85;
 const TOPIC_TARGET_CHARS = 2500;
 
+const PDF_FONT_SIZE = 11;
+const PDF_LINE_HEIGHT = 5.9;
+const PDF_PARAGRAPH_GAP = 3.4;
+
+const stripUnsafePrintCharacters = (value = '') => String(value)
+  // Keep line breaks and tabs, but remove binary/control characters that can be
+  // emitted by the PDF text renderer as visible percent-control artifacts.
+  .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '')
+  .replace(/\u00AD/g, '')
+  .replace(/[\u200B-\u200D\uFEFF]/g, '');
+
 const POSITIONS_KEY = 'wr_apostila_print_layout_positions_v2';
 const LEGACY_TEXT_POSITION_KEY = 'wr_apostila_print_text_position_v1';
 const DEFAULT_LAYER_POSITION = { x: 0, y: 0 };
@@ -186,7 +197,7 @@ function decodeHtmlEntities(value = '') {
 }
 
 function htmlToPrintableText(value = '') {
-  const source = String(value || '').trim();
+  const source = stripUnsafePrintCharacters(value).trim();
   if (!source) return '';
 
   const withBreaks = isHtmlContent(source)
@@ -197,7 +208,7 @@ function htmlToPrintableText(value = '') {
         .replace(/<[^>]*>/g, '')
     : source;
 
-  return decodeHtmlEntities(withBreaks)
+  return stripUnsafePrintCharacters(decodeHtmlEntities(withBreaks))
     .replace(/\r\n?/g, '\n')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
@@ -289,7 +300,12 @@ function drawApostilaPdfFooter({ pdf, pageWidth, pageHeight, pageNumber, totalPa
 }
 
 function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak }) {
-  const lines = pdf.splitTextToSize(paragraph, layout.contentWidth);
+  const cleanParagraph = stripUnsafePrintCharacters(paragraph)
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+  const lines = pdf.splitTextToSize(cleanParagraph, layout.contentWidth)
+    .map((line) => stripUnsafePrintCharacters(line).trimEnd())
+    .filter(Boolean);
   let { y } = cursor;
 
   for (const line of lines) {
@@ -298,7 +314,15 @@ function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak 
       onPageBreak?.();
       y = layout.contentTop;
     }
-    pdf.text(line, layout.marginX, y, { maxWidth: layout.contentWidth, align: 'justify' });
+
+    // Left alignment is intentional here. jsPDF's justify mode applies per-line
+    // character spacing internally; with some fonts/viewers it can surface hidden
+    // control bytes as repeated visible sequences at the beginning of the PDF.
+    pdf.text(line, layout.marginX, y, {
+      baseline: 'alphabetic',
+      charSpace: 0,
+      maxWidth: layout.contentWidth,
+    });
     y += layout.lineHeight;
   }
 
@@ -661,8 +685,8 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         marginX: 22,
         contentTop: 74,
         pageBottom: pageHeight - 28,
-        lineHeight: 5.6,
-        paragraphGap: 3.2,
+        lineHeight: PDF_LINE_HEIGHT,
+        paragraphGap: PDF_PARAGRAPH_GAP,
       };
       layout.contentWidth = pageWidth - layout.marginX * 2;
 
@@ -677,14 +701,14 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
 
       drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle });
       pdf.setFont('times', 'normal');
-      pdf.setFontSize(11);
+      pdf.setFontSize(PDF_FONT_SIZE);
       pdf.setTextColor(30, 58, 95);
 
       let cursor = { y: layout.contentTop };
       const prepareTextPage = () => {
         drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle });
         pdf.setFont('times', 'normal');
-        pdf.setFontSize(11);
+        pdf.setFontSize(PDF_FONT_SIZE);
         pdf.setTextColor(30, 58, 95);
       };
 
