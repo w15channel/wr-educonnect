@@ -45,7 +45,8 @@ const PDF_PARAGRAPH_GAP = 8;
 const PDF_HEADING_FONT_SIZE = 12.8;
 const PDF_HEADING_LINE_HEIGHT = PDF_HEADING_FONT_SIZE * 1.35;
 const PDF_HEADING_BEFORE_GAP = 16;
-const PDF_HEADING_AFTER_GAP = 8;
+const PDF_HEADING_AFTER_GAP = 5;
+const PDF_HEADING_KEEP_WITH_BODY_LINES = 3;
 const PDF_FOOTER_FONT_SIZE = 7.6;
 
 const HIGHLIGHT_TERMS = [
@@ -107,6 +108,11 @@ function removePrintablePreamble(value = '') {
   return source.slice(firstTopic.index).trim();
 }
 
+function breakEmbeddedNumberedTopics(value = '') {
+  return normalizeExtractedApostilaText(value)
+    .replace(/([.!?])\s+(\d{1,2}[.)]\s+(?=[A-Z0-9ÁÉÍÓÚÂÊÔÃÕÇ]))/g, '$1\n\n$2');
+}
+
 function splitNumberedHeadingLead(paragraph = '') {
   const source = normalizeExtractedApostilaText(paragraph).trim();
   if (!/^\d{1,2}[.)]\s+/.test(source)) return [source].filter(Boolean);
@@ -133,7 +139,7 @@ function splitNumberedHeadingLead(paragraph = '') {
 }
 
 function getPrintableParagraphs(printableText = '') {
-  const paragraphs = removeDuplicateParagraphs(removePrintablePreamble(printableText)
+  const paragraphs = removeDuplicateParagraphs(breakEmbeddedNumberedTopics(removePrintablePreamble(printableText))
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.trim()));
   return paragraphs.flatMap(splitNumberedHeadingLead).filter(Boolean);
@@ -598,6 +604,11 @@ function getParagraphPdfHeight(args) {
   return getParagraphPdfMetrics(args).height;
 }
 
+function getBodyPreviewPdfHeight({ pdf, paragraph, layout, lineCount = PDF_HEADING_KEEP_WITH_BODY_LINES }) {
+  const metrics = getParagraphPdfMetrics({ pdf, paragraph, layout, isHeading: false });
+  return Math.min(metrics.lines.length, lineCount) * metrics.lineHeight;
+}
+
 function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak, forcePageBreak = false }) {
   const cleanParagraph = normalizeExtractedApostilaText(paragraph).replace(/[ \t]+/g, ' ').trim();
   if (!cleanParagraph) return cursor;
@@ -1053,9 +1064,10 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
 
           if (isHeading) {
             const nextParagraph = paragraphs.slice(index + 1).find((candidate) => !isApostilaPdfTopicHeading(candidate));
-            const headingAndFirstParagraphHeight = getParagraphPdfHeight({ pdf, paragraph, layout, isHeading: true })
-              + (nextParagraph ? getParagraphPdfHeight({ pdf, paragraph: nextParagraph, layout, isHeading: false }) : 0);
-            forcePageBreak = cursor.y + headingAndFirstParagraphHeight > layout.contentBottom;
+            const headingAndBodyPreviewHeight = getParagraphPdfHeight({ pdf, paragraph, layout, isHeading: true })
+              + (nextParagraph ? getBodyPreviewPdfHeight({ pdf, paragraph: nextParagraph, layout }) : 0);
+            const isAtPageStart = cursor.y <= layout.contentTop + 0.25;
+            forcePageBreak = !isAtPageStart && cursor.y + headingAndBodyPreviewHeight > layout.contentBottom;
           }
 
           cursor = addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak: prepareTextPage, forcePageBreak });
