@@ -32,16 +32,38 @@ const FONT_SIZE   = 18;
 const LINE_HEIGHT = 1.85;
 const TOPIC_TARGET_CHARS = 2500;
 
-const PDF_FONT_SIZE = 11;
-const PDF_LINE_HEIGHT = 5.9;
-const PDF_PARAGRAPH_GAP = 3.4;
+const PDF_FONT_SIZE = 11.5;
+const PDF_LINE_HEIGHT = 6.1;
+const PDF_PARAGRAPH_GAP = 4.2;
+const PDF_HEADING_FONT_SIZE = 14.5;
+
+const HIGHLIGHT_TERMS = [
+  'padrão comportamental',
+  'comportamento',
+  'ambiente',
+  'reforço',
+  'função',
+];
 
 const stripUnsafePrintCharacters = (value = '') => String(value)
   // Keep line breaks and tabs, but remove binary/control characters that can be
   // emitted by the PDF text renderer as visible percent-control artifacts.
+  .replace(/^[^\p{L}\p{N}<#*]+(?=\s*(?:=====\s*Page|\d+[.)]|[A-ZÁÉÍÓÚÂÊÔÃÕÇ]))/gmu, '')
+  .replace(/^\s*=====\s*Page\s*\d+\s*=====\s*$/gmi, '')
   .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '')
   .replace(/\u00AD/g, '')
   .replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+const repairSpacedLetters = (value = '') => String(value).replace(
+  /(?<![\p{L}])(?:[\p{L}]\s+){2,}[\p{L}](?![\p{L}])/gu,
+  (match) => match.replace(/\s+/g, '')
+);
+
+const normalizeExtractedApostilaText = (value = '') => repairSpacedLetters(stripUnsafePrintCharacters(value))
+  .replace(/\r\n?/g, '\n')
+  .replace(/[ \t]+\n/g, '\n')
+  .replace(/\n{3,}/g, '\n\n')
+  .trim();
 
 const POSITIONS_KEY = 'wr_apostila_print_layout_positions_v2';
 const LEGACY_TEXT_POSITION_KEY = 'wr_apostila_print_text_position_v1';
@@ -174,11 +196,21 @@ const escapeHtml = (value = '') => String(value)
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
-const formatPlainTopic = (value = '') => value
+const applyInlineHighlights = (html = '') => HIGHLIGHT_TERMS.reduce((current, term) => {
+  const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return current.replace(new RegExp(`\\b(${escapedTerm})\\b`, 'giu'), '<strong>$1</strong>');
+}, html);
+
+const formatPlainTopic = (value = '') => normalizeExtractedApostilaText(value)
   .split(/\n{2,}/)
   .map((paragraph) => paragraph.trim())
   .filter(Boolean)
-  .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
+  .map((paragraph, index) => {
+    const escaped = applyInlineHighlights(escapeHtml(paragraph).replace(/\n/g, '<br>'));
+    const isNumberedHeading = /^\d+[.)]\s+/.test(paragraph);
+    const tag = index === 0 && isNumberedHeading ? 'h2' : 'p';
+    return `<${tag}>${escaped}</${tag}>`;
+  })
   .join('');
 
 function decodeHtmlEntities(value = '') {
@@ -253,11 +285,11 @@ function drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, les
     pdf.addImage(logoDataUrl, 'PNG', 18, 15, 18, 18, undefined, 'FAST');
   }
 
-  pdf.setFont('times', 'bold');
+  pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(8);
   pdf.setTextColor(...navy);
   pdf.text(BRAND_LEGAL_NAME, pageWidth / 2, 18, { align: 'center' });
-  pdf.setFont('times', 'normal');
+  pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7);
   pdf.setTextColor(136, 136, 136);
   pdf.text('Terapia · Educação · Desenvolvimento Pessoal', pageWidth / 2, 23, { align: 'center' });
@@ -266,15 +298,15 @@ function drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, les
   pdf.setLineWidth(0.45);
   pdf.line(18, 38, pageWidth - 18, 38);
 
-  pdf.setFont('times', 'normal');
+  pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7.5);
   pdf.setTextColor(122, 106, 58);
   pdf.text('APOSTILA DE ESTUDOS', pageWidth / 2, 45, { align: 'center', charSpace: 1.2 });
-  pdf.setFont('times', 'bold');
+  pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(13);
   pdf.setTextColor(...navy);
   pdf.text(lessonTitle || 'Aula da apostila', pageWidth / 2, 52, { align: 'center', maxWidth: pageWidth - 44 });
-  pdf.setFont('times', 'normal');
+  pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(8);
   pdf.setTextColor(122, 106, 58);
   pdf.text(chapterTitle || 'Apostila', pageWidth / 2, 58, { align: 'center', maxWidth: pageWidth - 44 });
@@ -287,29 +319,31 @@ function drawApostilaPdfFooter({ pdf, pageWidth, pageHeight, pageNumber, totalPa
   pdf.setDrawColor(226, 232, 240);
   pdf.setLineWidth(0.25);
   pdf.line(18, pageHeight - 23, pageWidth - 18, pageHeight - 23);
-  pdf.setFont('times', 'normal');
+  pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7);
   pdf.setTextColor(136, 136, 136);
   pdf.text(formatDocumentIssuer(`Página ${pageNumber} de ${totalPages}`), 18, pageHeight - 16, { maxWidth: pageWidth - 56 });
-  pdf.setFont('times', 'bold');
+  pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(122, 106, 58);
   pdf.text(`${pageNumber} / ${totalPages}`, pageWidth - 18, pageHeight - 16, { align: 'right' });
-  pdf.setFont('times', 'normal');
+  pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(136, 136, 136);
   pdf.text(`CNPJ: ${BRAND_CNPJ}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 }
 
 function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak }) {
-  const cleanParagraph = stripUnsafePrintCharacters(paragraph)
-    .replace(/[ \t]+/g, ' ')
-    .trim();
+  const cleanParagraph = normalizeExtractedApostilaText(paragraph).replace(/[ \t]+/g, ' ').trim();
+  const isHeading = /^\d+[.)]\s+/.test(cleanParagraph) || /^[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9 ,:;—–-]{18,}$/.test(cleanParagraph);
+  pdf.setFont('helvetica', isHeading ? 'bold' : 'normal');
+  pdf.setFontSize(isHeading ? PDF_HEADING_FONT_SIZE : PDF_FONT_SIZE);
+  const activeLineHeight = isHeading ? PDF_LINE_HEIGHT + 1.5 : layout.lineHeight;
   const lines = pdf.splitTextToSize(cleanParagraph, layout.contentWidth)
     .map((line) => stripUnsafePrintCharacters(line).trimEnd())
     .filter(Boolean);
   let { y } = cursor;
 
   for (const line of lines) {
-    if (y + layout.lineHeight > layout.pageBottom) {
+    if (y + activeLineHeight > layout.pageBottom) {
       pdf.addPage('a4', 'portrait');
       onPageBreak?.();
       y = layout.contentTop;
@@ -323,15 +357,15 @@ function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak 
       charSpace: 0,
       maxWidth: layout.contentWidth,
     });
-    y += layout.lineHeight;
+    y += activeLineHeight;
   }
 
-  return { y: y + layout.paragraphGap };
+  return { y: y + (isHeading ? layout.paragraphGap + 1.8 : layout.paragraphGap) };
 }
 
 
 function splitPlainContentByNumberedTopics(content) {
-  const source = String(content || '').replace(/\r\n?/g, '\n').trim();
+  const source = normalizeExtractedApostilaText(content);
   if (!source || isHtmlContent(source)) return null;
 
   const matches = [...source.matchAll(/^\s*([1-6])[.)]\s+.+$/gm)];
@@ -442,6 +476,31 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
         }}
       />
 
+
+      <style>{`
+        .apostila-print-column h2 {
+          margin: 0 0 18px;
+          font-family: Arial, Verdana, sans-serif;
+          font-size: 26px;
+          line-height: 1.35;
+          font-weight: 800;
+          color: #1a2d5a;
+          text-align: left;
+          letter-spacing: 0;
+        }
+        .apostila-print-column p {
+          margin: 0 0 16px;
+          font-family: Arial, Verdana, sans-serif;
+          font-size: ${FONT_SIZE}px;
+          line-height: ${LINE_HEIGHT};
+          letter-spacing: 0;
+        }
+        .apostila-print-column strong {
+          font-weight: 800;
+          color: #102348;
+        }
+      `}</style>
+
       {/* Header */}
       <DraggableTextLayer
         position={positions.title}
@@ -507,15 +566,16 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
           width: COL_W,
           height: CONTENT_H,
           overflow: 'hidden',
-          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontFamily: "Arial, Verdana, sans-serif",
           fontSize: FONT_SIZE,
           lineHeight: LINE_HEIGHT,
           color: '#1a2d5a',
           textAlign: 'justify',
-          letterSpacing: 0.3,
+          letterSpacing: 0,
           hyphens: 'auto',
           wordBreak: 'break-word',
         }}
+        className="apostila-print-column"
         dangerouslySetInnerHTML={{ __html: topicLeft || '' }}
         />
 
@@ -527,15 +587,16 @@ const ApostilaPage = React.forwardRef(function ApostilaPage(
           width: COL_W,
           height: CONTENT_H,
           overflow: 'hidden',
-          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontFamily: "Arial, Verdana, sans-serif",
           fontSize: FONT_SIZE,
           lineHeight: LINE_HEIGHT,
           color: '#1a2d5a',
           textAlign: 'justify',
-          letterSpacing: 0.3,
+          letterSpacing: 0,
           hyphens: 'auto',
           wordBreak: 'break-word',
         }}
+        className="apostila-print-column"
         dangerouslySetInnerHTML={{ __html: topicRight || '' }}
         />
       </DraggableTextLayer>
@@ -690,7 +751,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       };
       layout.contentWidth = pageWidth - layout.marginX * 2;
 
-      const printableText = htmlToPrintableText(lesson.content);
+      const printableText = htmlToPrintableText(normalizeExtractedApostilaText(lesson.content));
       const paragraphs = printableText.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
 
       pdf.setProperties({
@@ -700,14 +761,14 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       });
 
       drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle });
-      pdf.setFont('times', 'normal');
+      pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(PDF_FONT_SIZE);
       pdf.setTextColor(30, 58, 95);
 
       let cursor = { y: layout.contentTop };
       const prepareTextPage = () => {
         drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle });
-        pdf.setFont('times', 'normal');
+        pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(PDF_FONT_SIZE);
         pdf.setTextColor(30, 58, 95);
       };
