@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image, Move, RotateCcw, Save } from 'lucide-react';
+import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image, Move, RotateCcw, Save, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // ─── Background ───────────────────────────────────────────────────────────────
 const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
@@ -167,6 +168,67 @@ const formatPlainTopic = (value = '') => value
   .filter(Boolean)
   .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
   .join('');
+
+function decodeHtmlEntities(value = '') {
+  if (typeof document === 'undefined') {
+    return String(value)
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>');
+  }
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = value;
+  return textarea.value;
+}
+
+function htmlToPrintableText(value = '') {
+  const source = String(value || '').trim();
+  if (!source) return '';
+
+  const withBreaks = isHtmlContent(source)
+    ? source
+        .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+        .replace(/<\s*\/\s*(p|div|h[1-6]|li|blockquote)\s*>/gi, '\n\n')
+        .replace(/<\s*li\b[^>]*>/gi, '• ')
+        .replace(/<[^>]*>/g, '')
+    : source;
+
+  return decodeHtmlEntities(withBreaks)
+    .replace(/\r\n?/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout }) {
+  const lines = pdf.splitTextToSize(paragraph, layout.columnWidth);
+  let { x, y, column, page } = cursor;
+
+  for (const line of lines) {
+    if (y + layout.lineHeight > layout.pageBottom) {
+      if (column === 0) {
+        column = 1;
+        x = layout.rightColumnX;
+        y = layout.contentTop;
+      } else {
+        pdf.addPage('a4', 'landscape');
+        page += 1;
+        column = 0;
+        x = layout.leftColumnX;
+        y = layout.contentTop;
+      }
+    }
+    pdf.text(line, x, y);
+    y += layout.lineHeight;
+  }
+
+  return { x, y: y + layout.paragraphGap, column, page };
+}
+
 
 function splitPlainContentByNumberedTopics(content) {
   const source = String(content || '').replace(/\r\n?/g, '\n').trim();
@@ -511,6 +573,77 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     }
   };
 
+
+  const handleExportTextPdf = () => {
+    setLoading(true);
+    try {
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const layout = {
+        marginX: 18,
+        contentTop: 34,
+        pageBottom: pageHeight - 18,
+        gutter: 10,
+        lineHeight: 5.1,
+        paragraphGap: 2.4,
+      };
+      layout.columnWidth = (pageWidth - layout.marginX * 2 - layout.gutter) / 2;
+      layout.leftColumnX = layout.marginX;
+      layout.rightColumnX = layout.marginX + layout.columnWidth + layout.gutter;
+
+      const printableText = htmlToPrintableText(lesson.content);
+      const paragraphs = printableText.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
+
+      pdf.setProperties({
+        title: `${lesson.title || 'Aula da apostila'} — ${chapterTitle || 'Apostila'}`,
+        subject: 'Apostila de estudos em PDF textual',
+        creator: 'WR EduConnect',
+      });
+      pdf.setFont('times', 'bold');
+      pdf.setFontSize(15);
+      pdf.text(lesson.title || 'Aula da apostila', pageWidth / 2, 16, { align: 'center' });
+      pdf.setFont('times', 'normal');
+      pdf.setFontSize(9);
+      pdf.text(chapterTitle || 'Apostila de estudos', pageWidth / 2, 22, { align: 'center' });
+      pdf.setDrawColor(201, 168, 76);
+      pdf.line(pageWidth / 2 - 22, 26, pageWidth / 2 + 22, 26);
+      pdf.setFontSize(10.5);
+      pdf.setTextColor(26, 45, 90);
+
+      let cursor = {
+        x: layout.leftColumnX,
+        y: layout.contentTop,
+        column: 0,
+        page: 1,
+      };
+
+      if (paragraphs.length === 0) {
+        pdf.text('Esta aula ainda não possui conteúdo para exportar.', cursor.x, cursor.y);
+      } else {
+        for (const paragraph of paragraphs) {
+          cursor = addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout });
+        }
+      }
+
+      const total = pdf.getNumberOfPages();
+      for (let i = 1; i <= total; i += 1) {
+        pdf.setPage(i);
+        pdf.setFont('times', 'normal');
+        pdf.setFontSize(8);
+        pdf.setTextColor(122, 106, 58);
+        pdf.text(`${i} / ${total}`, pageWidth - layout.marginX, pageHeight - 9, { align: 'right' });
+      }
+
+      pdf.save(`apostila-${safeName}-texto.pdf`);
+      toast.success('PDF textual exportado e ajustado às páginas!');
+    } catch (e) {
+      toast.error('Erro ao exportar PDF: ' + (e.message || ''));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleExportAllPng = async () => {
     setLoading(true);
     try {
@@ -608,6 +741,14 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Image size={14} />}
           PNG (esta pág.)
+        </button>
+        <button
+          onClick={handleExportTextPdf}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+        >
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+          PDF texto
         </button>
         <button
           onClick={handleExportAllPng}
