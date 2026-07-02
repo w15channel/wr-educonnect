@@ -38,8 +38,13 @@ const GOOGLE_DRIVE_CERT_BG_FILE_ID = '1dPpaAG0DutbJ-kqMNFchf64Mh6TKgCaf';
 export const CERT_BG = `https://lh3.googleusercontent.com/d/${GOOGLE_DRIVE_CERT_BG_FILE_ID}=s0`;
 export const CERT_W = 1052;
 export const CERT_H = 744;
-const CERT_EXPORT_SCALE = 4;
+const CERT_EXPORT_SCALE = 6;
+const CERT_EXPORT_W = CERT_W * CERT_EXPORT_SCALE;
+const CERT_EXPORT_H = CERT_H * CERT_EXPORT_SCALE;
 const CERT_PNG_MIME = 'image/png';
+const PDF_A4_LANDSCAPE_W_MM = 297;
+const PDF_A4_LANDSCAPE_H_MM = 210;
+const PDF_IMAGE_COMPRESSION = 'NONE';
 
 export const COURSE_LABELS = {
   tcc: 'Formacao Profissional em Terapia TC',
@@ -529,7 +534,10 @@ export default function AdminCertificateGenerator() {
   const waitImages = async (node) => {
     const imgs = Array.from(node?.querySelectorAll?.('img') || []);
     await Promise.all(imgs.map((img) => {
-      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      if (img.complete && img.naturalWidth > 0) {
+        if (typeof img.decode === 'function') return img.decode().catch(() => {});
+        return Promise.resolve();
+      }
       return new Promise((resolve) => {
         img.onload = resolve;
         img.onerror = resolve;
@@ -537,8 +545,51 @@ export default function AdminCertificateGenerator() {
     }));
   };
 
+  const preloadImage = (src) => new Promise((resolve) => {
+    if (!src || typeof window === 'undefined') {
+      resolve(false);
+      return;
+    }
+
+    const image = new window.Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = async () => {
+      try {
+        if (typeof image.decode === 'function') await image.decode();
+      } catch {}
+      resolve(true);
+    };
+    image.onerror = () => resolve(false);
+    image.src = src;
+  });
+
+  const canvasToBlob = (canvas) => new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error('Nao foi possivel gerar o PNG em alta resolucao.'));
+    }, CERT_PNG_MIME);
+  });
+
+  const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const releaseCanvas = (canvas) => {
+    if (!canvas) return;
+    canvas.width = 1;
+    canvas.height = 1;
+  };
+
   const captureNode = async (node) => {
     if (!node) throw new Error('Area do certificado nao encontrada.');
+    await preloadImage(CERT_BG);
     await waitImages(node);
 
     const canvas = await html2canvas(node, {
@@ -556,7 +607,13 @@ export default function AdminCertificateGenerator() {
       imageTimeout: 15000,
     });
 
-    return canvas.toDataURL(CERT_PNG_MIME);
+    if (canvas.width < CERT_EXPORT_W || canvas.height < CERT_EXPORT_H) {
+      console.warn(
+        `[Certificados] Canvas exportado abaixo do esperado: ${canvas.width}x${canvas.height}. Esperado: ${CERT_EXPORT_W}x${CERT_EXPORT_H}.`
+      );
+    }
+
+    return canvas;
   };
 
   const generatePdf = async () => {
@@ -567,16 +624,20 @@ export default function AdminCertificateGenerator() {
 
     setIsGenerating(true);
     try {
-      const [frontImage, backImage] = await Promise.all([
-        captureNode(frontRef.current),
-        captureNode(backRef.current),
-      ]);
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-      pdf.addImage(frontImage, 'PNG', 0, 0, 297, 210, undefined, 'SLOW');
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: false });
+
+      const frontCanvas = await captureNode(frontRef.current);
+      pdf.addImage(frontCanvas, 'PNG', 0, 0, PDF_A4_LANDSCAPE_W_MM, PDF_A4_LANDSCAPE_H_MM, undefined, PDF_IMAGE_COMPRESSION);
+      releaseCanvas(frontCanvas);
+
       pdf.addPage('a4', 'landscape');
-      pdf.addImage(backImage, 'PNG', 0, 0, 297, 210, undefined, 'SLOW');
+
+      const backCanvas = await captureNode(backRef.current);
+      pdf.addImage(backCanvas, 'PNG', 0, 0, PDF_A4_LANDSCAPE_W_MM, PDF_A4_LANDSCAPE_H_MM, undefined, PDF_IMAGE_COMPRESSION);
+      releaseCanvas(backCanvas);
+
       pdf.save(`certificado-${sanitizeFileName(cert.studentName || 'aluno')}.pdf`);
-      toast.success('PDF gerado.');
+      toast.success(`PDF gerado em alta resolucao (${CERT_EXPORT_W} x ${CERT_EXPORT_H}px por pagina).`);
     } catch (error) {
       toast.error('Erro ao gerar PDF: ' + (error.message || ''));
     } finally {
@@ -592,14 +653,11 @@ export default function AdminCertificateGenerator() {
 
     setIsGenerating(true);
     try {
-      const image = await captureNode(frontRef.current);
-      const anchor = document.createElement('a');
-      anchor.href = image;
-      anchor.download = `certificado-${sanitizeFileName(cert.studentName || 'aluno')}.png`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      toast.success('PNG gerado.');
+      const canvas = await captureNode(frontRef.current);
+      const blob = await canvasToBlob(canvas);
+      downloadBlob(blob, `certificado-${sanitizeFileName(cert.studentName || 'aluno')}-${CERT_EXPORT_W}x${CERT_EXPORT_H}.png`);
+      releaseCanvas(canvas);
+      toast.success(`PNG gerado em alta resolucao (${CERT_EXPORT_W} x ${CERT_EXPORT_H}px).`);
     } catch (error) {
       toast.error('Erro ao gerar PNG: ' + (error.message || ''));
     } finally {
@@ -633,11 +691,11 @@ export default function AdminCertificateGenerator() {
           </button>
           <button onClick={generatePng} disabled={isGenerating} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground hover:bg-secondary disabled:opacity-50">
             <FileImage size={14} />
-            PNG Frente
+            PNG HD Frente
           </button>
           <button onClick={generatePdf} disabled={isGenerating} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
             {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            {isGenerating ? 'Gerando...' : 'PDF Completo'}
+            {isGenerating ? 'Gerando...' : 'PDF HD Completo'}
           </button>
         </div>
       </div>
