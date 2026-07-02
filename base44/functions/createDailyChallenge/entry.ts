@@ -191,8 +191,11 @@ Deno.serve(async (req) => {
 
     const payload = normalizePayload(rawPayload);
 
+    // Also treat as scheduled when no manual params are present (extra safety)
+    const hasManualParams = payload?.course || payload?.questions || payload?.module_id;
+
     // Manual save with explicit questions
-    if (!isScheduledAutomation) {
+    if (!isScheduledAutomation && hasManualParams) {
       const { date, course, lesson_ref, lesson_id, questions, force = false } = payload;
       if (date && course && questions && questions.length >= 3) {
         const record = await base44.asServiceRole.entities.DailyChallenge.create({
@@ -212,7 +215,7 @@ Deno.serve(async (req) => {
       return await generateChallengeForCourse(base44, course, force, payload?.module_id, payload?.lesson_id, payload?.duration_days);
     }
 
-    // Scheduled automation — generate automatically for today
+    // Scheduled automation (or no manual params) — generate automatically for today
     const today = ymd(new Date());
     const existing = await base44.asServiceRole.entities.DailyChallenge.filter({ date: today });
     if (existing && existing.length > 0) {
