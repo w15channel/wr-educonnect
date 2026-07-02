@@ -182,10 +182,14 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const rawPayload = await req.json().catch(() => ({}));
-    const payload = normalizePayload(rawPayload);
     
-    // Check if this is a scheduled automation call
-    const isScheduledAutomation = payload?.automation?.type === 'scheduled';
+    // Check automation type on the RAW payload before normalization, since
+    // normalizePayload may unwrap `.data` and discard the `automation` key.
+    const isScheduledAutomation =
+      rawPayload?.automation?.type === 'scheduled' ||
+      rawPayload?.data?.automation?.type === 'scheduled';
+
+    const payload = normalizePayload(rawPayload);
 
     // Manual save with explicit questions
     if (!isScheduledAutomation) {
