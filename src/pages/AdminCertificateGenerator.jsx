@@ -31,9 +31,15 @@ const DEFAULT_POSITIONS = {
   qr: { x: 905, y: 608 },
 };
 
-export const CERT_BG = 'https://drive.google.com/file/d/1dPpaAG0DutbJ-kqMNFchf64Mh6TKgCaf/view?usp=drive_link';
+const GOOGLE_DRIVE_CERT_BG_FILE_ID = '1dPpaAG0DutbJ-kqMNFchf64Mh6TKgCaf';
+
+// Use a direct image URL. The /view Google Drive URL opens an HTML page and
+// cannot be used as a canvas background for PNG/PDF export.
+export const CERT_BG = `https://lh3.googleusercontent.com/d/${GOOGLE_DRIVE_CERT_BG_FILE_ID}=s0`;
 export const CERT_W = 1052;
 export const CERT_H = 744;
+const CERT_EXPORT_SCALE = 4;
+const CERT_PNG_MIME = 'image/png';
 
 export const COURSE_LABELS = {
   tcc: 'Formacao Profissional em Terapia TC',
@@ -536,7 +542,7 @@ export default function AdminCertificateGenerator() {
     await waitImages(node);
 
     const canvas = await html2canvas(node, {
-      scale: 2,
+      scale: CERT_EXPORT_SCALE,
       useCORS: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
@@ -550,7 +556,7 @@ export default function AdminCertificateGenerator() {
       imageTimeout: 15000,
     });
 
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL(CERT_PNG_MIME);
   };
 
   const generatePdf = async () => {
@@ -566,9 +572,9 @@ export default function AdminCertificateGenerator() {
         captureNode(backRef.current),
       ]);
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-      pdf.addImage(frontImage, 'PNG', 0, 0, 297, 210, undefined, 'FAST');
+      pdf.addImage(frontImage, 'PNG', 0, 0, 297, 210, undefined, 'SLOW');
       pdf.addPage('a4', 'landscape');
-      pdf.addImage(backImage, 'PNG', 0, 0, 297, 210, undefined, 'FAST');
+      pdf.addImage(backImage, 'PNG', 0, 0, 297, 210, undefined, 'SLOW');
       pdf.save(`certificado-${sanitizeFileName(cert.studentName || 'aluno')}.pdf`);
       toast.success('PDF gerado.');
     } catch (error) {
