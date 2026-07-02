@@ -55,7 +55,12 @@
     "pontuacao_total": {
       "type": "number",
       "default": 0,
-      "description": "Pontua\u00e7\u00e3o total sincronizada"
+      "description": "Pontuação total sincronizada para ranking geral"
+    },
+    "pontuacao_estudos": {
+      "type": "number",
+      "default": 0,
+      "description": "Pontuação acadêmica/estudos: aulas assistidas, trabalhos entregues e provas"
     },
     "dashboard_rank": {
       "type": "number",

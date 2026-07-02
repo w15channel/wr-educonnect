@@ -133,10 +133,18 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   ).
   reduce((sum, s) => sum + (Number(s.score) || 0), 0);
 
+  const studyScore = scoreItems.
+  filter((s) => s.verified && (
+  s.category === 'lesson' && lessonIds.has(s.ref_id) ||
+  (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
+  s.category === 'exam' && (examIds.has(s.ref_id) || String(s.ref_id || '').startsWith('exam:')))
+  && !String(s.ref_id || '').startsWith('therapist_pairing:')).
+  reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+
   const sendTotalMutation = useMutation({
     mutationFn: async () => {
       const profile = studentProfiles[0];
-      const data = { student_email: email, full_name: displayName, points: roundScore(totalScore), pontuacao_total: roundScore(totalScore), dashboard_course: activeCourse };
+      const data = { student_email: email, full_name: displayName, points: roundScore(totalScore), pontuacao_total: roundScore(totalScore), pontuacao_estudos: roundScore(studyScore), dashboard_course: activeCourse };
       if (profile) return adminApi.update('StudentProfile', profile.id, data);
       return adminApi.create('StudentProfile', data);
     },
@@ -692,6 +700,7 @@ export default function ScoreControl() {
           full_name: code.profile_name || code.student_name || code.student_email,
           points: roundScore(item.totalScore),
           pontuacao_total: roundScore(item.totalScore),
+          pontuacao_estudos: roundScore(code.pontuacao_estudos || 0),
           dashboard_rank: index + 1,
           dashboard_course: activeCourse
         };
@@ -716,6 +725,7 @@ export default function ScoreControl() {
           full_name: code.profile_name || code.student_name || code.student_email,
           points: roundScore(item.totalScore),
           pontuacao_total: roundScore(item.totalScore),
+          pontuacao_estudos: roundScore(code.pontuacao_estudos || 0),
           dashboard_rank: index + 1,
           dashboard_course: activeCourse
         };

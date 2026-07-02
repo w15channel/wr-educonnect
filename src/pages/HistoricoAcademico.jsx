@@ -526,7 +526,7 @@ export default function HistoricoAcademico() {
           const email = code.student_email || '';
           const name = code.profile_name || code.student_name || 'Sem nome';
           const studentScores = scoreItems.filter(s => s.student_email === email && s.verified);
-          const total = roundScore(code.pontuacao_total ?? studentScores.reduce((sum, item) => roundScore(sum + roundScore(item.score)), 0));
+          const total = roundScore(code.pontuacao_estudos ?? studentScores.filter((item) => ['lesson', 'task', 'quiz', 'exam'].includes(item.category) && !String(item.ref_id || '').startsWith('therapist_pairing:')).reduce((sum, item) => roundScore(sum + roundScore(item.score)), 0));
           const max = studentScores.reduce((sum, item) => roundScore(sum + roundScore(item.max_score || 10)), 0);
           const rate = max > 0 ? Math.round((total / max) * 100) : 0;
           return (
@@ -544,7 +544,7 @@ export default function HistoricoAcademico() {
                   <p className={`text-sm font-black ${Number(rate) >= 60 ? 'text-green-600' : 'text-orange-500'}`}>{rate}%</p>
                 </div>
                 <div className="bg-primary/10 px-3 py-1.5 rounded-xl">
-                  <p className="text-xs text-muted-foreground">Pontos</p>
+                  <p className="text-xs text-muted-foreground">Estudos</p>
                   <p className="text-sm font-black text-primary">{total}</p>
                 </div>
                 <Settings2 size={15} className="text-muted-foreground" />
