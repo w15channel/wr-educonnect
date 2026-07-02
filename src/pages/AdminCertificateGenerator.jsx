@@ -36,6 +36,7 @@ const GOOGLE_DRIVE_CERT_BG_FILE_ID = '1dPpaAG0DutbJ-kqMNFchf64Mh6TKgCaf';
 // Use a direct image URL. The /view Google Drive URL opens an HTML page and
 // cannot be used as a canvas background for PNG/PDF export.
 export const CERT_BG = `https://lh3.googleusercontent.com/d/${GOOGLE_DRIVE_CERT_BG_FILE_ID}=s0`;
+const LEGACY_CERT_BG_FILE_HINT = 'BlueandGoldElegantParticipationCertificate';
 export const CERT_W = 1052;
 export const CERT_H = 744;
 const CERT_EXPORT_SCALE = 6;
@@ -545,9 +546,64 @@ export default function AdminCertificateGenerator() {
     }));
   };
 
+  const isCertificateBackgroundSource = (value = '') => {
+    const source = String(value || '');
+    return source.includes(GOOGLE_DRIVE_CERT_BG_FILE_ID)
+      || source.includes(LEGACY_CERT_BG_FILE_HINT)
+      || source.includes(encodeURIComponent(GOOGLE_DRIVE_CERT_BG_FILE_ID));
+  };
+
+  const hideCertificateBackgroundInClone = (clonedDocument, clonedElement) => {
+    const allNodes = [
+      clonedElement,
+      ...Array.from(clonedElement?.querySelectorAll?.('*') || []),
+    ].filter(Boolean);
+
+    allNodes.forEach((element) => {
+      const tagName = element.tagName?.toLowerCase();
+      const inlineBackground = element.style?.backgroundImage || '';
+      const computedBackground = clonedDocument.defaultView?.getComputedStyle(element)?.backgroundImage || '';
+      const src = tagName === 'img' ? element.getAttribute('src') || element.src || '' : '';
+
+      if (tagName === 'img' && isCertificateBackgroundSource(src)) {
+        element.style.visibility = 'hidden';
+        element.style.opacity = '0';
+      }
+
+      if (isCertificateBackgroundSource(inlineBackground) || isCertificateBackgroundSource(computedBackground)) {
+        element.style.backgroundImage = 'none';
+        element.style.background = 'transparent';
+      }
+    });
+
+    if (clonedElement?.style) {
+      clonedElement.style.backgroundColor = 'transparent';
+    }
+  };
+
+  const nodeHasCertificateBackground = (node) => {
+    const allNodes = [
+      node,
+      ...Array.from(node?.querySelectorAll?.('*') || []),
+    ].filter(Boolean);
+
+    return allNodes.some((element) => {
+      const tagName = element.tagName?.toLowerCase();
+      const src = tagName === 'img' ? element.getAttribute('src') || element.src || '' : '';
+      const inlineBackground = element.style?.backgroundImage || '';
+      const computedBackground = typeof window !== 'undefined'
+        ? window.getComputedStyle(element)?.backgroundImage || ''
+        : '';
+
+      return isCertificateBackgroundSource(src)
+        || isCertificateBackgroundSource(inlineBackground)
+        || isCertificateBackgroundSource(computedBackground);
+    });
+  };
+
   const preloadImage = (src) => new Promise((resolve) => {
     if (!src || typeof window === 'undefined') {
-      resolve(false);
+      resolve(null);
       return;
     }
 
@@ -557,9 +613,9 @@ export default function AdminCertificateGenerator() {
       try {
         if (typeof image.decode === 'function') await image.decode();
       } catch {}
-      resolve(true);
+      resolve(image);
     };
-    image.onerror = () => resolve(false);
+    image.onerror = () => resolve(null);
     image.src = src;
   });
 
@@ -587,9 +643,30 @@ export default function AdminCertificateGenerator() {
     canvas.height = 1;
   };
 
-  const captureNode = async (node) => {
+  const drawImageCover = (context, image, targetWidth, targetHeight) => {
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+    const sourceRatio = sourceWidth / sourceHeight;
+    const targetRatio = targetWidth / targetHeight;
+
+    let sx = 0;
+    let sy = 0;
+    let sw = sourceWidth;
+    let sh = sourceHeight;
+
+    if (sourceRatio > targetRatio) {
+      sw = sourceHeight * targetRatio;
+      sx = (sourceWidth - sw) / 2;
+    } else if (sourceRatio < targetRatio) {
+      sh = sourceWidth / targetRatio;
+      sy = (sourceHeight - sh) / 2;
+    }
+
+    context.drawImage(image, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+  };
+
+  const captureFullNodeCanvas = async (node) => {
     if (!node) throw new Error('Area do certificado nao encontrada.');
-    await preloadImage(CERT_BG);
     await waitImages(node);
 
     const canvas = await html2canvas(node, {
@@ -606,6 +683,74 @@ export default function AdminCertificateGenerator() {
       logging: false,
       imageTimeout: 15000,
     });
+
+    return canvas;
+  };
+
+  const captureOverlayCanvas = async (node) => {
+    if (!node) throw new Error('Area do certificado nao encontrada.');
+    await waitImages(node);
+
+    return html2canvas(node, {
+      scale: CERT_EXPORT_SCALE,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      width: CERT_W,
+      height: CERT_H,
+      windowWidth: CERT_W,
+      windowHeight: CERT_H,
+      scrollX: 0,
+      scrollY: 0,
+      logging: false,
+      imageTimeout: 15000,
+      onclone: (clonedDocument, clonedElement) => {
+        hideCertificateBackgroundInClone(clonedDocument, clonedElement);
+      },
+    });
+  };
+
+  const composeCertificateCanvas = async (node) => {
+    if (!node) throw new Error('Area do certificado nao encontrada.');
+
+    if (!nodeHasCertificateBackground(node)) {
+      return captureFullNodeCanvas(node);
+    }
+
+    const backgroundImage = await preloadImage(CERT_BG);
+    if (!backgroundImage) {
+      console.warn('[Certificados] Background HD nao carregou. Usando captura completa como fallback.');
+      return captureFullNodeCanvas(node);
+    }
+
+    const backgroundNaturalWidth = backgroundImage.naturalWidth || backgroundImage.width;
+    const backgroundNaturalHeight = backgroundImage.naturalHeight || backgroundImage.height;
+    if (backgroundNaturalWidth < CERT_EXPORT_W || backgroundNaturalHeight < CERT_EXPORT_H) {
+      console.warn(
+        `[Certificados] O background carregado tem ${backgroundNaturalWidth}x${backgroundNaturalHeight}px, menor que a exportacao ${CERT_EXPORT_W}x${CERT_EXPORT_H}px. Para nitidez maxima, envie um background com pelo menos essa resolucao.`
+      );
+    }
+
+    const overlayCanvas = await captureOverlayCanvas(node);
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = CERT_EXPORT_W;
+    outputCanvas.height = CERT_EXPORT_H;
+
+    const context = outputCanvas.getContext('2d', { alpha: false });
+    if (!context) throw new Error('Nao foi possivel preparar o canvas de exportacao HD.');
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, CERT_EXPORT_W, CERT_EXPORT_H);
+    drawImageCover(context, backgroundImage, CERT_EXPORT_W, CERT_EXPORT_H);
+    context.drawImage(overlayCanvas, 0, 0, CERT_EXPORT_W, CERT_EXPORT_H);
+    releaseCanvas(overlayCanvas);
+
+    return outputCanvas;
+  };
+
+  const captureNode = async (node) => {
+    const canvas = await composeCertificateCanvas(node);
 
     if (canvas.width < CERT_EXPORT_W || canvas.height < CERT_EXPORT_H) {
       console.warn(
