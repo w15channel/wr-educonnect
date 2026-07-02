@@ -33,9 +33,14 @@ const DEFAULT_POSITIONS = {
 
 const GOOGLE_DRIVE_CERT_BG_FILE_ID = '1dPpaAG0DutbJ-kqMNFchf64Mh6TKgCaf';
 
-// Use a direct image URL. The /view Google Drive URL opens an HTML page and
-// cannot be used as a canvas background for PNG/PDF export.
-export const CERT_BG = `https://lh3.googleusercontent.com/d/${GOOGLE_DRIVE_CERT_BG_FILE_ID}=s0`;
+// Put the original high-resolution certificate background in the app public
+// folder using this path. This should be the first choice for export quality.
+const CERT_BG_LOCAL_HD = '/certificates/certificado-background-hd.png';
+const CERT_BG_DRIVE_DIRECT = `https://lh3.googleusercontent.com/d/${GOOGLE_DRIVE_CERT_BG_FILE_ID}=s0`;
+
+// The /view Google Drive URL opens an HTML page and cannot be used directly by
+// canvas. Keep Drive only as a fallback; the local public asset is more stable.
+export const CERT_BG = CERT_BG_LOCAL_HD;
 const LEGACY_CERT_BG_FILE_HINT = 'BlueandGoldElegantParticipationCertificate';
 export const CERT_W = 1052;
 export const CERT_H = 744;
@@ -46,6 +51,12 @@ const CERT_PNG_MIME = 'image/png';
 const PDF_A4_LANDSCAPE_W_MM = 297;
 const PDF_A4_LANDSCAPE_H_MM = 210;
 const PDF_IMAGE_COMPRESSION = 'NONE';
+const A4_LANDSCAPE_300_DPI_W = 3508;
+const A4_LANDSCAPE_300_DPI_H = 2480;
+const CERT_BG_SOURCES = [
+  { label: 'background local HD', src: CERT_BG_LOCAL_HD },
+  { label: 'background Google Drive', src: CERT_BG_DRIVE_DIRECT },
+];
 
 export const COURSE_LABELS = {
   tcc: 'Formacao Profissional em Terapia TC',
@@ -601,23 +612,66 @@ export default function AdminCertificateGenerator() {
     });
   };
 
-  const preloadImage = (src) => new Promise((resolve) => {
+  const getImageResolution = (image) => ({
+    width: image?.naturalWidth || image?.width || 0,
+    height: image?.naturalHeight || image?.height || 0,
+  });
+
+  const isGoodEnoughForPrint = (image) => {
+    const { width, height } = getImageResolution(image);
+    return width >= A4_LANDSCAPE_300_DPI_W && height >= A4_LANDSCAPE_300_DPI_H;
+  };
+
+  const preloadImage = (src, timeoutMs = 12000) => new Promise((resolve) => {
     if (!src || typeof window === 'undefined') {
       resolve(null);
       return;
     }
 
     const image = new window.Image();
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      resolve(result);
+    };
+    const timeout = window.setTimeout(() => finish(null), timeoutMs);
+
     image.crossOrigin = 'anonymous';
     image.onload = async () => {
       try {
         if (typeof image.decode === 'function') await image.decode();
       } catch {}
-      resolve(image);
+      finish(image);
     };
-    image.onerror = () => resolve(null);
+    image.onerror = () => finish(null);
     image.src = src;
   });
+
+  const loadBestBackgroundImage = async () => {
+    const loaded = [];
+
+    for (const source of CERT_BG_SOURCES) {
+      const image = await preloadImage(source.src);
+      if (!image) {
+        console.warn(`[Certificados] Nao foi possivel carregar ${source.label}: ${source.src}`);
+        continue;
+      }
+
+      const resolution = getImageResolution(image);
+      loaded.push({ ...source, image, ...resolution });
+      console.info(`[Certificados] ${source.label} carregado: ${resolution.width}x${resolution.height}px`);
+
+      if (isGoodEnoughForPrint(image)) {
+        return { ...source, image, ...resolution };
+      }
+    }
+
+    if (!loaded.length) return null;
+
+    return loaded.sort((a, b) => (b.width * b.height) - (a.width * a.height))[0];
+  };
 
   const canvasToBlob = (canvas) => new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
@@ -717,18 +771,24 @@ export default function AdminCertificateGenerator() {
       return captureFullNodeCanvas(node);
     }
 
-    const backgroundImage = await preloadImage(CERT_BG);
-    if (!backgroundImage) {
+    const bestBackground = await loadBestBackgroundImage();
+    if (!bestBackground?.image) {
       console.warn('[Certificados] Background HD nao carregou. Usando captura completa como fallback.');
+      toast.warning('O fundo HD nao carregou. O certificado sera exportado com o fundo da previa.');
       return captureFullNodeCanvas(node);
     }
 
-    const backgroundNaturalWidth = backgroundImage.naturalWidth || backgroundImage.width;
-    const backgroundNaturalHeight = backgroundImage.naturalHeight || backgroundImage.height;
+    const backgroundImage = bestBackground.image;
+    const backgroundNaturalWidth = bestBackground.width;
+    const backgroundNaturalHeight = bestBackground.height;
     if (backgroundNaturalWidth < CERT_EXPORT_W || backgroundNaturalHeight < CERT_EXPORT_H) {
-      console.warn(
-        `[Certificados] O background carregado tem ${backgroundNaturalWidth}x${backgroundNaturalHeight}px, menor que a exportacao ${CERT_EXPORT_W}x${CERT_EXPORT_H}px. Para nitidez maxima, envie um background com pelo menos essa resolucao.`
-      );
+      const message = `O fundo carregado (${backgroundNaturalWidth}x${backgroundNaturalHeight}px) e menor que a exportacao (${CERT_EXPORT_W}x${CERT_EXPORT_H}px). Use um arquivo HD em /certificates/certificado-background-hd.png.`;
+      console.warn(`[Certificados] ${message}`);
+      toast.warning(message);
+    } else if (backgroundNaturalWidth < A4_LANDSCAPE_300_DPI_W || backgroundNaturalHeight < A4_LANDSCAPE_300_DPI_H) {
+      const message = `O fundo carregado (${backgroundNaturalWidth}x${backgroundNaturalHeight}px) esta abaixo do minimo ideal para A4 300 DPI.`;
+      console.warn(`[Certificados] ${message}`);
+      toast.warning(message);
     }
 
     const overlayCanvas = await captureOverlayCanvas(node);
