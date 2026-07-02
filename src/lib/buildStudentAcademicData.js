@@ -28,6 +28,13 @@ export const HOURS_MAP = {
   ofensiva: 0, // pontos apenas, sem CH
 };
 
+export const STUDY_SCORE_RULES = {
+  lesson: 2,
+  task: 6,
+  quiz: 60,
+  exam: 60,
+};
+
 function roundScore(v) {
   const n = Number(v);
   if (!Number.isFinite(n)) return 0;
@@ -59,27 +66,14 @@ export function buildStudentAcademicData({
       category: 'Aula Gravada',
       title: l.title,
       score: si?.score ?? null,
-      max: 10,
+      max: STUDY_SCORE_RULES.lesson,
       hours: HOURS_MAP.lesson,
       status: si ? 'Avaliado' : 'Pendente',
       notes: si?.notes || '',
     });
   });
 
-  // ── Aulas ao vivo ──
-  liveSessions.forEach((l) => {
-    const si = verifiedScores.find((s) => s.category === 'live_attendance' && s.ref_id === l.id);
-    rows.push({
-      key: `live_attendance_${l.id}`,
-      category: 'Aula ao Vivo',
-      title: l.title,
-      score: si?.score ?? null,
-      max: 1,
-      hours: HOURS_MAP.live_attendance,
-      status: si ? 'Avaliado' : 'Pendente',
-      notes: si?.notes || '',
-    });
-  });
+  // Lives não entram na pontuação de estudos/histórico/certificado.
 
   // ── Tarefas / Provas (Task entity) ──
   tasks.forEach((t) => {
@@ -90,7 +84,7 @@ export function buildStudentAcademicData({
       category: t.type === 'quiz' ? 'Prova' : 'Tarefa',
       title: t.title,
       score: si?.score ?? null,
-      max: t.max_grade || 10,
+      max: t.type === 'quiz' ? STUDY_SCORE_RULES.quiz : STUDY_SCORE_RULES.task,
       hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task,
       status: si ? 'Avaliado' : 'Pendente',
       notes: si?.notes || '',
@@ -102,13 +96,13 @@ export function buildStudentAcademicData({
     examSubs.forEach((sub) => {
       const exam = exams.find((e) => e.id === sub.exam_id);
       if (!exam || sub.status !== 'graded') return;
-      const si = verifiedScores.find((s) => s.category === 'exam' && s.ref_id === exam.id);
+      const si = verifiedScores.find((s) => s.category === 'exam' && (s.ref_id === exam.id || s.ref_id === `exam:${exam.id}`));
       rows.push({
         key: `exam_${exam.id}`,
         category: 'Prova',
         title: exam.title,
         score: sub.grade ?? si?.score ?? null,
-        max: exam.max_grade || 10,
+        max: exam.max_grade || STUDY_SCORE_RULES.exam,
         hours: HOURS_MAP.exam,
         status: 'Avaliado',
         notes: sub.feedback || si?.notes || '',
@@ -116,45 +110,7 @@ export function buildStudentAcademicData({
     });
   }
 
-  // ── Terapeuta da semana (via ScoreItems de categoria task com ref therapist_pairing:) ──
-  const myPairings = pairings.filter(
-    (p) => p.therapist_email === studentEmail || p.patient_email === studentEmail
-  );
-  myPairings.forEach((p, i) => {
-    const role = p.therapist_email === studentEmail ? 'Terapeuta' : 'Paciente';
-    const refId = `therapist_pairing:${p.id}:${role === 'Terapeuta' ? 'therapist' : 'patient'}`;
-    const si = verifiedScores.find((s) => s.category === 'task' && s.ref_id === refId);
-    rows.push({
-      key: `therapist_${p.id}_${role}`,
-      category: 'Terapia da Semana',
-      title: `Sessão ${i + 1} (${role})`,
-      score: si?.score ?? null,
-      max: 10,
-      hours: HOURS_MAP.therapist,
-      status: si ? 'Avaliado' : 'Pendente',
-      notes: si?.notes || '',
-    });
-  });
-
-  // ── Ofensivas Diárias ──
-  const myResponses = challengeResponses.filter(
-    (r) => r.student_email === studentEmail && (r.points_earned || 0) > 0
-  );
-  myResponses.forEach((r) => {
-    const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
-    // Procura também pelo ScoreItem correspondente (categoria forum, ref_id = refId)
-    const si = verifiedScores.find((s) => s.category === 'forum' && s.ref_id === refId);
-    rows.push({
-      key: `ofensiva_${r.challenge_id}`,
-      category: 'Ofensiva Diária',
-      title: `Ofensiva ${r.date || 'sem data'}`,
-      score: si?.score ?? roundScore(r.points_earned || 0),
-      max: si?.max_score ?? 1,
-      hours: HOURS_MAP.ofensiva,
-      status: 'Avaliado',
-      notes: si?.notes || `${r.questions_answered || 0} perguntas respondidas`,
-    });
-  });
+  // Somente aulas assistidas, trabalhos entregues e provas compõem a pontuação de estudos.
 
   // ── Totals (only evaluated rows) ──
   const evaluatedRows = rows.filter((r) => r.status === 'Avaliado');
@@ -174,19 +130,13 @@ export function buildStudentAcademicData({
 
   // ── classes para verso do certificado ──
   // Aulas Gravadas: listadas individualmente
-  // Aulas ao Vivo:  uma linha única "Aulas ao Vivo" com somatória
-  // Tarefas:        uma linha única "Tarefas de Classe" com somatória
+  // Tarefas:        uma linha única "Trabalhos Entregues" com somatória
   // Provas:         uma linha única "Provas" com somatória
-  // Terapia da Semana: uma linha única com somatória
-  // Ofensivas:      uma linha única "Ofensivas Diárias" com somatória
 
-  const GROUPED_CATEGORIES = new Set(['Aula ao Vivo', 'Tarefa', 'Prova', 'Terapia da Semana', 'Ofensiva Diária']);
+  const GROUPED_CATEGORIES = new Set(['Tarefa', 'Prova']);
   const GROUP_LABELS = {
-    'Aula ao Vivo': 'Aulas ao Vivo',
-    'Tarefa': 'Tarefas de Classe',
+    'Tarefa': 'Trabalhos Entregues',
     'Prova': 'Provas',
-    'Terapia da Semana': 'Terapia da Semana',
-    'Ofensiva Diária': 'Ofensivas Diárias',
   };
 
   const classesMap = {}; // key -> { title, hours, scoreSum, maxSum }

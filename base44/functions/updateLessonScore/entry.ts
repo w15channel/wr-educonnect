@@ -3,7 +3,7 @@
  *
  * Entity automation handler — fires on LessonProgress create/update.
  *
- * Upserts a single ScoreItem (10 pts) when a student marks a lesson as watched,
+ * Upserts a single ScoreItem (2 pts) when a student marks a lesson as watched,
  * then updates their AccessCode.pontuacao_total and StudentProfile.points.
  *
  * Lightweight: loads only the records needed for the specific student + lesson.
@@ -66,16 +66,16 @@ Deno.serve(async (req) => {
       category: 'lesson',
       ref_id: lessonId,
       ref_title: lesson.title || 'Aula assistida',
-      score: 10,
-      max_score: 10,
+      score: 2,
+      max_score: 2,
       verified: true,
-      notes: 'Aula assistida por completo: +10 pontos.',
+      notes: 'Aula assistida por completo: +2 pontos de estudo.',
     };
 
     let scoreAction = 'skipped';
     const existing = existingScores?.[0];
     if (existing) {
-      if (!existing.verified || roundScore(existing.score) !== 10) {
+      if (!existing.verified || roundScore(existing.score) !== 2) {
         await base44.asServiceRole.entities.ScoreItem.update(existing.id, scorePayload);
         scoreAction = 'updated';
       }

@@ -92,7 +92,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     }
   });
 
-  const getScoreItem = (category, ref_id) => scoreItems.find((s) => s.category === category && s.ref_id === ref_id);
+  const getScoreItem = (category, ref_id) => scoreItems.find((s) => s.category === category && (s.ref_id === ref_id || (category === 'exam' && s.ref_id === `exam:${ref_id}`)));
 
   const isPairingFromActiveCourse = (pairing) => {
     if (!courseEmails || courseEmails.size === 0) return true;
@@ -226,7 +226,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={CATEGORY_CONFIG.lesson.icon}
                 refId={lesson.id}
                 refTitle={lesson.title}
-                maxScore={10}
+                maxScore={2}
                 item={getScoreItem('lesson', lesson.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
@@ -267,7 +267,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={CATEGORY_CONFIG.live_attendance.icon}
                 refId={sess.id}
                 refTitle={sess.title}
-                maxScore={1}
+                maxScore={0}
                 item={getScoreItem('live_attendance', sess.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
@@ -296,7 +296,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={task.type === 'quiz' ? CATEGORY_CONFIG.quiz.icon : CATEGORY_CONFIG.task.icon}
                 refId={task.id}
                 refTitle={task.title}
-                maxScore={task.max_grade || 10}
+                maxScore={task.max_grade || (task.type === 'quiz' ? 60 : 6)}
                 item={getScoreItem(task.type === 'quiz' ? 'quiz' : 'task', task.id)}
                 needsCorrection={uncorrectedTaskIds.has(task.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
@@ -358,7 +358,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={CATEGORY_CONFIG.exam.icon}
                 refId={exam.id}
                 refTitle={exam.title}
-                maxScore={exam.max_grade || 10}
+                maxScore={exam.max_grade || 60}
                 item={scoreItem}
                 needsCorrection={sub && sub.status === 'submitted' && !scoreItem}
                 onSave={(data) => updateScoreMutation.mutate(data)}

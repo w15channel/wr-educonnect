@@ -41,9 +41,9 @@ Deno.serve(async (req) => {
       ref_id: exam_id,
       ref_title: exam.title,
       score: roundScore(grade),
-      max_score: exam.max_grade || 10,
+      max_score: exam.max_grade || 60,
       verified: true,
-      notes: feedback || `Prova corrigida: ${grade}/${exam.max_grade || 10}`,
+      notes: feedback || `Prova corrigida: ${grade}/${exam.max_grade || 60}`,
     };
 
     if (existingScores && existingScores.length > 0) {

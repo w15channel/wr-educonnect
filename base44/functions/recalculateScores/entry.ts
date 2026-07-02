@@ -3,10 +3,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCORING RULES — canonical reference (update here, propagates everywhere)
 // ─────────────────────────────────────────────────────────────────────────────
-// lesson              watched        +10.0 pts  (per lesson)
-// live_attendance     confirmed      + 1.0 pts  (per live session)
-// task / quiz         submitted      +10.0 pts  (+ monitor bonus if applicable)
-// exam                graded         + grade    (exam grade 0-10, from ExamSubmission)
+// lesson              watched        + 2.0 pts  (per lesson; study + ranking)
+// live_attendance     confirmed      + 0.0 pts  (lives no longer generate points)
+// task                submitted      + 6.0 pts  (per assignment; study + ranking)
+// quiz / exam         graded         +60.0 pts  (per exam; study + ranking)
 // forum post          created        + 0.1 pts  (includes debates space)
 // forum reply         to colleague   + 0.5 pts  (includes debates space)
 // therapist_pairing   submitted eval +10.0 pts  (per role per pairing — therapist + patient separately)
@@ -31,6 +31,8 @@ async function fetchAllPages(entityQuery, sort, pageSize = 5000) {
 const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 const BONUS_BY_RANK = { 1: 0.5, 2: 0.3, 3: 0.2 };
+const STUDY_POINTS = { lesson: 2, task: 6, exam: 60 };
+const LIVE_ATTENDANCE_POINTS = 0;
 
 function ymd(date) {
   return date.toISOString().slice(0, 10);
@@ -136,7 +138,7 @@ Deno.serve(async (req) => {
     // Batch queues to avoid rate limits
     const scoreCreates = [];
     const scoreUpdates = [];
-    
+
     const queueScore = ({ studentEmail, category, refId, refTitle, score, maxScore, notes }) => {
       if (!studentEmail || !refId) return;
       const p = {
@@ -215,13 +217,16 @@ Deno.serve(async (req) => {
       const addBase = (email, pts) => baseTotals.set(email, roundScore((baseTotals.get(email) || 0) + roundScore(pts)));
 
       progresses.forEach((p) => {
-        if (p.watched && courseEmails.has(p.student_email) && lessonMap.has(p.lesson_id)) addBase(p.student_email, 10);
+        if (p.watched && courseEmails.has(p.student_email) && lessonMap.has(p.lesson_id)) addBase(p.student_email, STUDY_POINTS.lesson);
       });
       attendances.forEach((a) => {
-        if (courseEmails.has(a.student_email) && liveMap.has(a.session_id)) addBase(a.student_email, 1);
+        if (courseEmails.has(a.student_email) && liveMap.has(a.session_id)) addBase(a.student_email, LIVE_ATTENDANCE_POINTS);
       });
       submissions.forEach((s) => {
-        if (courseEmails.has(s.student_email) && taskMap.has(s.task_id)) addBase(s.student_email, 10);
+        if (courseEmails.has(s.student_email) && taskMap.has(s.task_id)) {
+          const task = taskMap.get(s.task_id);
+          addBase(s.student_email, task?.type === 'quiz' ? STUDY_POINTS.exam : STUDY_POINTS.task);
+        }
       });
       coursePosts.forEach((p) => {
         if (courseEmails.has(p.author_email)) addBase(p.author_email, 0.1);
@@ -288,16 +293,15 @@ Deno.serve(async (req) => {
       for (const p of progresses) {
         const lesson = lessonMap.get(p.lesson_id);
         if (!p.watched || !courseEmails.has(p.student_email) || !lesson) continue;
-        queueScore({ studentEmail: p.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: 10, maxScore: 10, notes: 'Aula assistida por completo: +10 pontos.' });
-        addCalc(p.student_email, 10);
+        queueScore({ studentEmail: p.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: STUDY_POINTS.lesson, maxScore: STUDY_POINTS.lesson, notes: 'Aula assistida por completo: +2 pontos de estudo.' });
+        addCalc(p.student_email, STUDY_POINTS.lesson);
       }
 
       // Live attendance
       for (const a of attendances) {
         const live = liveMap.get(a.session_id);
         if (!courseEmails.has(a.student_email) || !live) continue;
-        queueScore({ studentEmail: a.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || a.session_title || 'Presença em live', score: 1, maxScore: 1, notes: 'Presença confirmada em live: +1 ponto.' });
-        addCalc(a.student_email, 1);
+        queueScore({ studentEmail: a.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || a.session_title || 'Presença em live', score: LIVE_ATTENDANCE_POINTS, maxScore: LIVE_ATTENDANCE_POINTS, notes: 'Presença confirmada em live: sem pontuação pela regra atual.' });
       }
 
       // Task/quiz submissions
@@ -305,11 +309,13 @@ Deno.serve(async (req) => {
         const task = taskMap.get(s.task_id);
         if (!courseEmails.has(s.student_email) || !task) continue;
         const bonus = bonusByEmail.get(s.student_email) || 0;
-        const score = 10 + bonus;
+        const baseScore = task.type === 'quiz' ? STUDY_POINTS.exam : STUDY_POINTS.task;
+        const score = baseScore + bonus;
         const category = task.type === 'quiz' ? 'quiz' : 'task';
+        const label = task.type === 'quiz' ? 'Prova' : 'Trabalho';
         const feedback = bonus > 0
-          ? `Entrega recebida e pontuada: 10 pontos + ${String(roundScore(bonus)).replace('.', ',')} de bônus de monitor/ranking.`
-          : 'Entrega recebida e pontuada conforme a regra universal: +10 pontos.';
+          ? `${label} pontuado: ${String(roundScore(baseScore)).replace('.', ',')} pontos + ${String(roundScore(bonus)).replace('.', ',')} de bônus de monitor/ranking.`
+          : `${label} pontuado conforme a regra atual: +${String(roundScore(baseScore)).replace('.', ',')} pontos.`;
         queueScore({ studentEmail: s.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
         addCalc(s.student_email, score);
         if (s.status !== 'graded' || roundScore(s.grade) !== roundScore(score) || s.feedback !== feedback) {
@@ -327,14 +333,14 @@ Deno.serve(async (req) => {
         if (!courseEmails.has(sub.student_email) || !exam || sub.status !== 'graded') continue;
         const grade = roundScore(sub.grade || 0);
         const refId = `exam:${sub.exam_id}`;
-        queueScore({ 
-          studentEmail: sub.student_email, 
-          category: 'exam', 
-          refId, 
-          refTitle: exam.title, 
-          score: grade, 
-          maxScore: exam.max_grade || 10, 
-          notes: sub.feedback || `Prova corrigida: ${grade}/${exam.max_grade || 10} pontos.` 
+        queueScore({
+          studentEmail: sub.student_email,
+          category: 'exam',
+          refId,
+          refTitle: exam.title,
+          score: grade,
+          maxScore: exam.max_grade || STUDY_POINTS.exam,
+          notes: sub.feedback || `Prova corrigida: ${grade}/${exam.max_grade || STUDY_POINTS.exam} pontos.`
         });
         addCalc(sub.student_email, grade);
         // Agrupa por módulo para cálculo de média
@@ -440,10 +446,10 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       rules: {
-        lesson_watched:               { pts: 10,    note: 'por aula assistida' },
-        live_attendance:              { pts: 1,     note: 'por presença confirmada em live' },
-        task_or_quiz_submission:      { pts: 10,    note: 'por entrega (+ bônus de monitor se aplicável)' },
-        exam_graded:                  { pts: '0–10', note: 'nota da prova (ExamSubmission) — valor real atribuído pelo professor' },
+        lesson_watched:               { pts: 2,     note: 'por aula assistida (pontuação de estudos)' },
+        live_attendance:              { pts: 0,     note: 'lives não geram pontuação' },
+        task_submission:              { pts: 6,     note: 'por trabalho entregue (pontuação de estudos)' },
+        quiz_or_exam_graded:          { pts: 60,    note: 'por prova entregue/corrigida (pontuação de estudos)' },
         forum_post:                   { pts: 0.1,   note: 'por post criado no fórum ou sala de debates' },
         forum_reply_to_colleague:     { pts: 0.5,   note: 'por resposta a colega no fórum ou sala de debates' },
         therapist_week_submitted:     { pts: 10,    note: 'por relato enviado (como terapeuta OU paciente)' },
