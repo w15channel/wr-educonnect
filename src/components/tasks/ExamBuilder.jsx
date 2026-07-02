@@ -14,7 +14,7 @@ export default function ExamBuilder({ onBack, editingExam }) {
   const [title, setTitle] = useState(editingExam?.title || '');
   const [description, setDescription] = useState(editingExam?.description || '');
   const [deadline, setDeadline] = useState(editingExam?.deadline || '');
-  const [maxGrade, setMaxGrade] = useState(editingExam?.max_grade || 10);
+  const [maxGrade, setMaxGrade] = useState(editingExam?.max_grade || 60);
   const [questions, setQuestions] = useState(
     editingExam?.quiz_questions?.length > 0 ? editingExam.quiz_questions : [{ ...EMPTY_QUESTION }]
   );

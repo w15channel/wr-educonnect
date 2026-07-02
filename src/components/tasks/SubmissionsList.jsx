@@ -32,7 +32,7 @@ function SubmissionRow({ sub, task }) {
         ref_id: sub.task_id,
         ref_title: task.title,
         score: normalizedGrade,
-        max_score: roundScore(task.max_grade || 10),
+        max_score: roundScore(task.max_grade || (task.type === 'quiz' ? 60 : 6)),
         verified: true,
         notes: feedback || '',
       };

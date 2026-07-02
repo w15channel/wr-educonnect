@@ -22,7 +22,7 @@ import SubmissionsList from '../components/tasks/SubmissionsList';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
-const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 10, quiz_questions: [] };
+const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 6, quiz_questions: [] };
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -223,7 +223,7 @@ export default function Tasks({ mode = 'tasks' }) {
 
   const openEdit = (task) => {
     setEditingTask(task);
-    setForm({ title: task.title, description: task.description || '', type: task.type, deadline: task.deadline || '', max_grade: task.max_grade || 10, quiz_questions: task.quiz_questions || [] });
+    setForm({ title: task.title, description: task.description || '', type: task.type, deadline: task.deadline || '', max_grade: task.max_grade || (task.type === 'quiz' ? 60 : 6), quiz_questions: task.quiz_questions || [] });
     setShowForm(true);
   };
 

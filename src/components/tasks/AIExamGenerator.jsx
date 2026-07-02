@@ -54,9 +54,9 @@ export default function AIExamGenerator({ onBack, course }) {
   const [useCustomText, setUseCustomText] = useState(false);
   const [customText, setCustomText] = useState('');
   const [format, setFormat] = useState('choice'); // 'choice' | 'text' | 'mixed'
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(60);
   const [deadline, setDeadline] = useState('');
-  const [maxGrade, setMaxGrade] = useState(10);
+  const [maxGrade, setMaxGrade] = useState(60);
   const [generating, setGenerating] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState(null);
   const [examTitle, setExamTitle] = useState('');

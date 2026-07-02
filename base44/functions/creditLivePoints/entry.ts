@@ -3,7 +3,7 @@
  *
  * Entity automation handler — fires on LiveAttendance create/update.
  *
- * Upserts a single ScoreItem (1 pt) for the student + session in the event,
+ * Upserts a single ScoreItem (0 pts) for the student + session in the event,
  * then updates their AccessCode.pontuacao_total and StudentProfile.points.
  *
  * Designed to be lightweight: loads only the records it needs so many
@@ -63,16 +63,16 @@ Deno.serve(async (req) => {
       category: 'live_attendance',
       ref_id: sessionId,
       ref_title: session.title || 'Presença em live',
-      score: 1,
-      max_score: 1,
+      score: 0,
+      max_score: 0,
       verified: true,
-      notes: 'Presença confirmada em live: +1 ponto.',
+      notes: 'Presença confirmada em live: sem pontuação pela regra atual.',
     };
 
     let scoreAction = 'skipped';
     const existing = existingScores?.[0];
     if (existing) {
-      if (!existing.verified || roundScore(existing.score) !== 1) {
+      if (!existing.verified || roundScore(existing.score) !== 0) {
         await base44.asServiceRole.entities.ScoreItem.update(existing.id, scorePayload);
         scoreAction = 'updated';
       }

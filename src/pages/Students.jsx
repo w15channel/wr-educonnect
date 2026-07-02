@@ -87,18 +87,18 @@ export default function Students() {
         const toCreate = [];
         for (const lesson of lessons) {
           if (!existingScores.find(s => s.category === 'lesson' && s.ref_id === lesson.id)) {
-            toCreate.push({ student_email: email, category: 'lesson', ref_id: lesson.id, ref_title: lesson.title, score: 0, max_score: 10, verified: false });
+            toCreate.push({ student_email: email, category: 'lesson', ref_id: lesson.id, ref_title: lesson.title, score: 0, max_score: 2, verified: false });
           }
         }
         for (const session of liveSessions) {
           if (!existingScores.find(s => s.category === 'live_attendance' && s.ref_id === session.id)) {
-            toCreate.push({ student_email: email, category: 'live_attendance', ref_id: session.id, ref_title: session.title, score: 0, max_score: 1, verified: false });
+            toCreate.push({ student_email: email, category: 'live_attendance', ref_id: session.id, ref_title: session.title, score: 0, max_score: 0, verified: false });
           }
         }
         for (const task of tasks) {
           const cat = task.type === 'quiz' ? 'quiz' : 'task';
           if (!existingScores.find(s => s.category === cat && s.ref_id === task.id)) {
-            toCreate.push({ student_email: email, category: cat, ref_id: task.id, ref_title: task.title, score: 0, max_score: task.max_grade || 10, verified: false });
+            toCreate.push({ student_email: email, category: cat, ref_id: task.id, ref_title: task.title, score: 0, max_score: task.max_grade || (task.type === 'quiz' ? 60 : 6), verified: false });
           }
         }
         if (toCreate.length > 0) {

@@ -145,7 +145,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
       <div className="grid grid-cols-4 gap-1.5">
         {[
           { label: 'Selecionados', value: selectedItems.size },
-          { label: 'Pontuação', value: `${formatScore(totalScore)}/${formatScore(totalMax)}` },
+          { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/${formatScore(totalMax)}` },
           { label: 'Aproveitamento', value: `${approvalRate}%` },
           { label: 'Carga (h)', value: `${totalHours}h` },
         ].map(item => (
@@ -168,7 +168,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
           <Square size={10} /> Limpar
         </button>
         <div className="ml-auto text-[10px] text-muted-foreground self-center">
-          Nota Total: <span className="font-black text-primary">{averageGrade}</span>
+          Pontuação de Estudos: <span className="font-black text-primary">{averageGrade}</span>
         </div>
       </div>
 

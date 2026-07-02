@@ -148,7 +148,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', background: '#f8fafc', border: '1px solid #dde4ec', borderRadius: 8, padding: '14px 18px', marginBottom: 24, fontSize: 11 }}>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aluno(a)</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{student.name}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aproveitamento</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{approvalRate}%</p></div>
-          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Total de Pontos</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} / {formatScore(totalMaxScore)}</p></div>
+          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Pontuação de Estudos</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} / {formatScore(totalMaxScore)}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Carga Horária</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours}h</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Data de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionDate}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Horário de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionTime}</p></div>
@@ -201,7 +201,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
             <p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours} horas/aula</p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Pontuação Final</span>
+            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Pontuação de Estudos</span>
             <p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} pts</p>
           </div>
         </div>
@@ -407,7 +407,7 @@ export default function HistoricoAcademico() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Itens selecionados', value: selectedItems.size },
-            { label: 'Pontuação', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` },
+            { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` },
             { label: 'Aproveitamento', value: `${approvalRate}%` },
             { label: 'Carga Horária', value: `${totalHours}h` },
           ].map(item => (
@@ -468,7 +468,7 @@ export default function HistoricoAcademico() {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Pontuação', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: `${totalHours}h` }].map(item => (
+          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: `${totalHours}h` }].map(item => (
             <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground">{item.label}</p>
               <p className="text-base font-black text-primary">{item.value}</p>
