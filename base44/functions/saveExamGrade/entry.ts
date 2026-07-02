@@ -40,10 +40,10 @@ Deno.serve(async (req) => {
       category: 'exam',
       ref_id: exam_id,
       ref_title: exam.title,
-      score: roundScore(grade),
-      max_score: exam.max_grade || 60,
+      score: 60,
+      max_score: 60,
       verified: true,
-      notes: feedback || `Prova corrigida: ${grade}/${exam.max_grade || 60}`,
+      notes: feedback || `Prova entregue/corrigida conforme a regra atual: +60 pontos de estudo. Nota registrada: ${grade}/${exam.max_grade || 60}`,
     };
 
     if (existingScores && existingScores.length > 0) {

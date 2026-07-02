@@ -66,6 +66,16 @@
       "type": "boolean",
       "default": false,
       "description": "Se o aluno ativou notifica\u00e7\u00f5es do site neste aparelho"
+    },
+    "pontuacao_total": {
+      "type": "number",
+      "default": 0,
+      "description": "Pontuação total para ranking geral"
+    },
+    "pontuacao_estudos": {
+      "type": "number",
+      "default": 0,
+      "description": "Pontuação acadêmica/estudos: aulas assistidas, trabalhos entregues e provas"
     }
   },
   "required": [

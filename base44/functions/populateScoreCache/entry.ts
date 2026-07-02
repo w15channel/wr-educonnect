@@ -10,23 +10,29 @@ function addRounded(total, value) {
   return roundScore(roundScore(total) + roundScore(value));
 }
 
-async function updateStudentCache(base44, email, total, profiles, accessCodes, users) {
+function isStudyItem(item) {
+  return ['lesson', 'task', 'quiz', 'exam'].includes(item?.category) && !String(item?.ref_id || '').startsWith('therapist_pairing:');
+}
+
+async function updateStudentCache(base44, email, total, studyTotal, profiles, accessCodes, users) {
   const pontuacaoTotal = roundScore(total);
+  const pontuacaoEstudos = roundScore(studyTotal);
   const profileMatches = profiles.filter((profile) => profile.student_email === email);
   for (const profile of profileMatches) {
     await base44.asServiceRole.entities.StudentProfile.update(profile.id, {
       pontuacao_total: pontuacaoTotal,
+      pontuacao_estudos: pontuacaoEstudos,
       points: pontuacaoTotal,
     });
   }
 
   const codeMatches = accessCodes.filter((code) => code.student_email === email);
   for (const code of codeMatches) {
-    await base44.asServiceRole.entities.AccessCode.update(code.id, { pontuacao_total: pontuacaoTotal });
+    await base44.asServiceRole.entities.AccessCode.update(code.id, { pontuacao_total: pontuacaoTotal, pontuacao_estudos: pontuacaoEstudos });
   }
 
   for (const user of users.filter((item) => item.email === email)) {
-    await base44.asServiceRole.entities.User.update(user.id, { pontuacao_total: pontuacaoTotal });
+    await base44.asServiceRole.entities.User.update(user.id, { pontuacao_total: pontuacaoTotal, pontuacao_estudos: pontuacaoEstudos });
   }
 }
 
@@ -73,9 +79,13 @@ Deno.serve(async (req) => {
     }
 
     const totals = new Map();
+    const studyTotals = new Map();
     for (const item of deduped.values()) {
       if (!item.verified || !item.student_email) continue;
       totals.set(item.student_email, addRounded(totals.get(item.student_email) || 0, item.score));
+      if (isStudyItem(item)) {
+        studyTotals.set(item.student_email, addRounded(studyTotals.get(item.student_email) || 0, item.score));
+      }
     }
 
     const emails = targetEmail
@@ -87,10 +97,10 @@ Deno.serve(async (req) => {
         ])];
 
     for (const email of emails) {
-      await updateStudentCache(base44, email, totals.get(email) || 0, profiles, accessCodes, users);
+      await updateStudentCache(base44, email, totals.get(email) || 0, studyTotals.get(email) || 0, profiles, accessCodes, users);
     }
 
-    return Response.json({ success: true, updatedStudents: emails.length, student_email: targetEmail, totals: Object.fromEntries(totals) });
+    return Response.json({ success: true, updatedStudents: emails.length, student_email: targetEmail, totals: Object.fromEntries(totals), studyTotals: Object.fromEntries(studyTotals) });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

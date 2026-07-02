@@ -87,19 +87,20 @@ Deno.serve(async (req) => {
     // ── Recalculate student total from all verified ScoreItems ───────────────
     if (scoreAction !== 'skipped' && code) {
       const allScores = await base44.asServiceRole.entities.ScoreItem.filter({ student_email: studentEmail });
-      const newTotal = roundScore(
-        allScores
-          .filter((item) => item.verified)
-          .reduce((sum, item) => sum + roundScore(item.score), 0)
-      );
+      const verifiedScores = allScores.filter((item) => item.verified);
+      const newTotal = roundScore(verifiedScores.reduce((sum, item) => sum + roundScore(item.score), 0));
+      const newStudyTotal = roundScore(verifiedScores
+        .filter((item) => ['lesson', 'task', 'quiz', 'exam'].includes(item.category) && !String(item.ref_id || '').startsWith('therapist_pairing:'))
+        .reduce((sum, item) => sum + roundScore(item.score), 0));
 
-      await base44.asServiceRole.entities.AccessCode.update(code.id, { pontuacao_total: newTotal });
+      await base44.asServiceRole.entities.AccessCode.update(code.id, { pontuacao_total: newTotal, pontuacao_estudos: newStudyTotal });
 
       const profiles = await base44.asServiceRole.entities.StudentProfile.filter({ student_email: studentEmail });
       if (profiles?.[0]) {
         await base44.asServiceRole.entities.StudentProfile.update(profiles[0].id, {
           points: newTotal,
           pontuacao_total: newTotal,
+          pontuacao_estudos: newStudyTotal,
         });
       }
     }

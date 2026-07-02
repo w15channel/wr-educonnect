@@ -31,7 +31,7 @@ async function fetchAllPages(entityQuery, sort, pageSize = 5000) {
 const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 const BONUS_BY_RANK = { 1: 0.5, 2: 0.3, 3: 0.2 };
-const STUDY_POINTS = { lesson: 2, task: 6, exam: 60 };
+const STUDY_POINTS = { lesson: 2, task: 6, quiz: 60, exam: 60 };
 const LIVE_ATTENDANCE_POINTS = 0;
 
 function ymd(date) {
@@ -179,6 +179,7 @@ Deno.serve(async (req) => {
         createdScores += batch.length;
         if (i + 50 < scoreCreates.length) await new Promise(r => setTimeout(r, 300));
       }
+      scoreCreates.length = 0;
       // Process updates in batches of 50 with delays
       for (let i = 0; i < scoreUpdates.length; i += 50) {
         const batch = scoreUpdates.slice(i, i + 50);
@@ -190,6 +191,7 @@ Deno.serve(async (req) => {
         updatedScores += batch.length;
         if (i + 50 < scoreUpdates.length) await new Promise(r => setTimeout(r, 300));
       }
+      scoreUpdates.length = 0;
     };
 
     // ── Per-course processing ─────────────────────────────────────────────
@@ -287,14 +289,17 @@ Deno.serve(async (req) => {
 
       // ── Queue all ScoreItems for this course ────────────────────────────
       const calculatedTotals = new Map(courseCodes.map((c) => [c.student_email, 0]));
+      const calculatedStudyTotals = new Map(courseCodes.map((c) => [c.student_email, 0]));
       const addCalc = (email, pts) => calculatedTotals.set(email, roundScore((calculatedTotals.get(email) || 0) + roundScore(pts)));
+      const addStudyCalc = (email, pts) => calculatedStudyTotals.set(email, roundScore((calculatedStudyTotals.get(email) || 0) + roundScore(pts)));
+      const addBothCalc = (email, pts) => { addCalc(email, pts); addStudyCalc(email, pts); };
 
       // Lessons
       for (const p of progresses) {
         const lesson = lessonMap.get(p.lesson_id);
         if (!p.watched || !courseEmails.has(p.student_email) || !lesson) continue;
         queueScore({ studentEmail: p.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: STUDY_POINTS.lesson, maxScore: STUDY_POINTS.lesson, notes: 'Aula assistida por completo: +2 pontos de estudo.' });
-        addCalc(p.student_email, STUDY_POINTS.lesson);
+        addBothCalc(p.student_email, STUDY_POINTS.lesson);
       }
 
       // Live attendance
@@ -309,7 +314,7 @@ Deno.serve(async (req) => {
         const task = taskMap.get(s.task_id);
         if (!courseEmails.has(s.student_email) || !task) continue;
         const bonus = bonusByEmail.get(s.student_email) || 0;
-        const baseScore = task.type === 'quiz' ? STUDY_POINTS.exam : STUDY_POINTS.task;
+        const baseScore = task.type === 'quiz' ? STUDY_POINTS.quiz : STUDY_POINTS.task;
         const score = baseScore + bonus;
         const category = task.type === 'quiz' ? 'quiz' : 'task';
         const label = task.type === 'quiz' ? 'Prova' : 'Trabalho';
@@ -317,7 +322,8 @@ Deno.serve(async (req) => {
           ? `${label} pontuado: ${String(roundScore(baseScore)).replace('.', ',')} pontos + ${String(roundScore(bonus)).replace('.', ',')} de bônus de monitor/ranking.`
           : `${label} pontuado conforme a regra atual: +${String(roundScore(baseScore)).replace('.', ',')} pontos.`;
         queueScore({ studentEmail: s.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
-        addCalc(s.student_email, score);
+        addBothCalc(s.student_email, baseScore);
+        if (bonus > 0) addCalc(s.student_email, bonus);
         if (s.status !== 'graded' || roundScore(s.grade) !== roundScore(score) || s.feedback !== feedback) {
           await base44.asServiceRole.entities.TaskSubmission.update(s.id, { grade: roundScore(score), feedback, status: 'graded' });
           correctedSubmissions++;
@@ -331,7 +337,7 @@ Deno.serve(async (req) => {
       for (const sub of courseExamSubs) {
         const exam = examMap.get(sub.exam_id);
         if (!courseEmails.has(sub.student_email) || !exam || sub.status !== 'graded') continue;
-        const grade = roundScore(sub.grade || 0);
+        const grade = STUDY_POINTS.exam;
         const refId = `exam:${sub.exam_id}`;
         queueScore({
           studentEmail: sub.student_email,
@@ -339,10 +345,10 @@ Deno.serve(async (req) => {
           refId,
           refTitle: exam.title,
           score: grade,
-          maxScore: exam.max_grade || STUDY_POINTS.exam,
-          notes: sub.feedback || `Prova corrigida: ${grade}/${exam.max_grade || STUDY_POINTS.exam} pontos.`
+          maxScore: STUDY_POINTS.exam,
+          notes: sub.feedback || `Prova entregue/corrigida conforme a regra atual: +60 pontos de estudo.`
         });
-        addCalc(sub.student_email, grade);
+        addBothCalc(sub.student_email, grade);
         // Agrupa por módulo para cálculo de média
         const moduleKey = exam.module_ref || 'default';
         if (!examByModule[sub.student_email]) examByModule[sub.student_email] = {};
@@ -409,6 +415,7 @@ Deno.serve(async (req) => {
           (p) => p.student_email === item.code.student_email && (p.dashboard_course === course || (!p.dashboard_course && course === 'tcc'))
         );
         const existingProfile = matchingProfiles.find((p) => p.code_id) || matchingProfiles[0];
+        const studyTotal = roundScore(calculatedStudyTotals.get(item.code.student_email) || 0);
         for (const dup of matchingProfiles.filter((p) => existingProfile && p.id !== existingProfile.id)) {
           await base44.asServiceRole.entities.StudentProfile.delete(dup.id).catch(() => null);
         }
@@ -417,6 +424,7 @@ Deno.serve(async (req) => {
           full_name: displayName(item.code),
           points: roundScore(item.total),
           pontuacao_total: roundScore(item.total),
+          pontuacao_estudos: studyTotal,
           dashboard_rank: idx + 1,
           dashboard_course: course,
         };
@@ -424,14 +432,20 @@ Deno.serve(async (req) => {
         else await base44.asServiceRole.entities.StudentProfile.create(profilePayload);
         profilesUpdated++;
 
-        if (roundScore(item.code.pontuacao_total) !== roundScore(item.total)) {
-          await base44.asServiceRole.entities.AccessCode.update(item.code.id, { pontuacao_total: roundScore(item.total) });
+        if (roundScore(item.code.pontuacao_total) !== roundScore(item.total) || roundScore(item.code.pontuacao_estudos) !== studyTotal) {
+          await base44.asServiceRole.entities.AccessCode.update(item.code.id, {
+            pontuacao_total: roundScore(item.total),
+            pontuacao_estudos: studyTotal,
+          });
           scoreCachesUpdated++;
         }
 
         for (const cachedUser of users.filter((u) => u.email === item.code.student_email)) {
-          if (roundScore(cachedUser.pontuacao_total) !== roundScore(item.total)) {
-            await base44.asServiceRole.entities.User.update(cachedUser.id, { pontuacao_total: roundScore(item.total) });
+          if (roundScore(cachedUser.pontuacao_total) !== roundScore(item.total) || roundScore(cachedUser.pontuacao_estudos) !== studyTotal) {
+            await base44.asServiceRole.entities.User.update(cachedUser.id, {
+              pontuacao_total: roundScore(item.total),
+              pontuacao_estudos: studyTotal,
+            });
             scoreCachesUpdated++;
           }
         }
