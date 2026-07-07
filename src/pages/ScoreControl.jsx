@@ -55,18 +55,41 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
   const updateScoreMutation = useMutation({
     mutationFn: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
-      const existing = scoreItems.find((s) => s.category === category && s.ref_id === ref_id);
-      const data = { student_email: email, category, ref_id, ref_title, score: roundScore(String(score).replace(',', '.')), max_score: roundScore(max_score), verified: true, notes: itemNotes || '' };
-      if (existing) return adminApi.update('ScoreItem', existing.id, data);
-      return adminApi.create('ScoreItem', data);
+      const existing = scoreItems.find((s) => {
+        if (category === 'exam') return s.category === 'exam' && (s.ref_id === ref_id || s.ref_id === `exam:${ref_id}`);
+        return s.category === category && s.ref_id === ref_id;
+      });
+      const normalizedScore = roundScore(String(score).replace(',', '.'));
+      const scoreRefId = category === 'exam' ? `exam:${ref_id}` : ref_id;
+      const data = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score: roundScore(max_score), verified: true, notes: itemNotes || '' };
+      const result = existing ? await adminApi.update('ScoreItem', existing.id, data) : await adminApi.create('ScoreItem', data);
+
+      if (category === 'exam') {
+        const submission = examSubs.find((sub) => sub.exam_id === ref_id);
+        if (submission?.id) {
+          await adminApi.update('ExamSubmission', submission.id, {
+            grade: normalizedScore,
+            feedback: itemNotes || submission.feedback || '',
+            status: 'graded',
+            graded_at: new Date().toISOString()
+          });
+        }
+      }
+
+      return result;
     },
     onMutate: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
       await queryClient.cancelQueries({ queryKey: ['score-items', email] });
       const previous = queryClient.getQueryData(['score-items', email]);
       queryClient.setQueryData(['score-items', email], (old = []) => {
-        const existing = old.find((s) => s.category === category && s.ref_id === ref_id);
-        const updated = { student_email: email, category, ref_id, ref_title, score: Number(score), max_score, verified: true, notes: itemNotes || '', id: existing?.id || `optimistic_${ref_id}` };
-        if (existing) return old.map((s) => s.category === category && s.ref_id === ref_id ? updated : s);
+        const existing = old.find((s) => {
+          if (category === 'exam') return s.category === 'exam' && (s.ref_id === ref_id || s.ref_id === `exam:${ref_id}`);
+          return s.category === category && s.ref_id === ref_id;
+        });
+        const normalizedScore = roundScore(String(score).replace(',', '.'));
+        const scoreRefId = category === 'exam' ? `exam:${ref_id}` : ref_id;
+        const updated = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score, verified: true, notes: itemNotes || '', id: existing?.id || `optimistic_${ref_id}` };
+        if (existing) return old.map((s) => s.id === existing.id ? updated : s);
         return [...old, updated];
       });
       return { previous };
@@ -79,6 +102,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       await base44.functions.invoke('populateScoreCache', { student_email: email });
       queryClient.invalidateQueries({ queryKey: ['score-items', email] });
       queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
+      queryClient.invalidateQueries({ queryKey: ['exam-subs-student', email] });
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
       toast.success('Pontuação salva e cache atualizado!');

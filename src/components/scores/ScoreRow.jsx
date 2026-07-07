@@ -23,6 +23,7 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
   }, [item?.id, item?.score, item?.notes]);
 
   const color = CATEGORY_CONFIG[category]?.iconColor || 'bg-secondary text-muted-foreground';
+  const normalizedScore = roundScore(String(score || 0).replace(',', '.'));
 
   return (
     <div className={`p-3 sm:p-4 rounded-xl border transition-all max-w-full overflow-hidden ${needsCorrection ? 'border-red-300 bg-red-50/40' : item?.verified ? 'border-green-200 bg-green-50/30' : 'border-border bg-card'}`}>
@@ -66,7 +67,7 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
           <Button
             size="sm"
             className="h-8 text-xs px-3"
-            onClick={() => onSave({ category, ref_id: refId, ref_title: refTitle || 'Item sem título', score: roundScore(String(score || 0).replace(',', '.')), max_score: roundScore(maxScore), notes })}
+            onClick={() => onSave({ category, ref_id: refId, ref_title: refTitle || 'Item sem título', score: normalizedScore, max_score: roundScore(maxScore), notes })}
             disabled={saving}
           >
             {item?.verified ? 'Atualizar' : 'Verificar'}
