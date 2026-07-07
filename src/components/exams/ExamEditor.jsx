@@ -18,7 +18,7 @@ export default function ExamEditor({ exam, onBack, course }) {
   const [title, setTitle] = useState(exam?.title || '');
   const [description, setDescription] = useState(exam?.description || '');
   const [deadline, setDeadline] = useState(exam?.deadline ? exam.deadline.slice(0, 16) : '');
-  const [maxGrade, setMaxGrade] = useState(exam?.max_grade || 60);
+  const [maxGrade, setMaxGrade] = useState(exam?.max_grade || 50);
   const [questions, setQuestions] = useState(exam?.quiz_questions || []);
   const [isPublished, setIsPublished] = useState(exam?.is_published ?? true);
 

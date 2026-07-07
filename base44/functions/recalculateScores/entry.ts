@@ -5,8 +5,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // ─────────────────────────────────────────────────────────────────────────────
 // lesson              watched        + 2.0 pts  (per lesson; study + ranking)
 // live_attendance     confirmed      + 0.0 pts  (lives no longer generate points)
-// task                submitted      + 6.0 pts  (per assignment; study + ranking)
-// quiz / exam         graded         +60.0 pts  (per exam; study + ranking)
+// task                submitted      + 5.0 pts  (per assignment; study + ranking)
+// quiz / exam         graded         +50.0 pts  (per exam; study + ranking)
 // forum post          created        + 0.1 pts  (includes debates space)
 // forum reply         to colleague   + 0.5 pts  (includes debates space)
 // therapist_pairing   submitted eval +10.0 pts  (per role per pairing — therapist + patient separately)
@@ -31,7 +31,7 @@ async function fetchAllPages(entityQuery, sort, pageSize = 5000) {
 const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
 const BONUS_BY_RANK = { 1: 0.5, 2: 0.3, 3: 0.2 };
-const STUDY_POINTS = { lesson: 2, task: 6, quiz: 60, exam: 60 };
+const STUDY_POINTS = { lesson: 2, task: 5, quiz: 50, exam: 50 };
 const LIVE_ATTENDANCE_POINTS = 0;
 
 function ymd(date) {
@@ -346,7 +346,7 @@ Deno.serve(async (req) => {
           refTitle: exam.title,
           score: grade,
           maxScore: STUDY_POINTS.exam,
-          notes: sub.feedback || `Prova entregue/corrigida conforme a regra atual: +60 pontos de estudo.`
+          notes: sub.feedback || `Prova entregue/corrigida conforme a regra atual: +50 pontos de estudo.`
         });
         addBothCalc(sub.student_email, grade);
         // Agrupa por módulo para cálculo de média
@@ -462,8 +462,8 @@ Deno.serve(async (req) => {
       rules: {
         lesson_watched:               { pts: 2,     note: 'por aula assistida (pontuação de estudos)' },
         live_attendance:              { pts: 0,     note: 'lives não geram pontuação' },
-        task_submission:              { pts: 6,     note: 'por trabalho entregue (pontuação de estudos)' },
-        quiz_or_exam_graded:          { pts: 60,    note: 'por prova entregue/corrigida (pontuação de estudos)' },
+        task_submission:              { pts: 5,     note: 'por trabalho entregue (pontuação de estudos)' },
+        quiz_or_exam_graded:          { pts: 50,    note: 'por prova entregue/corrigida (pontuação de estudos)' },
         forum_post:                   { pts: 0.1,   note: 'por post criado no fórum ou sala de debates' },
         forum_reply_to_colleague:     { pts: 0.5,   note: 'por resposta a colega no fórum ou sala de debates' },
         therapist_week_submitted:     { pts: 10,    note: 'por relato enviado (como terapeuta OU paciente)' },

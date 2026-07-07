@@ -30,9 +30,9 @@ export const HOURS_MAP = {
 
 export const STUDY_SCORE_RULES = {
   lesson: 2,
-  task: 6,
-  quiz: 60,
-  exam: 60,
+  task: 5,
+  quiz: 50,
+  exam: 50,
 };
 
 function roundScore(v) {

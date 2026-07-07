@@ -98,7 +98,7 @@ export default function Students() {
         for (const task of tasks) {
           const cat = task.type === 'quiz' ? 'quiz' : 'task';
           if (!existingScores.find(s => s.category === cat && s.ref_id === task.id)) {
-            toCreate.push({ student_email: email, category: cat, ref_id: task.id, ref_title: task.title, score: 0, max_score: task.max_grade || (task.type === 'quiz' ? 60 : 6), verified: false });
+            toCreate.push({ student_email: email, category: cat, ref_id: task.id, ref_title: task.title, score: 0, max_score: task.type === 'quiz' ? 50 : 5, verified: false });
           }
         }
         if (toCreate.length > 0) {
