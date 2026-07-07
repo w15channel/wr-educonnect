@@ -18,7 +18,7 @@
         "sexologia"
       ],
       "default": "tcc",
-      "description": "Curso ao qual a sess\u00e3o ao vivo pertence"
+      "description": "Curso ao qual a sessão ao vivo pertence"
     },
     "scheduled_at": {
       "type": "string",
@@ -48,32 +48,9 @@
     "title"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "data.course": "{{user.course}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

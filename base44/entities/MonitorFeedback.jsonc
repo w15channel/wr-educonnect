@@ -33,7 +33,7 @@
     },
     "comment": {
       "type": "string",
-      "description": "Coment\u00e1rio opcional"
+      "description": "Comentário opcional"
     }
   },
   "required": [
@@ -42,47 +42,9 @@
     "rating"
   ],
   "rls": {
-    "create": {
-      "data.student_email": "{{user.email}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "data.monitor_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

@@ -4,11 +4,11 @@
   "properties": {
     "title": {
       "type": "string",
-      "description": "T\u00edtulo da atividade de trilha"
+      "description": "Título da atividade de trilha"
     },
     "description": {
       "type": "string",
-      "description": "Enunciado / instru\u00e7\u00f5es da atividade"
+      "description": "Enunciado / instruções da atividade"
     },
     "type": {
       "type": "string",
@@ -32,7 +32,7 @@
     },
     "order": {
       "type": "number",
-      "description": "Posi\u00e7\u00e3o na trilha (1 a 15)"
+      "description": "Posição na trilha (1 a 15)"
     },
     "points_reward": {
       "type": "number",
@@ -41,7 +41,7 @@
     },
     "quiz_questions": {
       "type": "array",
-      "description": "Quest\u00f5es para atividades do tipo quiz",
+      "description": "Questões para atividades do tipo quiz",
       "items": {
         "type": "object",
         "properties": {
@@ -66,21 +66,9 @@
     "type"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "create": true,
     "read": true,
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "update": true,
+    "delete": true
   }
 }

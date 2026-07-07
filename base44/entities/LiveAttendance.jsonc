@@ -4,11 +4,11 @@
   "properties": {
     "session_id": {
       "type": "string",
-      "description": "ID da sess\u00e3o ao vivo"
+      "description": "ID da sessão ao vivo"
     },
     "session_title": {
       "type": "string",
-      "description": "T\u00edtulo da sess\u00e3o"
+      "description": "Título da sessão"
     },
     "student_email": {
       "type": "string",
@@ -20,7 +20,7 @@
     },
     "confirmed_at": {
       "type": "string",
-      "description": "Timestamp da confirma\u00e7\u00e3o de presen\u00e7a"
+      "description": "Timestamp da confirmação de presença"
     }
   },
   "required": [
@@ -28,28 +28,9 @@
     "student_email"
   ],
   "rls": {
-    "create": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": true,
     "read": true,
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "update": true,
+    "delete": true
   }
 }

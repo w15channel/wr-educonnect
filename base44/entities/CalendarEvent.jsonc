@@ -8,11 +8,11 @@
     },
     "title": {
       "type": "string",
-      "description": "T\u00edtulo do evento"
+      "description": "Título do evento"
     },
     "description": {
       "type": "string",
-      "description": "Descri\u00e7\u00e3o do evento"
+      "description": "Descrição do evento"
     },
     "date": {
       "type": "string",
@@ -20,7 +20,7 @@
     },
     "time": {
       "type": "string",
-      "description": "Hor\u00e1rio (HH:mm)"
+      "description": "Horário (HH:mm)"
     },
     "type": {
       "type": "string",
@@ -42,7 +42,7 @@
     },
     "event_time": {
       "type": "string",
-      "description": "Hor\u00e1rio legado"
+      "description": "Horário legado"
     },
     "color": {
       "type": "string",
@@ -53,44 +53,9 @@
     "title"
   ],
   "rls": {
-    "create": {
-      "data.student_email": "{{user.email}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }
