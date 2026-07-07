@@ -25,16 +25,17 @@ function SubmissionRow({ sub, task }) {
         status: 'graded',
       });
       const category = task.type === 'quiz' ? 'quiz' : 'task';
+      const fixedScore = task.type === 'quiz' ? 60 : 6;
       const existing = await base44.entities.ScoreItem.filter({ student_email: sub.student_email, category, ref_id: sub.task_id }, '-created_date', 1);
       const scorePayload = {
         student_email: sub.student_email,
         category,
         ref_id: sub.task_id,
         ref_title: task.title,
-        score: normalizedGrade,
-        max_score: roundScore(task.max_grade || (task.type === 'quiz' ? 60 : 6)),
+        score: fixedScore,
+        max_score: fixedScore,
         verified: true,
-        notes: feedback || '',
+        notes: feedback || `${task.type === 'quiz' ? 'Prova' : 'Trabalho'} entregue/corrigido conforme a regra atual: +${formatScore(fixedScore)} pontos de estudo.`,
       };
       if (existing[0]) await base44.entities.ScoreItem.update(existing[0].id, scorePayload);
       else await base44.entities.ScoreItem.create(scorePayload);
@@ -103,7 +104,7 @@ function SubmissionRow({ sub, task }) {
         <p className="text-xs font-bold text-foreground mb-2">{isGraded ? 'Atualizar avaliação' : 'Avaliar entrega'}</p>
         <div className="flex items-center gap-2">
           <div className="shrink-0">
-            <label className="text-[10px] text-muted-foreground font-semibold block mb-1">Nota {task?.max_grade ? `(máx. ${formatScore(task.max_grade)})` : ''}</label>
+            <label className="text-[10px] text-muted-foreground font-semibold block mb-1">Nota pedagógica {task?.max_grade ? `(máx. ${formatScore(task.max_grade)})` : ''}</label>
             <Input
               type="text"
               inputMode="decimal"
