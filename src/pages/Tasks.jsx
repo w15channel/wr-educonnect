@@ -223,7 +223,7 @@ export default function Tasks({ mode = 'tasks' }) {
 
   const openEdit = (task) => {
     setEditingTask(task);
-    setForm({ title: task.title, description: task.description || '', type: task.type, deadline: task.deadline || '', max_grade: task.max_grade || (task.type === 'quiz' ? 60 : 6), quiz_questions: task.quiz_questions || [] });
+    setForm({ title: task.title, description: task.description || '', type: task.type, deadline: task.deadline || '', max_grade: task.type === 'quiz' ? 50 : 5, quiz_questions: task.quiz_questions || [] });
     setShowForm(true);
   };
 

@@ -25,7 +25,7 @@ function SubmissionRow({ sub, task }) {
         status: 'graded',
       });
       const category = task.type === 'quiz' ? 'quiz' : 'task';
-      const fixedScore = task.type === 'quiz' ? 60 : 6;
+      const fixedScore = task.type === 'quiz' ? 50 : 5;
       const existing = await base44.entities.ScoreItem.filter({ student_email: sub.student_email, category, ref_id: sub.task_id }, '-created_date', 1);
       const scorePayload = {
         student_email: sub.student_email,

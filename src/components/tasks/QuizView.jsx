@@ -72,7 +72,7 @@ export default function QuizView({ task, user, onBack }) {
     });
 
     const grade = choiceQuestions.length > 0
-      ? roundScore((correct / choiceQuestions.length) * (task.max_grade || 60))
+      ? roundScore((correct / choiceQuestions.length) * (50))
       : null;
 
     const hasTextQuestions = questions.some(q => q.answer_type === 'text');
@@ -132,7 +132,7 @@ export default function QuizView({ task, user, onBack }) {
           {score !== null ? (
             <>
               <p className="text-muted-foreground text-sm mt-2">Nota parcial nas questões objetivas:</p>
-              <p className="text-4xl font-black text-primary mt-2">{formatScore(score)} / {formatScore(task.max_grade || 60)}</p>
+              <p className="text-4xl font-black text-primary mt-2">{formatScore(score)} / {formatScore(50)}</p>
               {questions.some(q => q.answer_type === 'text') && (
                 <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
                   <p className="text-sm text-amber-400 font-bold">📝 Questões dissertativas pendentes</p>

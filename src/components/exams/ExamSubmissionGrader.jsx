@@ -35,13 +35,13 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
     return acc + (Number(studentAnswers[origIdx]) === q.correct_index ? 1 : 0);
   }, 0);
   const objectiveScore = objectiveQuestions.length > 0 
-    ? roundScore((correctCount / objectiveQuestions.length) * (exam.max_grade || 60) * 0.5)
+    ? roundScore((correctCount / objectiveQuestions.length) * (50) * 0.5)
     : 0;
 
   // Discursive questions count
   const discursiveCount = questions.filter(q => q.answer_type === 'text').length;
   const discursivePoints = discursiveCount > 0 
-    ? roundScore((exam.max_grade || 60) * 0.5 / discursiveCount)
+    ? roundScore((50) * 0.5 / discursiveCount)
     : 0;
 
   // Total grade calculation
@@ -130,7 +130,7 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
           </h3>
           <div className="text-right">
             <p className="text-xs text-emerald-600 font-bold">Nota Parcial</p>
-            <p className="font-mono font-black text-3xl text-emerald-700">{formatScore(totalGrade)} / {formatScore(exam.max_grade || 60)}</p>
+            <p className="font-mono font-black text-3xl text-emerald-700">{formatScore(totalGrade)} / {formatScore(50)}</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 text-xs">
@@ -264,7 +264,7 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
           className="flex-1 gap-2 h-12 font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
         >
           <CheckCircle size={18} /> 
-          {saveMutation.isPending ? 'Salvando...' : `Salvar Correção (${formatScore(totalGrade)}/${exam.max_grade || 60} pts)`}
+          {saveMutation.isPending ? 'Salvando...' : `Salvar Correção (${formatScore(totalGrade)}/${50} pts)`}
         </Button>
       </div>
     </div>

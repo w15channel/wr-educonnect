@@ -85,7 +85,14 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     }
   });
 
-  const getScoreItem = (category, ref_id) => scoreItems.find((s) => s.category === category && (s.ref_id === ref_id || (category === 'exam' && s.ref_id === `exam:${ref_id}`)));
+  const getScoreItem = (category, ref_id, role) => scoreItems.find((s) => {
+    if (category === 'exam') return s.category === 'exam' && (s.ref_id === ref_id || s.ref_id === `exam:${ref_id}`);
+    if (category === 'therapist') {
+      return (s.category === 'therapist' && s.ref_id === ref_id) ||
+        (s.category === 'task' && s.ref_id === `therapist_pairing:${ref_id}:${role}`);
+    }
+    return s.category === category && s.ref_id === ref_id;
+  });
 
   const isPairingFromActiveCourse = (pairing) => {
     if (!courseEmails || courseEmails.size === 0) return true;
@@ -112,6 +119,12 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const sequencedForumPosts = sortBySequence(studentForumPosts);
   const sequencedForumReplies = sortBySequence(scorableForumReplies);
   const sequencedPairings = sortBySequence(myPairings);
+  const therapistScoreRefIds = new Set(myPairings.flatMap((p) => {
+    const ids = [];
+    if (p.therapist_email === email) ids.push(`therapist_pairing:${p.id}:therapist`);
+    if (p.patient_email === email) ids.push(`therapist_pairing:${p.id}:patient`);
+    return ids;
+  }));
 
   const totalScore = scoreItems.
   filter((s) => s.verified && (
@@ -119,7 +132,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
   s.category === 'exam' && (examIds.has(s.ref_id) || examIds.has(String(s.ref_id || '').replace(/^exam:/, ''))) ||
   s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id)) ||
-  s.category === 'therapist' && myPairings.some((p) => p.id === s.ref_id))
+  s.category === 'therapist' && myPairings.some((p) => p.id === s.ref_id) ||
+  s.category === 'task' && therapistScoreRefIds.has(s.ref_id))
   ).
   reduce((sum, s) => sum + (Number(s.score) || 0), 0);
 
@@ -169,9 +183,10 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     forum: [...studentForumPosts, ...scorableForumReplies].some((item) =>
     !scoreItems.find((s) => s.category === 'forum' && s.ref_id === item.id && s.verified)
     ),
-    therapist: sequencedPairings.some((p) =>
-    !scoreItems.find((s) => s.category === 'therapist' && s.ref_id === p.id && s.verified)
-    )
+    therapist: sequencedPairings.some((p) => {
+      const role = p.therapist_email === email ? 'therapist' : 'patient';
+      return !scoreItems.find((s) => s.verified && ((s.category === 'therapist' && s.ref_id === p.id) || (s.category === 'task' && s.ref_id === `therapist_pairing:${p.id}:${role}`)));
+    })
   };
 
   const uncorrectedTaskIds = new Set(
@@ -263,7 +278,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={task.type === 'quiz' ? CATEGORY_CONFIG.quiz.icon : CATEGORY_CONFIG.task.icon}
                 refId={task.id}
                 refTitle={task.title}
-                maxScore={task.max_grade || (task.type === 'quiz' ? 60 : 6)}
+                maxScore={task.type === 'quiz' ? 50 : 5}
                 item={getScoreItem(task.type === 'quiz' ? 'quiz' : 'task', task.id)}
                 needsCorrection={uncorrectedTaskIds.has(task.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
@@ -325,7 +340,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={CATEGORY_CONFIG.exam.icon}
                 refId={exam.id}
                 refTitle={exam.title}
-                maxScore={exam.max_grade || 60}
+                maxScore={50}
                 item={scoreItem}
                 needsCorrection={sub && sub.status === 'submitted' && !scoreItem}
                 onSave={(data) => updateScoreMutation.mutate(data)}
@@ -422,7 +437,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 refId={p.id}
                 refTitle={`Sessão ${i + 1} — ${role} de ${partner}`}
                 maxScore={10}
-                item={getScoreItem('therapist', p.id)}
+                item={getScoreItem('therapist', p.id, p.therapist_email === email ? 'therapist' : 'patient')}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
                 readOnly={!isTeacher}>

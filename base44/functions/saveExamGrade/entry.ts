@@ -32,10 +32,10 @@ Deno.serve(async (req) => {
       category: 'exam',
       ref_id: `exam:${exam_id}`,
       ref_title: exam.title,
-      score: 60,
-      max_score: 60,
+      score: 50,
+      max_score: 50,
       verified: true,
-      notes: feedback || `Prova entregue/corrigida conforme a regra atual: +60 pontos de estudo. Nota registrada: ${grade}/${exam.max_grade || 60}`,
+      notes: feedback || `Prova entregue/corrigida conforme a regra atual: +50 pontos de estudo. Nota registrada: ${grade}/${exam.max_grade || 50}`,
     };
 
     if (matchingScore) {
