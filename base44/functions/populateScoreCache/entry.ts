@@ -14,6 +14,12 @@ function isStudyItem(item) {
   return ['lesson', 'task', 'quiz', 'exam'].includes(item?.category) && !String(item?.ref_id || '').startsWith('therapist_pairing:');
 }
 
+function rankingScore(item) {
+  // Lives deixaram de gerar pontuação; registros legados são mantidos como evidência, mas valem 0 no cache.
+  if (item?.category === 'live_attendance') return 0;
+  return item?.score;
+}
+
 async function updateStudentCache(base44, email, total, studyTotal, profiles, accessCodes, users) {
   const pontuacaoTotal = roundScore(total);
   const pontuacaoEstudos = roundScore(studyTotal);
@@ -82,7 +88,7 @@ Deno.serve(async (req) => {
     const studyTotals = new Map();
     for (const item of deduped.values()) {
       if (!item.verified || !item.student_email) continue;
-      totals.set(item.student_email, addRounded(totals.get(item.student_email) || 0, item.score));
+      totals.set(item.student_email, addRounded(totals.get(item.student_email) || 0, rankingScore(item)));
       if (isStudyItem(item)) {
         studyTotals.set(item.student_email, addRounded(studyTotals.get(item.student_email) || 0, item.score));
       }

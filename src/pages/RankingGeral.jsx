@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, Video, FileText, MessageSquare, X, CheckCircle, RefreshCw, Heart, Flame } from 'lucide-react';
+import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
@@ -10,7 +10,6 @@ import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const CATEGORY_CONFIG = {
   lesson:          { label: 'Aula Gravada',          icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
-  live_attendance: { label: 'Presença Live',          icon: Video,          color: 'bg-red-100 text-red-700' },
   task:            { label: 'Tarefa / Terapeuta',     icon: FileText,       color: 'bg-orange-100 text-orange-700' },
   quiz:            { label: 'Prova',                  icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
@@ -179,10 +178,6 @@ export default function RankingGeral() {
     queryKey: ['ranking-tasks', activeCourseForQuery],
     queryFn: () => base44.entities.Task.filter({ course: activeCourseForQuery }, '-created_date', 500),
   });
-  const { data: courseLiveSessions = [] } = useQuery({
-    queryKey: ['ranking-lives', activeCourseForQuery],
-    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourseForQuery }, '-scheduled_at', 200),
-  });
   const { data: courseForumPosts = [] } = useQuery({
     queryKey: ['ranking-forum', activeCourseForQuery],
     queryFn: () => base44.entities.ForumPost.filter({ course: activeCourseForQuery }, '-created_date', 2000),
@@ -209,7 +204,6 @@ export default function RankingGeral() {
     // Standard entities
     courseLessons.forEach(l => set.add(l.id));
     courseTasks.forEach(t => set.add(t.id));
-    courseLiveSessions.forEach(l => set.add(l.id));
     courseForumPosts.forEach(p => set.add(p.id));
     allForumReplies.forEach(r => set.add(r.id));
     // Terapeuta da Semana: ref_id = `therapist_pairing:{id}:{role}`
@@ -231,7 +225,7 @@ export default function RankingGeral() {
       set.add(`ofensiva:${r.challenge_id}:${r.student_email}`);
     });
     return set;
-  }, [courseLessons, courseTasks, courseLiveSessions, courseForumPosts, allForumReplies,
+  }, [courseLessons, courseTasks, courseForumPosts, allForumReplies,
       allPairings, allChallengeResponses, accessCodes, activeCourseForQuery]);
 
   // ── Determine which course to show (same as activeCourseForQuery above) ──

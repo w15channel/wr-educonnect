@@ -5,18 +5,16 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
-import { Trophy, ChevronLeft, Clock, BookOpen, Video, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
 
 const CATEGORY_CONFIG = {
   lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
-  live_attendance: { label: 'Presença Live', icon: Video, color: 'bg-red-100 text-red-700' },
   task: { label: 'Tarefa', icon: FileText, color: 'bg-orange-100 text-orange-700' },
   quiz: { label: 'Prova', icon: Trophy, color: 'bg-blue-100 text-blue-700' },
   exam: { label: 'Prova do Módulo', icon: GraduationCap, color: 'bg-indigo-100 text-indigo-700' },
@@ -41,11 +39,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const { data: submissions = [] } = useQuery({ queryKey: ['submissions-student', email], queryFn: () => base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 200) });
   const { data: examSubs = [] } = useQuery({ queryKey: ['exam-subs-student', email], queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email, course: activeCourse }, '-submitted_at', 200) });
   const { data: exams = [] } = useQuery({ queryKey: ['exams-score-detail', activeCourse], queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 100) });
-  const { data: attendances = [] } = useQuery({ queryKey: ['attendances', email], queryFn: () => base44.entities.LiveAttendance.filter({ student_email: email }, '-created_date', 100) });
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions-score-detail', activeCourse],
-    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 50)
-  });
   const { data: forumPosts = [] } = useQuery({
     queryKey: ['forum-posts-score-detail', email, activeCourse],
     queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 500)
@@ -106,7 +99,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const lessonIds = new Set(lessons.map((l) => l.id));
   const taskIds = new Set(tasks.map((t) => t.id));
   const examIds = new Set(exams.map((e) => e.id));
-  const liveSessionIds = new Set(liveSessions.map((l) => l.id));
   const studentForumPosts = forumPosts.filter((p) => p.author_email === email);
   const forumPostIds = new Set(studentForumPosts.map((p) => p.id));
   const forumParentById = new Map(forumPosts.map((p) => [p.id, p]));
@@ -117,7 +109,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const forumReplyIds = new Set(scorableForumReplies.map((r) => r.id));
   const sequencedLessons = sortBySequence(lessons);
   const sequencedTasks = sortBySequence(tasks);
-  const sequencedLiveSessions = sortBySequence(liveSessions);
   const sequencedForumPosts = sortBySequence(studentForumPosts);
   const sequencedForumReplies = sortBySequence(scorableForumReplies);
   const sequencedPairings = sortBySequence(myPairings);
@@ -125,9 +116,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const totalScore = scoreItems.
   filter((s) => s.verified && (
   s.category === 'lesson' && lessonIds.has(s.ref_id) ||
-  s.category === 'live_attendance' && liveSessionIds.has(s.ref_id) ||
-  (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
-  s.category === 'exam' && examIds.has(s.ref_id) ||
+(s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
+  s.category === 'exam' && (examIds.has(s.ref_id) || examIds.has(String(s.ref_id || '').replace(/^exam:/, ''))) ||
   s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id)) ||
   s.category === 'therapist' && myPairings.some((p) => p.id === s.ref_id))
   ).
@@ -157,7 +147,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
   const sections = [
   { key: 'lessons', label: 'Aulas', icon: BookOpen },
-  { key: 'lives', label: 'Presenças', icon: Video },
   { key: 'tasks', label: 'Tarefas', icon: FileText },
   { key: 'exams', label: 'Provas', icon: GraduationCap },
   { key: 'forum', label: 'Fórum', icon: MessageSquare },
@@ -169,15 +158,14 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       const p = progresses.find((pr) => pr.lesson_id === l.id);
       return p && (p.watched || p.comment || p.summary) && !scoreItems.find((s) => s.category === 'lesson' && s.ref_id === l.id && s.verified);
     }),
-    lives: sequencedLiveSessions.some((sess) => {
-      const att = attendances.find((a) => a.session_id === sess.id);
-      return att && !scoreItems.find((s) => s.category === 'live_attendance' && s.ref_id === sess.id && s.verified);
-    }),
     tasks: sequencedTasks.some((task) => {
       const sub = submissions.find((s) => s.task_id === task.id);
       return sub && !scoreItems.find((s) => (s.category === 'task' || s.category === 'quiz') && s.ref_id === task.id && s.verified);
     }),
-    exams: examSubs.some((sub) => sub.status === 'submitted' && !scoreItems.find((s) => s.category === 'exam' && s.ref_id === exams.find(e => e.id === sub.exam_id)?.id && s.verified)),
+    exams: examSubs.some((sub) => {
+      const examId = exams.find(e => e.id === sub.exam_id)?.id;
+      return sub.status === 'submitted' && examId && !scoreItems.find((s) => s.category === 'exam' && (s.ref_id === examId || s.ref_id === `exam:${examId}`) && s.verified);
+    }),
     forum: [...studentForumPosts, ...scorableForumReplies].some((item) =>
     !scoreItems.find((s) => s.category === 'forum' && s.ref_id === item.id && s.verified)
     ),
@@ -257,35 +245,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                       <span className="font-semibold text-foreground">Resumo: </span>{progress.summary}
                     </div>
                 }
-                </ScoreRow>);
-
-          })}
-          </>
-        }
-
-        {activeSection === 'lives' &&
-        <>
-            {sequencedLiveSessions.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma live registrada.</p>}
-            {sequencedLiveSessions.map((sess) => {
-            const att = attendances.find((a) => a.session_id === sess.id);
-            return (
-              <ScoreRow
-                key={sess.id}
-                category="live_attendance"
-                icon={CATEGORY_CONFIG.live_attendance.icon}
-                refId={sess.id}
-                refTitle={sess.title}
-                maxScore={0}
-                item={getScoreItem('live_attendance', sess.id)}
-                onSave={(data) => updateScoreMutation.mutate(data)}
-                saving={updateScoreMutation.isPending}
-                readOnly={!isTeacher}>
-                
-                  <div className="flex flex-wrap gap-2 mt-1.5">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${att ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                      {att ? `✅ Presença confirmada — ${format(new Date(att.confirmed_at || att.created_date), 'dd/MM HH:mm')}` : '❌ Não confirmou presença'}
-                    </span>
-                  </div>
                 </ScoreRow>);
 
           })}
@@ -536,16 +495,6 @@ export default function ScoreControl() {
     queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 500)
   });
 
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions-score-overview', activeCourse],
-    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 500)
-  });
-
-  const { data: attendances = [] } = useQuery({
-    queryKey: ['live-attendances-score-overview'],
-    queryFn: () => base44.entities.LiveAttendance.list('-created_date', 3000)
-  });
-
   const { data: forumPosts = [] } = useQuery({
     queryKey: ['forum-posts-score-overview', activeCourse],
     queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 2000)
@@ -609,7 +558,6 @@ export default function ScoreControl() {
 
   const lessonIds = new Set(lessons.map((l) => l.id));
   const taskIds = new Set(tasks.map((t) => t.id));
-  const liveSessionIds = new Set(liveSessions.map((l) => l.id));
   const forumPostIds = new Set(forumPosts.map((p) => p.id));
   const allowedEmails = new Set(filtered.map((c) => c.student_email).filter(Boolean));
   const courseSubmissions = submissions.filter((s) => allowedEmails.has(s.student_email) && taskIds.has(s.task_id));
@@ -641,7 +589,6 @@ export default function ScoreControl() {
     return scoreItems.
     filter((s) => s.student_email === email && s.verified && (
     s.category === 'lesson' && lessonIds.has(s.ref_id) ||
-    s.category === 'live_attendance' && liveSessionIds.has(s.ref_id) ||
     (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
     s.category === 'forum' && (studentForumPostIds.has(s.ref_id) || studentForumReplyIds.has(s.ref_id)) ||
     s.category === 'therapist' && coursePairingIds.has(s.ref_id))
@@ -651,7 +598,7 @@ export default function ScoreControl() {
 
   const getParticipationStats = (email) => {
     const lessonCount = lessonProgresses.filter((p) => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched).length;
-    const liveCount = attendances.filter((a) => a.student_email === email && liveSessionIds.has(a.session_id)).length;
+    // Lives não geram pontuação e não entram mais na área de pontuação do aluno.
     const taskCount = submissions.filter((s) => s.student_email === email && taskIds.has(s.task_id)).length;
     const postCount = forumPosts.filter((p) => p.author_email === email && forumPostIds.has(p.id)).length;
     const forumParentById = new Map(forumPosts.map((p) => [p.id, p]));
@@ -660,7 +607,7 @@ export default function ScoreControl() {
       return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostIds.has(parentPost.id);
     }).length;
     const monitorCount = monitorHistory.filter((m) => m.student_email === email).length;
-    const count = lessonCount + liveCount + taskCount + postCount + replyCount + monitorCount;
+    const count = lessonCount + taskCount + postCount + replyCount + monitorCount;
     return { count };
   };
 
@@ -836,7 +783,7 @@ export default function ScoreControl() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
                     {isTeacher &&
-                <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Aulas assistidas + lives + entregas + fórum + monitoria">
+                <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Aulas assistidas + entregas + fórum + monitoria">
                         <Activity size={11} className="text-blue-500" />
                         <span className="text-xs font-bold text-blue-700">{participations}</span>
                       </div>

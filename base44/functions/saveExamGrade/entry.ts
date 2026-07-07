@@ -1,11 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-function roundScore(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return 0;
-  return Math.round((numeric + Number.EPSILON) * 1000) / 1000;
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -22,23 +16,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Dados inválidos' }, { status: 400 });
     }
 
-    // Get exam details
     const exam = await base44.asServiceRole.entities.Exam.get(exam_id);
     if (!exam) {
       return Response.json({ error: 'Prova não encontrada' }, { status: 404 });
     }
 
-    // Create or update ScoreItem for the exam
     const existingScores = await base44.asServiceRole.entities.ScoreItem.filter({
       student_email,
       category: 'exam',
-      ref_id: exam_id,
     });
+    const matchingScore = existingScores?.find((item) => item.ref_id === `exam:${exam_id}` || item.ref_id === exam_id);
 
     const scoreData = {
       student_email,
       category: 'exam',
-      ref_id: exam_id,
+      ref_id: `exam:${exam_id}`,
       ref_title: exam.title,
       score: 60,
       max_score: 60,
@@ -46,11 +38,13 @@ Deno.serve(async (req) => {
       notes: feedback || `Prova entregue/corrigida conforme a regra atual: +60 pontos de estudo. Nota registrada: ${grade}/${exam.max_grade || 60}`,
     };
 
-    if (existingScores && existingScores.length > 0) {
-      await base44.asServiceRole.entities.ScoreItem.update(existingScores[0].id, scoreData);
+    if (matchingScore) {
+      await base44.asServiceRole.entities.ScoreItem.update(matchingScore.id, scoreData);
     } else {
       await base44.asServiceRole.entities.ScoreItem.create(scoreData);
     }
+
+    await base44.functions.invoke('populateScoreCache', { student_email });
 
     return Response.json({
       success: true,
