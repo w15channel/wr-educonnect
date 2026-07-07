@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw } from 'lucide-react';
+import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
@@ -12,7 +12,10 @@ const CATEGORY_CONFIG = {
   lesson:          { label: 'Aula Gravada',          icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
   task:            { label: 'Tarefa / Terapeuta',     icon: FileText,       color: 'bg-orange-100 text-orange-700' },
   quiz:            { label: 'Prova',                  icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
+  exam:            { label: 'Prova / Avaliação',       icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
+  live_attendance: { label: 'Presença em Live',        icon: CheckCircle,    color: 'bg-sky-100 text-sky-700' },
+  other:           { label: 'Outras Pontuações',       icon: CircleHelp,     color: 'bg-slate-100 text-slate-700' },
 };
 
 // For each AccessCode, which course field values map to it
@@ -57,8 +60,9 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
 
   const byCategory = {};
   myItems.forEach(item => {
-    if (!byCategory[item.category]) byCategory[item.category] = [];
-    byCategory[item.category].push(item);
+    const category = CATEGORY_CONFIG[item.category] ? item.category : 'other';
+    if (!byCategory[category]) byCategory[category] = [];
+    byCategory[category].push(item);
   });
 
   return (
@@ -178,6 +182,10 @@ export default function RankingGeral() {
     queryKey: ['ranking-tasks', activeCourseForQuery],
     queryFn: () => base44.entities.Task.filter({ course: activeCourseForQuery }, '-created_date', 500),
   });
+  const { data: courseExams = [] } = useQuery({
+    queryKey: ['ranking-exams', activeCourseForQuery],
+    queryFn: () => base44.entities.Exam.filter({ course: activeCourseForQuery }, '-created_date', 500),
+  });
   const { data: courseForumPosts = [] } = useQuery({
     queryKey: ['ranking-forum', activeCourseForQuery],
     queryFn: () => base44.entities.ForumPost.filter({ course: activeCourseForQuery }, '-created_date', 2000),
@@ -204,6 +212,7 @@ export default function RankingGeral() {
     // Standard entities
     courseLessons.forEach(l => set.add(l.id));
     courseTasks.forEach(t => set.add(t.id));
+    courseExams.forEach(e => set.add(`exam:${e.id}`));
     courseForumPosts.forEach(p => set.add(p.id));
     allForumReplies.forEach(r => set.add(r.id));
     // Terapeuta da Semana: ref_id = `therapist_pairing:{id}:{role}`
@@ -225,7 +234,7 @@ export default function RankingGeral() {
       set.add(`ofensiva:${r.challenge_id}:${r.student_email}`);
     });
     return set;
-  }, [courseLessons, courseTasks, courseForumPosts, allForumReplies,
+  }, [courseLessons, courseTasks, courseExams, courseForumPosts, allForumReplies,
       allPairings, allChallengeResponses, accessCodes, activeCourseForQuery]);
 
   // ── Determine which course to show (same as activeCourseForQuery above) ──
