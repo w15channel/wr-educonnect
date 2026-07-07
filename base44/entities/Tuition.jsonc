@@ -12,7 +12,7 @@
     },
     "month_ref": {
       "type": "string",
-      "description": "Refer\u00eancia do m\u00eas (ex: 2025-01)"
+      "description": "Referência do mês (ex: 2025-01)"
     },
     "amount": {
       "type": "number",
@@ -40,7 +40,7 @@
     },
     "notes": {
       "type": "string",
-      "description": "Observa\u00e7\u00f5es"
+      "description": "Observações"
     }
   },
   "required": [
@@ -48,32 +48,9 @@
     "month_ref"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

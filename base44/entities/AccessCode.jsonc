@@ -55,17 +55,17 @@
     },
     "last_seen_at": {
       "type": "string",
-      "description": "\u00daltimo momento em que o aluno esteve ativo no site"
+      "description": "Último momento em que o aluno esteve ativo no site"
     },
     "is_online": {
       "type": "boolean",
       "default": false,
-      "description": "Se o aluno est\u00e1 online agora"
+      "description": "Se o aluno está online agora"
     },
     "site_notifications_enabled": {
       "type": "boolean",
       "default": false,
-      "description": "Se o aluno ativou notifica\u00e7\u00f5es do site neste aparelho"
+      "description": "Se o aluno ativou notificações do site neste aparelho"
     },
     "pontuacao_total": {
       "type": "number",
@@ -82,28 +82,9 @@
     "code"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "create": true,
     "read": true,
-    "update": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "update": true,
+    "delete": true
   }
 }

@@ -26,12 +26,12 @@
     },
     "quiz_answers": {
       "type": "array",
-      "description": "Respostas do aluno \u2014 cada item \u00e9 \u00edndice (escolha) ou {text: string} (escrita)",
+      "description": "Respostas do aluno — cada item é índice (escolha) ou {text: string} (escrita)",
       "items": {}
     },
     "grade": {
       "type": "number",
-      "description": "Nota atribu\u00edda pelo professor (0-10)"
+      "description": "Nota atribuída pelo professor (0-10)"
     },
     "feedback": {
       "type": "string",
@@ -44,7 +44,7 @@
         "graded"
       ],
       "default": "submitted",
-      "description": "Status da corre\u00e7\u00e3o"
+      "description": "Status da correção"
     },
     "submitted_at": {
       "type": "string",
@@ -54,7 +54,7 @@
     "graded_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Data da corre\u00e7\u00e3o"
+      "description": "Data da correção"
     },
     "graded_by": {
       "type": "string",
@@ -75,24 +75,9 @@
     "student_email"
   ],
   "rls": {
-    "create": null,
+    "create": true,
     "read": true,
-    "update": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "update": true,
+    "delete": true
   }
 }

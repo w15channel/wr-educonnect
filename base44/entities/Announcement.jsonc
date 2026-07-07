@@ -32,7 +32,7 @@
     },
     "recipient_email": {
       "type": "string",
-      "description": "Email do destinat\u00e1rio espec\u00edfico, quando o aviso for individual"
+      "description": "Email do destinatário específico, quando o aviso for individual"
     },
     "certificate_monitor_id": {
       "type": "string",
@@ -43,9 +43,9 @@
     "content"
   ],
   "rls": {
-    "create": null,
-    "read": null,
-    "update": null,
-    "delete": null
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

@@ -4,19 +4,19 @@
   "properties": {
     "recipient_email": {
       "type": "string",
-      "description": "Email de quem deve receber a notifica\u00e7\u00e3o (professor/admin)"
+      "description": "Email de quem deve receber a notificação (professor/admin)"
     },
     "sender_email": {
       "type": "string",
-      "description": "Email de quem gerou a notifica\u00e7\u00e3o (aluno)"
+      "description": "Email de quem gerou a notificação (aluno)"
     },
     "sender_name": {
       "type": "string",
-      "description": "Nome de quem gerou a notifica\u00e7\u00e3o"
+      "description": "Nome de quem gerou a notificação"
     },
     "message": {
       "type": "string",
-      "description": "Texto da notifica\u00e7\u00e3o"
+      "description": "Texto da notificação"
     },
     "task_id": {
       "type": "string",
@@ -24,7 +24,7 @@
     },
     "task_title": {
       "type": "string",
-      "description": "T\u00edtulo da tarefa"
+      "description": "Título da tarefa"
     },
     "type": {
       "type": "string",
@@ -33,12 +33,12 @@
         "quiz_submission"
       ],
       "default": "task_submission",
-      "description": "Tipo de notifica\u00e7\u00e3o"
+      "description": "Tipo de notificação"
     },
     "is_read": {
       "type": "boolean",
       "default": false,
-      "description": "Se a notifica\u00e7\u00e3o foi lida"
+      "description": "Se a notificação foi lida"
     }
   },
   "required": [
@@ -47,56 +47,9 @@
     "message"
   ],
   "rls": {
-    "create": {
-      "$or": [
-        {
-          "data.sender_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "read": {
-      "$or": [
-        {
-          "data.recipient_email": "{{user.email}}"
-        },
-        {
-          "data.sender_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.recipient_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.recipient_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

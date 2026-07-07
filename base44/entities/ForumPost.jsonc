@@ -48,21 +48,21 @@
         "debates"
       ],
       "default": "forum",
-      "description": "\u00c1rea onde a publica\u00e7\u00e3o deve aparecer"
+      "description": "Área onde a publicação deve aparecer"
     },
     "bot_replied": {
       "type": "boolean",
       "default": false,
-      "description": "Se o bot j\u00e1 respondeu automaticamente"
+      "description": "Se o bot já respondeu automaticamente"
     }
   },
   "required": [
     "content"
   ],
   "rls": {
-    "create": null,
+    "create": true,
     "read": true,
-    "update": null,
-    "delete": null
+    "update": true,
+    "delete": true
   }
 }

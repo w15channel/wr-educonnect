@@ -43,7 +43,7 @@
     "questions_answered": {
       "type": "number",
       "default": 0,
-      "description": "Quantas perguntas respondidas (m\u00e1x 8)"
+      "description": "Quantas perguntas respondidas (máx 8)"
     },
     "points_earned": {
       "type": "number",
@@ -56,30 +56,9 @@
     "student_email"
   ],
   "rls": {
-    "create": {
-      "data.student_email": "{{user.email}}"
-    },
-    "read": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

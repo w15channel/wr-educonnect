@@ -43,7 +43,7 @@
         "debates"
       ],
       "default": "forum",
-      "description": "\u00c1rea onde a resposta deve aparecer"
+      "description": "Área onde a resposta deve aparecer"
     }
   },
   "required": [
@@ -51,33 +51,9 @@
     "content"
   ],
   "rls": {
-    "create": {
-      "created_by_id": "{{user.id}}"
-    },
+    "create": true,
     "read": true,
-    "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "update": true,
+    "delete": true
   }
 }

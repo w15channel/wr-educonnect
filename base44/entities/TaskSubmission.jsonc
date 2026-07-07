@@ -40,7 +40,7 @@
     },
     "quiz_answers": {
       "type": "array",
-      "description": "Student's quiz answers \u2014 each item is index (choice) or {text: string} (written)",
+      "description": "Student's quiz answers — each item is index (choice) or {text: string} (written)",
       "items": {}
     },
     "grade": {
@@ -66,26 +66,9 @@
     "student_email"
   ],
   "rls": {
-    "create": {
-      "data.student_email": "{{user.email}}"
-    },
+    "create": true,
     "read": true,
-    "update": {
-      "$or": [
-        {
-          "data.student_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "update": true,
+    "delete": true
   }
 }

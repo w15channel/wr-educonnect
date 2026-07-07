@@ -12,11 +12,11 @@
     },
     "title": {
       "type": "string",
-      "description": "T\u00edtulo do livro"
+      "description": "Título do livro"
     },
     "subtitle": {
       "type": "string",
-      "description": "Subt\u00edtulo do livro"
+      "description": "Subtítulo do livro"
     },
     "cover_image_url": {
       "type": "string",
@@ -31,23 +31,23 @@
         "Carta 6x9"
       ],
       "default": "A4",
-      "description": "Formato das p\u00e1ginas"
+      "description": "Formato das páginas"
     },
     "dedication": {
       "type": "string",
-      "description": "Dedicat\u00f3ria"
+      "description": "Dedicatória"
     },
     "preface": {
       "type": "string",
-      "description": "Pref\u00e1cio"
+      "description": "Prefácio"
     },
     "references": {
       "type": "string",
-      "description": "Refer\u00eancias bibliogr\u00e1ficas (formato ABNT)"
+      "description": "Referências bibliográficas (formato ABNT)"
     },
     "chapters_data": {
       "type": "string",
-      "description": "JSON serializado dos m\u00f3dulos e aulas da apostila editados pelo admin"
+      "description": "JSON serializado dos módulos e aulas da apostila editados pelo admin"
     },
     "status": {
       "type": "string",
@@ -65,53 +65,9 @@
     "title"
   ],
   "rls": {
-    "create": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "read": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "$or": [
-        {
-          "data.author_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

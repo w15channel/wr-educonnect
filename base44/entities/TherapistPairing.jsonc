@@ -47,12 +47,12 @@
     "therapist_submitted": {
       "type": "boolean",
       "default": false,
-      "description": "Terapeuta j\u00e1 enviou avalia\u00e7\u00e3o"
+      "description": "Terapeuta já enviou avaliação"
     },
     "patient_submitted": {
       "type": "boolean",
       "default": false,
-      "description": "Paciente j\u00e1 enviou avalia\u00e7\u00e3o"
+      "description": "Paciente já enviou avaliação"
     }
   },
   "required": [
@@ -61,55 +61,9 @@
     "pairing_date"
   ],
   "rls": {
-    "create": {
-      "$or": [
-        {
-          "data.therapist_email": "{{user.email}}"
-        },
-        {
-          "data.patient_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "read": {
-      "$or": [
-        {
-          "data.therapist_email": "{{user.email}}"
-        },
-        {
-          "data.patient_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "$or": [
-        {
-          "data.therapist_email": "{{user.email}}"
-        },
-        {
-          "data.patient_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

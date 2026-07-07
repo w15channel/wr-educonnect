@@ -32,7 +32,7 @@
     },
     "video_url": {
       "type": "string",
-      "description": "URL do v\u00eddeo (YouTube, Vimeo, Instagram, etc.)"
+      "description": "URL do vídeo (YouTube, Vimeo, Instagram, etc.)"
     },
     "external_url": {
       "type": "string",
@@ -40,7 +40,7 @@
     },
     "text_content": {
       "type": "string",
-      "description": "Conte\u00fado de aula em texto (quando lesson_type=text_written)"
+      "description": "Conteúdo de aula em texto (quando lesson_type=text_written)"
     },
     "thumbnail_url": {
       "type": "string",
@@ -56,32 +56,20 @@
     },
     "material_links": {
       "type": "string",
-      "description": "Links de materiais de suporte (separados por v\u00edrgula)"
+      "description": "Links de materiais de suporte (separados por vírgula)"
     },
     "research_links": {
       "type": "string",
-      "description": "Links para pesquisa online (separados por v\u00edrgula com t\u00edtulos separados por |)"
+      "description": "Links para pesquisa online (separados por vírgula com títulos separados por |)"
     }
   },
   "required": [
     "title"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
+    "create": true,
     "read": true,
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "update": true,
+    "delete": true
   }
 }

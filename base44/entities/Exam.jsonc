@@ -4,11 +4,11 @@
   "properties": {
     "title": {
       "type": "string",
-      "description": "T\u00edtulo da prova"
+      "description": "Título da prova"
     },
     "description": {
       "type": "string",
-      "description": "Instru\u00e7\u00f5es para o aluno"
+      "description": "Instruções para o aluno"
     },
     "course": {
       "type": "string",
@@ -23,16 +23,16 @@
     "deadline": {
       "type": "string",
       "format": "date-time",
-      "description": "Prazo final para realiza\u00e7\u00e3o"
+      "description": "Prazo final para realização"
     },
     "max_grade": {
       "type": "number",
       "default": 10,
-      "description": "Pontua\u00e7\u00e3o m\u00e1xima"
+      "description": "Pontuação máxima"
     },
     "quiz_questions": {
       "type": "array",
-      "description": "Quest\u00f5es geradas pela IA ou criadas manualmente",
+      "description": "Questões geradas pela IA ou criadas manualmente",
       "items": {
         "type": "object",
         "properties": {
@@ -54,14 +54,14 @@
           },
           "correct_index": {
             "type": "number",
-            "description": "\u00cdndice da resposta correta (somente m\u00faltipla escolha)"
+            "description": "Índice da resposta correta (somente múltipla escolha)"
           }
         }
       }
     },
     "module_ref": {
       "type": "string",
-      "description": "Refer\u00eancia ao m\u00f3dulo da apostila usado (ex: mod1)"
+      "description": "Referência ao módulo da apostila usado (ex: mod1)"
     },
     "generated_by_ai": {
       "type": "boolean",
@@ -71,7 +71,7 @@
     "is_published": {
       "type": "boolean",
       "default": true,
-      "description": "Se est\u00e1 vis\u00edvel para os alunos"
+      "description": "Se está visível para os alunos"
     }
   },
   "required": [
@@ -79,21 +79,9 @@
     "course"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": null,
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }

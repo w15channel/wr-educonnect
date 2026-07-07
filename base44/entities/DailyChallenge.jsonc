@@ -17,15 +17,15 @@
     },
     "lesson_ref": {
       "type": "string",
-      "description": "M\u00f3dulo e tema de refer\u00eancia usados para selecionar as perguntas"
+      "description": "Módulo e tema de referência usados para selecionar as perguntas"
     },
     "lesson_id": {
       "type": "string",
-      "description": "ID da aula de refer\u00eancia"
+      "description": "ID da aula de referência"
     },
     "questions": {
       "type": "array",
-      "description": "8 perguntas selecionadas para o dia com base no m\u00f3dulo e tema escolhidos",
+      "description": "8 perguntas selecionadas para o dia com base no módulo e tema escolhidos",
       "items": {
         "type": "object",
         "properties": {
@@ -43,7 +43,7 @@
     },
     "created_by_admin": {
       "type": "string",
-      "description": "Origem da gera\u00e7\u00e3o ou email do admin"
+      "description": "Origem da geração ou email do admin"
     }
   },
   "required": [
@@ -51,21 +51,9 @@
     "course"
   ],
   "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": null,
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }
