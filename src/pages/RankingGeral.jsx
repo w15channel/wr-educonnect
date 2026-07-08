@@ -11,7 +11,6 @@ import { formatScore, rankingScoreValue, roundScore, sumRoundedScores } from '@/
 const CATEGORY_CONFIG = {
   lesson:          { label: 'Aula Gravada',              icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
   task:            { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
-  quiz:            { label: 'Prova',                     icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   exam:            { label: 'Prova / Avaliação',          icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
   live_attendance: { label: 'Presença em Live',           icon: CheckCircle,   color: 'bg-sky-100 text-sky-700' },
@@ -61,7 +60,9 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
 
   const byCategory = {};
   myItems.forEach(item => {
-    const category = CATEGORY_CONFIG[item.category] ? item.category : 'other';
+    // Merge 'quiz' into 'exam' so both show under "Prova / Avaliação"
+    const normalized = item.category === 'quiz' ? 'exam' : item.category;
+    const category = CATEGORY_CONFIG[normalized] ? normalized : 'other';
     if (!byCategory[category]) byCategory[category] = [];
     byCategory[category].push(item);
   });
