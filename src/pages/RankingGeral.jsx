@@ -30,7 +30,7 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, publishedTotal, onClose }) {
+function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTotal, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
@@ -42,6 +42,8 @@ function StudentProfileModal({ code, scoreItems, publishedTotal, onClose }) {
     const seen = new Map();
     for (const s of scoreItems) {
       if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
+      // Only include items that belong to the student's course
+      if (courseItemRefIds && courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) continue;
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
@@ -478,6 +480,7 @@ export default function RankingGeral() {
         <StudentProfileModal
           code={selected}
           scoreItems={allScoreItems}
+          courseItemRefIds={courseItemRefIds}
           publishedTotal={roundScore(selected.pontuacao_total ?? publishedScoreMap[selected.student_email] ?? 0)}
           onClose={() => setSelected(null)}
         />
