@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
+import CloseModuleButton from '@/components/scores/CloseModuleButton';
 import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -559,6 +560,13 @@ export default function ScoreControl() {
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000)
   });
 
+  const { data: moduleClosures = [] } = useQuery({
+    queryKey: ['module-closures', activeCourse],
+    queryFn: () => base44.entities.ModuleClosure.filter({ course: activeCourse }, '-module_number', 100)
+  });
+
+  const nextModuleNumber = (moduleClosures.reduce((max, c) => Math.max(max, Number(c.module_number) || 0), 0)) + 1;
+
   useEffect(() => {
     if (!location.search.includes('filter=pending')) return;
     if (selectedCode || codes.length === 0 || submissions.length === 0) return;
@@ -772,6 +780,7 @@ export default function ScoreControl() {
               {saveOrderMutation.isPending ? 'Salvando...' : 'Salvar sequência'}
             </Button>
           }
+          {isTeacher && <CloseModuleButton course={activeCourse} nextModuleNumber={nextModuleNumber} />}
         </div>
       </div>
 

@@ -15,7 +15,8 @@ import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, formatDocumentIssuer } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { HOURS_MAP, buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
-import { Flame } from 'lucide-react';
+import { Flame, Archive } from 'lucide-react';
+import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
 function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, onClose, isAdmin = false }) {
@@ -431,6 +432,13 @@ export default function HistoricoAcademico() {
           </Button>
         </div>
 
+        <div>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+            <Archive size={13} /> Módulos Encerrados
+          </p>
+          <ModuleHistoryPanel course={studentCourse} filterEmail={selectedStudent.email} />
+        </div>
+
         {Object.entries(groupedRows).map(([cat, items]) => (
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
@@ -519,6 +527,13 @@ export default function HistoricoAcademico() {
       <div className="relative w-full sm:w-80">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+      </div>
+
+      <div>
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+          <Archive size={13} /> Módulos Encerrados
+        </p>
+        <ModuleHistoryPanel course={activeCourse} />
       </div>
 
       <div className="space-y-2">

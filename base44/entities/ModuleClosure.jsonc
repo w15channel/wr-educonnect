@@ -1,0 +1,65 @@
+{
+  "name": "ModuleClosure",
+  "type": "object",
+  "properties": {
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc",
+      "description": "Curso ao qual o encerramento pertence"
+    },
+    "module_number": {
+      "type": "number",
+      "description": "N\u00famero do m\u00f3dulo encerrado (ex: 1, 2, 3)"
+    },
+    "module_label": {
+      "type": "string",
+      "description": "R\u00f3tulo do m\u00f3dulo encerrado (ex: M\u00f3dulo 1)"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do corte \u2014 ScoreItems criados ap\u00f3s este instante contam para o novo m\u00f3dulo"
+    },
+    "closed_by": {
+      "type": "string",
+      "description": "Email do admin que encerrou o m\u00f3dulo"
+    },
+    "snapshot": {
+      "type": "array",
+      "description": "Pontua\u00e7\u00e3o geral congelada de cada aluno no momento do encerramento",
+      "items": {
+        "type": "object",
+        "properties": {
+          "student_email": {
+            "type": "string"
+          },
+          "student_name": {
+            "type": "string"
+          },
+          "points": {
+            "type": "number"
+          },
+          "rank": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "course",
+    "module_number",
+    "closed_at"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}
