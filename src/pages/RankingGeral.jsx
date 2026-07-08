@@ -29,21 +29,18 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTotal, onClose }) {
+function StudentProfileModal({ code, scoreItems, publishedTotal, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
   const avatarColor = code.profile_avatar_color || '#5b5ef4';
 
-  // Only verified items for this student, deduplicated by (category|ref_id),
-  // AND restricted to ref_ids that belong to this course (courseItemRefIds set).
-  // This prevents cross-course ScoreItems from inflating the modal total.
+  // All verified items for this student, deduplicated by (category|ref_id).
+  // No courseItemRefIds filter here — we show everything so the sum is transparent.
   const myItems = useMemo(() => {
     const seen = new Map();
     for (const s of scoreItems) {
       if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
-      // If courseItemRefIds is provided, enforce course isolation
-      if (courseItemRefIds && !courseItemRefIds.has(s.ref_id)) continue;
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
@@ -51,12 +48,12 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
       if (!prevWins) seen.set(key, s);
     }
     return [...seen.values()];
-  }, [scoreItems, email, courseItemRefIds]);
+  }, [scoreItems, email]);
 
-  // Use the admin-published total (same as outer list) as the authoritative total.
-  // Fall back to live sum only when no published value exists yet.
+  // Live sum from all verified ScoreItems — this is the transparent total.
+  // If the published total is higher (e.g. manual admin override), use that.
   const liveSum = roundScore(myItems.reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
-  const liveTotal = (publishedTotal != null && publishedTotal > 0) ? publishedTotal : liveSum;
+  const liveTotal = Math.max(liveSum, publishedTotal ?? 0);
 
   const byCategory = {};
   myItems.forEach(item => {
@@ -296,14 +293,24 @@ export default function RankingGeral() {
     return map;
   }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds]);
 
-  // ── Build and sort ranking — identical sort logic to Dashboard ──
-  // Primary sort: publishedRank (admin-set order)
-  // Fallback: pontuacao_total from AccessCode → publishedScoreMap → 0
+  // ── Live sum per student from all verified ScoreItems ──
+  const liveScoreSumMap = useMemo(() => {
+    const map = {};
+    for (const s of deduplicatedScoreItems) {
+      if (!s.student_email || !s.verified) continue;
+      map[s.student_email] = roundScore((map[s.student_email] || 0) + roundScore(s.score));
+    }
+    return map;
+  }, [deduplicatedScoreItems]);
+
+  // ── Build and sort ranking — uses live sum as primary, falls back to published ──
   const ranking = useMemo(() => {
     return courseCodes
       .map(c => {
-        // Use the same source-of-truth as Dashboard: pontuacao_total on AccessCode
-        const total = roundScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0);
+        // Use live sum of verified ScoreItems; fall back to pontuacao_total if no items yet
+        const liveSum = liveScoreSumMap[c.student_email] ?? 0;
+        const publishedFallback = roundScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0);
+        const total = liveSum > 0 ? liveSum : publishedFallback;
         const publishedRank = publishedRankMap[c.student_email] ?? Number.MAX_SAFE_INTEGER;
         return {
           email: c.student_email,
@@ -326,7 +333,7 @@ export default function RankingGeral() {
         if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
         return a.name.localeCompare(b.name);
       });
-  }, [courseCodes, publishedScoreMap, publishedRankMap, participationMap]);
+  }, [courseCodes, publishedScoreMap, publishedRankMap, participationMap, liveScoreSumMap]);
 
   const myPos = ranking.findIndex(r => r.email === session?.email) + 1;
   const isLoading = loadingScores || loadingCodes || loadingProfiles;
@@ -464,7 +471,6 @@ export default function RankingGeral() {
         <StudentProfileModal
           code={selected}
           scoreItems={allScoreItems}
-          courseItemRefIds={courseItemRefIds}
           publishedTotal={roundScore(selected.pontuacao_total ?? publishedScoreMap[selected.student_email] ?? 0)}
           onClose={() => setSelected(null)}
         />
