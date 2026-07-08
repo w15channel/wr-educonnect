@@ -277,12 +277,27 @@ Deno.serve(async (req) => {
 
       // ── Clean up invalid ScoreItems ─────────────────────────────────────
       const liveSessionIds = new Set(courseLives.map((l) => l.id));
+
+      // Valid submission keys: a quiz/exam score is only legitimate if a real
+      // submission exists for that student. Guards against orphan "Prova" points
+      // (e.g. left behind by content migrations/renames) awarding points without delivery.
+      const validQuizKeys = new Set(); // `${email}|${task_id}` — quiz = Task submission
+      submissions.forEach((s) => {
+        if (courseEmails.has(s.student_email)) validQuizKeys.add(`${s.student_email}|${s.task_id}`);
+      });
+      const validExamKeys = new Set(); // `${email}|exam:${exam_id}` — exam = ExamSubmission
+      examSubmissions.forEach((s) => {
+        if (courseEmails.has(s.student_email)) validExamKeys.add(`${s.student_email}|exam:${s.exam_id}`);
+      });
+
       for (const item of scoreItems) {
         if (!courseEmails.has(item.student_email)) continue;
         const key = scoreKey(item.student_email, item.category, item.ref_id);
         const isLegacyTherapist = item.category === 'therapist';
         const isOrphanLiveAttendance = item.category === 'live_attendance' && !liveSessionIds.has(item.ref_id);
-        if (isLegacyTherapist || isOrphanLiveAttendance) {
+        const isOrphanQuiz = item.category === 'quiz' && !validQuizKeys.has(`${item.student_email}|${item.ref_id}`);
+        const isOrphanExam = item.category === 'exam' && !validExamKeys.has(`${item.student_email}|${item.ref_id}`);
+        if (isLegacyTherapist || isOrphanLiveAttendance || isOrphanQuiz || isOrphanExam) {
           await base44.asServiceRole.entities.ScoreItem.delete(item.id).catch(() => null);
           existingScores.delete(key);
         }
