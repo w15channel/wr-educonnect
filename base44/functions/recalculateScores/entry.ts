@@ -325,13 +325,11 @@ Deno.serve(async (req) => {
       }
 
       // Exam submissions (graded exams from ExamSubmission entity)
-      // Módulo = exam.module_ref (ex: mod1, mod2, etc.)
-      // Média do módulo = (participação + nota_prova) / 2, máximo 100 pts por módulo
-      const examByModule = {};
+      // Uses the actual grade assigned by the teacher (sub.grade), capped at STUDY_POINTS.exam
       for (const sub of courseExamSubs) {
         const exam = examMap.get(sub.exam_id);
         if (!courseEmails.has(sub.student_email) || !exam || sub.status !== 'graded') continue;
-        const grade = STUDY_POINTS.exam;
+        const grade = roundScore(Math.min(Number(sub.grade) || 0, STUDY_POINTS.exam));
         const refId = `exam:${sub.exam_id}`;
         queueScore({
           studentEmail: sub.student_email,
@@ -340,13 +338,9 @@ Deno.serve(async (req) => {
           refTitle: exam.title,
           score: grade,
           maxScore: STUDY_POINTS.exam,
-          notes: sub.feedback || `Prova entregue/corrigida conforme a regra atual: +50 pontos de estudo.`
+          notes: sub.feedback || `Prova corrigida pelo professor: ${grade} pontos.`
         });
         addBothCalc(sub.student_email, grade);
-        // Agrupa por módulo para cálculo de média
-        const moduleKey = exam.module_ref || 'default';
-        if (!examByModule[sub.student_email]) examByModule[sub.student_email] = {};
-        examByModule[sub.student_email][moduleKey] = { exam, grade, sub };
       }
 
       // Forum posts

@@ -2,21 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp } from 'lucide-react';
+import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp, Heart } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { formatScore, rankingScoreValue, roundScore, sumRoundedScores } from '@/lib/scoreUtils';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const CATEGORY_CONFIG = {
-  lesson:          { label: 'Aula Gravada',          icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
-  task:            { label: 'Tarefa',     icon: FileText,       color: 'bg-orange-100 text-orange-700' },
-  quiz:            { label: 'Prova',                  icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
-  exam:            { label: 'Prova / Avaliação',       icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
+  lesson:          { label: 'Aula Gravada',              icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
+  task:            { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
+  quiz:            { label: 'Prova',                     icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
+  exam:            { label: 'Prova / Avaliação',          icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
-  live_attendance: { label: 'Presença em Live',        icon: CheckCircle,    color: 'bg-sky-100 text-sky-700' },
-  therapist:       { label: 'Sessão de Terapeutas', icon: CheckCircle,    color: 'bg-pink-100 text-pink-700' },
-  other:           { label: 'Outras Pontuações',       icon: CircleHelp,     color: 'bg-slate-100 text-slate-700' },
+  live_attendance: { label: 'Presença em Live',           icon: CheckCircle,   color: 'bg-sky-100 text-sky-700' },
+  therapist:       { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
+  other:           { label: 'Outras Pontuações',          icon: CircleHelp,    color: 'bg-slate-100 text-slate-700' },
 };
 
 // For each AccessCode, which course field values map to it
@@ -121,7 +121,7 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
                     <div key={item.id} className="flex items-center gap-2 bg-secondary/40 rounded-xl px-3 py-2">
                       <CheckCircle size={12} className="text-green-500 shrink-0" />
                       <span className="text-xs text-foreground flex-1 truncate">{item.ref_title}</span>
-                      <span className="text-xs font-bold text-foreground shrink-0">{formatScore(item.score)}/{formatScore(item.max_score)}</span>
+                      <span className="text-xs font-bold text-foreground shrink-0">{formatScore(item.score)} pts</span>
                     </div>
                   ))}
                 </div>
