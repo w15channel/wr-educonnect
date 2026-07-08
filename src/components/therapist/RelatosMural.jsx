@@ -1,0 +1,142 @@
+import React, { useState } from 'react';
+import { ClipboardList, ChevronDown, ChevronUp, Trash2, Star, Calendar } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { formatScore } from '@/lib/scoreUtils';
+
+function formatDateLabel(dateStr) {
+  if (!dateStr) return 'Sem data';
+  try {
+    return format(parseISO(dateStr), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+}
+
+// Turns pairings into a flat list of individual reports (one per submitted evaluation).
+function buildReports(pairings, getStudentInfo) {
+  const reports = [];
+  for (const p of pairings) {
+    if (p.therapist_submitted && p.therapist_comment) {
+      reports.push({
+        id: `${p.id}-therapist`,
+        pairingId: p.id,
+        field: 'therapist',
+        date: p.pairing_date,
+        authorEmail: p.therapist_email,
+        authorName: getStudentInfo(p.therapist_email).name,
+        targetName: getStudentInfo(p.patient_email).name,
+        roleLabel: 'Terapeuta → Paciente',
+        roleColor: 'text-pink-600',
+        comment: p.therapist_comment,
+        score: p.therapist_score,
+      });
+    }
+    if (p.patient_submitted && p.patient_comment) {
+      reports.push({
+        id: `${p.id}-patient`,
+        pairingId: p.id,
+        field: 'patient',
+        date: p.pairing_date,
+        authorEmail: p.patient_email,
+        authorName: getStudentInfo(p.patient_email).name,
+        targetName: getStudentInfo(p.therapist_email).name,
+        roleLabel: 'Paciente → Terapeuta',
+        roleColor: 'text-blue-600',
+        comment: p.patient_comment,
+        score: p.patient_score,
+      });
+    }
+  }
+  return reports;
+}
+
+export default function RelatosMural({ pairings, getStudentInfo, isTeacher, onDeleteReport }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const reports = buildReports(pairings, getStudentInfo);
+
+  // Group by date, most recent first
+  const groups = {};
+  for (const r of reports) {
+    const key = r.date || 'sem-data';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  }
+  const sortedDates = Object.keys(groups).sort((a, b) => (b || '').localeCompare(a || ''));
+
+  return (
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between gap-3 p-5 hover:bg-secondary/30 transition-colors"
+      >
+        <div className="flex items-center gap-3 text-left">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <ClipboardList size={18} className="text-primary" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-foreground">Mural de Relatos</h3>
+            <p className="text-xs text-muted-foreground">Histórico permanente de todos os relatos enviados · {reports.length} relato(s)</p>
+          </div>
+        </div>
+        {expanded ? <ChevronUp size={18} className="text-muted-foreground shrink-0" /> : <ChevronDown size={18} className="text-muted-foreground shrink-0" />}
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border p-5 space-y-5 animate-fade-in">
+          {reports.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ClipboardList size={36} className="mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Nenhum relato enviado ainda.</p>
+            </div>
+          ) : (
+            sortedDates.map(dateKey => (
+              <div key={dateKey} className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                  <Calendar size={13} className="text-primary" />
+                  {dateKey === 'sem-data' ? 'Sem data' : formatDateLabel(dateKey)}
+                </div>
+                <div className="space-y-2">
+                  {groups[dateKey].map(r => (
+                    <div key={r.id} className="border border-border rounded-xl p-3.5 bg-secondary/20">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="text-xs font-bold text-foreground">{r.authorName}</span>
+                            <span className={`text-[10px] font-semibold ${r.roleColor}`}>{r.roleLabel}</span>
+                            <span className="text-[10px] text-muted-foreground">· sobre {r.targetName}</span>
+                          </div>
+                          <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">{r.comment}</p>
+                          {typeof r.score === 'number' && (
+                            <div className="flex items-center gap-1 mt-2">
+                              <Star size={11} className="text-yellow-400 fill-yellow-400" />
+                              <span className="text-xs font-bold">{formatScore(r.score)}/10,000</span>
+                            </div>
+                          )}
+                        </div>
+                        {isTeacher && onDeleteReport && (
+                          <button
+                            onClick={() => {
+                              if (confirm('Excluir este relato permanentemente? Esta ação não pode ser desfeita.')) {
+                                onDeleteReport(r);
+                              }
+                            }}
+                            className="p-1.5 text-muted-foreground hover:text-destructive rounded-lg transition-colors shrink-0"
+                            title="Excluir relato"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -15,6 +15,7 @@ import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
+import RelatosMural from '@/components/therapist/RelatosMural';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -147,6 +148,21 @@ export default function TerapeutaDaSemana() {
     }
     toast.success(`✅ ${pairs.length} pareamento(s) gerado(s) com ${activeStudents.length} aluno(s) do domínio.`);
   };
+
+  const deleteReportMutation = useMutation({
+    mutationFn: ({ pairingId, field }) => {
+      const data = field === 'therapist'
+        ? { therapist_comment: '', therapist_score: null, therapist_submitted: false }
+        : { patient_comment: '', patient_score: null, patient_submitted: false };
+      return base44.entities.TherapistPairing.update(pairingId, data);
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] }); toast.success('Relato excluído.'); },
+  });
+
+  // Todos os pareamentos do domínio (atuais + anteriores) com pelo menos um relato
+  const allDomainPairings = pairings.filter(p =>
+    !courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email))
+  );
 
   const handleSubmitEval = () => {
     if (!evalDialog) return;
@@ -331,6 +347,14 @@ export default function TerapeutaDaSemana() {
           </div>
         </div>
       )}
+
+      {/* Mural permanente de relatos — histórico por datas */}
+      <RelatosMural
+        pairings={allDomainPairings}
+        getStudentInfo={getStudentInfo}
+        isTeacher={isTeacher}
+        onDeleteReport={(r) => deleteReportMutation.mutate({ pairingId: r.pairingId, field: r.field })}
+      />
 
       {/* Dialog Avaliação */}
       <Dialog open={!!evalDialog} onOpenChange={() => setEvalDialog(null)}>
