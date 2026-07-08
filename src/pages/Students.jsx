@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Trash2 } from 'lucide-react';
+import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Trash2, Layers } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -52,16 +52,23 @@ export default function Students() {
     queryFn: () => base44.entities.Tuition.list('-month_ref', 500),
   });
 
+  const { data: moduleClosures = [] } = useQuery({
+    queryKey: ['module-closures', activeCourse],
+    queryFn: () => base44.entities.ModuleClosure.filter({ course: activeCourse }, '-module_number', 100),
+  });
+
+  const currentModule = (moduleClosures.reduce((max, c) => Math.max(max, Number(c.module_number) || 0), 0)) + 1;
+
   const updateCodeMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.AccessCode.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['access-codes'] }),
   });
 
   const deleteCodeMutation = useMutation({
-    mutationFn: (id) => base44.entities.AccessCode.delete(id),
+    mutationFn: (id) => base44.functions.invoke('deleteStudentData', { code_id: id, admin_email: session?.email }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-      toast.success('Aluno removido com sucesso!');
+      queryClient.invalidateQueries();
+      toast.success('Aluno e todos os seus dados foram removidos permanentemente.');
     },
     onError: () => toast.error('Erro ao remover aluno.'),
   });
@@ -118,10 +125,9 @@ export default function Students() {
 
   const getStudentStats = (code) => {
     const subs = allSubmissions.filter(s => s.student_email === code.student_email);
-    const graded = subs.filter(s => s.grade !== undefined && s.grade !== null);
-    const total = graded.reduce((sum, item) => roundScore(sum + roundScore(item.grade)), 0);
-    const avg = graded.length > 0 ? roundScore(total / graded.length) : null;
-    return { avg, avgDisplay: avg !== null ? formatScore(avg) : '—', submissions: subs.length, total };
+    const profile = studentProfiles.find(p => p.student_email === code.student_email && (p.dashboard_course === activeCourse || (!p.dashboard_course && activeCourse === 'tcc')));
+    const moduleScore = roundScore(code.pontuacao_total ?? profile?.pontuacao_total ?? profile?.points ?? 0);
+    return { moduleScore, moduleScoreDisplay: formatScore(moduleScore), submissions: subs.length };
   };
 
   const getStudentTuitionStatus = (code) => {
@@ -179,14 +185,10 @@ export default function Students() {
       if (sortBy === 'submissions_desc') return getStudentStats(b).submissions - getStudentStats(a).submissions;
       if (sortBy === 'submissions_asc') return getStudentStats(a).submissions - getStudentStats(b).submissions;
       if (sortBy === 'avg_desc') {
-        const avgA = Number(getStudentStats(a).avg) || 0;
-        const avgB = Number(getStudentStats(b).avg) || 0;
-        return avgB - avgA;
+        return getStudentStats(b).moduleScore - getStudentStats(a).moduleScore;
       }
       if (sortBy === 'avg_asc') {
-        const avgA = Number(getStudentStats(a).avg) || 0;
-        const avgB = Number(getStudentStats(b).avg) || 0;
-        return avgA - avgB;
+        return getStudentStats(a).moduleScore - getStudentStats(b).moduleScore;
       }
       // date_desc default
       return new Date(b.created_date) - new Date(a.created_date);
@@ -202,9 +204,14 @@ export default function Students() {
 
   return (
     <div className="p-3 md:p-5 max-w-[1100px] mx-auto animate-fade-in-up">
-      <div className="mb-5">
-        <h2 className="text-xl lg:text-2xl font-bold text-foreground">Gestão de Alunos — {courseLabel}</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Gerencie alunos e códigos de acesso da turma ativa</p>
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Gestão de Alunos — {courseLabel}</h2>
+          <p className="text-muted-foreground text-sm mt-0.5">Gerencie alunos e códigos de acesso da turma ativa</p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
+          <Layers size={15} /> Módulo Atual: {currentModule}
+        </span>
       </div>
 
       {/* Dialog para matricular em outro curso */}
@@ -258,8 +265,8 @@ export default function Students() {
                   <SelectItem value="tuition_overdue">Inadimplentes primeiro</SelectItem>
                   <SelectItem value="submissions_desc">Mais entregas primeiro</SelectItem>
                   <SelectItem value="submissions_asc">Menos entregas primeiro</SelectItem>
-                  <SelectItem value="avg_desc">Maior média primeiro</SelectItem>
-                  <SelectItem value="avg_asc">Menor média primeiro</SelectItem>
+                  <SelectItem value="avg_desc">Maior pontuação primeiro</SelectItem>
+                  <SelectItem value="avg_asc">Menor pontuação primeiro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -333,8 +340,8 @@ export default function Students() {
                           <p className="font-semibold text-foreground">{stats.submissions}</p>
                         </div>
                         <div className="rounded-xl border border-border px-2.5 py-2 bg-secondary/30">
-                          <p className="text-muted-foreground">Média</p>
-                          <p className="font-semibold text-foreground">{stats.avgDisplay}</p>
+                          <p className="text-muted-foreground">Pontuação (Mód. {currentModule})</p>
+                          <p className="font-semibold text-foreground">{stats.moduleScoreDisplay}</p>
                         </div>
                       </div>
 
@@ -357,7 +364,7 @@ export default function Students() {
                       </div>
 
                       <div className="w-full">
-                         <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="w-full h-10 px-3 text-red-500 border border-red-200 hover:bg-red-100 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5" title="Remover aluno">
+                         <button onClick={() => { if (confirm('Remover este aluno? TODOS os dados dele (pontuação, entregas, fórum, presenças, mensalidades, certificados) serão apagados permanentemente e sem deixar rastros. Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} disabled={deleteCodeMutation.isPending} className="w-full h-10 px-3 text-red-500 border border-red-200 hover:bg-red-100 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50" title="Remover aluno">
                            <Trash2 size={15} /> Remover
                          </button>
                       </div>
@@ -375,7 +382,7 @@ export default function Students() {
                         <th className="p-4">Aluno</th>
                         <th className="p-4">Código</th>
                         <th className="p-4">Entregas</th>
-                        <th className="p-4">Média</th>
+                        <th className="p-4">Pontuação (Mód. {currentModule})</th>
                         <th className="p-4">Mensalidade</th>
                         <th className="p-4">Status</th>
                         <th className="p-4">Ações</th>
@@ -408,7 +415,7 @@ export default function Students() {
                               <code className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded-lg">{code.code}</code>
                             </td>
                             <td className="p-4 font-semibold text-foreground text-sm">{stats.submissions}</td>
-                            <td className="p-4 font-bold text-foreground">{stats.avgDisplay}</td>
+                            <td className="p-4 font-bold text-foreground">{stats.moduleScoreDisplay}</td>
                             <td className="p-4">
                               {tCfg ? (
                                 <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border font-semibold ${tCfg.class}`}>
@@ -435,7 +442,7 @@ export default function Students() {
                                 <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
                                   <Eye size={13} /> Detalhes
                                 </button>
-                                <button onClick={() => { if (confirm('Tem certeza? Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} className="flex items-center gap-1 text-xs text-red-500 hover:underline font-semibold">
+                                <button onClick={() => { if (confirm('Remover este aluno? TODOS os dados dele (pontuação, entregas, fórum, presenças, mensalidades, certificados) serão apagados permanentemente e sem deixar rastros. Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} disabled={deleteCodeMutation.isPending} className="flex items-center gap-1 text-xs text-red-500 hover:underline font-semibold disabled:opacity-50">
                                   <Trash2 size={13} /> Remover
                                 </button>
                               </div>
