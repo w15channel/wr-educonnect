@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { formatScore, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
 
 const CATEGORY_CONFIG = {
@@ -157,9 +157,9 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   s.category === 'exam' && (examIds.has(s.ref_id) || examIds.has(String(s.ref_id || '').replace(/^exam:/, ''))) ||
   s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id)) ||
   s.category === 'therapist' && myPairings.some((p) => p.id === s.ref_id) ||
-  s.category === 'task' && therapistScoreRefIds.has(s.ref_id))
+  isTherapistScoreItem(s) && therapistScoreRefIds.has(s.ref_id))
   ).
-  reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+  reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0);
 
   const studyScore = scoreItems.
   filter((s) => s.verified && (
@@ -167,7 +167,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
   s.category === 'exam' && (examIds.has(s.ref_id) || String(s.ref_id || '').startsWith('exam:')))
   && !String(s.ref_id || '').startsWith('therapist_pairing:')).
-  reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+  reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0);
 
   const sendTotalMutation = useMutation({
     mutationFn: async () => {
@@ -261,7 +261,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={CATEGORY_CONFIG.lesson.icon}
                 refId={lesson.id}
                 refTitle={lesson.title}
-                maxScore={2}
+                maxScore={SCORE_RULES.lesson}
                 item={getScoreItem('lesson', lesson.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
@@ -302,7 +302,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={task.type === 'quiz' ? CATEGORY_CONFIG.quiz.icon : CATEGORY_CONFIG.task.icon}
                 refId={task.id}
                 refTitle={task.title}
-                maxScore={task.type === 'quiz' ? 50 : 5}
+                maxScore={task.type === 'quiz' ? SCORE_RULES.quiz : SCORE_RULES.task}
                 item={getScoreItem(task.type === 'quiz' ? 'quiz' : 'task', task.id)}
                 needsCorrection={uncorrectedTaskIds.has(task.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
@@ -364,7 +364,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={CATEGORY_CONFIG.exam.icon}
                 refId={exam.id}
                 refTitle={exam.title}
-                maxScore={50}
+                maxScore={SCORE_RULES.exam}
                 item={scoreItem}
                 needsCorrection={sub && sub.status === 'submitted' && !scoreItem}
                 onSave={(data) => updateScoreMutation.mutate(data)}
@@ -460,7 +460,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 icon={CATEGORY_CONFIG.therapist.icon}
                 refId={p.id}
                 refTitle={`Sessão ${i + 1} — ${role} de ${partner}`}
-                maxScore={10}
+                maxScore={SCORE_RULES.therapist}
                 item={getScoreItem('therapist', p.id, p.therapist_email === email ? 'therapist' : 'patient')}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
@@ -629,10 +629,12 @@ export default function ScoreControl() {
     filter((s) => s.student_email === email && s.verified && (
     s.category === 'lesson' && lessonIds.has(s.ref_id) ||
     (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
+    s.category === 'exam' ||
     s.category === 'forum' && (studentForumPostIds.has(s.ref_id) || studentForumReplyIds.has(s.ref_id)) ||
-    s.category === 'therapist' && coursePairingIds.has(s.ref_id))
+    s.category === 'therapist' && coursePairingIds.has(s.ref_id) ||
+    isTherapistScoreItem(s) && coursePairingIds.has(String(s.ref_id || '').split(':')[1]))
     ).
-    reduce((sum, s) => sum + (Number(s.score) || 0), 0);
+    reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0);
   };
 
   const getParticipationStats = (email) => {

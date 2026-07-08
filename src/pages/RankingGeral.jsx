@@ -4,17 +4,18 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { formatScore, rankingScoreValue, roundScore, sumRoundedScores } from '@/lib/scoreUtils';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const CATEGORY_CONFIG = {
   lesson:          { label: 'Aula Gravada',          icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
-  task:            { label: 'Tarefa / Terapeuta',     icon: FileText,       color: 'bg-orange-100 text-orange-700' },
+  task:            { label: 'Tarefa',     icon: FileText,       color: 'bg-orange-100 text-orange-700' },
   quiz:            { label: 'Prova',                  icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   exam:            { label: 'Prova / Avaliação',       icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
   live_attendance: { label: 'Presença em Live',        icon: CheckCircle,    color: 'bg-sky-100 text-sky-700' },
+  therapist:       { label: 'Sessão de Terapeutas', icon: CheckCircle,    color: 'bg-pink-100 text-pink-700' },
   other:           { label: 'Outras Pontuações',       icon: CircleHelp,     color: 'bg-slate-100 text-slate-700' },
 };
 
@@ -50,10 +51,11 @@ function StudentProfileModal({ code, scoreItems, publishedTotal, onClose }) {
     return [...seen.values()];
   }, [scoreItems, email]);
 
-  // Live sum from all verified ScoreItems — this is the transparent total.
-  // If the published total is higher (e.g. manual admin override), use that.
-  const liveSum = roundScore(myItems.reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
-  const liveTotal = Math.max(liveSum, publishedTotal ?? 0);
+  // Soma transparente dos itens verificados exibidos no modal.
+  // Se houver total publicado maior que a soma dos itens, mostramos o ajuste para fechar a conta.
+  const liveSum = sumRoundedScores(myItems.map(rankingScoreValue));
+  const publishedAdjustment = roundScore(Math.max(0, roundScore(publishedTotal ?? 0) - liveSum));
+  const liveTotal = roundScore(liveSum + publishedAdjustment);
 
   const byCategory = {};
   myItems.forEach(item => {
@@ -61,6 +63,10 @@ function StudentProfileModal({ code, scoreItems, publishedTotal, onClose }) {
     if (!byCategory[category]) byCategory[category] = [];
     byCategory[category].push(item);
   });
+  if (publishedAdjustment > 0) {
+    byCategory.other = byCategory.other || [];
+    byCategory.other.push({ id: 'published-adjustment', ref_title: 'Ajuste de pontuação publicada/cache', score: publishedAdjustment, max_score: publishedAdjustment });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
@@ -96,7 +102,7 @@ function StudentProfileModal({ code, scoreItems, publishedTotal, onClose }) {
             const items = byCategory[cat] || [];
             if (items.length === 0) return null;
             const cfg = CATEGORY_CONFIG[cat];
-            const catTotal = items.reduce((sum, item) => roundScore(sum + roundScore(item.score)), 0);
+            const catTotal = sumRoundedScores(items.map(rankingScoreValue));
             return (
               <div key={cat}>
                 <div className="flex items-center gap-2 mb-2">
@@ -209,7 +215,7 @@ export default function RankingGeral() {
     // Standard entities
     courseLessons.forEach(l => set.add(l.id));
     courseTasks.forEach(t => set.add(t.id));
-    courseExams.forEach(e => set.add(`exam:${e.id}`));
+    courseExams.forEach(e => { set.add(`exam:${e.id}`); set.add(e.id); });
     courseForumPosts.forEach(p => set.add(p.id));
     allForumReplies.forEach(r => set.add(r.id));
     // Terapeuta da Semana: ref_id = `therapist_pairing:{id}:{role}`
@@ -223,8 +229,8 @@ export default function RankingGeral() {
         .map(c => c.student_email)
     );
     allPairings.forEach(p => {
-      if (courseEmailSet.has(p.therapist_email)) set.add(`therapist_pairing:${p.id}:therapist`);
-      if (courseEmailSet.has(p.patient_email))   set.add(`therapist_pairing:${p.id}:patient`);
+      if (courseEmailSet.has(p.therapist_email)) { set.add(`therapist_pairing:${p.id}:therapist`); set.add(p.id); }
+      if (courseEmailSet.has(p.patient_email))   { set.add(`therapist_pairing:${p.id}:patient`); set.add(p.id); }
     });
     // Ofensivas: ref_id = `ofensiva:{challengeId}:{studentEmail}`
     allChallengeResponses.forEach(r => {
@@ -293,15 +299,16 @@ export default function RankingGeral() {
     return map;
   }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds]);
 
-  // ── Live sum per student from all verified ScoreItems ──
+  // ── Live sum per student from verified ScoreItems in the active course ──
   const liveScoreSumMap = useMemo(() => {
     const map = {};
     for (const s of deduplicatedScoreItems) {
-      if (!s.student_email || !s.verified) continue;
-      map[s.student_email] = roundScore((map[s.student_email] || 0) + roundScore(s.score));
+      if (!s.student_email || !s.verified || !courseEmailSet.has(s.student_email)) continue;
+      if (courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) continue;
+      map[s.student_email] = roundScore((map[s.student_email] || 0) + rankingScoreValue(s));
     }
     return map;
-  }, [deduplicatedScoreItems]);
+  }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds]);
 
   // ── Build and sort ranking — uses live sum as primary, falls back to published ──
   const ranking = useMemo(() => {
