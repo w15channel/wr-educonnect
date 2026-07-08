@@ -30,8 +30,8 @@ async function fetchAllPages(entityQuery, sort, pageSize = 5000) {
 
 const CYCLE_DAYS = 7;
 const EPOCH = new Date('2024-01-01T00:00:00Z');
-const BONUS_BY_RANK = { 1: 0.5, 2: 0.3, 3: 0.2 };
 const STUDY_POINTS = { lesson: 2, task: 5, quiz: 50, exam: 50 };
+const THERAPIST_SESSION_POINTS = 10;
 const LIVE_ATTENDANCE_POINTS = 0;
 
 function ymd(date) {
@@ -259,10 +259,8 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.MonitorHistory.delete(m.id).catch(() => null);
       }
 
-      const bonusByEmail = new Map();
       for (const [idx, item] of rankingBase.slice(0, 3).entries()) {
         const rank = idx + 1;
-        bonusByEmail.set(item.code.student_email, BONUS_BY_RANK[rank] || 0);
         await base44.asServiceRole.entities.MonitorHistory.create({
           student_email: item.code.student_email,
           student_name: displayName(item.code),
@@ -313,17 +311,13 @@ Deno.serve(async (req) => {
       for (const s of submissions) {
         const task = taskMap.get(s.task_id);
         if (!courseEmails.has(s.student_email) || !task) continue;
-        const bonus = bonusByEmail.get(s.student_email) || 0;
         const baseScore = task.type === 'quiz' ? STUDY_POINTS.quiz : STUDY_POINTS.task;
-        const score = baseScore + bonus;
+        const score = baseScore;
         const category = task.type === 'quiz' ? 'quiz' : 'task';
         const label = task.type === 'quiz' ? 'Prova' : 'Trabalho';
-        const feedback = bonus > 0
-          ? `${label} pontuado: ${String(roundScore(baseScore)).replace('.', ',')} pontos + ${String(roundScore(bonus)).replace('.', ',')} de bônus de monitor/ranking.`
-          : `${label} pontuado conforme a regra atual: +${String(roundScore(baseScore)).replace('.', ',')} pontos.`;
+        const feedback = `${label} pontuado conforme a regra atual: +${String(roundScore(baseScore)).replace('.', ',')} pontos.`;
         queueScore({ studentEmail: s.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
         addBothCalc(s.student_email, baseScore);
-        if (bonus > 0) addCalc(s.student_email, bonus);
         if (s.status !== 'graded' || roundScore(s.grade) !== roundScore(score) || s.feedback !== feedback) {
           await base44.asServiceRole.entities.TaskSubmission.update(s.id, { grade: roundScore(score), feedback, status: 'graded' });
           correctedSubmissions++;
@@ -380,15 +374,15 @@ Deno.serve(async (req) => {
         if (courseEmails.has(pairing.therapist_email) && pairing.therapist_submitted) {
           const refId = `therapist_pairing:${pairing.id}:therapist`;
           const dateStr = pairing.pairing_date || 'data não informada';
-          queueScore({ studentEmail: pairing.therapist_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana (${dateStr})`, score: 10, maxScore: 10, notes: 'Relato enviado como terapeuta na atividade Terapeuta da Semana: +10 pontos.' });
-          addCalc(pairing.therapist_email, 10);
+          queueScore({ studentEmail: pairing.therapist_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana (${dateStr})`, score: THERAPIST_SESSION_POINTS, maxScore: THERAPIST_SESSION_POINTS, notes: 'Relato enviado como terapeuta na atividade Terapeuta da Semana: +10 pontos.' });
+          addCalc(pairing.therapist_email, THERAPIST_SESSION_POINTS);
         }
 
         if (courseEmails.has(pairing.patient_email) && pairing.patient_submitted) {
           const refId = `therapist_pairing:${pairing.id}:patient`;
           const dateStr = pairing.pairing_date || 'data não informada';
-          queueScore({ studentEmail: pairing.patient_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana — Paciente (${dateStr})`, score: 10, maxScore: 10, notes: 'Relato enviado como paciente na atividade Terapeuta da Semana: +10 pontos.' });
-          addCalc(pairing.patient_email, 10);
+          queueScore({ studentEmail: pairing.patient_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana — Paciente (${dateStr})`, score: THERAPIST_SESSION_POINTS, maxScore: THERAPIST_SESSION_POINTS, notes: 'Relato enviado como paciente na atividade Terapeuta da Semana: +10 pontos.' });
+          addCalc(pairing.patient_email, THERAPIST_SESSION_POINTS);
         }
       }
 
@@ -468,7 +462,6 @@ Deno.serve(async (req) => {
         forum_reply_to_colleague:     { pts: 0.5,   note: 'por resposta a colega no fórum ou sala de debates' },
         therapist_week_submitted:     { pts: 10,    note: 'por relato enviado (como terapeuta OU paciente)' },
         ofensiva_diaria:              { pts: '0–1', note: 'soma dos points_earned do DailyChallengeResponse do dia' },
-        monitor_bonus_by_rank:        BONUS_BY_RANK,
         monitor_cycle_days:           CYCLE_DAYS,
       },
       createdScores,
