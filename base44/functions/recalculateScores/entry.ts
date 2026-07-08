@@ -7,8 +7,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // live_attendance     confirmed      + 0.0 pts  (lives no longer generate points)
 // task                submitted      + 5.0 pts  (per assignment; study + ranking)
 // quiz / exam         graded         +50.0 pts  (per exam; study + ranking)
-// forum post          created        + 0.1 pts  (includes debates space)
-// forum reply         to colleague   + 0.5 pts  (includes debates space)
+// forum post          created        + 0.1 pts  base (includes debates space)
+// forum reply         to colleague   + 0.1 pts  base (includes debates space)
+//   ranking bonus (post OR reply)   + 0.1 pts  if author is 3rd place
+//                                   + 0.2 pts  if author is 2nd place
+//                                   + 0.3 pts  if author is 1st place
 // therapist_pairing   submitted eval +10.0 pts  (per role per pairing — therapist + patient separately)
 // ofensiva            points_earned  variable   (sum of DailyChallengeResponse.points_earned per day)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -236,7 +239,7 @@ Deno.serve(async (req) => {
       forumReplies.forEach((r) => {
         const parent = postById.get(r.post_id);
         if (parent && coursePostIds.has(parent.id) && courseEmails.has(r.author_email) && parent.author_email !== r.author_email) {
-          addBase(r.author_email, 0.5);
+          addBase(r.author_email, 0.1);
         }
       });
       therapistPairings.forEach((p) => {
@@ -283,6 +286,21 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.ScoreItem.delete(item.id).catch(() => null);
           existingScores.delete(key);
         }
+      }
+
+      // ── Forum ranking bonus — based on baseTotals ranking position ─────
+      // Rank all course students by baseTotals (descending); ties broken by name.
+      const rankingForForum = [...baseTotals.entries()]
+        .sort((a, b) => b[1] !== a[1] ? b[1] - a[1] : a[0].localeCompare(b[0], 'pt-BR'));
+      // Map email → 1-based rank position
+      const rankPositionMap = new Map(rankingForForum.map(([email], idx) => [email, idx + 1]));
+
+      // Returns base forum pts (0.1) + bonus for top-3 ranked authors
+      function forumScore(authorEmail) {
+        const base = 0.1;
+        const pos = rankPositionMap.get(authorEmail) ?? Number.MAX_SAFE_INTEGER;
+        const bonus = pos === 1 ? 0.3 : pos === 2 ? 0.2 : pos === 3 ? 0.1 : 0;
+        return roundScore(base + bonus);
       }
 
       // ── Queue all ScoreItems for this course ────────────────────────────
@@ -347,8 +365,11 @@ Deno.serve(async (req) => {
       for (const post of coursePosts) {
         if (!courseEmails.has(post.author_email)) continue;
         const space = post.space === 'debates' ? 'Sala de Debates' : 'Fórum';
-        queueScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: `Comentário/Pergunta — ${space}`, score: 0.1, maxScore: 0.1, notes: `Publicação criada na ${space}: +0,1 ponto.` });
-        addCalc(post.author_email, 0.1);
+        const pts = forumScore(post.author_email);
+        const pos = rankPositionMap.get(post.author_email) ?? 0;
+        const bonusNote = pos <= 3 ? ` (bônus de classificação: ${pos}º lugar)` : '';
+        queueScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: `Publicação — ${space}`, score: pts, maxScore: 0.4, notes: `Publicação criada na ${space}: +${pts.toFixed(3)} ponto(s)${bonusNote}.` });
+        addCalc(post.author_email, pts);
       }
 
       // Forum replies
@@ -356,8 +377,11 @@ Deno.serve(async (req) => {
         const parent = postById.get(reply.post_id);
         if (!parent || !coursePostIds.has(parent.id) || !courseEmails.has(reply.author_email) || parent.author_email === reply.author_email) continue;
         const space = reply.space === 'debates' ? 'Sala de Debates' : 'Fórum';
-        queueScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: `Resposta a colega — ${space}`, score: 0.5, maxScore: 0.5, notes: `Resposta em pergunta aberta por colega na ${space}: +0,5 ponto.` });
-        addCalc(reply.author_email, 0.5);
+        const pts = forumScore(reply.author_email);
+        const pos = rankPositionMap.get(reply.author_email) ?? 0;
+        const bonusNote = pos <= 3 ? ` (bônus de classificação: ${pos}º lugar)` : '';
+        queueScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: `Resposta a colega — ${space}`, score: pts, maxScore: 0.4, notes: `Resposta na ${space}: +${pts.toFixed(3)} ponto(s)${bonusNote}.` });
+        addCalc(reply.author_email, pts);
       }
 
       // Therapist pairings
@@ -452,8 +476,8 @@ Deno.serve(async (req) => {
         live_attendance:              { pts: 0,     note: 'lives não geram pontuação' },
         task_submission:              { pts: 5,     note: 'por trabalho entregue (pontuação de estudos)' },
         quiz_or_exam_graded:          { pts: 50,    note: 'por prova entregue/corrigida (pontuação de estudos)' },
-        forum_post:                   { pts: 0.1,   note: 'por post criado no fórum ou sala de debates' },
-        forum_reply_to_colleague:     { pts: 0.5,   note: 'por resposta a colega no fórum ou sala de debates' },
+        forum_post:                   { pts: '0.1–0.4', note: 'base 0.1 + bônus: +0.1 (3º), +0.2 (2º), +0.3 (1º lugar no ranking)' },
+        forum_reply_to_colleague:     { pts: '0.1–0.4', note: 'base 0.1 + mesmo bônus de classificação' },
         therapist_week_submitted:     { pts: 10,    note: 'por relato enviado (como terapeuta OU paciente)' },
         ofensiva_diaria:              { pts: '0–1', note: 'soma dos points_earned do DailyChallengeResponse do dia' },
         monitor_cycle_days:           CYCLE_DAYS,
