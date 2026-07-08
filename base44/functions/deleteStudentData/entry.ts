@@ -29,23 +29,47 @@ Deno.serve(async (req) => {
     const email = code.student_email || '';
     const deleted = {};
 
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
     const deleteWhere = async (entityName, query) => {
       let count = 0;
-      let skip = 0;
-      while (true) {
-        const rows = await base44.asServiceRole.entities[entityName].filter(query, '-created_date', 200, skip).catch(() => []);
+      // Keep re-fetching from the start until the query returns nothing. Deletes
+      // may fail silently on rate limits, so we loop until the list is truly
+      // empty rather than trusting a single pass. Guard against infinite loops.
+      let safety = 0;
+      while (safety < 200) {
+        safety++;
+        const rows = await base44.asServiceRole.entities[entityName].filter(query, '-created_date', 100).catch(() => []);
         if (!rows || rows.length === 0) break;
+        let deletedThisPass = 0;
         for (const row of rows) {
-          await base44.asServiceRole.entities[entityName].delete(row.id).catch(() => null);
-          count++;
+          try {
+            await base44.asServiceRole.entities[entityName].delete(row.id);
+            count++;
+            deletedThisPass++;
+          } catch {
+            // rate-limited or transient — brief pause, next pass will retry
+            await sleep(200);
+          }
+          await sleep(40);
         }
-        if (rows.length < 200) break;
+        // If a whole pass deleted nothing, the remaining rows are stuck — stop.
+        if (deletedThisPass === 0) break;
       }
       if (count > 0) deleted[entityName] = (deleted[entityName] || 0) + count;
     };
 
+    // ── STEP 1: remove ALL access codes FIRST ────────────────────────────────
+    // Any sync/recalculate automation only recreates ScoreItem/StudentProfile for
+    // students that still have an AccessCode. Deleting the codes first guarantees
+    // nothing gets regenerated while we clean up the rest.
     if (email) {
-      // Entities keyed by student_email
+      await deleteWhere('AccessCode', { student_email: email });
+    }
+    await base44.asServiceRole.entities.AccessCode.delete(codeId).catch(() => null);
+
+    // ── STEP 2: purge everything else keyed by the student ───────────────────
+    if (email) {
       await deleteWhere('ScoreItem', { student_email: email });
       await deleteWhere('StudentProfile', { student_email: email });
       await deleteWhere('LessonProgress', { student_email: email });
@@ -66,14 +90,6 @@ Deno.serve(async (req) => {
       // Therapist pairings (either role)
       await deleteWhere('TherapistPairing', { therapist_email: email });
       await deleteWhere('TherapistPairing', { patient_email: email });
-    }
-
-    // Finally, all access codes for this student (across courses) + this one
-    if (email) {
-      await deleteWhere('AccessCode', { student_email: email });
-    } else {
-      await base44.asServiceRole.entities.AccessCode.delete(codeId).catch(() => null);
-      deleted.AccessCode = (deleted.AccessCode || 0) + 1;
     }
 
     return Response.json({ success: true, email, deleted });
