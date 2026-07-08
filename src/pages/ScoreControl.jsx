@@ -292,8 +292,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
         {activeSection === 'tasks' &&
         <>
-            {sequencedTasks.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa/prova criada.</p>}
-            {sequencedTasks.map((task) => {
+            {sequencedTasks.filter(t => t.type !== 'quiz').length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa criada.</p>}
+            {sequencedTasks.filter(t => t.type !== 'quiz').map((task) => {
             const sub = submissions.find((s) => s.task_id === task.id);
             return (
               <ScoreRow
