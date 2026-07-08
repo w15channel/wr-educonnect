@@ -58,9 +58,20 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
   const publishedAdjustment = roundScore(Math.max(0, roundScore(publishedTotal ?? 0) - liveSum));
   const liveTotal = roundScore(liveSum + publishedAdjustment);
 
+  // Build exam bucket: prefer teacher-graded 'exam' items (ref_id = 'exam:{id}') over
+  // auto-graded 'quiz' items for the same underlying exam. If a teacher-graded entry
+  // exists for an exam, the quiz entry for that same exam is suppressed.
+  const teacherGradedExamIds = new Set(
+    myItems
+      .filter(i => i.category === 'exam' && String(i.ref_id).startsWith('exam:'))
+      .map(i => String(i.ref_id).replace('exam:', ''))
+  );
+
   const byCategory = {};
   myItems.forEach(item => {
-    // Merge 'quiz' into 'exam' so both show under "Prova / Avaliação"
+    // Suppress the generic 'quiz' entry if a teacher-graded 'exam' entry already covers this exam
+    if (item.category === 'quiz' && teacherGradedExamIds.has(item.ref_id)) return;
+    // Merge remaining 'quiz' into 'exam' bucket for display
     const normalized = item.category === 'quiz' ? 'exam' : item.category;
     const category = CATEGORY_CONFIG[normalized] ? normalized : 'other';
     if (!byCategory[category]) byCategory[category] = [];
