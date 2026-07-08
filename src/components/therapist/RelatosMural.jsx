@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ClipboardList, ChevronDown, ChevronUp, Trash2, Star, Calendar } from 'lucide-react';
+import ReportItem from './ReportItem';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatScore } from '@/lib/scoreUtils';
@@ -99,37 +100,7 @@ export default function RelatosMural({ pairings, getStudentInfo, isTeacher, onDe
                 </div>
                 <div className="space-y-2">
                   {groups[dateKey].map(r => (
-                    <div key={r.id} className="border border-border rounded-xl p-3.5 bg-secondary/20">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className="text-xs font-bold text-foreground">{r.authorName}</span>
-                            <span className={`text-[10px] font-semibold ${r.roleColor}`}>{r.roleLabel}</span>
-                            <span className="text-[10px] text-muted-foreground">· sobre {r.targetName}</span>
-                          </div>
-                          <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">{r.comment}</p>
-                          {typeof r.score === 'number' && (
-                            <div className="flex items-center gap-1 mt-2">
-                              <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                              <span className="text-xs font-bold">{formatScore(r.score)}/10,000</span>
-                            </div>
-                          )}
-                        </div>
-                        {isTeacher && onDeleteReport && (
-                          <button
-                            onClick={() => {
-                              if (confirm('Excluir este relato permanentemente? Esta ação não pode ser desfeita.')) {
-                                onDeleteReport(r);
-                              }
-                            }}
-                            className="p-1.5 text-muted-foreground hover:text-destructive rounded-lg transition-colors shrink-0"
-                            title="Excluir relato"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    <ReportItem key={r.id} report={r} isTeacher={isTeacher} onDelete={onDeleteReport} />
                   ))}
                 </div>
               </div>
