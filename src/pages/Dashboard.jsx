@@ -33,6 +33,12 @@ const sortByNumericSequence = (items = []) => [...items].sort((a, b) => {
 
 const getFirstThreePendingBySequence = (items = []) => sortByNumericSequence(items).slice(0, 3);
 
+// Aulas assistidas e tarefas pendentes só fazem sentido depois que a plataforma
+// tiver histórico real de uso. Como os alunos estão ingressando agora pela
+// primeira vez, essas duas categorias ficam desativadas nas Pendências.
+// Reative (true) quando houver um novo reset da plataforma com alunos já em andamento.
+const SHOW_LESSON_TASK_PENDING_ALERTS = false;
+
 function useScopedPrefix() {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
@@ -474,7 +480,9 @@ export default function Dashboard() {
         const isFutureLive = (s) => s.scheduled_at && new Date(s.scheduled_at) > now;
         const upcomingLives = liveSessions.filter((s) => !attendedIds.has(s.id) && isFutureLive(s));
         const missedLives = liveSessions.filter((s) => !attendedIds.has(s.id) && !isFutureLive(s) && s.status === 'ended');
-        const totalPending = therapistPending.length + unwatchedLessons.length + pendingTasksList.length + pendingExams.length + missedLives.length + upcomingLives.length;
+        const totalPending = therapistPending.length +
+          (SHOW_LESSON_TASK_PENDING_ALERTS ? unwatchedLessons.length + pendingTasksList.length : 0) +
+          pendingExams.length + missedLives.length + upcomingLives.length;
 
         if (totalPending === 0) return null;
 
@@ -510,7 +518,7 @@ export default function Dashboard() {
                   +{therapistPending.length - 3} pendências de terapeuta → Ver todas
                 </button>
               }
-              {visiblePendingLessons.map((l) =>
+              {SHOW_LESSON_TASK_PENDING_ALERTS && visiblePendingLessons.map((l) =>
               <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
                   <Circle size={13} className="text-purple-400 shrink-0" />
@@ -522,12 +530,12 @@ export default function Dashboard() {
                   <ArrowRight size={12} className="text-purple-400 shrink-0" />
                 </button>
               )}
-              {unwatchedLessons.length > 3 &&
+              {SHOW_LESSON_TASK_PENDING_ALERTS && unwatchedLessons.length > 3 &&
               <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
                   +{unwatchedLessons.length - visiblePendingLessons.length} aulas não assistidas → Ver todas
                 </button>
               }
-              {visiblePendingTasks.map((t) =>
+              {SHOW_LESSON_TASK_PENDING_ALERTS && visiblePendingTasks.map((t) =>
               <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
                   <ClipboardList size={13} className="text-orange-500 shrink-0" />
@@ -540,7 +548,7 @@ export default function Dashboard() {
                   <ArrowRight size={12} className="text-orange-400 shrink-0" />
                 </button>
               )}
-              {pendingTasksList.length > 3 &&
+              {SHOW_LESSON_TASK_PENDING_ALERTS && pendingTasksList.length > 3 &&
               <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
                   +{pendingTasksList.length - visiblePendingTasks.length} tarefas pendentes → Ver todas
                 </button>
