@@ -3,7 +3,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { Video, FileText, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart } from 'lucide-react';
+import { Video, FileText, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -256,6 +256,20 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Announcement.list('-created_date', 5)
   });
 
+  const { data: exams = [] } = useQuery({
+    queryKey: ['exams-dashboard', userCourse || 'all'],
+    queryFn: () => userCourse ?
+    base44.entities.Exam.filter({ course: userCourse, is_published: true }, '-created_date', 300) :
+    base44.entities.Exam.list('-created_date', 300),
+    enabled: !isTeacher
+  });
+
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['exam-submissions-dashboard', session?.email],
+    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: session?.email || '' }, '-submitted_at', 300),
+    enabled: !isTeacher && !!session?.email
+  });
+
   const pendingTasks = isTeacher ?
   submissions.filter((s) =>
   s.status === 'submitted' &&
@@ -447,7 +461,7 @@ export default function Dashboard() {
         const pendingTasksList = sortByNumericSequence(tasks.filter((t) => t.type === 'upload' && !submissions.find((s) => s.task_id === t.id)));
         const visiblePendingLessons = getFirstThreePendingBySequence(unwatchedLessons);
         const visiblePendingTasks = getFirstThreePendingBySequence(pendingTasksList);
-        const pendingQuizzes = tasks.filter((t) => t.type === 'quiz' && !submissions.find((s) => s.task_id === t.id));
+        const pendingExams = exams.filter((e) => !examSubmissions.find((s) => s.exam_id === e.id));
         const therapistPending = therapistPairings.filter((p) => {
           const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
           if (!inPeriod) return false;
@@ -456,8 +470,11 @@ export default function Dashboard() {
           return false;
         });
         const attendedIds = new Set(liveAttendances.map((a) => a.session_id));
-        const missedLives = liveSessions.filter((s) => s.status === 'ended' && !attendedIds.has(s.id));
-        const totalPending = therapistPending.length + unwatchedLessons.length + pendingTasksList.length + pendingQuizzes.length + missedLives.length;
+        const now = new Date();
+        const isFutureLive = (s) => s.scheduled_at && new Date(s.scheduled_at) > now;
+        const upcomingLives = liveSessions.filter((s) => !attendedIds.has(s.id) && isFutureLive(s));
+        const missedLives = liveSessions.filter((s) => !attendedIds.has(s.id) && !isFutureLive(s) && s.status === 'ended');
+        const totalPending = therapistPending.length + unwatchedLessons.length + pendingTasksList.length + pendingExams.length + missedLives.length + upcomingLives.length;
 
         if (totalPending === 0) return null;
 
@@ -528,22 +545,40 @@ export default function Dashboard() {
                   +{pendingTasksList.length - visiblePendingTasks.length} tarefas pendentes → Ver todas
                 </button>
               }
-              {pendingQuizzes.slice(0, 3).map((t) =>
-              <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
+              {pendingExams.slice(0, 3).map((e) =>
+              <button key={e.id} onClick={() => navigate(scoped('/exams'))}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
                   <GraduationCap size={13} className="text-violet-500 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-violet-700 truncate">{t.title}</p>
+                    <p className="text-xs font-bold text-violet-700 truncate">{e.title}</p>
                     <p className="text-[10px] text-violet-500">
-                      Prova pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
+                      Prova pendente{e.deadline ? ` · Entrega: ${format(new Date(e.deadline), 'dd/MM HH:mm')}` : ''}
                     </p>
                   </div>
                   <ArrowRight size={12} className="text-violet-400 shrink-0" />
                 </button>
               )}
-              {pendingQuizzes.length > 3 &&
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
-                  +{pendingQuizzes.length - 3} provas pendentes → Ver todas
+              {pendingExams.length > 3 &&
+              <button onClick={() => navigate(scoped('/exams'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
+                  +{pendingExams.length - 3} provas pendentes → Ver todas
+                </button>
+              }
+              {upcomingLives.slice(0, 3).map((live) =>
+              <button key={live.id} onClick={() => navigate(scoped('/live'))}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors text-left">
+                  <Calendar size={13} className="text-blue-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-blue-700 truncate">{live.title}</p>
+                    <p className="text-[10px] text-blue-500">
+                      Live programada para lançamento futuro{live.scheduled_at ? ` · ${format(new Date(live.scheduled_at), 'dd/MM/yyyy HH:mm')}` : ''}
+                    </p>
+                  </div>
+                  <ArrowRight size={12} className="text-blue-400 shrink-0" />
+                </button>
+              )}
+              {upcomingLives.length > 3 &&
+              <button onClick={() => navigate(scoped('/live'))} className="w-full text-xs text-blue-600 font-semibold py-1 hover:underline">
+                  +{upcomingLives.length - 3} lives agendadas → Ver todas
                 </button>
               }
               {missedLives.slice(0, 3).map((live) =>

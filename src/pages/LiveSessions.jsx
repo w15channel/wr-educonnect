@@ -464,7 +464,21 @@ function SessionCard({ sess, isTeacher, onEnter, onToggle, onDelete }) {
             </button>
           </>
         )}
-        <Button size="sm" className="h-8 px-3 gap-1 text-xs" onClick={() => onEnter(sess)}>
+        <Button
+          size="sm"
+          className="h-8 px-3 gap-1 text-xs"
+          onClick={() => {
+            if (!isTeacher && !isLive) {
+              toast.info(
+                sess.scheduled_at
+                  ? `Esta live ainda não começou. Programada para ${format(new Date(sess.scheduled_at), 'dd/MM/yyyy')} às ${format(new Date(sess.scheduled_at), 'HH:mm')}.`
+                  : 'Esta live ainda não começou.'
+              );
+              return;
+            }
+            onEnter(sess);
+          }}
+        >
           Entrar <Video size={12} />
         </Button>
       </div>
