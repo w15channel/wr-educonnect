@@ -91,6 +91,19 @@ Deno.serve(async (req) => {
       for (const item of items) {
         if (!item.category || !item.ref_id) { toDelete.push(item.id); stats.invalid++; continue; }
 
+        // Relatos de terapeuta são sempre válidos (10 pts) — nunca tratar como órfão
+        if (item.category === 'therapist' || isTherapistRef(item)) {
+          const key = `therapist|${item.ref_id}`;
+          const prev = seen.get(key);
+          if (!prev) { seen.set(key, item); }
+          else {
+            const keepPrev = (Number(prev.score) || 0) >= (Number(item.score) || 0);
+            if (keepPrev) { toDelete.push(item.id); stats.duplicates++; }
+            else { toDelete.push(prev.id); stats.duplicates++; seen.set(key, item); }
+          }
+          continue;
+        }
+
         // Órfãos
         if ((item.category === 'task' || item.category === 'quiz') && !isTherapistRef(item)) {
           if (!validTaskKeys.has(String(item.ref_id))) { toDelete.push(item.id); stats.orphanTask++; continue; }
