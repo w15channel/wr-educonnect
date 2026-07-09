@@ -311,7 +311,8 @@ export default function Dashboard() {
   const currentAccessCode = accessCodes.find((code) => code.student_email === session?.email);
   const totalPoints = roundScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
 
-  const watchedCount = progresses.filter((p) => p.watched).length;
+  const lessonIds = new Set(lessons.map((l) => l.id));
+  const watchedCount = progresses.filter((p) => p.watched && lessonIds.has(p.lesson_id)).length;
   const progressPct = lessons.length > 0 ? Math.round(watchedCount / lessons.length * 100) : 0;
 
   // Ranking — isolated by course only (prefix filter removed: causes students to be invisible)
