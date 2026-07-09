@@ -1,22 +1,28 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// auditFixAllScores
+// auditFixAllScores  —  auditoria de pontuação em LOTES RECURSIVOS
 // ─────────────────────────────────────────────────────────────────────────
-// Auditoria definitiva de pontuação. Corrige de uma vez, para TODOS os alunos:
-//   1. ScoreItems duplicados (mesmo student|category|ref_id) → mantém 1, apaga o resto
-//   2. ScoreItems "task"/"quiz" órfãos: sem TaskSubmission real correspondente
-//   3. ScoreItems "exam" órfãos: sem ExamSubmission real correspondente
-//   4. ScoreItems "live_attendance" com score > 0 → lives valem 0 hoje
-//   5. Recalcula StudentProfile / AccessCode / cache com base APENAS nos itens válidos
+// Processa os alunos em blocos (BATCH). Cada execução:
+//   1. Pega um lote de alunos (por email, ordenado) a partir de `offset`
+//   2. Para cada aluno do lote, carrega SÓ os dados dele e:
+//      - remove ScoreItems duplicados (mesmo category|ref_id → mantém 1)
+//      - remove ScoreItems "task"/"quiz" órfãos (sem TaskSubmission)
+//      - remove ScoreItems "exam" órfãos (sem ExamSubmission)
+//      - remove ScoreItems "live_attendance" com score > 0
+//      - recalcula StudentProfile / AccessCode com base nos itens válidos
+//   3. Se ainda houver alunos, auto-invoca para o próximo `offset`
 //
-// Regras oficiais (fonte da verdade):
-//   lesson 2 · task 5 · quiz/exam 50 · forum 0.1(+bônus) · therapist 10 · live 0
+// Regras oficiais: lesson 2 · task 5 · quiz/exam 50 · forum 0.1 · therapist 10 · live 0
 //
 // Uso:
-//   { dry_run: true }  → só relatório, não apaga nada
-//   {}                 → executa a correção completa
+//   {}                       → começa do zero e roda até o fim sozinha
+//   { offset: 0 }            → idem
+//   { dry_run: true }        → só relatório do lote, não apaga nada, não recorre
+//   { auto_continue: false } → processa apenas UM lote e para (para testes)
 // ═══════════════════════════════════════════════════════════════════════════
+
+const BATCH = 40; // alunos por execução
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
@@ -39,20 +45,6 @@ function rankingScore(item) {
   return roundScore(item?.score);
 }
 
-async function fetchAllPages(lister, pageSize = 5000) {
-  let all = [];
-  let skip = 0;
-  while (true) {
-    const page = await lister(pageSize, skip);
-    if (!page || page.length === 0) break;
-    all = all.concat(page);
-    if (page.length < pageSize) break;
-    skip += pageSize;
-    await sleep(120);
-  }
-  return all;
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -65,106 +57,87 @@ Deno.serve(async (req) => {
     }
 
     const dryRun = payload?.dry_run === true;
+    const autoContinue = payload?.auto_continue !== false; // padrão: continua sozinha
+    const offset = Math.max(0, Number(payload?.offset) || 0);
 
-    // ── Carrega tudo o que precisamos para validar ──────────────────────────
-    const [scoreItems, taskSubs, examSubs, accessCodes, profiles] = await Promise.all([
-      fetchAllPages((limit, skip) => base44.asServiceRole.entities.ScoreItem.list('-created_date', limit, skip)),
-      fetchAllPages((limit, skip) => base44.asServiceRole.entities.TaskSubmission.list('-created_date', limit, skip)),
-      fetchAllPages((limit, skip) => base44.asServiceRole.entities.ExamSubmission.list('-submitted_at', limit, skip)),
-      base44.asServiceRole.entities.AccessCode.list('-created_date', 20000),
-      base44.asServiceRole.entities.StudentProfile.list('-updated_date', 20000),
-    ]);
+    // ── Lista de todos os emails de alunos (fonte única, ordenada) ───────────
+    // AccessCode é a fonte da verdade de "quem é aluno".
+    const accessCodes = await base44.asServiceRole.entities.AccessCode.list('-created_date', 20000);
+    const allEmails = [...new Set(accessCodes.map((c) => c.student_email).filter(Boolean))].sort();
+    const totalStudents = allEmails.length;
 
-    // Conjuntos de validação: qual (aluno, tarefa/prova) tem entrega real
-    const validTaskKeys = new Set(); // `${email}|${task_id}`
-    taskSubs.forEach((s) => { if (s.student_email && s.task_id) validTaskKeys.add(`${s.student_email}|${s.task_id}`); });
-    const validExamKeys = new Set(); // `${email}|exam:${exam_id}`  E também `${email}|${exam_id}`
-    examSubs.forEach((s) => {
-      if (s.student_email && s.exam_id) {
-        validExamKeys.add(`${s.student_email}|exam:${s.exam_id}`);
-        validExamKeys.add(`${s.student_email}|${s.exam_id}`);
-      }
-    });
+    const batchEmails = allEmails.slice(offset, offset + BATCH);
+    const hasMore = offset + BATCH < totalStudents;
 
-    // ── Fase 1: decidir o que apagar ────────────────────────────────────────
-    const seen = new Map(); // `${email}|${category}|${ref_id}` → item vencedor mantido
-    const toDelete = [];
     const stats = { duplicates: 0, orphanTask: 0, orphanExam: 0, liveWithScore: 0, invalid: 0 };
+    let deleted = 0, failed = 0, updated = 0;
 
-    for (const item of scoreItems) {
-      const email = item.student_email;
-      if (!email || !item.category || !item.ref_id) { toDelete.push(item.id); stats.invalid++; continue; }
+    for (const email of batchEmails) {
+      // Carrega SÓ os dados deste aluno
+      const [items, taskSubs, examSubs] = await Promise.all([
+        base44.asServiceRole.entities.ScoreItem.filter({ student_email: email }, '-created_date', 5000),
+        base44.asServiceRole.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 2000),
+        base44.asServiceRole.entities.ExamSubmission.filter({ student_email: email }, '-created_date', 2000),
+      ]);
 
-      // Órfãos: quiz/task sem submission; exam sem ExamSubmission
-      if ((item.category === 'task' || item.category === 'quiz') && !isTherapistRef(item)) {
-        if (!validTaskKeys.has(`${email}|${item.ref_id}`)) { toDelete.push(item.id); stats.orphanTask++; continue; }
-      }
-      if (item.category === 'exam') {
-        const bareRef = String(item.ref_id || '').replace(/^exam:/, '');
-        if (!validExamKeys.has(`${email}|${item.ref_id}`) && !validExamKeys.has(`${email}|${bareRef}`) && !validExamKeys.has(`${email}|exam:${bareRef}`)) {
-          toDelete.push(item.id); stats.orphanExam++; continue;
+      const validTaskKeys = new Set();
+      taskSubs.forEach((s) => { if (s.task_id) validTaskKeys.add(String(s.task_id)); });
+      const validExamKeys = new Set();
+      examSubs.forEach((s) => { if (s.exam_id) validExamKeys.add(String(s.exam_id)); });
+
+      const seen = new Map(); // `${category}|${ref_id}` → item mantido
+      const toDelete = [];
+
+      for (const item of items) {
+        if (!item.category || !item.ref_id) { toDelete.push(item.id); stats.invalid++; continue; }
+
+        // Órfãos
+        if ((item.category === 'task' || item.category === 'quiz') && !isTherapistRef(item)) {
+          if (!validTaskKeys.has(String(item.ref_id))) { toDelete.push(item.id); stats.orphanTask++; continue; }
         }
+        if (item.category === 'exam') {
+          const bareRef = String(item.ref_id || '').replace(/^exam:/, '');
+          if (!validExamKeys.has(String(item.ref_id)) && !validExamKeys.has(bareRef)) {
+            toDelete.push(item.id); stats.orphanExam++; continue;
+          }
+        }
+        // Live com score → resíduo
+        if (item.category === 'live_attendance' && (Number(item.score) || 0) !== 0) {
+          toDelete.push(item.id); stats.liveWithScore++; continue;
+        }
+
+        // Deduplicação: verificado > maior score > mais recente
+        const key = `${item.category}|${item.ref_id}`;
+        const prev = seen.get(key);
+        if (!prev) { seen.set(key, item); continue; }
+        const keepPrev =
+          (prev.verified && !item.verified) ||
+          (prev.verified === item.verified && (Number(prev.score) || 0) >= (Number(item.score) || 0));
+        if (keepPrev) { toDelete.push(item.id); stats.duplicates++; }
+        else { toDelete.push(prev.id); stats.duplicates++; seen.set(key, item); }
       }
-      // Lives com score → resíduo (hoje valem 0)
-      if (item.category === 'live_attendance' && (Number(item.score) || 0) !== 0) {
-        toDelete.push(item.id); stats.liveWithScore++; continue;
+
+      if (dryRun) continue;
+
+      // Apaga o lixo deste aluno em ondas
+      for (let i = 0; i < toDelete.length; i += 8) {
+        const wave = toDelete.slice(i, i + 8);
+        const results = await Promise.allSettled(wave.map((id) => base44.asServiceRole.entities.ScoreItem.delete(id)));
+        results.forEach((r) => r.status === 'fulfilled' ? deleted++ : failed++);
+        await sleep(120);
       }
 
-      // Deduplicação: mantém verificado > maior score > mais recente
-      const key = `${email}|${item.category}|${item.ref_id}`;
-      const prev = seen.get(key);
-      if (!prev) { seen.set(key, item); continue; }
-      const keepPrev =
-        (prev.verified && !item.verified) ||
-        (prev.verified === item.verified && (Number(prev.score) || 0) >= (Number(item.score) || 0));
-      if (keepPrev) { toDelete.push(item.id); stats.duplicates++; }
-      else { toDelete.push(prev.id); stats.duplicates++; seen.set(key, item); }
-    }
-
-    if (dryRun) {
-      return Response.json({
-        success: true, dryRun: true,
-        totalScoreItems: scoreItems.length,
-        toDeleteTotal: toDelete.length,
-        breakdown: stats,
-        validItemsRemaining: seen.size,
-      });
-    }
-
-    // ── Fase 2: apagar o lixo em ondas ──────────────────────────────────────
-    let deleted = 0, failed = 0;
-    const WAVE = 8;
-    for (let i = 0; i < toDelete.length; i += WAVE) {
-      const wave = toDelete.slice(i, i + WAVE);
-      const results = await Promise.allSettled(wave.map((id) => base44.asServiceRole.entities.ScoreItem.delete(id)));
-      results.forEach((r) => r.status === 'fulfilled' ? deleted++ : failed++);
-      await sleep(250);
-    }
-
-    // ── Fase 3: recalcular totais SÓ com os itens válidos que ficaram ────────
-    const totals = new Map();
-    const studyTotals = new Map();
-    for (const item of seen.values()) {
-      if (!item.verified || !item.student_email) continue;
-      const email = item.student_email;
-      totals.set(email, roundScore((totals.get(email) || 0) + rankingScore(item)));
-      if (isStudyItem(item)) {
-        studyTotals.set(email, roundScore((studyTotals.get(email) || 0) + roundScore(item.score)));
+      // Recalcula totais SÓ com itens válidos verificados
+      let total = 0, study = 0;
+      for (const item of seen.values()) {
+        if (!item.verified) continue;
+        total = roundScore(total + rankingScore(item));
+        if (isStudyItem(item)) study = roundScore(study + roundScore(item.score));
       }
-    }
 
-    // ── Fase 4: gravar cache/profile de cada aluno ──────────────────────────
-    const emails = [...new Set([
-      ...accessCodes.map((c) => c.student_email).filter(Boolean),
-      ...profiles.map((p) => p.student_email).filter(Boolean),
-    ])];
-
-    let updated = 0;
-    for (const email of emails) {
-      const total = roundScore(totals.get(email) || 0);
-      const study = roundScore(studyTotals.get(email) || 0);
-
-      for (const p of profiles.filter((x) => x.student_email === email)) {
+      // Grava profile + access code deste aluno
+      const profiles = await base44.asServiceRole.entities.StudentProfile.filter({ student_email: email }, '-updated_date', 20);
+      for (const p of profiles) {
         await base44.asServiceRole.entities.StudentProfile.update(p.id, {
           points: total, pontuacao_total: total, pontuacao_estudos: study,
         }).catch(() => null);
@@ -175,16 +148,26 @@ Deno.serve(async (req) => {
         }).catch(() => null);
       }
       updated++;
-      if (updated % 20 === 0) await sleep(200);
+      await sleep(80);
+    }
+
+    // ── Auto-invocação para o próximo lote ──────────────────────────────────
+    if (!dryRun && autoContinue && hasMore) {
+      // Dispara o próximo lote sem esperar a resposta (fire-and-forget)
+      base44.functions.invoke('auditFixAllScores', { offset: offset + BATCH }).catch(() => null);
     }
 
     return Response.json({
       success: true,
-      totalScoreItemsBefore: scoreItems.length,
+      dryRun,
+      totalStudents,
+      processedRange: [offset, offset + batchEmails.length],
+      studentsInBatch: batchEmails.length,
+      hasMore,
+      nextOffset: hasMore ? offset + BATCH : null,
       deleted, failed,
-      breakdown: stats,
-      validItemsRemaining: seen.size,
       studentsRecalculated: updated,
+      breakdown: stats,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
