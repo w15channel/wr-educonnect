@@ -426,7 +426,8 @@ function AttendanceWidget({ secondsLeft, onConfirm, loading, onTick }) {
 
 function SessionCard({ sess, isTeacher, onEnter, onToggle, onDelete }) {
   const isLive = sess.status === 'live';
-  const isEnded = sess.status === 'ended';
+  const isFutureSession = sess.scheduled_at && new Date(sess.scheduled_at) > new Date();
+  const isEnded = sess.status === 'ended' && !isFutureSession;
 
   return (
     <div className={`bg-card rounded-2xl border shadow-sm hover:shadow-md transition-all p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${isLive ? 'border-red-200' : 'border-border'}`}>
@@ -469,11 +470,15 @@ function SessionCard({ sess, isTeacher, onEnter, onToggle, onDelete }) {
           className="h-8 px-3 gap-1 text-xs"
           onClick={() => {
             if (!isTeacher && !isLive) {
-              toast.info(
-                sess.scheduled_at
-                  ? `Esta live ainda não começou. Programada para ${format(new Date(sess.scheduled_at), 'dd/MM/yyyy')} às ${format(new Date(sess.scheduled_at), 'HH:mm')}.`
-                  : 'Esta live ainda não começou.'
-              );
+              if (sess.stream_url) {
+                window.open(sess.stream_url, '_blank', 'noopener,noreferrer');
+              } else {
+                toast.info(
+                  sess.scheduled_at
+                    ? `Esta live ainda não começou. Programada para ${format(new Date(sess.scheduled_at), 'dd/MM/yyyy')} às ${format(new Date(sess.scheduled_at), 'HH:mm')}.`
+                    : 'Esta live ainda não começou.'
+                );
+              }
               return;
             }
             onEnter(sess);
