@@ -39,6 +39,9 @@ export default function ClosePeriodButton({ course, nextModuleNumber = 1 }) {
     setLoading(true);
     try {
       const session = getSession();
+      // Recalcula ANTES de fechar, para que qualquer ScoreItem retroativo criado
+      // agora fique com created_date anterior ao corte (evita vazamento para o novo período)
+      await base44.functions.invoke('recalculateScores', {});
       const res = await base44.functions.invoke('closeModule', {
         course,
         module_number: nextModuleNumber,
@@ -48,8 +51,6 @@ export default function ClosePeriodButton({ course, nextModuleNumber = 1 }) {
         admin_email: session?.email,
       });
       if (!res.data?.success) throw new Error(res.data?.error || 'Falha ao encerrar período.');
-      // Recalcula com o novo corte aplicado
-      await base44.functions.invoke('recalculateScores', {});
       await queryClient.invalidateQueries();
       toast.success(`${periodLabel} encerrado! ${res.data.students_snapshotted} aluno(s) registrados no histórico e ranking zerado.`);
       setOpen(false);
