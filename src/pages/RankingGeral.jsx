@@ -31,7 +31,7 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTotal, onClose }) {
+function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTotal, periodCutoff, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
@@ -45,6 +45,11 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
       if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
       // Only include items that belong to the student's course
       if (courseItemRefIds && courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) continue;
+      // Após o encerramento de período, só contam atividades registradas depois do corte
+      if (periodCutoff) {
+        const created = s.created_date ? new Date(s.created_date) : null;
+        if (!created || Number.isNaN(created.getTime()) || created <= periodCutoff) continue;
+      }
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
@@ -52,7 +57,7 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
       if (!prevWins) seen.set(key, s);
     }
     return [...seen.values()];
-  }, [scoreItems, email]);
+  }, [scoreItems, email, courseItemRefIds, periodCutoff]);
 
   // Soma transparente dos itens verificados exibidos no modal.
   // Se houver total publicado maior que a soma dos itens, mostramos o ajuste para fechar a conta.
@@ -554,6 +559,7 @@ export default function RankingGeral() {
           scoreItems={allScoreItems}
           courseItemRefIds={courseItemRefIds}
           publishedTotal={roundScore(selected.pontuacao_total ?? publishedScoreMap[selected.student_email] ?? 0)}
+          periodCutoff={periodCutoff}
           onClose={() => setSelected(null)}
         />
       )}
