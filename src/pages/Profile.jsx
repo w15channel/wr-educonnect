@@ -100,6 +100,8 @@ export default function Profile() {
           profile_bio: bio,
           profile_avatar_color: avatarColor,
           profile_photo_url: photoUrl,
+          student_name: name,
+          student_email: email,
         });
       }
       // Filter by codeId to avoid cross-student collisions when email is empty
