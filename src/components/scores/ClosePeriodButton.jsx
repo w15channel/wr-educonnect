@@ -13,18 +13,27 @@ const COURSE_LABELS = {
   sexologia: 'Sexólogo(a)',
 };
 
-// Encerra o módulo atual do curso: congela o ranking geral num histórico e
-// zera a contagem para o novo módulo.
-export default function CloseModuleButton({ course, nextModuleNumber = 1 }) {
+// Encerra o período atual do curso: congela o ranking geral num histórico
+// (com uma janela de datas customizável) e zera a contagem para o novo período.
+export default function ClosePeriodButton({ course, nextModuleNumber = 1 }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [moduleNumber, setModuleNumber] = useState(String(nextModuleNumber));
+  const [periodLabel, setPeriodLabel] = useState(`Período ${nextModuleNumber}`);
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleClose = async () => {
-    const num = Number(moduleNumber);
-    if (!Number.isFinite(num) || num <= 0) {
-      toast.error('Informe um número de módulo válido.');
+    if (!periodLabel.trim()) {
+      toast.error('Informe um nome para o período.');
+      return;
+    }
+    if (!periodStart || !periodEnd) {
+      toast.error('Informe a data de início e término do período.');
+      return;
+    }
+    if (periodEnd < periodStart) {
+      toast.error('A data final não pode ser anterior à data inicial.');
       return;
     }
     setLoading(true);
@@ -32,16 +41,21 @@ export default function CloseModuleButton({ course, nextModuleNumber = 1 }) {
       const session = getSession();
       const res = await base44.functions.invoke('closeModule', {
         course,
-        module_number: num,
+        module_number: nextModuleNumber,
+        period_label: periodLabel.trim(),
+        period_start: periodStart,
+        period_end: periodEnd,
         admin_email: session?.email,
       });
-      if (!res.data?.success) throw new Error(res.data?.error || 'Falha ao encerrar módulo.');
+      if (!res.data?.success) throw new Error(res.data?.error || 'Falha ao encerrar período.');
       // Recalcula com o novo corte aplicado
       await base44.functions.invoke('recalculateScores', {});
       await queryClient.invalidateQueries();
-      toast.success(`Módulo ${num} encerrado! ${res.data.students_snapshotted} aluno(s) registrados no histórico e ranking zerado.`);
+      toast.success(`${periodLabel} encerrado! ${res.data.students_snapshotted} aluno(s) registrados no histórico e ranking zerado.`);
       setOpen(false);
-      setModuleNumber(String(num + 1));
+      setPeriodLabel(`Período ${nextModuleNumber + 1}`);
+      setPeriodStart('');
+      setPeriodEnd('');
     } catch (e) {
       toast.error('Erro: ' + (e?.message || 'tente novamente'));
     } finally {
@@ -57,7 +71,7 @@ export default function CloseModuleButton({ course, nextModuleNumber = 1 }) {
         className="text-xs gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
         onClick={() => setOpen(true)}
       >
-        <Lock size={13} /> Encerrar Módulo
+        <Lock size={13} /> Encerrar Período
       </Button>
 
       {open && (
@@ -68,7 +82,7 @@ export default function CloseModuleButton({ course, nextModuleNumber = 1 }) {
                 <Lock size={18} className="text-amber-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-foreground">Encerrar Módulo</h3>
+                <h3 className="font-bold text-foreground">Encerrar Período</h3>
                 <p className="text-xs text-muted-foreground truncate">{COURSE_LABELS[course] || course}</p>
               </div>
               <button onClick={() => !loading && setOpen(false)} className="p-2 rounded-xl hover:bg-secondary transition-colors shrink-0">
@@ -80,22 +94,41 @@ export default function CloseModuleButton({ course, nextModuleNumber = 1 }) {
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2.5">
                 <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-800 leading-relaxed">
-                  A pontuação geral atual de cada aluno será <strong>congelada no Histórico Acadêmico</strong> deste módulo.
-                  Em seguida, o <strong>ranking geral reinicia do zero</strong> para o novo módulo. As atividades já registradas
+                  A pontuação geral atual de cada aluno será <strong>congelada no Ranking por Período</strong>.
+                  Em seguida, o <strong>ranking atual reinicia do zero</strong> para o novo período. As atividades já registradas
                   permanecem no histórico individual, mas não contam mais para o novo ranking.
                 </p>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground mb-1.5 block">Número do módulo que está sendo encerrado</label>
+                <label className="text-xs font-semibold text-foreground mb-1.5 block">Nome do período</label>
                 <Input
-                  type="number"
-                  min="1"
-                  value={moduleNumber}
-                  onChange={(e) => setModuleNumber(e.target.value)}
-                  placeholder="Ex: 1"
+                  value={periodLabel}
+                  onChange={(e) => setPeriodLabel(e.target.value)}
+                  placeholder="Ex: Período 1 — Jan/Fev 2026"
                   className="h-10"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Início do período</label>
+                  <Input
+                    type="date"
+                    value={periodStart}
+                    onChange={(e) => setPeriodStart(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Fim do período</label>
+                  <Input
+                    type="date"
+                    value={periodEnd}
+                    onChange={(e) => setPeriodEnd(e.target.value)}
+                    className="h-10"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-2 pt-1">

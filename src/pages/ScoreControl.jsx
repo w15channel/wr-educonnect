@@ -5,8 +5,10 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
-import CloseModuleButton from '@/components/scores/CloseModuleButton';
-import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap } from 'lucide-react';
+import ClosePeriodButton from '@/components/scores/ClosePeriodButton';
+import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap, Archive } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -776,10 +778,19 @@ export default function ScoreControl() {
               {saveOrderMutation.isPending ? 'Salvando...' : 'Salvar sequência'}
             </Button>
           }
-          {isTeacher && <CloseModuleButton course={activeCourse} nextModuleNumber={nextModuleNumber} />}
+          {isTeacher && <ClosePeriodButton course={activeCourse} nextModuleNumber={nextModuleNumber} />}
         </div>
       </div>
 
+      <Accordion type="multiple" defaultValue={['current']} className="space-y-3">
+        <AccordionItem value="current" className="bg-card border border-border rounded-2xl px-4 border-b-0">
+          <AccordionTrigger className="hover:no-underline py-3.5">
+            <div className="flex items-center gap-2.5">
+              <Trophy size={16} className="text-yellow-500" />
+              <span className="font-bold text-sm text-foreground">Ranking Atual</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
       {isLoading ?
       <div className="space-y-2">{[1, 2, 3].map((i) => <div key={i} className="h-16 bg-muted rounded-2xl animate-pulse" />)}</div> :
       filtered.length === 0 ?
@@ -858,6 +869,21 @@ export default function ScoreControl() {
         })}
         </div>
       }
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="periods" className="bg-card border border-border rounded-2xl px-4 border-b-0">
+          <AccordionTrigger className="hover:no-underline py-3.5">
+            <div className="flex items-center gap-2.5">
+              <Archive size={16} className="text-amber-500" />
+              <span className="font-bold text-sm text-foreground">Ranking por Período</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <ModuleHistoryPanel course={activeCourse} filterEmail={isTeacher ? null : session?.email} />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>);
 
 }

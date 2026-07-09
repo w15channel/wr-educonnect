@@ -37,6 +37,9 @@ export default function ModuleHistoryPanel({ course, filterEmail = null }) {
           ? snapshot.filter((s) => s.student_email === filterEmail)
           : snapshot;
         const closedDate = closure.closed_at ? format(new Date(closure.closed_at), "dd 'de' MMM 'de' yyyy 'às' HH:mm", { locale: ptBR }) : '—';
+        const rangeLabel = closure.period_start && closure.period_end
+          ? `${format(new Date(closure.period_start + 'T00:00:00'), "dd/MM/yyyy")} a ${format(new Date(closure.period_end + 'T00:00:00'), "dd/MM/yyyy")}`
+          : null;
 
         return (
           <div key={closure.id} className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -49,6 +52,7 @@ export default function ModuleHistoryPanel({ course, filterEmail = null }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-foreground">{closure.module_label || `Módulo ${closure.module_number}`}</p>
+                {rangeLabel && <p className="text-xs text-muted-foreground font-semibold">{rangeLabel}</p>}
                 <p className="text-xs text-muted-foreground">Encerrado em {closedDate} · {snapshot.length} aluno(s)</p>
               </div>
               {isOpen ? <ChevronUp size={16} className="text-muted-foreground shrink-0" /> : <ChevronDown size={16} className="text-muted-foreground shrink-0" />}
