@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Brain, CalendarHeart, X, ExternalLink } from 'lucide-react';
+import ServiceRequestChatModal from './ServiceRequestChatModal';
 
 const CALENDLY_URL = 'https://calendly.com/wrterapia/atendimentos';
 
@@ -55,7 +56,7 @@ function CalendlyModal({ onClose }) {
 }
 
 export default function ServicosCard() {
-  const [showModal, setShowModal] = useState(false);
+  const [activeService, setActiveService] = useState(null);
 
   return (
     <>
@@ -66,13 +67,13 @@ export default function ServicosCard() {
           </div>
           <div>
             <h3 className="font-bold text-sm text-foreground">Contratação de Serviço</h3>
-            <p className="text-xs text-muted-foreground">Sessões individuais com W.Ribeiro</p>
+            <p className="text-xs text-muted-foreground">Sessões individuais com W.Ribeiro · R$ 45,00/hora</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => setActiveService('Mentoria Particular')}
             className="group flex items-center gap-3 bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white rounded-2xl p-4 hover:shadow-xl hover:shadow-[#5b5ef4]/25 transition-all text-left"
           >
             <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
@@ -85,7 +86,7 @@ export default function ServicosCard() {
           </button>
 
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => setActiveService('Terapia Particular')}
             className="group flex items-center gap-3 bg-gradient-to-br from-[#1db89e] to-[#059669] text-white rounded-2xl p-4 hover:shadow-xl hover:shadow-[#1db89e]/25 transition-all text-left"
           >
             <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
@@ -99,7 +100,7 @@ export default function ServicosCard() {
         </div>
       </div>
 
-      {showModal && <CalendlyModal onClose={() => setShowModal(false)} />}
+      {activeService && <ServiceRequestChatModal serviceLabel={activeService} onClose={() => setActiveService(null)} />}
     </>
   );
 }
