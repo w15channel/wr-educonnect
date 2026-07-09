@@ -196,6 +196,8 @@ export default function LandingPage({ onLogin }) {
   const [code, setCode] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [rememberCode, setRememberCode] = useState(localStorage.getItem('wr_remember_student_code') === 'yes');
+  const [rememberAdmin, setRememberAdmin] = useState(localStorage.getItem('wr_remember_admin') === 'yes');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [testimonials, setTestimonials] = useState(TESTIMONIALS);
@@ -257,6 +259,11 @@ export default function LandingPage({ onLogin }) {
   }, []);
 
   useEffect(() => {
+    const savedCode = localStorage.getItem('wr_saved_student_code') || '';
+    if (savedCode) setCode(savedCode);
+  }, []);
+
+  useEffect(() => {
     const loadTestimonials = async () => {
       try {
         const approved = await base44.entities.Testimonial.filter({ approved: true }, '-created_date', 20);
@@ -272,7 +279,10 @@ export default function LandingPage({ onLogin }) {
     e.preventDefault(); setError(''); setLoading(true);
     try {
       const response = await base44.functions.invoke('siteLogin', { mode: 'student', code });
-      setSession(response.data.session); onLogin('lobby');
+      localStorage.setItem('wr_remember_student_code', rememberCode ? 'yes' : 'no');
+      if (rememberCode) localStorage.setItem('wr_saved_student_code', code.trim().toUpperCase());
+      else localStorage.removeItem('wr_saved_student_code');
+      setSession(response.data.session, { remember: rememberCode }); onLogin('lobby');
     } catch (err) { setError(err?.response?.data?.error || 'Não foi possível entrar. Verifique o código.'); }
     setLoading(false);
   };
@@ -281,7 +291,8 @@ export default function LandingPage({ onLogin }) {
     e.preventDefault(); setError(''); setLoading(true);
     try {
       const response = await base44.functions.invoke('siteLogin', { mode: 'admin', email: adminEmail, password: adminPassword });
-      setSession(response.data.session); onLogin('lobby');
+      localStorage.setItem('wr_remember_admin', rememberAdmin ? 'yes' : 'no');
+      setSession(response.data.session, { remember: rememberAdmin }); onLogin('lobby');
     } catch (err) { setError(err?.response?.data?.error || 'Email ou senha incorretos.'); }
     setLoading(false);
   };
@@ -1191,6 +1202,10 @@ export default function LandingPage({ onLogin }) {
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
                   {loading ? <><div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" /> Verificando...</> : <>Entrar na Plataforma <ChevronRight size={12} /></>}
                 </button>
+                <label className="flex items-center justify-center gap-2 text-[11px] text-white/40 font-light cursor-pointer">
+                  <input type="checkbox" checked={rememberCode} onChange={(e) => setRememberCode(e.target.checked)} className="accent-[#d4b96a]" />
+                  Lembrar acesso neste dispositivo
+                </label>
               </form>
             ) : (
               <form onSubmit={handleAdminLogin} className="space-y-3">
@@ -1207,6 +1222,10 @@ export default function LandingPage({ onLogin }) {
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
                   {loading ? <><div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" /> Entrando...</> : 'Entrar como Admin'}
                 </button>
+                <label className="flex items-center justify-center gap-2 text-[11px] text-white/40 font-light cursor-pointer">
+                  <input type="checkbox" checked={rememberAdmin} onChange={(e) => setRememberAdmin(e.target.checked)} className="accent-[#d4b96a]" />
+                  Lembrar acesso neste dispositivo
+                </label>
               </form>
             )}
           </div>
