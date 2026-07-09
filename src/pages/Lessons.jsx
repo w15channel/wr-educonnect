@@ -9,6 +9,7 @@ import { Play, Plus, Trash2, ExternalLink, BookOpen, Video, FileText, Globe } fr
 import LessonProgressPanel from '@/components/lessons/LessonProgressPanel';
 import ModuleBlock from '@/components/lessons/ModuleBlock';
 import ModuleCompletionCelebration from '@/components/lessons/ModuleCompletionCelebration';
+import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,6 +47,7 @@ export default function Lessons() {
 
   // Module completion state (persisted to localStorage)
   const [celebrationModule, setCelebrationModule] = useState(null); // { index, name }
+  const [celebrating, setCelebrating] = useState(false);
   const [moduleCompletions, setModuleCompletions] = useState(() => {
     const key = moduleCompKey(session?.email || session?.code || 'guest', session?.course || 'tcc');
     try {
@@ -126,6 +128,7 @@ export default function Lessons() {
         return;
       }
       await upsertProgress(lessonId, { summary: summaryDraft[lessonId] ?? existing?.summary ?? '', comment: commentDraft[lessonId] ?? existing?.comment ?? '', watched: true });
+      setCelebrating(true);
     } else {
       await upsertProgress(lessonId, { watched: false });
     }
@@ -212,6 +215,7 @@ export default function Lessons() {
           onClose={() => setCelebrationModule(null)}
         />
       )}
+      {celebrating && <ParticipationCelebration message="Aula concluída! Continue assim! 🎉" onClose={() => setCelebrating(false)} />}
 
       {/* Video modal */}
       <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>

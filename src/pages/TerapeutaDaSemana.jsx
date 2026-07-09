@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import RelatosMural from '@/components/therapist/RelatosMural';
+import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -26,6 +27,7 @@ export default function TerapeutaDaSemana() {
   const [evalDialog, setEvalDialog] = useState(null); // { pairing, role: 'therapist'|'patient' }
   const [comment, setComment] = useState('');
   const [score, setScore] = useState([7]);
+  const [celebrating, setCelebrating] = useState(false);
 
   const { data: pairings = [] } = useQuery({
     queryKey: ['therapist-pairings'],
@@ -56,6 +58,7 @@ export default function TerapeutaDaSemana() {
       setComment('');
       setScore([7]);
       toast.success('Avaliação enviada!');
+      setCelebrating(true);
     },
   });
 
@@ -183,6 +186,7 @@ export default function TerapeutaDaSemana() {
 
   return (
     <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+      {celebrating && <ParticipationCelebration message="Relato enviado! Obrigado por cuidar da turma! 🎉" onClose={() => setCelebrating(false)} />}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">

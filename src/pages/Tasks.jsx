@@ -20,6 +20,7 @@ import { ptBR } from 'date-fns/locale';
 import { formatScore } from '@/lib/scoreUtils';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
+import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 6, quiz_questions: [] };
@@ -111,6 +112,7 @@ export default function Tasks({ mode = 'tasks' }) {
   const [editingTask, setEditingTask] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', userCourse],
@@ -173,6 +175,7 @@ export default function Tasks({ mode = 'tasks' }) {
       setCommentInputs(prev => ({ ...prev, [taskId]: '' }));
       setExpandedId(null);
       toast.success('Resposta enviada!');
+      setCelebrating(true);
     },
   });
 
@@ -209,6 +212,7 @@ export default function Tasks({ mode = 'tasks' }) {
         setUploadFiles(prev => ({ ...prev, [taskId]: null }));
         setExpandedId(null);
         toast.success('Arquivo enviado!');
+        setCelebrating(true);
       } catch {
         setUploadStatus(prev => ({ ...prev, [taskId]: 'error' }));
         toast.error('Erro ao enviar. Tente novamente.');
@@ -228,6 +232,7 @@ export default function Tasks({ mode = 'tasks' }) {
 
   return (
     <div className="p-3 md:p-5 max-w-[900px] mx-auto animate-fade-in-up">
+      {celebrating && <ParticipationCelebration message="Tarefa entregue! Parabéns pela dedicação! 🎉" onClose={() => setCelebrating(false)} />}
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-5">
         <div>
