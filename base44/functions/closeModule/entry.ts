@@ -94,23 +94,62 @@ Deno.serve(async (req) => {
     // ── Reset ranking caches to zero for the new module ──────────────────────
     // ScoreItems are preserved (individual academic history stays intact).
     // recalculateScores will only count items created after closed_at from now on.
+    // Batched with retries so a rate-limit blip never leaves a few students stuck
+    // with their old (pre-closure) score/participations visible on the ranking.
+    async function updateWithRetry(fn, attempts = 3) {
+      for (let i = 0; i < attempts; i++) {
+        try {
+          await fn();
+          return true;
+        } catch (e) {
+          if (i === attempts - 1) return false;
+          await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+        }
+      }
+      return false;
+    }
+
+    const codesToReset = courseCodes.filter(
+      (c) => roundScore(c.pontuacao_total) !== 0 || roundScore(c.pontuacao_estudos) !== 0
+    );
+
     let resetCount = 0;
-    for (const c of courseCodes) {
-      if (roundScore(c.pontuacao_total) !== 0 || roundScore(c.pontuacao_estudos) !== 0) {
-        await base44.asServiceRole.entities.AccessCode.update(c.id, {
-          pontuacao_total: 0,
-          pontuacao_estudos: 0,
-        }).catch(() => null);
-        resetCount++;
-      }
-      const profile = profileByEmail.get(c.student_email);
-      if (profile) {
-        await base44.asServiceRole.entities.StudentProfile.update(profile.id, {
-          points: 0,
-          pontuacao_total: 0,
-          pontuacao_estudos: 0,
-        }).catch(() => null);
-      }
+    const failedResets = [];
+    const BATCH_SIZE = 15;
+    for (let i = 0; i < codesToReset.length; i += BATCH_SIZE) {
+      const batch = codesToReset.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(
+        batch.map((c) =>
+          updateWithRetry(() =>
+            base44.asServiceRole.entities.AccessCode.update(c.id, { pontuacao_total: 0, pontuacao_estudos: 0 })
+          )
+        )
+      );
+      results.forEach((ok, idx) => {
+        if (ok) resetCount++;
+        else failedResets.push(batch[idx].student_email);
+      });
+      if (i + BATCH_SIZE < codesToReset.length) await new Promise((r) => setTimeout(r, 350));
+    }
+
+    const profilesToReset = courseCodes
+      .map((c) => profileByEmail.get(c.student_email))
+      .filter((p) => p && (roundScore(p.pontuacao_total) !== 0 || roundScore(p.points) !== 0 || roundScore(p.pontuacao_estudos) !== 0));
+
+    for (let i = 0; i < profilesToReset.length; i += BATCH_SIZE) {
+      const batch = profilesToReset.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map((profile) =>
+          updateWithRetry(() =>
+            base44.asServiceRole.entities.StudentProfile.update(profile.id, {
+              points: 0,
+              pontuacao_total: 0,
+              pontuacao_estudos: 0,
+            })
+          )
+        )
+      );
+      if (i + BATCH_SIZE < profilesToReset.length) await new Promise((r) => setTimeout(r, 350));
     }
 
     return Response.json({
@@ -121,6 +160,7 @@ Deno.serve(async (req) => {
       closed_at: closedAt,
       students_snapshotted: snapshot.length,
       caches_reset: resetCount,
+      failed_resets: failedResets,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
