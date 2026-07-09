@@ -503,7 +503,7 @@ export default function HistoricoAcademico() {
 
   // ── TEACHER: student list ────────────────────────────────────────────────
   const filtered = codes.filter(c => {
-    if (activeCourse && c.course !== activeCourse) return false;
+    if (activeCourse && !(c.course === activeCourse || (activeCourse === 'tcc' && !c.course))) return false;
     if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
     if (courseEmails && !courseEmails.has(c.student_email || '')) return false;
     return !search ||
