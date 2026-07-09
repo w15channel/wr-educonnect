@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { formatScore, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES } from '@/lib/scoreUtils';
+import { formatScore, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES, parseUtcDate } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
 
 const CATEGORY_CONFIG = {
@@ -574,8 +574,8 @@ export default function ScoreControl() {
   }, null);
   const isAfterCutoff = (record) => {
     if (!periodCutoff) return true;
-    const created = record?.created_date ? new Date(record.created_date) : null;
-    return !created || Number.isNaN(created.getTime()) || created > periodCutoff;
+    const created = parseUtcDate(record?.created_date);
+    return !created || created > periodCutoff;
   };
 
   useEffect(() => {

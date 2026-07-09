@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { X, Star, BookOpen, Heart, Trophy, MessageSquare, CheckCircle, CircleHelp } from 'lucide-react';
-import { formatScore, rankingScoreValue, sumRoundedScores } from '@/lib/scoreUtils';
+import { formatScore, rankingScoreValue, sumRoundedScores, parseUtcDate } from '@/lib/scoreUtils';
 
 const CATEGORY_CONFIG = {
   lesson:          { label: 'Aula Gravada',              icon: BookOpen,      color: 'bg-purple-100 text-purple-700' },
@@ -26,7 +26,7 @@ export default function PeriodStudentDetailModal({ email, name, points, periodSt
     const seen = new Map();
     for (const s of allScoreItems) {
       if (!s.verified || !s.category || !s.ref_id) continue;
-      const created = s.created_date ? new Date(s.created_date) : null;
+      const created = parseUtcDate(s.created_date);
       if (!created) continue;
       if (periodStart && created <= periodStart) continue;
       if (periodEnd && created > periodEnd) continue;

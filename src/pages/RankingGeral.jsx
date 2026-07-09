@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp, Heart, Archive } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { formatScore, rankingScoreValue, roundScore, sumRoundedScores } from '@/lib/scoreUtils';
+import { formatScore, rankingScoreValue, roundScore, sumRoundedScores, parseUtcDate } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 
@@ -47,8 +47,8 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
       if (courseItemRefIds && courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) continue;
       // Após o encerramento de período, só contam atividades registradas depois do corte
       if (periodCutoff) {
-        const created = s.created_date ? new Date(s.created_date) : null;
-        if (!created || Number.isNaN(created.getTime()) || created <= periodCutoff) continue;
+        const created = parseUtcDate(s.created_date);
+        if (!created || created <= periodCutoff) continue;
       }
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
@@ -259,8 +259,8 @@ export default function RankingGeral() {
   }, [moduleClosures]);
   const isAfterCutoff = (record) => {
     if (!periodCutoff) return true;
-    const created = record?.created_date ? new Date(record.created_date) : null;
-    return !created || Number.isNaN(created.getTime()) || created > periodCutoff;
+    const created = parseUtcDate(record?.created_date);
+    return !created || created > periodCutoff;
   };
 
   // Build the set of all ref_ids valid for this course
