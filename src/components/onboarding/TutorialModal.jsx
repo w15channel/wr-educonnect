@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight, ChevronLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
@@ -12,27 +12,32 @@ const STEPS = [
     content: (
       <div className="space-y-3 text-sm text-gray-600">
         <p>Olá! Esta é a plataforma completa de formação da <strong>{BRAND_LEGAL_NAME}</strong>.</p>
-        <p>Aqui você encontra tudo para sua formação como terapeuta — aulas, tarefas, comunidade, ferramentas práticas e muito mais. Vamos conhecer cada seção!</p>
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-          💡 <strong>Dica:</strong> Use o menu lateral (no computador) ou o menu inferior (no celular) para navegar entre as seções.
+        <p>Antes de tudo, existem <strong>dois modelos de estudo</strong> — entenda qual é o seu:</p>
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700 space-y-1.5">
+          <p><strong>📜 Somente Diploma (Distância):</strong> modelo resumido e individual. Você tem acesso apenas às <strong>aulas gravadas</strong>, à <strong>apostila</strong> e à <strong>entrega de trabalhos</strong>. Não há interação com a comunidade — você estuda sozinho, no seu próprio tempo, sem prazos rígidos.</p>
+          <p><strong>🌟 Formação Completa:</strong> imersão total na prática terapêutica. Além de aulas, apostila e tarefas, você tem <strong>fórum</strong>, <strong>sala de debates</strong>, <strong>chat da turma</strong>, a experiência de ser <strong>Terapeuta da Semana</strong>, <strong>lives</strong> e diversas outras ferramentas de prática e comunidade.</p>
+        </div>
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs text-gray-500">
+          💡 Use o menu lateral (computador) ou o menu inferior (celular) para navegar entre as seções. Vamos conhecer cada ferramenta em detalhes!
         </div>
       </div>
     ),
   },
   {
     icon: '🎬',
-    title: 'Aulas & Apostila',
-    subtitle: 'Conteúdo gravado para estudar no seu ritmo',
+    title: 'Aulas Gravadas',
+    subtitle: 'Conteúdo em vídeo para estudar no seu ritmo',
     color: 'from-purple-500 to-purple-700',
     content: (
       <div className="space-y-3 text-sm text-gray-600">
-        <p>Em <strong>Aulas</strong> você acessa todo o conteúdo gravado do curso:</p>
+        <p>Em <strong>Aulas</strong> você acessa todo o conteúdo gravado do curso, organizado em módulos:</p>
         <ul className="space-y-2">
           {[
-            { icon: '▶️', text: 'Videoaulas, aulas em texto e materiais externos' },
-            { icon: '✅', text: 'Marque aulas como assistidas e registre seu progresso' },
-            { icon: '📝', text: 'Escreva resumos e comentários de cada aula' },
-            { icon: '📎', text: 'Envie atividades vinculadas às aulas' },
+            { icon: '▶️', text: 'Videoaulas, aulas em texto e materiais externos (artigos, PDFs, links)' },
+            { icon: '✅', text: 'Marque cada aula como assistida e acompanhe seu progresso por módulo' },
+            { icon: '📝', text: 'Escreva um resumo e um comentário de cada aula para confirmar presença' },
+            { icon: '📎', text: 'Envie atividades práticas vinculadas diretamente às aulas' },
+            { icon: '🏆', text: 'Ao concluir todas as aulas de um módulo, você recebe uma celebração especial' },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
               <span>{item.icon}</span>
@@ -41,25 +46,24 @@ const STEPS = [
           ))}
         </ul>
         <p className="text-xs text-purple-700 bg-purple-50 border border-purple-100 rounded-xl p-3">
-          📖 <strong>Apostila TCC:</strong> Material didático completo com 10 módulos temáticos. Você pode imprimir ou exportar como PNG cada aula da apostila!
+          📖 <strong>Disponível para todos os alunos</strong>, incluindo a modalidade Somente Diploma.
         </p>
       </div>
     ),
   },
   {
-    icon: '📡',
-    title: 'Sala ao Vivo',
-    subtitle: 'Mentorias e práticas em tempo real',
-    color: 'from-red-500 to-red-700',
+    icon: '📚',
+    title: 'Apostila Digital',
+    subtitle: 'Material didático completo',
+    color: 'from-indigo-500 to-indigo-700',
     content: (
       <div className="space-y-3 text-sm text-gray-600">
-        <p>A <strong>Sala ao Vivo</strong> é onde acontecem as mentorias todas as segundas-feiras:</p>
+        <p>A <strong>Apostila</strong> reúne todo o material didático teórico do curso:</p>
         <ul className="space-y-2">
           {[
-            { icon: '📺', text: 'Acesse o link da transmissão ao vivo diretamente pela plataforma' },
-            { icon: '✋', text: 'Confirme sua presença para ganhar pontos de participação' },
-            { icon: '📋', text: 'Histórico de sessões anteriores disponível para revisão' },
-            { icon: '🗓️', text: 'Veja as sessões agendadas com data e horário no calendário' },
+            { icon: '🗂️', text: '10 módulos temáticos com conteúdo aprofundado' },
+            { icon: '🖨️', text: 'Imprima ou exporte cada aula da apostila em PDF/PNG' },
+            { icon: '🔎', text: 'Consulte o material a qualquer momento, no seu ritmo' },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
               <span>{item.icon}</span>
@@ -67,6 +71,9 @@ const STEPS = [
             </li>
           ))}
         </ul>
+        <p className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
+          📖 <strong>Disponível para todos os alunos</strong>, incluindo a modalidade Somente Diploma.
+        </p>
       </div>
     ),
   },
@@ -80,10 +87,11 @@ const STEPS = [
         <p>Em <strong>Tarefas e Provas</strong> você encontra todas as atividades avaliativas:</p>
         <ul className="space-y-2">
           {[
-            { icon: '📤', text: 'Envie trabalhos e atividades em arquivo ou texto' },
+            { icon: '📤', text: 'Envie trabalhos e atividades em arquivo ou por texto' },
             { icon: '🧠', text: 'Responda provas e quizzes online diretamente na plataforma' },
             { icon: '⏰', text: 'Fique atento aos prazos de entrega de cada atividade' },
             { icon: '⭐', text: 'Acompanhe suas notas e o feedback do professor' },
+            { icon: '🎉', text: 'Toda entrega gera uma celebração de parabéns na hora' },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
               <span>{item.icon}</span>
@@ -91,6 +99,37 @@ const STEPS = [
             </li>
           ))}
         </ul>
+        <p className="text-xs text-orange-700 bg-orange-50 border border-orange-100 rounded-xl p-3">
+          📎 <strong>Disponível para todos os alunos</strong>, incluindo a modalidade Somente Diploma.
+        </p>
+      </div>
+    ),
+  },
+  {
+    icon: '📡',
+    title: 'Sala ao Vivo',
+    subtitle: 'Mentorias e práticas em tempo real',
+    color: 'from-red-500 to-red-700',
+    content: (
+      <div className="space-y-3 text-sm text-gray-600">
+        <p>A <strong>Sala ao Vivo</strong> é onde acontecem as mentorias periódicas com a turma:</p>
+        <ul className="space-y-2">
+          {[
+            { icon: '📺', text: 'Acesse a transmissão ao vivo diretamente pela plataforma' },
+            { icon: '✋', text: 'Confirme sua presença e levante a mão para participar' },
+            { icon: '💬', text: 'Converse com colegas e professor pelo chat da sala' },
+            { icon: '📋', text: 'Histórico de sessões anteriores disponível para revisão' },
+            { icon: '🗓️', text: 'Sessões futuras aparecem como "Agendada" com data e horário' },
+          ].map((item, i) => (
+            <li key={i} className="flex items-start gap-2">
+              <span>{item.icon}</span>
+              <span>{item.text}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl p-3">
+          🌟 Exclusivo da modalidade <strong>Formação Completa</strong>.
+        </p>
       </div>
     ),
   },
@@ -101,13 +140,12 @@ const STEPS = [
     color: 'from-[#1db89e] to-teal-700',
     content: (
       <div className="space-y-3 text-sm text-gray-600">
-        <p>A <strong>Comunidade</strong> é o coração da plataforma — conecte-se com seus colegas:</p>
+        <p>A <strong>Comunidade</strong> é o coração da imersão prática — conecte-se com seus colegas:</p>
         <ul className="space-y-2">
           {[
             { icon: '💬', text: 'Chat da Turma em tempo real — converse com seus colegas' },
-            { icon: '❓', text: 'Fórum de Dúvidas — faça perguntas e ajude a turma' },
+            { icon: '❓', text: 'Fórum de Dúvidas — faça perguntas e ajude a turma, ganhando pontos' },
             { icon: '🗣️', text: 'Sala de Debates — discussões temáticas moderadas pelo professor' },
-            { icon: '💆', text: 'Terapeuta da Semana — prática terapêutica supervisionada entre alunos' },
             { icon: '👑', text: 'Monitores — acompanhe os alunos destaque escolhidos pelo professor' },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
@@ -116,6 +154,36 @@ const STEPS = [
             </li>
           ))}
         </ul>
+        <p className="text-xs text-teal-700 bg-teal-50 border border-teal-100 rounded-xl p-3">
+          🌟 Exclusivo da modalidade <strong>Formação Completa</strong>.
+        </p>
+      </div>
+    ),
+  },
+  {
+    icon: '💆',
+    title: 'Terapeuta da Semana',
+    subtitle: 'Prática terapêutica supervisionada',
+    color: 'from-pink-500 to-rose-600',
+    content: (
+      <div className="space-y-3 text-sm text-gray-600">
+        <p>A cada rodada, você é pareado com um colega para praticar a experiência terapêutica:</p>
+        <ul className="space-y-2">
+          {[
+            { icon: '🔀', text: 'Pareamentos automáticos a cada ciclo de dias' },
+            { icon: '🧑‍⚕️', text: 'Em uma sessão você é o terapeuta, em outra o paciente' },
+            { icon: '📝', text: 'Envie um relato privado da sessão, visível apenas ao professor' },
+            { icon: '🗒️', text: 'Mural de Relatos guarda o histórico permanente de todas as práticas' },
+          ].map((item, i) => (
+            <li key={i} className="flex items-start gap-2">
+              <span>{item.icon}</span>
+              <span>{item.text}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-pink-700 bg-pink-50 border border-pink-100 rounded-xl p-3">
+          🌟 Exclusivo da modalidade <strong>Formação Completa</strong>.
+        </p>
       </div>
     ),
   },
@@ -126,12 +194,13 @@ const STEPS = [
     color: 'from-orange-400 to-red-600',
     content: (
       <div className="space-y-3 text-sm text-gray-600">
-        <p>As <strong>Ofensivas</strong> são atividades diárias baseadas no conteúdo do curso:</p>
+        <p>As <strong>Ofensivas</strong> são desafios diários baseados no conteúdo do curso:</p>
         <ul className="space-y-2">
           {[
-            { icon: '🎯', text: 'Responda até 5 perguntas por dia geradas a partir das aulas' },
+            { icon: '🎯', text: 'Responda 8 perguntas por dia, geradas a partir das aulas e da apostila' },
+            { icon: '🗝️', text: 'Perguntas "Baú do Saber" valem mais pontos por serem mais desafiadoras' },
             { icon: '🔥', text: 'Mantenha sua sequência de dias consecutivos (streak)' },
-            { icon: '⭐', text: 'Cada resposta vale pontos extras no ranking geral' },
+            { icon: '💎', text: 'Sequências de 5, 10 e 20 dias garantem bônus extras de pontos' },
             { icon: '📅', text: 'Novo desafio todo dia — as perguntas mudam diariamente' },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
@@ -153,14 +222,14 @@ const STEPS = [
     color: 'from-violet-500 to-indigo-600',
     content: (
       <div className="space-y-3 text-sm text-gray-600">
-        <p>A plataforma conta com ferramentas avançadas para apoiar seu aprendizado:</p>
+        <p>A plataforma conta com ferramentas de apoio disponíveis para todos os alunos:</p>
         <ul className="space-y-2">
           {[
             { icon: '🤖', text: 'Tutor Digital — tire dúvidas sobre o conteúdo do curso com IA' },
-            { icon: '📚', text: 'Apostila TCC — material didático em 10 módulos, exportável em PDF/PNG' },
             { icon: '📊', text: 'Histórico Acadêmico — visualize todas suas notas e aproveitamento' },
-            { icon: '📖', text: 'Biblioteca — artigos e livros recomendados para aprofundamento' },
             { icon: '🗓️', text: 'Calendário — veja todos os eventos e prazos importantes do curso' },
+            { icon: '🔔', text: 'Central de Notificações — acompanhe avisos e novidades da turma' },
+            { icon: '💰', text: 'Mensalidades — visualize e acompanhe seus pagamentos' },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
               <span>{item.icon}</span>
@@ -173,7 +242,7 @@ const STEPS = [
   },
   {
     icon: '🏆',
-    title: 'Gamificação & Certificado',
+    title: 'Gamificação',
     subtitle: 'Sua evolução em números',
     color: 'from-yellow-500 to-amber-600',
     content: (
@@ -182,10 +251,32 @@ const STEPS = [
         <ul className="space-y-2">
           {[
             { icon: '👤', text: 'Configure seu perfil com foto, bio e avatar personalizado' },
-            { icon: '⭐', text: 'Ganhe pontos por aulas, tarefas, lives, ofensivas e participação' },
+            { icon: '⭐', text: 'Ganhe pontos por aulas, tarefas, provas, lives, ofensivas e participação' },
             { icon: '🏆', text: 'Suba no Ranking Geral e concorra a ser Monitor da Semana' },
-            { icon: '📜', text: 'Gere seu Histórico Acadêmico e acompanhe mensalidades' },
-            { icon: '💰', text: 'Mensalidades — visualize e gerencie seus pagamentos' },
+            { icon: '🎉', text: 'Toda conquista — aula, tarefa, prova, fórum, debate ou relato — gera uma celebração' },
+          ].map((item, i) => (
+            <li key={i} className="flex items-start gap-2">
+              <span>{item.icon}</span>
+              <span>{item.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ),
+  },
+  {
+    icon: '📜',
+    title: 'Certificado',
+    subtitle: 'Reconhecimento nacional e internacional',
+    color: 'from-emerald-500 to-green-700',
+    content: (
+      <div className="space-y-3 text-sm text-gray-600">
+        <p>Ao concluir o curso, você recebe seu certificado emitido pela <strong>nossa própria unidade certificadora</strong>.</p>
+        <ul className="space-y-2">
+          {[
+            { icon: '🔳', text: 'Cada certificado possui um QR Code exclusivo para consulta pública de autenticidade' },
+            { icon: '🇧🇷', text: 'Credenciados nacionalmente junto à ABED (Associação Brasileira de Ensino a Distância)' },
+            { icon: '🌍', text: 'Credenciados internacionalmente pela AHDE (Association for Human Development and Evolution)' },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
               <span>{item.icon}</span>
@@ -194,7 +285,7 @@ const STEPS = [
           ))}
         </ul>
         <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-xs text-green-700">
-          🎓 <strong>Certificado:</strong> Disponível ao atingir 90% de conclusão do curso — emitido pela Escola Venes e credenciado pela AHDE!
+          🎓 <strong>Disponível ao atingir os requisitos de conclusão do curso</strong>, para as duas modalidades de estudo.
         </div>
       </div>
     ),
@@ -210,7 +301,13 @@ export default function TutorialModal({ onFinish }) {
     <div className="fixed inset-0 z-[99] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90dvh]">
         {/* Header */}
-        <div className={`bg-gradient-to-br ${current.color} p-6 text-white text-center shrink-0`}>
+        <div className={`relative bg-gradient-to-br ${current.color} p-6 text-white text-center shrink-0`}>
+          <button
+            onClick={onFinish}
+            className="absolute top-3 right-3 flex items-center gap-1 text-white/80 hover:text-white text-xs font-semibold bg-white/10 hover:bg-white/20 rounded-full px-2.5 py-1 transition-colors"
+          >
+            Pular <X size={12} />
+          </button>
           <div className="text-5xl mb-3">{current.icon}</div>
           <h2 className="font-black text-xl">{current.title}</h2>
           <p className="text-white/70 text-sm mt-1">{current.subtitle}</p>
