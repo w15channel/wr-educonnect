@@ -34,6 +34,7 @@ export default function LoginScreen({ onLogin }) {
   const [adminConfigured, setAdminConfigured] = useState(null);
   const [heroImg, setHeroImg] = useState(0);
   const [rememberCode, setRememberCode] = useState(localStorage.getItem('wr_remember_student_code') === 'yes');
+  const [rememberAdmin, setRememberAdmin] = useState(localStorage.getItem('wr_remember_admin') === 'yes');
 
   useEffect(() => {
     const savedCode = localStorage.getItem('wr_saved_student_code') || '';
@@ -77,7 +78,8 @@ export default function LoginScreen({ onLogin }) {
     setLoading(true);
     try {
       const response = await base44.functions.invoke('siteLogin', { mode: 'admin', email: adminEmail, password: adminPassword });
-      setSession(response.data.session);
+      localStorage.setItem('wr_remember_admin', rememberAdmin ? 'yes' : 'no');
+      setSession(response.data.session, { remember: rememberAdmin });
       onLogin();
     } catch (err) {
       setError(err?.response?.data?.error || 'Email ou senha incorretos.');
@@ -243,9 +245,11 @@ export default function LoginScreen({ onLogin }) {
                       <p className="text-white/25 text-xs mt-2.5 text-center flex items-center justify-center gap-1">
                         <Lock size={9} /> Código fornecido pelo seu professor
                       </p>
-                      <label className="mt-3 flex items-center justify-center gap-2 text-xs text-white/60">
-                        <input type="checkbox" checked={rememberCode} onChange={(e) => setRememberCode(e.target.checked)} className="accent-[#5b5ef4]" />
-                        Lembrar meu código neste dispositivo
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="remember-code" checked={rememberCode} onCheckedChange={(checked) => setRememberCode(Boolean(checked))} />
+                      <label htmlFor="remember-code" className="text-xs text-white/55 cursor-pointer">
+                        Lembrar acesso neste dispositivo
                       </label>
                     </div>
                     <Button
@@ -258,12 +262,6 @@ export default function LoginScreen({ onLogin }) {
                         : <><span>Entrar na Plataforma</span> <ChevronRight size={16} /></>
                       }
                     </Button>
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="remember-code" checked={rememberCode} onCheckedChange={(checked) => setRememberCode(Boolean(checked))} />
-                      <label htmlFor="remember-code" className="text-xs text-white/55 cursor-pointer">
-                        Lembrar meu código neste dispositivo
-                      </label>
-                    </div>
                   </form>
                 ) : (
                   <form onSubmit={handleAdminLogin} className="space-y-4">
@@ -295,6 +293,12 @@ export default function LoginScreen({ onLogin }) {
                           {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="remember-admin" checked={rememberAdmin} onCheckedChange={(checked) => setRememberAdmin(Boolean(checked))} />
+                      <label htmlFor="remember-admin" className="text-xs text-white/55 cursor-pointer">
+                        Lembrar acesso neste dispositivo
+                      </label>
                     </div>
                     <Button
                       type="submit"
