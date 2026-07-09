@@ -321,9 +321,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold">❌ Não entregue</span>
                   }
-                    {sub?.grade !== undefined && sub?.grade !== null &&
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota prévia: {formatScore(sub.grade)}</span>
-                  }
                   </div>
                   {sub?.comment &&
                 <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
@@ -382,7 +379,6 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                         ) : (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">⏳ Aguardando correção</span>
                         )}
-                        {sub.grade != null && <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota: {formatScore(sub.grade)}</span>}
                       </> :
 
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold">❌ Não realizada</span>

@@ -53,11 +53,7 @@ function SubmittedView({ submission }) {
         <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
           <CheckCircle size={12} /> Entregue
         </span>
-        {submission.grade != null && (
-          <span className="text-sm font-black text-foreground bg-secondary px-3 py-1.5 rounded-xl border border-border">
-            Nota: {formatScore(submission.grade)}
-          </span>
-        )}
+
         {(submission.comment || submission.file_name) && (
           <button
             onClick={() => setOpen(!open)}
@@ -330,11 +326,7 @@ export default function Tasks({ mode = 'tasks' }) {
                     <h3 className="font-bold text-sm text-foreground truncate">{task.title}</h3>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {isDone && <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200 py-0 px-1.5">✓ Entregue</Badge>}
-                      {isDone && submission?.grade != null && (
-                        <span className="text-[10px] text-yellow-600 font-bold flex items-center gap-0.5">
-                          <Star size={9} className="fill-yellow-500" /> {formatScore(submission.grade)}
-                        </span>
-                      )}
+
                       {!isDone && task.deadline && (
                         <span className={`text-[10px] font-semibold ${isPastDeadline ? 'text-red-500' : 'text-muted-foreground'}`}>
                           Prazo: {format(new Date(task.deadline), 'dd/MM HH:mm')}{isPastDeadline ? ' · Expirou' : ''}
