@@ -438,42 +438,134 @@ export default function Dashboard() {
         </div>
       }
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          title="Próxima Live"
-          value={nextLive ? isLiveNow ? 'Ao Vivo!' : nextLive.scheduled_at ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Agendada' : 'Nenhuma'}
-          icon={Video}
-          iconBg={isLiveNow ? 'bg-red-500' : 'bg-slate-500'}
-          to="/live"
-          subtitle="Ir para Sala ao Vivo"
-          pulse={isLiveNow} />
-        
-        <StatCard
-          title={isTeacher ? 'Para Corrigir' : 'Tarefas Pendentes'}
-          value={pendingTasks}
-          icon={FileText}
-          iconBg="bg-orange-500"
-          to={isTeacher ? '/scorecontrol?filter=pending' : '/tasks'}
-          subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Ir para Tarefas'} />
-        
-        <StatCard
-          title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}
-          value={isTeacher ? studentCount : formatScore(totalPoints)}
-          icon={isTeacher ? Users : Star}
-          iconBg={isTeacher ? 'bg-emerald-500' : 'bg-yellow-500'}
-          to={isTeacher ? '/students' : '/dashboard'}
-          subtitle={isTeacher ? 'Ver alunos' : 'Pontuação publicada pelo administrador'} />
-        
-        <StatCard
-          title={isTeacher ? 'Total de Aulas' : 'Aulas Assistidas'}
-          value={isTeacher ? lessons.length : `${watchedCount}/${lessons.length}`}
-          icon={BookOpen}
-          iconBg="bg-purple-500"
-          to="/lessons"
-          subtitle="Ir para Videoaulas" />
-        
-      </div>
+      {/* Pendências do Aluno */}
+      {!isTeacher && (() => {
+        const today = new Date();
+        const todayYmd = format(today, 'yyyy-MM-dd');
+        const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
+        const unwatchedLessons = sortByNumericSequence(lessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched)));
+        const pendingTasksList = sortByNumericSequence(tasks.filter((t) => t.type === 'upload' && !submissions.find((s) => s.task_id === t.id)));
+        const visiblePendingLessons = getFirstThreePendingBySequence(unwatchedLessons);
+        const visiblePendingTasks = getFirstThreePendingBySequence(pendingTasksList);
+        const pendingQuizzes = tasks.filter((t) => t.type === 'quiz' && !submissions.find((s) => s.task_id === t.id));
+        const therapistPending = therapistPairings.filter((p) => {
+          const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
+          if (!inPeriod) return false;
+          if (p.therapist_email === session?.email) return !p.therapist_submitted;
+          if (p.patient_email === session?.email) return !p.patient_submitted;
+          return false;
+        });
+        const attendedIds = new Set(liveAttendances.map((a) => a.session_id));
+        const missedLives = liveSessions.filter((s) => s.status === 'ended' && !attendedIds.has(s.id));
+        const totalPending = therapistPending.length + unwatchedLessons.length + pendingTasksList.length + pendingQuizzes.length + missedLives.length;
+
+        if (totalPending === 0) return null;
+
+        return (
+          <div className="bg-card rounded-2xl border border-orange-200 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
+                <ClipboardList size={16} className="text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Minhas Pendências</h3>
+                <p className="text-xs text-muted-foreground">{totalPending} {totalPending === 1 ? 'item pendente' : 'itens pendentes'}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {therapistPending.slice(0, 3).map((pairing) => {
+                const isTherapist = pairing.therapist_email === session?.email;
+                const otherName = isTherapist ? pairing.patient_name : pairing.therapist_name;
+                return (
+              <button key={pairing.id} onClick={() => navigate(scoped('/terapeuta'))}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-pink-50 border border-pink-100 hover:bg-pink-100 transition-colors text-left">
+                  <Heart size={13} className="text-pink-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-pink-700 truncate">{isTherapist ? 'Atender' : 'Ser atendido(a) por'}: {otherName || 'Pareamento da semana'}</p>
+                    <p className="text-[10px] text-pink-500">Terapeuta da semana pendente</p>
+                  </div>
+                  <ArrowRight size={12} className="text-pink-400 shrink-0" />
+                </button>
+                );
+              })}
+              {therapistPending.length > 3 &&
+              <button onClick={() => navigate(scoped('/terapeuta'))} className="w-full text-xs text-pink-600 font-semibold py-1 hover:underline">
+                  +{therapistPending.length - 3} pendências de terapeuta → Ver todas
+                </button>
+              }
+              {visiblePendingLessons.map((l) =>
+              <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
+                  <Circle size={13} className="text-purple-400 shrink-0" />
+                  <BookOpen size={13} className="text-purple-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-purple-700 truncate">{extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}</p>
+                    <p className="text-[10px] text-purple-500">Aula não assistida · próximas pendências em ordem numérica</p>
+                  </div>
+                  <ArrowRight size={12} className="text-purple-400 shrink-0" />
+                </button>
+              )}
+              {unwatchedLessons.length > 3 &&
+              <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
+                  +{unwatchedLessons.length - visiblePendingLessons.length} aulas não assistidas → Ver todas
+                </button>
+              }
+              {visiblePendingTasks.map((t) =>
+              <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
+                  <ClipboardList size={13} className="text-orange-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-orange-700 truncate">{extractSequenceNumber(t) ? `Tarefa ${extractSequenceNumber(t)} · ` : ''}{t.title}</p>
+                    <p className="text-[10px] text-orange-500">
+                      Tarefa pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
+                    </p>
+                  </div>
+                  <ArrowRight size={12} className="text-orange-400 shrink-0" />
+                </button>
+              )}
+              {pendingTasksList.length > 3 &&
+              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
+                  +{pendingTasksList.length - visiblePendingTasks.length} tarefas pendentes → Ver todas
+                </button>
+              }
+              {pendingQuizzes.slice(0, 3).map((t) =>
+              <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
+                  <GraduationCap size={13} className="text-violet-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-violet-700 truncate">{t.title}</p>
+                    <p className="text-[10px] text-violet-500">
+                      Prova pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
+                    </p>
+                  </div>
+                  <ArrowRight size={12} className="text-violet-400 shrink-0" />
+                </button>
+              )}
+              {pendingQuizzes.length > 3 &&
+              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
+                  +{pendingQuizzes.length - 3} provas pendentes → Ver todas
+                </button>
+              }
+              {missedLives.slice(0, 3).map((live) =>
+              <button key={live.id} onClick={() => navigate(scoped('/live'))}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 transition-colors text-left">
+                  <WifiOff size={13} className="text-red-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-red-700 truncate">{live.title}</p>
+                    <p className="text-[10px] text-red-500">Live encerrada sem presença registrada</p>
+                  </div>
+                  <ArrowRight size={12} className="text-red-400 shrink-0" />
+                </button>
+              )}
+              {missedLives.length > 3 &&
+              <button onClick={() => navigate(scoped('/live'))} className="w-full text-xs text-red-600 font-semibold py-1 hover:underline">
+                  +{missedLives.length - 3} lives perdidas → Ver todas
+                </button>
+              }
+            </div>
+          </div>);
+
+      })()}
 
       {/* Student: progress + ranking */}
       {!isTeacher &&
@@ -715,134 +807,42 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
         </div>
       }
 
-      {/* Pendências do Aluno */}
-      {!isTeacher && (() => {
-        const today = new Date();
-        const todayYmd = format(today, 'yyyy-MM-dd');
-        const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
-        const unwatchedLessons = sortByNumericSequence(lessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched)));
-        const pendingTasksList = sortByNumericSequence(tasks.filter((t) => t.type === 'upload' && !submissions.find((s) => s.task_id === t.id)));
-        const visiblePendingLessons = getFirstThreePendingBySequence(unwatchedLessons);
-        const visiblePendingTasks = getFirstThreePendingBySequence(pendingTasksList);
-        const pendingQuizzes = tasks.filter((t) => t.type === 'quiz' && !submissions.find((s) => s.task_id === t.id));
-        const therapistPending = therapistPairings.filter((p) => {
-          const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
-          if (!inPeriod) return false;
-          if (p.therapist_email === session?.email) return !p.therapist_submitted;
-          if (p.patient_email === session?.email) return !p.patient_submitted;
-          return false;
-        });
-        const attendedIds = new Set(liveAttendances.map((a) => a.session_id));
-        const missedLives = liveSessions.filter((s) => s.status === 'ended' && !attendedIds.has(s.id));
-        const totalPending = therapistPending.length + unwatchedLessons.length + pendingTasksList.length + pendingQuizzes.length + missedLives.length;
-
-        if (totalPending === 0) return null;
-
-        return (
-          <div className="bg-card rounded-2xl border border-orange-200 p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
-                <ClipboardList size={16} className="text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-foreground">Minhas Pendências</h3>
-                <p className="text-xs text-muted-foreground">{totalPending} {totalPending === 1 ? 'item pendente' : 'itens pendentes'}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {therapistPending.slice(0, 3).map((pairing) => {
-                const isTherapist = pairing.therapist_email === session?.email;
-                const otherName = isTherapist ? pairing.patient_name : pairing.therapist_name;
-                return (
-              <button key={pairing.id} onClick={() => navigate(scoped('/terapeuta'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-pink-50 border border-pink-100 hover:bg-pink-100 transition-colors text-left">
-                  <Heart size={13} className="text-pink-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-pink-700 truncate">{isTherapist ? 'Atender' : 'Ser atendido(a) por'}: {otherName || 'Pareamento da semana'}</p>
-                    <p className="text-[10px] text-pink-500">Terapeuta da semana pendente</p>
-                  </div>
-                  <ArrowRight size={12} className="text-pink-400 shrink-0" />
-                </button>
-                );
-              })}
-              {therapistPending.length > 3 &&
-              <button onClick={() => navigate(scoped('/terapeuta'))} className="w-full text-xs text-pink-600 font-semibold py-1 hover:underline">
-                  +{therapistPending.length - 3} pendências de terapeuta → Ver todas
-                </button>
-              }
-              {visiblePendingLessons.map((l) =>
-              <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
-                  <Circle size={13} className="text-purple-400 shrink-0" />
-                  <BookOpen size={13} className="text-purple-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-purple-700 truncate">{extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}</p>
-                    <p className="text-[10px] text-purple-500">Aula não assistida · próximas pendências em ordem numérica</p>
-                  </div>
-                  <ArrowRight size={12} className="text-purple-400 shrink-0" />
-                </button>
-              )}
-              {unwatchedLessons.length > 3 &&
-              <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
-                  +{unwatchedLessons.length - visiblePendingLessons.length} aulas não assistidas → Ver todas
-                </button>
-              }
-              {visiblePendingTasks.map((t) =>
-              <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
-                  <ClipboardList size={13} className="text-orange-500 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-orange-700 truncate">{extractSequenceNumber(t) ? `Tarefa ${extractSequenceNumber(t)} · ` : ''}{t.title}</p>
-                    <p className="text-[10px] text-orange-500">
-                      Tarefa pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
-                    </p>
-                  </div>
-                  <ArrowRight size={12} className="text-orange-400 shrink-0" />
-                </button>
-              )}
-              {pendingTasksList.length > 3 &&
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
-                  +{pendingTasksList.length - visiblePendingTasks.length} tarefas pendentes → Ver todas
-                </button>
-              }
-              {pendingQuizzes.slice(0, 3).map((t) =>
-              <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
-                  <GraduationCap size={13} className="text-violet-500 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-violet-700 truncate">{t.title}</p>
-                    <p className="text-[10px] text-violet-500">
-                      Prova pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
-                    </p>
-                  </div>
-                  <ArrowRight size={12} className="text-violet-400 shrink-0" />
-                </button>
-              )}
-              {pendingQuizzes.length > 3 &&
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
-                  +{pendingQuizzes.length - 3} provas pendentes → Ver todas
-                </button>
-              }
-              {missedLives.slice(0, 3).map((live) =>
-              <button key={live.id} onClick={() => navigate(scoped('/live'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 transition-colors text-left">
-                  <WifiOff size={13} className="text-red-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-red-700 truncate">{live.title}</p>
-                    <p className="text-[10px] text-red-500">Live encerrada sem presença registrada</p>
-                  </div>
-                  <ArrowRight size={12} className="text-red-400 shrink-0" />
-                </button>
-              )}
-              {missedLives.length > 3 &&
-              <button onClick={() => navigate(scoped('/live'))} className="w-full text-xs text-red-600 font-semibold py-1 hover:underline">
-                  +{missedLives.length - 3} lives perdidas → Ver todas
-                </button>
-              }
-            </div>
-          </div>);
-
-      })()}
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          title="Próxima Live"
+          value={nextLive ? isLiveNow ? 'Ao Vivo!' : nextLive.scheduled_at ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Agendada' : 'Nenhuma'}
+          icon={Video}
+          iconBg={isLiveNow ? 'bg-red-500' : 'bg-slate-500'}
+          to="/live"
+          subtitle="Ir para Sala ao Vivo"
+          pulse={isLiveNow} />
+        
+        <StatCard
+          title={isTeacher ? 'Para Corrigir' : 'Tarefas Pendentes'}
+          value={pendingTasks}
+          icon={FileText}
+          iconBg="bg-orange-500"
+          to={isTeacher ? '/scorecontrol?filter=pending' : '/tasks'}
+          subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Ir para Tarefas'} />
+        
+        <StatCard
+          title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}
+          value={isTeacher ? studentCount : formatScore(totalPoints)}
+          icon={isTeacher ? Users : Star}
+          iconBg={isTeacher ? 'bg-emerald-500' : 'bg-yellow-500'}
+          to={isTeacher ? '/students' : '/dashboard'}
+          subtitle={isTeacher ? 'Ver alunos' : 'Pontuação publicada pelo administrador'} />
+        
+        <StatCard
+          title={isTeacher ? 'Total de Aulas' : 'Aulas Assistidas'}
+          value={isTeacher ? lessons.length : `${watchedCount}/${lessons.length}`}
+          icon={BookOpen}
+          iconBg="bg-purple-500"
+          to="/lessons"
+          subtitle="Ir para Videoaulas" />
+        
+      </div>
 
       {/* Ofensiva CTA — Widget animado */}
       {!isTeacher && (() => {
