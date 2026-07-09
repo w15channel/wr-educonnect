@@ -76,7 +76,7 @@ export default function ModuleHistoryPanel({ course, filterEmail = null }) {
                     return (
                       <button
                         key={s.student_email}
-                        onClick={() => setSelected({ ...s, periodStart, periodEnd, isOwnProfile: isMe })}
+                        onClick={() => setSelected({ ...s, periodStart, periodEnd, isOwnProfile: isMe, activities: s.activities })}
                         className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
                           isMe ? 'bg-primary/10 border border-primary/25' : 'bg-secondary/40 hover:bg-secondary/70'
                         }`}
@@ -109,6 +109,7 @@ export default function ModuleHistoryPanel({ course, filterEmail = null }) {
           points={selected.points}
           periodStart={selected.periodStart}
           periodEnd={selected.periodEnd}
+          activities={selected.activities}
           canPrint={!!selected.isOwnProfile}
           onClose={() => setSelected(null)}
         />

@@ -46,6 +46,24 @@
           },
           "rank": {
             "type": "number"
+          },
+          "activities": {
+            "type": "array",
+            "description": "Detalhamento manual das atividades pontuadas neste per\u00edodo (usado quando n\u00e3o h\u00e1 ScoreItems datados dentro da janela)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "ref_title": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                }
+              }
+            }
           }
         }
       }

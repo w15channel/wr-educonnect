@@ -23,16 +23,30 @@ const CATEGORY_CONFIG = {
 
 // Mostra o detalhamento por categoria das atividades de um aluno dentro da janela
 // de um período já encerrado (entre o corte anterior e o corte deste período).
-export default function PeriodStudentDetailModal({ email, name, points, periodStart, periodEnd, canPrint = false, onClose }) {
+export default function PeriodStudentDetailModal({ email, name, points, periodStart, periodEnd, activities = null, canPrint = false, onClose }) {
   const [printing, setPrinting] = useState(false);
   const printRef = useRef(null);
+  const hasManualActivities = Array.isArray(activities) && activities.length > 0;
 
   const { data: allScoreItems = [] } = useQuery({
     queryKey: ['period-detail-score-items', email],
     queryFn: () => base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 2000),
+    enabled: !hasManualActivities,
   });
 
   const byCategory = useMemo(() => {
+    // Se o período já tem um detalhamento manual salvo (activities), usa ele diretamente —
+    // evita depender da data de criação dos ScoreItems, que não pode ser retroagida.
+    if (hasManualActivities) {
+      const grouped = {};
+      activities.forEach((item, idx) => {
+        const normalized = item.category === 'quiz' ? 'exam' : item.category;
+        const category = CATEGORY_CONFIG[normalized] ? normalized : 'other';
+        grouped[category] = grouped[category] || [];
+        grouped[category].push({ id: `manual-${idx}`, ref_title: item.ref_title, score: item.score });
+      });
+      return grouped;
+    }
     const seen = new Map();
     for (const s of allScoreItems) {
       if (!s.verified || !s.category || !s.ref_id) continue;
@@ -52,7 +66,7 @@ export default function PeriodStudentDetailModal({ email, name, points, periodSt
       grouped[category].push(item);
     }
     return grouped;
-  }, [allScoreItems, periodStart, periodEnd]);
+  }, [allScoreItems, periodStart, periodEnd, hasManualActivities, activities]);
 
   const rangeLabel = periodStart && periodEnd
     ? `${format(periodStart, "dd/MM/yyyy")} a ${format(periodEnd, "dd/MM/yyyy")}`
