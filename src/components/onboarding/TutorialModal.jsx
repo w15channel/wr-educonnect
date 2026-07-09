@@ -194,7 +194,7 @@ const STEPS = [
           ))}
         </ul>
         <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-xs text-green-700">
-          🎓 <strong>Certificado:</strong> Disponível ao atingir 90% de conclusão do curso — emitido pela Escola Venes e credenciado pela AHDE!
+          🎓 <strong>Certificado:</strong> Disponível ao atingir 90% de conclusão do curso — emitido por nossa própria unidade certificadora, com autenticidade consultável por QR Code. Somos credenciados nacionalmente junto à <strong>ABED</strong> (Associação Brasileira de Ensino a Distância) e internacionalmente pela <strong>AHDE</strong> (Association for Human Development and Evolution)!
         </div>
       </div>
     ),
@@ -231,11 +231,16 @@ export default function TutorialModal({ onFinish }) {
 
         {/* Navigation */}
         <div className="p-5 border-t border-gray-100 flex items-center gap-3 shrink-0">
-          {step > 0 ? (
+          {step > 0 && (
             <Button variant="outline" onClick={() => setStep(s => s - 1)} className="gap-1.5 h-10">
               <ChevronLeft size={15} /> Anterior
             </Button>
-          ) : <div />}
+          )}
+          {!isLast && (
+            <Button variant="ghost" onClick={onFinish} className="h-10 text-gray-400 hover:text-gray-600">
+              Pular
+            </Button>
+          )}
           <div className="flex-1" />
           <span className="text-xs text-gray-400">{step + 1} / {STEPS.length}</span>
           {isLast ? (
