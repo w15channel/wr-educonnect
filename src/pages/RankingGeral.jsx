@@ -2,9 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp, Heart } from 'lucide-react';
+import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp, Heart, Archive } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { formatScore, rankingScoreValue, roundScore, sumRoundedScores } from '@/lib/scoreUtils';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -222,6 +224,25 @@ export default function RankingGeral() {
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourseForQuery }, '-created_date', 5000),
   });
 
+  // Encerramentos de período — quando existe um, o ranking atual só conta
+  // atividade registrada DEPOIS do corte, igualando alunos novos e antigos.
+  const { data: moduleClosures = [] } = useQuery({
+    queryKey: ['ranking-module-closures', activeCourseForQuery],
+    queryFn: () => base44.entities.ModuleClosure.filter({ course: activeCourseForQuery }, '-module_number', 100),
+  });
+  const periodCutoff = useMemo(() => {
+    return moduleClosures.reduce((latest, c) => {
+      if (!c.closed_at) return latest;
+      const d = new Date(c.closed_at);
+      return !latest || d > latest ? d : latest;
+    }, null);
+  }, [moduleClosures]);
+  const isAfterCutoff = (record) => {
+    if (!periodCutoff) return true;
+    const created = record?.created_date ? new Date(record.created_date) : null;
+    return !created || Number.isNaN(created.getTime()) || created > periodCutoff;
+  };
+
   // Build the set of all ref_ids valid for this course
   // This must mirror every ref_id pattern used in recalculateScores.
   const courseItemRefIds = useMemo(() => {
@@ -308,10 +329,11 @@ export default function RankingGeral() {
       if (!s.student_email || !courseEmailSet.has(s.student_email) || !s.verified) return;
       // Only count items whose ref_id belongs to this course (avoid cross-course inflation)
       if (courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) return;
+      if (!isAfterCutoff(s)) return;
       map[s.student_email] = (map[s.student_email] || 0) + 1;
     });
     return map;
-  }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds]);
+  }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds, periodCutoff]);
 
   // ── Live sum per student from verified ScoreItems in the active course ──
   const liveScoreSumMap = useMemo(() => {
@@ -319,10 +341,11 @@ export default function RankingGeral() {
     for (const s of deduplicatedScoreItems) {
       if (!s.student_email || !s.verified || !courseEmailSet.has(s.student_email)) continue;
       if (courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) continue;
+      if (!isAfterCutoff(s)) continue;
       map[s.student_email] = roundScore((map[s.student_email] || 0) + rankingScoreValue(s));
     }
     return map;
-  }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds]);
+  }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds, periodCutoff]);
 
   // ── Build and sort ranking — uses live sum as primary, falls back to published ──
   const ranking = useMemo(() => {
@@ -414,6 +437,15 @@ export default function RankingGeral() {
       )}
 
       {/* Body */}
+      <Accordion type="multiple" defaultValue={['current']} className="space-y-3">
+        <AccordionItem value="current" className="bg-card border border-border rounded-2xl px-4 border-b-0">
+          <AccordionTrigger className="hover:no-underline py-3.5">
+            <div className="flex items-center gap-2.5">
+              <Trophy size={16} className="text-yellow-500" />
+              <span className="font-bold text-sm text-foreground">Ranking Atual</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
       {isLoading ? (
         <div className="space-y-2">
           {[1,2,3,4,5].map(i => (
@@ -486,6 +518,21 @@ export default function RankingGeral() {
           })}
         </div>
       )}
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="periods" className="bg-card border border-border rounded-2xl px-4 border-b-0">
+          <AccordionTrigger className="hover:no-underline py-3.5">
+            <div className="flex items-center gap-2.5">
+              <Archive size={16} className="text-amber-500" />
+              <span className="font-bold text-sm text-foreground">Ranking por Período</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <ModuleHistoryPanel course={activeCourse} filterEmail={session?.role === 'admin' ? null : session?.email} />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {/* Student modal */}
       {selected && (
