@@ -23,7 +23,7 @@ const CATEGORY_CONFIG = {
 
 // Mostra o detalhamento por categoria das atividades de um aluno dentro da janela
 // de um período já encerrado (entre o corte anterior e o corte deste período).
-export default function PeriodStudentDetailModal({ email, name, points, periodStart, periodEnd, onClose }) {
+export default function PeriodStudentDetailModal({ email, name, points, periodStart, periodEnd, canPrint = false, onClose }) {
   const [printing, setPrinting] = useState(false);
   const printRef = useRef(null);
 
@@ -111,15 +111,17 @@ export default function PeriodStudentDetailModal({ email, name, points, periodSt
           </button>
         </div>
 
-        <div className="px-4 pt-3">
-          <button
-            onClick={handlePrintPeriod}
-            disabled={printing}
-            className="w-full flex items-center justify-center gap-2 text-xs font-bold bg-primary text-primary-foreground px-3 py-2.5 rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity"
-          >
-            <Printer size={13} /> {printing ? 'Gerando PDF...' : `Imprimir Histórico deste Período (${rangeLabel})`}
-          </button>
-        </div>
+        {canPrint && (
+          <div className="px-4 pt-3">
+            <button
+              onClick={handlePrintPeriod}
+              disabled={printing}
+              className="w-full flex items-center justify-center gap-2 text-xs font-bold bg-primary text-primary-foreground px-3 py-2.5 rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity"
+            >
+              <Printer size={13} /> {printing ? 'Gerando PDF...' : `Imprimir Histórico deste Período (${rangeLabel})`}
+            </button>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {Object.keys(CATEGORY_CONFIG).map((cat) => {
