@@ -214,6 +214,21 @@ export default function RankingGeral() {
     queryFn: () => base44.entities.ForumReply.list('-created_date', 5000),
   });
 
+  // Fontes originais das atividades — usadas para o corte de período com a MESMA
+  // lógica do painel admin (data do registro de origem, não do ScoreItem)
+  const { data: allLessonProgress = [] } = useQuery({
+    queryKey: ['ranking-lesson-progress'],
+    queryFn: () => base44.entities.LessonProgress.list('-created_date', 5000),
+  });
+  const { data: allSubmissions = [] } = useQuery({
+    queryKey: ['ranking-submissions'],
+    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 2000),
+  });
+  const { data: allMonitorHistory = [] } = useQuery({
+    queryKey: ['ranking-monitor-history', activeCourseForQuery],
+    queryFn: () => base44.entities.MonitorHistory.filter({ course: activeCourseForQuery }, '-period_start', 500),
+  });
+
   // Terapeuta da Semana & Ofensivas — for courseItemRefIds
   const { data: allPairings = [] } = useQuery({
     queryKey: ['ranking-pairings'],
@@ -321,40 +336,38 @@ export default function RankingGeral() {
     return [...seen.values()];
   }, [allScoreItems]);
 
-  // Participation count: only verified items from this course (both email AND ref_id scoped)
   const courseEmailSet = useMemo(() => new Set(courseCodes.map(c => c.student_email)), [courseCodes]);
+
+  // Participation count: mesma lógica do painel admin (ScoreControl) — usa a data do
+  // registro de ORIGEM (aula assistida, entrega, post, monitoria) para aplicar o corte
+  // de período, evitando que um recálculo retroativo do ScoreItem "vaze" para o novo período.
+  const lessonRefIds = useMemo(() => new Set(courseLessons.map(l => l.id)), [courseLessons]);
+  const taskRefIds = useMemo(() => new Set(courseTasks.map(t => t.id)), [courseTasks]);
+  const forumPostRefIds = useMemo(() => new Set(courseForumPosts.map(p => p.id)), [courseForumPosts]);
+  const forumParentById = useMemo(() => new Map(courseForumPosts.map(p => [p.id, p])), [courseForumPosts]);
+
   const participationMap = useMemo(() => {
     const map = {};
-    deduplicatedScoreItems.forEach(s => {
-      if (!s.student_email || !courseEmailSet.has(s.student_email) || !s.verified) return;
-      // Only count items whose ref_id belongs to this course (avoid cross-course inflation)
-      if (courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) return;
-      if (!isAfterCutoff(s)) return;
-      map[s.student_email] = (map[s.student_email] || 0) + 1;
+    courseEmailSet.forEach(email => {
+      const lessonCount = allLessonProgress.filter(p => p.student_email === email && lessonRefIds.has(p.lesson_id) && p.watched && isAfterCutoff(p)).length;
+      const taskCount = allSubmissions.filter(s => s.student_email === email && taskRefIds.has(s.task_id) && isAfterCutoff(s)).length;
+      const postCount = courseForumPosts.filter(p => p.author_email === email && isAfterCutoff(p)).length;
+      const replyCount = allForumReplies.filter(r => {
+        const parentPost = forumParentById.get(r.post_id);
+        return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostRefIds.has(parentPost.id) && isAfterCutoff(r);
+      }).length;
+      const monitorCount = allMonitorHistory.filter(m => m.student_email === email && isAfterCutoff(m)).length;
+      map[email] = lessonCount + taskCount + postCount + replyCount + monitorCount;
     });
     return map;
-  }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds, periodCutoff]);
+  }, [courseEmailSet, allLessonProgress, allSubmissions, courseForumPosts, allForumReplies, allMonitorHistory, lessonRefIds, taskRefIds, forumPostRefIds, forumParentById, periodCutoff]);
 
-  // ── Live sum per student from verified ScoreItems in the active course ──
-  const liveScoreSumMap = useMemo(() => {
-    const map = {};
-    for (const s of deduplicatedScoreItems) {
-      if (!s.student_email || !s.verified || !courseEmailSet.has(s.student_email)) continue;
-      if (courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) continue;
-      if (!isAfterCutoff(s)) continue;
-      map[s.student_email] = roundScore((map[s.student_email] || 0) + rankingScoreValue(s));
-    }
-    return map;
-  }, [deduplicatedScoreItems, courseEmailSet, courseItemRefIds, periodCutoff]);
-
-  // ── Build and sort ranking — uses live sum as primary, falls back to published ──
+  // ── Build and sort ranking — pontuação publicada é a fonte única da verdade,
+  // igual ao painel admin (evita divergência quando o período foi encerrado) ──
   const ranking = useMemo(() => {
     return courseCodes
       .map(c => {
-        // Use live sum of verified ScoreItems; fall back to pontuacao_total if no items yet
-        const liveSum = liveScoreSumMap[c.student_email] ?? 0;
-        const publishedFallback = roundScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0);
-        const total = liveSum > 0 ? liveSum : publishedFallback;
+        const total = roundScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0);
         const publishedRank = publishedRankMap[c.student_email] ?? Number.MAX_SAFE_INTEGER;
         return {
           email: c.student_email,
@@ -377,7 +390,7 @@ export default function RankingGeral() {
         if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
         return a.name.localeCompare(b.name);
       });
-  }, [courseCodes, publishedScoreMap, publishedRankMap, participationMap, liveScoreSumMap]);
+  }, [courseCodes, publishedScoreMap, publishedRankMap, participationMap]);
 
   const myPos = ranking.findIndex(r => r.email === session?.email) + 1;
   const isLoading = loadingScores || loadingCodes || loadingProfiles;
