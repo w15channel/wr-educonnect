@@ -565,6 +565,19 @@ export default function ScoreControl() {
 
   const nextModuleNumber = (moduleClosures.reduce((max, c) => Math.max(max, Number(c.module_number) || 0), 0)) + 1;
 
+  // Corte do período atual: após encerrar um período, participações e pontuações
+  // só devem contar atividades registradas DEPOIS do encerramento — assim alunos
+  // novos e antigos começam empatados no período vigente.
+  const periodCutoff = moduleClosures.reduce((latest, c) => {
+    if (!c.closed_at) return latest;
+    return !latest || new Date(c.closed_at) > latest ? new Date(c.closed_at) : latest;
+  }, null);
+  const isAfterCutoff = (record) => {
+    if (!periodCutoff) return true;
+    const created = record?.created_date ? new Date(record.created_date) : null;
+    return !created || Number.isNaN(created.getTime()) || created > periodCutoff;
+  };
+
   useEffect(() => {
     if (!location.search.includes('filter=pending')) return;
     if (selectedCode || codes.length === 0 || submissions.length === 0) return;
@@ -644,16 +657,16 @@ export default function ScoreControl() {
   };
 
   const getParticipationStats = (email) => {
-    const lessonCount = lessonProgresses.filter((p) => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched).length;
+    const lessonCount = lessonProgresses.filter((p) => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched && isAfterCutoff(p)).length;
     // Lives não geram pontuação e não entram mais na área de pontuação do aluno.
-    const taskCount = submissions.filter((s) => s.student_email === email && taskIds.has(s.task_id)).length;
-    const postCount = forumPosts.filter((p) => p.author_email === email && forumPostIds.has(p.id)).length;
+    const taskCount = submissions.filter((s) => s.student_email === email && taskIds.has(s.task_id) && isAfterCutoff(s)).length;
+    const postCount = forumPosts.filter((p) => p.author_email === email && forumPostIds.has(p.id) && isAfterCutoff(p)).length;
     const forumParentById = new Map(forumPosts.map((p) => [p.id, p]));
     const replyCount = forumReplies.filter((r) => {
       const parentPost = forumParentById.get(r.post_id);
-      return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostIds.has(parentPost.id);
+      return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostIds.has(parentPost.id) && isAfterCutoff(r);
     }).length;
-    const monitorCount = monitorHistory.filter((m) => m.student_email === email).length;
+    const monitorCount = monitorHistory.filter((m) => m.student_email === email && isAfterCutoff(m)).length;
     const count = lessonCount + taskCount + postCount + replyCount + monitorCount;
     return { count };
   };
