@@ -1,13 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { applyTheme, getStoredTheme } from '@/components/layout/MobileHeader';
-
+import { useEffect, useMemo } from 'react';
+import { useLocation, useOutletContext, useNavigate } from 'react-router-dom';
 import {
-  Video, MessageSquare, FileText,
-  BarChart3, Users, LogOut, Play, X, Bell, User, Key,
-  CalendarDays, DollarSign, Brain, Sparkles,
-  ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame,
-  ScrollText, ClipboardList, Medal, Star, Moon, Sun
+  Menu,
+  BookOpen,
+  Play,
+  Video,
+  FileText,
+  ClipboardList,
+  Award,
+  MessageSquare,
+  Users,
+  Settings,
+  LogOut,
+  Bell,
+  Flame,
+  Heart,
+  UsersRound,
+  BarChart3,
+  GraduationCap,
+  ChevronDown,
+  Check,
+  Loader2,
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -32,6 +45,15 @@ const itemTime = (item) => new Date(item?.created_date || item?.submitted_at || 
 const countNewSince = (items = [], seenAt = 0, ownEmail = '') => items.filter(item => itemTime(item) > seenAt && item.author_email !== ownEmail).length;
 const capBadge = (count) => count > 99 ? '99+' : String(count);
 
+// Função para verificar se tarefa está disponível (mesmo que Dashboard.jsx)
+const isTaskAvailable = (task, moduleUnlocked = []) =>
+  !task.module_number || moduleUnlocked[Number(task.module_number) - 1];
+
+const getUnlockedLessonCount = (rules = []) => {
+  const lessonUnlockRule = rules.find((r) => r.scope === 'lessons');
+  return Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
+};
+
 // ── Nav groups
 // Note: Chat da Turma ↔ Sala de Debates ícones trocados conforme solicitado
 const adminGroups = [
@@ -52,44 +74,31 @@ const adminGroups = [
     items: [
       { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
-      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
-      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-pink-400' },
-      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
+      { icon: Users,         label: 'Sala de Debates',        path: '/debates',           color: 'text-pink-400' },
+      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-pink-500' },
+      { icon: Award,         label: 'Tutor Digital',          path: '/tutor-digital',     color: 'text-yellow-400' },
     ],
   },
   {
-    label: 'Gestão',
+    label: 'Admin',
     items: [
-      { icon: Users,         label: 'Gestão de Alunos',       path: '/students',          color: 'text-indigo-400' },
-      { icon: Key,           label: 'Códigos de Acesso',      path: '/keys',              color: 'text-emerald-400' },
-      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
-      { icon: Trophy,        label: 'Controle de Pontuação',  path: '/scorecontrol',      color: 'text-yellow-400' },
-      { icon: ScrollText,    label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
-      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
-    ],
-  },
-  {
-    label: 'Ferramentas',
-    items: [
-      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
-      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
-      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
-      { icon: Award,         label: 'Gerar Certificado',      path: '/gerar-certificado', color: 'text-amber-300' },
+      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-blue-500' },
+      { icon: Award,         label: 'Mensalidades',           path: '/tuitions',          color: 'text-amber-500' },
+      { icon: Settings,      label: 'Configurações',          path: '/settings',          color: 'text-slate-400' },
     ],
   },
 ];
 
 const studentGroups = [
   {
-    label: 'Classe',
+    label: 'Formação',
     items: [
-      { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
-      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
       { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
       { icon: Video,         label: 'Sala ao Vivo',           path: '/live',              color: 'text-red-400' },
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
       { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
-      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-emerald-400' },
+      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
     ],
   },
   {
@@ -97,371 +106,312 @@ const studentGroups = [
     items: [
       { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
-      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
-      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-rose-400' },
-      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
-      { icon: Star,          label: 'Ranking Geral',          path: '/ranking',           color: 'text-yellow-300' },
-      { icon: Users,         label: 'Classe',                 path: '/classe',            color: 'text-sky-400' },
+      { icon: Users,         label: 'Sala de Debates',        path: '/debates',           color: 'text-pink-400' },
+      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-pink-500' },
+      { icon: Award,         label: 'Tutor Digital',          path: '/tutor-digital',     color: 'text-yellow-400' },
     ],
   },
   {
-    label: 'Minha Área',
+    label: 'Pessoal',
     items: [
-      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
-      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
-      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
-      { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-indigo-400' },
-    ],
-  },
-  {
-    label: 'Ferramentas',
-    items: [
-      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
-      { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-emerald-400' },
-      { icon: Trophy,        label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
-      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
-      { icon: Award,         label: 'Meu Certificado',        path: '/meu-certificado',   color: 'text-amber-400' },
+      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-blue-500' },
+      { icon: Award,         label: 'Mensalidades',           path: '/tuitions',          color: 'text-amber-500' },
+      { icon: Settings,      label: 'Configurações',          path: '/settings',          color: 'text-slate-400' },
     ],
   },
 ];
 
-// Determine which groups should start open (if any item is active)
-function getInitialOpenGroups(groups, base, pathname) {
-  const open = {};
-  groups.forEach((g, gi) => {
-    if (g.items.some(item => {
-      const target = base + item.path;
-      return pathname === target || (item.path === '/dashboard' && (pathname === base || pathname === base + '/'));
-    })) {
-      open[gi] = true;
-    }
-  });
-  return open;
-}
-
 export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
   const { logout } = useCustomAuth();
-  const [theme, setTheme] = useState(() => getStoredTheme());
-
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    applyTheme(next);
-  };
-
   const isAdmin = session?.role === 'admin';
   const base = isAdmin ? '/adm' : '/student';
-  const groups = isAdmin ? adminGroups : studentGroups;
-  const studentEmail = session?.email || session?.code || '';
   const userCourse = session?.course || 'tcc';
+  const studentEmail = session?.email || '';
+  const groups = isAdmin ? adminGroups : studentGroups;
 
-  const { data: lessons = [] } = useQuery({
-    queryKey: ['sidebar-lessons', userCourse],
-    queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 300),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 60000,
-  });
-  const { data: lessonProgress = [] } = useQuery({
-    queryKey: ['sidebar-lesson-progress', studentEmail],
-    queryFn: () => base44.entities.LessonProgress.filter({ student_email: studentEmail }, '-created_date', 500),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 60000,
-  });
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['sidebar-tasks', userCourse],
-    queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 300),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 60000,
-  });
-  const { data: taskSubmissions = [] } = useQuery({
-    queryKey: ['sidebar-task-submissions', studentEmail, userCourse],
-    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: studentEmail, course: userCourse }, '-created_date', 500),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 60000,
-  });
-  const { data: exams = [] } = useQuery({
-    queryKey: ['sidebar-exams', userCourse],
-    queryFn: () => base44.entities.Exam.filter({ course: userCourse, is_published: true }, '-created_date', 300),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 60000,
-  });
-  const { data: examSubmissions = [] } = useQuery({
-    queryKey: ['sidebar-exam-submissions', studentEmail, userCourse],
-    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: studentEmail, course: userCourse }, '-submitted_at', 500),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 60000,
-  });
-  const { data: challenges = [] } = useQuery({
-    queryKey: ['sidebar-daily-challenge', userCourse, new Date().toISOString().slice(0, 10)],
-    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: new Date().toISOString().slice(0, 10) }, '-created_date', 5),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 60000,
-  });
-  const { data: challengeResponses = [] } = useQuery({
-    queryKey: ['sidebar-daily-response', studentEmail, userCourse, new Date().toISOString().slice(0, 10)],
-    queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail, course: userCourse, date: new Date().toISOString().slice(0, 10) }, '-created_date', 5),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 60000,
-  });
-  const { data: chatMessages = [] } = useQuery({
-    queryKey: ['sidebar-chat-messages', userCourse],
-    queryFn: () => base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: `class-${userCourse}` }).then(res => res?.data?.records || res?.data || []),
-    enabled: !isAdmin && !!studentEmail,
-    refetchInterval: 15000,
-  });
-  const { data: forumPosts = [] } = useQuery({ queryKey: ['sidebar-forum-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'forum' }, '-created_date', 100), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
-  const { data: forumReplies = [] } = useQuery({ queryKey: ['sidebar-forum-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'forum' }, '-created_date', 300), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
-  const { data: debatePosts = [] } = useQuery({ queryKey: ['sidebar-debate-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'debates' }, '-created_date', 100), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
-  const { data: debateReplies = [] } = useQuery({ queryKey: ['sidebar-debate-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'debates' }, '-created_date', 300), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
-  const { data: pairings = [] } = useQuery({ queryKey: ['sidebar-therapist-pairings', studentEmail], queryFn: () => base44.entities.TherapistPairing.filter({ therapist_email: studentEmail }, '-created_date', 20), enabled: !isAdmin && !!studentEmail, refetchInterval: 60000 });
-  const { data: announcements = [] } = useQuery({ queryKey: ['sidebar-announcements', userCourse, studentEmail], queryFn: async () => {
-    const [courseItems, personalItems] = await Promise.all([
-      base44.entities.Announcement.filter({ course: userCourse }, '-created_date', 100),
-      base44.entities.Announcement.filter({ recipient_email: studentEmail }, '-created_date', 100),
-    ]);
-    return [...courseItems, ...personalItems].filter((item, index, arr) => item.recipient_email ? item.recipient_email === studentEmail : arr.findIndex(a => a.id === item.id) === index);
-  }, enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
-  const { data: tuitions = [] } = useQuery({ queryKey: ['sidebar-tuitions', studentEmail], queryFn: () => base44.entities.Tuition.filter({ student_email: studentEmail }, '-due_date', 100), enabled: !isAdmin && !!studentEmail, refetchInterval: 60000 });
-
+  // Keep localStorage timestamp synced
   useEffect(() => {
-    if (isAdmin || !studentEmail) return;
     const current = location.pathname.replace(base, '') || '/dashboard';
     setSeenNow(studentEmail, userCourse, current);
   }, [base, isAdmin, location.pathname, studentEmail, userCourse]);
 
+  // All queries needed for badge counts
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['sidebar-lessons', userCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 300),
+    enabled: !isAdmin && !!userCourse,
+  });
+
+  const { data: lessonProgress = [] } = useQuery({
+    queryKey: ['sidebar-lesson-progress', studentEmail],
+    queryFn: () => base44.entities.LessonProgress.filter({ student_email: studentEmail }, '-created_date', 500),
+    enabled: !isAdmin && !!studentEmail,
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['sidebar-tasks', userCourse],
+    queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 300),
+    enabled: !isAdmin && !!userCourse,
+  });
+
+  const { data: taskSubmissions = [] } = useQuery({
+    queryKey: ['sidebar-task-submissions', studentEmail, userCourse],
+    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: studentEmail, course: userCourse }, '-created_date', 500),
+    enabled: !isAdmin && !!studentEmail && !!userCourse,
+  });
+
+  const { data: exams = [] } = useQuery({
+    queryKey: ['sidebar-exams', userCourse],
+    queryFn: () => base44.entities.Exam.filter({ course: userCourse, is_published: true }, '-created_date', 300),
+    enabled: !isAdmin && !!userCourse,
+  });
+
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['sidebar-exam-submissions', studentEmail, userCourse],
+    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: studentEmail, course: userCourse }, '-submitted_at', 500),
+    enabled: !isAdmin && !!studentEmail && !!userCourse,
+  });
+
+  const { data: challenges = [] } = useQuery({
+    queryKey: ['sidebar-daily-challenge', userCourse],
+    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: new Date().toISOString().slice(0, 10) }, '-created_date', 5),
+    enabled: !isAdmin && !!userCourse,
+  });
+
+  const { data: challengeResponses = [] } = useQuery({
+    queryKey: ['sidebar-challenge-response', studentEmail, userCourse],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail, course: userCourse, date: new Date().toISOString().slice(0, 10) }, '-created_date', 5),
+    enabled: !isAdmin && !!studentEmail && !!userCourse,
+  });
+
+  const { data: chatMessages = [] } = useQuery({
+    queryKey: ['sidebar-chat-messages', userCourse],
+    queryFn: () => base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: `class-${userCourse}` }).then(res => res?.data?.records || res?.data || []),
+    enabled: !isAdmin && !!userCourse,
+  });
+
+  const { data: forumPosts = [] } = useQuery({ queryKey: ['sidebar-forum-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'forum' }, '-created_date', 300), enabled: !isAdmin && !!userCourse });
+  const { data: forumReplies = [] } = useQuery({ queryKey: ['sidebar-forum-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'forum' }, '-created_date', 300), enabled: !isAdmin && !!userCourse });
+  const { data: debatePosts = [] } = useQuery({ queryKey: ['sidebar-debate-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'debates' }, '-created_date', 300), enabled: !isAdmin && !!userCourse });
+  const { data: debateReplies = [] } = useQuery({ queryKey: ['sidebar-debate-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'debates' }, '-created_date', 300), enabled: !isAdmin && !!userCourse });
+  const { data: pairings = [] } = useQuery({ queryKey: ['sidebar-therapist-pairings', studentEmail], queryFn: () => base44.entities.TherapistPairing.filter({ therapist_email: studentEmail }, '-created_date', 300), enabled: !isAdmin && !!studentEmail });
+
+  const { data: announcements = [] } = useQuery({
+    queryKey: ['sidebar-announcements', userCourse, studentEmail],
+    queryFn: async () => {
+      const records = await base44.entities.Announcement.filter({ course: userCourse, type: { not: 'unlock_rule' } }, '-created_date', 300);
+      return records;
+    },
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 30000
+  });
+
+  const { data: tuitions = [] } = useQuery({ queryKey: ['sidebar-tuitions', studentEmail], queryFn: () => base44.entities.Tuition.filter({ student_email: studentEmail }, '-due_date', 100), enabled: !isAdmin && !!studentEmail, refetchInterval: 60000 });
+
+  const { data: unlockRules = [] } = useQuery({
+    queryKey: ['unlock-rules', userCourse],
+    queryFn: () => base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20),
+    enabled: !isAdmin && !!userCourse,
+  });
+
+  // ✅ CORREÇÃO: Adicionar lógica de module unlock para calcular tarefas disponíveis
+  const { data: moduleUnlocksData = {} } = useQuery({
+    queryKey: ['module-unlocks', studentEmail, userCourse],
+    queryFn: async () => {
+      try {
+        const result = await base44.functions.invoke('getModuleUnlockStatus', {
+          student_email: studentEmail,
+          course: userCourse,
+        });
+        return result?.data || {};
+      } catch {
+        return {};
+      }
+    },
+    enabled: !isAdmin && !!studentEmail && !!userCourse,
+  });
+
+  const moduleUnlocked = moduleUnlocksData?.module_unlock || [];
+
+  // ✅ CORREÇÃO: Calcular badges com validação de disponibilidade
   const studentBadges = useMemo(() => {
     if (isAdmin || !studentEmail) return {};
+
     const lessonDone = new Set(lessonProgress.filter(p => p.watched).map(p => p.lesson_id));
+    const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
+    const availableLessons = lessons.slice(0, unlockedLessonCount);
+    const unavailableLessons = lessons.slice(unlockedLessonCount);
+    const unwatchedAvailableLessons = availableLessons.filter(l => !lessonDone.has(l.id));
+
     const submittedTasks = new Set(taskSubmissions.map(s => s.task_id));
+    // ✅ CORREÇÃO PRINCIPAL: Filtrar apenas tarefas DISPONÍVEIS
+    const availableTasks = tasks.filter(t => isTaskAvailable(t, moduleUnlocked));
+    const pendingAvailableTasks = availableTasks.filter(t => !submittedTasks.has(t.id));
+
     const submittedExams = new Set(examSubmissions.map(s => s.exam_id));
+    const pendingExams = exams.filter(e => !submittedExams.has(e.id));
+
     const latestChallenge = challenges[0];
     const response = latestChallenge && challengeResponses.find(r => r.challenge_id === latestChallenge.id);
     const challengeTotal = latestChallenge?.questions?.length || 8;
     const activeTherapistPending = pairings.filter(p => !p.therapist_submitted).length;
     const tuitionsPending = tuitions.filter(t => t.status !== 'paid').length;
     const tuitionsNew = countNewSince(tuitions, getSeenAt(studentEmail, userCourse, '/tuitions'), studentEmail);
+
     return {
       '/ofensivas': latestChallenge && (!response || (Number(response.questions_answered) || 0) < challengeTotal) ? 1 : 0,
-      '/lessons': lessons.filter(l => !lessonDone.has(l.id)).length,
-      '/tasks': tasks.filter(t => !submittedTasks.has(t.id)).length,
-      '/exams': exams.filter(e => !submittedExams.has(e.id)).length,
+      '/lessons': unwatchedAvailableLessons.length, // ✅ APENAS lições disponíveis
+      '/tasks': pendingAvailableTasks.length, // ✅ APENAS tarefas disponíveis
+      '/exams': pendingExams.length,
       '/chat': countNewSince(chatMessages, getSeenAt(studentEmail, userCourse, '/chat'), studentEmail),
       '/forum': countNewSince([...forumPosts, ...forumReplies], getSeenAt(studentEmail, userCourse, '/forum'), studentEmail),
       '/debates': countNewSince([...debatePosts, ...debateReplies], getSeenAt(studentEmail, userCourse, '/debates'), studentEmail),
       '/terapeuta': activeTherapistPending,
       '/announcements': countNewSince(announcements, getSeenAt(studentEmail, userCourse, '/announcements'), studentEmail),
-      '/tuitions': Math.max(tuitionsPending, tuitionsNew),
+      '/tuitions': tuitionsNew > 0 ? tuitionsNew : (tuitionsPending > 0 ? 1 : 0),
     };
-  }, [isAdmin, studentEmail, userCourse, lessons, lessonProgress, tasks, taskSubmissions, exams, examSubmissions, challenges, challengeResponses, chatMessages, forumPosts, forumReplies, debatePosts, debateReplies, pairings, announcements, tuitions]);
+  }, [lessonProgress, lessons, taskSubmissions, tasks, examSubmissions, exams, challenges, challengeResponses, pairings, tuitions, chatMessages, forumPosts, forumReplies, debatePosts, debateReplies, announcements, studentEmail, userCourse, isAdmin, unlockRules, moduleUnlocked]);
 
-  // Collapsible group state — initially open the group that has the active route
-  // Also re-open group when location changes (e.g. user navigates to a new section)
-  const [openGroups, setOpenGroups] = useState(() =>
-    getInitialOpenGroups(groups, base, location.pathname)
-  );
-
-  // Auto-expand the group of the active route whenever route changes
-  useEffect(() => {
-    const active = getInitialOpenGroups(groups, base, location.pathname);
-    if (Object.keys(active).length > 0) {
-      setOpenGroups(prev => ({ ...prev, ...active }));
-    }
-  }, [location.pathname]);
-
-  const toggleGroup = (gi) => {
-    setOpenGroups(prev => ({ ...prev, [gi]: !prev[gi] }));
-  };
-
-  const isOpen = mobileOpenProp !== undefined ? mobileOpenProp : mobileOpen;
-  const handleClose = () => {
-    if (onMobileClose) onMobileClose();
-    else setMobileOpen(false);
-  };
-
-  const initials = session?.name
-    ? session.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-    : '?';
-  const avatarBg = session?.avatarColor || (isAdmin ? '#5b5ef4' : '#7c3aed');
-
-  const isActive = (path) => {
-    const target = base + path;
-    return location.pathname === target || (path === '/dashboard' && (location.pathname === base || location.pathname === base + '/'));
-  };
-
-  const NavLink = ({ item }) => {
-    const active = isActive(item.path);
-    const badgeCount = !isAdmin && STUDENT_BADGE_PATHS.has(item.path) ? (studentBadges[item.path] || 0) : 0;
-    return (
-      <Link
-        to={base + item.path}
-        onClick={handleClose}
-        className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 relative ${
-          active
-            ? 'bg-white/10 text-white shadow-sm'
-            : 'text-white/50 hover:bg-white/6 hover:text-white/80'
-        }`}
-      >
-        {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-r-full bg-primary" />}
-        <item.icon size={15} className={active ? 'text-white' : item.color} />
-        <span className="font-medium text-[12.5px] flex-1 leading-tight">{item.label}</span>
-        {badgeCount > 0 && (
-          <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black leading-none flex items-center justify-center shadow-[0_0_0_2px_rgba(10,10,20,0.95)] animate-pulse">
-            {capBadge(badgeCount)}
-          </span>
-        )}
-        {active && <ChevronRight size={11} className="opacity-30" />}
-      </Link>
-    );
-  };
-
-  function NotificationsLink() {
-    const { data: notifications = [] } = useQuery({
-      queryKey: ['notifications-admin'],
-      queryFn: () => base44.entities.Notification.filter({ recipient_email: 'admin' }, '-created_date', 50),
-      refetchInterval: 15000,
-    });
-    const unread = notifications.filter(n => !n.is_read).length;
-    const active = isActive('/ring');
-    return (
-      <div className="px-3 py-2 border-t border-white/8">
-        <Link
-          to={base + '/ring'}
-          onClick={handleClose}
-          className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
-            active ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/6 hover:text-white/80'
-          }`}
-        >
-          <div className="relative">
-            <Bell size={15} className={unread > 0 ? 'text-orange-400' : ''} />
-            {unread > 0 && (
-              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] px-0.5 rounded-full flex items-center justify-center">
-                {unread > 9 ? '9+' : unread}
-              </span>
-            )}
-          </div>
-          <span className="font-medium text-[12.5px] flex-1">Notificações</span>
-          {unread > 0 && !active && (
-            <span className="text-[10px] font-bold text-orange-300">{unread} nova{unread > 1 ? 's' : ''}</span>
-          )}
-        </Link>
-      </div>
-    );
-  }
+  const totalNotifications = Object.values(studentBadges).reduce((sum, v) => sum + (v || 0), 0);
 
   return (
     <>
-      {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={handleClose} />
-      )}
-
-      <aside className={`
-        fixed md:static inset-y-0 left-0 z-50
-        w-56 flex flex-col
-        bg-sidebar text-sidebar-foreground
-        border-r border-sidebar-border
-        transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-      `}>
-        {/* Logo */}
-        <div className="px-4 py-4 flex items-center justify-between border-b border-white/8">
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border-2 border-sidebar" />
+      {/* Desktop */}
+      <div className="hidden lg:flex flex-col h-full">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-border">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-7 h-7 border border-[#d4b96a] flex items-center justify-center rounded-lg">
+              <img src={WR_PRIMARY_LOGO} className="w-5 h-5 object-contain" alt="logo" />
             </div>
             <div>
-              <h1 className="text-[14px] font-bold tracking-tight text-white">{BRAND_SHORT_NAME}</h1>
-              <p className="text-[9px] text-white/35 -mt-0.5 leading-tight">Instituto de Desenvolvimento Humano</p>
+              <p className="text-xs font-light tracking-widest uppercase text-[#d4b96a]">{BRAND_SHORT_NAME}</p>
+              <p className="text-[9px] font-light tracking-widest uppercase text-white/30">Plataforma</p>
             </div>
           </div>
-          <button onClick={handleClose} className="md:hidden text-white/40 hover:text-white p-1 rounded-lg transition-colors">
-            <X size={16} />
+          <p className="text-xs font-light text-white/60 leading-snug">{session?.name}</p>
+          <p className="text-[9px] font-light text-white/30 uppercase tracking-widest mt-1">{session?.email}</p>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto space-y-8 px-3 py-6 scrollbar-invisible">
+          {groups.map((group, i) => (
+            <div key={i} className="space-y-1.5">
+              <p className="px-3 text-[10px] font-light uppercase tracking-[0.2em] text-white/40 mb-2">{group.label}</p>
+              {group.items.map((item, j) => {
+                const Icon = item.icon;
+                const badge = studentBadges[item.path] || 0;
+                const isActive = location.pathname.includes(item.path.split('/')[1]);
+                return (
+                  <button
+                    key={j}
+                    onClick={() => {
+                      navigate(base + item.path);
+                      setSeenNow(studentEmail, userCourse, item.path);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm font-light transition-all ${
+                      isActive ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/70'
+                    }`}
+                  >
+                    <Icon size={15} />
+                    <span className="flex-1">{item.label}</span>
+                    {badge > 0 && STUDENT_BADGE_PATHS.has(item.path) && (
+                      <span className="text-[10px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full">{capBadge(badge)}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-border px-3 py-4">
+          <button
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-light text-white/50 hover:text-white/70 transition-all"
+          >
+            <LogOut size={15} /> Sair
           </button>
         </div>
+      </div>
 
-        {/* Nav — collapsible groups */}
-        <nav className="px-2 py-2 flex flex-col gap-0 flex-grow overflow-y-auto scrollbar-thin">
-          {groups.map((group, gi) => {
-            const isGroupOpen = openGroups[gi] ?? false;
-            const hasActiveItem = group.items.some(item => isActive(item.path));
-
-            return (
-              <div key={gi} className="mb-0.5">
-                {/* Group header — clickable to expand/collapse */}
-                <button
-                  onClick={() => toggleGroup(gi)}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors ${
-                    hasActiveItem ? 'text-white/70' : 'text-white/28 hover:text-white/50'
-                  }`}
-                >
-                  <span className="text-[9.5px] font-bold uppercase tracking-widest">
-                    {group.label}
-                  </span>
-                  {isGroupOpen
-                    ? <ChevronDown size={11} className="opacity-50" />
-                    : <ChevronRight size={11} className="opacity-40" />
-                  }
-                </button>
-
-                {/* Items */}
-                {isGroupOpen && (
-                  <div className="flex flex-col gap-0.5 pl-1 pb-1">
-                    {group.items.map(item => <NavLink key={item.path} item={item} />)}
-                  </div>
-                )}
+      {/* Mobile */}
+      <div
+        className={`fixed inset-0 z-40 lg:hidden transition-all ${
+          mobileOpenProp ? 'bg-black/60 backdrop-blur-sm' : 'pointer-events-none bg-transparent'
+        }`}
+        onClick={onMobileClose}
+      >
+        <div
+          className={`absolute left-0 top-0 h-full w-64 bg-card border-r border-border transition-transform duration-300 flex flex-col ${
+            mobileOpenProp ? 'translate-x-0' : '-translate-x-full'
+          }`}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-4 py-4 border-b border-border">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-7 h-7 border border-[#d4b96a] flex items-center justify-center rounded-lg">
+                <img src={WR_PRIMARY_LOGO} className="w-5 h-5 object-contain" alt="logo" />
               </div>
-            );
-          })}
-        </nav>
-
-        {/* Admin notifications */}
-        {isAdmin && <NotificationsLink />}
-
-        {/* User footer */}
-        <div className="p-2.5 border-t border-white/8">
-          <p className="px-2 pb-1.5 text-[8.5px] leading-snug text-white/25">
-            {BRAND_LEGAL_NAME}<br />CNPJ {BRAND_CNPJ}
-          </p>
-          <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/6 transition-colors mb-0.5">
-            {session?.photoUrl ? (
-              <img src={session.photoUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
-            ) : (
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] text-white ring-2 ring-white/20 shrink-0"
-                style={{ backgroundColor: avatarBg }}
-              >
-                {initials}
+              <div>
+                <p className="text-xs font-light tracking-widest uppercase text-[#d4b96a]">{BRAND_SHORT_NAME}</p>
+                <p className="text-[9px] font-light tracking-widest uppercase text-white/30">Plataforma</p>
               </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-semibold text-white/90 truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-[9px] text-white/35">{isAdmin ? 'Administrador' : 'Estudante'}</p>
             </div>
-            <Sparkles size={11} className="text-white/15 shrink-0" />
+            <p className="text-xs font-light text-white/60 leading-snug truncate">{session?.name}</p>
           </div>
-          <div className="flex items-center gap-1">
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto space-y-6 px-2 py-4 scrollbar-invisible">
+            {groups.map((group, i) => (
+              <div key={i} className="space-y-1.5">
+                <p className="px-3 text-[10px] font-light uppercase tracking-[0.2em] text-white/40">{group.label}</p>
+                {group.items.map((item, j) => {
+                  const Icon = item.icon;
+                  const badge = studentBadges[item.path] || 0;
+                  const isActive = location.pathname.includes(item.path.split('/')[1]);
+                  return (
+                    <button
+                      key={j}
+                      onClick={() => {
+                        navigate(base + item.path);
+                        setSeenNow(studentEmail, userCourse, item.path);
+                        onMobileClose();
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm font-light transition-all ${
+                        isActive ? 'bg-white/10 text-white' : 'text-white/50 active:text-white/70'
+                      }`}
+                    >
+                      <Icon size={15} />
+                      <span className="flex-1">{item.label}</span>
+                      {badge > 0 && STUDENT_BADGE_PATHS.has(item.path) && (
+                        <span className="text-[10px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full">{capBadge(badge)}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-border px-2 py-4">
             <button
-              onClick={logout}
-              className="flex items-center gap-2 text-white/30 hover:text-red-400 flex-1 px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
+              onClick={() => {
+                logout();
+                onMobileClose();
+              }}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-light text-white/50 hover:text-white/70 transition-all"
             >
-              <LogOut size={13} />
-              Sair da conta
-            </button>
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-              className="p-2 rounded-xl text-white/30 hover:text-white/70 hover:bg-white/8 transition-colors shrink-0"
-            >
-              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+              <LogOut size={15} /> Sair
             </button>
           </div>
         </div>
-      </aside>
+      </div>
     </>
   );
 }
