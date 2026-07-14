@@ -23,7 +23,7 @@ import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
-const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 6, quiz_questions: [] };
+const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 6, quiz_questions: [], module_number: '' };
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -223,7 +223,7 @@ export default function Tasks({ mode = 'tasks' }) {
 
   const openEdit = (task) => {
     setEditingTask(task);
-    setForm({ title: task.title, description: task.description || '', type: task.type, deadline: task.deadline || '', max_grade: task.type === 'quiz' ? 50 : 5, quiz_questions: task.quiz_questions || [] });
+    setForm({ title: task.title, description: task.description || '', type: task.type, deadline: task.deadline || '', max_grade: task.type === 'quiz' ? 50 : 5, quiz_questions: task.quiz_questions || [], module_number: task.module_number || '' });
     setShowForm(true);
   };
 
@@ -274,6 +274,19 @@ export default function Tasks({ mode = 'tasks' }) {
                 </Select>
                 <Input type="datetime-local" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} />
                 <Input type="number" placeholder="Nota máxima" value={form.max_grade} onChange={e => setForm({ ...form, max_grade: Number(e.target.value) })} />
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Módulo da Apostila (opcional)</label>
+                  <Select value={form.module_number ? String(form.module_number) : 'none'} onValueChange={v => setForm({ ...form, module_number: v === 'none' ? '' : Number(v) })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+                        <SelectItem key={n} value={String(n)}>Módulo {n}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">Vincular esta tarefa a um módulo trava o acesso do aluno ao próximo módulo da apostila até ela ser entregue.</p>
+                </div>
                 <Button onClick={() => { const p = { ...form, course: userCourse }; editingTask ? updateMutation.mutate({ id: editingTask.id, data: p }) : createMutation.mutate(p); }} disabled={!form.title} className="w-full">
                   {editingTask ? 'Salvar' : 'Criar'}
                 </Button>

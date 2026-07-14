@@ -58,6 +58,10 @@
           }
         }
       }
+    },
+    "module_number": {
+      "type": "number",
+      "description": "M\u00f3dulo da apostila (1-10) ao qual esta tarefa pertence \u2014 usado para liberar progressivamente os m\u00f3dulos da apostila conforme o aluno entrega os trabalhos"
     }
   },
   "required": [

@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2, Lock } from 'lucide-react';
+import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -124,6 +125,7 @@ export default function Apostila() {
   const { session } = useCustomAuth();
   const isAdmin = session?.role === 'admin';
   const queryClient = useQueryClient();
+  const { moduleUnlocked, isLoading: loadingUnlocks } = useApostilaModuleUnlocks(session?.course || 'tcc', session);
 
   const [openChapter, setOpenChapter] = useState(null);
   const [openLesson, setOpenLesson] = useState(null);
@@ -465,33 +467,37 @@ export default function Apostila() {
           const isChOpen = openChapter === chapter.id;
           const colorLight = chapter.colorLight || 'text-emerald-400';
           const bgLight = chapter.bgLight || 'bg-emerald-500/10';
+          const isLocked = !isAdmin && !loadingUnlocks && !moduleUnlocked[chIdx];
 
           return (
-            <div key={chapter.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div key={chapter.id} className={`rounded-2xl border border-border bg-card overflow-hidden ${isLocked ? 'opacity-60' : ''}`}>
               {/* Chapter header */}
               <button
-                onClick={() => setOpenChapter(isChOpen ? null : chapter.id)}
-                className="w-full flex items-center justify-between p-5 hover:bg-secondary/40 transition-colors text-left"
+                onClick={() => {
+                  if (isLocked) { toast.error('Conclua o módulo anterior (aulas assistidas e trabalhos entregues) para desbloquear.'); return; }
+                  setOpenChapter(isChOpen ? null : chapter.id);
+                }}
+                className={`w-full flex items-center justify-between p-5 transition-colors text-left ${isLocked ? 'cursor-not-allowed' : 'hover:bg-secondary/40'}`}
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <div className={`w-10 h-10 rounded-xl ${bgLight} flex items-center justify-center shrink-0`}>
-                    <span className="text-sm font-bold">{chIdx + 1}</span>
+                    {isLocked ? <Lock size={15} className="text-muted-foreground" /> : <span className="text-sm font-bold">{chIdx + 1}</span>}
                   </div>
                   <div className="min-w-0">
                     <p className="font-bold text-sm text-foreground leading-tight">{chapter.title}</p>
-                    <p className={`text-xs mt-0.5 ${colorLight} font-medium`}>
-                      {chapter.subtitle} · {chapter.lessons.length} aulas
+                    <p className={`text-xs mt-0.5 ${isLocked ? 'text-muted-foreground' : colorLight} font-medium`}>
+                      {isLocked ? 'Bloqueado — conclua o módulo anterior' : `${chapter.subtitle} · ${chapter.lessons.length} aulas`}
                     </p>
                   </div>
                 </div>
-                {isChOpen
+                {!isLocked && (isChOpen
                   ? <ChevronDown size={16} className="text-muted-foreground shrink-0" />
                   : <ChevronRight size={16} className="text-muted-foreground shrink-0" />
-                }
+                )}
               </button>
 
               {/* Lessons */}
-              {isChOpen && (
+              {isChOpen && !isLocked && (
                 <div className="border-t border-border divide-y divide-border">
                   {chapter.lessons.map((lesson) => {
                     const key = `${chapter.id}__${lesson.id}`;
