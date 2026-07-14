@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { format, addDays } from 'date-fns';
+import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
 
 
@@ -32,13 +33,21 @@ const sortByNumericSequence = (items = []) => [...items].sort((a, b) => {
   return (a.created_date || '').localeCompare(b.created_date || '');
 });
 
-const getFirstThreePendingBySequence = (items = []) => sortByNumericSequence(items).slice(0, 3);
+const getNextPendingBySequence = (items = []) => sortByNumericSequence(items).slice(0, 1);
+
+const getUnlockedLessonCount = (rules = []) => {
+  const lessonUnlockRule = rules.find((r) => r.scope === 'lessons');
+  return Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
+};
+
+const isTaskAvailable = (task, moduleUnlocked = []) =>
+  !task.module_number || moduleUnlocked[Number(task.module_number) - 1];
 
 // Aulas assistidas e tarefas pendentes só fazem sentido depois que a plataforma
 // tiver histórico real de uso. Como os alunos estão ingressando agora pela
 // primeira vez, essas duas categorias ficam desativadas nas Pendências.
 // Reative (true) quando houver um novo reset da plataforma com alunos já em andamento.
-const SHOW_LESSON_TASK_PENDING_ALERTS = false;
+const SHOW_LESSON_TASK_PENDING_ALERTS = true;
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -245,6 +254,13 @@ export default function Dashboard() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 500)
   });
 
+  const { data: unlockRules = [] } = useQuery({
+    queryKey: ['unlock-rules-lessons', userCourse || 'all'],
+    queryFn: () => userCourse
+      ? base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20)
+      : base44.entities.Announcement.filter({ type: 'unlock_rule' }, '-updated_date', 20),
+  });
+
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', userCourse || 'all'],
     queryFn: () => userCourse ?
@@ -257,6 +273,8 @@ export default function Dashboard() {
     queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email }, '-created_date', 200),
     enabled: !isTeacher && !!session?.email
   });
+
+  const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, session);
 
   const { data: announcements = [] } = useQuery({
     queryKey: ['announcements'],
@@ -465,10 +483,12 @@ export default function Dashboard() {
         const today = new Date();
         const todayYmd = format(today, 'yyyy-MM-dd');
         const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
-        const unwatchedLessons = sortByNumericSequence(lessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched)));
-        const pendingTasksList = sortByNumericSequence(tasks.filter((t) => t.type === 'upload' && !submissions.find((s) => s.task_id === t.id)));
-        const visiblePendingLessons = getFirstThreePendingBySequence(unwatchedLessons);
-        const visiblePendingTasks = getFirstThreePendingBySequence(pendingTasksList);
+        const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
+        const availableLessons = sortByNumericSequence(lessons).slice(0, unlockedLessonCount);
+        const unwatchedLessons = sortByNumericSequence(availableLessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched)));
+        const pendingTasksList = sortByNumericSequence(tasks.filter((t) => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)));
+        const visiblePendingLessons = getNextPendingBySequence(unwatchedLessons);
+        const visiblePendingTasks = getNextPendingBySequence(pendingTasksList);
         const pendingExams = exams.filter((e) => !examSubmissions.find((s) => s.exam_id === e.id));
         const therapistPending = therapistPairings.filter((p) => {
           const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
@@ -483,7 +503,7 @@ export default function Dashboard() {
         // Lives já encerradas não devem mais aparecer nas pendências do aluno.
         const upcomingLives = liveSessions.filter((s) => !attendedIds.has(s.id) && isFutureLive(s) && s.status !== 'ended');
         const totalPending = therapistPending.length +
-          (SHOW_LESSON_TASK_PENDING_ALERTS ? unwatchedLessons.length + pendingTasksList.length : 0) +
+          (SHOW_LESSON_TASK_PENDING_ALERTS ? Math.min(unwatchedLessons.length, 1) + Math.min(pendingTasksList.length, 1) : 0) +
           pendingExams.length + upcomingLives.length;
 
         if (totalPending === 0) return null;
@@ -532,9 +552,9 @@ export default function Dashboard() {
                   <ArrowRight size={12} className="text-purple-400 shrink-0" />
                 </button>
               )}
-              {SHOW_LESSON_TASK_PENDING_ALERTS && unwatchedLessons.length > 3 &&
+              {SHOW_LESSON_TASK_PENDING_ALERTS && unwatchedLessons.length > visiblePendingLessons.length &&
               <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
-                  +{unwatchedLessons.length - visiblePendingLessons.length} aulas não assistidas → Ver todas
+                  +{unwatchedLessons.length - visiblePendingLessons.length} aulas no aguardo → Ver todas
                 </button>
               }
               {SHOW_LESSON_TASK_PENDING_ALERTS && visiblePendingTasks.map((t) =>
@@ -550,9 +570,9 @@ export default function Dashboard() {
                   <ArrowRight size={12} className="text-orange-400 shrink-0" />
                 </button>
               )}
-              {SHOW_LESSON_TASK_PENDING_ALERTS && pendingTasksList.length > 3 &&
+              {SHOW_LESSON_TASK_PENDING_ALERTS && pendingTasksList.length > visiblePendingTasks.length &&
               <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
-                  +{pendingTasksList.length - visiblePendingTasks.length} tarefas pendentes → Ver todas
+                  +{pendingTasksList.length - visiblePendingTasks.length} tarefas no aguardo → Ver todas
                 </button>
               }
               {pendingExams.slice(0, 3).map((e) =>

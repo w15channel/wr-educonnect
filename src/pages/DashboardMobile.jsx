@@ -11,17 +11,18 @@
  */
 import React, { useState } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  Video, FileText, Users, Trophy, Star, Bell, BookOpen,
+  FileText, Users, Trophy, Star, Bell, BookOpen,
   ArrowRight, Wifi, WifiOff, ClipboardList, GraduationCap,
-  Circle, Heart, ChevronDown, ChevronUp, TrendingUp, RefreshCw, Crown
+  Heart, ChevronDown, ChevronUp, TrendingUp, RefreshCw
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { toast } from 'sonner';
+import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 
 function getScopedPrefix(pathname) {
   const parts = pathname.split('/').filter(Boolean);
@@ -42,6 +43,14 @@ const sortBySeq = (arr = []) => [...arr].sort((a, b) => {
   if (bn !== null) return 1;
   return 0;
 });
+
+const getUnlockedLessonCount = (rules = []) => {
+  const lessonUnlockRule = rules.find((r) => r.scope === 'lessons');
+  return Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
+};
+
+const isTaskAvailable = (task, moduleUnlocked = []) =>
+  !task.module_number || moduleUnlocked[Number(task.module_number) - 1];
 
 export default function DashboardMobile() {
   const { user: session } = useOutletContext();
@@ -102,6 +111,13 @@ export default function DashboardMobile() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
   });
 
+  const { data: unlockRules = [] } = useQuery({
+    queryKey: ['unlock-rules-lessons', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20)
+      : base44.entities.Announcement.filter({ type: 'unlock_rule' }, '-updated_date', 20),
+  });
+
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', userCourse],
     queryFn: () => userCourse
@@ -114,6 +130,8 @@ export default function DashboardMobile() {
     queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email }, '-created_date', 200),
     enabled: !isTeacher && !!session?.email,
   });
+
+  const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, session);
 
   const { data: announcements = [] } = useQuery({
     queryKey: ['announcements'],
@@ -191,9 +209,11 @@ export default function DashboardMobile() {
   const today = new Date();
   const todayYmd = format(today, 'yyyy-MM-dd');
   const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
-  const unwatchedLessons = sortBySeq(lessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
-  const pendingTasksList = sortBySeq(tasks.filter(t => t.type === 'upload' && !submissions.find(s => s.task_id === t.id)));
-  const pendingQuizzes = tasks.filter(t => t.type === 'quiz' && !submissions.find(s => s.task_id === t.id));
+  const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
+  const availableLessons = sortBySeq(lessons).slice(0, unlockedLessonCount);
+  const unwatchedLessons = sortBySeq(availableLessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
+  const pendingTasksList = sortBySeq(tasks.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
+  const pendingQuizzes = tasks.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
   const therapistPending = therapistPairings.filter(p => {
     if (p.pairing_date < periodStart || p.pairing_date > todayYmd) return false;
     if (p.therapist_email === session?.email) return !p.therapist_submitted;
@@ -201,8 +221,9 @@ export default function DashboardMobile() {
     return false;
   });
   const attendedIds = new Set(liveAttendances.map(a => a.session_id));
-  const missedLives = liveSessions.filter(s => s.status === 'ended' && !attendedIds.has(s.id));
-  const totalPending = therapistPending.length + unwatchedLessons.length + pendingTasksList.length + pendingQuizzes.length + missedLives.length;
+  const now = new Date();
+  const missedLives = liveSessions.filter(s => s.scheduled_at && new Date(s.scheduled_at) > now && s.status !== 'ended' && !attendedIds.has(s.id));
+  const totalPending = therapistPending.length + Math.min(unwatchedLessons.length, 1) + Math.min(pendingTasksList.length, 1) + Math.min(pendingQuizzes.length, 1) + missedLives.length;
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -451,7 +472,7 @@ export default function DashboardMobile() {
                   </button>
                 );
               })}
-              {unwatchedLessons.slice(0, 2).map(l => (
+              {unwatchedLessons.slice(0, 1).map(l => (
                 <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
                   className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-purple-500/8 border border-purple-500/15 active:scale-[0.98] text-left transition-all">
                   <BookOpen size={13} className="text-purple-400 shrink-0" />
@@ -459,7 +480,7 @@ export default function DashboardMobile() {
                   <ArrowRight size={12} className="text-purple-400/40 shrink-0" />
                 </button>
               ))}
-              {pendingTasksList.slice(0, 2).map(t => (
+              {pendingTasksList.slice(0, 1).map(t => (
                 <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
                   className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-orange-500/8 border border-orange-500/15 active:scale-[0.98] text-left transition-all">
                   <ClipboardList size={13} className="text-orange-400 shrink-0" />
