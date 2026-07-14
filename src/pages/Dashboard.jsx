@@ -3,7 +3,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { Video, FileText, Users, Trophy, TrendingUp, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar } from 'lucide-react';
+import { Video, FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar, PlayCircle } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -614,49 +614,30 @@ export default function Dashboard() {
       {/* Student: progress + ranking */}
       {!isTeacher &&
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Progress */}
-          <button
-          onClick={() => navigate(scoped('/lessons'))}
-          className="bg-card rounded-2xl border border-border p-5 text-left hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all group">
-          
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <TrendingUp size={16} className="text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-foreground">Progresso nas Aulas</h3>
-                  <p className="text-xs text-muted-foreground">{watchedCount} de {lessons.length} concluídas</p>
-                </div>
+          {/* Tutorial player */}
+          <div className="bg-card rounded-2xl border border-border p-5 text-left">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
+                <PlayCircle size={16} className="text-purple-600" />
               </div>
-              <span className="text-2xl font-black text-primary">{progressPct}%</span>
-            </div>
-            <div className="relative w-full bg-secondary rounded-full h-2.5 overflow-hidden">
-              <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-700"
-              style={{ width: `${progressPct}%` }} />
-            
-            </div>
-
-            {myGrades.length > 0 &&
-          <div className="grid grid-cols-3 gap-2 mt-4">
-                {myGrades.slice(0, 6).map((s, i) => {
-              const task = tasks.find((t) => t.id === s.task_id);
-              return (
-                <div key={i} className="bg-secondary/60 rounded-xl p-2.5 text-center">
-                      <p className="text-lg font-black text-foreground">{formatScore(s.grade)}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{task?.title || 'Tarefa'}</p>
-                    </div>);
-
-            })}
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Tutorial da Plataforma</h3>
+                <p className="text-xs text-muted-foreground">Assista quando quiser para aprender a usar o site</p>
               </div>
-          }
-            {myGrades.length === 0 &&
-          <p className="text-xs text-muted-foreground mt-3 text-center py-2">
-                Suas notas aparecerão aqui após serem lançadas
-              </p>
-          }
-          </button>
+            </div>
+            <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ aspectRatio: '16 / 9' }}>
+              <iframe
+                src="https://drive.google.com/file/d/1cIKz1staWdnYROSBlyfXh7H3bjX7vb3w/preview"
+                allow="autoplay"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+                title="Tutorial da Plataforma"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Este vídeo é o tutorial de como usar o site adequadamente. Você pode assisti-lo sempre que precisar — tudo o que você precisa para começar a usar a plataforma está nele.
+            </p>
+          </div>
 
           {/* Ranking */}
           <div className="bg-card rounded-2xl border border-border p-5 text-left">
