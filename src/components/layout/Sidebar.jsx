@@ -13,6 +13,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
+import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 
 
 const STUDENT_BADGE_PATHS = new Set(['/ofensivas', '/lessons', '/tasks', '/exams', '/chat', '/forum', '/debates', '/terapeuta', '/announcements', '/tuitions']);
@@ -259,12 +260,26 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     });
   }, ...queryDefaults, refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL });
   const { data: tuitions = [] } = useQuery({ queryKey: ['sidebar-tuitions', studentEmail], queryFn: () => base44.entities.Tuition.filter({ student_email: studentEmail }, '-due_date', 100), ...queryDefaults, refetchInterval: SIDEBAR_REFETCH_INTERVAL });
+  const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, studentQueryEnabled ? session : null);
 
   useEffect(() => {
     if (isAdmin || !studentEmail) return;
     const current = location.pathname.replace(base, '') || '/dashboard';
     setSeenNow(studentEmail, userCourse, current);
   }, [base, isAdmin, location.pathname, studentEmail, userCourse]);
+
+  // Na primeira carga (ou quando o "visto" nunca foi gravado — ex: cache
+  // limpo/troca de dispositivo), define a linha de base como "agora" ao invés
+  // de 0. Isso evita que publicações antigas do fórum/debates/etc. sejam
+  // contadas como "novas" indefinidamente.
+  useEffect(() => {
+    if (isAdmin || !studentEmail) return;
+    VIEW_BADGE_PATHS.forEach((path) => {
+      if (getSeenAt(studentEmail, userCourse, path) === 0) {
+        setSeenNow(studentEmail, userCourse, path);
+      }
+    });
+  }, [isAdmin, studentEmail, userCourse]);
 
   const studentBadges = useMemo(() => {
     if (isAdmin || !studentEmail) return {};
@@ -281,7 +296,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     return {
       '/ofensivas': latestChallenge && (!response || (Number(response.questions_answered) || 0) < challengeTotal) ? 1 : 0,
       '/lessons': lessons.filter(lesson => lesson?.id && !lessonDone.has(lesson.id)).length,
-      '/tasks': tasks.filter(task => task?.id && !submittedTasks.has(task.id)).length,
+      '/tasks': tasks.filter(task => task?.id && !submittedTasks.has(task.id) && !(task.module_number && !moduleUnlocked[Number(task.module_number) - 1])).length,
       '/exams': exams.filter(exam => exam?.id && !submittedExams.has(exam.id)).length,
       '/chat': countNewSince(chatMessages, getSeenAt(studentEmail, userCourse, '/chat'), studentEmail),
       '/forum': countNewSince([...forumPosts, ...forumReplies], getSeenAt(studentEmail, userCourse, '/forum'), studentEmail),
@@ -290,7 +305,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
       '/announcements': countNewSince(announcements, getSeenAt(studentEmail, userCourse, '/announcements'), studentEmail),
       '/tuitions': Math.max(tuitionsPending, tuitionsNew),
     };
-  }, [isAdmin, studentEmail, userCourse, lessons, lessonProgress, tasks, taskSubmissions, exams, examSubmissions, challenges, challengeResponses, chatMessages, forumPosts, forumReplies, debatePosts, debateReplies, pairings, announcements, tuitions]);
+  }, [isAdmin, studentEmail, userCourse, lessons, lessonProgress, tasks, taskSubmissions, exams, examSubmissions, challenges, challengeResponses, chatMessages, forumPosts, forumReplies, debatePosts, debateReplies, pairings, announcements, tuitions, moduleUnlocked]);
 
   // Collapsible group state — initially open the group that has the active route
   // Also re-open group when location changes (e.g. user navigates to a new section)
