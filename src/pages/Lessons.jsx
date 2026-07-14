@@ -115,10 +115,12 @@ export default function Lessons() {
   const createMutation = useMutation({
     mutationFn: (data) => adminApi.create('RecordedLesson', data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['lessons'] }); setShowForm(false); setForm(EMPTY_FORM); toast.success('Aula criada!'); },
+    onError: (error) => toast.error(`Erro ao criar aula: ${error.message || 'tente novamente.'}`),
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => adminApi.update('RecordedLesson', id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['lessons'] }); setShowForm(false); setEditingLesson(null); setForm(EMPTY_FORM); toast.success('Aula atualizada!'); },
+    onError: (error) => toast.error(`Erro ao atualizar aula: ${error.message || 'tente novamente.'}`),
   });
   const deleteMutation = useMutation({
     mutationFn: (id) => adminApi.delete('RecordedLesson', id),
@@ -220,9 +222,22 @@ export default function Lessons() {
     }));
   };
 
+  const buildLessonPayload = () => {
+    // module_number é numérico no schema — nunca enviar string vazia (quebra a criação
+    // para os tipos de módulo Tutorial, Tira-Dúvidas e Outros, que não usam módulo da apostila).
+    const { module_number, apostila_chapter_id, apostila_lesson_id, ...rest } = form;
+    const payload = { ...rest, course: userCourse };
+    if (form.module_type === 'apostila' && module_number) {
+      payload.module_number = Number(module_number);
+      payload.apostila_chapter_id = apostila_chapter_id || '';
+      payload.apostila_lesson_id = apostila_lesson_id || '';
+    }
+    return payload;
+  };
+
   const handleSave = () => {
-    if (editingLesson) updateMutation.mutate({ id: editingLesson.id, data: { ...form, course: userCourse } });
-    else createMutation.mutate({ ...form, course: userCourse, order: lessons.length + 1 });
+    if (editingLesson) updateMutation.mutate({ id: editingLesson.id, data: buildLessonPayload() });
+    else createMutation.mutate({ ...buildLessonPayload(), order: lessons.length + 1 });
   };
 
   const handleCompleteModule = useCallback((moduleIndex) => {
