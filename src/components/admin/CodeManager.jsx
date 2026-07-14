@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode, getSession } from '@/lib/customAuth';
-import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X } from 'lucide-react';
+import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X, UserCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import StudentProfileEditDialog from '@/components/admin/StudentProfileEditDialog';
 
 export default function CodeManager({ course: lockedCourse }) {
   const queryClient = useQueryClient();
@@ -16,6 +17,7 @@ export default function CodeManager({ course: lockedCourse }) {
   const [newEmail, setNewEmail] = useState('');
   const [editingEmailId, setEditingEmailId] = useState(null);
   const [editingEmailValue, setEditingEmailValue] = useState('');
+  const [editingProfileCode, setEditingProfileCode] = useState(null);
 
   const { data: allCodes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -232,6 +234,9 @@ export default function CodeManager({ course: lockedCourse }) {
                   <Badge className={c.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
                     {c.is_active ? 'Ativo' : 'Inativo'}
                   </Badge>
+                  <button onClick={() => setEditingProfileCode(c)} title="Editar perfil do aluno" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                    <UserCog size={15} />
+                  </button>
                   <button onClick={() => copyCode(c.code)} title="Copiar código" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                     <Copy size={15} />
                   </button>
@@ -254,6 +259,10 @@ export default function CodeManager({ course: lockedCourse }) {
           </div>
         )}
       </div>
+
+      {editingProfileCode && (
+        <StudentProfileEditDialog code={editingProfileCode} onClose={() => setEditingProfileCode(null)} />
+      )}
     </div>
   );
 }
