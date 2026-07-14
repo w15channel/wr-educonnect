@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Play, Video, MessageSquare, LayoutGrid, BookOpen } from 'lucide-react';
+import { BarChart3, Play, Video, FileText, LayoutGrid, BookOpen } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 const tabs = [
   { icon: BarChart3,    label: 'Início',   root: '/dashboard' },
   { icon: Play,         label: 'Aulas',   root: '/lessons' },
   { icon: BookOpen,     label: 'Apostila', root: '/apostila' },
-  { icon: MessageSquare,label: 'Fórum',   root: '/forum' },
+  { icon: FileText,     label: 'Tarefas', root: '/tasks' },
   { icon: LayoutGrid,   label: 'Menu',    root: '__menu__' },
 ];
 
@@ -15,7 +15,7 @@ function getOwnerTab(pathname, base) {
   const stripped = pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
   if (stripped.startsWith('/lessons'))  return '/lessons';
   if (stripped.startsWith('/apostila')) return '/apostila';
-  if (stripped.startsWith('/forum'))    return '/forum';
+  if (stripped.startsWith('/tasks'))    return '/tasks';
   if (stripped === '/dashboard' || stripped === '/' || stripped === '') return '/dashboard';
   return null;
 }
