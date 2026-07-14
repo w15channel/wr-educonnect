@@ -7,6 +7,7 @@ import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X, GraduationCa
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
+import { toast } from 'sonner';
 
 const G = '#d4b96a';
 const BG = '#07080f';
@@ -14,7 +15,7 @@ const BG2 = '#0a0c18';
 const BG3 = '#0f1220';
 
 const MAX_RESERVATION_AI_QUESTIONS = 5;
-const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp; caso aconteça qualquer problema no envio, entre em contato com a equipe pelo WhatsApp 4199253-1598.';
+const RESERVATION_FINAL_MESSAGE = 'Obrigado! Já tenho as informações principais. Agora selecione a opção de enviar a reserva para o WhatsApp oficial. A mensagem será enviada pelo aplicativo WhatsApp no seu celular.';
 
 const LOBBY_MUSIC_KEY = 'wr_lobby_music_enabled';
 
@@ -294,7 +295,7 @@ export default function CourseLobby() {
 
   const openReserve = (course) => {
     setSelectedCourse(course);
-    setLeadMessages([{ role: 'assistant', content: `Olá! Sou a IA da ${BRAND_LEGAL_NAME} 😊 Vamos fazer sua reserva antecipada para ${course.title}. Qual é seu nome completo e melhor WhatsApp?` }]);
+    setLeadMessages([{ role: 'assistant', content: `Olá! Sou a IA da ${BRAND_LEGAL_NAME} 😊 Vamos fazer sua reserva antecipada para ${course.title}. Qual é seu nome completo e melhor número de WhatsApp para contato?` }]);
     setLeadInput('');
     setReserveOpen(true);
   };
@@ -311,10 +312,21 @@ export default function CourseLobby() {
       return;
     }
     setLeadLoading(true);
-    const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, objetivo profissional e melhor horário de contato. Faça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez. Quando tiver os dados principais, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre pedindo para a pessoa selecionar a opção de enviar ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
-    const response = await base44.integrations.Core.InvokeLLM({ prompt });
-    setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]);
-    setLeadLoading(false);
+    try {
+      const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, email e motivação. Faça uma pergunta por vez, de forma amigável. A resposta anterior foi: "${userMessage.content}". Qual é a próxima pergunta?`;
+      const response = await base44.integrations.Core.InvokeLLM({ prompt });
+      if (response && typeof response === 'string') {
+        setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]);
+      } else {
+        throw new Error('Resposta inválida da IA');
+      }
+    } catch (error) {
+      console.error('Erro ao chamar IA:', error);
+      toast.error('Não foi possível continuar. Tente novamente.');
+      setLeadMessages(prev => prev.slice(0, -1)); // Remove mensagem do usuário em caso de erro
+    } finally {
+      setLeadLoading(false);
+    }
   };
 
   const sendLead = () => {
@@ -485,7 +497,7 @@ export default function CourseLobby() {
     <div className="app-shell-bg relative h-[100dvh] text-white overflow-y-auto overflow-x-hidden scrollbar-invisible" style={{ WebkitOverflowScrolling: 'touch' }}>
       {/* Subtle cosmos gradient */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 20% 20%, rgba(212,185,106,0.04), transparent 45%), radial-gradient(circle at 80% 80%, rgba(212,185,106,0.03), transparent 45%)` }} />
+        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 20% 20%, rgba(212,185,106,0.04), transparent 45%), radial-gradient(circle at 80% 80%, rgba(212,185,106,0.03), transparent 50%)` }} />
       </div>
 
       <Header />

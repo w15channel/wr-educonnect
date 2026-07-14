@@ -20,12 +20,24 @@ async function adminSave(params) {
   try {
     res = await base44.functions.invoke('adminSave', { ...params, admin_email });
   } catch (error) {
-    throw new Error(error.response?.data?.error || error.message || 'Erro desconhecido no adminSave');
+    throw new Error(error?.response?.data?.error || error?.message || 'Erro desconhecido no adminSave');
   }
-  if (!res.data?.success) {
-    throw new Error(res.data?.error || 'Erro desconhecido no adminSave');
+  
+  // Validação segura da resposta
+  if (!res || typeof res !== 'object') {
+    throw new Error('Resposta inválida do servidor: formato não reconhecido');
   }
-  return res.data;
+  
+  const data = res.data || res;
+  if (!data || typeof data !== 'object') {
+    throw new Error('Resposta inválida do servidor: dados não disponíveis');
+  }
+  
+  if (data.success === false || !data.success) {
+    throw new Error(data.error || 'Erro desconhecido no adminSave');
+  }
+  
+  return data;
 }
 
 export const adminApi = {
@@ -33,7 +45,7 @@ export const adminApi = {
   update: (entity, id, data) => adminSave({ action: 'update', entity, id, data }),
   delete: (entity, id) => adminSave({ action: 'delete', entity, id }),
   list: (entity, { filter, sort_by, limit } = {}) =>
-    adminSave({ action: 'list', entity, filter, sort_by, limit }).then(r => r.records || []),
+    adminSave({ action: 'list', entity, filter, sort_by, limit }).then(r => (r && Array.isArray(r.records)) ? r.records : []),
   /**
    * Persiste uma aula da apostila usando apenas ações CRUD públicas do adminSave.
    *
@@ -56,7 +68,7 @@ export const adminApi = {
       ? await adminApi.update('BookChapter', recordId, data)
       : await adminApi.create('BookChapter', data);
 
-    return response.record;
+    return response?.record || response;
   },
   syncBookChapters: async (chapters, { createOnly = true } = {}) => {
     const records = [];

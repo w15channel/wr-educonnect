@@ -39,12 +39,8 @@ function DraggableElement({ id, x, y, onMove, editMode, children, anchor = 'cent
   const startMouse = useRef({ x: 0, y: 0 });
   const startPos = useRef({ x, y });
 
-  const onMouseDown = useCallback((e) => {
-    if (!editMode) return;
-    e.preventDefault();
-    dragging.current = true;
-    startMouse.current = { x: e.clientX, y: e.clientY };
-    startPos.current = { x, y };
+  useEffect(() => {
+    if (!editMode || !dragging.current) return;
 
     const onMouseMove = (me) => {
       if (!dragging.current) return;
@@ -56,14 +52,30 @@ function DraggableElement({ id, x, y, onMove, editMode, children, anchor = 'cent
       const dy = (me.clientY - startMouse.current.y) * scaleY;
       onMove(id, startPos.current.x + dx, startPos.current.y + dy);
     };
+
     const onMouseUp = () => {
       dragging.current = false;
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
+
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
-  }, [editMode, x, y, id, onMove]);
+
+    return () => {
+      dragging.current = false;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [editMode, id, onMove]);
+
+  const onMouseDown = useCallback((e) => {
+    if (!editMode) return;
+    e.preventDefault();
+    dragging.current = true;
+    startMouse.current = { x: e.clientX, y: e.clientY };
+    startPos.current = { x, y };
+  }, [editMode, x, y]);
 
   const transform = anchor === 'center' ? 'translate(-50%, -50%)' : anchor === 'top-center' ? 'translateX(-50%)' : 'none';
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Award, CheckCircle2, Search, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -48,7 +48,7 @@ function mapCertificateRecord(record) {
 }
 
 export default function CertificateVerifier() {
-  const certificateParams = useMemo(() => readCertificateParams(window.location.search), []);
+  const [certificateParams, setCertificateParams] = useState(() => readCertificateParams(window.location.search));
   const [certificateData, setCertificateData] = useState(certificateParams);
   const [typedCode, setTypedCode] = useState(certificateParams.codigo);
   const [isSearching, setIsSearching] = useState(false);
@@ -56,6 +56,14 @@ export default function CertificateVerifier() {
   const normalizedCertificateCode = normalizeVerificationCode(certificateData.codigo);
   const hasCertificateData = Boolean(normalizedCertificateCode && certificateData.aluno && certificateData.curso);
   const isCodeConfirmed = hasCertificateData && normalizedTypedCode === normalizedCertificateCode;
+
+  // Detecta mudanças na URL e atualiza o estado
+  useEffect(() => {
+    const params = readCertificateParams(window.location.search);
+    setCertificateParams(params);
+    setCertificateData(params);
+    setTypedCode(params.codigo);
+  }, [window.location.search]);
 
   const searchCertificateCode = async () => {
     const code = normalizedTypedCode;
@@ -120,7 +128,7 @@ export default function CertificateVerifier() {
           <label className="mt-5 block space-y-2">
             <span className="text-xs font-black uppercase tracking-wide text-slate-700">Código de autenticidade</span>
             <input
-              className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-black uppercase tracking-widest text-black outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
+              className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-black uppercase tracking-widest text-black outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30"
               value={typedCode}
               onChange={(event) => setTypedCode(event.target.value.toUpperCase())}
               onKeyDown={(event) => {
@@ -134,7 +142,7 @@ export default function CertificateVerifier() {
             type="button"
             onClick={searchCertificateCode}
             disabled={isSearching}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-black uppercase tracking-wide text-white transition hover:bg-slate-800 disabled:pointer-events-none disabled:opacity-60 sm:w-auto"
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-black uppercase tracking-wide text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
             <Search size={18} />
             {isSearching ? 'Pesquisando...' : 'Pesquisar código'}
@@ -162,7 +170,7 @@ export default function CertificateVerifier() {
               <dl className="mt-5 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Aluno</dt><dd className="mt-1 font-bold text-black">{certificateData.aluno}</dd></div>
                 <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Curso</dt><dd className="mt-1 font-bold text-black">{certificateData.curso}</dd></div>
-                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Carga horária</dt><dd className="mt-1 font-bold text-black">{certificateData.carga} horas</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Carga horária</dt><dd className="mt-1 font-bold text-black">{certificateData.carga}h</dd></div>
                 <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Média final</dt><dd className="mt-1 font-bold text-black">{certificateData.media}</dd></div>
                 <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Emissão</dt><dd className="mt-1 font-bold text-black">{certificateData.emissao}</dd></div>
                 <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Código</dt><dd className="mt-1 font-black tracking-widest text-black">{certificateData.codigo}</dd></div>
