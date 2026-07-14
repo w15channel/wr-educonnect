@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { applyTheme, getStoredTheme } from '@/components/layout/MobileHeader';
 
-from '@/components/ui/button';
-import { ChevronDown, ChevronUp, LogOut, Settings, Menu, X } from 'lucide-react';
+import {
+  Video, MessageSquare, FileText,
+  BarChart3, Users, LogOut, Play, X, Bell, User, Key,
+  CalendarDays, DollarSign, Brain, Sparkles,
+  ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame,
+  ScrollText, ClipboardList, Medal, Star, Moon, Sun
+} from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -12,19 +17,41 @@ import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from 
 
 const STUDENT_BADGE_PATHS = new Set(['/ofensivas', '/lessons', '/tasks', '/exams', '/chat', '/forum', '/debates', '/terapeuta', '/announcements', '/tuitions']);
 const VIEW_BADGE_PATHS = new Set(['/chat', '/forum', '/debates', '/announcements', '/tuitions']);
+const SIDEBAR_STALE_TIME = 60 * 1000;
+const SIDEBAR_REFETCH_INTERVAL = 2 * 60 * 1000;
+const SIDEBAR_ACTIVITY_REFETCH_INTERVAL = 60 * 1000;
 const badgeStorageKey = (email, course, path) => `wr_sidebar_seen_${course || 'tcc'}_${email || 'guest'}_${path}`;
+const getBadgeStorage = () => {
+  try {
+    if (typeof window === 'undefined') return null;
+    const storage = window.localStorage;
+    if (!storage || typeof storage.getItem !== 'function' || typeof storage.setItem !== 'function') {
+      return null;
+    }
+    return storage;
+  } catch {
+    return null;
+  }
+};
 const getSeenAt = (email, course, path) => {
-  if (typeof localStorage === 'undefined') return 0;
-  const raw = localStorage.getItem(badgeStorageKey(email, course, path));
+  const storage = getBadgeStorage();
+  if (!storage) return 0;
+  const raw = storage.getItem(badgeStorageKey(email, course, path));
   const parsed = raw ? Number(raw) : 0;
   return Number.isFinite(parsed) ? parsed : 0;
 };
 const setSeenNow = (email, course, path) => {
-  if (typeof localStorage === 'undefined' || !email || !VIEW_BADGE_PATHS.has(path)) return;
-  localStorage.setItem(badgeStorageKey(email, course, path), String(Date.now()));
+  const storage = getBadgeStorage();
+  if (!storage || !email || !VIEW_BADGE_PATHS.has(path)) return;
+  storage.setItem(badgeStorageKey(email, course, path), String(Date.now()));
 };
-const itemTime = (item) => new Date(item?.created_date || item?.submitted_at || item?.updated_date || item?.due_date || 0).getTime() || 0;
-const countNewSince = (items = [], seenAt = 0, ownEmail = '') => items.filter(item => itemTime(item) > seenAt && item.author_email !== ownEmail).length;
+const itemTime = (item) => {
+  if (!item || typeof item !== 'object') return 0;
+  return new Date(item.created_date || item.submitted_at || item.updated_date || item.due_date || 0).getTime() || 0;
+};
+const countNewSince = (items = [], seenAt = 0, ownEmail = '') => (
+  Array.isArray(items) ? items : []
+).filter(item => itemTime(item) > seenAt && (item?.author_email || '') !== ownEmail).length;
 const capBadge = (count) => count > 99 ? '99+' : String(count);
 
 // ── Nav groups
@@ -47,33 +74,44 @@ const adminGroups = [
     items: [
       { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
-      { icon: Lightbulb,     label: 'Sala de Debates',        path: '/debates',           color: 'text-yellow-400' },
-      { icon: MessageCircle, label: 'DM com Alunos',          path: '/messages',          color: 'text-indigo-400' },
+      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
+      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-pink-400' },
+      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
     ],
   },
   {
     label: 'Gestão',
     items: [
-      { icon: Users,         label: 'Alunos',                 path: '/students',          color: 'text-cyan-400' },
-      { icon: Trophy,        label: 'Pontuação',              path: '/scorecontrol',      color: 'text-yellow-400' },
-      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-orange-300' },
-      { icon: Bell,          label: 'Notificações',           path: '/notifications',     color: 'text-red-400' },
-      { icon: CreditCard,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-green-400' },
+      { icon: Users,         label: 'Gestão de Alunos',       path: '/students',          color: 'text-indigo-400' },
+      { icon: Key,           label: 'Códigos de Acesso',      path: '/keys',              color: 'text-emerald-400' },
+      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
+      { icon: Trophy,        label: 'Controle de Pontuação',  path: '/scorecontrol',      color: 'text-yellow-400' },
+      { icon: ScrollText,    label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
+      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
+    ],
+  },
+  {
+    label: 'Ferramentas',
+    items: [
+      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
+      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
+      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
+      { icon: Award,         label: 'Gerar Certificado',      path: '/gerar-certificado', color: 'text-amber-300' },
     ],
   },
 ];
 
 const studentGroups = [
   {
-    label: 'Formação',
+    label: 'Classe',
     items: [
       { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
+      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
       { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
       { icon: Video,         label: 'Sala ao Vivo',           path: '/live',              color: 'text-red-400' },
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
       { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
-      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-emerald-400' },
-      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
     ],
   },
   {
@@ -81,268 +119,384 @@ const studentGroups = [
     items: [
       { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
-      { icon: Lightbulb,     label: 'Sala de Debates',        path: '/debates',           color: 'text-yellow-400' },
-      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-pink-400' },
-      { icon: MessageCircle, label: 'Tutor Digital',          path: '/tutor-digital',     color: 'text-cyan-400' },
+      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
+      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-rose-400' },
+      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
+      { icon: Star,          label: 'Ranking Geral',          path: '/ranking',           color: 'text-yellow-300' },
+      { icon: Users,         label: 'Classe',                 path: '/classe',            color: 'text-sky-400' },
     ],
   },
   {
-    label: 'Pessoal',
+    label: 'Minha Área',
     items: [
-      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-orange-300' },
-      { icon: CreditCard,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-green-400' },
+      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
+      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
+      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
+      { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-indigo-400' },
+    ],
+  },
+  {
+    label: 'Ferramentas',
+    items: [
+      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
+      { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-emerald-400' },
+      { icon: Trophy,        label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
+      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
+      { icon: Award,         label: 'Meu Certificado',        path: '/meu-certificado',   color: 'text-amber-400' },
     ],
   },
 ];
 
-export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { logout } = useCustomAuth();
-  const [mobileOpen, setMobileOpen] = useState(mobileOpenProp);
-  const [expandedGroups, setExpandedGroups] = useState({});
+// Determine which groups should start open (if any item is active)
+function getInitialOpenGroups(groups, base, pathname) {
+  const open = {};
+  groups.forEach((g, gi) => {
+    if (g.items.some(item => {
+      const target = base + item.path;
+      return pathname === target || (item.path === '/dashboard' && (pathname === base || pathname === base + '/'));
+    })) {
+      open[gi] = true;
+    }
+  });
+  return open;
+}
 
-  useEffect(() => {
-    setMobileOpen(mobileOpenProp);
-  }, [mobileOpenProp]);
+export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileClose }) {
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { logout } = useCustomAuth();
+  const [theme, setTheme] = useState(() => getStoredTheme());
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    applyTheme(next);
+  };
 
   const isAdmin = session?.role === 'admin';
   const base = isAdmin ? '/adm' : '/student';
-  const userCourse = session?.course || 'tcc';
-  const studentEmail = session?.email || '';
   const groups = isAdmin ? adminGroups : studentGroups;
+  const studentEmail = session?.email || session?.code || '';
+  const userCourse = session?.course || 'tcc';
+  const today = new Date().toISOString().slice(0, 10);
+  const studentQueryEnabled = !isAdmin && !!studentEmail && !!userCourse;
+  const queryDefaults = {
+    enabled: studentQueryEnabled,
+    staleTime: SIDEBAR_STALE_TIME,
+    refetchOnWindowFocus: false,
+  };
 
-  // Keep localStorage timestamp synced
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['sidebar-lessons', userCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 300),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_REFETCH_INTERVAL,
+  });
+  const { data: lessonProgress = [] } = useQuery({
+    queryKey: ['sidebar-lesson-progress', studentEmail],
+    queryFn: () => base44.entities.LessonProgress.filter({ student_email: studentEmail }, '-created_date', 500),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_REFETCH_INTERVAL,
+  });
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['sidebar-tasks', userCourse],
+    queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 300),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_REFETCH_INTERVAL,
+  });
+  const { data: taskSubmissions = [] } = useQuery({
+    queryKey: ['sidebar-task-submissions', studentEmail, userCourse],
+    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: studentEmail, course: userCourse }, '-created_date', 500),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_REFETCH_INTERVAL,
+  });
+  const { data: exams = [] } = useQuery({
+    queryKey: ['sidebar-exams', userCourse],
+    queryFn: () => base44.entities.Exam.filter({ course: userCourse, is_published: true }, '-created_date', 300),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_REFETCH_INTERVAL,
+  });
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['sidebar-exam-submissions', studentEmail, userCourse],
+    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: studentEmail, course: userCourse }, '-submitted_at', 500),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_REFETCH_INTERVAL,
+  });
+  const { data: challenges = [] } = useQuery({
+    queryKey: ['sidebar-daily-challenge', userCourse, today],
+    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: today }, '-created_date', 5),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_REFETCH_INTERVAL,
+  });
+  const { data: challengeResponses = [] } = useQuery({
+    queryKey: ['sidebar-daily-response', studentEmail, userCourse, today],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail, course: userCourse, date: today }, '-created_date', 5),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_REFETCH_INTERVAL,
+  });
+  const { data: chatMessages = [] } = useQuery({
+    queryKey: ['sidebar-chat-messages', userCourse],
+    queryFn: () => base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: `class-${userCourse}` }).then(res => res?.data?.records || res?.data || []),
+    ...queryDefaults,
+    refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL,
+  });
+  const { data: forumPosts = [] } = useQuery({ queryKey: ['sidebar-forum-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'forum' }, '-created_date', 100), ...queryDefaults, refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL });
+  const { data: forumReplies = [] } = useQuery({ queryKey: ['sidebar-forum-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'forum' }, '-created_date', 300), ...queryDefaults, refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL });
+  const { data: debatePosts = [] } = useQuery({ queryKey: ['sidebar-debate-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'debates' }, '-created_date', 100), ...queryDefaults, refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL });
+  const { data: debateReplies = [] } = useQuery({ queryKey: ['sidebar-debate-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'debates' }, '-created_date', 300), ...queryDefaults, refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL });
+  const { data: pairings = [] } = useQuery({ queryKey: ['sidebar-therapist-pairings', studentEmail], queryFn: () => base44.entities.TherapistPairing.filter({ therapist_email: studentEmail }, '-created_date', 20), ...queryDefaults, refetchInterval: SIDEBAR_REFETCH_INTERVAL });
+  const { data: announcements = [] } = useQuery({ queryKey: ['sidebar-announcements', userCourse, studentEmail], queryFn: async () => {
+    const [courseItems = [], personalItems = []] = await Promise.all([
+      base44.entities.Announcement.filter({ course: userCourse }, '-created_date', 100),
+      base44.entities.Announcement.filter({ recipient_email: studentEmail }, '-created_date', 100),
+    ]);
+    return [...courseItems, ...personalItems].filter((item, index, arr) => {
+      if (!item || typeof item !== 'object') return false;
+      if (typeof item.recipient_email === 'string' && item.recipient_email.length > 0) {
+        return item.recipient_email === studentEmail;
+      }
+      return arr.findIndex(candidate => candidate?.id === item.id) === index;
+    });
+  }, ...queryDefaults, refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL });
+  const { data: tuitions = [] } = useQuery({ queryKey: ['sidebar-tuitions', studentEmail], queryFn: () => base44.entities.Tuition.filter({ student_email: studentEmail }, '-due_date', 100), ...queryDefaults, refetchInterval: SIDEBAR_REFETCH_INTERVAL });
+
   useEffect(() => {
+    if (isAdmin || !studentEmail) return;
     const current = location.pathname.replace(base, '') || '/dashboard';
     setSeenNow(studentEmail, userCourse, current);
   }, [base, isAdmin, location.pathname, studentEmail, userCourse]);
 
-  // All queries needed for badge counts
-  const { data: lessons = [] } = useQuery({
-    queryKey: ['sidebar-lessons', userCourse],
-    queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 300),
-    enabled: !isAdmin && !!userCourse,
-  });
-
-  const { data: lessonProgress = [] } = useQuery({
-    queryKey: ['sidebar-lesson-progress', studentEmail],
-    queryFn: () => base44.entities.LessonProgress.filter({ student_email: studentEmail }, '-created_date', 500),
-    enabled: !isAdmin && !!studentEmail,
-  });
-
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['sidebar-tasks', userCourse],
-    queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 300),
-    enabled: !isAdmin && !!userCourse,
-  });
-
-  const { data: taskSubmissions = [] } = useQuery({
-    queryKey: ['sidebar-task-submissions', studentEmail, userCourse],
-    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: studentEmail, course: userCourse }, '-created_date', 500),
-    enabled: !isAdmin && !!studentEmail && !!userCourse,
-  });
-
-  const { data: exams = [] } = useQuery({
-    queryKey: ['sidebar-exams', userCourse],
-    queryFn: () => base44.entities.Exam.filter({ course: userCourse, is_published: true }, '-created_date', 300),
-    enabled: !isAdmin && !!userCourse,
-  });
-
-  const { data: examSubmissions = [] } = useQuery({
-    queryKey: ['sidebar-exam-submissions', studentEmail, userCourse],
-    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: studentEmail, course: userCourse }, '-submitted_at', 500),
-    enabled: !isAdmin && !!studentEmail && !!userCourse,
-  });
-
-  const { data: challenges = [] } = useQuery({
-    queryKey: ['sidebar-daily-challenge', userCourse],
-    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: new Date().toISOString().slice(0, 10) }, '-created_date', 5),
-    enabled: !isAdmin && !!userCourse,
-  });
-
-  const { data: challengeResponses = [] } = useQuery({
-    queryKey: ['sidebar-challenge-response', studentEmail, userCourse],
-    queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail, course: userCourse, date: new Date().toISOString().slice(0, 10) }, '-created_date', 5),
-    enabled: !isAdmin && !!studentEmail && !!userCourse,
-  });
-
-  const { data: chatMessages = [] } = useQuery({
-    queryKey: ['sidebar-chat-messages', userCourse],
-    queryFn: () => base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: `class-${userCourse}` }).then(res => res?.data?.records || res?.data || []),
-    enabled: !isAdmin && !!userCourse,
-  });
-
-  const { data: forumPosts = [] } = useQuery({ queryKey: ['sidebar-forum-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'forum' }, '-created_date', 300), enabled: !isAdmin && !!userCourse });
-  const { data: forumReplies = [] } = useQuery({ queryKey: ['sidebar-forum-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'forum' }, '-created_date', 300), enabled: !isAdmin && !!userCourse });
-  const { data: debatePosts = [] } = useQuery({ queryKey: ['sidebar-debate-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'debates' }, '-created_date', 300), enabled: !isAdmin && !!userCourse });
-  const { data: debateReplies = [] } = useQuery({ queryKey: ['sidebar-debate-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'debates' }, '-created_date', 300), enabled: !isAdmin && !!userCourse });
-  const { data: pairings = [] } = useQuery({ queryKey: ['sidebar-therapist-pairings', studentEmail], queryFn: () => base44.entities.TherapistPairing.filter({ therapist_email: studentEmail }, '-created_date', 300), enabled: !isAdmin && !!studentEmail });
-  const { data: announcements = [] } = useQuery({ queryKey: ['sidebar-announcements', userCourse, studentEmail], queryFn: async () => base44.entities.Announcement.filter({ course: userCourse, type: { not: 'unlock_rule' } }, '-created_date', 300), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
-  const { data: tuitions = [] } = useQuery({ queryKey: ['sidebar-tuitions', studentEmail], queryFn: () => base44.entities.Tuition.filter({ student_email: studentEmail }, '-due_date', 100), enabled: !isAdmin && !!studentEmail, refetchInterval: 60000 });
-
   const studentBadges = useMemo(() => {
     if (isAdmin || !studentEmail) return {};
-    const lessonDone = new Set(lessonProgress.filter(p => p.watched).map(p => p.lesson_id));
-    const submittedTasks = new Set(taskSubmissions.map(s => s.task_id));
-    const submittedExams = new Set(examSubmissions.map(s => s.exam_id));
+    const lessonDone = new Set(lessonProgress.filter(progress => progress?.watched && progress?.lesson_id).map(progress => progress.lesson_id));
+    const submittedTasks = new Set(taskSubmissions.map(submission => submission?.task_id).filter(Boolean));
+    const submittedExams = new Set(examSubmissions.map(submission => submission?.exam_id).filter(Boolean));
     const latestChallenge = challenges[0];
-    const response = latestChallenge && challengeResponses.find(r => r.challenge_id === latestChallenge.id);
+    const response = latestChallenge && challengeResponses.find(challengeResponse => challengeResponse?.challenge_id === latestChallenge.id);
     const challengeTotal = latestChallenge?.questions?.length || 8;
-    const activeTherapistPending = pairings.filter(p => !p.therapist_submitted).length;
-    const tuitionsPending = tuitions.filter(t => t.status !== 'paid').length;
-    const tuitionsNew = countNewSince(tuitions, getSeenAt(studentEmail, userCourse, '/tuitions'), studentEmail);
+    const activeTherapistPending = pairings.filter(pairing => pairing && !pairing.therapist_submitted).length;
+    const validTuitions = tuitions.filter(Boolean);
+    const tuitionsPending = validTuitions.filter(tuition => tuition.status !== 'paid').length;
+    const tuitionsNew = countNewSince(validTuitions, getSeenAt(studentEmail, userCourse, '/tuitions'), studentEmail);
     return {
       '/ofensivas': latestChallenge && (!response || (Number(response.questions_answered) || 0) < challengeTotal) ? 1 : 0,
-      '/lessons': lessons.filter(l => !lessonDone.has(l.id)).length,
-      '/tasks': tasks.filter(t => !submittedTasks.has(t.id)).length,
-      '/exams': submittedExams.length > 0 ? 0 : exams.length,
+      '/lessons': lessons.filter(lesson => lesson?.id && !lessonDone.has(lesson.id)).length,
+      '/tasks': tasks.filter(task => task?.id && !submittedTasks.has(task.id)).length,
+      '/exams': exams.filter(exam => exam?.id && !submittedExams.has(exam.id)).length,
       '/chat': countNewSince(chatMessages, getSeenAt(studentEmail, userCourse, '/chat'), studentEmail),
       '/forum': countNewSince([...forumPosts, ...forumReplies], getSeenAt(studentEmail, userCourse, '/forum'), studentEmail),
       '/debates': countNewSince([...debatePosts, ...debateReplies], getSeenAt(studentEmail, userCourse, '/debates'), studentEmail),
       '/terapeuta': activeTherapistPending,
       '/announcements': countNewSince(announcements, getSeenAt(studentEmail, userCourse, '/announcements'), studentEmail),
-      '/tuitions': tuitionsNew > 0 ? tuitionsNew : (tuitionsPending > 0 ? 1 : 0),
+      '/tuitions': Math.max(tuitionsPending, tuitionsNew),
     };
-  }, [lessonProgress, lessons, taskSubmissions, tasks, examSubmissions, exams, challenges, challengeResponses, pairings, tuitions, chatMessages, forumPosts, forumReplies, debatePosts, debateReplies, announcements, studentEmail, userCourse, isAdmin]);
+  }, [isAdmin, studentEmail, userCourse, lessons, lessonProgress, tasks, taskSubmissions, exams, examSubmissions, challenges, challengeResponses, chatMessages, forumPosts, forumReplies, debatePosts, debateReplies, pairings, announcements, tuitions]);
 
-  const totalNotifications = Object.values(studentBadges).reduce((sum, v) => sum + (v || 0), 0);
-
-  const toggleGroup = (idx) => {
-    setExpandedGroups(prev => ({ ...prev, [idx]: !prev[idx] }));
-  };
-
-  const handleNavClick = () => {
-    if (window.innerWidth < 768 && mobileOpen) {
-      onMobileClose?.();
-    }
-  };
-
-  const sidebarContent = (
-    <>
-      {/* Header */}
-      <div className="px-4 py-5 border-b border-sidebar-border">
-        <div className="flex items-center gap-2 mb-3">
-          <img src={WR_PRIMARY_LOGO} alt="Logo" className="w-6 h-6" />
-          <h1 className="text-sm font-black text-sidebar-foreground uppercase tracking-widest">{BRAND_SHORT_NAME}</h1>
-        </div>
-        <p className="text-xs font-semibold text-sidebar-foreground">{session?.name?.split(' ')[0]}</p>
-        <p className="text-[11px] text-sidebar-foreground/60 truncate">{session?.email}</p>
-      </div>
-
-      {/* Nav Groups */}
-      <nav className="flex-1 overflow-y-auto space-y-0.5 py-3 px-2">
-        {groups.map((group, idx) => {
-          const expanded = expandedGroups[idx] !== false; // Default expanded
-          return (
-            <div key={idx}>
-              <button
-                onClick={() => toggleGroup(idx)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-sidebar-foreground/70 uppercase tracking-wider hover:text-sidebar-foreground transition-colors group"
-              >
-                <span>{group.label}</span>
-                <ChevronDown size={14} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
-              </button>
-              {expanded && (
-                <div className="space-y-1 py-1">
-                  {group.items.map((item, itemIdx) => {
-                    const isActive = location.pathname.includes(item.path.split('/')[1]);
-                    const badge = studentBadges[item.path];
-                    return (
-                      <Link
-                        key={itemIdx}
-                        to={`${base}${item.path}`}
-                        onClick={() => {
-                          setSeenNow(studentEmail, userCourse, item.path);
-                          handleNavClick();
-                        }}
-                        className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                          isActive
-                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <item.icon size={16} className={item.color} />
-                          <span className="truncate">{item.label}</span>
-                        </div>
-                        {badge > 0 && STUDENT_BADGE_PATHS.has(item.path) && (
-                          <span className="ml-auto shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-red-500 text-white">{capBadge(badge)}</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      <div className="border-t border-sidebar-border p-3 space-y-1">
-        <button
-          onClick={() => navigate(`${base}/settings`)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground transition-all"
-        >
-          <Settings size={16} />
-          <span>Configurações</span>
-        </button>
-        <button
-          onClick={logout}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground transition-all"
-        >
-          <LogOut size={16} />
-          <span>Sair</span>
-        </button>
-      </div>
-    </>
+  // Collapsible group state — initially open the group that has the active route
+  // Also re-open group when location changes (e.g. user navigates to a new section)
+  const [openGroups, setOpenGroups] = useState(() =>
+    getInitialOpenGroups(groups, base, location.pathname)
   );
 
-  // Desktop sidebar
-  if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+  // Auto-expand the group of the active route whenever route changes
+  useEffect(() => {
+    const active = getInitialOpenGroups(groups, base, location.pathname);
+    if (Object.keys(active).length > 0) {
+      setOpenGroups(prev => ({ ...prev, ...active }));
+    }
+  }, [base, groups, location.pathname]);
+
+  const toggleGroup = (gi) => {
+    setOpenGroups(prev => ({ ...prev, [gi]: !prev[gi] }));
+  };
+
+  const isOpen = mobileOpenProp !== undefined ? mobileOpenProp : mobileOpen;
+  const handleClose = () => {
+    if (onMobileClose) onMobileClose();
+    else setMobileOpen(false);
+  };
+
+  const initials = session?.name
+    ? session.name.split(' ').map(namePart => namePart[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+  const avatarBg = session?.avatarColor || (isAdmin ? '#5b5ef4' : '#7c3aed');
+
+  const isActive = (path) => {
+    const target = base + path;
+    return location.pathname === target || (path === '/dashboard' && (location.pathname === base || location.pathname === base + '/'));
+  };
+
+  const NavLink = ({ item }) => {
+    const active = isActive(item.path);
+    const badgeCount = !isAdmin && STUDENT_BADGE_PATHS.has(item.path) ? (studentBadges[item.path] || 0) : 0;
     return (
-      <aside className="hidden md:flex md:flex-col w-72 h-full bg-sidebar border-r border-sidebar-border overflow-hidden">
-        {sidebarContent}
-      </aside>
+      <Link
+        to={base + item.path}
+        onClick={handleClose}
+        className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 relative ${
+          active
+            ? 'bg-white/10 text-white shadow-sm'
+            : 'text-white/50 hover:bg-white/6 hover:text-white/80'
+        }`}
+      >
+        {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-r-full bg-primary" />}
+        <item.icon size={15} className={active ? 'text-white' : item.color} />
+        <span className="font-medium text-[12.5px] flex-1 leading-tight">{item.label}</span>
+        {badgeCount > 0 && (
+          <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black leading-none flex items-center justify-center shadow-[0_0_0_2px_rgba(10,10,20,0.95)] animate-pulse">
+            {capBadge(badgeCount)}
+          </span>
+        )}
+        {active && <ChevronRight size={11} className="opacity-30" />}
+      </Link>
+    );
+  };
+
+  function NotificationsLink() {
+    const { data: notifications = [] } = useQuery({
+      queryKey: ['notifications-admin'],
+      queryFn: () => base44.entities.Notification.filter({ recipient_email: 'admin' }, '-created_date', 50),
+      refetchInterval: 15000,
+    });
+    const unread = notifications.filter(notification => notification && !notification.is_read).length;
+    const active = isActive('/ring');
+    return (
+      <div className="px-3 py-2 border-t border-white/8">
+        <Link
+          to={base + '/ring'}
+          onClick={handleClose}
+          className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
+            active ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/6 hover:text-white/80'
+          }`}
+        >
+          <div className="relative">
+            <Bell size={15} className={unread > 0 ? 'text-orange-400' : ''} />
+            {unread > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] px-0.5 rounded-full flex items-center justify-center">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </div>
+          <span className="font-medium text-[12.5px] flex-1">Notificações</span>
+          {unread > 0 && !active && (
+            <span className="text-[10px] font-bold text-orange-300">{unread} nova{unread > 1 ? 's' : ''}</span>
+          )}
+        </Link>
+      </div>
     );
   }
 
-  // Mobile drawer
   return (
     <>
-      {/* Overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
-          onClick={onMobileClose}
-        />
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={handleClose} />
       )}
-      {/* Drawer */}
-      <aside
-        className={`fixed left-0 top-0 z-50 h-full w-72 bg-sidebar border-r border-sidebar-border flex flex-col transform transition-transform duration-300 md:hidden ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <img src={WR_PRIMARY_LOGO} alt="Logo" className="w-5 h-5" />
-            <span className="text-sm font-bold text-sidebar-foreground">{BRAND_SHORT_NAME}</span>
+
+      <aside className={`
+        fixed md:static inset-y-0 left-0 z-50
+        w-56 flex flex-col
+        bg-sidebar text-sidebar-foreground
+        border-r border-sidebar-border
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Logo */}
+        <div className="px-4 py-4 flex items-center justify-between border-b border-white/8">
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border-2 border-sidebar" />
+            </div>
+            <div>
+              <h1 className="text-[14px] font-bold tracking-tight text-white">{BRAND_SHORT_NAME}</h1>
+              <p className="text-[9px] text-white/35 -mt-0.5 leading-tight">Instituto de Desenvolvimento Humano</p>
+            </div>
           </div>
-          <button onClick={onMobileClose} className="p-1 hover:bg-sidebar-accent rounded-lg">
-            <X size={18} />
+          <button onClick={handleClose} className="md:hidden text-white/40 hover:text-white p-1 rounded-lg transition-colors">
+            <X size={16} />
           </button>
         </div>
-        {sidebarContent}
+
+        {/* Nav — collapsible groups */}
+        <nav className="px-2 py-2 flex flex-col gap-0 flex-grow overflow-y-auto scrollbar-thin">
+          {groups.map((group, gi) => {
+            const isGroupOpen = openGroups[gi] ?? false;
+            const hasActiveItem = group.items.some(item => isActive(item.path));
+
+            return (
+              <div key={gi} className="mb-0.5">
+                {/* Group header — clickable to expand/collapse */}
+                <button
+                  onClick={() => toggleGroup(gi)}
+                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors ${
+                    hasActiveItem ? 'text-white/70' : 'text-white/28 hover:text-white/50'
+                  }`}
+                >
+                  <span className="text-[9.5px] font-bold uppercase tracking-widest">
+                    {group.label}
+                  </span>
+                  {isGroupOpen
+                    ? <ChevronDown size={11} className="opacity-50" />
+                    : <ChevronRight size={11} className="opacity-40" />
+                  }
+                </button>
+
+                {/* Items */}
+                {isGroupOpen && (
+                  <div className="flex flex-col gap-0.5 pl-1 pb-1">
+                    {group.items.map(item => <NavLink key={item.path} item={item} />)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Admin notifications */}
+        {isAdmin && <NotificationsLink />}
+
+        {/* User footer */}
+        <div className="p-2.5 border-t border-white/8">
+          <p className="px-2 pb-1.5 text-[8.5px] leading-snug text-white/25">
+            {BRAND_LEGAL_NAME}<br />CNPJ {BRAND_CNPJ}
+          </p>
+          <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/6 transition-colors mb-0.5">
+            {session?.photoUrl ? (
+              <img src={session.photoUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
+            ) : (
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] text-white ring-2 ring-white/20 shrink-0"
+                style={{ backgroundColor: avatarBg }}
+              >
+                {initials}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold text-white/90 truncate">{session?.name || 'Usuário'}</p>
+              <p className="text-[9px] text-white/35">{isAdmin ? 'Administrador' : 'Estudante'}</p>
+            </div>
+            <Sparkles size={11} className="text-white/15 shrink-0" />
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 text-white/30 hover:text-red-400 flex-1 px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
+            >
+              <LogOut size={13} />
+              Sair da conta
+            </button>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              className="p-2 rounded-xl text-white/30 hover:text-white/70 hover:bg-white/8 transition-colors shrink-0"
+            >
+              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+            </button>
+          </div>
+        </div>
       </aside>
     </>
   );
 }
-
-// Imports faltantes (adicionar no topo do arquivo se necessário)
-import { useMemo } from 'react';
-import {
-  BarChart3, Play, Video, FileText, ClipboardList, BookOpen, Flame,
-  UsersRound, MessageSquare, Lightbulb, Heart, MessageCircle,
-  Users, Trophy, Bell, CreditCard
-} from 'lucide-react';
