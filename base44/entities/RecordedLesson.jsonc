@@ -32,7 +32,7 @@
     },
     "video_url": {
       "type": "string",
-      "description": "URL do vídeo (YouTube, Vimeo, Instagram, etc.)"
+      "description": "URL do v\u00eddeo (YouTube, Vimeo, Instagram, etc.)"
     },
     "external_url": {
       "type": "string",
@@ -40,7 +40,7 @@
     },
     "text_content": {
       "type": "string",
-      "description": "Conteúdo de aula em texto (quando lesson_type=text_written)"
+      "description": "Conte\u00fado de aula em texto (quando lesson_type=text_written)"
     },
     "thumbnail_url": {
       "type": "string",
@@ -56,11 +56,34 @@
     },
     "material_links": {
       "type": "string",
-      "description": "Links de materiais de suporte (separados por vírgula)"
+      "description": "Links de materiais de suporte (separados por v\u00edrgula)"
     },
     "research_links": {
       "type": "string",
-      "description": "Links para pesquisa online (separados por vírgula com títulos separados por |)"
+      "description": "Links para pesquisa online (separados por v\u00edrgula com t\u00edtulos separados por |)"
+    },
+    "module_type": {
+      "type": "string",
+      "enum": [
+        "apostila",
+        "tutorial",
+        "tira_duvidas",
+        "outros"
+      ],
+      "default": "apostila",
+      "description": "Categoria do m\u00f3dulo de v\u00eddeo: vinculado a um m\u00f3dulo da apostila ou um m\u00f3dulo customizado (tutorial, tira-d\u00favidas, outros)"
+    },
+    "module_number": {
+      "type": "number",
+      "description": "N\u00famero do m\u00f3dulo da apostila (1-10) ao qual esta aula est\u00e1 relacionada, quando module_type = apostila"
+    },
+    "apostila_chapter_id": {
+      "type": "string",
+      "description": "ID do cap\u00edtulo da apostila usado para preencher automaticamente t\u00edtulo/resumo"
+    },
+    "apostila_lesson_id": {
+      "type": "string",
+      "description": "ID da aula da apostila usada para preencher automaticamente t\u00edtulo/resumo"
     }
   },
   "required": [

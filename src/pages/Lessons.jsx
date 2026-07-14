@@ -14,13 +14,39 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { MOD1 } from '@/lib/apostila/mod1';
+import { MOD2 } from '@/lib/apostila/mod2';
+import { MOD3 } from '@/lib/apostila/mod3';
+import { MOD4 } from '@/lib/apostila/mod4';
+import { MOD5 } from '@/lib/apostila/mod5';
+import { MOD6 } from '@/lib/apostila/mod6';
+import { MOD7 } from '@/lib/apostila/mod7';
+import { MOD8 } from '@/lib/apostila/mod8';
+import { MOD9 } from '@/lib/apostila/mod9';
+import { MOD10 } from '@/lib/apostila/mod10';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
-const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '' };
+const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
 const LESSONS_PER_MODULE = 5;
 // localStorage key for completed modules per student+course
 const moduleCompKey = (email, course) => `wr_mod_completions_${course}_${email}`;
+
+const APOSTILA_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
+
+const MODULE_TYPE_CONFIG = {
+  apostila:     { label: 'Módulo da Apostila', desc: 'Vinculado a um dos 10 módulos da apostila' },
+  tutorial:     { label: 'Tutorial', desc: 'Como usar a plataforma' },
+  tira_duvidas: { label: 'Tira-Dúvidas', desc: 'Perguntas e respostas frequentes' },
+  outros:       { label: 'Outros', desc: 'Demais conteúdos avulsos' },
+};
+
+const stripHtml = (html = '') => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const summarizeContent = (content = '', maxLen = 280) => {
+  const plain = stripHtml(content);
+  return plain.length > maxLen ? `${plain.slice(0, maxLen).trim()}…` : plain;
+};
 
 const LESSON_TYPE_CONFIG = {
   video_external:   { label: 'Vídeo Externo', icon: Video, color: 'text-purple-500', desc: 'YouTube, Vimeo, Instagram...' },
@@ -175,8 +201,23 @@ export default function Lessons() {
 
   const openEdit = (lesson) => {
     setEditingLesson(lesson);
-    setForm({ title: lesson.title, description: lesson.description || '', lesson_type: lesson.lesson_type || 'video_external', video_url: lesson.video_url || '', external_url: lesson.external_url || '', text_content: lesson.text_content || '', thumbnail_url: lesson.thumbnail_url || '', duration: lesson.duration || '', material_links: lesson.material_links || '', research_links: lesson.research_links || '' });
+    setForm({ title: lesson.title, description: lesson.description || '', lesson_type: lesson.lesson_type || 'video_external', video_url: lesson.video_url || '', external_url: lesson.external_url || '', text_content: lesson.text_content || '', thumbnail_url: lesson.thumbnail_url || '', duration: lesson.duration || '', material_links: lesson.material_links || '', research_links: lesson.research_links || '', module_type: lesson.module_type || 'apostila', module_number: lesson.module_number || '', apostila_chapter_id: lesson.apostila_chapter_id || '', apostila_lesson_id: lesson.apostila_lesson_id || '' });
     setShowForm(true);
+  };
+
+  const handlePickApostilaLesson = (chapterId, lessonId) => {
+    const chapter = APOSTILA_CHAPTERS.find((c) => c.id === chapterId);
+    const apostilaLesson = chapter?.lessons.find((l) => l.id === lessonId);
+    if (!chapter || !apostilaLesson) return;
+    const chapterIndex = APOSTILA_CHAPTERS.findIndex((c) => c.id === chapterId);
+    setForm((prev) => ({
+      ...prev,
+      title: apostilaLesson.title,
+      description: summarizeContent(apostilaLesson.content),
+      module_number: chapterIndex + 1,
+      apostila_chapter_id: chapterId,
+      apostila_lesson_id: lessonId,
+    }));
   };
 
   const handleSave = () => {
@@ -299,6 +340,56 @@ export default function Lessons() {
                     </div>
                   </div>
                   <Textarea placeholder="Descrição/resumo da aula" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} />
+
+                  <div className="rounded-xl border border-border p-3 space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground block mb-2">Tipo de Módulo</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(MODULE_TYPE_CONFIG).map(([key, cfg]) => (
+                          <button key={key} type="button"
+                            onClick={() => setForm(prev => ({ ...prev, module_type: key, ...(key !== 'apostila' ? { apostila_chapter_id: '', apostila_lesson_id: '' } : {}) }))}
+                            className={`flex flex-col items-start p-2.5 rounded-xl border text-xs font-semibold transition-all ${form.module_type === key ? 'border-primary bg-primary/8 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
+                            <span>{cfg.label}</span>
+                            <span className="text-[9px] font-normal text-muted-foreground">{cfg.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {form.module_type === 'apostila' && (
+                      <>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Módulo da Apostila</label>
+                          <Select value={form.module_number ? String(form.module_number) : ''} onValueChange={v => setForm(prev => ({ ...prev, module_number: Number(v) }))}>
+                            <SelectTrigger><SelectValue placeholder="Selecione o módulo" /></SelectTrigger>
+                            <SelectContent>
+                              {APOSTILA_CHAPTERS.map((c, i) => (
+                                <SelectItem key={c.id} value={String(i + 1)}>Módulo {i + 1} — {c.title.replace(/^Módulo \d+\s*—\s*/, '')}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Preencher a partir de uma aula da apostila (opcional)</label>
+                          <Select
+                            value={form.apostila_lesson_id ? `${form.apostila_chapter_id}::${form.apostila_lesson_id}` : ''}
+                            onValueChange={(v) => { const [chId, lsId] = v.split('::'); handlePickApostilaLesson(chId, lsId); }}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Selecione uma aula da apostila" /></SelectTrigger>
+                            <SelectContent>
+                              {APOSTILA_CHAPTERS.map((c) => (
+                                c.lessons.map((l) => (
+                                  <SelectItem key={l.id} value={`${c.id}::${l.id}`}>{l.title}</SelectItem>
+                                ))
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[10px] text-muted-foreground mt-1">Preenche automaticamente título e resumo com o conteúdo da apostila.</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   {form.lesson_type === 'video_external' && <Input placeholder="URL do vídeo (YouTube, Vimeo...)" value={form.video_url} onChange={e => setForm({ ...form, video_url: e.target.value })} />}
                   {form.lesson_type === 'content_external' && <Input placeholder="URL do material externo" value={form.external_url} onChange={e => setForm({ ...form, external_url: e.target.value })} />}
                   {form.lesson_type === 'text_written' && <Textarea placeholder="Conteúdo da aula em texto..." value={form.text_content} onChange={e => setForm({ ...form, text_content: e.target.value })} rows={8} />}
