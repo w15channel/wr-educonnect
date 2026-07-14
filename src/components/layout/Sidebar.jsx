@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { applyTheme, getStoredTheme } from '@/components/layout/MobileHeader';
 
@@ -13,6 +13,24 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
+
+
+const STUDENT_BADGE_PATHS = new Set(['/ofensivas', '/lessons', '/tasks', '/exams', '/chat', '/forum', '/debates', '/terapeuta', '/announcements', '/tuitions']);
+const VIEW_BADGE_PATHS = new Set(['/chat', '/forum', '/debates', '/announcements', '/tuitions']);
+const badgeStorageKey = (email, course, path) => `wr_sidebar_seen_${course || 'tcc'}_${email || 'guest'}_${path}`;
+const getSeenAt = (email, course, path) => {
+  if (typeof localStorage === 'undefined') return 0;
+  const raw = localStorage.getItem(badgeStorageKey(email, course, path));
+  const parsed = raw ? Number(raw) : 0;
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+const setSeenNow = (email, course, path) => {
+  if (typeof localStorage === 'undefined' || !email || !VIEW_BADGE_PATHS.has(path)) return;
+  localStorage.setItem(badgeStorageKey(email, course, path), String(Date.now()));
+};
+const itemTime = (item) => new Date(item?.created_date || item?.submitted_at || item?.updated_date || item?.due_date || 0).getTime() || 0;
+const countNewSince = (items = [], seenAt = 0, ownEmail = '') => items.filter(item => itemTime(item) > seenAt && item.author_email !== ownEmail).length;
+const capBadge = (count) => count > 99 ? '99+' : String(count);
 
 // ── Nav groups
 // Note: Chat da Turma ↔ Sala de Debates ícones trocados conforme solicitado
@@ -137,6 +155,107 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   const isAdmin = session?.role === 'admin';
   const base = isAdmin ? '/adm' : '/student';
   const groups = isAdmin ? adminGroups : studentGroups;
+  const studentEmail = session?.email || session?.code || '';
+  const userCourse = session?.course || 'tcc';
+
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['sidebar-lessons', userCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 300),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 60000,
+  });
+  const { data: lessonProgress = [] } = useQuery({
+    queryKey: ['sidebar-lesson-progress', studentEmail],
+    queryFn: () => base44.entities.LessonProgress.filter({ student_email: studentEmail }, '-created_date', 500),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 60000,
+  });
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['sidebar-tasks', userCourse],
+    queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 300),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 60000,
+  });
+  const { data: taskSubmissions = [] } = useQuery({
+    queryKey: ['sidebar-task-submissions', studentEmail, userCourse],
+    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: studentEmail, course: userCourse }, '-created_date', 500),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 60000,
+  });
+  const { data: exams = [] } = useQuery({
+    queryKey: ['sidebar-exams', userCourse],
+    queryFn: () => base44.entities.Exam.filter({ course: userCourse, is_published: true }, '-created_date', 300),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 60000,
+  });
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['sidebar-exam-submissions', studentEmail, userCourse],
+    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: studentEmail, course: userCourse }, '-submitted_at', 500),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 60000,
+  });
+  const { data: challenges = [] } = useQuery({
+    queryKey: ['sidebar-daily-challenge', userCourse, new Date().toISOString().slice(0, 10)],
+    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: new Date().toISOString().slice(0, 10) }, '-created_date', 5),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 60000,
+  });
+  const { data: challengeResponses = [] } = useQuery({
+    queryKey: ['sidebar-daily-response', studentEmail, userCourse, new Date().toISOString().slice(0, 10)],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail, course: userCourse, date: new Date().toISOString().slice(0, 10) }, '-created_date', 5),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 60000,
+  });
+  const { data: chatMessages = [] } = useQuery({
+    queryKey: ['sidebar-chat-messages', userCourse],
+    queryFn: () => base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: `class-${userCourse}` }).then(res => res?.data?.records || res?.data || []),
+    enabled: !isAdmin && !!studentEmail,
+    refetchInterval: 15000,
+  });
+  const { data: forumPosts = [] } = useQuery({ queryKey: ['sidebar-forum-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'forum' }, '-created_date', 100), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
+  const { data: forumReplies = [] } = useQuery({ queryKey: ['sidebar-forum-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'forum' }, '-created_date', 300), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
+  const { data: debatePosts = [] } = useQuery({ queryKey: ['sidebar-debate-posts', userCourse], queryFn: () => base44.entities.ForumPost.filter({ course: userCourse, space: 'debates' }, '-created_date', 100), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
+  const { data: debateReplies = [] } = useQuery({ queryKey: ['sidebar-debate-replies', userCourse], queryFn: () => base44.entities.ForumReply.filter({ course: userCourse, space: 'debates' }, '-created_date', 300), enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
+  const { data: pairings = [] } = useQuery({ queryKey: ['sidebar-therapist-pairings', studentEmail], queryFn: () => base44.entities.TherapistPairing.filter({ therapist_email: studentEmail }, '-created_date', 20), enabled: !isAdmin && !!studentEmail, refetchInterval: 60000 });
+  const { data: announcements = [] } = useQuery({ queryKey: ['sidebar-announcements', userCourse, studentEmail], queryFn: async () => {
+    const [courseItems, personalItems] = await Promise.all([
+      base44.entities.Announcement.filter({ course: userCourse }, '-created_date', 100),
+      base44.entities.Announcement.filter({ recipient_email: studentEmail }, '-created_date', 100),
+    ]);
+    return [...courseItems, ...personalItems].filter((item, index, arr) => item.recipient_email ? item.recipient_email === studentEmail : arr.findIndex(a => a.id === item.id) === index);
+  }, enabled: !isAdmin && !!studentEmail, refetchInterval: 30000 });
+  const { data: tuitions = [] } = useQuery({ queryKey: ['sidebar-tuitions', studentEmail], queryFn: () => base44.entities.Tuition.filter({ student_email: studentEmail }, '-due_date', 100), enabled: !isAdmin && !!studentEmail, refetchInterval: 60000 });
+
+  useEffect(() => {
+    if (isAdmin || !studentEmail) return;
+    const current = location.pathname.replace(base, '') || '/dashboard';
+    setSeenNow(studentEmail, userCourse, current);
+  }, [base, isAdmin, location.pathname, studentEmail, userCourse]);
+
+  const studentBadges = useMemo(() => {
+    if (isAdmin || !studentEmail) return {};
+    const lessonDone = new Set(lessonProgress.filter(p => p.watched).map(p => p.lesson_id));
+    const submittedTasks = new Set(taskSubmissions.map(s => s.task_id));
+    const submittedExams = new Set(examSubmissions.map(s => s.exam_id));
+    const latestChallenge = challenges[0];
+    const response = latestChallenge && challengeResponses.find(r => r.challenge_id === latestChallenge.id);
+    const challengeTotal = latestChallenge?.questions?.length || 8;
+    const activeTherapistPending = pairings.filter(p => !p.therapist_submitted).length;
+    const tuitionsPending = tuitions.filter(t => t.status !== 'paid').length;
+    const tuitionsNew = countNewSince(tuitions, getSeenAt(studentEmail, userCourse, '/tuitions'), studentEmail);
+    return {
+      '/ofensivas': latestChallenge && (!response || (Number(response.questions_answered) || 0) < challengeTotal) ? 1 : 0,
+      '/lessons': lessons.filter(l => !lessonDone.has(l.id)).length,
+      '/tasks': tasks.filter(t => !submittedTasks.has(t.id)).length,
+      '/exams': exams.filter(e => !submittedExams.has(e.id)).length,
+      '/chat': countNewSince(chatMessages, getSeenAt(studentEmail, userCourse, '/chat'), studentEmail),
+      '/forum': countNewSince([...forumPosts, ...forumReplies], getSeenAt(studentEmail, userCourse, '/forum'), studentEmail),
+      '/debates': countNewSince([...debatePosts, ...debateReplies], getSeenAt(studentEmail, userCourse, '/debates'), studentEmail),
+      '/terapeuta': activeTherapistPending,
+      '/announcements': countNewSince(announcements, getSeenAt(studentEmail, userCourse, '/announcements'), studentEmail),
+      '/tuitions': Math.max(tuitionsPending, tuitionsNew),
+    };
+  }, [isAdmin, studentEmail, userCourse, lessons, lessonProgress, tasks, taskSubmissions, exams, examSubmissions, challenges, challengeResponses, chatMessages, forumPosts, forumReplies, debatePosts, debateReplies, pairings, announcements, tuitions]);
 
   // Collapsible group state — initially open the group that has the active route
   // Also re-open group when location changes (e.g. user navigates to a new section)
@@ -174,6 +293,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
   const NavLink = ({ item }) => {
     const active = isActive(item.path);
+    const badgeCount = !isAdmin && STUDENT_BADGE_PATHS.has(item.path) ? (studentBadges[item.path] || 0) : 0;
     return (
       <Link
         to={base + item.path}
@@ -187,6 +307,11 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-r-full bg-primary" />}
         <item.icon size={15} className={active ? 'text-white' : item.color} />
         <span className="font-medium text-[12.5px] flex-1 leading-tight">{item.label}</span>
+        {badgeCount > 0 && (
+          <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black leading-none flex items-center justify-center shadow-[0_0_0_2px_rgba(10,10,20,0.95)] animate-pulse">
+            {capBadge(badgeCount)}
+          </span>
+        )}
         {active && <ChevronRight size={11} className="opacity-30" />}
       </Link>
     );
