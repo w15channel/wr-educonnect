@@ -22,11 +22,6 @@ const LESSONS_PER_MODULE = 5;
 // localStorage key for completed modules per student+course
 const moduleCompKey = (email, course) => `wr_mod_completions_${course}_${email}`;
 
-function extractTaskNumber(title = '') {
-  const m = title.match(/(?:trabalho|tarefa|prova)\s*(\d+)/i);
-  return m ? Number(m[1]) : null;
-}
-
 const LESSON_TYPE_CONFIG = {
   video_external:   { label: 'Vídeo Externo', icon: Video, color: 'text-purple-500', desc: 'YouTube, Vimeo, Instagram...' },
   text_written:     { label: 'Aula em Texto', icon: FileText, color: 'text-blue-500', desc: 'Escrita diretamente na plataforma' },
@@ -89,22 +84,6 @@ export default function Lessons() {
       return isTeacher ? records : records.filter(p => studentIdentifiers.includes(normalizeStudentId(p.student_email)));
     },
     enabled: isTeacher || studentIdentifiers.length > 0,
-  });
-
-  // Trabalhos entregues — usados para exigir experiência (aulas assistidas + trabalhos)
-  // antes de liberar o módulo seguinte para o aluno.
-  const { data: unlockTasks = [] } = useQuery({
-    queryKey: ['tasks-for-unlock', userCourse],
-    queryFn: () => base44.entities.Task.filter({ course: userCourse, type: 'upload' }, '-created_date', 300),
-    enabled: !isTeacher,
-  });
-  const { data: unlockSubmissions = [] } = useQuery({
-    queryKey: ['task-submissions-for-unlock', studentIdentifiers.join('|')],
-    queryFn: async () => {
-      const records = await base44.entities.TaskSubmission.list('-created_date', 3000);
-      return records.filter(s => studentIdentifiers.includes(normalizeStudentId(s.student_email)));
-    },
-    enabled: !isTeacher && studentIdentifiers.length > 0,
   });
 
   const createMutation = useMutation({
@@ -222,25 +201,6 @@ export default function Lessons() {
 
   const watchedCount = progresses.filter(p => p.watched && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
   const progressPct = orderedLessons.length > 0 ? Math.round((watchedCount / orderedLessons.length) * 100) : 0;
-
-  // Módulo 1 sempre liberado. A partir do módulo 2, exige que o módulo anterior tenha
-  // sido totalmente assistido E que o trabalho correspondente já tenha sido entregue.
-  const getModuleLockReason = (moduleIndex) => {
-    if (isTeacher || moduleIndex === 0) return null;
-    const prevModuleNumber = moduleIndex; // número (1-based) do módulo anterior
-    const prevLessons = modules[moduleIndex - 1] || [];
-    const prevWatchedCount = prevLessons.filter(l =>
-      progresses.some(p => p.lesson_id === l.id && p.watched && studentIdentifiers.includes(normalizeStudentId(p.student_email)))
-    ).length;
-    const prevFullyWatched = prevLessons.length > 0 && prevWatchedCount >= prevLessons.length;
-    const prevTask = unlockTasks.find(t => extractTaskNumber(t.title) === prevModuleNumber);
-    const taskDelivered = prevTask ? unlockSubmissions.some(s => s.task_id === prevTask.id) : true;
-    if (prevFullyWatched && taskDelivered) return null;
-    const missing = [];
-    if (!prevFullyWatched) missing.push(`assistir todas as aulas do Módulo ${prevModuleNumber}`);
-    if (!taskDelivered) missing.push(`enviar o Trabalho ${prevModuleNumber}`);
-    return `Conclua: ${missing.join(' e ')}.`;
-  };
 
   if (viewProgressLesson) {
     return <LessonProgressPanel lesson={viewProgressLesson} onBack={() => setViewProgressLesson(null)} />;
@@ -401,7 +361,6 @@ export default function Lessons() {
               moduleIndex={moduleIndex}
               lessons={moduleLessons}
               isTeacher={isTeacher}
-              lockReason={getModuleLockReason(moduleIndex)}
               progresses={progresses}
               studentIdentifiers={studentIdentifiers}
               unlockedLessonCount={unlockedLessonCount}

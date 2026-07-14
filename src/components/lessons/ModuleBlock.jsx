@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import {
   CheckCircle, Circle, ChevronDown, ChevronUp, Play, FileText, Globe,
-  MessageSquare, Pencil, Trash2, BookOpen, FileDown, Link, Clock, Trophy, Lock
+  MessageSquare, Pencil, Trash2, BookOpen, FileDown, Link, Clock, Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,10 +63,8 @@ export default function ModuleBlock({
   onViewProgress,
   moduleCompletions,    // Set of completed module indices
   onCompleteModule,     // (moduleIndex) => void
-  lockReason = null,    // string | null — se definido, o módulo inteiro está bloqueado
 }) {
   const theme = MODULE_THEMES[moduleIndex % MODULE_THEMES.length];
-  const isModuleLocked = !!lockReason;
 
   const normalizeId = (v = '') => String(v || '').trim().toLowerCase();
   const getProgress = (lessonId) => progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeId(p.student_email)));
@@ -80,15 +78,15 @@ export default function ModuleBlock({
   const [moduleOpen, setModuleOpen] = useState(false);
 
   return (
-    <div className={`rounded-2xl border overflow-hidden transition-all ${isModuleCompleted ? 'border-emerald-400/40 shadow-emerald-500/10 shadow-lg' : isModuleLocked ? 'border-border opacity-70' : 'border-border'} bg-card`}>
+    <div className={`rounded-2xl border overflow-hidden transition-all ${isModuleCompleted ? 'border-emerald-400/40 shadow-emerald-500/10 shadow-lg' : 'border-border'} bg-card`}>
       {/* Module Header */}
       <button
-        className={`w-full flex items-center justify-between p-4 transition-colors text-left ${isModuleLocked ? 'cursor-not-allowed' : 'hover:bg-secondary/30'}`}
-        onClick={() => !isModuleLocked && setModuleOpen(v => !v)}
+        className="w-full flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors text-left"
+        onClick={() => setModuleOpen(v => !v)}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-md ${isModuleLocked ? 'bg-secondary' : `bg-gradient-to-br ${theme.color}`}`}>
-            {isModuleLocked ? <Lock size={16} className="text-muted-foreground" /> : <span className="text-lg">{theme.emoji}</span>}
+          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${theme.color} flex items-center justify-center shrink-0 shadow-md`}>
+            <span className="text-lg">{theme.emoji}</span>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -98,41 +96,31 @@ export default function ModuleBlock({
                   <CheckCircle size={9} /> Concluído
                 </span>
               )}
-              {isModuleLocked && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground bg-secondary border border-border px-2 py-0.5 rounded-full">
-                  <Lock size={9} /> Bloqueado
-                </span>
-              )}
             </div>
             <p className={`font-bold text-sm text-foreground leading-tight`}>{theme.label}</p>
-            {!isTeacher && !isModuleLocked && (
+            {!isTeacher && (
               <p className="text-xs text-muted-foreground mt-0.5">
                 {watchedInModule}/5 aulas concluídas
               </p>
-            )}
-            {isModuleLocked && (
-              <p className="text-xs text-amber-600 font-semibold mt-0.5">{lockReason}</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-2">
           {/* Progress dots */}
-          {!isModuleLocked && (
-            <div className="hidden sm:flex items-center gap-1">
-              {lessons.map((l, i) => (
-                <div
-                  key={i}
-                  className={`w-2 h-2 rounded-full transition-colors ${getProgress(l.id)?.watched ? 'bg-emerald-400' : 'bg-border'}`}
-                />
-              ))}
-            </div>
-          )}
-          {isModuleLocked ? null : moduleOpen ? <ChevronUp size={15} className="text-muted-foreground" /> : <ChevronDown size={15} className="text-muted-foreground" />}
+          <div className="hidden sm:flex items-center gap-1">
+            {lessons.map((l, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full transition-colors ${getProgress(l.id)?.watched ? 'bg-emerald-400' : 'bg-border'}`}
+              />
+            ))}
+          </div>
+          {moduleOpen ? <ChevronUp size={15} className="text-muted-foreground" /> : <ChevronDown size={15} className="text-muted-foreground" />}
         </div>
       </button>
 
       {/* Lesson list */}
-      {moduleOpen && !isModuleLocked && (
+      {moduleOpen && (
         <div className="border-t border-border divide-y divide-border">
           {lessons.map((lesson, lessonIdx) => {
             const globalIdx = globalOffset + lessonIdx;
