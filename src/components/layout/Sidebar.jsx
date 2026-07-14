@@ -274,8 +274,8 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     const latestChallenge = challenges[0];
     const response = latestChallenge && challengeResponses.find(challengeResponse => challengeResponse?.challenge_id === latestChallenge.id);
     const challengeTotal = latestChallenge?.questions?.length || 8;
-    const activeTherapistPending = pairings.filter(pairing => pairing && pairing.therapist_email === studentEmail && !pairing.therapist_submitted).length;
-    const validTuitions = tuitions.filter(tuition => tuition && tuition.student_email === studentEmail);
+    const activeTherapistPending = pairings.filter(pairing => pairing && !pairing.therapist_submitted).length;
+    const validTuitions = tuitions.filter(Boolean);
     const tuitionsPending = validTuitions.filter(tuition => tuition.status !== 'paid').length;
     const tuitionsNew = countNewSince(validTuitions, getSeenAt(studentEmail, userCourse, '/tuitions'), studentEmail);
     return {
@@ -317,7 +317,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   };
 
   const initials = session?.name
-    ? session.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    ? session.name.split(' ').map(namePart => namePart[0]).join('').slice(0, 2).toUpperCase()
     : '?';
   const avatarBg = session?.avatarColor || (isAdmin ? '#5b5ef4' : '#7c3aed');
 
