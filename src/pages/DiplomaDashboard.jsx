@@ -1,10 +1,11 @@
 import React from 'react';
-import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { BookOpen, FileText, ClipboardList, Circle, ArrowRight, GraduationCap } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 
 const extractSequenceNumber = (item = {}) => {
   const direct = Number(item.order ?? item.sequence);
@@ -23,6 +24,14 @@ const sortBySeq = (items = []) => [...items].sort((a, b) => {
   return (a.created_date || '').localeCompare(b.created_date || '');
 });
 
+const getUnlockedLessonCount = (rules = []) => {
+  const lessonUnlockRule = rules.find((r) => r.scope === 'lessons');
+  return Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
+};
+
+const isTaskAvailable = (task, moduleUnlocked = []) =>
+  !task.module_number || moduleUnlocked[Number(task.module_number) - 1];
+
 function useScopedPrefix() {
   // Diploma routes are always under /degree/student/*
   return '/degree/student';
@@ -39,6 +48,13 @@ export default function DiplomaDashboard() {
   const firstName = (session?.name || 'Estudante').split(' ')[0];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+
+  const { data: unlockRules = [] } = useQuery({
+    queryKey: ['unlock-rules-lessons-diploma', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20)
+      : base44.entities.Announcement.filter({ type: 'unlock_rule' }, '-updated_date', 20),
+  });
 
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons-diploma', userCourse],
@@ -66,17 +82,21 @@ export default function DiplomaDashboard() {
     enabled: !!session?.email,
   });
 
+  const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, session);
+
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
 
-  const unwatchedLessons = sortBySeq(lessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
-  const pendingUploadTasks = sortBySeq(tasks.filter(t => t.type === 'upload' && !submissions.find(s => s.task_id === t.id)));
-  const pendingQuizzes = tasks.filter(t => t.type === 'quiz' && !submissions.find(s => s.task_id === t.id));
+  const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
+  const availableLessons = sortBySeq(lessons).slice(0, unlockedLessonCount);
+  const unwatchedLessons = sortBySeq(availableLessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
+  const pendingUploadTasks = sortBySeq(tasks.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
+  const pendingQuizzes = tasks.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
 
-  const visibleLessons = unwatchedLessons.slice(0, 3);
-  const visibleTasks = pendingUploadTasks.slice(0, 3);
+  const visibleLessons = unwatchedLessons.slice(0, 1);
+  const visibleTasks = pendingUploadTasks.slice(0, 1);
 
-  const totalPending = unwatchedLessons.length + pendingUploadTasks.length + pendingQuizzes.length;
+  const totalPending = Math.min(unwatchedLessons.length, 1) + Math.min(pendingUploadTasks.length, 1) + Math.min(pendingQuizzes.length, 1);
 
   return (
     <div className="app-page app-page--narrow space-y-5 animate-fade-in-up pb-20 md:pb-6">
@@ -171,9 +191,9 @@ export default function DiplomaDashboard() {
                 <ArrowRight size={12} className="text-purple-400 shrink-0" />
               </button>
             ))}
-            {unwatchedLessons.length > 3 && (
+            {unwatchedLessons.length > visibleLessons.length && (
               <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
-                +{unwatchedLessons.length - 3} aulas não assistidas → Ver todas
+                +{unwatchedLessons.length - visibleLessons.length} aulas no aguardo → Ver todas
               </button>
             )}
 
@@ -193,14 +213,14 @@ export default function DiplomaDashboard() {
                 <ArrowRight size={12} className="text-orange-400 shrink-0" />
               </button>
             ))}
-            {pendingUploadTasks.length > 3 && (
+            {pendingUploadTasks.length > visibleTasks.length && (
               <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
-                +{pendingUploadTasks.length - 3} tarefas pendentes → Ver todas
+                +{pendingUploadTasks.length - visibleTasks.length} tarefas no aguardo → Ver todas
               </button>
             )}
 
             {/* Provas */}
-            {pendingQuizzes.slice(0, 3).map(t => (
+            {pendingQuizzes.slice(0, 1).map(t => (
               <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
                 <GraduationCap size={13} className="text-violet-500 shrink-0" />
@@ -213,9 +233,9 @@ export default function DiplomaDashboard() {
                 <ArrowRight size={12} className="text-violet-400 shrink-0" />
               </button>
             ))}
-            {pendingQuizzes.length > 3 && (
+            {pendingQuizzes.length > 1 && (
               <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
-                +{pendingQuizzes.length - 3} provas pendentes → Ver todas
+                +{pendingQuizzes.length - 1} provas no aguardo → Ver todas
               </button>
             )}
           </div>
