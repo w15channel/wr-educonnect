@@ -6,7 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import {
   ClipboardList, CheckCircle, Star, Plus, Pencil, Trash2, Play, Send,
   MessageSquare, GraduationCap, FileText, ChevronDown, ChevronUp,
-  Trophy, Eye, Award, Sparkles
+  Trophy, Eye, Award, Sparkles, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,8 +21,8 @@ import { formatScore } from '@/lib/scoreUtils';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
+import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 6, quiz_questions: [], module_number: '' };
 
 function useScopedPrefix() {
@@ -103,10 +103,7 @@ export default function Tasks({ mode = 'tasks' }) {
   const userCourse = session?.course || 'tcc';
 
   const [expandedId, setExpandedId] = useState(null);
-  const [uploadFiles, setUploadFiles] = useState({});
-  const [uploadStatus, setUploadStatus] = useState({});
   const [commentInputs, setCommentInputs] = useState({});
-  const [submissionDetails, setSubmissionDetails] = useState({});
   const [viewSubmissions, setViewSubmissions] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -154,7 +151,8 @@ export default function Tasks({ mode = 'tasks' }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
   });
 
-  const getStudentName = (taskId) => submissionDetails[taskId]?.studentName || user?.name || user?.full_name || '';
+  const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, user);
+  const isTaskLocked = (task) => !isTeacher && task.module_number && !moduleUnlocked[Number(task.module_number) - 1];
 
   const submitCommentMutation = useMutation({
     mutationFn: async ({ taskId, comment }) => {
@@ -178,48 +176,6 @@ export default function Tasks({ mode = 'tasks' }) {
       setCelebrating(true);
     },
   });
-
-  const handleUpload = async (taskId) => {
-    const file = uploadFiles[taskId];
-    if (!file) { toast.error('Selecione um arquivo'); return; }
-    const studentName = getStudentName(taskId);
-    if (!studentName) { toast.error('Preencha seu nome'); return; }
-    const task = tasks.find(t => t.id === taskId);
-    const safeName = str => str.replace(/[^a-zA-Z0-9À-ÿ ]/g, '').trim().replace(/\s+/g, '_');
-    const fileName = `${safeName(task?.title || 'Trabalho')}_${safeName(studentName)}_${file.name}`;
-    setUploadStatus(prev => ({ ...prev, [taskId]: 'sending' }));
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const params = new URLSearchParams();
-      params.append('fileName', fileName);
-      params.append('mimeType', file.type);
-      params.append('fileData', e.target.result.split(',')[1]);
-      params.append('description', `Aluno: ${studentName} | Turma: ${userCourse}`);
-      try {
-        await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: params, mode: 'no-cors' });
-        await base44.functions.invoke('saveStudentRecord', {
-          action: 'create', entity: 'TaskSubmission',
-          student_identifiers: [user?.email, user?.code],
-          data: { task_id: taskId, student_email: user?.email || '', student_name: studentName, file_name: fileName, comment: `Aluno: ${studentName} | Turma: ${userCourse}`, status: 'submitted', course: userCourse },
-        });
-        await base44.entities.Notification.create({
-          recipient_email: 'admin', sender_email: user?.email || '', sender_name: studentName,
-          message: `${studentName} enviou arquivo para: "${task?.title}"`,
-          task_title: task?.title || '', type: 'task_submission', is_read: false,
-        });
-        queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
-        setUploadStatus(prev => ({ ...prev, [taskId]: 'success' }));
-        setUploadFiles(prev => ({ ...prev, [taskId]: null }));
-        setExpandedId(null);
-        toast.success('Arquivo enviado!');
-        setCelebrating(true);
-      } catch {
-        setUploadStatus(prev => ({ ...prev, [taskId]: 'error' }));
-        toast.error('Erro ao enviar. Tente novamente.');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const openEdit = (task) => {
     setEditingTask(task);
@@ -324,7 +280,20 @@ export default function Tasks({ mode = 'tasks' }) {
             const isExpanded = expandedId === task.id;
             const taskNum = extractTaskNumber(task.title) || idx + 1;
             const isPastDeadline = task.deadline && new Date(task.deadline) < new Date();
-            const status = uploadStatus[task.id];
+            const locked = isTaskLocked(task);
+
+            if (locked) return (
+              <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden opacity-50">
+                <div className="flex items-center gap-3 p-4">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-muted text-xl">🔒</div>
+                  <div className="p-2 rounded-xl shrink-0 bg-blue-100 text-blue-600"><FileText size={15} /></div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm text-foreground truncate">{task.title}</h3>
+                    <p className="text-[10px] text-amber-600 font-semibold mt-0.5">⏳ Conclua o módulo anterior na apostila para liberar</p>
+                  </div>
+                </div>
+              </div>
+            );
 
             return (
               <div key={task.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200' : 'border-border hover:shadow-md'}`}>
@@ -376,23 +345,12 @@ export default function Tasks({ mode = 'tasks' }) {
                         <Play size={13} /> Iniciar Prova
                       </Button>
                     ) : (
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-xs font-bold text-foreground mb-2">📎 Enviar Arquivo</p>
-                          <Input placeholder="Seu nome completo" value={getStudentName(task.id)} onChange={e => setSubmissionDetails(prev => ({ ...prev, [task.id]: { studentName: e.target.value } }))} className="h-9 text-xs mb-2" />
-                          <input type="file" onChange={e => setUploadFiles(prev => ({ ...prev, [task.id]: e.target.files[0] }))} className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground mb-2" />
-                          <Button size="sm" className="w-full gap-1.5" disabled={!uploadFiles[task.id] || status === 'sending'} onClick={() => handleUpload(task.id)}>
-                            <Send size={13} /> {status === 'sending' ? 'Enviando...' : 'Enviar Arquivo'}
-                          </Button>
-                          {status === 'error' && <p className="text-xs text-red-500 text-center mt-1">❌ Erro ao enviar. Tente novamente.</p>}
-                        </div>
-                        <div className="border-t border-border/50 pt-3">
-                          <p className="text-xs font-bold text-foreground mb-2">💬 Ou responder por texto</p>
-                          <Textarea placeholder="Escreva sua resposta aqui..." value={commentInputs[task.id] || ''} onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))} rows={4} className="text-xs" />
-                          <Button size="sm" variant="outline" className="w-full gap-1.5 mt-2" disabled={!commentInputs[task.id]?.trim() || submitCommentMutation.isPending} onClick={() => submitCommentMutation.mutate({ taskId: task.id, comment: commentInputs[task.id] })}>
-                            <MessageSquare size={13} /> Enviar Resposta em Texto
-                          </Button>
-                        </div>
+                      <div>
+                        <p className="text-xs font-bold text-foreground mb-2">💬 Sua Resposta</p>
+                        <Textarea placeholder="Escreva sua resposta aqui..." value={commentInputs[task.id] || ''} onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))} rows={5} className="text-xs" />
+                        <Button size="sm" className="w-full gap-1.5 mt-2" disabled={!commentInputs[task.id]?.trim() || submitCommentMutation.isPending} onClick={() => submitCommentMutation.mutate({ taskId: task.id, comment: commentInputs[task.id] })}>
+                          <Send size={13} /> Enviar Resposta
+                        </Button>
                       </div>
                     )}
                   </div>
