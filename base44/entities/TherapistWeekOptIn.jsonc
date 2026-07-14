@@ -1,0 +1,39 @@
+{
+  "name": "TherapistWeekOptIn",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno que respondeu"
+    },
+    "response": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no"
+      ],
+      "description": "Resposta do aluno ao convite para ser terapeuta da semana"
+    },
+    "round": {
+      "type": "number",
+      "default": 1,
+      "description": "Rodada da enquete \u2014 incrementada quando o admin reinicia a ferramenta"
+    },
+    "responded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da resposta"
+    }
+  },
+  "required": [
+    "student_email",
+    "response",
+    "round"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

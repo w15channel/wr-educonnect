@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2 } from 'lucide-react';
+import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2, RotateCcw } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,6 +37,25 @@ export default function TerapeutaDaSemana() {
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 10000),
+  });
+
+  const { data: weekSettingsList = [] } = useQuery({
+    queryKey: ['therapist-week-settings'],
+    queryFn: () => base44.entities.TherapistWeekSettings.list('-created_date', 1),
+    enabled: isTeacher,
+  });
+
+  const resetWeekPollMutation = useMutation({
+    mutationFn: async () => {
+      const current = weekSettingsList[0];
+      const nextRound = (current?.current_round || 1) + 1;
+      if (current) return base44.entities.TherapistWeekSettings.update(current.id, { current_round: nextRound });
+      return base44.entities.TherapistWeekSettings.create({ current_round: nextRound });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['therapist-week-settings'] });
+      toast.success('Enquete reiniciada! A pergunta voltará a aparecer para todos os alunos.');
+    },
   });
 
 
@@ -195,9 +214,14 @@ export default function TerapeutaDaSemana() {
           <p className="text-sm text-muted-foreground mt-0.5">Pareamentos a cada 5 dias</p>
         </div>
         {isTeacher && (
-          <Button onClick={handleGeneratePairings} className="gap-2" disabled={createPairingMutation.isPending}>
-            <Shuffle size={15} /> Gerar Novos Pareamentos
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleGeneratePairings} className="gap-2" disabled={createPairingMutation.isPending}>
+              <Shuffle size={15} /> Gerar Novos Pareamentos
+            </Button>
+            <Button variant="outline" onClick={() => resetWeekPollMutation.mutate()} className="gap-2" disabled={resetWeekPollMutation.isPending}>
+              <RotateCcw size={15} /> Reiniciar Enquete
+            </Button>
+          </div>
         )}
       </div>
 

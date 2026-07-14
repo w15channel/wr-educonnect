@@ -6,6 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import { Video, FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar, PlayCircle } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
+import TherapistWeekInviteCard from '@/components/dashboard/TherapistWeekInviteCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
@@ -479,11 +480,11 @@ export default function Dashboard() {
         const attendedIds = new Set(liveAttendances.map((a) => a.session_id));
         const now = new Date();
         const isFutureLive = (s) => s.scheduled_at && new Date(s.scheduled_at) > now;
-        const upcomingLives = liveSessions.filter((s) => !attendedIds.has(s.id) && isFutureLive(s));
-        const missedLives = liveSessions.filter((s) => !attendedIds.has(s.id) && !isFutureLive(s) && s.status === 'ended');
+        // Lives já encerradas não devem mais aparecer nas pendências do aluno.
+        const upcomingLives = liveSessions.filter((s) => !attendedIds.has(s.id) && isFutureLive(s) && s.status !== 'ended');
         const totalPending = therapistPending.length +
           (SHOW_LESSON_TASK_PENDING_ALERTS ? unwatchedLessons.length + pendingTasksList.length : 0) +
-          pendingExams.length + missedLives.length + upcomingLives.length;
+          pendingExams.length + upcomingLives.length;
 
         if (totalPending === 0) return null;
 
@@ -590,26 +591,13 @@ export default function Dashboard() {
                   +{upcomingLives.length - 3} lives agendadas → Ver todas
                 </button>
               }
-              {missedLives.slice(0, 3).map((live) =>
-              <button key={live.id} onClick={() => navigate(scoped('/live'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 transition-colors text-left">
-                  <WifiOff size={13} className="text-red-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-red-700 truncate">{live.title}</p>
-                    <p className="text-[10px] text-red-500">Live encerrada sem presença registrada</p>
-                  </div>
-                  <ArrowRight size={12} className="text-red-400 shrink-0" />
-                </button>
-              )}
-              {missedLives.length > 3 &&
-              <button onClick={() => navigate(scoped('/live'))} className="w-full text-xs text-red-600 font-semibold py-1 hover:underline">
-                  +{missedLives.length - 3} lives perdidas → Ver todas
-                </button>
-              }
             </div>
           </div>);
 
       })()}
+
+      {/* Convite: Terapeuta da Semana — mesmo tamanho/proporção das Pendências */}
+      {!isTeacher && <TherapistWeekInviteCard studentEmail={session?.email} />}
 
       {/* Student: progress + ranking */}
       {!isTeacher &&

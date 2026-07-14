@@ -1,0 +1,20 @@
+{
+  "name": "TherapistWeekSettings",
+  "type": "object",
+  "properties": {
+    "current_round": {
+      "type": "number",
+      "default": 1,
+      "description": "Rodada atual da enquete de terapeuta da semana \u2014 incrementada pelo admin para reabrir a pergunta a todos"
+    }
+  },
+  "required": [
+    "current_round"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}
