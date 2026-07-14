@@ -304,7 +304,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     if (Object.keys(active).length > 0) {
       setOpenGroups(prev => ({ ...prev, ...active }));
     }
-  }, [location.pathname]);
+  }, [base, groups, location.pathname]);
 
   const toggleGroup = (gi) => {
     setOpenGroups(prev => ({ ...prev, [gi]: !prev[gi] }));
@@ -358,7 +358,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
       queryFn: () => base44.entities.Notification.filter({ recipient_email: 'admin' }, '-created_date', 50),
       refetchInterval: 15000,
     });
-    const unread = notifications.filter(n => !n.is_read).length;
+    const unread = notifications.filter(notification => notification && !notification.is_read).length;
     const active = isActive('/ring');
     return (
       <div className="px-3 py-2 border-t border-white/8">
