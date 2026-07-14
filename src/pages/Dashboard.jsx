@@ -300,7 +300,7 @@ export default function Dashboard() {
   s.status === 'submitted' &&
   !allScoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)
   ).length :
-  tasks.filter((t) => !submissions.find((s) => s.task_id === t.id)).length;
+  tasks.filter((t) => isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)).length;
 
   const nextLive = liveSessions.find((s) => s.status === 'live' || s.status === 'scheduled');
   const isLiveNow = nextLive?.status === 'live';
