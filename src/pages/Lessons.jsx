@@ -26,6 +26,7 @@ import { MOD7 } from '@/lib/apostila/mod7';
 import { MOD8 } from '@/lib/apostila/mod8';
 import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
+import { getVideoEmbed } from '@/lib/videoEmbed';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
@@ -280,34 +281,20 @@ export default function Lessons() {
             <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
           </div>
           {selectedVideo && (() => {
-            const embedUrl = (() => {
-              const url = selectedVideo.video_url;
-              if (!url) return null;
-              try {
-                const p = new URL(url.startsWith('http') ? url : `https://${url}`);
-                const host = p.hostname.replace('www.', '').toLowerCase();
-                if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be') {
-                  let vid = '';
-                  if (host === 'youtu.be') vid = p.pathname.split('/').filter(Boolean)[0] || '';
-                  else if (p.pathname.startsWith('/watch')) vid = p.searchParams.get('v') || '';
-                  else if (p.pathname.startsWith('/embed/')) vid = p.pathname.split('/embed/')[1]?.split('/')[0] || '';
-                  else if (p.pathname.startsWith('/shorts/') || p.pathname.startsWith('/live/')) vid = p.pathname.split('/')[2] || '';
-                  if (vid) return `https://www.youtube-nocookie.com/embed/${vid}?rel=0&modestbranding=1`;
-                }
-                if (host === 'vimeo.com' || host === 'player.vimeo.com') {
-                  const id = p.pathname.split('/').find(x => /^\d+$/.test(x));
-                  if (id) return `https://player.vimeo.com/video/${id}`;
-                }
-                return null;
-              } catch { return null; }
-            })();
+            const embed = getVideoEmbed(selectedVideo.video_url);
             return (
               <div>
-                {embedUrl ? (
+                {embed.type === 'iframe' && (
                   <div className="aspect-video bg-black">
-                    <iframe src={embedUrl} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" />
+                    <iframe src={embed.src} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" />
                   </div>
-                ) : (
+                )}
+                {embed.type === 'video' && (
+                  <div className="aspect-video bg-black">
+                    <video src={embed.src} className="w-full h-full" controls autoPlay playsInline />
+                  </div>
+                )}
+                {embed.type === 'unsupported' && (
                   <div className="aspect-video bg-muted flex items-center justify-center flex-col gap-3">
                     <p className="text-muted-foreground text-sm">Vídeo não disponível para embed</p>
                     {selectedVideo.video_url && <a href={selectedVideo.video_url} target="_blank" rel="noopener noreferrer" className="text-primary flex items-center gap-1 text-sm hover:underline"><ExternalLink size={14} /> Abrir externamente</a>}
