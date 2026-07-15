@@ -36,6 +36,7 @@ const EPOCH = new Date('2024-01-01T00:00:00Z');
 const STUDY_POINTS = { lesson: 2, task: 5, quiz: 50, exam: 50 };
 const THERAPIST_SESSION_POINTS = 10;
 const LIVE_ATTENDANCE_POINTS = 0;
+const MAX_RANKING_POINTS = 100;
 
 function ymd(date) {
   return date.toISOString().slice(0, 10);
@@ -66,6 +67,10 @@ function roundScore(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.round((numeric + Number.EPSILON) * 1000) / 1000;
+}
+
+function capRankingScore(value) {
+  return Math.min(roundScore(value), MAX_RANKING_POINTS);
 }
 
 Deno.serve(async (req) => {
@@ -458,7 +463,7 @@ Deno.serve(async (req) => {
 
       // ── Final ranking + persist ──────────────────────────────────────────
       const finalRanking = courseCodes
-        .map((c) => ({ code: c, total: calculatedTotals.get(c.student_email) || 0, name: displayName(c).toLowerCase() }))
+        .map((c) => ({ code: c, total: capRankingScore(calculatedTotals.get(c.student_email) || 0), name: displayName(c).toLowerCase() }))
         .sort((a, b) => b.total !== a.total ? b.total - a.total : a.name.localeCompare(b.name, 'pt-BR'));
 
       for (const [idx, item] of finalRanking.entries()) {
@@ -473,8 +478,8 @@ Deno.serve(async (req) => {
         const profilePayload = {
           student_email: item.code.student_email,
           full_name: displayName(item.code),
-          points: roundScore(item.total),
-          pontuacao_total: roundScore(item.total),
+          points: capRankingScore(item.total),
+          pontuacao_total: capRankingScore(item.total),
           pontuacao_estudos: studyTotal,
           dashboard_rank: idx + 1,
           dashboard_course: course,
@@ -483,18 +488,18 @@ Deno.serve(async (req) => {
         else await base44.asServiceRole.entities.StudentProfile.create(profilePayload);
         profilesUpdated++;
 
-        if (roundScore(item.code.pontuacao_total) !== roundScore(item.total) || roundScore(item.code.pontuacao_estudos) !== studyTotal) {
+        if (roundScore(item.code.pontuacao_total) !== capRankingScore(item.total) || roundScore(item.code.pontuacao_estudos) !== studyTotal) {
           await base44.asServiceRole.entities.AccessCode.update(item.code.id, {
-            pontuacao_total: roundScore(item.total),
+            pontuacao_total: capRankingScore(item.total),
             pontuacao_estudos: studyTotal,
           });
           scoreCachesUpdated++;
         }
 
         for (const cachedUser of users.filter((u) => u.email === item.code.student_email)) {
-          if (roundScore(cachedUser.pontuacao_total) !== roundScore(item.total) || roundScore(cachedUser.pontuacao_estudos) !== studyTotal) {
+          if (roundScore(cachedUser.pontuacao_total) !== capRankingScore(item.total) || roundScore(cachedUser.pontuacao_estudos) !== studyTotal) {
             await base44.asServiceRole.entities.User.update(cachedUser.id, {
-              pontuacao_total: roundScore(item.total),
+              pontuacao_total: capRankingScore(item.total),
               pontuacao_estudos: studyTotal,
             });
             scoreCachesUpdated++;

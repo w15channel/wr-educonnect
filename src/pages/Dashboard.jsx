@@ -9,7 +9,7 @@ import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import TherapistWeekInviteCard from '@/components/dashboard/TherapistWeekInviteCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { capScore, formatScore } from '@/lib/scoreUtils';
 import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
@@ -111,10 +111,10 @@ export default function Dashboard() {
   }, []);
 
   const getAssignedPoints = React.useCallback((email, fallback = 0) => {
-    if (!manualScoreEmails.has(email)) return roundScore(fallback || 0);
+    if (!manualScoreEmails.has(email)) return capScore(fallback || 0);
     const draft = scoreDrafts[email];
     const numeric = Number(String(draft ?? '').replace(',', '.'));
-    return Number.isFinite(numeric) ? roundScore(numeric) : roundScore(fallback || 0);
+    return Number.isFinite(numeric) ? capScore(numeric) : capScore(fallback || 0);
   }, [manualScoreEmails, scoreDrafts]);
 
   const toggleManualScoreEmail = (email, suggestedPoints) => {
@@ -328,7 +328,7 @@ export default function Dashboard() {
   });
   const myGrades = submissions.filter((s) => s.grade !== undefined && s.grade !== null);
   const currentAccessCode = accessCodes.find((code) => code.student_email === session?.email);
-  const totalPoints = roundScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
+  const totalPoints = capScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
 
   const lessonIds = new Set(lessons.map((l) => l.id));
   const watchedCount = progresses.filter((p) => p.watched && lessonIds.has(p.lesson_id)).length;
@@ -340,7 +340,7 @@ export default function Dashboard() {
     if (userCourse && c.course !== userCourse && !(userCourse === 'tcc' && !c.course)) return false;
     return true;
   });
-  const scoreMap = Object.fromEntries(courseCodes.map((code) => [code.student_email, roundScore(code.pontuacao_total ?? publishedScoreMap[code.student_email] ?? 0)]));
+  const scoreMap = Object.fromEntries(courseCodes.map((code) => [code.student_email, capScore(code.pontuacao_total ?? publishedScoreMap[code.student_email] ?? 0)]));
   const taskIds = new Set(tasks.map((t) => t.id));
   const courseSubmissions = submissions.filter((s) => taskIds.has(s.task_id));
   const participationMap = {};
@@ -364,6 +364,7 @@ export default function Dashboard() {
       hasPending
     };
   }).sort((a, b) => {
+    if (a.total >= 100 && b.total >= 100 && b.count !== a.count) return b.count - a.count;
     if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
     if (b.total !== a.total) return b.total - a.total;
     if (a.count > 0 || b.count > 0) {

@@ -1,4 +1,5 @@
 export const SCORE_DECIMAL_PLACES = 1;
+export const SCORE_MAX_POINTS = 100;
 
 export const SCORE_RULES = {
   lesson: 2,
@@ -13,6 +14,10 @@ export function roundScore(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.round((numeric + Number.EPSILON) * 10) / 10;
+}
+
+export function capScore(value, max = SCORE_MAX_POINTS) {
+  return Math.min(roundScore(value), max);
 }
 
 export function sumRoundedScores(values) {

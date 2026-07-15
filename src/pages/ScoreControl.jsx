@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { formatScore, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES, parseUtcDate } from '@/lib/scoreUtils';
+import { capScore, formatScore, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES, parseUtcDate } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
 
 const CATEGORY_CONFIG = {
@@ -153,7 +153,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     return ids;
   }));
 
-  const totalScore = scoreItems.
+  const totalScore = capScore(scoreItems.
   filter((s) => s.verified && (
   s.category === 'lesson' && lessonIds.has(s.ref_id) ||
 (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
@@ -162,7 +162,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   s.category === 'therapist' && myPairings.some((p) => p.id === s.ref_id) ||
   isTherapistScoreItem(s) && therapistScoreRefIds.has(s.ref_id))
   ).
-  reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0);
+  reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0));
 
   const studyScore = scoreItems.
   filter((s) => s.verified && (
@@ -175,7 +175,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const sendTotalMutation = useMutation({
     mutationFn: async () => {
       const profile = studentProfiles[0];
-      const data = { student_email: email, full_name: displayName, points: roundScore(totalScore), pontuacao_total: roundScore(totalScore), pontuacao_estudos: roundScore(studyScore), dashboard_course: activeCourse };
+      const data = { student_email: email, full_name: displayName, points: capScore(totalScore), pontuacao_total: capScore(totalScore), pontuacao_estudos: roundScore(studyScore), dashboard_course: activeCourse };
       if (profile) return adminApi.update('StudentProfile', profile.id, data);
       return adminApi.create('StudentProfile', data);
     },
@@ -680,13 +680,17 @@ export default function ScoreControl() {
     );
     const stats = getParticipationStats(code.student_email);
     const savedProfile = studentProfiles.find((p) => p.student_email === code.student_email && p.dashboard_course === activeCourse && typeof p.points === 'number');
-    const totalScore = roundScore(code.pontuacao_total ?? savedProfile?.pontuacao_total ?? savedProfile?.points ?? 0);
+    const totalScore = capScore(code.pontuacao_total ?? savedProfile?.pontuacao_total ?? savedProfile?.points ?? 0);
     const participations = stats.count;
     return { code, hasPending, totalScore, participations };
   }).
   sort((a, b) => {
     if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
-    if (sortBy === 'points') return b.totalScore - a.totalScore;
+    if (sortBy === 'points') {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (a.totalScore >= 100 && b.totalScore >= 100 && b.participations !== a.participations) return b.participations - a.participations;
+      return 0;
+    }
     if (sortBy === 'participations') return b.participations - a.participations;
     return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
   });
@@ -705,8 +709,8 @@ export default function ScoreControl() {
         const data = {
           student_email: code.student_email,
           full_name: code.profile_name || code.student_name || code.student_email,
-          points: roundScore(item.totalScore),
-          pontuacao_total: roundScore(item.totalScore),
+          points: capScore(item.totalScore),
+          pontuacao_total: capScore(item.totalScore),
           pontuacao_estudos: roundScore(code.pontuacao_estudos || 0),
           dashboard_rank: index + 1,
           dashboard_course: activeCourse
@@ -730,8 +734,8 @@ export default function ScoreControl() {
         const data = {
           student_email: code.student_email,
           full_name: code.profile_name || code.student_name || code.student_email,
-          points: roundScore(item.totalScore),
-          pontuacao_total: roundScore(item.totalScore),
+          points: capScore(item.totalScore),
+          pontuacao_total: capScore(item.totalScore),
           pontuacao_estudos: roundScore(code.pontuacao_estudos || 0),
           dashboard_rank: index + 1,
           dashboard_course: activeCourse

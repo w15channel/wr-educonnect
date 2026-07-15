@@ -9,10 +9,16 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+const MAX_RANKING_POINTS = 100;
+
 function roundScore(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.round((numeric + Number.EPSILON) * 1000) / 1000;
+}
+
+function capRankingScore(value) {
+  return Math.min(roundScore(value), MAX_RANKING_POINTS);
 }
 
 function sameCourse(record, course) {
@@ -93,7 +99,7 @@ Deno.serve(async (req) => {
       const prev = seen.get(key);
       if (!prev || (Number(s.score) || 0) > (Number(prev.score) || 0)) seen.set(key, s);
     }
-    const total = roundScore([...seen.values()].reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
+    const total = capRankingScore([...seen.values()].reduce((sum, s) => roundScore(sum + roundScore(s.score)), 0));
 
     // Update AccessCode
     const codes = await base44.asServiceRole.entities.AccessCode.filter({ student_email }, '-created_date', 5);

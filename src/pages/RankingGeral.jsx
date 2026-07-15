@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp, Heart, Archive } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { formatScore, rankingScoreValue, roundScore, sumRoundedScores, parseUtcDate } from '@/lib/scoreUtils';
+import { capScore, formatScore, rankingScoreValue, roundScore, sumRoundedScores, parseUtcDate } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 
@@ -372,7 +372,7 @@ export default function RankingGeral() {
   const ranking = useMemo(() => {
     return courseCodes
       .map(c => {
-        const total = roundScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0);
+        const total = capScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0);
         const publishedRank = publishedRankMap[c.student_email] ?? Number.MAX_SAFE_INTEGER;
         return {
           email: c.student_email,
@@ -385,6 +385,7 @@ export default function RankingGeral() {
         };
       })
       .sort((a, b) => {
+        if (a.total >= 100 && b.total >= 100 && b.count !== a.count) return b.count - a.count;
         // Respect admin-published rank order first (same as Dashboard)
         if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
         // Then by points
@@ -558,7 +559,7 @@ export default function RankingGeral() {
           code={selected}
           scoreItems={allScoreItems}
           courseItemRefIds={courseItemRefIds}
-          publishedTotal={roundScore(selected.pontuacao_total ?? publishedScoreMap[selected.student_email] ?? 0)}
+          publishedTotal={capScore(selected.pontuacao_total ?? publishedScoreMap[selected.student_email] ?? 0)}
           periodCutoff={periodCutoff}
           onClose={() => setSelected(null)}
         />
