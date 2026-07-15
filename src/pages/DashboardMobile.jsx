@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { capScore, formatScore } from '@/lib/scoreUtils';
 import { toast } from 'sonner';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 
@@ -166,7 +166,7 @@ export default function DashboardMobile() {
   });
 
   const currentAccessCode = accessCodes.find(c => c.student_email === session?.email);
-  const totalPoints = roundScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
+  const totalPoints = capScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
   const watchedCount = progresses.filter(p => p.watched).length;
   const progressPct = lessons.length > 0 ? Math.round(watchedCount / lessons.length * 100) : 0;
 
@@ -187,15 +187,23 @@ export default function DashboardMobile() {
     }
   });
 
+  const participationMap = {};
+  allScoreItems.forEach((s) => {
+    if (!s.student_email) return;
+    participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
+  });
+
   const rankingFull = courseCodes.map(c => ({
     email: c.student_email,
-    total: roundScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0),
+    total: capScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0),
     publishedRank: publishedRankMap[c.student_email] || Number.MAX_SAFE_INTEGER,
+    count: participationMap[c.student_email] || 0,
     name: (c.profile_name || c.student_name || c.student_email || ''),
     avatarColor: c.profile_avatar_color || '#5b5ef4',
     photoUrl: c.profile_photo_url || '',
     avatarEmoji: c.profile_avatar_emoji || '',
   })).sort((a, b) => {
+    if (a.total >= 100 && b.total >= 100 && b.count !== a.count) return b.count - a.count;
     if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
     return b.total - a.total;
   });

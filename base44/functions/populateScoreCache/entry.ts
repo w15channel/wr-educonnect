@@ -1,9 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+const MAX_RANKING_POINTS = 100;
+
 function roundScore(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.round((numeric + Number.EPSILON) * 1000) / 1000;
+}
+
+function capRankingScore(value) {
+  return Math.min(roundScore(value), MAX_RANKING_POINTS);
 }
 
 function addRounded(total, value) {
@@ -21,7 +27,7 @@ function rankingScore(item) {
 }
 
 async function updateStudentCache(base44, email, total, studyTotal, profiles, accessCodes, users) {
-  const pontuacaoTotal = roundScore(total);
+  const pontuacaoTotal = capRankingScore(total);
   const pontuacaoEstudos = roundScore(studyTotal);
   const profileMatches = profiles.filter((profile) => profile.student_email === email);
   for (const profile of profileMatches) {

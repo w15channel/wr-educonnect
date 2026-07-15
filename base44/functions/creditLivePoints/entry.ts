@@ -12,10 +12,16 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+const MAX_RANKING_POINTS = 100;
+
 function roundScore(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.round((numeric + Number.EPSILON) * 1000) / 1000;
+}
+
+function capRankingScore(value) {
+  return Math.min(roundScore(value), MAX_RANKING_POINTS);
 }
 
 function normalizePayload(raw) {
@@ -85,7 +91,7 @@ Deno.serve(async (req) => {
     if (scoreAction !== 'skipped' && code) {
       const allScores = await base44.asServiceRole.entities.ScoreItem.filter({ student_email: studentEmail });
       const verifiedScores = allScores.filter((item) => item.verified);
-      const newTotal = roundScore(verifiedScores.reduce((sum, item) => sum + roundScore(item.score), 0));
+      const newTotal = capRankingScore(verifiedScores.reduce((sum, item) => sum + roundScore(item.score), 0));
       const newStudyTotal = roundScore(verifiedScores
         .filter((item) => ['lesson', 'task', 'quiz', 'exam'].includes(item.category) && !String(item.ref_id || '').startsWith('therapist_pairing:'))
         .reduce((sum, item) => sum + roundScore(item.score), 0));
