@@ -759,12 +759,20 @@ export default function Dashboard() {
           }
 
             <div className="mt-4 pt-4 border-t border-border space-y-3">
-              <div className="flex items-center gap-2">
-                <MessageSquare size={14} className="text-primary" />
-                <p className="text-xs font-bold text-foreground">Mini chat da turma (somente chat geral)</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <MessageSquare size={14} className="text-primary" />
+                  <p className="text-xs font-bold text-foreground">Chat da turma</p>
+                </div>
+                <button
+                  onClick={() => navigate(scoped('/chat'))}
+                  className="flex items-center gap-1 text-[11px] text-primary font-semibold hover:underline shrink-0"
+                >
+                  Abrir chat completo →
+                </button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Este espaço nao permite chat particular. Aqui e apenas conversa geral com a turma.
+                🎉 Interaja com sua turma agora — compartilhe ideias, tire dúvidas e celebre conquistas juntos!
               </p>
 
               <div className="flex flex-wrap items-center gap-1.5">
@@ -795,6 +803,19 @@ export default function Dashboard() {
                 }
               </div>
 
+              <div className="flex items-center gap-1 flex-wrap">
+                {['😄','👏','🔥','💡','🎉','🙌','❤️','💪'].map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setMiniChatText((prev) => prev + emoji)}
+                    className="text-base leading-none px-1.5 py-1 rounded-lg hover:bg-secondary transition-colors"
+                    aria-label={`Inserir ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -807,7 +828,7 @@ export default function Dashboard() {
                 <input
                   value={miniChatText}
                   onChange={(e) => setMiniChatText(e.target.value)}
-                  placeholder="Escreva para o chat geral..."
+                  placeholder="Escreva para a turma..."
                   className="flex-1 h-9 px-3 text-xs border border-border rounded-lg bg-background focus:outline-none"
                 />
                 <button
