@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Save, CheckCircle, Camera, User, Trash2, GraduationCap, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
+import { AVATAR_OPTIONS, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -17,21 +18,6 @@ const AVATAR_COLORS = [
   '#5b5ef4', '#7c3aed', '#db2777', '#dc2626',
   '#ea580c', '#ca8a04', '#16a34a', '#0d9488',
   '#2563eb', '#0891b2', '#9333ea', '#c2410c',
-];
-
-const AVATARS = [
-  { id: 'a1', emoji: '🧑‍🎓', label: 'Estudante' },
-  { id: 'a2', emoji: '🧘', label: 'Zen' },
-  { id: 'a3', emoji: '🌟', label: 'Estrela' },
-  { id: 'a4', emoji: '🦋', label: 'Borboleta' },
-  { id: 'a5', emoji: '🌸', label: 'Flor' },
-  { id: 'a6', emoji: '🦁', label: 'Leão' },
-  { id: 'a7', emoji: '🐬', label: 'Golfinho' },
-  { id: 'a8', emoji: '🌈', label: 'Arco-íris' },
-  { id: 'a9', emoji: '🔮', label: 'Cristal' },
-  { id: 'a10', emoji: '🌻', label: 'Girassol' },
-  { id: 'a11', emoji: '🦉', label: 'Coruja' },
-  { id: 'a12', emoji: '🌊', label: 'Onda' },
 ];
 
 export default function Profile() {
@@ -49,7 +35,6 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [studyMode, setStudyMode] = useState(session?.study_mode || 'interativa');
   const fileRef = useRef();
@@ -70,13 +55,13 @@ export default function Profile() {
           setName(p.full_name || session?.name || '');
           setBio(p.bio || session?.bio || '');
           setNickname(p.nickname || '');
-          setSelectedAvatar(p.avatar_emoji || '');
+          setSelectedAvatar(p.avatar_emoji || session?.avatarEmoji || '');
           setEmail(p.email || session?.email || '');
         }
       });
   }, []);
 
-  const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
+  const initials = getInitials(name);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -91,7 +76,7 @@ export default function Profile() {
   const handleSave = async () => {
     setSaving(true);
     // Optimistic: update session immediately so UI reflects changes at once
-    setSession({ ...session, name, bio, avatarColor, photoUrl, study_mode: studyMode });
+    setSession({ ...session, name, bio, avatarColor, photoUrl, avatarEmoji: selectedAvatar, study_mode: studyMode });
     setSaved(true);
     try {
       if (session?.codeId) {
@@ -99,6 +84,7 @@ export default function Profile() {
           profile_name: name,
           profile_bio: bio,
           profile_avatar_color: avatarColor,
+          profile_avatar_emoji: selectedAvatar,
           profile_photo_url: photoUrl,
           student_name: name,
           student_email: email,
@@ -153,7 +139,7 @@ export default function Profile() {
     }
   };
 
-  const avatarEl = selectedAvatar ? AVATARS.find(a => a.id === selectedAvatar) : null;
+  const avatarEmoji = resolveAvatarEmoji(selectedAvatar);
 
   return (
     <div className="p-4 lg:p-7 max-w-2xl mx-auto animate-fade-in-up">
@@ -169,9 +155,9 @@ export default function Profile() {
           <div className="relative">
             {photoUrl ? (
               <img src={photoUrl} alt="Foto" className="w-24 h-24 rounded-2xl object-cover shadow-lg border-4 border-white ring-2 ring-primary/20" />
-            ) : avatarEl ? (
+            ) : avatarEmoji ? (
               <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-4xl shadow-lg border-4 border-white" style={{ backgroundColor: avatarColor }}>
-                {avatarEl.emoji}
+                {avatarEmoji}
               </div>
             ) : (
               <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg border-4 border-white" style={{ backgroundColor: avatarColor }}>
@@ -218,7 +204,7 @@ export default function Profile() {
               >
                 <User size={16} className="text-muted-foreground" />
               </button>
-              {AVATARS.map(av => (
+              {AVATAR_OPTIONS.map(av => (
                 <button
                   key={av.id}
                   onClick={() => setSelectedAvatar(av.id)}

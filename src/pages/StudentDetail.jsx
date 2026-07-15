@@ -7,6 +7,7 @@ import { ChevronLeft, CalendarDays, Phone, CheckCircle, XCircle, MessageCircle, 
 import { format } from 'date-fns';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { Button } from '@/components/ui/button';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 
 const tuitionConfig = {
   paid:    { label: 'Em dia',       class: 'text-green-700 bg-green-100 border-green-200',   icon: CheckCircle },
@@ -19,9 +20,6 @@ const COURSE_LABELS = {
   psicanalise: 'Psicanalista Freudiano',
   sexologia: 'Sexólogo(a)',
 };
-
-// Avatar emoji map (same as Profile page)
-const AVATAR_EMOJIS = ['🧠','🌱','💫','🔥','⚡','🌟','🎯','🧬','🌀','🎓','🦋','🌊','🎭','🏆','✨','🌺','🦉','🚀','💎','🌙'];
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -39,7 +37,7 @@ export default function StudentDetail() {
 
   const { data: codes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
   });
 
   const { data: allSubmissions = [] } = useQuery({
@@ -49,7 +47,7 @@ export default function StudentDetail() {
 
   const { data: studentProfiles = [] } = useQuery({
     queryKey: ['student-profiles'],
-    queryFn: () => base44.entities.StudentProfile.list('-created_date', 200),
+    queryFn: () => base44.entities.StudentProfile.list('-created_date', 10000),
   });
 
   const { data: tuitions = [] } = useQuery({
@@ -81,10 +79,10 @@ export default function StudentDetail() {
   const displayName = code.profile_name || code.student_name || 'Sem nome';
   const avatarColor = code.profile_avatar_color || profile?.avatar_color || '#5b5ef4';
   const photoUrl = code.profile_photo_url || profile?.photo_url;
-  const emojiKey = code.profile_avatar_emoji || profile?.avatar_emoji;
-  const avatarEmoji = emojiKey ? AVATAR_EMOJIS[parseInt(emojiKey, 10)] || emojiKey : null;
+  const avatarEmoji = resolveAvatarEmoji(code.profile_avatar_emoji || profile?.avatar_emoji);
   const bio = code.profile_bio || profile?.bio;
-  const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = getInitials(displayName);
+  const publicName = getAvatarPrefixedName(displayName, code.profile_avatar_emoji || profile?.avatar_emoji);
 
   return (
     <div className="p-4 lg:p-7 max-w-xl mx-auto animate-fade-in-up">
@@ -125,7 +123,7 @@ export default function StudentDetail() {
               </div>
 
               <div className="flex-1 min-w-0 pt-11">
-                <h2 className="text-lg font-bold text-foreground truncate">{displayName}</h2>
+                <h2 className="text-lg font-bold text-foreground truncate">{publicName}</h2>
                 <p className="text-xs text-muted-foreground truncate">{code.student_email || '—'}</p>
               </div>
             </div>
@@ -155,7 +153,7 @@ export default function StudentDetail() {
           )}
 
           {/* Dados pessoais */}
-          {(profile?.birth_date || profile?.whatsapp || code.student_email) && (
+          {(profile?.birth_date || profile?.whatsapp || profile?.email || code.student_email) && (
             <div className="grid grid-cols-1 gap-2">
               {code.student_email && (
                 <div className="flex items-center gap-2.5 text-sm bg-secondary/40 rounded-xl p-3">
@@ -167,6 +165,15 @@ export default function StudentDetail() {
                 </div>
               )}
               <div className="grid grid-cols-2 gap-2">
+                {profile?.email && profile.email !== code.student_email && (
+                  <div className="flex items-center gap-2 text-sm bg-secondary/40 rounded-xl p-3">
+                    <Mail size={14} className="text-muted-foreground" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">E-mail pessoal</p>
+                      <p className="font-semibold text-xs break-all">{profile.email}</p>
+                    </div>
+                  </div>
+                )}
                 {profile?.birth_date && (
                   <div className="flex items-center gap-2 text-sm bg-secondary/40 rounded-xl p-3">
                     <CalendarDays size={14} className="text-muted-foreground" />

@@ -21,6 +21,7 @@ import {
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { capScore, formatScore } from '@/lib/scoreUtils';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { toast } from 'sonner';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 
@@ -92,7 +93,7 @@ export default function DashboardMobile() {
 
   const { data: publishedScores = [] } = useQuery({
     queryKey: ['student-profiles-score-overview'],
-    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 500),
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000),
   });
 
   const { data: liveSessions = [] } = useQuery({
@@ -108,7 +109,7 @@ export default function DashboardMobile() {
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
   });
 
   const { data: unlockRules = [] } = useQuery({
@@ -201,7 +202,7 @@ export default function DashboardMobile() {
     name: (c.profile_name || c.student_name || c.student_email || ''),
     avatarColor: c.profile_avatar_color || '#5b5ef4',
     photoUrl: c.profile_photo_url || '',
-    avatarEmoji: c.profile_avatar_emoji || '',
+    avatarEmoji: resolveAvatarEmoji(c.profile_avatar_emoji),
   })).sort((a, b) => {
     if (a.total >= 100 && b.total >= 100 && b.count !== a.count) return b.count - a.count;
     if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
@@ -209,7 +210,7 @@ export default function DashboardMobile() {
   });
 
   const studentPublishedRanking = rankingFull.filter(r => Number.isFinite(r.publishedRank) && r.publishedRank !== Number.MAX_SAFE_INTEGER);
-  const visibleRanking = (studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull).slice(0, 5);
+  const visibleRanking = studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull;
   const myRank = visibleRanking.findIndex(r => r.email === session?.email) + 1;
   const myGrades = submissions.filter(s => s.grade !== undefined && s.grade !== null);
 
@@ -393,10 +394,11 @@ export default function DashboardMobile() {
               <span className="text-[10px] font-light border border-[#d4b96a]/20 text-[#d4b96a] px-2 py-0.5 rounded-full">#{myRank}</span>
             )}
           </div>
-          <div className="space-y-1">
+          <div className="max-h-72 overflow-y-auto pr-1 space-y-1">
             {visibleRanking.map((r, i) => {
               const isMe = r.email === session?.email;
               const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+              const nameWithAvatar = getAvatarPrefixedName(r.name, r.avatarEmoji);
               return (
                 <div key={r.email} className={`flex items-center gap-2.5 p-2 rounded-xl ${isMe ? 'bg-[#d4b96a]/8 border border-[#d4b96a]/12' : ''}`}>
                   <span className="w-5 text-center text-sm shrink-0">
@@ -406,9 +408,9 @@ export default function DashboardMobile() {
                     ? <img src={r.photoUrl} alt={r.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
                     : r.avatarEmoji
                     ? <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ background: r.avatarColor }}>{r.avatarEmoji}</div>
-                    : <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-light text-white shrink-0" style={{ background: r.avatarColor }}>{r.name?.[0]?.toUpperCase()}</div>
+                    : <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-light text-white shrink-0" style={{ background: r.avatarColor }}>{getInitials(r.name)}</div>
                   }
-                  <span className={`flex-1 text-[12px] font-light truncate ${isMe ? 'text-[#d4b96a]' : 'text-[#e8dfc8]/70'}`}>{r.name}</span>
+                  <span className={`flex-1 text-[12px] font-light truncate ${isMe ? 'text-[#d4b96a]' : 'text-[#e8dfc8]/70'}`}>{nameWithAvatar}</span>
                   <div className="flex items-center gap-1 shrink-0">
                     <Star size={10} className="text-yellow-400 fill-yellow-400" />
                     <span className="text-[11px] font-light text-[#e8dfc8]/60">{formatScore(r.total)}</span>
