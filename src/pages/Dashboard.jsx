@@ -3,7 +3,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { Video, FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar, PlayCircle } from 'lucide-react';
+import { Video, FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar, PlayCircle, MessageSquare, Send } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import TherapistWeekInviteCard from '@/components/dashboard/TherapistWeekInviteCard';
@@ -102,6 +102,7 @@ export default function Dashboard() {
   const [customRanking, setCustomRanking] = React.useState([]);
   const [scoreDrafts, setScoreDrafts] = React.useState({});
   const [manualScoreEmails, setManualScoreEmails] = React.useState(new Set());
+  const [miniChatText, setMiniChatText] = React.useState('');
 
 
   useEffect(() => {
@@ -253,6 +254,19 @@ export default function Dashboard() {
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 500)
   });
+  const chatSessionId = `class_chat_${userCourse || 'tcc'}`;
+  const { data: miniChatMessages = [] } = useQuery({
+    queryKey: ['dashboard-mini-chat', chatSessionId],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('saveStudentRecord', {
+        action: 'listChatMessages',
+        session_id: chatSessionId,
+      });
+      return res.data?.records || [];
+    },
+    enabled: !isTeacher && !!session?.email,
+    refetchInterval: 3000,
+  });
 
   const { data: unlockRules = [] } = useQuery({
     queryKey: ['unlock-rules-lessons', userCourse || 'all'],
@@ -275,6 +289,16 @@ export default function Dashboard() {
   });
 
   const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, session);
+
+  useEffect(() => {
+    if (isTeacher || !session?.email) return;
+    const myCode = accessCodes.find((c) => c.student_email === session.email);
+    if (!myCode?.id) return;
+    const markOnline = () => base44.entities.AccessCode.update(myCode.id, { is_online: true, last_seen_at: new Date().toISOString() });
+    markOnline();
+    const timer = setInterval(markOnline, 30000);
+    return () => clearInterval(timer);
+  }, [accessCodes, isTeacher, session?.email]);
 
   const { data: announcements = [] } = useQuery({
     queryKey: ['announcements'],
@@ -413,8 +437,36 @@ export default function Dashboard() {
     },
   });
 
-  const visibleStudentRanking = (studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull).slice(0, 10);
-  const myRank = visibleStudentRanking.findIndex((r) => r.email === session?.email) + 1;
+  const studentRankingSource = studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull;
+  const visibleStudentRanking = studentRankingSource.slice(0, 5);
+  const myRank = studentRankingSource.findIndex((r) => r.email === session?.email) + 1;
+  const isStudentOnline = (student) => student.is_online && student.last_seen_at && Date.now() - new Date(student.last_seen_at).getTime() < 90000;
+  const onlineClassmates = accessCodes
+    .filter((c) => c.student_email && c.student_email !== session?.email && c.is_active !== false)
+    .filter((c) => !userCourse || c.course === userCourse || userCourse === 'tcc' && !c.course)
+    .filter(isStudentOnline)
+    .sort((a, b) => (a.profile_name || a.student_name || a.student_email || '').localeCompare(b.profile_name || b.student_name || b.student_email || '', 'pt-BR'));
+  const recentMiniChatMessages = miniChatMessages.slice(-12);
+
+  const sendMiniChatMutation = useMutation({
+    mutationFn: async (content) => {
+      await base44.functions.invoke('saveStudentRecord', {
+        action: 'create',
+        entity: 'ChatMessage',
+        data: {
+          session_id: chatSessionId,
+          author_name: session?.name || 'Aluno',
+          author_email: session?.email || session?.code || '',
+          content,
+          is_hand_raised: false,
+        },
+      });
+    },
+    onSuccess: async () => {
+      setMiniChatText('');
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-mini-chat', chatSessionId] });
+    },
+  });
 
   const firstName = (session?.name || 'Usuário').split(' ')[0];
   const hour = new Date().getHours();
@@ -705,6 +757,68 @@ export default function Dashboard() {
             })}
               </div>
           }
+
+            <div className="mt-4 pt-4 border-t border-border space-y-3">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={14} className="text-primary" />
+                <p className="text-xs font-bold text-foreground">Mini chat da turma (somente chat geral)</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Este espaço nao permite chat particular. Aqui e apenas conversa geral com a turma.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-foreground">Online agora:</span>
+                {onlineClassmates.length === 0 ?
+                <span className="text-[11px] text-muted-foreground">sem colegas online no momento</span> :
+                onlineClassmates.slice(0, 8).map((student) =>
+                <span key={student.id} className="text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
+                      {student.profile_name || student.student_name || student.student_email}
+                    </span>
+                )
+                }
+              </div>
+
+              <div className="rounded-xl border border-border bg-secondary/20 p-2 h-40 overflow-y-auto space-y-1.5">
+                {recentMiniChatMessages.length === 0 ?
+                <p className="text-xs text-muted-foreground">Ainda nao ha mensagens no chat geral.</p> :
+                recentMiniChatMessages.map((msg) => {
+                  const isMe = msg.author_email === session?.email;
+                  const authorCode = accessCodes.find((c) => c.student_email === msg.author_email);
+                  const authorName = authorCode?.profile_name || authorCode?.student_name || msg.author_name || 'Aluno';
+                  return (
+                    <div key={msg.id} className="text-[11px] leading-relaxed">
+                      <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{isMe ? 'Voce' : authorName}:</span>
+                      <span className="ml-1 text-muted-foreground">{msg.content}</span>
+                    </div>);
+                })
+                }
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const content = miniChatText.trim();
+                  if (!content || sendMiniChatMutation.isPending) return;
+                  sendMiniChatMutation.mutate(content);
+                }}
+                className="flex items-center gap-2">
+                
+                <input
+                  value={miniChatText}
+                  onChange={(e) => setMiniChatText(e.target.value)}
+                  placeholder="Escreva para o chat geral..."
+                  className="flex-1 h-9 px-3 text-xs border border-border rounded-lg bg-background focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!miniChatText.trim() || sendMiniChatMutation.isPending}
+                  className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50 flex items-center gap-1">
+                  
+                  <Send size={12} /> {sendMiniChatMutation.isPending ? 'Enviando...' : 'Enviar'}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       }
