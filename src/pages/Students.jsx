@@ -34,7 +34,7 @@ export default function Students() {
 
   const { data: codes = [], isLoading: codesLoading } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
   });
 
   const { data: allSubmissions = [] } = useQuery({
@@ -44,7 +44,7 @@ export default function Students() {
 
   const { data: studentProfiles = [] } = useQuery({
     queryKey: ['student-profiles'],
-    queryFn: () => base44.entities.StudentProfile.list('-created_date', 200),
+    queryFn: () => base44.entities.StudentProfile.list('-created_date', 10000),
   });
 
   const { data: tuitions = [] } = useQuery({
@@ -161,6 +161,7 @@ export default function Students() {
         profile_name: sourceCode.profile_name,
         profile_bio: sourceCode.profile_bio,
         profile_avatar_color: sourceCode.profile_avatar_color,
+        profile_avatar_emoji: sourceCode.profile_avatar_emoji,
         profile_photo_url: sourceCode.profile_photo_url,
         course: targetCourse,
         is_active: true,

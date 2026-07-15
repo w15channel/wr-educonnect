@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { startOfWeek, format } from 'date-fns';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 
 function getBrTime() {
   // GMT-3
@@ -15,7 +16,7 @@ function getBrTime() {
 }
 
 function StudentAvatar({ name, photoUrl, avatarColor, avatarEmoji, size = 56 }) {
-  const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
+  const initials = getInitials(name);
   const bg = avatarColor || '#5b5ef4';
 
   if (photoUrl) {
@@ -43,11 +44,12 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
   const nickname = profile?.nickname || '';
   const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
   const avatarColor = profile?.avatar_color || code?.profile_avatar_color || '#5b5ef4';
-  const avatarEmoji = profile?.avatar_emoji || '';
+  const avatarEmoji = resolveAvatarEmoji(profile?.avatar_emoji || code?.profile_avatar_emoji);
   const bio = profile?.bio || '';
   const whatsapp = profile?.whatsapp || '';
   const email = code?.student_email || '';
   const points = roundScore(code?.pontuacao_total ?? profile?.pontuacao_total ?? profile?.points ?? 0);
+  const publicName = getAvatarPrefixedName(name, profile?.avatar_emoji || code?.profile_avatar_emoji);
 
   const isMe = session?.email === email;
 
@@ -101,7 +103,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
 
       {/* Info */}
       <div className="w-full min-w-0">
-        <p className="font-bold text-foreground text-sm leading-tight truncate">{name}</p>
+        <p className="font-bold text-foreground text-sm leading-tight truncate">{publicName}</p>
         {nickname && <p className="text-xs text-muted-foreground truncate">"{nickname}"</p>}
         {bio && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{bio}</p>}
         {points > 0 && (
@@ -161,12 +163,12 @@ export default function Classe() {
 
   const { data: codes = [], isLoading: loadingCodes } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
   });
 
   const { data: profiles = [] } = useQuery({
     queryKey: ['student-profiles'],
-    queryFn: () => base44.entities.StudentProfile.list('-created_date', 200),
+    queryFn: () => base44.entities.StudentProfile.list('-created_date', 10000),
   });
 
   const { data: scoreItems = [] } = useQuery({
@@ -341,19 +343,20 @@ export default function Classe() {
               const name = profile?.full_name || code?.profile_name || code?.student_name || code?.student_email || 'Aluno';
               const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
               const avatarColor = profile?.avatar_color || code?.profile_avatar_color || '#5b5ef4';
-              const avatarEmoji = profile?.avatar_emoji || '';
+              const avatarEmoji = resolveAvatarEmoji(profile?.avatar_emoji || code?.profile_avatar_emoji);
               const bio = profile?.bio || code?.profile_bio || '';
               const nickname = profile?.nickname || '';
               const age = getAge(profile?.birth_date);
               const whatsapp = profile?.whatsapp || '';
+              const publicName = getAvatarPrefixedName(name, profile?.avatar_emoji || code?.profile_avatar_emoji);
               return (
                 <div className="text-white">
                   <div className="mx-auto w-fit mb-4">
                     <StudentAvatar name={name} photoUrl={photoUrl} avatarColor={avatarColor} avatarEmoji={avatarEmoji} size={132} />
                   </div>
-                  <h3 className="text-xl font-bold text-center">{name}</h3>
+                  <h3 className="text-xl font-bold text-center">{publicName}</h3>
                   {nickname && <p className="text-center text-sm text-white/70 mt-0.5">"{nickname}"</p>}
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
                       <p className="text-white/60">Idade</p>
                       <p className="font-semibold">{age !== null ? `${age} anos` : 'Não informado'}</p>
@@ -361,6 +364,10 @@ export default function Classe() {
                     <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
                       <p className="text-white/60">WhatsApp</p>
                       <p className="font-semibold">{whatsapp || 'Não informado'}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                      <p className="text-white/60">E-mail</p>
+                      <p className="font-semibold break-all">{code?.student_email || profile?.email || 'Não informado'}</p>
                     </div>
                   </div>
                   <div className="mt-4 bg-white/5 border border-white/10 rounded-xl p-3">

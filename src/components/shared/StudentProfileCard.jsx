@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { MessageCircle, Phone, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 
 /**
  * Popup card that shows a student's profile summary.
@@ -45,15 +47,19 @@ export default function StudentProfileCard({ email, onClose }) {
   }, [email]);
 
   const name = profile?.full_name || code?.profile_name || code?.student_name || email;
+  const publicName = getAvatarPrefixedName(name, profile?.avatar_emoji || code?.profile_avatar_emoji);
   const photo = profile?.photo_url || code?.profile_photo_url || '';
   const color = profile?.avatar_color || code?.profile_avatar_color || '#5b5ef4';
+  const avatarEmoji = resolveAvatarEmoji(profile?.avatar_emoji || code?.profile_avatar_emoji);
   const bio = profile?.bio || code?.profile_bio || '';
   const whatsapp = profile?.whatsapp || '';
   const nickname = profile?.nickname || '';
+  const publicEmail = profile?.email || code?.student_email || email;
+  const birthDate = profile?.birth_date || '';
   const lastSeen = code?.last_seen_at ? new Date(code.last_seen_at) : null;
   const isOnline = code?.is_online && lastSeen && Date.now() - lastSeen.getTime() < 90000;
   const lastSeenText = isOnline ? 'Online agora' : lastSeen ? `Visto por último em ${lastSeen.toLocaleDateString('pt-BR')} às ${lastSeen.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Visto por último indisponível';
-  const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
+  const initials = getInitials(name);
 
   return (
     <div
@@ -82,23 +88,41 @@ export default function StudentProfileCard({ email, onClose }) {
         {/* Avatar */}
         <div className="flex flex-col items-center -mt-10 pb-5 px-5">
           {photo ? (
-            <img src={photo} alt={name} className="w-20 h-20 rounded-full object-cover border-4 border-card shadow-lg" />
+            <div className="relative">
+              <img src={photo} alt={name} className="w-20 h-20 rounded-full object-cover border-4 border-card shadow-lg" />
+              {avatarEmoji && <span className="absolute -bottom-1 -right-1 text-xl">{avatarEmoji}</span>}
+            </div>
           ) : (
             <div
               className="w-20 h-20 rounded-full border-4 border-card shadow-lg flex items-center justify-center font-black text-2xl text-white"
               style={{ backgroundColor: color }}
             >
-              {initials}
+              {avatarEmoji || initials}
             </div>
           )}
 
-          <h3 className="mt-3 font-bold text-foreground text-base text-center leading-tight">{name}</h3>
+          <h3 className="mt-3 font-bold text-foreground text-base text-center leading-tight">{publicName}</h3>
           {nickname && <p className="text-sm text-muted-foreground mt-0.5">"{nickname}"</p>}
           <p className={`text-[11px] font-semibold mt-1 ${isOnline ? 'text-green-600' : 'text-red-500'}`}>{isOnline ? '🟢' : '🔴'} {lastSeenText}</p>
 
           {bio && (
-            <p className="text-xs text-muted-foreground text-center mt-2 leading-relaxed line-clamp-3">{bio}</p>
+            <p className="text-xs text-muted-foreground text-center mt-2 leading-relaxed whitespace-pre-wrap">{bio}</p>
           )}
+
+          <div className="mt-3 grid w-full grid-cols-1 gap-2 text-left">
+            {publicEmail && (
+              <div className="rounded-xl border border-border bg-secondary/30 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">E-mail</p>
+                <p className="text-xs font-semibold text-foreground break-all">{publicEmail}</p>
+              </div>
+            )}
+            {birthDate && (
+              <div className="rounded-xl border border-border bg-secondary/30 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Nascimento</p>
+                <p className="text-xs font-semibold text-foreground">{format(new Date(`${birthDate}T12:00:00`), 'dd/MM/yyyy')}</p>
+              </div>
+            )}
+          </div>
 
           {whatsapp && (
             <a

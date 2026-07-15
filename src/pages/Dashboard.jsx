@@ -3,13 +3,14 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { Video, FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar, PlayCircle, MessageSquare, Send } from 'lucide-react';
+import { Video, FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar, PlayCircle, MessageSquare, Send, Smile } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import TherapistWeekInviteCard from '@/components/dashboard/TherapistWeekInviteCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { capScore, formatScore } from '@/lib/scoreUtils';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
@@ -48,6 +49,7 @@ const isTaskAvailable = (task, moduleUnlocked = []) =>
 // primeira vez, essas duas categorias ficam desativadas nas Pendências.
 // Reative (true) quando houver um novo reset da plataforma com alunos já em andamento.
 const SHOW_LESSON_TASK_PENDING_ALERTS = true;
+const MINI_CHAT_EMOJIS = ['😀', '😁', '😂', '😊', '😍', '😘', '🤗', '🤩', '😎', '🥳', '🤝', '👏', '🙌', '💪', '🫶', '❤️', '🔥', '✨', '🎉', '🌟', '💡', '📚', '🧠', '🚀', '☕', '🌈', '🙏', '🤔', '😅', '😮', '😢', '👍', '👌', '🙋', '✅', '🎯', '💬', '📝', '🎓', '🌻', '🦋', '🌙'];
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -103,6 +105,7 @@ export default function Dashboard() {
   const [scoreDrafts, setScoreDrafts] = React.useState({});
   const [manualScoreEmails, setManualScoreEmails] = React.useState(new Set());
   const [miniChatText, setMiniChatText] = React.useState('');
+  const [showMiniChatEmojiPicker, setShowMiniChatEmojiPicker] = React.useState(false);
 
 
   useEffect(() => {
@@ -252,7 +255,7 @@ export default function Dashboard() {
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 500)
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000)
   });
   const chatSessionId = `class_chat_${userCourse || 'tcc'}`;
   const { data: miniChatMessages = [] } = useQuery({
@@ -438,7 +441,7 @@ export default function Dashboard() {
   });
 
   const studentRankingSource = studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull;
-  const visibleStudentRanking = studentRankingSource.slice(0, 5);
+  const visibleStudentRanking = studentRankingSource;
   const myRank = studentRankingSource.findIndex((r) => r.email === session?.email) + 1;
   const isStudentOnline = (student) => student.is_online && student.last_seen_at && Date.now() - new Date(student.last_seen_at).getTime() < 90000;
   const onlineClassmates = accessCodes
@@ -464,6 +467,7 @@ export default function Dashboard() {
     },
     onSuccess: async () => {
       setMiniChatText('');
+      setShowMiniChatEmojiPicker(false);
       await queryClient.invalidateQueries({ queryKey: ['dashboard-mini-chat', chatSessionId] });
     },
   });
@@ -722,14 +726,15 @@ export default function Dashboard() {
             {visibleStudentRanking.length === 0 ?
           <p className="text-sm text-muted-foreground text-center py-6">O ranking será exibido após as primeiras notas</p> :
 
-          <div className="space-y-1.5">
+          <div className="max-h-72 overflow-y-auto pr-1 space-y-1.5">
                 {visibleStudentRanking.map((r, i) => {
               const isMe = r.email === session?.email;
               const code = accessCodes.find((c) => c.student_email === r.email);
               const displayName = code?.profile_name || code?.student_name || r.email;
               const avatarColor = code?.profile_avatar_color || '#5b5ef4';
               const photoUrl = code?.profile_photo_url || '';
-              const avatarEmoji = code?.profile_avatar_emoji || '';
+              const avatarEmoji = resolveAvatarEmoji(code?.profile_avatar_emoji);
+              const nameWithAvatar = getAvatarPrefixedName(displayName, code?.profile_avatar_emoji);
               const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
               return (
                 <div key={r.email} className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/8 border border-primary/15' : 'hover:bg-secondary/50'}`}>
@@ -744,10 +749,10 @@ export default function Dashboard() {
                         </div> :
 
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
-                          {displayName?.charAt(0)?.toUpperCase()}
+                          {getInitials(displayName)}
                         </div>
                   }
-                      <span className={`flex-1 text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{displayName}</span>
+                      <span className={`flex-1 text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{nameWithAvatar}</span>
                       <div className="flex items-center gap-1 shrink-0">
                         <Star size={11} className="text-yellow-400 fill-yellow-400" />
                         <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
@@ -781,7 +786,7 @@ export default function Dashboard() {
                 <span className="text-[11px] text-muted-foreground">sem colegas online no momento</span> :
                 onlineClassmates.slice(0, 8).map((student) =>
                 <span key={student.id} className="text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
-                      {student.profile_name || student.student_name || student.student_email}
+                      {getAvatarPrefixedName(student.profile_name || student.student_name || student.student_email, student.profile_avatar_emoji)}
                     </span>
                 )
                 }
@@ -794,28 +799,33 @@ export default function Dashboard() {
                   const isMe = msg.author_email === session?.email;
                   const authorCode = accessCodes.find((c) => c.student_email === msg.author_email);
                   const authorName = authorCode?.profile_name || authorCode?.student_name || msg.author_name || 'Aluno';
+                  const authorDisplayName = getAvatarPrefixedName(isMe ? 'Voce' : authorName, authorCode?.profile_avatar_emoji);
                   return (
                     <div key={msg.id} className="text-[11px] leading-relaxed">
-                      <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{isMe ? 'Voce' : authorName}:</span>
+                      <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{authorDisplayName}:</span>
                       <span className="ml-1 text-muted-foreground">{msg.content}</span>
                     </div>);
                 })
                 }
               </div>
 
-              <div className="flex items-center gap-1 flex-wrap">
-                {['😄','👏','🔥','💡','🎉','🙌','❤️','💪'].map((emoji) => (
+              {showMiniChatEmojiPicker &&
+              <div className="rounded-xl border border-border bg-secondary/20 p-2">
+                  <div className="grid grid-cols-7 gap-1">
+                    {MINI_CHAT_EMOJIS.map((emoji) =>
                   <button
                     key={emoji}
                     type="button"
-                    onClick={() => setMiniChatText((prev) => prev + emoji)}
-                    className="text-base leading-none px-1.5 py-1 rounded-lg hover:bg-secondary transition-colors"
-                    aria-label={`Inserir ${emoji}`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
+                    onClick={() => setMiniChatText((prev) => `${prev}${emoji}`)}
+                    className="h-9 rounded-lg bg-background hover:bg-secondary text-lg transition-colors"
+                    aria-label={`Inserir ${emoji}`}>
+                    
+                        {emoji}
+                      </button>
+                  )}
+                  </div>
+                </div>
+              }
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -824,7 +834,13 @@ export default function Dashboard() {
                   sendMiniChatMutation.mutate(content);
                 }}
                 className="flex items-center gap-2">
-                
+                <button
+                  type="button"
+                  onClick={() => setShowMiniChatEmojiPicker((prev) => !prev)}
+                  className={`h-9 w-9 rounded-lg border flex items-center justify-center transition-colors ${showMiniChatEmojiPicker ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:text-foreground'}`}>
+                  
+                  <Smile size={15} />
+                </button>
                 <input
                   value={miniChatText}
                   onChange={(e) => setMiniChatText(e.target.value)}

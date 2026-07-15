@@ -5,6 +5,7 @@ import { Send, Smile, Lock, Users, Search, Minus, Square, X, Bell } from 'lucide
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
+import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 
 const MSN_CLASSIC_EMOJIS = [
   { code: ':-)', icon: '🙂' }, { code: ';-)', icon: '😉' }, { code: ':-D', icon: '😄' },
@@ -97,7 +98,7 @@ export default function ClassChat() {
 
   const { data: codes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 300),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
     refetchInterval: 15000,
   });
 
@@ -199,7 +200,7 @@ export default function ClassChat() {
   const getProfile = (email) => {
     const code = codes.find(c => c.student_email === email);
     const idx = Math.abs(email?.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 0) % MSN_COLORS.length;
-    return { color: code?.profile_avatar_color || MSN_COLORS[idx], emoji: code?.profile_emoji || '•', name: code?.profile_name || null };
+    return { color: code?.profile_avatar_color || MSN_COLORS[idx], emoji: resolveAvatarEmoji(code?.profile_avatar_emoji), name: code?.profile_name || null };
   };
 
   const formatLastSeen = (dateStr) => {
@@ -257,7 +258,7 @@ export default function ClassChat() {
                 {messages.length === 0 ? <p className="text-sm text-[#7182ac]">Ninguém falou ainda. Inicie com um “Oi :)”.</p> : messages.map((msg) => {
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);
-                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} name={`${profile.emoji} ${profile.name || msg.author_name}`} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} />;
+                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} />;
                 })}
                 <div ref={bottomRef} />
               </div>
@@ -279,14 +280,14 @@ export default function ClassChat() {
                 <div>
                   <div className="text-[11px] font-bold text-[#2f7d32] mb-1 border-b border-green-200 pb-1">🟢 Online ({onlineStudents.length})</div>
                   {onlineStudents.slice(0, 60).map((c) => {
-                    const name = c.profile_name || c.student_name || c.student_email;
+                    const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
                     return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] truncate"><span className="text-green-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
                   })}
                 </div>
                 <div>
                   <div className="text-[11px] font-bold text-[#b42318] mb-1 border-b border-red-200 pb-1">🔴 Ausentes ({awayStudents.length})</div>
                   {awayStudents.slice(0, 60).map((c) => {
-                    const name = c.profile_name || c.student_name || c.student_email;
+                    const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
                     return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] truncate"><span className="text-red-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Visto por último: {formatLastSeen(c.last_seen_at)}</span></button>;
                   })}
                 </div>
@@ -299,7 +300,7 @@ export default function ClassChat() {
             <div className="relative mb-3"><Search size={14} className="absolute left-2.5 top-2.5 text-gray-400"/><input value={dmSearch} onChange={e => setDmSearch(e.target.value)} className="w-full h-9 pl-8 pr-3 border border-[#abc0ea] rounded" placeholder="Buscar contato..."/></div>
             <div className="grid md:grid-cols-2 gap-2">
               {otherStudents.map((c) => {
-                const name = c.profile_name || c.student_name || c.student_email;
+                const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
                 const online = isStudentOnline(c);
                 return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="border border-[#c8d7f5] rounded px-3 py-2 text-left hover:bg-[#f6f9ff] text-sm"><span className={online ? 'text-green-500' : 'text-red-500'}>●</span> 🔒 {name}<span className="block text-[10px] text-[#6f7ba8] ml-4">{online ? 'Online agora' : `Visto por último: ${formatLastSeen(c.last_seen_at)}`}</span></button>;
               })}
