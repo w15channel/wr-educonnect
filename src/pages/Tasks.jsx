@@ -6,7 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import {
   ClipboardList, CheckCircle, Star, Plus, Pencil, Trash2, Play, Send,
   MessageSquare, GraduationCap, FileText, ChevronDown, ChevronUp,
-  Trophy, Eye, Award, Sparkles, Lock
+  Trophy, Eye, EyeOff, Award, Sparkles, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -345,10 +345,10 @@ export default function Tasks({ mode = 'tasks' }) {
                       <button onClick={e => { e.stopPropagation(); task.type === 'quiz' ? navigate(`${prefix}/tasks/builder/${task.id}`) : openEdit(task); }} className="p-2 text-muted-foreground hover:text-primary rounded-lg"><Pencil size={13} /></button>
                       <button
                         onClick={e => { e.stopPropagation(); toggleVisibilityMutation.mutate({ id: task.id, isHidden: !task.is_hidden }); }}
-                        className={`p-2 rounded-lg ${task.is_hidden ? 'text-amber-600 hover:text-amber-700' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`p-2 rounded-lg ${task.is_hidden ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
                         title={task.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
                       >
-                        <Eye size={13} />
+                        {task.is_hidden ? <EyeOff size={13} /> : <Eye size={13} />}
                       </button>
                       <button onClick={e => { e.stopPropagation(); deleteMutation.mutate(task.id); }} className="p-2 text-muted-foreground hover:text-destructive rounded-lg"><Trash2 size={13} /></button>
                     </div>

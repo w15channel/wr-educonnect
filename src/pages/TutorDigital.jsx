@@ -74,7 +74,7 @@ export default function TutorDigital() {
   }, [messages]);
 
   const buildContext = () => {
-    const pendingTasks = tasks.filter(t => !submissions.find(s => s.task_id === t.id));
+    const pendingTasks = tasks.filter(t => !t.is_hidden && !submissions.find(s => s.task_id === t.id));
     const nextLive = liveSessions.find(s => s.status === 'live' || s.status === 'scheduled');
     return `
 Contexto do aluno:

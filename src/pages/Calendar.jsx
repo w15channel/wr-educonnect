@@ -83,7 +83,7 @@ export default function Calendar() {
       type: 'live',
       source: 'platform',
     })),
-    ...tasks.filter(t => t.deadline).map(t => ({
+    ...tasks.filter(t => t.deadline && (isAdmin || !t.is_hidden)).map(t => ({
       id: `task-${t.id}`,
       title: `${t.type === 'quiz' ? '📝' : '📋'} ${t.title}`,
       date: t.deadline.split('T')[0],

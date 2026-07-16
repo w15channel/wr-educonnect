@@ -84,14 +84,17 @@ export default function DiplomaDashboard() {
 
   const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, session);
 
+  const visibleLessonsAll = lessons.filter(l => !l.is_hidden);
+  const visibleTasksAll = tasks.filter(t => !t.is_hidden);
+
   const watchedCount = progresses.filter(p => p.watched).length;
-  const progressPct = lessons.length > 0 ? Math.round((watchedCount / lessons.length) * 100) : 0;
+  const progressPct = visibleLessonsAll.length > 0 ? Math.round((watchedCount / visibleLessonsAll.length) * 100) : 0;
 
   const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
-  const availableLessons = sortBySeq(lessons).slice(0, unlockedLessonCount);
+  const availableLessons = sortBySeq(visibleLessonsAll).slice(0, unlockedLessonCount);
   const unwatchedLessons = sortBySeq(availableLessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
-  const pendingUploadTasks = sortBySeq(tasks.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
-  const pendingQuizzes = tasks.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
+  const pendingUploadTasks = sortBySeq(visibleTasksAll.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
+  const pendingQuizzes = visibleTasksAll.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
 
   const visibleLessons = unwatchedLessons.slice(0, 1);
   const visibleTasks = pendingUploadTasks.slice(0, 1);
@@ -122,7 +125,7 @@ export default function DiplomaDashboard() {
             </div>
             <div>
               <h3 className="font-bold text-sm text-foreground">Progresso nas Aulas</h3>
-              <p className="text-xs text-muted-foreground">{watchedCount} de {lessons.length} concluídas</p>
+              <p className="text-xs text-muted-foreground">{watchedCount} de {visibleLessonsAll.length} concluídas</p>
             </div>
           </div>
           <span className="text-2xl font-black text-primary">{progressPct}%</span>

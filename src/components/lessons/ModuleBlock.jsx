@@ -188,7 +188,7 @@ export default function ModuleBlock({
                         <button
                           onClick={() => onToggleVisibility(lesson)}
                           className={`p-2 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg transition-colors ${
-                            lesson.is_hidden ? 'text-amber-600 hover:text-amber-700' : 'text-muted-foreground hover:text-foreground'
+                            lesson.is_hidden ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'
                           }`}
                           title={lesson.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
                         >

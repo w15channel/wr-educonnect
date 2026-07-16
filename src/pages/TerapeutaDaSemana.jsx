@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
@@ -91,9 +91,6 @@ export default function TerapeutaDaSemana() {
 
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
-  // Período atual: pareamentos cujo period_end >= hoje (ainda ativos)
-  // ou criados nos últimos 5 dias caso period_end não esteja definido
-  const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
 
   // Filtro por curso: /sex/ exibe apenas alunos SEX-
   const isCodeInActiveDomain = (code) => {
@@ -120,17 +117,18 @@ export default function TerapeutaDaSemana() {
   const eligibleDomainStudents = activeDomainStudents.filter((student) => optedInEmails.has(String(student.student_email || '').trim().toLowerCase()));
   const rankedDomainStudents = [...eligibleDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
 
-  // Pareamento "atual" = period_end >= hoje OU (sem period_end e criado nos últimos 5 dias)
-  const isActivePairing = (p) => p.period_end ? p.period_end >= todayStr : p.pairing_date >= periodStart;
+  // Pareamento é completamente manual: o administrador gera novas rodadas quando desejar.
+  // O lote "atual" é sempre o mais recente gerado; os demais ficam no histórico.
+  const domainPairingsAll = pairings.filter(p =>
+    !courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email))
+  );
+  const latestPairingDate = domainPairingsAll.reduce(
+    (max, p) => (!max || p.pairing_date > max ? p.pairing_date : max),
+    null
+  );
 
-  const currentPairings = sortBySequence(pairings.filter(p =>
-    isActivePairing(p) &&
-    (!courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email)))
-  ));
-  const pastPairings = sortBySequence(pairings.filter(p =>
-    !isActivePairing(p) &&
-    (!courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email)))
-  ));
+  const currentPairings = sortBySequence(domainPairingsAll.filter(p => p.pairing_date === latestPairingDate));
+  const pastPairings = sortBySequence(domainPairingsAll.filter(p => p.pairing_date !== latestPairingDate));
 
   // Pairings do aluno logado
   const myTherapistPairing = currentPairings.find(p => p.therapist_email === session?.email);
@@ -175,7 +173,6 @@ export default function TerapeutaDaSemana() {
     const allOrdered = [...mostActiveGroup, ...randomPool];
 
     const date = todayStr;
-    const endDate = format(addDays(today, 4), 'yyyy-MM-dd');
     const pairs = [];
     for (let i = 0; i < allOrdered.length - 1; i += 2) {
       pairs.push({ therapist: allOrdered[i], patient: allOrdered[i + 1] });
@@ -190,7 +187,6 @@ export default function TerapeutaDaSemana() {
         patient_email: patient.student_email,
         patient_name: patient.profile_name || patient.student_name,
         pairing_date: date,
-        period_end: endDate,
       });
     }
     toast.success(`✅ ${pairs.length} pareamento(s) gerado(s) com ${activeStudents.length} aluno(s) do domínio.`);
@@ -207,9 +203,7 @@ export default function TerapeutaDaSemana() {
   });
 
   // Todos os pareamentos do domínio (atuais + anteriores) com pelo menos um relato
-  const allDomainPairings = pairings.filter(p =>
-    !courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email))
-  );
+  const allDomainPairings = domainPairingsAll;
 
   const handleSubmitEval = () => {
     if (!evalDialog) return;
@@ -236,7 +230,7 @@ export default function TerapeutaDaSemana() {
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             <Heart size={22} className="text-pink-500" /> Terapeuta da Semana
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Pareamentos a cada 5 dias</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Pareamento manual, definido pelo administrador</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2">
