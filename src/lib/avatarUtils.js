@@ -1,5 +1,5 @@
 export const AVATAR_OPTIONS = [
-  { id: 'a1', emoji: '🧑‍🎓', label: 'Estudante' },
+  { id: 'a1', emoji: '🎓', label: 'Formando' },
   { id: 'a2', emoji: '🧘', label: 'Zen' },
   { id: 'a3', emoji: '🌟', label: 'Estrela' },
   { id: 'a4', emoji: '🦋', label: 'Borboleta' },

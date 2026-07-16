@@ -96,6 +96,7 @@ export default function Lessons() {
   });
 
   const orderedLessons = sortBySequence(lessons).map((l, idx) => ({ ...l, displayOrder: idx + 1 }));
+  const visibleLessons = isTeacher ? orderedLessons : orderedLessons.filter((lesson) => !lesson.is_hidden);
   const lessonUnlockRule = unlockRules.find(r => r.scope === 'lessons');
   const unlockedLessonCount = Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
 
@@ -126,6 +127,14 @@ export default function Lessons() {
   const deleteMutation = useMutation({
     mutationFn: (id) => adminApi.delete('RecordedLesson', id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lessons'] }),
+  });
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: ({ id, isHidden }) => adminApi.update('RecordedLesson', id, { is_hidden: isHidden }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      toast.success('Visibilidade da aula atualizada.');
+    },
+    onError: (error) => toast.error(`Erro ao atualizar visibilidade: ${error.message || 'tente novamente.'}`),
   });
   const updateUnlockMutation = useMutation({
     mutationFn: async (unlockUntil) => {
@@ -252,12 +261,13 @@ export default function Lessons() {
 
   // Build modules: groups of LESSONS_PER_MODULE
   const modules = [];
-  for (let i = 0; i < orderedLessons.length; i += LESSONS_PER_MODULE) {
-    modules.push(orderedLessons.slice(i, i + LESSONS_PER_MODULE));
+  for (let i = 0; i < visibleLessons.length; i += LESSONS_PER_MODULE) {
+    modules.push(visibleLessons.slice(i, i + LESSONS_PER_MODULE));
   }
 
-  const watchedCount = progresses.filter(p => p.watched && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
-  const progressPct = orderedLessons.length > 0 ? Math.round((watchedCount / orderedLessons.length) * 100) : 0;
+  const visibleLessonIds = new Set(visibleLessons.map((lesson) => lesson.id));
+  const watchedCount = progresses.filter((p) => p.watched && visibleLessonIds.has(p.lesson_id) && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
+  const progressPct = visibleLessons.length > 0 ? Math.round((watchedCount / visibleLessons.length) * 100) : 0;
 
   if (viewProgressLesson) {
     return <LessonProgressPanel lesson={viewProgressLesson} onBack={() => setViewProgressLesson(null)} />;
@@ -415,7 +425,7 @@ export default function Lessons() {
       {isTeacher && <p className="text-xs text-muted-foreground mb-3">Aulas liberadas para a turma: <strong>{unlockedLessonCount}</strong>.</p>}
 
       {/* Progress bar (student only) */}
-      {!isTeacher && lessons.length > 0 && (
+      {!isTeacher && visibleLessons.length > 0 && (
         <div className="bg-card rounded-2xl border border-border p-5 mb-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -425,7 +435,7 @@ export default function Lessons() {
               <div>
                 <p className="font-bold text-sm text-foreground">Progresso Geral</p>
                 <p className="text-xs text-muted-foreground">
-                  {watchedCount}/{orderedLessons.length} aulas · {moduleCompletions.size}/10 módulos concluídos
+                  {watchedCount}/{visibleLessons.length} aulas · {moduleCompletions.size}/10 módulos concluídos
                 </p>
               </div>
             </div>
@@ -440,10 +450,10 @@ export default function Lessons() {
       {/* Module list */}
       {isLoading ? (
         <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="bg-card rounded-2xl border border-border animate-pulse h-20" />)}</div>
-      ) : lessons.length === 0 ? (
+      ) : visibleLessons.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
           <Play size={48} className="mx-auto mb-4 opacity-20" />
-          <p className="text-lg font-semibold">Nenhuma aula gravada ainda</p>
+          <p className="text-lg font-semibold">{isTeacher ? 'Nenhuma aula gravada ainda' : 'Nenhuma aula disponível no momento'}</p>
           {isTeacher && <p className="text-sm mt-1">Clique em "Nova Aula" para adicionar</p>}
         </div>
       ) : (
@@ -475,6 +485,7 @@ export default function Lessons() {
               onFileUpload={handleFileUploadToGDrive}
               onEdit={openEdit}
               onDelete={deleteMutation.mutate}
+              onToggleVisibility={(lesson) => toggleVisibilityMutation.mutate({ id: lesson.id, isHidden: !lesson.is_hidden })}
               onViewProgress={setViewProgressLesson}
               moduleCompletions={moduleCompletions}
               onCompleteModule={handleCompleteModule}

@@ -322,12 +322,16 @@ export default function Dashboard() {
     enabled: !isTeacher && !!session?.email
   });
 
+  const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
+  const visibleLessons = isTeacher ? lessons : lessons.filter((lesson) => !lesson.is_hidden);
+  const visibleExams = isTeacher ? exams : exams.filter((exam) => !exam.is_hidden);
+
   const pendingTasks = isTeacher ?
   submissions.filter((s) =>
   s.status === 'submitted' &&
   !allScoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)
   ).length :
-  tasks.filter((t) => isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)).length;
+  visibleTasks.filter((t) => isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)).length;
 
   const nextLive = liveSessions.find((s) => s.status === 'live' || s.status === 'scheduled');
   const isLiveNow = nextLive?.status === 'live';
@@ -357,9 +361,9 @@ export default function Dashboard() {
   const currentAccessCode = accessCodes.find((code) => code.student_email === session?.email);
   const totalPoints = capScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
 
-  const lessonIds = new Set(lessons.map((l) => l.id));
+  const lessonIds = new Set(visibleLessons.map((l) => l.id));
   const watchedCount = progresses.filter((p) => p.watched && lessonIds.has(p.lesson_id)).length;
-  const progressPct = lessons.length > 0 ? Math.round(watchedCount / lessons.length * 100) : 0;
+  const progressPct = visibleLessons.length > 0 ? Math.round(watchedCount / visibleLessons.length * 100) : 0;
 
   // Ranking — isolated by course only (prefix filter removed: causes students to be invisible)
   const courseCodes = accessCodes.filter((c) => {
@@ -368,7 +372,7 @@ export default function Dashboard() {
     return true;
   });
   const scoreMap = Object.fromEntries(courseCodes.map((code) => [code.student_email, capScore(code.pontuacao_total ?? publishedScoreMap[code.student_email] ?? 0)]));
-  const taskIds = new Set(tasks.map((t) => t.id));
+  const taskIds = new Set(visibleTasks.map((t) => t.id));
   const courseSubmissions = submissions.filter((s) => taskIds.has(s.task_id));
   const participationMap = {};
   allScoreItems.forEach((s) => {
@@ -541,12 +545,12 @@ export default function Dashboard() {
         const todayYmd = format(today, 'yyyy-MM-dd');
         const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
         const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
-        const availableLessons = sortByNumericSequence(lessons).slice(0, unlockedLessonCount);
+        const availableLessons = sortByNumericSequence(visibleLessons).slice(0, unlockedLessonCount);
         const unwatchedLessons = sortByNumericSequence(availableLessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched)));
-        const pendingTasksList = sortByNumericSequence(tasks.filter((t) => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)));
+        const pendingTasksList = sortByNumericSequence(visibleTasks.filter((t) => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)));
         const visiblePendingLessons = getNextPendingBySequence(unwatchedLessons);
         const visiblePendingTasks = getNextPendingBySequence(pendingTasksList);
-        const pendingExams = exams.filter((e) => !examSubmissions.find((s) => s.exam_id === e.id));
+        const pendingExams = visibleExams.filter((e) => !examSubmissions.find((s) => s.exam_id === e.id));
         const therapistPending = therapistPairings.filter((p) => {
           const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
           if (!inPeriod) return false;
@@ -1021,7 +1025,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
         
         <StatCard
           title={isTeacher ? 'Total de Aulas' : 'Aulas Assistidas'}
-          value={isTeacher ? lessons.length : `${watchedCount}/${lessons.length}`}
+          value={isTeacher ? lessons.length : `${watchedCount}/${visibleLessons.length}`}
           icon={BookOpen}
           iconBg="bg-purple-500"
           to="/lessons"

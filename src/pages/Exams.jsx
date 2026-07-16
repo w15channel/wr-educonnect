@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import {
   GraduationCap, CheckCircle, Star, Plus, Pencil, Trash2, Play,
-  ChevronDown, ChevronUp, Trophy, Eye, Award, Sparkles, AlertCircle, Edit, HelpCircle
+  ChevronDown, ChevronUp, Trophy, Eye, Award, Sparkles, AlertCircle, Edit, HelpCircle, EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -80,6 +80,7 @@ export default function Exams() {
       return base44.entities.Exam.filter({ course: userCourse, is_published: true }, '-created_date', 300);
     },
   });
+  const visibleExams = isTeacher ? exams : exams.filter((exam) => !exam.is_hidden);
 
   const normalizeEmail = (v = '') => String(v || '').trim().toLowerCase();
   const studentEmails = [session?.email, session?.code].filter(Boolean).map(normalizeEmail);
@@ -121,8 +122,15 @@ export default function Exams() {
       toast.success('Prova removida.');
     },
   });
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: ({ id, isHidden }) => adminApi.update('Exam', id, { is_hidden: isHidden }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
+      toast.success('Visibilidade da prova atualizada.');
+    },
+  });
 
-  const totalDone = exams.filter(e => submissionByExamId[e.id]).length;
+  const totalDone = visibleExams.filter(e => submissionByExamId[e.id]).length;
 
   if (showAIGenerator) {
     return <AIExamGenerator onBack={() => setShowAIGenerator(false)} course={userCourse} />;
@@ -151,7 +159,7 @@ export default function Exams() {
           <p className="text-muted-foreground text-sm mt-0.5">
             {isTeacher
               ? `${exams.length} prova${exams.length !== 1 ? 's' : ''} cadastrada${exams.length !== 1 ? 's' : ''}`
-              : `${totalDone}/${exams.length} realizada${totalDone !== 1 ? 's' : ''}`
+              : `${totalDone}/${visibleExams.length} realizada${totalDone !== 1 ? 's' : ''}`
             }
           </p>
         </div>
@@ -185,14 +193,14 @@ export default function Exams() {
       </div>
 
       {/* Progress bar — students */}
-      {!isTeacher && exams.length > 0 && (
+      {!isTeacher && visibleExams.length > 0 && (
         <div className="bg-card border border-border rounded-2xl p-4 mb-5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold flex items-center gap-1.5"><GraduationCap size={14} /> Progresso Geral</span>
-            <span className="font-mono font-bold text-primary text-sm">{totalDone}/{exams.length}</span>
+            <span className="font-mono font-bold text-primary text-sm">{totalDone}/{visibleExams.length}</span>
           </div>
           <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${exams.length > 0 ? (totalDone / exams.length) * 100 : 0}%` }} />
+            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${visibleExams.length > 0 ? (totalDone / visibleExams.length) * 100 : 0}%` }} />
           </div>
         </div>
       )}
@@ -201,7 +209,7 @@ export default function Exams() {
         <div className="flex justify-center py-20">
           <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      ) : exams.length === 0 ? (
+      ) : visibleExams.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
           <GraduationCap size={48} className="mx-auto mb-4 opacity-20" />
           <p className="text-lg font-semibold">Nenhuma prova encontrada</p>
@@ -209,14 +217,14 @@ export default function Exams() {
         </div>
       ) : (
         <div className="space-y-3">
-          {exams.map((exam, idx) => {
+          {visibleExams.map((exam, idx) => {
             const submission = submissionByExamId[exam.id];
             const isDone = !!submission;
             const isExpanded = expandedId === exam.id;
             const isPastDeadline = exam.deadline && new Date(exam.deadline) < new Date();
 
             return (
-              <div key={exam.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200/50' : 'border-border hover:shadow-md'}`}>
+              <div key={exam.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200/50' : 'border-border hover:shadow-md'} ${isTeacher && exam.is_hidden ? 'opacity-60' : ''}`}>
                 <div
                   className="flex items-center gap-3 p-4 cursor-pointer select-none"
                   onClick={() => setExpandedId(isExpanded ? null : exam.id)}
@@ -261,6 +269,9 @@ export default function Exams() {
                         </span>
                       )}
                       {!isDone && !exam.deadline && <span className="text-[10px] text-muted-foreground">Sem prazo definido</span>}
+                      {isTeacher && exam.is_hidden && (
+                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Oculta para alunos</span>
+                      )}
                     </div>
                   </div>
 
@@ -276,6 +287,13 @@ export default function Exams() {
                         className="p-2 text-muted-foreground hover:text-primary rounded-lg"
                       >
                         <Edit size={13} />
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleVisibilityMutation.mutate({ id: exam.id, isHidden: !exam.is_hidden }); }}
+                        className={`p-2 rounded-lg ${exam.is_hidden ? 'text-amber-600 hover:text-amber-700' : 'text-muted-foreground hover:text-foreground'}`}
+                        title={exam.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
+                      >
+                        {exam.is_hidden ? <EyeOff size={13} /> : <Eye size={13} />}
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); deleteMutation.mutate(exam.id); }}
@@ -325,7 +343,7 @@ export default function Exams() {
             );
           })}
 
-          {!isTeacher && totalDone >= exams.length && exams.length > 0 && (
+          {!isTeacher && totalDone >= visibleExams.length && visibleExams.length > 0 && (
             <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 text-center">
               <Trophy size={30} className="mx-auto mb-2 text-green-500" />
               <p className="font-black text-base text-foreground">Todas as provas realizadas! 🎉</p>

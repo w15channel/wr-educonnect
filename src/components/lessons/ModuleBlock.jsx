@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import {
   CheckCircle, Circle, ChevronDown, ChevronUp, Play, FileText, Globe,
-  MessageSquare, Pencil, Trash2, BookOpen, FileDown, Link, Clock, Trophy
+  MessageSquare, Pencil, Trash2, BookOpen, FileDown, Link, Clock, Trophy, Eye, EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,6 +38,7 @@ export default function ModuleBlock({
   onFileUpload,
   onEdit,
   onDelete,
+  onToggleVisibility,
   onViewProgress,
   moduleCompletions,    // Set of completed module indices
   onCompleteModule,     // (moduleIndex) => void
@@ -120,7 +121,7 @@ export default function ModuleBlock({
             );
 
             return (
-              <div key={lesson.id} className={`transition-all ${isWatched ? 'bg-emerald-500/5' : ''}`}>
+              <div key={lesson.id} className={`transition-all ${isWatched ? 'bg-emerald-500/5' : ''} ${isTeacher && lesson.is_hidden ? 'opacity-60' : ''}`}>
                 {/* Lesson row */}
                 <div className="flex items-center gap-3 p-3 sm:p-4">
                   {/* Thumbnail */}
@@ -158,6 +159,11 @@ export default function ModuleBlock({
                           <CheckCircle size={9} /> Concluída
                         </span>
                       )}
+                      {isTeacher && lesson.is_hidden && (
+                        <span className="inline-flex items-center gap-1 text-[10px] bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
+                          <EyeOff size={9} /> Oculta para alunos
+                        </span>
+                      )}
                       {lesson.duration && (
                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                           <Clock size={9} /> {lesson.duration}
@@ -178,6 +184,15 @@ export default function ModuleBlock({
                         </button>
                         <button onClick={() => onDelete(lesson.id)} className="p-2 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive transition-colors">
                           <Trash2 size={13} />
+                        </button>
+                        <button
+                          onClick={() => onToggleVisibility(lesson)}
+                          className={`p-2 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg transition-colors ${
+                            lesson.is_hidden ? 'text-amber-600 hover:text-amber-700' : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                          title={lesson.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
+                        >
+                          {lesson.is_hidden ? <EyeOff size={13} /> : <Eye size={13} />}
                         </button>
                       </>
                     ) : (

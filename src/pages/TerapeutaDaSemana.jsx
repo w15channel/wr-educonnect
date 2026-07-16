@@ -15,6 +15,7 @@ import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
+import { resolveAvatarEmoji } from '@/lib/avatarUtils';
 import RelatosMural from '@/components/therapist/RelatosMural';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 
@@ -42,6 +43,13 @@ export default function TerapeutaDaSemana() {
   const { data: weekSettingsList = [] } = useQuery({
     queryKey: ['therapist-week-settings'],
     queryFn: () => base44.entities.TherapistWeekSettings.list('-created_date', 1),
+    enabled: isTeacher,
+  });
+  const currentRound = weekSettingsList[0]?.current_round || 1;
+
+  const { data: therapistOptIns = [] } = useQuery({
+    queryKey: ['therapist-optins', currentRound],
+    queryFn: () => base44.entities.TherapistWeekOptIn.filter({ round: currentRound }, '-created_date', 10000),
     enabled: isTeacher,
   });
 
@@ -104,7 +112,13 @@ export default function TerapeutaDaSemana() {
   );
 
   const activeDomainStudents = accessCodes.filter(isCodeInActiveDomain);
-  const rankedDomainStudents = [...activeDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
+  const optedInEmails = new Set(
+    therapistOptIns
+      .filter((optIn) => optIn.response === 'yes')
+      .map((optIn) => String(optIn.student_email || '').trim().toLowerCase())
+  );
+  const eligibleDomainStudents = activeDomainStudents.filter((student) => optedInEmails.has(String(student.student_email || '').trim().toLowerCase()));
+  const rankedDomainStudents = [...eligibleDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
 
   // Pareamento "atual" = period_end >= hoje OU (sem period_end e criado nos últimos 5 dias)
   const isActivePairing = (p) => p.period_end ? p.period_end >= todayStr : p.pairing_date >= periodStart;
@@ -128,15 +142,26 @@ export default function TerapeutaDaSemana() {
       name: code?.profile_name || code?.student_name || email,
       photo: code?.profile_photo_url || '',
       color: code?.profile_avatar_color || '#5b5ef4',
+      avatarEmoji: resolveAvatarEmoji(code?.profile_avatar_emoji),
     };
   };
 
   const handleGeneratePairings = async () => {
     await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
     const freshCodes = await base44.entities.AccessCode.list('-created_date', 10000);
-    const activeStudents = freshCodes.filter(isCodeInActiveDomain);
+    const freshSettings = await base44.entities.TherapistWeekSettings.list('-created_date', 1);
+    const freshRound = freshSettings[0]?.current_round || 1;
+    const freshOptIns = await base44.entities.TherapistWeekOptIn.filter({ round: freshRound }, '-created_date', 10000);
+    const freshOptInEmails = new Set(
+      freshOptIns
+        .filter((optIn) => optIn.response === 'yes')
+        .map((optIn) => String(optIn.student_email || '').trim().toLowerCase())
+    );
+    const activeStudents = freshCodes
+      .filter(isCodeInActiveDomain)
+      .filter((student) => freshOptInEmails.has(String(student.student_email || '').trim().toLowerCase()));
     if (activeStudents.length < 2) {
-      toast.error('São necessários pelo menos 2 alunos para criar pareamentos.');
+      toast.error('São necessários pelo menos 2 alunos elegíveis que aceitaram o desafio nesta rodada.');
       return;
     }
 
@@ -200,7 +225,7 @@ export default function TerapeutaDaSemana() {
     const sz = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-12 h-12 text-base';
     return info.photo
       ? <img src={info.photo} alt={info.name} className={`${sz} rounded-full object-cover`} />
-      : <div className={`${sz} rounded-full flex items-center justify-center font-bold text-white`} style={{ backgroundColor: info.color }}>{info.name?.charAt(0)?.toUpperCase()}</div>;
+      : <div className={`${sz} rounded-full flex items-center justify-center font-bold text-white`} style={{ backgroundColor: info.color }}>{info.avatarEmoji || info.name?.charAt(0)?.toUpperCase()}</div>;
   };
 
   return (
@@ -230,9 +255,9 @@ export default function TerapeutaDaSemana() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-sm text-foreground">Alunos elegíveis deste domínio</h3>
-              <p className="text-xs text-muted-foreground">Mais ativos ficam em dupla; até 10 menos ativos entram no sorteio aleatório.</p>
+              <p className="text-xs text-muted-foreground">Lista formada apenas por quem aceitou o desafio de terapeuta nesta rodada. Mais ativos ficam em dupla; até 10 menos ativos entram no sorteio aleatório.</p>
             </div>
-            <Badge variant="secondary">{activeDomainStudents.length} alunos</Badge>
+            <Badge variant="secondary">{eligibleDomainStudents.length} alunos</Badge>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
             {rankedDomainStudents.map((student, index) => {
@@ -437,7 +462,7 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
         <div className="flex items-center gap-2 flex-1">
           {therapist.photo
             ? <img src={therapist.photo} alt={therapist.name} className="w-9 h-9 rounded-full object-cover" />
-            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: therapist.color || '#ec4899' }}>{therapist.name?.charAt(0)}</div>
+            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: therapist.color || '#ec4899' }}>{therapist.avatarEmoji || therapist.name?.charAt(0)}</div>
           }
           <div>
             <p className="text-xs font-bold text-foreground">{therapist.name}</p>
@@ -448,7 +473,7 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
         <div className="flex items-center gap-2 flex-1">
           {patient.photo
             ? <img src={patient.photo} alt={patient.name} className="w-9 h-9 rounded-full object-cover" />
-            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: patient.color || '#3b82f6' }}>{patient.name?.charAt(0)}</div>
+            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: patient.color || '#3b82f6' }}>{patient.avatarEmoji || patient.name?.charAt(0)}</div>
           }
           <div>
             <p className="text-xs font-bold text-foreground">{patient.name}</p>
