@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import PostCard from '@/components/shared/PostCard';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
+import { resolveAvatarEmoji } from '@/lib/avatarUtils';
 
 const DEBATE_TOPICS = [
   'Pensamentos automáticos', 'Distorções cognitivas', 'Reestruturação cognitiva', 'Registro de pensamentos',
@@ -34,7 +35,7 @@ export default function SalaDebates() {
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 10000),
   });
 
   const { course: routeCourse } = useCourseFilteredEmails();
@@ -114,7 +115,11 @@ export default function SalaDebates() {
 
   const getUserAvatar = (authorEmail, authorRole) => {
     const code = accessCodes.find(c => c.student_email === authorEmail);
-    return { photoUrl: code?.profile_photo_url || '', avatarColor: code?.profile_avatar_color || (authorRole === 'teacher' ? '#5b5ef4' : '#7c3aed') };
+    return {
+      photoUrl: code?.profile_photo_url || '',
+      avatarColor: code?.profile_avatar_color || (authorRole === 'teacher' ? '#5b5ef4' : '#7c3aed'),
+      avatarEmoji: resolveAvatarEmoji(code?.profile_avatar_emoji),
+    };
   };
 
   const myAv = getUserAvatar(session?.email, session?.role);
@@ -135,7 +140,7 @@ export default function SalaDebates() {
         <div className="flex items-start gap-3">
           {myAv.photoUrl
             ? <img src={myAv.photoUrl} alt={session?.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
-            : <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style={{ backgroundColor: myAv.avatarColor }}>{initials(session?.name)}</div>
+            : <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style={{ backgroundColor: myAv.avatarColor }}>{myAv.avatarEmoji || initials(session?.name)}</div>
           }
           <div className="flex-1">
             <form onSubmit={e => { e.preventDefault(); if (newPost.trim()) createPostMutation.mutate({ content: newPost, topic }); }} className="space-y-3">

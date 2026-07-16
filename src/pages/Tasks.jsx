@@ -132,6 +132,7 @@ export default function Tasks({ mode = 'tasks' }) {
   submissions.forEach(s => { if (!submissionByTaskId[s.task_id]) submissionByTaskId[s.task_id] = s; });
 
   const sortedTasks = [...tasks]
+    .filter(t => isTeacher || !t.is_hidden)
     .filter(t => mode === 'tests' ? t.type === 'quiz' : t.type === 'upload')
     .sort(taskSorter);
 
@@ -149,6 +150,13 @@ export default function Tasks({ mode = 'tasks' }) {
   const deleteMutation = useMutation({
     mutationFn: id => adminApi.delete('Task', id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+  });
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: ({ id, isHidden }) => adminApi.update('Task', id, { is_hidden: isHidden }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success('Visibilidade da tarefa atualizada.');
+    },
   });
 
   const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, user);
@@ -197,7 +205,10 @@ export default function Tasks({ mode = 'tasks' }) {
             {mode === 'tests' ? 'Provas' : 'Tarefas'}
           </h2>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {isTeacher ? 'Gerencie tarefas e veja as entregas dos alunos' : `${totalSubmitted}/${sortedTasks.length} entregue${totalSubmitted !== 1 ? 's' : ''}`}
+            {isTeacher
+              ? 'Gerencie tarefas e veja as entregas dos alunos'
+              : `Estude pela Apostila e responda aqui: ${totalSubmitted}/${sortedTasks.length} entregue${totalSubmitted !== 1 ? 's' : ''}`
+            }
           </p>
         </div>
 
@@ -296,7 +307,7 @@ export default function Tasks({ mode = 'tasks' }) {
             );
 
             return (
-              <div key={task.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200' : 'border-border hover:shadow-md'}`}>
+              <div key={task.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200' : 'border-border hover:shadow-md'} ${isTeacher && task.is_hidden ? 'opacity-60' : ''}`}>
                 <div
                   className="flex items-center gap-3 p-4 cursor-pointer select-none"
                   onClick={() => !isTeacher && setExpandedId(isExpanded ? null : task.id)}
@@ -320,6 +331,9 @@ export default function Tasks({ mode = 'tasks' }) {
                         </span>
                       )}
                       {!isDone && !task.deadline && <span className="text-[10px] text-muted-foreground">Em aberto</span>}
+                      {isTeacher && task.is_hidden && (
+                        <Badge className="text-[9px] bg-amber-100 text-amber-700 border-amber-200 py-0 px-1.5">Oculta para alunos</Badge>
+                      )}
                     </div>
                   </div>
 
@@ -329,6 +343,13 @@ export default function Tasks({ mode = 'tasks' }) {
                     <div className="flex gap-1 shrink-0">
                       <button onClick={e => { e.stopPropagation(); setViewSubmissions(task); }} className="p-2 text-muted-foreground hover:text-primary rounded-lg text-xs border border-border">Entregas</button>
                       <button onClick={e => { e.stopPropagation(); task.type === 'quiz' ? navigate(`${prefix}/tasks/builder/${task.id}`) : openEdit(task); }} className="p-2 text-muted-foreground hover:text-primary rounded-lg"><Pencil size={13} /></button>
+                      <button
+                        onClick={e => { e.stopPropagation(); toggleVisibilityMutation.mutate({ id: task.id, isHidden: !task.is_hidden }); }}
+                        className={`p-2 rounded-lg ${task.is_hidden ? 'text-amber-600 hover:text-amber-700' : 'text-muted-foreground hover:text-foreground'}`}
+                        title={task.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
+                      >
+                        <Eye size={13} />
+                      </button>
                       <button onClick={e => { e.stopPropagation(); deleteMutation.mutate(task.id); }} className="p-2 text-muted-foreground hover:text-destructive rounded-lg"><Trash2 size={13} /></button>
                     </div>
                   )}

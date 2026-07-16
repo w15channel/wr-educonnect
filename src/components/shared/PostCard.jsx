@@ -14,13 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-function Avatar({ photoUrl, name, color, size = 9 }) {
+function Avatar({ photoUrl, name, color, avatarEmoji = '', size = 9 }) {
   const initials = name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
   const cls = `w-${size} h-${size} rounded-full shrink-0`;
   if (photoUrl) return <img src={photoUrl} alt={name} className={`${cls} object-cover`} />;
   return (
     <div className={`${cls} flex items-center justify-center font-bold text-white`} style={{ fontSize: size < 9 ? 10 : 13, backgroundColor: color || '#7c3aed' }}>
-      {initials}
+      {avatarEmoji || initials}
     </div>
   );
 }
@@ -33,7 +33,7 @@ export default function PostCard({
   myName,
   myAvatarColor,
   myPhotoUrl,
-  getAvatar,            // (email, role) => { photoUrl, avatarColor }
+  getAvatar,            // (email, role) => { photoUrl, avatarColor, avatarEmoji }
   replyText,
   setReplyText,
   isExpanded,
@@ -62,7 +62,7 @@ export default function PostCard({
       {/* Post header */}
       <div className="p-4 sm:p-5">
         <div className="flex items-start gap-3">
-          <Avatar photoUrl={av.photoUrl} name={post.author_name} color={av.avatarColor} size={9} />
+          <Avatar photoUrl={av.photoUrl} name={post.author_name} color={av.avatarColor} avatarEmoji={av.avatarEmoji} size={9} />
 
           <div className="flex-1 min-w-0">
             {/* Meta row */}
@@ -140,7 +140,7 @@ export default function PostCard({
             const rav = getAvatar(reply.author_email, reply.author_role);
             return (
               <div key={reply.id} className="flex gap-3 pl-2">
-                <Avatar photoUrl={rav.photoUrl} name={reply.author_name} color={rav.avatarColor} size={7} />
+                <Avatar photoUrl={rav.photoUrl} name={reply.author_name} color={rav.avatarColor} avatarEmoji={rav.avatarEmoji} size={7} />
                 <div className="flex-1 bg-card rounded-xl p-3 border border-border">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <ClickableStudent email={reply.author_email} className="font-bold text-xs text-foreground">{reply.author_name}</ClickableStudent>

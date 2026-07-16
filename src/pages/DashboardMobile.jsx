@@ -145,9 +145,12 @@ export default function DashboardMobile() {
     enabled: !isTeacher,
   });
 
+  const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
+  const visibleLessons = isTeacher ? lessons : lessons.filter((lesson) => !lesson.is_hidden);
+
   const pendingTasks = isTeacher
     ? submissions.filter(s => s.status === 'submitted' && !allScoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length
-    : tasks.filter(t => isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)).length;
+    : visibleTasks.filter(t => isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)).length;
 
   const nextLive = liveSessions.find(s => s.status === 'live' || s.status === 'scheduled');
   const isLiveNow = nextLive?.status === 'live';
@@ -168,8 +171,8 @@ export default function DashboardMobile() {
 
   const currentAccessCode = accessCodes.find(c => c.student_email === session?.email);
   const totalPoints = capScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
-  const watchedCount = progresses.filter(p => p.watched).length;
-  const progressPct = lessons.length > 0 ? Math.round(watchedCount / lessons.length * 100) : 0;
+  const watchedCount = progresses.filter(p => p.watched && visibleLessons.some((lesson) => lesson.id === p.lesson_id)).length;
+  const progressPct = visibleLessons.length > 0 ? Math.round(watchedCount / visibleLessons.length * 100) : 0;
 
   // Ranking
   const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
@@ -219,10 +222,10 @@ export default function DashboardMobile() {
   const todayYmd = format(today, 'yyyy-MM-dd');
   const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
   const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
-  const availableLessons = sortBySeq(lessons).slice(0, unlockedLessonCount);
+  const availableLessons = sortBySeq(visibleLessons).slice(0, unlockedLessonCount);
   const unwatchedLessons = sortBySeq(availableLessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
-  const pendingTasksList = sortBySeq(tasks.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
-  const pendingQuizzes = tasks.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
+  const pendingTasksList = sortBySeq(visibleTasks.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
+  const pendingQuizzes = visibleTasks.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
   const therapistPending = therapistPairings.filter(p => {
     if (p.pairing_date < periodStart || p.pairing_date > todayYmd) return false;
     if (p.therapist_email === session?.email) return !p.therapist_submitted;
@@ -308,7 +311,7 @@ export default function DashboardMobile() {
           },
           {
             label: isTeacher ? 'Aulas' : 'Aulas Assistidas',
-            value: isTeacher ? lessons.length : `${watchedCount}/${lessons.length}`,
+            value: isTeacher ? lessons.length : `${watchedCount}/${visibleLessons.length}`,
             icon: BookOpen,
             color: 'bg-purple-500/15',
             iconColor: 'text-purple-400',
@@ -353,7 +356,7 @@ export default function DashboardMobile() {
               </div>
               <div>
                 <p className="text-[12px] font-light text-[#e8dfc8]/80">Progresso</p>
-                <p className="text-[10px] text-[#c8bfa8]/30">{watchedCount} de {lessons.length} aulas</p>
+                <p className="text-[10px] text-[#c8bfa8]/30">{watchedCount} de {visibleLessons.length} aulas</p>
               </div>
             </div>
             <span className="text-lg font-light text-[#d4b96a]">{progressPct}%</span>
