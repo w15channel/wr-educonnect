@@ -207,7 +207,7 @@ export default function Tasks({ mode = 'tasks' }) {
           <p className="text-muted-foreground text-sm mt-0.5">
             {isTeacher
               ? 'Gerencie tarefas e veja as entregas dos alunos'
-              : `Estude pela Apostila e responda aqui: ${totalSubmitted}/${sortedTasks.length} entregue${totalSubmitted !== 1 ? 's' : ''}`
+              : `As tarefas são baseadas nas aulas da Apostila: estude na Apostila e responda aqui (${totalSubmitted}/${sortedTasks.length} entregue${totalSubmitted !== 1 ? 's' : ''})`
             }
           </p>
         </div>
@@ -345,7 +345,7 @@ export default function Tasks({ mode = 'tasks' }) {
                       <button onClick={e => { e.stopPropagation(); task.type === 'quiz' ? navigate(`${prefix}/tasks/builder/${task.id}`) : openEdit(task); }} className="p-2 text-muted-foreground hover:text-primary rounded-lg"><Pencil size={13} /></button>
                       <button
                         onClick={e => { e.stopPropagation(); toggleVisibilityMutation.mutate({ id: task.id, isHidden: !task.is_hidden }); }}
-                        className={`p-2 rounded-lg ${task.is_hidden ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`p-2 rounded-lg ${task.is_hidden ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
                         title={task.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
                       >
                         {task.is_hidden ? <EyeOff size={13} /> : <Eye size={13} />}

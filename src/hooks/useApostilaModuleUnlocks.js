@@ -9,6 +9,7 @@ const MODULE_COUNT = 10;
 // está sempre liberado; os demais só liberam quando o módulo anterior é concluído.
 export default function useApostilaModuleUnlocks(course, session) {
   const studentEmail = session?.email || session?.code || '';
+  const isTeacher = session?.role === 'admin';
 
   const { data: recordedLessons = [], isLoading: loadingLessons } = useQuery({
     queryKey: ['apostila-unlock-lessons', course],
@@ -33,13 +34,15 @@ export default function useApostilaModuleUnlocks(course, session) {
 
   const watchedLessonIds = new Set(progresses.filter((p) => p.watched).map((p) => p.lesson_id));
   const submittedTaskIds = new Set(submissions.map((s) => s.task_id));
-  const orderedLessons = [...recordedLessons].sort((a, b) => (a.order || 0) - (b.order || 0));
+  const visibleLessons = isTeacher ? recordedLessons : recordedLessons.filter((lesson) => !lesson.is_hidden);
+  const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
+  const orderedLessons = [...visibleLessons].sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const moduleComplete = [];
   for (let i = 0; i < MODULE_COUNT; i++) {
     const moduleLessons = orderedLessons.slice(i * LESSONS_PER_MODULE, (i + 1) * LESSONS_PER_MODULE);
     const lessonsDone = moduleLessons.length === 0 || moduleLessons.every((l) => watchedLessonIds.has(l.id));
-    const moduleTasks = tasks.filter((t) => Number(t.module_number) === i + 1);
+    const moduleTasks = visibleTasks.filter((t) => Number(t.module_number) === i + 1);
     const tasksDone = moduleTasks.length === 0 || moduleTasks.every((t) => submittedTaskIds.has(t.id));
     moduleComplete.push(lessonsDone && tasksDone);
   }

@@ -57,6 +57,7 @@ export default function Profile() {
           setNickname(p.nickname || '');
           setSelectedAvatar(p.avatar_emoji || session?.avatarEmoji || '');
           setEmail(p.email || session?.email || '');
+          setStudyMode(p.study_mode || session?.study_mode || 'interativa');
         }
       });
   }, []);
@@ -100,6 +101,7 @@ export default function Profile() {
         bio,
         avatar_color: avatarColor,
         avatar_emoji: selectedAvatar,
+        study_mode: studyMode,
         birth_date: birthDate,
         whatsapp,
         email,
@@ -260,29 +262,54 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Modalidade de Estudo */}
+          {/* Perfil de Estudos */}
           {session?.role !== 'admin' && (
             <div>
-              <label className="text-xs font-bold text-foreground block mb-2">Modalidade de Estudo</label>
-              <div className="grid grid-cols-2 gap-3">
+              <label className="text-xs font-bold text-foreground block mb-2">Perfil de Estudos</label>
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Escolha como deseja viver sua jornada. Você pode trocar quando quiser e a navegação será ajustada automaticamente.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => { setStudyMode('diploma'); setSession({ ...session, study_mode: 'diploma' }); }}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-xs font-semibold ${studyMode === 'diploma' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
+                  className={`text-left p-3 rounded-xl border-2 transition-all ${studyMode === 'diploma' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
                 >
-                  <GraduationCap size={18} />
-                  Estudar pelo Diploma
+                  <div className="flex items-center gap-2 mb-2">
+                    <GraduationCap size={18} />
+                    <span className="text-xs font-bold uppercase tracking-wide">Experiência Simplificada (Diploma)</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed mb-2">
+                    Ideal para quem quer foco direto no conteúdo essencial, com rotina mais enxuta e estudo no próprio ritmo.
+                  </p>
+                  <ul className="text-[10px] leading-relaxed space-y-1">
+                    <li>• Videoaulas e tarefas com caminho objetivo</li>
+                    <li>• Menos distrações e navegação simplificada</li>
+                    <li>• Ótima opção para conciliar com rotina corrida</li>
+                  </ul>
                 </button>
                 <button
                   type="button"
                   onClick={() => { setStudyMode('interativa'); setSession({ ...session, study_mode: 'interativa' }); }}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-xs font-semibold ${studyMode === 'interativa' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
+                  className={`text-left p-3 rounded-xl border-2 transition-all ${studyMode === 'interativa' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
                 >
-                  <Users size={18} />
-                  Formação Prática
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users size={18} />
+                    <span className="text-xs font-bold uppercase tracking-wide">Formação Prática (Completa)</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed mb-2">
+                    Para quem busca experiência completa, com vivência real, prática contínua e participação ativa na comunidade.
+                  </p>
+                  <ul className="text-[10px] leading-relaxed space-y-1">
+                    <li>• Inclui todos os recursos da modalidade diploma</li>
+                    <li>• Comunidade, fórum, ofensivas e tutor digital</li>
+                    <li>• Mais prática aplicada e preparação profissional</li>
+                  </ul>
                 </button>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1.5">A alteração de modalidade é aplicada imediatamente ao menu de navegação.</p>
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                A alteração é aplicada imediatamente. Ao entrar no portal, você será direcionado conforme o perfil escolhido.
+              </p>
             </div>
           )}
 
