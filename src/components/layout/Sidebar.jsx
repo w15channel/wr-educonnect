@@ -295,9 +295,9 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     const tuitionsNew = countNewSince(validTuitions, getSeenAt(studentEmail, userCourse, '/tuitions'), studentEmail);
     return {
       '/ofensivas': latestChallenge && (!response || (Number(response.questions_answered) || 0) < challengeTotal) ? 1 : 0,
-      '/lessons': lessons.filter(lesson => lesson?.id && !lessonDone.has(lesson.id)).length,
-      '/tasks': tasks.filter(task => task?.id && !submittedTasks.has(task.id) && !(task.module_number && !moduleUnlocked[Number(task.module_number) - 1])).length,
-      '/exams': exams.filter(exam => exam?.id && !submittedExams.has(exam.id)).length,
+      '/lessons': lessons.filter(lesson => lesson?.id && !lesson.is_hidden && !lessonDone.has(lesson.id)).length,
+      '/tasks': tasks.filter(task => task?.id && !task.is_hidden && !submittedTasks.has(task.id) && !(task.module_number && !moduleUnlocked[Number(task.module_number) - 1])).length,
+      '/exams': exams.filter(exam => exam?.id && !exam.is_hidden && !submittedExams.has(exam.id)).length,
       '/chat': countNewSince(chatMessages, getSeenAt(studentEmail, userCourse, '/chat'), studentEmail),
       '/forum': countNewSince([...forumPosts, ...forumReplies], getSeenAt(studentEmail, userCourse, '/forum'), studentEmail),
       '/debates': countNewSince([...debatePosts, ...debateReplies], getSeenAt(studentEmail, userCourse, '/debates'), studentEmail),

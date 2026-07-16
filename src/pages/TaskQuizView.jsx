@@ -17,6 +17,8 @@ export default function TaskQuizView() {
   });
 
   const task = tasks.find(t => t.id === id);
+  const isAdmin = session?.role === 'admin';
+  const isHiddenForStudent = task?.is_hidden && !isAdmin;
 
   const handleBack = () => {
     queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
@@ -31,7 +33,7 @@ export default function TaskQuizView() {
     );
   }
 
-  if (!task) {
+  if (!task || isHiddenForStudent) {
     return (
       <div className="p-6 text-center text-muted-foreground">
         <p>Prova não encontrada.</p>

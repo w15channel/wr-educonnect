@@ -17,21 +17,6 @@ import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
-const CYCLE_DAYS = 7;
-const EPOCH = new Date('2024-01-01T00:00:00Z');
-
-function getCycleStart() {
-  const today = new Date();
-  const daysSince = Math.floor((today - EPOCH) / (1000 * 60 * 60 * 24));
-  const cycleNum = Math.floor(daysSince / CYCLE_DAYS);
-  const cycleDate = new Date(EPOCH.getTime() + cycleNum * CYCLE_DAYS * 24 * 60 * 60 * 1000);
-  return format(cycleDate, 'yyyy-MM-dd');
-}
-
-function getCycleEnd(start) {
-  const d = new Date(start + 'T00:00:00');
-  return format(addDays(d, CYCLE_DAYS - 1), 'yyyy-MM-dd');
-}
 
 function MonitorBadge({ rank }) {
   const colors = { 1: 'bg-yellow-400 text-yellow-900', 2: 'bg-slate-300 text-slate-800', 3: 'bg-amber-600 text-amber-100' };
@@ -82,13 +67,21 @@ export default function Monitores() {
 
   const [chatMessage, setChatMessage] = useState('');
 
-  const periodStart = getCycleStart();
-  const periodEnd = getCycleEnd(periodStart);
-
-  // Current monitors for this course and this cycle
-  const currentMonitors = monitorHistory.filter(
-    m => m.period_start === periodStart && (m.course === activeCourse || (!m.course && activeCourse === 'tcc'))
+  // Monitores são definidos e reiniciados manualmente pelo administrador,
+  // sem nenhum ciclo automático baseado em tempo. O "período atual" é sempre
+  // o lote mais recente definido para esta turma.
+  const courseHistory = monitorHistory.filter(
+    m => m.course === activeCourse || (!m.course && activeCourse === 'tcc')
   );
+  const latestPeriodStart = courseHistory.reduce(
+    (max, m) => (!max || m.period_start > max ? m.period_start : max),
+    null
+  );
+  const currentMonitors = latestPeriodStart
+    ? courseHistory.filter(m => m.period_start === latestPeriodStart)
+    : [];
+  const periodStart = latestPeriodStart || format(new Date(), 'yyyy-MM-dd');
+  const periodEnd = currentMonitors[0]?.period_end || periodStart;
 
   // Course students
   const courseStudents = accessCodes.filter(
@@ -140,14 +133,17 @@ export default function Monitores() {
           await base44.entities.MonitorHistory.delete(m.id);
         }
       }
+      // Data em que o administrador definiu manualmente os monitores (sem ciclo automático)
+      const newPeriodStart = format(new Date(), 'yyyy-MM-dd');
+      const newPeriodEnd = format(addDays(new Date(), 6), 'yyyy-MM-dd');
       for (let i = 0; i < topMonitors.length; i++) {
         const r = topMonitors[i];
         const code = accessCodes.find(c => c.student_email === r.email);
         await base44.entities.MonitorHistory.create({
           student_email: r.email,
           student_name: code?.profile_name || code?.student_name || r.email,
-          period_start: periodStart,
-          period_end: periodEnd,
+          period_start: newPeriodStart,
+          period_end: newPeriodEnd,
           rank_position: i + 1,
           course: activeCourse,
         });
@@ -246,11 +242,6 @@ export default function Monitores() {
 
   const courseLabel = { tcc: 'TCC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' }[activeCourse] || activeCourse;
 
-  // Course-filtered history
-  const courseHistory = monitorHistory.filter(
-    m => m.course === activeCourse || (!m.course && activeCourse === 'tcc')
-  );
-
   return (
     <div className="app-page app-page--narrow space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -259,7 +250,9 @@ export default function Monitores() {
             <Crown size={22} className="text-yellow-500" /> Monitores do Período
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Turma {courseLabel} · Semana de destaque · {format(new Date(periodStart + 'T00:00:00'), 'dd/MM', { locale: ptBR })} a {format(new Date(periodEnd + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}
+            Turma {courseLabel} · {currentMonitors.length > 0
+              ? `Definidos manualmente em ${format(new Date(periodStart + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })}`
+              : 'Nenhum monitor definido ainda'}
           </p>
         </div>
         {isTeacher && (
@@ -293,7 +286,7 @@ export default function Monitores() {
       {currentMonitors.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-10 text-center">
           <Crown size={40} className="mx-auto mb-3 text-yellow-400 opacity-40" />
-          <p className="font-semibold text-muted-foreground">Nenhum monitor definido para este período</p>
+          <p className="font-semibold text-muted-foreground">Nenhum monitor definido no momento</p>
           {isTeacher && (
             <p className="text-xs text-muted-foreground mt-1">Clique em "Definir Monitores" para selecionar automaticamente os 3 primeiros do ranking.</p>
           )}
@@ -373,7 +366,7 @@ export default function Monitores() {
         <div className="bg-card rounded-2xl border border-border p-5">
           <h3 className="font-bold text-sm flex items-center gap-2 mb-3"><BarChart3 size={14} className="text-primary" /> Relatório Semanal dos Monitores</h3>
           <div className="space-y-2">
-            {weeklyReport.length === 0 && <p className="text-xs text-muted-foreground">Sem monitores ativos para o ciclo atual.</p>}
+            {weeklyReport.length === 0 && <p className="text-xs text-muted-foreground">Sem monitores ativos no momento.</p>}
             {weeklyReport.map(item => (
               <div key={item.student_email} className="rounded-xl border border-border p-3 bg-secondary/20">
                 <p className="text-sm font-semibold">{item.student_name}</p>

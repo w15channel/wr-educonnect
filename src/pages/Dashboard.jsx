@@ -148,17 +148,21 @@ export default function Dashboard() {
   const handleSaveMonitors = async () => {
     if (selectedMonitorEmails.size === 0) return;
     setSavingMonitors(true);
-    const EPOCH = new Date('2024-01-01T00:00:00Z');
-    const CYCLE_DAYS = 7;
-    const today = new Date();
-    const daysSince = Math.floor((today - EPOCH) / (1000 * 60 * 60 * 24));
-    const cycleNum = Math.floor(daysSince / CYCLE_DAYS);
-    const cycleDate = new Date(EPOCH.getTime() + cycleNum * CYCLE_DAYS * 24 * 60 * 60 * 1000);
-    const periodStart = format(cycleDate, 'yyyy-MM-dd');
-    const periodEnd = format(addDays(cycleDate, CYCLE_DAYS - 1), 'yyyy-MM-dd');
+    // Monitores são publicados e reiniciados manualmente pelo administrador,
+    // sem nenhum ciclo automático baseado em tempo. Publicar sempre substitui
+    // o lote de monitores atualmente exibido (o mais recente desta turma).
+    const periodStart = format(new Date(), 'yyyy-MM-dd');
+    const periodEnd = format(addDays(new Date(), 6), 'yyyy-MM-dd');
     const existing = await adminApi.list('MonitorHistory', { sort_by: '-period_start', limit: 100 });
-    const currentCycle = existing.filter((m) => m.period_start === periodStart && (m.course === userCourse || !m.course));
-    for (const m of currentCycle) await adminApi.delete('MonitorHistory', m.id);
+    const courseExisting = existing.filter((m) => m.course === userCourse || !m.course);
+    const latestExistingPeriodStart = courseExisting.reduce(
+      (max, m) => (!max || m.period_start > max ? m.period_start : max),
+      null
+    );
+    const currentBatch = latestExistingPeriodStart
+      ? courseExisting.filter((m) => m.period_start === latestExistingPeriodStart)
+      : [];
+    for (const m of currentBatch) await adminApi.delete('MonitorHistory', m.id);
     const oldMonitorAnnouncements = await adminApi.list('Announcement', { filter: { course: userCourse || 'tcc' }, sort_by: '-created_date', limit: 300 });
     for (const announcement of oldMonitorAnnouncements) {
       const isMonitorNotice = Boolean(announcement.certificate_monitor_id) || (announcement.title || '').includes('Monitor(a) da Semana');

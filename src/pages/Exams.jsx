@@ -290,7 +290,7 @@ export default function Exams() {
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); toggleVisibilityMutation.mutate({ id: exam.id, isHidden: !exam.is_hidden }); }}
-                        className={`p-2 rounded-lg ${exam.is_hidden ? 'text-amber-600 hover:text-amber-700' : 'text-muted-foreground hover:text-foreground'}`}
+                        className={`p-2 rounded-lg ${exam.is_hidden ? 'text-red-600 hover:text-red-700' : 'text-muted-foreground hover:text-foreground'}`}
                         title={exam.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
                       >
                         {exam.is_hidden ? <EyeOff size={13} /> : <Eye size={13} />}

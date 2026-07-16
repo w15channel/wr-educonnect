@@ -18,6 +18,8 @@ export default function ExamQuizView() {
   });
 
   const exam = exams.find(e => e.id === id);
+  const isAdmin = session?.role === 'admin';
+  const isHiddenForStudent = exam?.is_hidden && !isAdmin;
 
   const handleBack = () => {
     queryClient.invalidateQueries({ queryKey: ['exam-submissions-mine'] });
@@ -32,7 +34,7 @@ export default function ExamQuizView() {
     );
   }
 
-  if (!exam) {
+  if (!exam || isHiddenForStudent) {
     return (
       <div className="p-6 text-center text-muted-foreground">
         <p>Prova não encontrada.</p>
