@@ -287,6 +287,9 @@ export default function HistoricoAcademico() {
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
   const { data: challengeResponses = [] } = useQuery({ queryKey: ['challenge-responses-all'], queryFn: () => base44.entities.DailyChallengeResponse.list('-date', 2000) });
+  const visibleLessons = isTeacher ? lessons : lessons.filter((lesson) => !lesson.is_hidden);
+  const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
+  const visibleExams = isTeacher ? exams : exams.filter((exam) => !exam.is_hidden);
 
   useEffect(() => {
     if (!isTeacher && session?.email && codes.length > 0) {
@@ -303,15 +306,15 @@ export default function HistoricoAcademico() {
   // Build all possible rows for a student using buildStudentAcademicData
   function buildAllRows(student) {
     const verifiedScores = scoreItems.filter(s => s.student_email === student.email && s.verified);
-    const examsForCourse = exams.filter(e => e.course === studentCourse);
+    const examsForCourse = visibleExams.filter(e => e.course === studentCourse);
     const examSubsForStudent = examSubmissions.filter(s => s.student_email === student.email && s.status === 'graded');
     
     const { rows } = buildStudentAcademicData({
       studentEmail: student.email,
       scoreItems,
-      lessons,
+      lessons: visibleLessons,
       liveSessions,
-      tasks,
+      tasks: visibleTasks,
       exams: examsForCourse,
       examSubs: examSubsForStudent,
       pairings,

@@ -3,7 +3,7 @@ import { applyTheme } from '@/components/layout/MobileHeader';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
-import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X, GraduationCap, Users } from 'lucide-react';
+import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
@@ -238,19 +238,12 @@ export default function CourseLobby() {
   const { session, logout, login, isAdmin } = useCustomAuth();
   const userCourse = session?.course || 'tcc';
 
-  const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
   const termsAccepted = true;
   const [reserveOpen, setReserveOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [leadMessages, setLeadMessages] = useState([]);
   const [leadInput, setLeadInput] = useState('');
   const [leadLoading, setLeadLoading] = useState(false);
-  const [studyModeStep, setStudyModeStep] = useState(() => {
-    // 'choose' = ainda não escolheu (mas não mostra até clicar em entrar)
-    // 'choosing' = clicou em entrar, mostrando a tela de escolha
-    // 'done' = já escolheu
-    return session?.study_mode ? 'done' : 'choose';
-  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -266,26 +259,9 @@ export default function CourseLobby() {
     navigate(`/adm/dashboard`);
   };
 
-  const handleStudyModeSelect = (mode) => {
-    const current = getSession();
-    setSession({ ...current, study_mode: mode });
-    login();
-    setStudyModeStep('done');
-    if (mode === 'diploma') {
-      navigate(`/degree/student/dashboard`);
-    } else {
-      navigate(`/student/dashboard`);
-    }
-  };
-
   const handleStudentEnter = () => {
     if (!termsAccepted) return;
-    // Se ainda não escolheu modalidade, mostra a tela de escolha antes de navegar
-    if (studyModeStep === 'choose') {
-      setStudyModeStep('choosing');
-      return;
-    }
-    const savedMode = getSession()?.study_mode;
+    const savedMode = getSession()?.study_mode || session?.study_mode || 'interativa';
     if (savedMode === 'diploma') {
       navigate(`/degree/student/dashboard`);
     } else {
@@ -397,97 +373,6 @@ export default function CourseLobby() {
               ))}
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Tela de escolha de modalidade (aparece após clicar em "Entrar no Portal")
-  if (!isAdmin && studyModeStep === 'choosing') {
-    return (
-      <div className="app-shell-bg relative h-[100dvh] text-white overflow-y-auto overflow-x-hidden scrollbar-invisible" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <Header />
-        <div className="internal-page-shell">
-          <div className="text-center mb-10">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="h-px w-8" style={{ background: `${G}50` }} />
-              <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Configuração de Acesso</span>
-              <div className="h-px w-8" style={{ background: `${G}50` }} />
-            </div>
-            <h1 className="text-3xl lg:text-4xl font-thin text-white mb-3 tracking-[-0.01em]">
-              Qual é sua <span className="font-light italic" style={{ color: G }}>intenção de estudos?</span>
-            </h1>
-            <p className="text-white/35 max-w-lg mx-auto text-sm font-light">
-              Escolha como você quer utilizar a plataforma. Você pode alterar isso depois no seu perfil.
-            </p>
-          </div>
-
-          <div className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Opção 1: Diploma */}
-            <button
-              onClick={() => handleStudyModeSelect('diploma')}
-              className="group border flex flex-col text-left p-6 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{ borderColor: `${G}25`, background: BG3 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = `${G}60`}
-              onMouseLeave={e => e.currentTarget.style.borderColor = `${G}25`}
-            >
-              <div className="w-12 h-12 border flex items-center justify-center mb-4" style={{ borderColor: `${G}30` }}>
-                <GraduationCap size={22} style={{ color: G }} />
-              </div>
-              <h3 className="font-light text-white text-base uppercase tracking-[0.15em] mb-2">Estudar pelo Certificado</h3>
-              <p className="text-white/40 text-xs leading-relaxed font-light mb-4">
-                Acesse as aulas, tarefas e mensalidades no seu próprio ritmo, sem interagir com a classe ou ferramentas práticas.
-              </p>
-              <div className="space-y-1.5 mt-auto">
-                {['Videoaulas', 'Tarefas', 'Mensalidades', 'Meu Perfil'].map(item => (
-                  <div key={item} className="flex items-center gap-2 text-xs text-white/30 font-light">
-                    <div className="w-1 h-1 shrink-0 rounded-full" style={{ background: `${G}60` }} />
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 pt-4 border-t flex items-center justify-between" style={{ borderColor: `${G}12` }}>
-                <span className="text-[10px] uppercase tracking-[0.2em] font-light" style={{ color: `${G}60` }}>Selecionar</span>
-                <ChevronRight size={14} style={{ color: G }} />
-              </div>
-            </button>
-
-            {/* Opção 2: Interativa */}
-            <button
-              onClick={() => handleStudyModeSelect('interativa')}
-              className="group border flex flex-col text-left p-6 transition-all hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden"
-              style={{ borderColor: `${G}50`, background: BG3 }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = G}
-              onMouseLeave={e => e.currentTarget.style.borderColor = `${G}50`}
-            >
-              <div className="absolute top-3 right-3 border px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] font-light" style={{ borderColor: `${G}50`, color: G, background: BG }}>
-                Recomendado
-              </div>
-              <div className="w-12 h-12 border flex items-center justify-center mb-4" style={{ borderColor: `${G}50`, background: `${G}10` }}>
-                <Users size={22} style={{ color: G }} />
-              </div>
-              <h3 className="font-light text-white text-base uppercase tracking-[0.15em] mb-2">Formação Prática</h3>
-              <p className="text-white/40 text-xs leading-relaxed font-light mb-4">
-                Acesso completo à plataforma — comunidade, ofensivas, terapeuta da semana, ranking, tutor digital e muito mais.
-              </p>
-              <div className="space-y-1.5 mt-auto">
-                {['Tudo da modalidade diploma', 'Comunidade & Fórum', 'Ofensivas Diárias', 'Terapeuta da Semana', 'Ranking & Monitores', 'Tutor Digital & Mais'].map(item => (
-                  <div key={item} className="flex items-center gap-2 text-xs text-white/30 font-light">
-                    <div className="w-1 h-1 shrink-0 rounded-full" style={{ background: G }} />
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 pt-4 border-t flex items-center justify-between" style={{ borderColor: `${G}20` }}>
-                <span className="text-[10px] uppercase tracking-[0.2em] font-medium" style={{ color: G }}>Selecionar</span>
-                <ChevronRight size={14} style={{ color: G }} />
-              </div>
-            </button>
-          </div>
-
-          <p className="text-center text-white/20 text-[10px] mt-8 font-light uppercase tracking-[0.15em]">
-            Você pode alterar sua preferência a qualquer momento no seu Perfil.
-          </p>
         </div>
       </div>
     );
