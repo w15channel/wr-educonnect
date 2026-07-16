@@ -6,7 +6,7 @@ import {
   Video, MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, Brain, Sparkles,
-  ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame,
+  ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame, GraduationCap,
   ScrollText, ClipboardList, Medal, Star, Moon, Sun
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
@@ -133,6 +133,7 @@ const studentGroups = [
       { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
       { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
       { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
+      { icon: GraduationCap, label: 'Perfil de Estudos',      path: '/study-profile',     color: 'text-violet-400' },
       { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-indigo-400' },
     ],
   },

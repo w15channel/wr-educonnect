@@ -89,6 +89,7 @@ function AppRoutesTree() {
         <Route path="keys" element={<Keys />} />
         <Route path="announcements" element={<Announcements />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="study-profile" element={<Profile focusStudyProfile />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="tutor" element={<TutorDigital />} />
@@ -167,6 +168,7 @@ const AuthenticatedApp = () => {
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="apostila" element={<Apostila />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="study-profile" element={<Profile focusStudyProfile />} />
       </Route>
 
       {/* Main student routes */}
@@ -191,6 +193,7 @@ const AuthenticatedApp = () => {
       <Route path="/keys" element={<Navigate to={`${base}/keys`} replace />} />
       <Route path="/announcements" element={<Navigate to={`${base}/announcements`} replace />} />
       <Route path="/profile" element={<Navigate to={`${base}/profile`} replace />} />
+      <Route path="/study-profile" element={<Navigate to={`${base}/study-profile`} replace />} />
       <Route path="/calendar" element={<Navigate to={`${base}/calendar`} replace />} />
       <Route path="/tuitions" element={<Navigate to={`${base}/tuitions`} replace />} />
       <Route path="/tutor" element={<Navigate to={`${base}/tutor`} replace />} />
