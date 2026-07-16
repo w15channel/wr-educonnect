@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
@@ -20,8 +21,9 @@ const AVATAR_COLORS = [
   '#2563eb', '#0891b2', '#9333ea', '#c2410c',
 ];
 
-export default function Profile() {
+export default function Profile({ focusStudyProfile = false }) {
   const session = getSession();
+  const navigate = useNavigate();
   const { logout } = useCustomAuth();
   const [name, setName] = useState(session?.name || '');
   const [nickname, setNickname] = useState('');
@@ -38,6 +40,7 @@ export default function Profile() {
   const [deleting, setDeleting] = useState(false);
   const [studyMode, setStudyMode] = useState(session?.study_mode || 'interativa');
   const fileRef = useRef();
+  const studyProfileRef = useRef(null);
 
   useEffect(() => {
     // CRITICAL: Only load profile if we have a unique codeId to identify this student.
@@ -61,6 +64,45 @@ export default function Profile() {
         }
       });
   }, []);
+
+  useEffect(() => {
+    if (!focusStudyProfile) return;
+    const timer = setTimeout(() => {
+      studyProfileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [focusStudyProfile]);
+
+  const saveStudyModePreference = async (mode) => {
+    if (!session?.codeId) return;
+    const existing = await base44.entities.StudentProfile.filter({ code_id: session.codeId }, '-created_date', 1);
+    if (existing.length > 0) {
+      await base44.entities.StudentProfile.update(existing[0].id, { study_mode: mode });
+      return;
+    }
+    await base44.entities.StudentProfile.create({
+      code_id: session.codeId,
+      student_email: session?.email || '',
+      full_name: session?.name || '',
+      study_mode: mode,
+    });
+  };
+
+  const handleSelectStudyMode = async (mode) => {
+    const currentSession = getSession() || {};
+    setStudyMode(mode);
+    setSession({ ...currentSession, study_mode: mode });
+    try {
+      await saveStudyModePreference(mode);
+    } catch {
+      toast.error('Não foi possível salvar a preferência de estudos. Tentando abrir a interface selecionada.');
+    }
+    if (mode === 'diploma') {
+      navigate('/degree/student/dashboard');
+      return;
+    }
+    navigate('/student/dashboard');
+  };
 
   const initials = getInitials(name);
 
@@ -146,8 +188,10 @@ export default function Profile() {
   return (
     <div className="p-4 lg:p-7 max-w-2xl mx-auto animate-fade-in-up">
       <div className="mb-6">
-        <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Perfil</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações</p>
+        <h2 className="text-xl lg:text-2xl font-bold text-foreground">{focusStudyProfile ? 'Perfil de Estudos' : 'Meu Perfil'}</h2>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          {focusStudyProfile ? 'Escolha seu estilo de formação e vá direto para a interface correspondente.' : 'Personalize suas informações'}
+        </p>
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
@@ -264,7 +308,7 @@ export default function Profile() {
 
           {/* Perfil de Estudos */}
           {session?.role !== 'admin' && (
-            <div>
+            <div ref={studyProfileRef}>
               <label className="text-xs font-bold text-foreground block mb-2">Perfil de Estudos</label>
               <p className="text-[11px] text-muted-foreground mb-2">
                 Escolha como deseja viver sua jornada. Você pode trocar quando quiser e a navegação será ajustada automaticamente.
@@ -272,7 +316,7 @@ export default function Profile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => { setStudyMode('diploma'); setSession({ ...session, study_mode: 'diploma' }); }}
+                  onClick={() => handleSelectStudyMode('diploma')}
                   className={`text-left p-3 rounded-xl border-2 transition-all ${studyMode === 'diploma' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -290,7 +334,7 @@ export default function Profile() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setStudyMode('interativa'); setSession({ ...session, study_mode: 'interativa' }); }}
+                  onClick={() => handleSelectStudyMode('interativa')}
                   className={`text-left p-3 rounded-xl border-2 transition-all ${studyMode === 'interativa' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -308,7 +352,7 @@ export default function Profile() {
                 </button>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5">
-                A alteração é aplicada imediatamente. Ao entrar no portal, você será direcionado conforme o perfil escolhido.
+                Ao selecionar um modelo, você é direcionado imediatamente para a interface correspondente.
               </p>
             </div>
           )}
