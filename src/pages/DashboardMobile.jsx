@@ -15,7 +15,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   FileText, Users, Trophy, Star, Bell, BookOpen,
-  ArrowRight, Wifi, WifiOff, ClipboardList, GraduationCap,
+  ArrowRight, ClipboardList, GraduationCap,
   Heart, ChevronDown, ChevronUp, TrendingUp, RefreshCw
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
@@ -96,17 +96,6 @@ export default function DashboardMobile() {
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000),
   });
 
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions'],
-    queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 5),
-  });
-
-  const { data: liveAttendances = [] } = useQuery({
-    queryKey: ['live-attendances-dashboard', session?.email],
-    queryFn: () => base44.entities.LiveAttendance.filter({ student_email: session?.email || '' }, '-created_date', 300),
-    enabled: !isTeacher && !!session?.email,
-  });
-
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
@@ -151,9 +140,6 @@ export default function DashboardMobile() {
   const pendingTasks = isTeacher
     ? submissions.filter(s => s.status === 'submitted' && !allScoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length
     : visibleTasks.filter(t => isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)).length;
-
-  const nextLive = liveSessions.find(s => s.status === 'live' || s.status === 'scheduled');
-  const isLiveNow = nextLive?.status === 'live';
 
   const studentCount = accessCodes.filter(c => {
     if (!c.is_active) return false;
@@ -232,10 +218,7 @@ export default function DashboardMobile() {
     if (p.patient_email === session?.email) return !p.patient_submitted;
     return false;
   });
-  const attendedIds = new Set(liveAttendances.map(a => a.session_id));
-  const now = new Date();
-  const missedLives = liveSessions.filter(s => s.scheduled_at && new Date(s.scheduled_at) > now && s.status !== 'ended' && !attendedIds.has(s.id));
-  const totalPending = therapistPending.length + Math.min(unwatchedLessons.length, 1) + Math.min(pendingTasksList.length, 1) + Math.min(pendingQuizzes.length, 1) + missedLives.length;
+  const totalPending = therapistPending.length + Math.min(unwatchedLessons.length, 1) + Math.min(pendingTasksList.length, 1) + Math.min(pendingQuizzes.length, 1);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -258,37 +241,6 @@ export default function DashboardMobile() {
           <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
         </button>
       </div>
-
-      {/* Live Banner */}
-      {nextLive && (
-        <button
-          onClick={() => navigate(scoped('/live'))}
-          className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border text-left active:scale-[0.98] transition-all ${
-            isLiveNow
-              ? 'bg-red-950/30 border-red-500/30'
-              : 'bg-[#0d1120] border-[#1e2540]'
-          }`}
-        >
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLiveNow ? 'bg-red-500/20' : 'bg-[#161c32]'}`}>
-            {isLiveNow
-              ? <Wifi size={18} className="text-red-400" />
-              : <WifiOff size={18} className="text-[#c8bfa8]/40" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            {isLiveNow && (
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-[9px] font-bold text-red-400 uppercase tracking-wide">Ao vivo agora</span>
-              </div>
-            )}
-            <p className={`text-[13px] font-light truncate ${isLiveNow ? 'text-red-300' : 'text-[#e8dfc8]/70'}`}>{nextLive.title}</p>
-            <p className="text-[10px] text-[#c8bfa8]/30 mt-0.5">
-              {isLiveNow ? 'Toque para assistir' : nextLive.scheduled_at ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Sala ao vivo'}
-            </p>
-          </div>
-          <ArrowRight size={14} className={isLiveNow ? 'text-red-400 shrink-0' : 'text-[#c8bfa8]/25 shrink-0'} />
-        </button>
-      )}
 
       {/* Stat Cards — 2 colunas */}
       <div className="grid grid-cols-2 gap-2.5">
@@ -509,16 +461,8 @@ export default function DashboardMobile() {
                   <ArrowRight size={12} className="text-violet-400/40 shrink-0" />
                 </button>
               ))}
-              {missedLives.slice(0, 1).map(live => (
-                <button key={live.id} onClick={() => navigate(scoped('/live'))}
-                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-red-500/8 border border-red-500/15 active:scale-[0.98] text-left transition-all">
-                  <WifiOff size={13} className="text-red-400 shrink-0" />
-                  <span className="text-[11px] text-red-300/80 flex-1 truncate">{live.title}</span>
-                  <ArrowRight size={12} className="text-red-400/40 shrink-0" />
-                </button>
-              ))}
-              {totalPending > 5 && (
-                <p className="text-[10px] text-[#c8bfa8]/30 text-center pt-1">+{totalPending - 5} pendências a mais</p>
+              {totalPending > 4 && (
+                <p className="text-[10px] text-[#c8bfa8]/30 text-center pt-1">+{totalPending - 4} pendências a mais</p>
               )}
             </div>
           )}

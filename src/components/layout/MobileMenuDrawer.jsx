@@ -12,7 +12,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Video, MessageSquare, FileText,
+  MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain,
   ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound
@@ -30,7 +30,7 @@ const adminGroups = [
   { label: 'Classe', items: [
     { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
     { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
-    { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
+    { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
     { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
     { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
   ]},
@@ -64,7 +64,7 @@ const studentGroups = [
   { label: 'Classe', items: [
     { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
     { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
-    { icon: Video, label: 'Sala ao Vivo', path: '/live', color: 'text-red-400' },
+    { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
     { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
     { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
   ]},

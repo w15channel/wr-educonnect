@@ -69,7 +69,7 @@ const courses = [
 
 const methodology = [
   { icon: Zap, title: 'Você pratica cedo', text: 'A formação não fica presa à teoria: o aluno aprende com exemplos, simulações e estudos de caso desde o início.' },
-  { icon: Users, title: 'Acompanhamento real', text: 'As aulas ao vivo criam proximidade com o professor, correção de rota e troca com colegas da mesma jornada.' },
+  { icon: Users, title: 'Acompanhamento real', text: 'A comunidade e os materiais da plataforma criam proximidade com o professor, correção de rota e troca com colegas da mesma jornada.' },
   { icon: Target, title: 'Método direto', text: 'O conteúdo é organizado para formar postura, raciocínio clínico e segurança prática — sem excesso de academicismo vazio.' },
   { icon: Shield, title: 'Ética e responsabilidade', text: 'Cada curso reforça limites profissionais, sigilo, acolhimento e encaminhamento adequado quando necessário.' }
 ];
@@ -157,7 +157,7 @@ export default function CourseSyllabus() {
               </div>
               <h2 className="text-3xl lg:text-5xl font-black mb-4">Não é só assistir aula. É aprender a pensar como terapeuta.</h2>
               <p className="text-white/55 leading-relaxed">
-                Nossa metodologia une conteúdo técnico, vivência prática, estudo de casos, comunidade e orientação ao vivo. O objetivo é formar alguém capaz de conduzir uma escuta responsável — não apenas decorar conceitos.
+                Nossa metodologia une conteúdo técnico, vivência prática, estudo de casos, comunidade e orientação contínua. O objetivo é formar alguém capaz de conduzir uma escuta responsável — não apenas decorar conceitos.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

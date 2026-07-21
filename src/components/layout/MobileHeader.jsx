@@ -26,7 +26,7 @@ const routeLabels = {
   '/dashboard': 'Dashboard',
   '/lessons': 'Aulas',
   '/chat': 'Chat da Turma',
-  '/live': 'Sala ao Vivo',
+  '/apostila': 'Apostila',
   '/tasks': 'Tarefas e Provas',
   '/forum': 'Fórum de Dúvidas',
   '/students': 'Gestão de Alunos',

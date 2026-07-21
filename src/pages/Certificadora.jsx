@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Award, BookOpen, FileText, Heart, Video, Bell, Download } from 'lucide-react';
+import { Award, BookOpen, FileText, Heart, Bell, Download } from 'lucide-react';
 import { useOutletContext, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -7,7 +7,6 @@ import { base44 } from '@/api/base44Client';
 const TOTAL_LESSONS = 45;
 const TOTAL_TASKS = 45;
 const TOTAL_PRACTICE_H = 10;
-const TOTAL_LIVES_H = 10;
 const REMINDER_KEY = 'cert_last_reminder';
 
 const COURSE_NAMES = {
@@ -86,25 +85,17 @@ export default function Certificadora() {
     enabled: !isTeacher && !!session?.email,
   });
 
-  const { data: liveAttendances = [] } = useQuery({
-    queryKey: ['my-attendances-cert', session?.email],
-    queryFn: () => base44.entities.LiveAttendance.filter({ student_email: session?.email || '' }, '-created_date', 100),
-    enabled: !isTeacher && !!session?.email,
-  });
-
   const lessonsWatched = lessonProgresses.filter(p => p.watched).length;
   const tasksSubmitted = taskSubmissions.length;
   const practiceCompleted = therapistPairings.filter(p =>
     (p.therapist_email === session?.email && p.therapist_submitted) ||
     (p.patient_email === session?.email && p.patient_submitted)
   ).length;
-  const livesConfirmed = liveAttendances.length;
 
   const totalPct = isTeacher ? 0 : Math.round(
     ((Math.min(lessonsWatched, TOTAL_LESSONS) / TOTAL_LESSONS) +
       (Math.min(tasksSubmitted, TOTAL_TASKS) / TOTAL_TASKS) +
-      (Math.min(practiceCompleted, TOTAL_PRACTICE_H) / TOTAL_PRACTICE_H) +
-      (Math.min(livesConfirmed, TOTAL_LIVES_H) / TOTAL_LIVES_H)) / 4 * 100
+      (Math.min(practiceCompleted, TOTAL_PRACTICE_H) / TOTAL_PRACTICE_H)) / 3 * 100
   );
 
   const courseName = COURSE_NAMES[session?.course] || 'Seu Curso';
@@ -203,7 +194,7 @@ export default function Certificadora() {
         </div>
       )}
 
-      {/* 4 progress bars */}
+      {/* 3 progress bars */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <ProgressBar
           label="Aulas Assistidas"
@@ -232,15 +223,6 @@ export default function Certificadora() {
           unit="h"
           description="Sessões como terapeuta ou paciente concluídas"
         />
-        <ProgressBar
-          label="Horas em Lives"
-          icon={Video}
-          colorClass="text-red-500"
-          current={livesConfirmed}
-          total={TOTAL_LIVES_H}
-          unit="h"
-          description="Confirme presença nas aulas ao vivo"
-        />
       </div>
 
 
@@ -265,7 +247,6 @@ export default function Certificadora() {
           <li>Assista às 60 aulas e marque-as como concluídas (com resumo e comentário)</li>
           <li>Entregue os 60 trabalhos e atividades do curso</li>
           <li>Complete 10 horas de prática terapêutica (Terapeuta da Semana)</li>
-          <li>Confirme presença em pelo menos 10 horas de aulas ao vivo</li>
           <li>Quando atingir 80% dos requisitos, solicite a emissão do certificado pelo botão abaixo</li>
         </ol>
       </div>

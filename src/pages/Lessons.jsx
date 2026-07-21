@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Play, Plus, Trash2, ExternalLink, BookOpen, Video, FileText, Globe } from 'lucide-react';
+import { Play, Plus, ExternalLink, BookOpen, Video, FileText, Globe } from 'lucide-react';
 import LessonProgressPanel from '@/components/lessons/LessonProgressPanel';
 import ModuleBlock from '@/components/lessons/ModuleBlock';
 import ModuleCompletionCelebration from '@/components/lessons/ModuleCompletionCelebration';
@@ -204,11 +204,18 @@ export default function Lessons() {
 
   const handleCoverUpload = async (file) => {
     if (!file) return;
-    setCoverUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(prev => ({ ...prev, thumbnail_url: file_url }));
-    setCoverUploading(false);
-    toast.success('Capa carregada!');
+    try {
+      setCoverUploading(true);
+      const uploadResult = await base44.integrations.Core.UploadFile({ file });
+      const fileUrl = uploadResult?.file_url || uploadResult?.url || uploadResult?.secure_url;
+      if (!fileUrl) throw new Error('URL da capa não retornada');
+      setForm(prev => ({ ...prev, thumbnail_url: fileUrl }));
+      toast.success('Capa carregada!');
+    } catch (error) {
+      toast.error(`Falha ao enviar capa: ${error?.message || 'tente novamente.'}`);
+    } finally {
+      setCoverUploading(false);
+    }
   };
 
   const openEdit = (lesson) => {
@@ -246,6 +253,10 @@ export default function Lessons() {
   };
 
   const handleSave = () => {
+    if (coverUploading) {
+      toast.error('Aguarde o envio da capa terminar antes de salvar.');
+      return;
+    }
     if (editingLesson) updateMutation.mutate({ id: editingLesson.id, data: buildLessonPayload() });
     else createMutation.mutate({ ...buildLessonPayload(), order: lessons.length + 1 });
   };
@@ -414,7 +425,7 @@ export default function Lessons() {
                   <Input placeholder="Duração (ex: 45 min)" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} />
                   <Input placeholder="Links de materiais (separados por vírgula)" value={form.material_links} onChange={e => setForm({ ...form, material_links: e.target.value })} />
                   <Input placeholder='Links de pesquisa (Título|URL, separados por vírgula)' value={form.research_links} onChange={e => setForm({ ...form, research_links: e.target.value })} />
-                  <Button onClick={handleSave} disabled={!form.title} className="w-full">{editingLesson ? 'Salvar Alterações' : 'Salvar Aula'}</Button>
+                  <Button onClick={handleSave} disabled={!form.title || coverUploading || createMutation.isPending || updateMutation.isPending} className="w-full">{editingLesson ? 'Salvar Alterações' : 'Salvar Aula'}</Button>
                 </div>
               </DialogContent>
             </Dialog>

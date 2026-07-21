@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Video, Shield, Zap } from 'lucide-react';
+import { Lock, Eye, EyeOff, Key, AlertCircle, Heart, Star, Sparkles, ChevronRight, Users, BookOpen, Shield, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,7 +17,7 @@ const HERO_IMAGES = [
 
 const FEATURES = [
   { icon: BookOpen, title: 'Videoaulas', desc: 'Conteúdo terapêutico exclusivo' },
-  { icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
+  { icon: BookOpen, title: 'Apostila', desc: 'Estudo guiado por módulos e capítulos' },
   { icon: Users, title: 'Comunidade', desc: 'Fórum de dúvidas e troca' },
   { icon: Heart, title: 'Prática', desc: 'Experiência terapêutica ao longo do curso' },
 ];

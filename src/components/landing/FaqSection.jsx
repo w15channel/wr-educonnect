@@ -14,8 +14,8 @@ const FAQS = [
     a: 'Sim. Os certificados são emitidos por instituições parceiras credenciadas e possuem registro verificável. O Curso de Terapia Comportamental conta ainda com credenciamento internacional pela AHDE (ID: 00403THE), reconhecida globalmente.'
   },
   {
-    q: 'Como funcionam as aulas ao vivo?',
-    a: 'As mentorias ao vivo acontecem todas as segundas-feiras em horário fixo, com transmissão pela plataforma. As sessões ficam gravadas e disponíveis para revisão a qualquer momento, para que nenhum conteúdo seja perdido.'
+    q: 'Como funciona o estudo na plataforma?',
+    a: 'Você estuda com videoaulas, apostila digital, tarefas e provas dentro da própria plataforma. Todo o progresso fica registrado para facilitar sua rotina de estudos e revisão.'
   },
   {
     q: 'Qual é a carga horária e quanto tempo terei para concluir?',

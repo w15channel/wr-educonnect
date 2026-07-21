@@ -106,20 +106,20 @@ const STEPS = [
     ),
   },
   {
-    icon: '📡',
-    title: 'Sala ao Vivo',
-    subtitle: 'Mentorias e práticas em tempo real',
-    color: 'from-red-500 to-red-700',
+    icon: '📚',
+    title: 'Apostila',
+    subtitle: 'Estudo estruturado por módulos',
+    color: 'from-emerald-500 to-emerald-700',
     content: (
       <div className="space-y-3 text-sm text-gray-600">
-        <p>A <strong>Sala ao Vivo</strong> é onde acontecem as mentorias periódicas com a turma:</p>
+        <p>A <strong>Apostila</strong> organiza seu aprendizado com trilha completa de estudo:</p>
         <ul className="space-y-2">
           {[
-            { icon: '📺', text: 'Acesse a transmissão ao vivo diretamente pela plataforma' },
-            { icon: '✋', text: 'Confirme sua presença e levante a mão para participar' },
-            { icon: '💬', text: 'Converse com colegas e professor pelo chat da sala' },
-            { icon: '📋', text: 'Histórico de sessões anteriores disponível para revisão' },
-            { icon: '🗓️', text: 'Sessões futuras aparecem como "Agendada" com data e horário' },
+            { icon: '📖', text: 'Acesse conteúdos divididos por módulos e aulas' },
+            { icon: '🧠', text: 'Reforce conceitos com leitura guiada no seu ritmo' },
+            { icon: '🔎', text: 'Revise capítulos sempre que precisar' },
+            { icon: '✅', text: 'Use a apostila como apoio para tarefas e provas' },
+            { icon: '🎯', text: 'Mantenha constância com um plano de estudo claro' },
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
               <span>{item.icon}</span>
@@ -127,7 +127,7 @@ const STEPS = [
             </li>
           ))}
         </ul>
-        <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl p-3">
+        <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl p-3">
           🌟 Exclusivo da modalidade <strong>Formação Completa</strong>.
         </p>
       </div>

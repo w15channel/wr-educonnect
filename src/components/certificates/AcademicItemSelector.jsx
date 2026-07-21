@@ -7,14 +7,13 @@
  * with { selectedItems, rows, selectedRows } whenever the selection changes.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckSquare, Square, Loader2, BookOpen, Video, ClipboardList, TestTube, Heart, Flame } from 'lucide-react';
+import { CheckSquare, Square, Loader2, BookOpen, ClipboardList, TestTube, Heart, Flame } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 import { formatScore } from '@/lib/scoreUtils';
 
 const CATEGORY_ICONS = {
   'Aula Gravada':      <BookOpen size={11} />,
-  'Aula ao Vivo':      <Video size={11} />,
   'Tarefa':            <ClipboardList size={11} />,
   'Prova':             <TestTube size={11} />,
   'Terapia da Semana': <Heart size={11} />,
@@ -63,17 +62,15 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
     Promise.all([
       base44.entities.ScoreItem.filter({ student_email: studentEmail }, '-created_date', 2000),
       base44.entities.RecordedLesson.filter({ course }, 'order', 200),
-      base44.entities.LiveSession.filter({ course }, '-scheduled_at', 50),
       base44.entities.Task.filter({ course }, '-created_date', 200),
       base44.entities.TherapistPairing.list('-pairing_date', 200),
       base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail }, '-date', 500),
     ])
-      .then(([scoreItems, lessons, liveSessions, tasks, pairings, challengeResponses]) => {
+      .then(([scoreItems, lessons, tasks, pairings, challengeResponses]) => {
         const { rows: allRows } = buildStudentAcademicData({
           studentEmail,
           scoreItems,
           lessons,
-          liveSessions,
           tasks,
           pairings,
           challengeResponses,

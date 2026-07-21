@@ -12,10 +12,10 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
-import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE, formatDocumentIssuer } from '@/lib/brand';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
-import { HOURS_MAP, buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
-import { Flame, Archive } from 'lucide-react';
+import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
+import { Archive } from 'lucide-react';
 import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
@@ -268,10 +268,6 @@ export default function HistoricoAcademico() {
     queryKey: ['lessons', studentCourse],
     queryFn: () => base44.entities.RecordedLesson.filter({ course: studentCourse }, 'order', 200),
   });
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions-historico', studentCourse],
-    queryFn: () => base44.entities.LiveSession.filter({ course: studentCourse }, '-scheduled_at', 50),
-  });
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', studentCourse],
     queryFn: () => base44.entities.Task.filter({ course: studentCourse }, '-created_date', 200),
@@ -313,7 +309,6 @@ export default function HistoricoAcademico() {
       studentEmail: student.email,
       scoreItems,
       lessons: visibleLessons,
-      liveSessions,
       tasks: visibleTasks,
       exams: examsForCourse,
       examSubs: examSubsForStudent,

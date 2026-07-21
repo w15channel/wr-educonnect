@@ -20,7 +20,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
-import { BarChart3, Play, Video, MessageSquare, LayoutGrid } from 'lucide-react';
+import { BarChart3, Play, BookOpen, MessageSquare, LayoutGrid } from 'lucide-react';
 import MobileMenuDrawer from './MobileMenuDrawer';
 import NotificationsBell from '@/components/dashboard/NotificationsBell';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
@@ -36,7 +36,7 @@ const pageVariants = {
 
 const routeLabels = {
   '/dashboard': 'Dashboard', '/lessons': 'Aulas', '/chat': 'EDU Messenger',
-  '/live': 'Sala ao Vivo', '/tasks': 'Tarefas', '/forum': 'Fórum',
+  '/apostila': 'Apostila', '/tasks': 'Tarefas', '/forum': 'Fórum',
   '/students': 'Alunos', '/announcements': 'Avisos', '/profile': 'Meu Perfil',
   '/calendar': 'Calendário', '/tuitions': 'Mensalidades', '/tutor': 'Tutor Digital',
   '/scorecontrol': 'Pontuação', '/certificadora': 'Certificação', '/gerar-certificado': 'Gerar Certificado',
@@ -64,7 +64,7 @@ function saveStack(root, path) { const s = loadStacks(); s[root] = path; session
 const tabs = [
   { icon: BarChart3,     label: 'Início', root: '/dashboard' },
   { icon: Play,          label: 'Aulas',  root: '/lessons' },
-  { icon: Video,         label: 'Live',   root: '/live' },
+  { icon: BookOpen,      label: 'Apostila', root: '/apostila' },
   { icon: MessageSquare, label: 'Fórum',  root: '/forum' },
   { icon: LayoutGrid,    label: 'Menu',   root: '__menu__' },
 ];
@@ -72,7 +72,7 @@ const tabs = [
 function getOwnerTab(pathname, prefix) {
   const stripped = prefix && pathname.startsWith(prefix) ? pathname.slice(prefix.length) || '/' : pathname;
   if (stripped.startsWith('/lessons'))  return '/lessons';
-  if (stripped.startsWith('/live'))     return '/live';
+  if (stripped.startsWith('/apostila')) return '/apostila';
   if (stripped.startsWith('/forum'))    return '/forum';
   if (stripped === '/dashboard' || stripped === '/' || stripped === '') return '/dashboard';
   return null;
