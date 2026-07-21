@@ -940,7 +940,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           title="Apostila"
-          value={`${moduleUnlocked.filter(Boolean).length}/10`}
+          value={`${moduleUnlocked.filter(Boolean).length}/${moduleUnlocked.length || 10}`}
           icon={BookOpen}
           iconBg="bg-emerald-500"
           to="/apostila"

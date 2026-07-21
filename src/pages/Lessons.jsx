@@ -279,7 +279,7 @@ export default function Lessons() {
   const visibleLessonIds = new Set(visibleLessons.map((lesson) => lesson.id));
   const watchedCount = progresses.filter((p) => p.watched && visibleLessonIds.has(p.lesson_id) && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
   const progressPct = visibleLessons.length > 0 ? Math.round((watchedCount / visibleLessons.length) * 100) : 0;
-  const isSaveDisabled = !form.title || coverUploading || createMutation.isPending || updateMutation.isPending;
+  const isSaveButtonDisabled = !form.title || coverUploading || createMutation.isPending || updateMutation.isPending;
 
   if (viewProgressLesson) {
     return <LessonProgressPanel lesson={viewProgressLesson} onBack={() => setViewProgressLesson(null)} />;
@@ -426,7 +426,7 @@ export default function Lessons() {
                   <Input placeholder="Duração (ex: 45 min)" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} />
                   <Input placeholder="Links de materiais (separados por vírgula)" value={form.material_links} onChange={e => setForm({ ...form, material_links: e.target.value })} />
                   <Input placeholder='Links de pesquisa (Título|URL, separados por vírgula)' value={form.research_links} onChange={e => setForm({ ...form, research_links: e.target.value })} />
-                  <Button onClick={handleSave} disabled={isSaveDisabled} className="w-full">{editingLesson ? 'Salvar Alterações' : 'Salvar Aula'}</Button>
+                  <Button onClick={handleSave} disabled={isSaveButtonDisabled} className="w-full">{editingLesson ? 'Salvar Alterações' : 'Salvar Aula'}</Button>
                 </div>
               </DialogContent>
             </Dialog>
