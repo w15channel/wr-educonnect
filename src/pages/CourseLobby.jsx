@@ -24,7 +24,7 @@ const COURSES = [
     id: 'tcc',
     title: 'Terapeuta em TC',
     subtitle: 'Terapia Comportamental',
-    desc: 'Técnicas de Terapia Comportamental aplicadas à prática clínica, com suporte em tempo real e mentoria ao vivo todas as segundas-feiras.',
+    desc: 'Técnicas de Terapia Comportamental aplicadas à prática clínica, com trilha de estudo estruturada em videoaulas, apostila e atividades práticas.',
     icon: Brain,
     video: 'https://media.base44.com/videos/public/69f55577840a3c93cee191be/9adbe6196_generated_video.mp4',
     tag: 'Turma Ativa',

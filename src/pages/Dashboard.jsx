@@ -3,7 +3,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { Video, FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, Wifi, WifiOff, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Calendar, PlayCircle, MessageSquare, Send, Smile } from 'lucide-react';
+import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, MessageSquare, Send, Smile } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import TherapistWeekInviteCard from '@/components/dashboard/TherapistWeekInviteCard';
@@ -242,15 +242,6 @@ export default function Dashboard() {
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000)
   });
 
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions'],
-    queryFn: () => base44.entities.LiveSession.list('-scheduled_at', 5)
-  });
-  const { data: liveAttendances = [] } = useQuery({
-    queryKey: ['live-attendances-dashboard', session?.email],
-    queryFn: () => base44.entities.LiveAttendance.filter({ student_email: session?.email || '' }, '-created_date', 300),
-    enabled: !isTeacher && !!session?.email
-  });
   const { data: therapistPairings = [] } = useQuery({
     queryKey: ['therapist-pairings-dashboard'],
     queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 300),
@@ -337,8 +328,6 @@ export default function Dashboard() {
   ).length :
   visibleTasks.filter((t) => isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)).length;
 
-  const nextLive = liveSessions.find((s) => s.status === 'live' || s.status === 'scheduled');
-  const isLiveNow = nextLive?.status === 'live';
   // Count only students of the current course
   const studentCount = accessCodes.filter((c) => {
     if (!c.is_active) return false;
@@ -513,36 +502,6 @@ export default function Dashboard() {
         }
       </div>
 
-      {/* Live Banner */}
-      {nextLive &&
-      <div
-        onClick={() => navigate(scoped('/live'))}
-        className={`cursor-pointer rounded-2xl p-4 flex items-center gap-4 border transition-all hover:shadow-lg ${
-        isLiveNow ?
-        'bg-gradient-to-r from-red-50 to-red-50/50 border-red-200 hover:border-red-300' :
-        'bg-gradient-to-r from-blue-50 to-blue-50/50 border-blue-200 hover:border-blue-300'}`
-        }>
-        
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLiveNow ? 'bg-red-100' : 'bg-blue-100'}`}>
-            {isLiveNow ? <Wifi size={20} className="text-red-600" /> : <WifiOff size={20} className="text-blue-600" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              {isLiveNow && <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">
-                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> TRANSMITINDO
-              </span>}
-              <p className={`font-bold text-sm truncate ${isLiveNow ? 'text-red-700' : 'text-blue-700'}`}>{nextLive.title}</p>
-            </div>
-            <p className={`text-xs mt-0.5 ${isLiveNow ? 'text-red-500' : 'text-blue-500'}`}>
-              {isLiveNow ? 'Aula ao vivo agora!' : nextLive.scheduled_at ? `Programada para ${format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm')}` : 'Sala ao vivo'}
-            </p>
-          </div>
-          <div className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl ${isLiveNow ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>
-            Entrar <ArrowRight size={12} />
-          </div>
-        </div>
-      }
-
       {/* Pendências do Aluno */}
       {!isTeacher && (() => {
         const today = new Date();
@@ -562,14 +521,9 @@ export default function Dashboard() {
           if (p.patient_email === session?.email) return !p.patient_submitted;
           return false;
         });
-        const attendedIds = new Set(liveAttendances.map((a) => a.session_id));
-        const now = new Date();
-        const isFutureLive = (s) => s.scheduled_at && new Date(s.scheduled_at) > now;
-        // Lives já encerradas não devem mais aparecer nas pendências do aluno.
-        const upcomingLives = liveSessions.filter((s) => !attendedIds.has(s.id) && isFutureLive(s) && s.status !== 'ended');
         const totalPending = therapistPending.length +
           (SHOW_LESSON_TASK_PENDING_ALERTS ? Math.min(unwatchedLessons.length, 1) + Math.min(pendingTasksList.length, 1) : 0) +
-          pendingExams.length + upcomingLives.length;
+          pendingExams.length;
 
         if (totalPending === 0) return null;
 
@@ -656,24 +610,6 @@ export default function Dashboard() {
               {pendingExams.length > 3 &&
               <button onClick={() => navigate(scoped('/exams'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
                   +{pendingExams.length - 3} provas pendentes → Ver todas
-                </button>
-              }
-              {upcomingLives.slice(0, 3).map((live) =>
-              <button key={live.id} onClick={() => navigate(scoped('/live'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors text-left">
-                  <Calendar size={13} className="text-blue-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-blue-700 truncate">{live.title}</p>
-                    <p className="text-[10px] text-blue-500">
-                      Live programada para lançamento futuro{live.scheduled_at ? ` · ${format(new Date(live.scheduled_at), 'dd/MM/yyyy HH:mm')}` : ''}
-                    </p>
-                  </div>
-                  <ArrowRight size={12} className="text-blue-400 shrink-0" />
-                </button>
-              )}
-              {upcomingLives.length > 3 &&
-              <button onClick={() => navigate(scoped('/live'))} className="w-full text-xs text-blue-600 font-semibold py-1 hover:underline">
-                  +{upcomingLives.length - 3} lives agendadas → Ver todas
                 </button>
               }
             </div>
@@ -1003,13 +939,12 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
-          title="Próxima Live"
-          value={nextLive ? isLiveNow ? 'Ao Vivo!' : nextLive.scheduled_at ? format(new Date(nextLive.scheduled_at), 'dd/MM HH:mm') : 'Agendada' : 'Nenhuma'}
-          icon={Video}
-          iconBg={isLiveNow ? 'bg-red-500' : 'bg-slate-500'}
-          to="/live"
-          subtitle="Ir para Sala ao Vivo"
-          pulse={isLiveNow} />
+          title="Apostila"
+          value={`${moduleUnlocked.filter(Boolean).length}/${moduleUnlocked.length || 10}`}
+          icon={BookOpen}
+          iconBg="bg-emerald-500"
+          to="/apostila"
+          subtitle="Ir para Apostila" />
         
         <StatCard
           title={isTeacher ? 'Para Corrigir' : 'Tarefas Pendentes'}

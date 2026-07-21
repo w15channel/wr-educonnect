@@ -16,7 +16,6 @@ import { toast } from 'sonner';
 const EVENT_TYPES = {
   personal: { label: 'Pessoal', color: 'bg-purple-500', dot: 'bg-purple-500' },
   study: { label: 'Estudo', color: 'bg-blue-500', dot: 'bg-blue-500' },
-  live: { label: 'Aula ao Vivo', color: 'bg-red-500', dot: 'bg-red-500' },
   task: { label: 'Tarefa', color: 'bg-orange-500', dot: 'bg-orange-500' },
   exam: { label: 'Prova', color: 'bg-pink-500', dot: 'bg-pink-500' },
   reminder: { label: 'Lembrete', color: 'bg-green-500', dot: 'bg-green-500' },
@@ -42,11 +41,6 @@ export default function Calendar() {
   const userCourse = session?.course;
   const { course: routeCourse } = useCourseFilteredEmails();
   const activeCourse = routeCourse || userCourse || 'tcc';
-
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions-calendar', activeCourse],
-    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 50),
-  });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks-calendar', activeCourse],
@@ -75,14 +69,6 @@ export default function Calendar() {
   // Combine all events
   const allEvents = [
     ...myEvents.map(e => ({ ...e, source: 'personal' })),
-    ...liveSessions.filter(s => s.scheduled_at).map(s => ({
-      id: `live-${s.id}`,
-      title: `📡 ${s.title}`,
-      date: s.scheduled_at.split('T')[0],
-      time: s.scheduled_at.includes('T') ? s.scheduled_at.split('T')[1].slice(0, 5) : '',
-      type: 'live',
-      source: 'platform',
-    })),
     ...tasks.filter(t => t.deadline && (isAdmin || !t.is_hidden)).map(t => ({
       id: `task-${t.id}`,
       title: `${t.type === 'quiz' ? '📝' : '📋'} ${t.title}`,

@@ -65,7 +65,6 @@ export const COURSE_LABELS = {
 };
 
 const GROUPED_CATEGORIES = new Set([
-  'Aula ao Vivo',
   'Tarefa',
   'Prova',
   'Terapia da Semana',
@@ -74,7 +73,6 @@ const GROUPED_CATEGORIES = new Set([
 ]);
 
 const GROUP_LABELS = {
-  'Aula ao Vivo': 'Aulas ao Vivo',
   Tarefa: 'Tarefas de Classe',
   Prova: 'Provas',
   'Terapia da Semana': 'Terapia da Semana',

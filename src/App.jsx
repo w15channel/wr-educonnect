@@ -19,7 +19,6 @@ import DiplomaLayout from './pages/DiplomaLayout';
 import DiplomaDashboard from './pages/DiplomaDashboard';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
-import LiveSessions from './pages/LiveSessions';
 import Tasks from './pages/Tasks';
 import Tests from './pages/Tests';
 import Forum from './pages/Forum';
@@ -74,7 +73,7 @@ function AppRoutesTree() {
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="lessons" element={<Lessons />} />
-        <Route path="live" element={<LiveSessions />} />
+        <Route path="live" element={<Navigate to="../apostila" replace />} />
         <Route path="tasks" element={<Tasks mode="tasks" />} />
         <Route path="tests" element={<Tests />} />
         <Route path="exams" element={<Exams />} />
@@ -181,7 +180,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Navigate to={`${base}/dashboard`} replace />} />
       <Route path="/dashboard" element={<Navigate to={`${base}/dashboard`} replace />} />
       <Route path="/lessons" element={<Navigate to={`${base}/lessons`} replace />} />
-      <Route path="/live" element={<Navigate to={`${base}/live`} replace />} />
+      <Route path="/live" element={<Navigate to={`${base}/apostila`} replace />} />
       <Route path="/tasks" element={<Navigate to={`${base}/tasks`} replace />} />
       <Route path="/tests" element={<Navigate to={`${base}/exams`} replace />} />
       <Route path="/exams" element={<Navigate to={`${base}/exams`} replace />} />

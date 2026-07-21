@@ -93,8 +93,8 @@ const features = [
   },
   {
     icon: Video,
-    title: 'Aulas Ao Vivo',
-    description: 'Dê aulas de onde estiver! Basta estar conectado à internet para transmitir em tempo real. Ensino dinâmico, flexível e acessível.',
+    title: 'Apostila Digital',
+    description: 'Organize conteúdos por módulos, ofereça material de apoio e facilite a revisão dos alunos com estudo guiado dentro da plataforma.',
     color: 'text-red-500',
     bg: 'bg-red-50',
   },

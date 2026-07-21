@@ -86,9 +86,8 @@ export default function Students() {
   const syncStudents = async () => {
     setSyncing(true);
     try {
-      const [lessons, liveSessions, tasks, scoreItems] = await Promise.all([
+      const [lessons, tasks, scoreItems] = await Promise.all([
         base44.entities.RecordedLesson.list('order', 200),
-        base44.entities.LiveSession.list('-scheduled_at', 100),
         base44.entities.Task.list('-created_date', 200),
         base44.entities.ScoreItem.list('-created_date', 5000),
       ]);
@@ -103,11 +102,6 @@ export default function Students() {
         for (const lesson of lessons) {
           if (!existingScores.find(s => s.category === 'lesson' && s.ref_id === lesson.id)) {
             toCreate.push({ student_email: email, category: 'lesson', ref_id: lesson.id, ref_title: lesson.title, score: 0, max_score: 2, verified: false });
-          }
-        }
-        for (const session of liveSessions) {
-          if (!existingScores.find(s => s.category === 'live_attendance' && s.ref_id === session.id)) {
-            toCreate.push({ student_email: email, category: 'live_attendance', ref_id: session.id, ref_title: session.title, score: 0, max_score: 0, verified: false });
           }
         }
         for (const task of tasks) {

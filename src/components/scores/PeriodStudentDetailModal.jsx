@@ -16,7 +16,6 @@ const CATEGORY_CONFIG = {
   task:            { label: 'Atividade Complementar',    icon: Heart,         color: 'bg-pink-100 text-pink-700' },
   exam:            { label: 'Prova / Avaliação',          icon: Trophy,        color: 'bg-blue-100 text-blue-700' },
   forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
-  live_attendance: { label: 'Presença em Live',           icon: CheckCircle,   color: 'bg-sky-100 text-sky-700' },
   therapist:       { label: 'Atividade Complementar',    icon: Heart,         color: 'bg-pink-100 text-pink-700' },
   other:           { label: 'Outras Pontuações',          icon: CircleHelp,    color: 'bg-slate-100 text-slate-700' },
 };
@@ -40,6 +39,7 @@ export default function PeriodStudentDetailModal({ email, name, points, periodSt
     if (hasManualActivities) {
       const grouped = {};
       activities.forEach((item, idx) => {
+        if (item.category === 'live_attendance') return;
         const normalized = item.category === 'quiz' ? 'exam' : item.category;
         const category = CATEGORY_CONFIG[normalized] ? normalized : 'other';
         grouped[category] = grouped[category] || [];
@@ -49,6 +49,7 @@ export default function PeriodStudentDetailModal({ email, name, points, periodSt
     }
     const seen = new Map();
     for (const s of allScoreItems) {
+      if (s.category === 'live_attendance') continue;
       if (!s.verified || !s.category || !s.ref_id) continue;
       const created = parseUtcDate(s.created_date);
       if (!created) continue;

@@ -8,7 +8,6 @@
  * @param {string}   params.studentEmail
  * @param {Array}    params.scoreItems         - all ScoreItems (filtered internally)
  * @param {Array}    params.lessons            - RecordedLesson list for the course
- * @param {Array}    params.liveSessions       - LiveSession list for the course
  * @param {Array}    params.tasks              - Task list for the course
  * @param {Array}    params.exams              - Exam list for the course
  * @param {Array}    params.examSubs           - ExamSubmission list for the student
@@ -19,7 +18,6 @@
 
 export const HOURS_MAP = {
   lesson: 2,
-  live_attendance: 2,
   task: 0.5,   // 30 minutos por entrega
   quiz: 1.5,
   exam: 2,     // 2 horas por prova
@@ -45,7 +43,6 @@ export function buildStudentAcademicData({
   studentEmail,
   scoreItems,
   lessons,
-  liveSessions,
   tasks,
   exams = [],
   examSubs = [],

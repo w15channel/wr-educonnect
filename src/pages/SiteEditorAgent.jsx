@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
 const SITE_TOOLS = [
-  'Dashboard administrativo', 'Aulas gravadas', 'Sala ao vivo', 'Tarefas', 'Provas',
+  'Dashboard administrativo', 'Aulas gravadas', 'Apostila', 'Tarefas', 'Provas',
   'Chat da turma', 'Fórum de dúvidas', 'Terapeuta da Semana', 'Monitores',
   'Gestão de alunos', 'Códigos de acesso', 'Mensalidades', 'Controle de Pontuação',
   'Histórico Acadêmico', 'Avisos', 'Instagram Institucional', 'Tutor Digital',

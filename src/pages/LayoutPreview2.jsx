@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Key, Sparkles, Users, BookOpen, Video, Heart,
+  Key, Sparkles, Users, BookOpen, Heart,
   Star, ChevronRight, Shield, CheckCircle, ExternalLink,
   ArrowDown, Quote, Menu, X, Play, Zap, AlertCircle, MessageCircle, Send,
   Instagram } from
@@ -29,7 +29,7 @@ const HERO_IMAGES = [
 
 const FEATURES = [
 { icon: BookOpen, title: 'Videoaulas Gravadas', desc: 'Conteúdo terapêutico exclusivo' },
-{ icon: Video, title: 'Lives ao Vivo', desc: 'Práticas e mentorias em tempo real' },
+{ icon: BookOpen, title: 'Apostila Digital', desc: 'Estudo guiado com apoio por módulos' },
 { icon: Users, title: 'Comunidade Ativa', desc: 'Fórum de dúvidas entre alunos' },
 { icon: Heart, title: 'Prática Real', desc: 'Experiência terapêutica ao longo do curso' }];
 
@@ -108,7 +108,7 @@ const COURSES = [
     'Prática clínica desde as primeiras semanas',
     'Credenciamento internacional como terapeuta',
     'Plataforma centralizada de conteúdos',
-    'Aulas ao vivo todas as segundas-feiras',
+    'Apostila digital para estudo contínuo',
     'Ingresso em Setembro/2026',
   ]
 },
@@ -132,7 +132,7 @@ const COURSES = [
     'Profundidade do método psicanalítico freudiano',
     'Credenciamento internacional como terapeuta',
     'Plataforma centralizada de conteúdos',
-    'Aulas ao vivo todas as segundas-feiras',
+    'Apostila digital para estudo contínuo',
     'Ingresso em Setembro/2026',
   ]
 },
@@ -156,7 +156,7 @@ const COURSES = [
     '80h de conteúdo especializado e integrativo',
     'Credenciamento internacional como terapeuta',
     'Plataforma centralizada de conteúdos',
-    'Aulas ao vivo todas as segundas-feiras',
+    'Apostila digital para estudo contínuo',
     'Ingresso em Setembro/2026',
   ]
 }];
@@ -854,7 +854,7 @@ export default function LandingPage({ onLogin }) {
                 ],
                 highlights: [
                   'Fundamentos da Psicanálise Freudiana e Lacaniana',
-                  'Prática clínica supervisionada ao vivo',
+                  'Prática clínica supervisionada',
                   'Certificação profissional reconhecida',
                   'Análise de sonhos e processos inconscientes',
                   'Ingresso previsto para início de 2027',

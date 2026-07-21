@@ -101,7 +101,7 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
           <section>
             <h3 className="font-bold text-gray-800 mb-2">Prestação de Serviços Educacionais</h3>
             <p className="text-gray-600 text-xs leading-relaxed">
-              A {BRAND_LEGAL_NAME} oferece formação em terapia e desenvolvimento pessoal através de videoaulas, sessões ao vivo, tarefas, quizzes e práticas terapêuticas. CNPJ {BRAND_CNPJ}. A participação ativa do aluno é fundamental para o aproveitamento e certificação. O acesso à plataforma é pessoal e intransferível, vinculado ao código de acesso fornecido.
+              A {BRAND_LEGAL_NAME} oferece formação em terapia e desenvolvimento pessoal através de videoaulas, apostila digital, tarefas, quizzes e práticas terapêuticas. CNPJ {BRAND_CNPJ}. A participação ativa do aluno é fundamental para o aproveitamento e certificação. O acesso à plataforma é pessoal e intransferível, vinculado ao código de acesso fornecido.
             </p>
           </section>
 

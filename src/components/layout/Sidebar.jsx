@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { applyTheme, getStoredTheme } from '@/components/layout/MobileHeader';
 
 import {
-  Video, MessageSquare, FileText,
+  MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, Brain, Sparkles,
   ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame, GraduationCap,
@@ -63,10 +63,9 @@ const adminGroups = [
     items: [
       { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
       { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
-      { icon: Video,         label: 'Sala ao Vivo',           path: '/live',              color: 'text-red-400' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-emerald-400' },
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
       { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
-      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-emerald-400' },
       { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
     ],
   },
@@ -109,10 +108,9 @@ const studentGroups = [
       { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
       { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
       { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
-      { icon: Video,         label: 'Sala ao Vivo',           path: '/live',              color: 'text-red-400' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
       { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
-      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
     ],
   },
   {

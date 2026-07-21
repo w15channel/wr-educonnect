@@ -13,13 +13,13 @@ const QUICK_ACTIONS = [
   'Quais tarefas estão pendentes?',
   'Como funciona o ranking?',
   'Preciso de apoio emocional',
-  'Como entro na sala ao vivo?',
+  'Como acesso a apostila?',
   'Como acesso a Unidade Certificadora?',
 ];
 
 const SYSTEM_CONTEXT = `Você é EDU, o tutor digital da plataforma ${BRAND_LEGAL_NAME}.
 Você ajuda alunos a:
-- Navegar e usar a plataforma (videoaulas, sala ao vivo, tarefas, fórum, calendário, mensalidades, perfil)
+- Navegar e usar a plataforma (videoaulas, apostila, tarefas, fórum, calendário, mensalidades, perfil)
 - Entender dinâmicas como datas, prazos, ranking e presença
 - Oferecer apoio emocional como um terapeuta virtual gentil e empático
 - Responder perguntas sobre a formação em terapia
@@ -64,23 +64,16 @@ export default function TutorDigital() {
     enabled: !!session?.email,
   });
 
-  const { data: liveSessions = [] } = useQuery({
-    queryKey: ['live-sessions-tutor', activeCourse],
-    queryFn: () => base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 5),
-  });
-
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const buildContext = () => {
     const pendingTasks = tasks.filter(t => !t.is_hidden && !submissions.find(s => s.task_id === t.id));
-    const nextLive = liveSessions.find(s => s.status === 'live' || s.status === 'scheduled');
     return `
 Contexto do aluno:
 - Nome: ${session?.name || 'Aluno'}
 - Tarefas pendentes: ${pendingTasks.length} (${pendingTasks.slice(0, 3).map(t => t.title).join(', ')})
-- Próxima aula ao vivo: ${nextLive ? `${nextLive.title} - ${nextLive.scheduled_at ? new Date(nextLive.scheduled_at).toLocaleString('pt-BR') : 'sem data'}` : 'nenhuma agendada'}
 `;
   };
 

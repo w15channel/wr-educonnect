@@ -6,7 +6,6 @@ import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const CATEGORY_CONFIG = {
   lesson: { iconColor: 'bg-purple-100 text-purple-700' },
-  live_attendance: { iconColor: 'bg-red-100 text-red-700' },
   task: { iconColor: 'bg-orange-100 text-orange-700' },
   quiz: { iconColor: 'bg-blue-100 text-blue-700' },
   forum: { iconColor: 'bg-green-100 text-green-700' },

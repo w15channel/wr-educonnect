@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, FileText, MessageSquare, X, CheckCircle, RefreshCw, CircleHelp, Heart, Archive } from 'lucide-react';
+import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, Archive } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { capScore, formatScore, rankingScoreValue, roundScore, sumRoundedScores, parseUtcDate } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
@@ -15,7 +15,6 @@ const CATEGORY_CONFIG = {
   task:            { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
   exam:            { label: 'Prova / Avaliação',          icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
-  live_attendance: { label: 'Presença em Live',           icon: CheckCircle,   color: 'bg-sky-100 text-sky-700' },
   therapist:       { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
   other:           { label: 'Outras Pontuações',          icon: CircleHelp,    color: 'bg-slate-100 text-slate-700' },
 };
@@ -325,10 +324,11 @@ export default function RankingGeral() {
     return { publishedScoreMap, publishedRankMap };
   }, [publishedProfiles, activeCourse]);
 
-  // ── Live deduplicated score items (for participation count & modal detail) ──
+  // ── Deduplicated score items (for participation count & modal detail) ──
   const deduplicatedScoreItems = useMemo(() => {
     const seen = new Map();
     for (const s of allScoreItems) {
+      if (s.category === 'live_attendance') continue;
       if (!s.student_email || !s.category || !s.ref_id) continue;
       const key = `${s.student_email}|${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
