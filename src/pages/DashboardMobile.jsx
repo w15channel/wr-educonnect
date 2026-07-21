@@ -461,8 +461,8 @@ export default function DashboardMobile() {
                   <ArrowRight size={12} className="text-violet-400/40 shrink-0" />
                 </button>
               ))}
-              {totalPending > 4 && (
-                <p className="text-[10px] text-[#c8bfa8]/30 text-center pt-1">+{totalPending - 4} pendências a mais</p>
+              {totalPending > 5 && (
+                <p className="text-[10px] text-[#c8bfa8]/30 text-center pt-1">+{totalPending - 5} pendências a mais</p>
               )}
             </div>
           )}
