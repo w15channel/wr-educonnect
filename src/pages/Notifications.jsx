@@ -7,11 +7,19 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const COURSE_SLUGS = new Set(['tcc', 'psi', 'sex']);
+const SLUG_TO_PREFIX = { sex: 'SEX-', tcc: 'EDU-', psi: 'PSI-' };
+
 function useScopedPrefix() {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
-  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) {
+  // Legacy scoped routes: /adm/<slug>/... — include the slug in the prefix
+  if ((parts[0] === 'student' || parts[0] === 'adm') && COURSE_SLUGS.has(parts[1])) {
     return `/${parts[0]}/${parts[1]}`;
+  }
+  // Current flat routes: /adm/ring → prefix is just /adm
+  if (parts[0] === 'student' || parts[0] === 'adm') {
+    return `/${parts[0]}`;
   }
   return '';
 }
@@ -19,11 +27,9 @@ function useScopedPrefix() {
 function useCourseSlug() {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
-  if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return parts[1];
+  if ((parts[0] === 'student' || parts[0] === 'adm') && COURSE_SLUGS.has(parts[1])) return parts[1];
   return null;
 }
-
-const SLUG_TO_PREFIX = { sex: 'SEX-', tcc: 'EDU-', psi: 'PSI-' };
 
 export default function Notifications() {
   const { user: session } = useOutletContext() || {};
