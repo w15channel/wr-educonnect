@@ -496,6 +496,7 @@ export default function ScoreControl() {
   const [selectedCode, setSelectedCode] = useState(null);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('points');
+  const autoStudentEmail = new URLSearchParams(location.search).get('student') || null;
   const [retroLoading, setRetroLoading] = useState(false);
   const [draggedEmail, setDraggedEmail] = useState(null);
   const [customOrder, setCustomOrder] = useState([]);
@@ -698,6 +699,13 @@ export default function ScoreControl() {
   useEffect(() => {
     setCustomOrder(sortedRows);
   }, [sortedRows.map((r) => r.code.student_email).join('|')]);
+
+  // Auto-select student when arriving from a notification link (?student=email)
+  useEffect(() => {
+    if (!autoStudentEmail || selectedCode || codes.length === 0) return;
+    const match = codes.find((c) => c.student_email === autoStudentEmail);
+    if (match) setSelectedCode(match);
+  }, [autoStudentEmail, codes.length]);
 
   const sendRankingToDashboardMutation = useMutation({
     mutationFn: async () => {
