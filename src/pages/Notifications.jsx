@@ -134,7 +134,10 @@ export default function Notifications() {
               key={n.id}
               onClick={() => {
                 if (!n.is_read) markOneRead.mutate(n.id);
-                navigate(`${prefix}/scorecontrol`);
+                const dest = n.sender_email
+                  ? `${prefix}/scorecontrol?student=${encodeURIComponent(n.sender_email)}`
+                  : `${prefix}/scorecontrol`;
+                navigate(dest);
               }}
               className={`flex gap-3 p-4 rounded-2xl border cursor-pointer transition-all hover:shadow-md ${
                 !n.is_read
@@ -152,6 +155,11 @@ export default function Notifications() {
                 <p className="text-[11px] text-muted-foreground mt-1">
                   {format(new Date(n.created_date), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                 </p>
+                {n.sender_email && (
+                  <span className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                    Ver pontuação do aluno →
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {!n.is_read && <span className="w-2 h-2 bg-orange-500 rounded-full" />}
