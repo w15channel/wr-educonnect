@@ -421,7 +421,8 @@ export default function Ofensivas() {
       const created = payload.created || 0;
       const updated = payload.updated || 0;
       const skipped = payload.skipped || 0;
-      toast.success(`🔥 Ofensiva gerada: ${created} criada(s), ${updated} atualizada(s), ${skipped} mantida(s).`);
+      const themeLabel = payload.theme ? ` · ${payload.theme}` : '';
+      toast.success(`🔥 Ofensiva gerada${themeLabel}: ${created} criada(s), ${updated} atualizada(s), ${skipped} mantida(s).`);
     } catch (err) {
       toast.error('Erro: ' + (err?.response?.data?.error || err.message || 'tente novamente'));
     } finally {
@@ -473,7 +474,7 @@ export default function Ofensivas() {
         </select>
       </label>
       <p className="text-[11px] text-muted-foreground">
-        Serão usadas perguntas pré-salvas, sem consumo de créditos de IA. A duração cria uma ofensiva por dia a partir de hoje.
+        O gerador analisa o conteúdo da aula/módulo selecionado e cria 8 perguntas exclusivas do tema (fáceis: 1, 2, 4, 5, 7 e 8; medianas/baú: 3 e 6), sem consumo de créditos de IA. A duração cria uma ofensiva por dia a partir de hoje, variando as perguntas para não repetir.
       </p>
     </div>
   );
@@ -512,7 +513,7 @@ export default function Ofensivas() {
           <p className="text-lg font-bold">Nenhuma ofensiva para hoje</p>
           {isTeacher ? (
             <div className="mt-4 space-y-4">
-              <p className="text-sm text-muted-foreground/70">Escolha o módulo, o tema e a duração. Ao gerar, o sistema seleciona perguntas pré-salvas para cada dia do período.</p>
+              <p className="text-sm text-muted-foreground/70">Escolha o módulo, o tema e a duração. Ao gerar, o algoritmo compreende o conteúdo da aula e cria perguntas exclusivas do tema para cada dia do período.</p>
               {generationControls}
             </div>
           ) : (
