@@ -160,7 +160,7 @@ async function generateChallengeForCourse(
     // previously, an existing DailyChallenge for the date silently blocked any
     // update unless "force" was set, so choosing a different theme appeared to
     // do nothing.
-    const themeChanged = existing?.length > 0 && existing[0].lesson_id !== selectedLessonId;
+    const themeChanged = existing?.length > 0 && existing[0]?.lesson_id !== selectedLessonId;
 
     if (existing?.length && (force || themeChanged)) {
       await base44.asServiceRole.entities.DailyChallenge.update(existing[0].id, data);
