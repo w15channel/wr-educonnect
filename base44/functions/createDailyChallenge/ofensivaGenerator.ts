@@ -74,10 +74,10 @@ function takeUnique<T>(rng: () => number, list: T[], count: number): T[] {
     const i = Math.floor(rng() * pool.length);
     out.push(pool.splice(i, 1)[0]);
   }
-  // Se a lista for curta, completa ciclando
+  // Se a lista for curta, completa ciclando de forma uniforme
   let guard = 0;
   while (out.length < count && list.length && guard < count * 3) {
-    out.push(list[out.length % list.length]);
+    out.push(list[guard % list.length]);
     guard += 1;
   }
   return out;
@@ -308,10 +308,15 @@ export function resolveLessonMeta(moduleId?: string | null, lessonId?: string | 
   };
 }
 
-/** Seleciona aula do calendário anual (automação diária). */
+/** Seleciona aula do calendário anual (automação diária).
+ * Mantém o mesmo tema por ~7 dias e percorre todas as aulas de forma uniforme.
+ */
 export function pickLessonByDayOfYear(dayOfYear: number): LessonKnowledge {
   const all = flattenLessons();
-  const idx = Math.floor(Math.max(0, dayOfYear - 1) / 7) % all.length;
+  const safeDay = Number.isFinite(dayOfYear) ? Math.max(1, Math.floor(dayOfYear)) : 1;
+  // Semana do ano → índice; o módulo garante cobertura cíclica de todas as aulas
+  const weekIndex = Math.floor((safeDay - 1) / 7);
+  const idx = ((weekIndex % all.length) + all.length) % all.length;
   return all[idx];
 }
 
