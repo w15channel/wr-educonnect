@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -162,6 +162,7 @@ export default function Lessons() {
   });
   const organizeModulesMutation = useMutation({
     mutationFn: async (draftModules) => {
+      // `order` é uma sequência global porque o desbloqueio usa contagem linear de aulas.
       let nextOrder = 1;
       const updates = [];
       for (const module of draftModules) {
@@ -352,18 +353,24 @@ export default function Lessons() {
     });
   };
 
-  const moduleGroups = buildModuleDraftFromLessons(visibleLessons).filter((module) => module.lessons.length > 0);
-  const moduleEntries = [];
-  let runningOffset = 0;
-  moduleGroups.forEach((module) => {
-    moduleEntries.push({
-      moduleIndex: module.moduleNumber - 1,
-      moduleNumber: module.moduleNumber,
-      lessons: module.lessons,
-      globalOffset: runningOffset,
+  const moduleGroups = useMemo(
+    () => buildModuleDraftFromLessons(visibleLessons).filter((module) => module.lessons.length > 0),
+    [buildModuleDraftFromLessons, visibleLessons]
+  );
+  const moduleEntries = useMemo(() => {
+    const entries = [];
+    let runningOffset = 0;
+    moduleGroups.forEach((module) => {
+      entries.push({
+        moduleIndex: module.moduleNumber - 1,
+        moduleNumber: module.moduleNumber,
+        lessons: module.lessons,
+        globalOffset: runningOffset,
+      });
+      runningOffset += module.lessons.length;
     });
-    runningOffset += module.lessons.length;
-  });
+    return entries;
+  }, [moduleGroups]);
 
   const visibleLessonIds = new Set(visibleLessons.map((lesson) => lesson.id));
   const watchedCount = progresses.filter((p) => p.watched && visibleLessonIds.has(p.lesson_id) && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
