@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Play, Plus, ExternalLink, BookOpen, Video, FileText, Globe } from 'lucide-react';
+import { Play, Plus, ExternalLink, BookOpen, Video, FileText, Globe, GripVertical } from 'lucide-react';
 import LessonProgressPanel from '@/components/lessons/LessonProgressPanel';
 import ModuleBlock from '@/components/lessons/ModuleBlock';
 import ModuleCompletionCelebration from '@/components/lessons/ModuleCompletionCelebration';
@@ -31,6 +32,7 @@ import { getVideoEmbed } from '@/lib/videoEmbed';
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
 const LESSONS_PER_MODULE = 5;
+const MODULE_COUNT = 10;
 // localStorage key for completed modules per student+course
 const moduleCompKey = (email, course) => `wr_mod_completions_${course}_${email}`;
 
@@ -47,6 +49,18 @@ const stripHtml = (html = '') => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, '
 const summarizeContent = (content = '', maxLen = 280) => {
   const plain = stripHtml(content);
   return plain.length > maxLen ? `${plain.slice(0, maxLen).trim()}…` : plain;
+};
+
+const clampModuleNumber = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.max(1, Math.min(MODULE_COUNT, parsed));
+};
+
+const getLessonModuleNumber = (lesson, fallbackIndex = 0) => {
+  const explicitModule = clampModuleNumber(lesson?.module_number);
+  if (explicitModule) return explicitModule;
+  return Math.min(MODULE_COUNT, Math.floor(fallbackIndex / LESSONS_PER_MODULE) + 1);
 };
 
 const LESSON_TYPE_CONFIG = {
@@ -71,6 +85,8 @@ export default function Lessons() {
   const [summaryDraft, setSummaryDraft] = useState({});
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFile, setUploadFile] = useState({});
+  const [showModuleEditor, setShowModuleEditor] = useState(false);
+  const [moduleEditorState, setModuleEditorState] = useState([]);
 
   // Module completion state (persisted to localStorage)
   const [celebrationModule, setCelebrationModule] = useState(null); // { index, name }
@@ -143,6 +159,35 @@ export default function Lessons() {
       return adminApi.create('Announcement', payload);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['unlock-rules-lessons', userCourse] }); toast.success('Desbloqueio de aulas atualizado!'); },
+  });
+  const organizeModulesMutation = useMutation({
+    mutationFn: async (draftModules) => {
+      let nextOrder = 1;
+      const updates = [];
+      for (const module of draftModules) {
+        for (const lesson of module.lessons) {
+          const desiredModule = module.moduleNumber;
+          const desiredOrder = nextOrder;
+          nextOrder += 1;
+
+          const currentModule = clampModuleNumber(lesson.module_number);
+          const currentOrder = Number(lesson.order);
+          if (currentModule === desiredModule && Number.isFinite(currentOrder) && currentOrder === desiredOrder) continue;
+
+          updates.push(adminApi.update('RecordedLesson', lesson.id, { module_number: desiredModule, order: desiredOrder }));
+        }
+      }
+      if (updates.length === 0) return 0;
+      await Promise.all(updates);
+      return updates.length;
+    },
+    onSuccess: (updatedCount) => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      setShowModuleEditor(false);
+      setModuleEditorState([]);
+      toast.success(updatedCount > 0 ? 'Módulos reorganizados com sucesso!' : 'Nenhuma alteração para salvar.');
+    },
+    onError: (error) => toast.error(`Erro ao reorganizar módulos: ${error.message || 'tente novamente.'}`),
   });
 
   const upsertProgress = async (lessonId, patch) => {
@@ -270,11 +315,55 @@ export default function Lessons() {
     setCelebrationModule({ index: moduleIndex });
   }, [moduleCompletions, session, userCourse]);
 
-  // Build modules: groups of LESSONS_PER_MODULE
-  const modules = [];
-  for (let i = 0; i < visibleLessons.length; i += LESSONS_PER_MODULE) {
-    modules.push(visibleLessons.slice(i, i + LESSONS_PER_MODULE));
-  }
+  const buildModuleDraftFromLessons = useCallback((sourceLessons) => {
+    const grouped = Array.from({ length: MODULE_COUNT }, (_, index) => ({ moduleNumber: index + 1, lessons: [] }));
+    sourceLessons.forEach((lesson, lessonIndex) => {
+      const moduleNumber = getLessonModuleNumber(lesson, lessonIndex);
+      grouped[moduleNumber - 1].lessons.push(lesson);
+    });
+    return grouped;
+  }, []);
+
+  const openModuleEditor = () => {
+    setModuleEditorState(buildModuleDraftFromLessons(orderedLessons));
+    setShowModuleEditor(true);
+  };
+
+  const handleModuleDragEnd = (result) => {
+    const { source, destination } = result;
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    const sourceModuleNumber = Number(source.droppableId.replace('module-', ''));
+    const destinationModuleNumber = Number(destination.droppableId.replace('module-', ''));
+    if (!Number.isFinite(sourceModuleNumber) || !Number.isFinite(destinationModuleNumber)) return;
+
+    setModuleEditorState((prev) => {
+      const next = prev.map((module) => ({ ...module, lessons: [...module.lessons] }));
+      const sourceBucket = next[sourceModuleNumber - 1];
+      const destinationBucket = next[destinationModuleNumber - 1];
+      if (!sourceBucket || !destinationBucket) return prev;
+
+      const [movedLesson] = sourceBucket.lessons.splice(source.index, 1);
+      if (!movedLesson) return prev;
+
+      destinationBucket.lessons.splice(destination.index, 0, movedLesson);
+      return next;
+    });
+  };
+
+  const moduleGroups = buildModuleDraftFromLessons(visibleLessons).filter((module) => module.lessons.length > 0);
+  const moduleEntries = [];
+  let runningOffset = 0;
+  moduleGroups.forEach((module) => {
+    moduleEntries.push({
+      moduleIndex: module.moduleNumber - 1,
+      moduleNumber: module.moduleNumber,
+      lessons: module.lessons,
+      globalOffset: runningOffset,
+    });
+    runningOffset += module.lessons.length;
+  });
 
   const visibleLessonIds = new Set(visibleLessons.map((lesson) => lesson.id));
   const watchedCount = progresses.filter((p) => p.watched && visibleLessonIds.has(p.lesson_id) && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
@@ -339,6 +428,9 @@ export default function Lessons() {
           <div className="flex gap-2">
             <Button variant="outline" className="h-9 text-sm" onClick={() => updateUnlockMutation.mutate(unlockedLessonCount + 1)} disabled={updateUnlockMutation.isPending}>
               Liberar próxima aula
+            </Button>
+            <Button variant="outline" className="h-9 text-sm" onClick={openModuleEditor}>
+              Organizar módulos
             </Button>
             <Dialog open={showForm} onOpenChange={(v) => { setShowForm(v); if (!v) { setEditingLesson(null); setForm(EMPTY_FORM); } }}>
               <DialogTrigger asChild>
@@ -470,16 +562,16 @@ export default function Lessons() {
         </div>
       ) : (
         <div className="space-y-4">
-          {modules.map((moduleLessons, moduleIndex) => (
+          {moduleEntries.map((moduleEntry) => (
             <ModuleBlock
-              key={moduleIndex}
-              moduleIndex={moduleIndex}
-              lessons={moduleLessons}
+              key={moduleEntry.moduleNumber}
+              moduleIndex={moduleEntry.moduleIndex}
+              lessons={moduleEntry.lessons}
               isTeacher={isTeacher}
               progresses={progresses}
               studentIdentifiers={studentIdentifiers}
               unlockedLessonCount={unlockedLessonCount}
-              globalOffset={moduleIndex * LESSONS_PER_MODULE}
+              globalOffset={moduleEntry.globalOffset}
               commentDraft={commentDraft}
               setCommentDraft={setCommentDraft}
               summaryDraft={summaryDraft}
@@ -505,6 +597,90 @@ export default function Lessons() {
           ))}
         </div>
       )}
+
+      <Dialog
+        open={showModuleEditor}
+        onOpenChange={(open) => {
+          if (organizeModulesMutation.isPending) return;
+          setShowModuleEditor(open);
+          if (!open) setModuleEditorState([]);
+        }}
+      >
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Organizar módulos e ordem das aulas</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Arraste usando o botão com ícone para mover a aula entre módulos e ajustar a posição.
+          </p>
+          <DragDropContext onDragEnd={handleModuleDragEnd}>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 mt-2">
+              {moduleEditorState.map((module) => (
+                <div key={module.moduleNumber} className="rounded-xl border border-border bg-card p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-semibold text-sm">Módulo {module.moduleNumber}</p>
+                    <span className="text-xs text-muted-foreground">{module.lessons.length} aula(s)</span>
+                  </div>
+                  <Droppable droppableId={`module-${module.moduleNumber}`}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-2 min-h-[84px] rounded-lg border border-dashed p-2 transition-colors ${snapshot.isDraggingOver ? 'border-primary bg-primary/5' : 'border-border/70'}`}
+                      >
+                        {module.lessons.map((lesson, lessonIndex) => (
+                          <Draggable key={lesson.id} draggableId={String(lesson.id)} index={lessonIndex}>
+                            {(draggableProvided, draggableSnapshot) => (
+                              <div
+                                ref={draggableProvided.innerRef}
+                                {...draggableProvided.draggableProps}
+                                className={`rounded-lg border bg-background p-2 text-xs ${draggableSnapshot.isDragging ? 'border-primary shadow-md' : 'border-border'}`}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <button
+                                    type="button"
+                                    className="mt-0.5 rounded p-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+                                    aria-label={`Arrastar aula ${lesson.title}`}
+                                    {...draggableProvided.dragHandleProps}
+                                  >
+                                    <GripVertical size={14} />
+                                  </button>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-foreground leading-tight">{lesson.title}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                      {lesson.module_type === 'apostila' ? 'Apostila' : 'Módulo customizado'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              ))}
+            </div>
+          </DragDropContext>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowModuleEditor(false);
+                setModuleEditorState([]);
+              }}
+              disabled={organizeModulesMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={() => organizeModulesMutation.mutate(moduleEditorState)} disabled={organizeModulesMutation.isPending}>
+              {organizeModulesMutation.isPending ? 'Salvando...' : 'Salvar organização'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
