@@ -154,7 +154,15 @@ async function generateChallengeForCourse(
       created_by_admin: 'ofensiva-generator-v2',
     };
 
-    if (existing?.length && force) {
+    // Applies the selected theme whenever it differs from what's already stored,
+    // even without an explicit "force". This is what makes picking a new
+    // módulo/tema in the admin panel actually take effect immediately —
+    // previously, an existing DailyChallenge for the date silently blocked any
+    // update unless "force" was set, so choosing a different theme appeared to
+    // do nothing.
+    const themeChanged = existing?.length > 0 && existing[0]?.lesson_id !== selectedLessonId;
+
+    if (existing?.length && (force || themeChanged)) {
       await base44.asServiceRole.entities.DailyChallenge.update(existing[0].id, data);
       results.push({ date, id: existing[0].id, action: 'updated' });
     } else if (existing?.length) {
