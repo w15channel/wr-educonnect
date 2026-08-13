@@ -618,7 +618,7 @@ export default function Dashboard() {
       })()}
 
       {/* Convite: Terapeuta da Semana — mesmo tamanho/proporção das Pendências */}
-      {!isTeacher && <TherapistWeekInviteCard studentEmail={session?.email} />}
+      {!isTeacher && <TherapistWeekInviteCard />}
 
       {/* Student: progress + ranking */}
       {!isTeacher &&

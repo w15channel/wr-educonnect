@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2, RotateCcw } from 'lucide-react';
+import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2, ArrowLeftRight, Send } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,6 +29,7 @@ export default function TerapeutaDaSemana() {
   const [comment, setComment] = useState('');
   const [score, setScore] = useState([7]);
   const [celebrating, setCelebrating] = useState(false);
+  const [swapSelection, setSwapSelection] = useState(null); // id of first pairing selected for swap
 
   const { data: pairings = [] } = useQuery({
     queryKey: ['therapist-pairings'],
@@ -44,26 +45,6 @@ export default function TerapeutaDaSemana() {
     queryKey: ['therapist-week-settings'],
     queryFn: () => base44.entities.TherapistWeekSettings.list('-created_date', 1),
     enabled: isTeacher,
-  });
-  const currentRound = weekSettingsList[0]?.current_round || 1;
-
-  const { data: therapistOptIns = [] } = useQuery({
-    queryKey: ['therapist-optins', currentRound],
-    queryFn: () => base44.entities.TherapistWeekOptIn.filter({ round: currentRound }, '-created_date', 10000),
-    enabled: isTeacher,
-  });
-
-  const resetWeekPollMutation = useMutation({
-    mutationFn: async () => {
-      const current = weekSettingsList[0];
-      const nextRound = (current?.current_round || 1) + 1;
-      if (current) return base44.entities.TherapistWeekSettings.update(current.id, { current_round: nextRound });
-      return base44.entities.TherapistWeekSettings.create({ current_round: nextRound });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['therapist-week-settings'] });
-      toast.success('Enquete reiniciada! A pergunta voltará a aparecer para todos os alunos.');
-    },
   });
 
 
@@ -89,6 +70,33 @@ export default function TerapeutaDaSemana() {
     },
   });
 
+  const publishPairingsMutation = useMutation({
+    mutationFn: (pairingIds) =>
+      Promise.all(pairingIds.map(id => base44.entities.TherapistPairing.update(id, { is_published: true }))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] });
+      toast.success('✅ Lista publicada! Os alunos já podem ver os pareamentos.');
+    },
+  });
+
+  const swapPatientsMutation = useMutation({
+    mutationFn: async ({ pairingA, pairingB }) => {
+      await base44.entities.TherapistPairing.update(pairingA.id, {
+        patient_email: pairingB.patient_email,
+        patient_name: pairingB.patient_name,
+      });
+      await base44.entities.TherapistPairing.update(pairingB.id, {
+        patient_email: pairingA.patient_email,
+        patient_name: pairingA.patient_name,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] });
+      setSwapSelection(null);
+      toast.success('Pacientes trocados com sucesso.');
+    },
+  });
+
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
 
@@ -108,14 +116,10 @@ export default function TerapeutaDaSemana() {
       .map(c => c.student_email)
   );
 
+  // Todos os alunos ativos do domínio participam
   const activeDomainStudents = accessCodes.filter(isCodeInActiveDomain);
-  const optedInEmails = new Set(
-    therapistOptIns
-      .filter((optIn) => optIn.response === 'yes')
-      .map((optIn) => String(optIn.student_email || '').trim().toLowerCase())
-  );
-  const eligibleDomainStudents = activeDomainStudents.filter((student) => optedInEmails.has(String(student.student_email || '').trim().toLowerCase()));
-  const rankedDomainStudents = [...eligibleDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
+  const rankedDomainStudents = [...activeDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
+
 
   // Pareamento é completamente manual: o administrador gera novas rodadas quando desejar.
   // O lote "atual" é sempre o mais recente gerado; os demais ficam no histórico.
@@ -128,11 +132,12 @@ export default function TerapeutaDaSemana() {
   );
 
   const currentPairings = sortBySequence(domainPairingsAll.filter(p => p.pairing_date === latestPairingDate));
+  const publishedCurrentPairings = currentPairings.filter(p => p.is_published === true);
   const pastPairings = sortBySequence(domainPairingsAll.filter(p => p.pairing_date !== latestPairingDate));
 
-  // Pairings do aluno logado
-  const myTherapistPairing = currentPairings.find(p => p.therapist_email === session?.email);
-  const myPatientPairing = currentPairings.find(p => p.patient_email === session?.email);
+  // Pairings do aluno logado (apenas publicados)
+  const myTherapistPairing = publishedCurrentPairings.find(p => p.therapist_email === session?.email);
+  const myPatientPairing = publishedCurrentPairings.find(p => p.patient_email === session?.email);
 
   const getStudentInfo = (email) => {
     const code = accessCodes.find(c => c.student_email === email);
@@ -147,19 +152,9 @@ export default function TerapeutaDaSemana() {
   const handleGeneratePairings = async () => {
     await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
     const freshCodes = await base44.entities.AccessCode.list('-created_date', 10000);
-    const freshSettings = await base44.entities.TherapistWeekSettings.list('-created_date', 1);
-    const freshRound = freshSettings[0]?.current_round || 1;
-    const freshOptIns = await base44.entities.TherapistWeekOptIn.filter({ round: freshRound }, '-created_date', 10000);
-    const freshOptInEmails = new Set(
-      freshOptIns
-        .filter((optIn) => optIn.response === 'yes')
-        .map((optIn) => String(optIn.student_email || '').trim().toLowerCase())
-    );
-    const activeStudents = freshCodes
-      .filter(isCodeInActiveDomain)
-      .filter((student) => freshOptInEmails.has(String(student.student_email || '').trim().toLowerCase()));
+    const activeStudents = freshCodes.filter(isCodeInActiveDomain);
     if (activeStudents.length < 2) {
-      toast.error('São necessários pelo menos 2 alunos elegíveis que aceitaram o desafio nesta rodada.');
+      toast.error('São necessários pelo menos 2 alunos ativos neste domínio.');
       return;
     }
 
@@ -187,9 +182,10 @@ export default function TerapeutaDaSemana() {
         patient_email: patient.student_email,
         patient_name: patient.profile_name || patient.student_name,
         pairing_date: date,
+        is_published: false,
       });
     }
-    toast.success(`✅ ${pairs.length} pareamento(s) gerado(s) com ${activeStudents.length} aluno(s) do domínio.`);
+    toast.success(`✅ ${pairs.length} pareamento(s) rascunho gerado(s) com ${activeStudents.length} aluno(s). Reposicione os pares e publique quando estiver pronto.`);
   };
 
   const deleteReportMutation = useMutation({
@@ -233,13 +229,20 @@ export default function TerapeutaDaSemana() {
           <p className="text-sm text-muted-foreground mt-0.5">Pareamento manual, definido pelo administrador</p>
         </div>
         {isTeacher && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button onClick={handleGeneratePairings} className="gap-2" disabled={createPairingMutation.isPending}>
               <Shuffle size={15} /> Gerar Novos Pareamentos
             </Button>
-            <Button variant="outline" onClick={() => resetWeekPollMutation.mutate()} className="gap-2" disabled={resetWeekPollMutation.isPending}>
-              <RotateCcw size={15} /> Reiniciar Enquete
-            </Button>
+            {currentPairings.length > 0 && !currentPairings.every(p => p.is_published) && (
+              <Button
+                variant="default"
+                className="gap-2 bg-green-600 hover:bg-green-700"
+                onClick={() => publishPairingsMutation.mutate(currentPairings.filter(p => !p.is_published).map(p => p.id))}
+                disabled={publishPairingsMutation.isPending}
+              >
+                <Send size={15} /> Publicar Lista para Alunos
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -248,10 +251,10 @@ export default function TerapeutaDaSemana() {
         <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-sm text-foreground">Alunos elegíveis deste domínio</h3>
-              <p className="text-xs text-muted-foreground">Lista formada apenas por quem aceitou o desafio de terapeuta nesta rodada. Mais ativos ficam em dupla; até 10 menos ativos entram no sorteio aleatório.</p>
+              <h3 className="font-bold text-sm text-foreground">Alunos deste domínio</h3>
+              <p className="text-xs text-muted-foreground">Todos os alunos ativos participam. Mais ativos ficam em dupla; até 10 menos ativos entram no sorteio aleatório.</p>
             </div>
-            <Badge variant="secondary">{eligibleDomainStudents.length} alunos</Badge>
+            <Badge variant="secondary">{activeDomainStudents.length} alunos</Badge>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
             {rankedDomainStudents.map((student, index) => {
@@ -362,8 +365,41 @@ export default function TerapeutaDaSemana() {
                 <p>Nenhum pareamento ativo. Clique em "Gerar Novos Pareamentos".</p>
               </div>
             )}
+            {currentPairings.length > 0 && !currentPairings.every(p => p.is_published) && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-yellow-800">
+                <ArrowLeftRight size={15} className="shrink-0" />
+                <span>
+                  <strong>Rascunho</strong> — Os alunos ainda não podem ver estes pareamentos.
+                  Reposicione os pares clicando em <strong>Trocar</strong> em dois cartões seguidos, depois clique em{' '}
+                  <strong>Publicar Lista para Alunos</strong>.
+                </span>
+              </div>
+            )}
             {currentPairings.map(p => (
-              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} onDelete={() => deletePairingMutation.mutate(p.id)} />
+              <PairingCard
+                key={p.id}
+                pairing={p}
+                getStudentInfo={getStudentInfo}
+                showScores={isTeacher}
+                onDelete={() => deletePairingMutation.mutate(p.id)}
+                isDraft={!p.is_published}
+                swapSelectedId={swapSelection}
+                onSwap={() => {
+                  if (swapPatientsMutation.isPending) return;
+                  if (!swapSelection) {
+                    setSwapSelection(p.id);
+                  } else if (swapSelection === p.id) {
+                    setSwapSelection(null);
+                  } else {
+                    const pairingA = currentPairings.find(x => x.id === swapSelection);
+                    if (pairingA) {
+                      swapPatientsMutation.mutate({ pairingA, pairingB: p });
+                    } else {
+                      setSwapSelection(null);
+                    }
+                  }
+                }}
+              />
             ))}
           </TabsContent>
           <TabsContent value="past" className="mt-4 space-y-3">
@@ -376,11 +412,11 @@ export default function TerapeutaDaSemana() {
       )}
 
       {/* Lista atual para alunos */}
-      {!isTeacher && currentPairings.length > 0 && (
+      {!isTeacher && publishedCurrentPairings.length > 0 && (
         <div className="bg-card rounded-2xl border border-border p-5">
           <h3 className="font-bold text-sm text-foreground mb-4">Todos os Pareamentos desta Rodada</h3>
           <div className="space-y-2">
-            {currentPairings.map(p => (
+            {publishedCurrentPairings.map(p => (
               <div key={p.id} className="flex items-center gap-3 p-3 bg-secondary/40 rounded-xl">
                 <StudentAvatar email={p.therapist_email} size="sm" />
                 <span className="text-xs font-semibold text-foreground truncate flex-1">{getStudentInfo(p.therapist_email).name}</span>
@@ -447,11 +483,13 @@ export default function TerapeutaDaSemana() {
   );
 }
 
-function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
+function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, swapSelectedId, onSwap }) {
   const therapist = getStudentInfo(pairing.therapist_email);
   const patient = getStudentInfo(pairing.patient_email);
+  const isSwapSelected = swapSelectedId === pairing.id;
+  const isSwapPending = !!swapSelectedId && swapSelectedId !== pairing.id;
   return (
-    <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+    <div className={`bg-card rounded-2xl border p-4 space-y-3 transition-colors ${isSwapSelected ? 'border-yellow-400 ring-2 ring-yellow-300' : isDraft ? 'border-dashed border-yellow-300' : 'border-border'}`}>
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-1">
           {therapist.photo
@@ -475,6 +513,16 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete }) {
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {isDraft && onSwap && (
+            <button
+              onClick={onSwap}
+              className={`p-1.5 rounded-lg transition-colors text-xs font-semibold flex items-center gap-1 ${isSwapSelected ? 'bg-yellow-400 text-white' : isSwapPending ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'text-muted-foreground hover:text-yellow-700 hover:bg-yellow-50'}`}
+              title={isSwapSelected ? 'Cancelar seleção' : isSwapPending ? 'Trocar paciente com este par' : 'Selecionar para trocar paciente'}
+            >
+              <ArrowLeftRight size={13} />
+              {isSwapSelected ? 'Selecionado' : isSwapPending ? 'Trocar aqui' : 'Trocar'}
+            </button>
+          )}
           {pairing.therapist_submitted ? <CheckCircle2 size={13} className="text-green-500" /> : <div className="w-3 h-3 rounded-full bg-orange-300" />}
           {pairing.patient_submitted ? <CheckCircle2 size={13} className="text-green-500" /> : <div className="w-3 h-3 rounded-full bg-orange-300" />}
           {onDelete && (
