@@ -16,6 +16,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
@@ -89,9 +99,11 @@ export default function Lessons() {
   const [uploadFile, setUploadFile] = useState({});
   const [showModuleEditor, setShowModuleEditor] = useState(false);
   const [moduleEditorState, setModuleEditorState] = useState([]);
+  const [showPauseExitPrompt, setShowPauseExitPrompt] = useState(false);
   const videoContainerRef = useRef(null);
   const videoElementRef = useRef(null);
   const suppressPausePromptRef = useRef(false);
+  const pausePromptDecisionRef = useRef(null);
 
   const lockLandscape = useCallback(async () => {
     const orientationApi = window.screen?.orientation;
@@ -115,22 +127,28 @@ export default function Lessons() {
     if (!isMobile) return;
 
     const videoEl = videoElementRef.current;
+    let enteredFullscreen = false;
+
     if (videoEl && typeof videoEl.webkitEnterFullscreen === 'function') {
       try {
         videoEl.webkitEnterFullscreen();
-        await lockLandscape();
-        return;
+        enteredFullscreen = true;
       } catch {}
     }
 
-    const target = videoEl || videoContainerRef.current;
-    if (target?.requestFullscreen && !document.fullscreenElement) {
-      try {
-        await target.requestFullscreen();
-      } catch {}
+    if (!enteredFullscreen) {
+      const target = videoEl || videoContainerRef.current;
+      if (target?.requestFullscreen && !document.fullscreenElement) {
+        try {
+          await target.requestFullscreen();
+          enteredFullscreen = true;
+        } catch {}
+      }
     }
 
-    await lockLandscape();
+    if (enteredFullscreen || document.fullscreenElement) {
+      await lockLandscape();
+    }
   }, [isMobile, lockLandscape]);
 
   const exitMobileFullscreen = useCallback(async () => {
@@ -145,11 +163,9 @@ export default function Lessons() {
   const handleVideoDialogChange = useCallback((open) => {
     if (open) return;
     suppressPausePromptRef.current = true;
+    setShowPauseExitPrompt(false);
     setSelectedVideo(null);
     void exitMobileFullscreen();
-    setTimeout(() => {
-      suppressPausePromptRef.current = false;
-    }, 0);
   }, [exitMobileFullscreen]);
 
   const handleVideoPlay = useCallback(() => {
@@ -161,22 +177,59 @@ export default function Lessons() {
     if (!isMobile || suppressPausePromptRef.current) return;
     const videoEl = videoElementRef.current;
     if (!videoEl || videoEl.ended) return;
+    const isInFullscreen = Boolean(document.fullscreenElement) || Boolean(videoEl.webkitDisplayingFullscreen);
+    if (!isInFullscreen) return;
 
-    const shouldExitFullscreen = window.confirm('Deseja sair da tela cheia?');
-    if (shouldExitFullscreen) {
-      void exitMobileFullscreen();
-      return;
-    }
-    void requestMobileFullscreen();
-  }, [isMobile, exitMobileFullscreen, requestMobileFullscreen]);
+    setShowPauseExitPrompt(true);
+  }, [isMobile]);
 
   useEffect(() => {
     if (!selectedVideo || !isMobile) return;
-    const timer = window.setTimeout(() => {
-      void requestMobileFullscreen();
-    }, 250);
-    return () => window.clearTimeout(timer);
+    let frameA = 0;
+    let frameB = 0;
+    frameA = window.requestAnimationFrame(() => {
+      frameB = window.requestAnimationFrame(() => {
+        void requestMobileFullscreen();
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(frameA);
+      window.cancelAnimationFrame(frameB);
+    };
   }, [selectedVideo, isMobile, requestMobileFullscreen]);
+
+  const markKeepFullscreenAfterPause = useCallback(() => {
+    pausePromptDecisionRef.current = 'keep';
+  }, []);
+
+  const markLeaveFullscreenAfterPause = useCallback(() => {
+    pausePromptDecisionRef.current = 'leave';
+  }, []);
+
+  const handlePausePromptChange = useCallback((open) => {
+    if (open) {
+      setShowPauseExitPrompt(true);
+      return;
+    }
+    const decision = pausePromptDecisionRef.current;
+    pausePromptDecisionRef.current = null;
+    setShowPauseExitPrompt(false);
+    if (decision === 'leave') {
+      void exitMobileFullscreen();
+      return;
+    }
+  }, [exitMobileFullscreen]);
+
+  useEffect(() => {
+    if (selectedVideo) return;
+    setShowPauseExitPrompt(false);
+  }, [selectedVideo]);
+
+  useEffect(() => {
+    return () => {
+      void exitMobileFullscreen();
+    };
+  }, [exitMobileFullscreen]);
 
   // Module completion state (persisted to localStorage)
   const [celebrationModule, setCelebrationModule] = useState(null); // { index, name }
@@ -523,6 +576,20 @@ export default function Lessons() {
           })()}
         </DialogContent>
       </Dialog>
+      <AlertDialog open={showPauseExitPrompt} onOpenChange={handlePausePromptChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sair da tela cheia?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O vídeo foi pausado. Deseja sair da tela cheia?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={markKeepFullscreenAfterPause}>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={markLeaveFullscreenAfterPause}>Sim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-5 gap-3">
