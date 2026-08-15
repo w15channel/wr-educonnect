@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -28,6 +28,7 @@ import { MOD8 } from '@/lib/apostila/mod8';
 import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
 import { getVideoEmbed } from '@/lib/videoEmbed';
+import { useDeviceType } from '@/hooks/useDeviceType';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
@@ -71,6 +72,7 @@ const LESSON_TYPE_CONFIG = {
 
 export default function Lessons() {
   const { user: session } = useOutletContext();
+  const { isMobile } = useDeviceType();
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
 
@@ -87,6 +89,94 @@ export default function Lessons() {
   const [uploadFile, setUploadFile] = useState({});
   const [showModuleEditor, setShowModuleEditor] = useState(false);
   const [moduleEditorState, setModuleEditorState] = useState([]);
+  const videoContainerRef = useRef(null);
+  const videoElementRef = useRef(null);
+  const suppressPausePromptRef = useRef(false);
+
+  const lockLandscape = useCallback(async () => {
+    const orientationApi = window.screen?.orientation;
+    if (orientationApi?.lock) {
+      try {
+        await orientationApi.lock('landscape');
+      } catch {}
+    }
+  }, []);
+
+  const unlockOrientation = useCallback(async () => {
+    const orientationApi = window.screen?.orientation;
+    if (orientationApi?.unlock) {
+      try {
+        orientationApi.unlock();
+      } catch {}
+    }
+  }, []);
+
+  const requestMobileFullscreen = useCallback(async () => {
+    if (!isMobile) return;
+
+    const videoEl = videoElementRef.current;
+    if (videoEl && typeof videoEl.webkitEnterFullscreen === 'function') {
+      try {
+        videoEl.webkitEnterFullscreen();
+        await lockLandscape();
+        return;
+      } catch {}
+    }
+
+    const target = videoEl || videoContainerRef.current;
+    if (target?.requestFullscreen && !document.fullscreenElement) {
+      try {
+        await target.requestFullscreen();
+      } catch {}
+    }
+
+    await lockLandscape();
+  }, [isMobile, lockLandscape]);
+
+  const exitMobileFullscreen = useCallback(async () => {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      try {
+        await document.exitFullscreen();
+      } catch {}
+    }
+    await unlockOrientation();
+  }, [unlockOrientation]);
+
+  const handleVideoDialogChange = useCallback((open) => {
+    if (open) return;
+    suppressPausePromptRef.current = true;
+    setSelectedVideo(null);
+    void exitMobileFullscreen();
+    setTimeout(() => {
+      suppressPausePromptRef.current = false;
+    }, 0);
+  }, [exitMobileFullscreen]);
+
+  const handleVideoPlay = useCallback(() => {
+    suppressPausePromptRef.current = false;
+    void requestMobileFullscreen();
+  }, [requestMobileFullscreen]);
+
+  const handleVideoPause = useCallback(() => {
+    if (!isMobile || suppressPausePromptRef.current) return;
+    const videoEl = videoElementRef.current;
+    if (!videoEl || videoEl.ended) return;
+
+    const shouldExitFullscreen = window.confirm('Deseja sair da tela cheia?');
+    if (shouldExitFullscreen) {
+      void exitMobileFullscreen();
+      return;
+    }
+    void requestMobileFullscreen();
+  }, [isMobile, exitMobileFullscreen, requestMobileFullscreen]);
+
+  useEffect(() => {
+    if (!selectedVideo || !isMobile) return;
+    const timer = window.setTimeout(() => {
+      void requestMobileFullscreen();
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [selectedVideo, isMobile, requestMobileFullscreen]);
 
   // Module completion state (persisted to localStorage)
   const [celebrationModule, setCelebrationModule] = useState(null); // { index, name }
@@ -393,8 +483,8 @@ export default function Lessons() {
       {celebrating && <ParticipationCelebration message="Aula concluída! Continue assim! 🎉" onClose={() => setCelebrating(false)} />}
 
       {/* Video modal */}
-      <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+      <Dialog open={!!selectedVideo} onOpenChange={handleVideoDialogChange}>
+        <DialogContent ref={videoContainerRef} className="max-w-4xl p-0 overflow-hidden">
           <div className="p-4 border-b border-border bg-card">
             <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
           </div>
@@ -409,7 +499,16 @@ export default function Lessons() {
                 )}
                 {embed.type === 'video' && (
                   <div className="aspect-video bg-black">
-                    <video src={embed.src} className="w-full h-full" controls autoPlay playsInline />
+                    <video
+                      ref={videoElementRef}
+                      src={embed.src}
+                      className="w-full h-full"
+                      controls
+                      autoPlay
+                      playsInline
+                      onPlay={handleVideoPlay}
+                      onPause={handleVideoPause}
+                    />
                   </div>
                 )}
                 {embed.type === 'unsupported' && (
