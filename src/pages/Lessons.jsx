@@ -105,51 +105,26 @@ export default function Lessons() {
   const suppressPausePromptRef = useRef(false);
   const pausePromptDecisionRef = useRef(null);
 
-  const lockLandscape = useCallback(async () => {
-    const orientationApi = window.screen?.orientation;
-    if (orientationApi?.lock) {
-      try {
-        await orientationApi.lock('landscape');
-      } catch {}
-    }
-  }, []);
-
-  const unlockOrientation = useCallback(async () => {
-    const orientationApi = window.screen?.orientation;
-    if (orientationApi?.unlock) {
-      try {
-        orientationApi.unlock();
-      } catch {}
-    }
-  }, []);
-
   const requestMobileFullscreen = useCallback(async () => {
     if (!isMobile) return;
 
     const videoEl = videoElementRef.current;
-    let enteredFullscreen = false;
+    const container = videoEl?.parentElement || videoContainerRef.current;
 
-    if (videoEl && typeof videoEl.webkitEnterFullscreen === 'function') {
+    if (container?.requestFullscreen && !document.fullscreenElement) {
       try {
-        videoEl.webkitEnterFullscreen();
-        enteredFullscreen = true;
+        await container.requestFullscreen();
+        return;
       } catch {}
     }
 
-    if (!enteredFullscreen) {
-      const target = videoEl || videoContainerRef.current;
-      if (target?.requestFullscreen && !document.fullscreenElement) {
-        try {
-          await target.requestFullscreen();
-          enteredFullscreen = true;
-        } catch {}
-      }
+    // iOS Safari does not expose requestFullscreen for arbitrary elements.
+    if (videoEl && typeof videoEl.webkitEnterFullscreen === 'function') {
+      try {
+        videoEl.webkitEnterFullscreen();
+      } catch {}
     }
-
-    if (enteredFullscreen || document.fullscreenElement) {
-      await lockLandscape();
-    }
-  }, [isMobile, lockLandscape]);
+  }, [isMobile]);
 
   const exitMobileFullscreen = useCallback(async () => {
     if (document.fullscreenElement && document.exitFullscreen) {
@@ -157,8 +132,13 @@ export default function Lessons() {
         await document.exitFullscreen();
       } catch {}
     }
-    await unlockOrientation();
-  }, [unlockOrientation]);
+    const videoEl = videoElementRef.current;
+    if (videoEl?.webkitDisplayingFullscreen && typeof videoEl.webkitExitFullscreen === 'function') {
+      try {
+        videoEl.webkitExitFullscreen();
+      } catch {}
+    }
+  }, []);
 
   const handleVideoDialogChange = useCallback((open) => {
     if (open) return;
@@ -182,21 +162,6 @@ export default function Lessons() {
 
     setShowPauseExitPrompt(true);
   }, [isMobile]);
-
-  useEffect(() => {
-    if (!selectedVideo || !isMobile) return;
-    let frameA = 0;
-    let frameB = 0;
-    frameA = window.requestAnimationFrame(() => {
-      frameB = window.requestAnimationFrame(() => {
-        void requestMobileFullscreen();
-      });
-    });
-    return () => {
-      window.cancelAnimationFrame(frameA);
-      window.cancelAnimationFrame(frameB);
-    };
-  }, [selectedVideo, isMobile, requestMobileFullscreen]);
 
   const markKeepFullscreenAfterPause = useCallback(() => {
     pausePromptDecisionRef.current = 'keep';
@@ -537,7 +502,7 @@ export default function Lessons() {
 
       {/* Video modal */}
       <Dialog open={!!selectedVideo} onOpenChange={handleVideoDialogChange}>
-        <DialogContent ref={videoContainerRef} className="max-w-4xl p-0 overflow-hidden">
+        <DialogContent ref={videoContainerRef} className="video-dialog max-w-4xl p-0 overflow-hidden">
           <div className="p-4 border-b border-border bg-card">
             <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
           </div>
@@ -546,16 +511,16 @@ export default function Lessons() {
             return (
               <div>
                 {embed.type === 'iframe' && (
-                  <div className="aspect-video bg-black">
-                    <iframe src={embed.src} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" />
+                  <div className="video-player-frame bg-black">
+                    <iframe title={selectedVideo.title} src={embed.src} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" />
                   </div>
                 )}
                 {embed.type === 'video' && (
-                  <div className="aspect-video bg-black">
+                  <div className="video-player-frame bg-black">
                     <video
                       ref={videoElementRef}
                       src={embed.src}
-                      className="w-full h-full"
+                      className="w-full h-full object-contain"
                       controls
                       autoPlay
                       playsInline
