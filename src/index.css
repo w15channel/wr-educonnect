@@ -187,6 +187,49 @@
   }
 }
 
+.video-player-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: calc(100dvh - 7rem);
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.video-player-frame:fullscreen,
+.video-player-frame:-webkit-full-screen {
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  aspect-ratio: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-player-frame:fullscreen video,
+.video-player-frame:fullscreen iframe,
+.video-player-frame:-webkit-full-screen video,
+.video-player-frame:-webkit-full-screen iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 767px) {
+  .video-dialog {
+    width: 100vw;
+    max-width: none;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .video-player-frame {
+    aspect-ratio: auto;
+    height: min(56.25vw, calc(100dvh - 8rem));
+    min-height: 12rem;
+  }
+}
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
