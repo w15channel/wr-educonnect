@@ -221,6 +221,10 @@
  * video is fully adjusted to whatever screen size/orientation the device is
  * actually in, without any zoom/crop. It also sits above the dialog's dark
  * backdrop, avoiding a black overlay appearing between the player and video.
+ *
+ * z-index layering: Dialog/DialogOverlay (z-50) < this overlay (z-100) <
+ * the "exit fullscreen?" AlertDialog (z-[110], set in Lessons.jsx) so the
+ * pause/exit confirmation always stays visible above the fullscreen video.
  */
 .mobile-video-fullscreen {
   position: fixed;

@@ -515,7 +515,7 @@ export default function Lessons() {
                     <video
                       ref={videoElementRef}
                       src={embed.src}
-                      className={mobileFullscreenActive ? 'max-w-full max-h-full w-auto h-auto object-contain' : 'w-full h-full object-contain'}
+                      className="w-full h-full object-contain"
                       controls
                       autoPlay
                       playsInline
