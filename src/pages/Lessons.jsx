@@ -512,7 +512,7 @@ export default function Lessons() {
               <div>
                 {embed.type === 'iframe' && (
                   <div className="video-player-frame bg-black">
-                    <iframe title={selectedVideo.title} src={embed.src} className="w-full h-full object-contain" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" />
+                    <iframe title={selectedVideo.title} src={embed.src} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" />
                   </div>
                 )}
                 {embed.type === 'video' && (
