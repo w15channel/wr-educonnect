@@ -213,6 +213,30 @@
   object-fit: contain;
 }
 
+/*
+ * CSS-only "fullscreen" for mobile lesson videos. Instead of the native
+ * Fullscreen API (which forces a landscape rotation and lets the browser/OS
+ * crop-to-fill mobile-format/portrait videos), this simply expands the
+ * player to the viewport size while keeping `object-fit: contain`, so the
+ * video is fully adjusted to whatever screen size/orientation the device is
+ * actually in, without any zoom/crop. It also sits above the dialog's dark
+ * backdrop, avoiding a black overlay appearing between the player and video.
+ *
+ * z-index layering: Dialog/DialogOverlay (z-50) < this overlay (z-100) <
+ * the "exit fullscreen?" AlertDialog (z-[110], set in Lessons.jsx) so the
+ * pause/exit confirmation always stays visible above the fullscreen video.
+ */
+.mobile-video-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 767px) {
   .video-dialog {
     width: 100vw;
