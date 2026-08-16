@@ -6,7 +6,6 @@ import { adminApi } from '@/lib/adminApi';
 import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, MessageSquare, Send, Smile } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
-import TherapistWeekInviteCard from '@/components/dashboard/TherapistWeekInviteCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { capScore, formatScore } from '@/lib/scoreUtils';
@@ -616,9 +615,6 @@ export default function Dashboard() {
           </div>);
 
       })()}
-
-      {/* Convite: Terapeuta da Semana — mesmo tamanho/proporção das Pendências */}
-      {!isTeacher && <TherapistWeekInviteCard />}
 
       {/* Student: progress + ranking */}
       {!isTeacher &&

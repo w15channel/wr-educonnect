@@ -30,6 +30,7 @@ export default function TerapeutaDaSemana() {
   const [score, setScore] = useState([7]);
   const [celebrating, setCelebrating] = useState(false);
   const [swapSelection, setSwapSelection] = useState(null); // id of first pairing selected for swap
+  const [manualTherapist, setManualTherapist] = useState(null); // email of student selected as therapist for manual pairing
 
   const { data: pairings = [] } = useQuery({
     queryKey: ['therapist-pairings'],
@@ -188,6 +189,45 @@ export default function TerapeutaDaSemana() {
     toast.success(`✅ ${pairs.length} pareamento(s) rascunho gerado(s) com ${activeStudents.length} aluno(s). Reposicione os pares e publique quando estiver pronto.`);
   };
 
+  // Alunos já em dupla na rodada atual (para o pareamento manual)
+  const pairedEmails = new Set(currentPairings.flatMap(p => [p.therapist_email, p.patient_email]));
+
+  const handleManualStudentClick = (student) => {
+    if (createPairingMutation.isPending) return;
+    const email = student.student_email;
+    if (pairedEmails.has(email)) {
+      toast.info('Este aluno já está em uma dupla nesta rodada. Exclua o pareamento para reutilizá-lo.');
+      return;
+    }
+    if (!manualTherapist) {
+      setManualTherapist(email);
+      return;
+    }
+    if (manualTherapist === email) {
+      setManualTherapist(null);
+      return;
+    }
+    const therapistCode = activeDomainStudents.find(c => c.student_email === manualTherapist);
+    if (!therapistCode || pairedEmails.has(manualTherapist)) {
+      setManualTherapist(null);
+      return;
+    }
+    const hasDraftBatch = currentPairings.length > 0 && !currentPairings.every(p => p.is_published);
+    createPairingMutation.mutate({
+      therapist_email: therapistCode.student_email,
+      therapist_name: therapistCode.profile_name || therapistCode.student_name,
+      patient_email: student.student_email,
+      patient_name: student.profile_name || student.student_name,
+      pairing_date: hasDraftBatch ? latestPairingDate : todayStr,
+      is_published: false,
+    }, {
+      onSuccess: () => {
+        setManualTherapist(null);
+        toast.success('Dupla criada como rascunho. Publique a lista quando estiver pronta.');
+      },
+    });
+  };
+
   const deleteReportMutation = useMutation({
     mutationFn: ({ pairingId, field }) => {
       const data = field === 'therapist'
@@ -252,28 +292,53 @@ export default function TerapeutaDaSemana() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-sm text-foreground">Alunos deste domínio</h3>
-              <p className="text-xs text-muted-foreground">Todos os alunos ativos participam. Mais ativos ficam em dupla; até 10 menos ativos entram no sorteio aleatório.</p>
+              <p className="text-xs text-muted-foreground">
+                Monte as duplas manualmente: clique em um aluno para defini-lo como <strong>terapeuta</strong> e depois clique em outro para defini-lo como <strong>paciente</strong>. Você também pode usar "Gerar Novos Pareamentos" para criar um rascunho automático.
+              </p>
             </div>
             <Badge variant="secondary">{activeDomainStudents.length} alunos</Badge>
           </div>
+          {manualTherapist && (
+            <div className="bg-pink-50 border border-pink-200 rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm text-pink-800">
+              <UserCheck size={15} className="shrink-0" />
+              <span>
+                <strong>{getStudentInfo(manualTherapist).name}</strong> será o(a) terapeuta. Clique em outro aluno para escolher o(a) paciente, ou clique novamente para cancelar.
+              </span>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
-            {rankedDomainStudents.map((student, index) => {
-              const randomPoolSize = Math.min(10, Math.max(0, rankedDomainStudents.length - 2));
-              const activePairCount = Math.floor((rankedDomainStudents.length - randomPoolSize) / 2) * 2;
-              const inRandomPool = index >= activePairCount;
+            {rankedDomainStudents.map((student) => {
+              const isPaired = pairedEmails.has(student.student_email);
+              const isSelected = manualTherapist === student.student_email;
               return (
-                <div key={student.id} className="flex items-center justify-between gap-2 bg-secondary/40 rounded-xl px-3 py-2">
+                <button
+                  key={student.id}
+                  type="button"
+                  onClick={() => handleManualStudentClick(student)}
+                  className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition-colors ${
+                    isSelected
+                      ? 'bg-pink-100 ring-2 ring-pink-400'
+                      : isPaired
+                        ? 'bg-secondary/40 opacity-60 cursor-not-allowed'
+                        : 'bg-secondary/40 hover:bg-pink-50'
+                  }`}
+                  title={isPaired ? 'Já em dupla nesta rodada' : isSelected ? 'Clique para cancelar a seleção' : manualTherapist ? 'Clique para definir como paciente' : 'Clique para definir como terapeuta'}
+                >
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-foreground truncate">{student.profile_name || student.student_name || 'Sem nome'}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{student.student_email}</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <Badge className={`text-[9px] ${inRandomPool ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-pink-100 text-pink-700 border-pink-200'}`}>
-                      {inRandomPool ? 'Sorteio' : 'Mais ativo'}
-                    </Badge>
+                    {isSelected ? (
+                      <Badge className="text-[9px] bg-pink-500 text-white border-pink-500">Terapeuta selecionado</Badge>
+                    ) : isPaired ? (
+                      <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200">Em dupla</Badge>
+                    ) : (
+                      <Badge className="text-[9px] bg-secondary text-muted-foreground border-border">Disponível</Badge>
+                    )}
                     <span className="text-[10px] font-bold text-muted-foreground">{formatScore(getStudentTotalScore(student.student_email))} pts</span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
