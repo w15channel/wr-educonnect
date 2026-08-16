@@ -121,7 +121,6 @@ export default function Lessons() {
   useEffect(() => {
     const mq = window.matchMedia('(orientation: portrait)');
     const update = () => setIsPortrait(mq.matches);
-    update();
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
   }, []);

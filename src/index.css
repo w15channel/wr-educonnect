@@ -249,7 +249,7 @@
   top: 0;
   left: 0;
   width: 100dvh;
-  height: 100vw;
+  height: 100dvw;
   transform: rotate(90deg) translateY(-100%);
   transform-origin: top left;
 }
