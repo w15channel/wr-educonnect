@@ -212,7 +212,7 @@ export default function TerapeutaDaSemana() {
       setManualTherapist(null);
       return;
     }
-    const hasDraftBatch = currentPairings.length > 0 && !currentPairings.every(p => p.is_published);
+    const hasDraftBatch = currentPairings.some(p => !p.is_published);
     createPairingMutation.mutate({
       therapist_email: therapistCode.student_email,
       therapist_name: therapistCode.profile_name || therapistCode.student_name,
