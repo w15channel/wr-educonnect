@@ -215,12 +215,19 @@
 
 /*
  * CSS-only "fullscreen" for mobile lesson videos. Instead of the native
- * Fullscreen API (which forces a landscape rotation and lets the browser/OS
- * crop-to-fill mobile-format/portrait videos), this simply expands the
- * player to the viewport size while keeping `object-fit: contain`, so the
- * video is fully adjusted to whatever screen size/orientation the device is
- * actually in, without any zoom/crop. It also sits above the dialog's dark
- * backdrop, avoiding a black overlay appearing between the player and video.
+ * Fullscreen API (which lets the browser/OS crop-to-fill the video when it
+ * rotates to landscape), this simply expands the player to the viewport size
+ * while keeping `object-fit: contain`, so the video is fully adjusted to the
+ * available screen size of each device, without any zoom/crop. It also sits
+ * above the dialog's dark backdrop, avoiding a black overlay appearing
+ * between the player and video.
+ *
+ * When the device is physically held in portrait, the `--rotated` modifier
+ * rotates the overlay 90° so playback is forced into a landscape full-screen
+ * layout: the overlay is sized with the viewport dimensions swapped
+ * (width = 100dvh, height = 100dvw) and rotated around the top-left corner,
+ * so it exactly covers the screen with no scaling — the inner video keeps
+ * `object-fit: contain` and is never cropped.
  *
  * z-index layering: Dialog/DialogOverlay (z-50) < this overlay (z-100) <
  * the "exit fullscreen?" AlertDialog (z-[110], set in Lessons.jsx) so the
@@ -235,6 +242,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.mobile-video-fullscreen--rotated {
+  inset: auto;
+  top: 0;
+  left: 0;
+  width: 100dvh;
+  height: 100dvw;
+  transform: rotate(90deg) translateY(-100%);
+  transform-origin: top left;
 }
 
 @media (max-width: 767px) {
