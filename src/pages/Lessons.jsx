@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Play, Plus, ExternalLink, BookOpen, Video, FileText, Globe, GripVertical } from 'lucide-react';
+import { Play, Plus, ExternalLink, BookOpen, Video, FileText, Globe, GripVertical, Minimize2 } from 'lucide-react';
 import LessonProgressPanel from '@/components/lessons/LessonProgressPanel';
 import ModuleBlock from '@/components/lessons/ModuleBlock';
 import ModuleCompletionCelebration from '@/components/lessons/ModuleCompletionCelebration';
@@ -100,44 +100,26 @@ export default function Lessons() {
   const [showModuleEditor, setShowModuleEditor] = useState(false);
   const [moduleEditorState, setModuleEditorState] = useState([]);
   const [showPauseExitPrompt, setShowPauseExitPrompt] = useState(false);
+  const [isMobileFullscreen, setIsMobileFullscreen] = useState(false);
   const videoContainerRef = useRef(null);
   const videoElementRef = useRef(null);
   const suppressPausePromptRef = useRef(false);
   const pausePromptDecisionRef = useRef(null);
 
-  const requestMobileFullscreen = useCallback(async () => {
+  // Instead of relying on the native Fullscreen API (which forces a landscape
+  // rotation and lets the browser/OS crop-to-fill portrait/mobile-format
+  // videos), the mobile "fullscreen" mode below is a CSS-driven overlay that
+  // simply expands the existing <video> element to fill the viewport while
+  // keeping `object-fit: contain`. This adapts to whatever size/orientation
+  // the device actually is in, without cropping, and avoids the dialog's
+  // dark backdrop ever rendering on top of the video.
+  const requestMobileFullscreen = useCallback(() => {
     if (!isMobile) return;
-
-    const videoEl = videoElementRef.current;
-    const container = videoEl?.parentElement || videoContainerRef.current;
-
-    if (container?.requestFullscreen && !document.fullscreenElement) {
-      try {
-        await container.requestFullscreen();
-        return;
-      } catch {}
-    }
-
-    // iOS Safari does not expose requestFullscreen for arbitrary elements.
-    if (videoEl && typeof videoEl.webkitEnterFullscreen === 'function') {
-      try {
-        videoEl.webkitEnterFullscreen();
-      } catch {}
-    }
+    setIsMobileFullscreen(true);
   }, [isMobile]);
 
-  const exitMobileFullscreen = useCallback(async () => {
-    if (document.fullscreenElement && document.exitFullscreen) {
-      try {
-        await document.exitFullscreen();
-      } catch {}
-    }
-    const videoEl = videoElementRef.current;
-    if (videoEl?.webkitDisplayingFullscreen && typeof videoEl.webkitExitFullscreen === 'function') {
-      try {
-        videoEl.webkitExitFullscreen();
-      } catch {}
-    }
+  const exitMobileFullscreen = useCallback(() => {
+    setIsMobileFullscreen(false);
   }, []);
 
   const handleVideoDialogChange = useCallback((open) => {
@@ -145,23 +127,22 @@ export default function Lessons() {
     suppressPausePromptRef.current = true;
     setShowPauseExitPrompt(false);
     setSelectedVideo(null);
-    void exitMobileFullscreen();
+    exitMobileFullscreen();
   }, [exitMobileFullscreen]);
 
   const handleVideoPlay = useCallback(() => {
     suppressPausePromptRef.current = false;
-    void requestMobileFullscreen();
+    requestMobileFullscreen();
   }, [requestMobileFullscreen]);
 
   const handleVideoPause = useCallback(() => {
     if (!isMobile || suppressPausePromptRef.current) return;
     const videoEl = videoElementRef.current;
     if (!videoEl || videoEl.ended) return;
-    const isInFullscreen = Boolean(document.fullscreenElement) || Boolean(videoEl.webkitDisplayingFullscreen);
-    if (!isInFullscreen) return;
+    if (!isMobileFullscreen) return;
 
     setShowPauseExitPrompt(true);
-  }, [isMobile]);
+  }, [isMobile, isMobileFullscreen]);
 
   const markKeepFullscreenAfterPause = useCallback(() => {
     pausePromptDecisionRef.current = 'keep';
@@ -180,7 +161,7 @@ export default function Lessons() {
     pausePromptDecisionRef.current = null;
     setShowPauseExitPrompt(false);
     if (decision === 'leave') {
-      void exitMobileFullscreen();
+      exitMobileFullscreen();
       return;
     }
   }, [exitMobileFullscreen]);
@@ -188,11 +169,12 @@ export default function Lessons() {
   useEffect(() => {
     if (selectedVideo) return;
     setShowPauseExitPrompt(false);
+    setIsMobileFullscreen(false);
   }, [selectedVideo]);
 
   useEffect(() => {
     return () => {
-      void exitMobileFullscreen();
+      exitMobileFullscreen();
     };
   }, [exitMobileFullscreen]);
 
@@ -503,11 +485,14 @@ export default function Lessons() {
       {/* Video modal */}
       <Dialog open={!!selectedVideo} onOpenChange={handleVideoDialogChange}>
         <DialogContent ref={videoContainerRef} className="video-dialog max-w-4xl p-0 overflow-hidden">
-          <div className="p-4 border-b border-border bg-card">
-            <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
-          </div>
+          {!isMobileFullscreen && (
+            <div className="p-4 border-b border-border bg-card">
+              <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
+            </div>
+          )}
           {selectedVideo && (() => {
             const embed = getVideoEmbed(selectedVideo.video_url);
+            const mobileFullscreenActive = isMobile && isMobileFullscreen && embed.type === 'video';
             return (
               <div>
                 {embed.type === 'iframe' && (
@@ -516,11 +501,21 @@ export default function Lessons() {
                   </div>
                 )}
                 {embed.type === 'video' && (
-                  <div className="video-player-frame bg-black">
+                  <div className={mobileFullscreenActive ? 'mobile-video-fullscreen bg-black' : 'video-player-frame bg-black'}>
+                    {mobileFullscreenActive && (
+                      <button
+                        type="button"
+                        onClick={exitMobileFullscreen}
+                        aria-label="Sair da tela cheia"
+                        className="absolute top-3 right-3 z-10 rounded-full bg-black/60 p-2 text-white"
+                      >
+                        <Minimize2 size={18} />
+                      </button>
+                    )}
                     <video
                       ref={videoElementRef}
                       src={embed.src}
-                      className="w-full h-full object-contain"
+                      className={mobileFullscreenActive ? 'max-w-full max-h-full w-auto h-auto object-contain' : 'w-full h-full object-contain'}
                       controls
                       autoPlay
                       playsInline
@@ -535,14 +530,14 @@ export default function Lessons() {
                     {selectedVideo.video_url && <a href={selectedVideo.video_url} target="_blank" rel="noopener noreferrer" className="text-primary flex items-center gap-1 text-sm hover:underline"><ExternalLink size={14} /> Abrir externamente</a>}
                   </div>
                 )}
-                {selectedVideo.description && <div className="p-4 bg-card"><p className="text-sm text-muted-foreground">{selectedVideo.description}</p></div>}
+                {!mobileFullscreenActive && selectedVideo.description && <div className="p-4 bg-card"><p className="text-sm text-muted-foreground">{selectedVideo.description}</p></div>}
               </div>
             );
           })()}
         </DialogContent>
       </Dialog>
       <AlertDialog open={showPauseExitPrompt} onOpenChange={handlePausePromptChange}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[110]">
           <AlertDialogHeader>
             <AlertDialogTitle>Sair da tela cheia?</AlertDialogTitle>
             <AlertDialogDescription>
