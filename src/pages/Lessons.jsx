@@ -106,13 +106,26 @@ export default function Lessons() {
   const suppressPausePromptRef = useRef(false);
   const pausePromptDecisionRef = useRef(null);
 
-  // Instead of relying on the native Fullscreen API (which forces a landscape
-  // rotation and lets the browser/OS crop-to-fill portrait/mobile-format
-  // videos), the mobile "fullscreen" mode below is a CSS-driven overlay that
-  // simply expands the existing <video> element to fill the viewport while
-  // keeping `object-fit: contain`. This adapts to whatever size/orientation
-  // the device actually is in, without cropping, and avoids the dialog's
-  // dark backdrop ever rendering on top of the video.
+  // Instead of relying on the native Fullscreen API (which lets the browser/OS
+  // crop-to-fill the video when it rotates to landscape), the mobile
+  // "fullscreen" mode below is a CSS-driven overlay that expands the existing
+  // <video> element to fill the viewport while keeping `object-fit: contain`.
+  // When the device is physically in portrait, the overlay itself is rotated
+  // 90° via CSS (`.mobile-video-fullscreen--rotated`), forcing a landscape
+  // full-screen presentation that is fully fitted to the available screen of
+  // whatever device is used — never zoomed or cropped.
+  const [isPortrait, setIsPortrait] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)').matches : false
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia('(orientation: portrait)');
+    const update = () => setIsPortrait(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
   const requestMobileFullscreen = useCallback(() => {
     if (!isMobile) return;
     setIsMobileFullscreen(true);
@@ -501,7 +514,7 @@ export default function Lessons() {
                   </div>
                 )}
                 {embed.type === 'video' && (
-                  <div className={mobileFullscreenActive ? 'mobile-video-fullscreen bg-black' : 'video-player-frame bg-black'}>
+                  <div className={`${mobileFullscreenActive ? `mobile-video-fullscreen${isPortrait ? ' mobile-video-fullscreen--rotated' : ''}` : 'video-player-frame'} bg-black`}>
                     {mobileFullscreenActive && (
                       <button
                         type="button"
