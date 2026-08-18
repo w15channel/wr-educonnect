@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Play, Plus, ExternalLink, BookOpen, Video, FileText, Globe, GripVertical, Minimize2 } from 'lucide-react';
+import { Play, Plus, BookOpen, Video, FileText, Globe, GripVertical } from 'lucide-react';
 import LessonProgressPanel from '@/components/lessons/LessonProgressPanel';
 import ModuleBlock from '@/components/lessons/ModuleBlock';
 import ModuleCompletionCelebration from '@/components/lessons/ModuleCompletionCelebration';
@@ -16,16 +16,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
@@ -37,8 +27,7 @@ import { MOD7 } from '@/lib/apostila/mod7';
 import { MOD8 } from '@/lib/apostila/mod8';
 import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
-import { getVideoEmbed } from '@/lib/videoEmbed';
-import { useDeviceType } from '@/hooks/useDeviceType';
+import VideoPlayer from '@/components/video/VideoPlayer';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
@@ -82,14 +71,12 @@ const LESSON_TYPE_CONFIG = {
 
 export default function Lessons() {
   const { user: session } = useOutletContext();
-  const { isMobile } = useDeviceType();
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
 
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [coverUploading, setCoverUploading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [expandedLesson, setExpandedLesson] = useState(null);
   const [viewProgressLesson, setViewProgressLesson] = useState(null);
@@ -99,96 +86,12 @@ export default function Lessons() {
   const [uploadFile, setUploadFile] = useState({});
   const [showModuleEditor, setShowModuleEditor] = useState(false);
   const [moduleEditorState, setModuleEditorState] = useState([]);
-  const [showPauseExitPrompt, setShowPauseExitPrompt] = useState(false);
-  const [isMobileFullscreen, setIsMobileFullscreen] = useState(false);
-  const videoContainerRef = useRef(null);
-  const videoElementRef = useRef(null);
-  const suppressPausePromptRef = useRef(false);
-  const pausePromptDecisionRef = useRef(null);
 
-  // Instead of relying on the native Fullscreen API (which lets the browser/OS
-  // crop-to-fill the video when it rotates to landscape), the mobile
-  // "fullscreen" mode below is a CSS-driven overlay that expands the existing
-  // <video> element to fill the viewport while keeping `object-fit: contain`.
-  // When the device is physically in portrait, the overlay itself is rotated
-  // 90° via CSS (`.mobile-video-fullscreen--rotated`), forcing a landscape
-  // full-screen presentation that is fully fitted to the available screen of
-  // whatever device is used — never zoomed or cropped.
-  const [isPortrait, setIsPortrait] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)').matches : false
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia('(orientation: portrait)');
-    const update = () => setIsPortrait(mq.matches);
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
-
-  const requestMobileFullscreen = useCallback(() => {
-    if (!isMobile) return;
-    setIsMobileFullscreen(true);
-  }, [isMobile]);
-
-  const exitMobileFullscreen = useCallback(() => {
-    setIsMobileFullscreen(false);
-  }, []);
-
+  // A tela cheia (botão "Girar tela") e todos os demais controles agora ficam
+  // dentro do <VideoPlayer>, que é o player integrado da plataforma.
   const handleVideoDialogChange = useCallback((open) => {
-    if (open) return;
-    suppressPausePromptRef.current = true;
-    setShowPauseExitPrompt(false);
-    setSelectedVideo(null);
-    exitMobileFullscreen();
-  }, [exitMobileFullscreen]);
-
-  const handleVideoPlay = useCallback(() => {
-    suppressPausePromptRef.current = false;
-    requestMobileFullscreen();
-  }, [requestMobileFullscreen]);
-
-  const handleVideoPause = useCallback(() => {
-    if (!isMobile || suppressPausePromptRef.current) return;
-    const videoEl = videoElementRef.current;
-    if (!videoEl || videoEl.ended) return;
-    if (!isMobileFullscreen) return;
-
-    setShowPauseExitPrompt(true);
-  }, [isMobile, isMobileFullscreen]);
-
-  const markKeepFullscreenAfterPause = useCallback(() => {
-    pausePromptDecisionRef.current = 'keep';
+    if (!open) setSelectedVideo(null);
   }, []);
-
-  const markLeaveFullscreenAfterPause = useCallback(() => {
-    pausePromptDecisionRef.current = 'leave';
-  }, []);
-
-  const handlePausePromptChange = useCallback((open) => {
-    if (open) {
-      setShowPauseExitPrompt(true);
-      return;
-    }
-    const decision = pausePromptDecisionRef.current;
-    pausePromptDecisionRef.current = null;
-    setShowPauseExitPrompt(false);
-    if (decision === 'leave') {
-      exitMobileFullscreen();
-      return;
-    }
-  }, [exitMobileFullscreen]);
-
-  useEffect(() => {
-    if (selectedVideo) return;
-    setShowPauseExitPrompt(false);
-    setIsMobileFullscreen(false);
-  }, [selectedVideo]);
-
-  useEffect(() => {
-    return () => {
-      exitMobileFullscreen();
-    };
-  }, [exitMobileFullscreen]);
 
   // Module completion state (persisted to localStorage)
   const [celebrationModule, setCelebrationModule] = useState(null); // { index, name }
@@ -350,22 +253,6 @@ export default function Lessons() {
     reader.readAsDataURL(file);
   };
 
-  const handleCoverUpload = async (file) => {
-    if (!file) return;
-    try {
-      setCoverUploading(true);
-      const uploadResult = await base44.integrations.Core.UploadFile({ file });
-      const fileUrl = uploadResult?.file_url || uploadResult?.url || uploadResult?.secure_url;
-      if (!fileUrl) throw new Error('URL da capa não retornada');
-      setForm(prev => ({ ...prev, thumbnail_url: fileUrl }));
-      toast.success('Capa carregada!');
-    } catch (error) {
-      toast.error(`Falha ao enviar capa: ${error?.message || 'tente novamente.'}`);
-    } finally {
-      setCoverUploading(false);
-    }
-  };
-
   const openEdit = (lesson) => {
     setEditingLesson(lesson);
     setForm({ title: lesson.title, description: lesson.description || '', lesson_type: lesson.lesson_type || 'video_external', video_url: lesson.video_url || '', external_url: lesson.external_url || '', text_content: lesson.text_content || '', thumbnail_url: lesson.thumbnail_url || '', duration: lesson.duration || '', material_links: lesson.material_links || '', research_links: lesson.research_links || '', module_type: lesson.module_type || 'apostila', module_number: lesson.module_number || '', apostila_chapter_id: lesson.apostila_chapter_id || '', apostila_lesson_id: lesson.apostila_lesson_id || '' });
@@ -401,10 +288,6 @@ export default function Lessons() {
   };
 
   const handleSave = () => {
-    if (coverUploading) {
-      toast.error('Aguarde o envio da capa terminar antes de salvar.');
-      return;
-    }
     if (editingLesson) updateMutation.mutate({ id: editingLesson.id, data: buildLessonPayload() });
     else createMutation.mutate({ ...buildLessonPayload(), order: lessons.length + 1 });
   };
@@ -477,7 +360,7 @@ export default function Lessons() {
   const visibleLessonIds = new Set(visibleLessons.map((lesson) => lesson.id));
   const watchedCount = progresses.filter((p) => p.watched && visibleLessonIds.has(p.lesson_id) && (!isTeacher || studentIdentifiers.includes(normalizeStudentId(p.student_email)))).length;
   const progressPct = visibleLessons.length > 0 ? Math.round((watchedCount / visibleLessons.length) * 100) : 0;
-  const isSaveButtonDisabled = !form.title || coverUploading || createMutation.isPending || updateMutation.isPending;
+  const isSaveButtonDisabled = !form.title || createMutation.isPending || updateMutation.isPending;
 
   if (viewProgressLesson) {
     return <LessonProgressPanel lesson={viewProgressLesson} onBack={() => setViewProgressLesson(null)} />;
@@ -494,74 +377,21 @@ export default function Lessons() {
       )}
       {celebrating && <ParticipationCelebration message="Aula concluída! Continue assim! 🎉" onClose={() => setCelebrating(false)} />}
 
-      {/* Video modal */}
+      {/* Video modal — player integrado da plataforma */}
       <Dialog open={!!selectedVideo} onOpenChange={handleVideoDialogChange}>
-        <DialogContent ref={videoContainerRef} className="video-dialog max-w-4xl p-0 overflow-hidden">
-          {!isMobileFullscreen && (
-            <div className="p-4 border-b border-border bg-card">
-              <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
-            </div>
+        <DialogContent className="video-dialog max-w-4xl p-0 overflow-hidden">
+          <div className="p-4 border-b border-border bg-card">
+            <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
+          </div>
+          {selectedVideo && (
+            <VideoPlayer
+              url={selectedVideo.video_url}
+              title={selectedVideo.title}
+              poster={selectedVideo.thumbnail_url || ''}
+            />
           )}
-          {selectedVideo && (() => {
-            const embed = getVideoEmbed(selectedVideo.video_url);
-            const mobileFullscreenActive = isMobile && isMobileFullscreen && embed.type === 'video';
-            return (
-              <div>
-                {embed.type === 'iframe' && (
-                  <div className="video-player-frame bg-black">
-                    <iframe title={selectedVideo.title} src={embed.src} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" />
-                  </div>
-                )}
-                {embed.type === 'video' && (
-                  <div className={`${mobileFullscreenActive ? `mobile-video-fullscreen${isPortrait ? ' mobile-video-fullscreen--rotated' : ''}` : 'video-player-frame'} bg-black`}>
-                    {mobileFullscreenActive && (
-                      <button
-                        type="button"
-                        onClick={exitMobileFullscreen}
-                        aria-label="Sair da tela cheia"
-                        className="absolute top-3 right-3 z-10 rounded-full bg-black/60 p-2 text-white"
-                      >
-                        <Minimize2 size={18} />
-                      </button>
-                    )}
-                    <video
-                      ref={videoElementRef}
-                      src={embed.src}
-                      className="w-full h-full object-contain"
-                      controls
-                      autoPlay
-                      playsInline
-                      onPlay={handleVideoPlay}
-                      onPause={handleVideoPause}
-                    />
-                  </div>
-                )}
-                {embed.type === 'unsupported' && (
-                  <div className="aspect-video bg-muted flex items-center justify-center flex-col gap-3">
-                    <p className="text-muted-foreground text-sm">Vídeo não disponível para embed</p>
-                    {selectedVideo.video_url && <a href={selectedVideo.video_url} target="_blank" rel="noopener noreferrer" className="text-primary flex items-center gap-1 text-sm hover:underline"><ExternalLink size={14} /> Abrir externamente</a>}
-                  </div>
-                )}
-                {!mobileFullscreenActive && selectedVideo.description && <div className="p-4 bg-card"><p className="text-sm text-muted-foreground">{selectedVideo.description}</p></div>}
-              </div>
-            );
-          })()}
         </DialogContent>
       </Dialog>
-      <AlertDialog open={showPauseExitPrompt} onOpenChange={handlePausePromptChange}>
-        <AlertDialogContent className="z-[110]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Sair da tela cheia?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O vídeo foi pausado. Deseja sair da tela cheia?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={markKeepFullscreenAfterPause}>Não</AlertDialogCancel>
-            <AlertDialogAction onClick={markLeaveFullscreenAfterPause}>Sim</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-5 gap-3">
@@ -655,10 +485,14 @@ export default function Lessons() {
                   {form.lesson_type === 'content_external' && <Input placeholder="URL do material externo" value={form.external_url} onChange={e => setForm({ ...form, external_url: e.target.value })} />}
                   {form.lesson_type === 'text_written' && <Textarea placeholder="Conteúdo da aula em texto..." value={form.text_content} onChange={e => setForm({ ...form, text_content: e.target.value })} rows={8} />}
                   <div>
-                    <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Capa da Aula</label>
+                    <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Capa da Aula (URL da imagem)</label>
                     {form.thumbnail_url && <img src={form.thumbnail_url} alt="Capa" className="w-full h-28 object-cover rounded-xl mb-2 border border-border" />}
-                    <input type="file" accept="image/*" onChange={e => handleCoverUpload(e.target.files[0])} className="w-full text-xs text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer" />
-                    {coverUploading && <p className="text-xs text-muted-foreground mt-1">Enviando...</p>}
+                    <Input
+                      placeholder="Cole aqui o link da imagem de capa (https://...)"
+                      value={form.thumbnail_url}
+                      onChange={e => setForm({ ...form, thumbnail_url: e.target.value })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">Não é mais necessário enviar arquivo: copie o endereço da imagem e cole aqui.</p>
                   </div>
                   <Input placeholder="Duração (ex: 45 min)" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} />
                   <Input placeholder="Links de materiais (separados por vírgula)" value={form.material_links} onChange={e => setForm({ ...form, material_links: e.target.value })} />
