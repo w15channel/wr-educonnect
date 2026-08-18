@@ -15,7 +15,8 @@
         "quiz",
         "forum",
         "exam",
-        "therapist"
+        "therapist",
+        "ofensiva"
       ],
       "description": "Categoria do item pontuável"
     },

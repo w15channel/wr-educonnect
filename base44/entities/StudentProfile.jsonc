@@ -62,6 +62,24 @@
       "default": 0,
       "description": "Pontuação acadêmica/estudos: aulas assistidas, trabalhos entregues e provas"
     },
+    "pontuacao_total_manual": {
+      "type": "number",
+      "description": "Pontuação total definida manualmente pelo admin (sobrescreve o cálculo automático)"
+    },
+    "pontuacao_total_manual_ativa": {
+      "type": "boolean",
+      "default": false,
+      "description": "Quando true, a pontuação total manual substitui a calculada automaticamente"
+    },
+    "participacoes_manual": {
+      "type": "number",
+      "description": "Número de participações definido manualmente pelo admin"
+    },
+    "participacoes_manual_ativa": {
+      "type": "boolean",
+      "default": false,
+      "description": "Quando true, o número de participações manual substitui o calculado automaticamente"
+    },
     "dashboard_rank": {
       "type": "number",
       "description": "Posição publicada para o ranking da Dashboard"

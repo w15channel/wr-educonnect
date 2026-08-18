@@ -57,16 +57,17 @@ Deno.serve(async (req) => {
     const pts = roundScore(points_earned);
     const refId = `ofensiva:${challenge_id}:${student_email}`;
 
-    // Upsert the ScoreItem for this ofensiva response
+    // Busca pelo ref_id independente da categoria: itens legados foram salvos
+    // com category 'forum' e precisam ser migrados para 'ofensiva'.
     const existingItems = await base44.asServiceRole.entities.ScoreItem.filter(
       { student_email, ref_id: refId },
       '-created_date',
-      1
+      5
     );
 
     const scorePayload = {
       student_email,
-      category: 'forum',
+      category: 'ofensiva',
       ref_id: refId,
       ref_title: `Ofensiva Diária (${date || 'data'})`,
       score: pts,
@@ -77,7 +78,7 @@ Deno.serve(async (req) => {
 
     if (existingItems.length > 0) {
       const existing = existingItems[0];
-      if (roundScore(existing.score) !== pts) {
+      if (roundScore(existing.score) !== pts || existing.category !== 'ofensiva') {
         await base44.asServiceRole.entities.ScoreItem.update(existing.id, scorePayload);
       }
     } else {

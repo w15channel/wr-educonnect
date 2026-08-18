@@ -10,6 +10,7 @@ const CATEGORY_CONFIG = {
   quiz: { iconColor: 'bg-blue-100 text-blue-700' },
   forum: { iconColor: 'bg-green-100 text-green-700' },
   therapist: { iconColor: 'bg-pink-100 text-pink-700' },
+  ofensiva: { iconColor: 'bg-orange-100 text-red-600' },
 };
 
 export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxScore = 10, item, needsCorrection, onSave, saving, readOnly = false, children }) {
