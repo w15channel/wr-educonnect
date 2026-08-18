@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -8,12 +8,12 @@ import ScoreRow from '@/components/scores/ScoreRow';
 import ClosePeriodButton from '@/components/scores/ClosePeriodButton';
 import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap, Archive } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap, Archive, Flame, Pencil, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { capScore, formatScore, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES, parseUtcDate } from '@/lib/scoreUtils';
+import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES, parseUtcDate } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
 
 const CATEGORY_CONFIG = {
@@ -22,7 +22,8 @@ const CATEGORY_CONFIG = {
   quiz: { label: 'Prova', icon: Trophy, color: 'bg-blue-100 text-blue-700' },
   exam: { label: 'Prova do Módulo', icon: GraduationCap, color: 'bg-indigo-100 text-indigo-700' },
   forum: { label: 'Fórum', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
-  therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' }
+  therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' },
+  ofensiva: { label: 'Ofensiva Diária', icon: Flame, color: 'bg-orange-100 text-red-600' }
 };
 
 function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeacher }) {
@@ -53,6 +54,14 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     queryKey: ['student-profile-score', email],
     queryFn: () => base44.entities.StudentProfile.filter({ student_email: email, dashboard_course: activeCourse }, '-updated_date', 1)
   });
+  const { data: ofensivaResponses = [] } = useQuery({
+    queryKey: ['ofensiva-responses-score-detail', email, activeCourse],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: email, course: activeCourse }, '-date', 200)
+  });
+  const { data: dailyChallenges = [] } = useQuery({
+    queryKey: ['daily-challenges-score-detail', activeCourse],
+    queryFn: () => base44.entities.DailyChallenge.filter({ course: activeCourse }, '-date', 200)
+  });
 
   const [activeSection, setActiveSection] = useState('lessons');
 
@@ -60,6 +69,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     mutationFn: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
       const existing = scoreItems.find((s) => {
         if (category === 'exam') return s.category === 'exam' && (s.ref_id === ref_id || s.ref_id === `exam:${ref_id}`);
+        // Ofensivas legadas foram gravadas com category 'forum'; casamos apenas pelo ref_id.
+        if (category === 'ofensiva') return s.ref_id === ref_id;
         return s.category === category && s.ref_id === ref_id;
       });
       const normalizedScore = roundScore(String(score).replace(',', '.'));
@@ -87,6 +98,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       queryClient.setQueryData(['score-items', email], (old = []) => {
         const existing = old.find((s) => {
           if (category === 'exam') return s.category === 'exam' && (s.ref_id === ref_id || s.ref_id === `exam:${ref_id}`);
+          if (category === 'ofensiva') return s.ref_id === ref_id;
           return s.category === category && s.ref_id === ref_id;
         });
         const normalizedScore = roundScore(String(score).replace(',', '.'));
@@ -114,6 +126,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
   const getScoreItem = (category, ref_id, role) => scoreItems.find((s) => {
     if (category === 'exam') return s.category === 'exam' && (s.ref_id === ref_id || s.ref_id === `exam:${ref_id}`);
+    // Ofensivas legadas ficaram salvas com category 'forum' — casamos pelo ref_id.
+    if (category === 'ofensiva') return s.ref_id === ref_id;
     if (category === 'therapist') {
       return (s.category === 'therapist' && s.ref_id === ref_id) ||
         (s.category === 'task' && s.ref_id === `therapist_pairing:${ref_id}:${role}`);
@@ -152,13 +166,18 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     if (p.patient_email === email) ids.push(`therapist_pairing:${p.id}:patient`);
     return ids;
   }));
+  const ofensivaRefIdByResponse = (response) => `ofensiva:${response.challenge_id}:${email}`;
+  const sortedOfensivaResponses = [...ofensivaResponses].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  const ofensivaScoreRefIds = new Set(sortedOfensivaResponses.map(ofensivaRefIdByResponse));
+  const challengeById = new Map(dailyChallenges.map((c) => [c.id, c]));
 
   const totalScore = capScore(scoreItems.
   filter((s) => s.verified && (
   s.category === 'lesson' && lessonIds.has(s.ref_id) ||
 (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
   s.category === 'exam' && (examIds.has(s.ref_id) || examIds.has(String(s.ref_id || '').replace(/^exam:/, ''))) ||
-  s.category === 'forum' && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id)) ||
+  isOfensivaScoreItem(s) && ofensivaScoreRefIds.has(s.ref_id) ||
+  s.category === 'forum' && !isOfensivaScoreItem(s) && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id)) ||
   s.category === 'therapist' && myPairings.some((p) => p.id === s.ref_id) ||
   isTherapistScoreItem(s) && therapistScoreRefIds.has(s.ref_id))
   ).
@@ -191,7 +210,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   { key: 'tasks', label: 'Tarefas', icon: FileText },
   { key: 'exams', label: 'Provas', icon: GraduationCap },
   { key: 'forum', label: 'Fórum', icon: MessageSquare },
-  { key: 'therapist', label: 'Terapeutas', icon: Heart }];
+  { key: 'therapist', label: 'Terapeutas', icon: Heart },
+  { key: 'ofensivas', label: 'Ofensivas', icon: Flame }];
 
 
   const sectionPending = {
@@ -213,7 +233,10 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     therapist: sequencedPairings.some((p) => {
       const role = p.therapist_email === email ? 'therapist' : 'patient';
       return !scoreItems.find((s) => s.verified && ((s.category === 'therapist' && s.ref_id === p.id) || (s.category === 'task' && s.ref_id === `therapist_pairing:${p.id}:${role}`)));
-    })
+    }),
+    ofensivas: sortedOfensivaResponses.some((response) =>
+    !scoreItems.find((s) => s.verified && s.ref_id === ofensivaRefIdByResponse(response))
+    )
   };
 
   const uncorrectedTaskIds = new Set(
@@ -484,6 +507,45 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
           })}
           </>
         }
+
+        {activeSection === 'ofensivas' &&
+        <>
+            {sortedOfensivaResponses.length === 0 &&
+          <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação nas Ofensivas Diárias.</p>
+          }
+            {sortedOfensivaResponses.map((response) => {
+            const challenge = challengeById.get(response.challenge_id);
+            const refId = ofensivaRefIdByResponse(response);
+            const lessonRef = challenge?.lesson_ref ? ` (${challenge.lesson_ref})` : '';
+            return (
+              <ScoreRow
+                key={response.id || refId}
+                category="ofensiva"
+                icon={CATEGORY_CONFIG.ofensiva.icon}
+                refId={refId}
+                refTitle={`Ofensiva Diária — ${response.date || 'sem data'}${lessonRef}`}
+                maxScore={SCORE_RULES.ofensiva}
+                item={getScoreItem('ofensiva', refId)}
+                onSave={(data) => updateScoreMutation.mutate(data)}
+                saving={updateScoreMutation.isPending}
+                readOnly={!isTeacher}>
+                
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-semibold">
+                      🔥 {response.questions_answered || 0}/8 perguntas
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">
+                      Pontos apurados: {formatScore(response.points_earned || 0, 3)}
+                    </span>
+                    {challenge?.lesson_ref &&
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold">{challenge.lesson_ref}</span>
+                  }
+                  </div>
+                </ScoreRow>);
+
+          })}
+          </>
+        }
       </div>
     </div>);
 
@@ -500,6 +562,8 @@ export default function ScoreControl() {
   const [retroLoading, setRetroLoading] = useState(false);
   const [draggedEmail, setDraggedEmail] = useState(null);
   const [customOrder, setCustomOrder] = useState([]);
+  const [editingScore, setEditingScore] = useState(null);
+  const [editingParticipations, setEditingParticipations] = useState(null);
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
   const isTeacher = session?.role === 'admin';
@@ -650,7 +714,8 @@ export default function ScoreControl() {
     s.category === 'lesson' && lessonIds.has(s.ref_id) ||
     (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
     s.category === 'exam' ||
-    s.category === 'forum' && (studentForumPostIds.has(s.ref_id) || studentForumReplyIds.has(s.ref_id)) ||
+    isOfensivaScoreItem(s) ||
+    s.category === 'forum' && !isOfensivaScoreItem(s) && (studentForumPostIds.has(s.ref_id) || studentForumReplyIds.has(s.ref_id)) ||
     s.category === 'therapist' && coursePairingIds.has(s.ref_id) ||
     isTherapistScoreItem(s) && coursePairingIds.has(String(s.ref_id || '').split(':')[1]))
     ).
@@ -672,6 +737,18 @@ export default function ScoreControl() {
     return { count };
   };
 
+  // O total automático é caro de calcular por aluno; memorizamos por e-mail para não
+  // recalcular a cada digitação na busca ou a cada tecla nos campos de edição inline.
+  const courseScoreTotalByEmail = useMemo(() => {
+    const totals = new Map();
+    for (const code of codes) {
+      const studentEmail = code.student_email;
+      if (!studentEmail || totals.has(studentEmail)) continue;
+      totals.set(studentEmail, capScore(getCourseScoreTotal(studentEmail)));
+    }
+    return totals;
+  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, therapistPairings, activeCourse]);
+
   const sortedRows = filtered.
   map((code) => {
     const hasPending = courseSubmissions.some((s) =>
@@ -680,10 +757,18 @@ export default function ScoreControl() {
     !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === code.student_email && si.verified)
     );
     const stats = getParticipationStats(code.student_email);
+    const profile = studentProfiles.find((p) => p.student_email === code.student_email && p.dashboard_course === activeCourse);
     const savedProfile = studentProfiles.find((p) => p.student_email === code.student_email && p.dashboard_course === activeCourse && typeof p.points === 'number');
-    const totalScore = capScore(code.pontuacao_total ?? savedProfile?.pontuacao_total ?? savedProfile?.points ?? 0);
-    const participations = stats.count;
-    return { code, hasPending, totalScore, participations };
+    const pontuacaoCalculada = capScore(code.pontuacao_total ?? savedProfile?.pontuacao_total ?? savedProfile?.points ?? 0);
+    // Recalculada a partir dos ScoreItems — é para ela que o botão "Auto" volta,
+    // já que pontuacao_total é sobrescrito enquanto o override manual estiver ativo.
+    const pontuacaoAutomatica = courseScoreTotalByEmail.get(code.student_email) ?? 0;
+    const manualScoreActive = profile?.pontuacao_total_manual_ativa === true && Number.isFinite(Number(profile?.pontuacao_total_manual));
+    const totalScore = manualScoreActive ? capScore(profile.pontuacao_total_manual) : pontuacaoCalculada;
+    const participacoesCalculadas = stats.count;
+    const manualParticipationsActive = profile?.participacoes_manual_ativa === true && Number.isFinite(Number(profile?.participacoes_manual));
+    const participations = manualParticipationsActive ? Math.max(0, Math.round(Number(profile.participacoes_manual))) : participacoesCalculadas;
+    return { code, hasPending, totalScore, participations, pontuacaoCalculada, pontuacaoAutomatica, participacoesCalculadas, manualScoreActive, manualParticipationsActive };
   }).
   sort((a, b) => {
     if (sortBy === 'alpha') return (a.code.profile_name || a.code.student_name || '').localeCompare(b.code.profile_name || b.code.student_name || '');
@@ -696,6 +781,11 @@ export default function ScoreControl() {
     return (b.hasPending ? 1 : 0) - (a.hasPending ? 1 : 0);
   });
 
+  // A ordem manual (drag & drop) é preservada em customOrder, mas os valores de cada linha
+  // precisam refletir sempre os dados mais recentes — por isso resolvemos pelo e-mail.
+  const rowByEmail = new Map(sortedRows.map((row) => [row.code.student_email, row]));
+  const resolveRow = (row) => rowByEmail.get(row?.code?.student_email) || row;
+
   useEffect(() => {
     setCustomOrder(sortedRows);
   }, [sortedRows.map((r) => r.code.student_email).join('|')]);
@@ -707,9 +797,61 @@ export default function ScoreControl() {
     if (match) setSelectedCode(match);
   }, [autoStudentEmail, codes.length]);
 
+  const upsertProfileData = async (code, data) => {
+    const existing = studentProfiles.find((p) => p.student_email === code.student_email && p.dashboard_course === activeCourse);
+    const payload = {
+      student_email: code.student_email,
+      full_name: code.profile_name || code.student_name || code.student_email,
+      dashboard_course: activeCourse,
+      ...data
+    };
+    if (existing) return adminApi.update('StudentProfile', existing.id, payload);
+    return adminApi.create('StudentProfile', payload);
+  };
+
+  const saveManualScoreMutation = useMutation({
+    mutationFn: async ({ code, value, active, calculada }) => {
+      const effective = capScore(active ? value : calculada);
+      await upsertProfileData(code, {
+        // Ao desativar o override preservamos o último valor manual gravado.
+        ...(active ? { pontuacao_total_manual: effective } : {}),
+        pontuacao_total_manual_ativa: active,
+        points: effective,
+        pontuacao_total: effective
+      });
+      if (code.id) await adminApi.update('AccessCode', code.id, { pontuacao_total: effective });
+      return effective;
+    },
+    onSuccess: () => {
+      setEditingScore(null);
+      queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      toast.success('Pontuação total atualizada!');
+    },
+    onError: (error) => toast.error('Erro ao salvar pontuação: ' + (error?.message || 'tente novamente'))
+  });
+
+  const saveManualParticipationsMutation = useMutation({
+    mutationFn: async ({ code, value, active }) => {
+      const effective = Math.max(0, Math.round(Number(value) || 0));
+      await upsertProfileData(code, {
+        ...(active ? { participacoes_manual: effective } : {}),
+        participacoes_manual_ativa: active
+      });
+      return effective;
+    },
+    onSuccess: () => {
+      setEditingParticipations(null);
+      queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      toast.success('Participações atualizadas!');
+    },
+    onError: (error) => toast.error('Erro ao salvar participações: ' + (error?.message || 'tente novamente'))
+  });
+
   const sendRankingToDashboardMutation = useMutation({
     mutationFn: async () => {
-      const rankedStudents = customOrder.length ? customOrder : sortedRows;
+      const rankedStudents = (customOrder.length ? customOrder : sortedRows).map(resolveRow);
 
       for (const [index, item] of rankedStudents.entries()) {
         const code = item.code;
@@ -736,7 +878,7 @@ export default function ScoreControl() {
 
   const saveOrderMutation = useMutation({
     mutationFn: async () => {
-      for (const [index, item] of customOrder.entries()) {
+      for (const [index, item] of customOrder.map(resolveRow).entries()) {
         const code = item.code;
         const existing = studentProfiles.find((p) => p.student_email === code.student_email && p.dashboard_course === activeCourse);
         const data = {
@@ -825,13 +967,16 @@ export default function ScoreControl() {
         </div> :
 
       <div className="space-y-2">
-          {customOrder.map(({ code, hasPending, totalScore, participations }, index) => {
+          {customOrder.map((orderedRow, index) => {
+          const { code, hasPending, totalScore, participations, pontuacaoAutomatica, participacoesCalculadas, manualScoreActive, manualParticipationsActive } = resolveRow(orderedRow);
           const displayName = code.profile_name || code.student_name || 'Sem nome';
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
+          const isEditingScoreRow = editingScore?.email === code.student_email;
+          const isEditingParticipationsRow = editingParticipations?.email === code.student_email;
           return (
             <div
               key={code.id}
-              draggable={isTeacher}
+              draggable={isTeacher && !isEditingScoreRow && !isEditingParticipationsRow}
               onDragStart={() => setDraggedEmail(code.student_email)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => {
@@ -864,17 +1009,121 @@ export default function ScoreControl() {
                     {isTeacher && <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>}
                   </div>
                   <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
-                    {isTeacher &&
-                <div className="flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-xl" title="Aulas assistidas + entregas + fórum + monitoria">
+                    {isTeacher && (
+                isEditingParticipationsRow ?
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    value={editingParticipations.value}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setEditingParticipations({ email: code.student_email, value: e.target.value })}
+                    className="w-16 h-8 text-xs" />
+                        <Button
+                    size="sm"
+                    className="h-8 px-2"
+                    title="Salvar participações"
+                    disabled={saveManualParticipationsMutation.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      saveManualParticipationsMutation.mutate({ code, value: editingParticipations.value, active: true });
+                    }}>
+                          <Check size={13} />
+                        </Button>
+                        <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2"
+                    title="Cancelar"
+                    onClick={(e) => { e.stopPropagation(); setEditingParticipations(null); }}>
+                          <X size={13} />
+                        </Button>
+                        <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 text-[10px] font-bold"
+                    title="Voltar ao número calculado automaticamente"
+                    disabled={saveManualParticipationsMutation.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      saveManualParticipationsMutation.mutate({ code, value: participacoesCalculadas, active: false });
+                    }}>
+                          Auto
+                        </Button>
+                      </div> :
+
+                <button
+                  type="button"
+                  title={manualParticipationsActive ? 'Participações definidas manualmente — clique para editar' : 'Aulas assistidas + entregas + fórum + monitoria — clique para editar'}
+                  onClick={(e) => { e.stopPropagation(); setEditingParticipations({ email: code.student_email, value: String(participations) }); }}
+                  className={`flex items-center gap-1 bg-blue-50 border px-2.5 py-1.5 rounded-xl transition-colors hover:border-blue-400 ${manualParticipationsActive ? 'border-blue-500 border-dashed' : 'border-blue-200'}`}>
                         <Activity size={11} className="text-blue-500" />
                         <span className="text-xs font-bold text-blue-700">{participations}</span>
-                      </div>
-                }
-                    {isTeacher ?
-                <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl">
+                        {manualParticipationsActive && <span className="text-[9px] font-bold uppercase text-blue-600">manual</span>}
+                        <Pencil size={10} className="text-blue-500" />
+                      </button>
+                )}
+                    {isTeacher ? (
+                isEditingScoreRow ?
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                    type="text"
+                    inputMode="decimal"
+                    autoFocus
+                    value={editingScore.value}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setEditingScore({ email: code.student_email, value: e.target.value })}
+                    className="w-20 h-8 text-xs" />
+                        <Button
+                    size="sm"
+                    className="h-8 px-2"
+                    title="Salvar pontuação"
+                    disabled={saveManualScoreMutation.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      saveManualScoreMutation.mutate({
+                        code,
+                        value: roundScore(String(editingScore.value || 0).replace(',', '.')),
+                        active: true,
+                        calculada: pontuacaoAutomatica
+                      });
+                    }}>
+                          <Check size={13} />
+                        </Button>
+                        <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2"
+                    title="Cancelar"
+                    onClick={(e) => { e.stopPropagation(); setEditingScore(null); }}>
+                          <X size={13} />
+                        </Button>
+                        <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 text-[10px] font-bold"
+                    title="Voltar à pontuação calculada automaticamente"
+                    disabled={saveManualScoreMutation.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      saveManualScoreMutation.mutate({ code, value: pontuacaoAutomatica, active: false, calculada: pontuacaoAutomatica });
+                    }}>
+                          Auto
+                        </Button>
+                      </div> :
+
+                <button
+                  type="button"
+                  title={manualScoreActive ? `Pontuação manual (cálculo automático: ${formatScore(pontuacaoAutomatica)}) — clique para editar` : 'Pontos publicados — clique para editar'}
+                  onClick={(e) => { e.stopPropagation(); setEditingScore({ email: code.student_email, value: formatScore(totalScore) }); }}
+                  className={`flex items-center gap-1 bg-yellow-50 border px-3 py-1.5 rounded-xl transition-colors hover:border-yellow-400 ${manualScoreActive ? 'border-yellow-500 border-dashed' : 'border-yellow-200'}`}>
                         <Star size={11} className="text-yellow-500 fill-yellow-500" />
                         <span className="text-sm font-black text-yellow-700">{formatScore(totalScore)}</span>
-                      </div> :
+                        {manualScoreActive && <span className="text-[9px] font-bold uppercase text-yellow-600">manual</span>}
+                        <Pencil size={10} className="text-yellow-600" />
+                      </button>
+                ) :
 
                 <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl" title="Pontos publicados">

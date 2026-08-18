@@ -7,6 +7,7 @@ export const SCORE_RULES = {
   quiz: 50,
   exam: 50,
   therapist: 10,
+  ofensiva: 1,
   liveAttendance: 0,
 };
 
@@ -30,6 +31,12 @@ export function formatScore(value, decimalPlaces = SCORE_DECIMAL_PLACES) {
 
 export function isTherapistScoreItem(item) {
   return item?.category === 'therapist' || String(item?.ref_id || '').startsWith('therapist_pairing:');
+}
+
+// Itens de ofensiva legados foram salvos com category 'forum' pela function syncOfensivaScore;
+// por isso reconhecemos também pelo prefixo do ref_id.
+export function isOfensivaScoreItem(item) {
+  return item?.category === 'ofensiva' || String(item?.ref_id || '').startsWith('ofensiva:');
 }
 
 export function isStudyScoreItem(item) {
