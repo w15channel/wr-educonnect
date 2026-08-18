@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import VideoPlayer from '@/components/video/VideoPlayer';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -630,12 +631,9 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">Assista quando quiser para aprender a usar o site</p>
               </div>
             </div>
-            <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ aspectRatio: '16 / 9' }}>
-              <iframe
-                src="https://drive.google.com/file/d/1cIKz1staWdnYROSBlyfXh7H3bjX7vb3w/preview"
-                allow="autoplay"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
+            <div className="rounded-xl overflow-hidden border border-border">
+              <VideoPlayer
+                url="https://drive.google.com/file/d/1cIKz1staWdnYROSBlyfXh7H3bjX7vb3w/preview"
                 title="Tutorial da Plataforma"
               />
             </div>

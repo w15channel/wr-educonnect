@@ -29,6 +29,16 @@
       "type": "string",
       "description": "Email do admin que encerrou o m\u00f3dulo"
     },
+    "period_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "In\u00edcio do per\u00edodo do m\u00f3dulo \u2014 usado para filtrar atividades por m\u00f3dulo"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fim do per\u00edodo do m\u00f3dulo \u2014 usado para filtrar atividades por m\u00f3dulo"
+    },
     "snapshot": {
       "type": "array",
       "description": "Pontua\u00e7\u00e3o geral congelada de cada aluno no momento do encerramento",

@@ -8,7 +8,7 @@ import ScoreRow from '@/components/scores/ScoreRow';
 import ClosePeriodButton from '@/components/scores/ClosePeriodButton';
 import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap, Archive, Flame, Pencil, Check, X } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap, Archive, Flame, Pencil, Check, X, Layers, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,23 +26,50 @@ const CATEGORY_CONFIG = {
   ofensiva: { label: 'Ofensiva Diária', icon: Flame, color: 'bg-orange-100 text-red-600' }
 };
 
-function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeacher }) {
+// ── Filtro por módulo ────────────────────────────────────────────────────────
+// Aulas e tarefas guardam o módulo em `module_number`; provas guardam em
+// `module_ref` como texto ('mod1'). Já fórum, terapeutas, ofensivas e monitoria
+// não têm módulo próprio — nesses casos usamos a janela de datas do período
+// (ModuleClosure) correspondente ao módulo escolhido.
+const MODULE_ALL = 'all';
+
+const parseModuleNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  const digits = String(value).match(/\d+/);
+  const parsed = digits ? Number(digits[0]) : Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+// Sem data conhecida não descartamos o registro: é melhor contar a mais do que
+// sumir com pontuação já lançada.
+const withinWindow = (dateLike, start, end) => {
+  const date = parseUtcDate(dateLike);
+  if (!date) return true;
+  if (start && date <= start) return false;
+  if (end && date > end) return false;
+  return true;
+};
+
+function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeacher, moduleFilter }) {
   const queryClient = useQueryClient();
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || 'Sem nome';
+  const selectedModule = moduleFilter?.module || null;
+  const matchesModule = (value) => !selectedModule || parseModuleNumber(value) === selectedModule;
+  const inModuleWindow = (dateLike) => !selectedModule || withinWindow(dateLike, moduleFilter?.start, moduleFilter?.end);
 
-  const { data: lessons = [] } = useQuery({
+  const { data: allLessons = [] } = useQuery({
     queryKey: ['lessons-score-detail', activeCourse],
     queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 100)
   });
   const { data: progresses = [] } = useQuery({ queryKey: ['lesson-progress', email], queryFn: () => base44.entities.LessonProgress.filter({ student_email: email }, '-created_date', 200) });
-  const { data: tasks = [] } = useQuery({
+  const { data: allTasks = [] } = useQuery({
     queryKey: ['tasks-score-detail', activeCourse],
     queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 100)
   });
   const { data: submissions = [] } = useQuery({ queryKey: ['submissions-student', email], queryFn: () => base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 200) });
   const { data: examSubs = [] } = useQuery({ queryKey: ['exam-subs-student', email], queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email, course: activeCourse }, '-submitted_at', 200) });
-  const { data: exams = [] } = useQuery({ queryKey: ['exams-score-detail', activeCourse], queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 100) });
+  const { data: allExams = [] } = useQuery({ queryKey: ['exams-score-detail', activeCourse], queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 100) });
   const { data: forumPosts = [] } = useQuery({
     queryKey: ['forum-posts-score-detail', email, activeCourse],
     queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 500)
@@ -64,6 +91,12 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   });
 
   const [activeSection, setActiveSection] = useState('lessons');
+
+  // Quando um módulo está selecionado no Controle de Pontuação, o detalhe do
+  // aluno mostra (e soma) apenas as atividades daquele módulo/período.
+  const lessons = allLessons.filter((l) => matchesModule(l.module_number));
+  const tasks = allTasks.filter((t) => matchesModule(t.module_number));
+  const exams = allExams.filter((e) => matchesModule(e.module_ref));
 
   const updateScoreMutation = useMutation({
     mutationFn: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
@@ -141,18 +174,19 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   };
 
   const myPairings = pairings.filter((p) =>
-  (p.therapist_email === email || p.patient_email === email) && isPairingFromActiveCourse(p)
+  (p.therapist_email === email || p.patient_email === email) && isPairingFromActiveCourse(p) &&
+  inModuleWindow(p.pairing_date || p.created_date)
   );
 
   const lessonIds = new Set(lessons.map((l) => l.id));
   const taskIds = new Set(tasks.map((t) => t.id));
   const examIds = new Set(exams.map((e) => e.id));
-  const studentForumPosts = forumPosts.filter((p) => p.author_email === email);
+  const studentForumPosts = forumPosts.filter((p) => p.author_email === email && inModuleWindow(p.created_date));
   const forumPostIds = new Set(studentForumPosts.map((p) => p.id));
   const forumParentById = new Map(forumPosts.map((p) => [p.id, p]));
   const scorableForumReplies = forumReplies.filter((r) => {
     const parentPost = forumParentById.get(r.post_id);
-    return parentPost && parentPost.author_email !== email;
+    return parentPost && parentPost.author_email !== email && inModuleWindow(r.created_date);
   });
   const forumReplyIds = new Set(scorableForumReplies.map((r) => r.id));
   const sequencedLessons = sortBySequence(lessons);
@@ -167,7 +201,9 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     return ids;
   }));
   const ofensivaRefIdByResponse = (response) => `ofensiva:${response.challenge_id}:${email}`;
-  const sortedOfensivaResponses = [...ofensivaResponses].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  const sortedOfensivaResponses = [...ofensivaResponses].
+  filter((r) => inModuleWindow(r.date || r.created_date)).
+  sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
   const ofensivaScoreRefIds = new Set(sortedOfensivaResponses.map(ofensivaRefIdByResponse));
   const challengeById = new Map(dailyChallenges.map((c) => [c.id, c]));
 
@@ -256,7 +292,11 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
           <h2 className="text-xl font-bold text-foreground truncate">{displayName}</h2>
           <p className="text-xs text-muted-foreground">{email}</p>
         </div>
-        
+        {selectedModule &&
+        <Badge variant="outline" className="shrink-0 border-primary/40 bg-primary/10 text-[10px] font-bold text-primary">
+          {moduleFilter?.label || `Módulo ${selectedModule}`}
+        </Badge>
+        }
       </div>
 
       <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-5 overflow-x-auto">
@@ -564,6 +604,7 @@ export default function ScoreControl() {
   const [customOrder, setCustomOrder] = useState([]);
   const [editingScore, setEditingScore] = useState(null);
   const [editingParticipations, setEditingParticipations] = useState(null);
+  const [selectedModule, setSelectedModule] = useState(MODULE_ALL);
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
   const isTeacher = session?.role === 'admin';
@@ -596,6 +637,11 @@ export default function ScoreControl() {
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks-score-overview', activeCourse],
     queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 500)
+  });
+
+  const { data: exams = [] } = useQuery({
+    queryKey: ['exams-score-overview', activeCourse],
+    queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 500)
   });
 
   const { data: forumPosts = [] } = useQuery({
@@ -641,6 +687,82 @@ export default function ScoreControl() {
     if (!periodCutoff) return true;
     const created = parseUtcDate(record?.created_date);
     return !created || created > periodCutoff;
+  };
+
+  // ── Janelas de período por módulo ─────────────────────────────────────────
+  // Cada ModuleClosure delimita um período. Quando o registro tem
+  // period_start/period_end usamos esses valores; senão, o período vai do
+  // encerramento anterior até o encerramento do próprio módulo. O módulo ainda
+  // em aberto começa no último encerramento e não tem fim.
+  const moduleWindows = useMemo(() => {
+    const map = new Map();
+    const closuresAsc = moduleClosures.
+    map((c) => ({ ...c, moduleNumber: parseModuleNumber(c.module_number) })).
+    filter((c) => c.moduleNumber).
+    sort((a, b) => a.moduleNumber - b.moduleNumber);
+
+    let previousEnd = null;
+    for (const closure of closuresAsc) {
+      const start = parseUtcDate(closure.period_start) || previousEnd;
+      const end = parseUtcDate(closure.period_end) || parseUtcDate(closure.closed_at);
+      map.set(closure.moduleNumber, { start, end, label: closure.module_label || `Módulo ${closure.moduleNumber}` });
+      previousEnd = end || previousEnd;
+    }
+    if (!map.has(nextModuleNumber)) {
+      map.set(nextModuleNumber, { start: previousEnd, end: null, label: `Módulo ${nextModuleNumber} (atual)` });
+    }
+    return map;
+  }, [moduleClosures, nextModuleNumber]);
+
+  const moduleOptions = useMemo(() => {
+    const numbers = new Set();
+    for (const lesson of lessons) { const n = parseModuleNumber(lesson.module_number); if (n) numbers.add(n); }
+    for (const task of tasks) { const n = parseModuleNumber(task.module_number); if (n) numbers.add(n); }
+    for (const exam of exams) { const n = parseModuleNumber(exam.module_ref); if (n) numbers.add(n); }
+    for (const n of moduleWindows.keys()) numbers.add(n);
+    return [...numbers].sort((a, b) => a - b);
+  }, [lessons, tasks, exams, moduleWindows]);
+
+  const activeModule = selectedModule === MODULE_ALL ? null : Number(selectedModule);
+  const activeModuleWindow = activeModule ? moduleWindows.get(activeModule) || { start: null, end: null } : null;
+  const activeModuleLabel = activeModule ? activeModuleWindow?.label || `Módulo ${activeModule}` : 'Todos os módulos';
+  const moduleFilter = activeModule ?
+  { module: activeModule, start: activeModuleWindow?.start || null, end: activeModuleWindow?.end || null, label: activeModuleLabel } :
+  null;
+
+  const lessonModuleById = useMemo(() => new Map(lessons.map((l) => [l.id, parseModuleNumber(l.module_number)])), [lessons]);
+  const taskModuleById = useMemo(() => new Map(tasks.map((t) => [t.id, parseModuleNumber(t.module_number)])), [tasks]);
+  const examModuleById = useMemo(() => new Map(exams.map((e) => [e.id, parseModuleNumber(e.module_ref)])), [exams]);
+  const forumDateById = useMemo(() => {
+    const map = new Map();
+    for (const post of forumPosts) map.set(post.id, post.created_date);
+    for (const reply of forumReplies) map.set(reply.id, reply.created_date);
+    return map;
+  }, [forumPosts, forumReplies]);
+  const pairingDateById = useMemo(
+    () => new Map(therapistPairings.map((p) => [p.id, p.pairing_date || p.created_date])),
+    [therapistPairings]
+  );
+
+  // Um ScoreItem pertence ao módulo selecionado quando a atividade de origem é
+  // daquele módulo (aula/tarefa/prova) ou, para atividades sem módulo, quando
+  // aconteceu dentro da janela de datas do período.
+  const scoreItemInSelectedModule = (item) => {
+    if (!activeModule) return true;
+    const refId = String(item.ref_id || '');
+    const start = activeModuleWindow?.start || null;
+    const end = activeModuleWindow?.end || null;
+
+    if (item.category === 'therapist' || isTherapistScoreItem(item)) {
+      const pairingId = item.category === 'therapist' ? refId : refId.split(':')[1];
+      return withinWindow(pairingDateById.get(pairingId) || item.created_date, start, end);
+    }
+    if (isOfensivaScoreItem(item)) return withinWindow(item.created_date, start, end);
+    if (item.category === 'lesson') return lessonModuleById.get(refId) === activeModule;
+    if (item.category === 'task' || item.category === 'quiz') return taskModuleById.get(refId) === activeModule;
+    if (item.category === 'exam') return examModuleById.get(refId.replace(/^exam:/, '')) === activeModule;
+    if (item.category === 'forum') return withinWindow(forumDateById.get(refId) || item.created_date, start, end);
+    return withinWindow(item.created_date, start, end);
   };
 
   useEffect(() => {
@@ -710,7 +832,7 @@ export default function ScoreControl() {
     );
 
     return scoreItems.
-    filter((s) => s.student_email === email && s.verified && (
+    filter((s) => s.student_email === email && s.verified && scoreItemInSelectedModule(s) && (
     s.category === 'lesson' && lessonIds.has(s.ref_id) ||
     (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
     s.category === 'exam' ||
@@ -723,16 +845,31 @@ export default function ScoreControl() {
   };
 
   const getParticipationStats = (email) => {
-    const lessonCount = lessonProgresses.filter((p) => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched && isAfterCutoff(p)).length;
+    // Com um módulo selecionado, o recorte é o próprio módulo (aula/tarefa) ou a
+    // janela de datas do período (fórum e monitoria). Sem módulo, vale o corte do
+    // período vigente, como antes.
+    const start = activeModuleWindow?.start || null;
+    const end = activeModuleWindow?.end || null;
+    const inScope = (record, moduleNumber) => {
+      if (!activeModule) return isAfterCutoff(record);
+      if (moduleNumber !== undefined) return moduleNumber === activeModule;
+      return withinWindow(record?.created_date, start, end);
+    };
+
+    const lessonCount = lessonProgresses.filter((p) => p.student_email === email && lessonIds.has(p.lesson_id) && p.watched && inScope(p, activeModule ? lessonModuleById.get(p.lesson_id) : undefined)).length;
     // Lives não geram pontuação e não entram mais na área de pontuação do aluno.
-    const taskCount = submissions.filter((s) => s.student_email === email && taskIds.has(s.task_id) && isAfterCutoff(s)).length;
-    const postCount = forumPosts.filter((p) => p.author_email === email && forumPostIds.has(p.id) && isAfterCutoff(p)).length;
+    const taskCount = submissions.filter((s) => s.student_email === email && taskIds.has(s.task_id) && inScope(s, activeModule ? taskModuleById.get(s.task_id) : undefined)).length;
+    const postCount = forumPosts.filter((p) => p.author_email === email && forumPostIds.has(p.id) && inScope(p)).length;
     const forumParentById = new Map(forumPosts.map((p) => [p.id, p]));
     const replyCount = forumReplies.filter((r) => {
       const parentPost = forumParentById.get(r.post_id);
-      return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostIds.has(parentPost.id) && isAfterCutoff(r);
+      return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostIds.has(parentPost.id) && inScope(r);
     }).length;
-    const monitorCount = monitorHistory.filter((m) => m.student_email === email && isAfterCutoff(m)).length;
+    const monitorCount = monitorHistory.filter((m) => {
+      if (m.student_email !== email) return false;
+      if (!activeModule) return isAfterCutoff(m);
+      return withinWindow(m.period_start || m.created_date, start, end);
+    }).length;
     const count = lessonCount + taskCount + postCount + replyCount + monitorCount;
     return { count };
   };
@@ -747,7 +884,7 @@ export default function ScoreControl() {
       totals.set(studentEmail, capScore(getCourseScoreTotal(studentEmail)));
     }
     return totals;
-  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, therapistPairings, activeCourse]);
+  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, exams, therapistPairings, activeCourse, selectedModule, moduleWindows]);
 
   const sortedRows = filtered.
   map((code) => {
@@ -763,10 +900,12 @@ export default function ScoreControl() {
     // Recalculada a partir dos ScoreItems — é para ela que o botão "Auto" volta,
     // já que pontuacao_total é sobrescrito enquanto o override manual estiver ativo.
     const pontuacaoAutomatica = courseScoreTotalByEmail.get(code.student_email) ?? 0;
-    const manualScoreActive = profile?.pontuacao_total_manual_ativa === true && Number.isFinite(Number(profile?.pontuacao_total_manual));
-    const totalScore = manualScoreActive ? capScore(profile.pontuacao_total_manual) : pontuacaoCalculada;
+    const manualScoreActive = !activeModule && profile?.pontuacao_total_manual_ativa === true && Number.isFinite(Number(profile?.pontuacao_total_manual));
+    // Com um módulo selecionado mostramos sempre o valor recalculado do período:
+    // os overrides manuais são do total geral, não de um módulo específico.
+    const totalScore = manualScoreActive ? capScore(profile.pontuacao_total_manual) : activeModule ? pontuacaoAutomatica : pontuacaoCalculada;
     const participacoesCalculadas = stats.count;
-    const manualParticipationsActive = profile?.participacoes_manual_ativa === true && Number.isFinite(Number(profile?.participacoes_manual));
+    const manualParticipationsActive = !activeModule && profile?.participacoes_manual_ativa === true && Number.isFinite(Number(profile?.participacoes_manual));
     const participations = manualParticipationsActive ? Math.max(0, Math.round(Number(profile.participacoes_manual))) : participacoesCalculadas;
     return { code, hasPending, totalScore, participations, pontuacaoCalculada, pontuacaoAutomatica, participacoesCalculadas, manualScoreActive, manualParticipationsActive };
   }).
@@ -900,7 +1039,13 @@ export default function ScoreControl() {
     }
   });
 
-  if (selectedCode && (isTeacher || selectedCode.student_email === session?.email)) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} onBack={() => setSelectedCode(null)} />;
+  if (selectedCode && (isTeacher || selectedCode.student_email === session?.email)) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} moduleFilter={moduleFilter} onBack={() => setSelectedCode(null)} />;
+
+  const changeSelectedModule = (value) => {
+    setSelectedModule(value);
+    setEditingScore(null);
+    setEditingParticipations(null);
+  };
 
   const sortOptions = isTeacher ?
   [['alpha', 'A–Z'], ['points', 'Classificação'], ['participations', 'Participações'], ['pending', 'Pendências']] :
@@ -949,6 +1094,35 @@ export default function ScoreControl() {
         </div>
       </div>
 
+      <div className="mb-4 space-y-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          <Layers size={13} className="text-muted-foreground shrink-0" />
+          <span className="text-[11px] font-semibold text-muted-foreground shrink-0 mr-1">Módulo:</span>
+          <button
+            onClick={() => changeSelectedModule(MODULE_ALL)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${selectedModule === MODULE_ALL ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+            Todos
+          </button>
+          {moduleOptions.map((moduleNumber) =>
+          <button
+            key={moduleNumber}
+            onClick={() => changeSelectedModule(String(moduleNumber))}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${Number(selectedModule) === moduleNumber ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+              Módulo {moduleNumber}
+            </button>
+          )}
+        </div>
+        {activeModule &&
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+            <Filter size={14} className="text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 leading-relaxed">
+              Exibindo apenas o <strong>{activeModuleLabel}</strong>. As somatórias de pontos e participações consideram somente as atividades desse módulo/período — atividades adiantadas de outros módulos ficam de fora.
+              {isTeacher && ' Ajustes manuais ficam desativados nesse modo, e publicar o ranking enviará a pontuação deste módulo.'}
+            </p>
+          </div>
+        }
+      </div>
+
       <Accordion type="multiple" defaultValue={['current']} className="space-y-3">
         <AccordionItem value="current" className="bg-card border border-border rounded-2xl px-4 border-b-0">
           <AccordionTrigger className="hover:no-underline py-3.5">
@@ -973,6 +1147,8 @@ export default function ScoreControl() {
           const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
           const isEditingScoreRow = editingScore?.email === code.student_email;
           const isEditingParticipationsRow = editingParticipations?.email === code.student_email;
+          // Os valores manuais são do total geral; com um módulo selecionado só exibimos o recalculado.
+          const canEditManual = isTeacher && !activeModule;
           return (
             <div
               key={code.id}
@@ -1010,7 +1186,7 @@ export default function ScoreControl() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
                     {isTeacher && (
-                isEditingParticipationsRow ?
+                canEditManual && isEditingParticipationsRow ?
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <Input
                     type="text"
@@ -1055,17 +1231,18 @@ export default function ScoreControl() {
 
                 <button
                   type="button"
-                  title={manualParticipationsActive ? 'Participações definidas manualmente — clique para editar' : 'Aulas assistidas + entregas + fórum + monitoria — clique para editar'}
-                  onClick={(e) => { e.stopPropagation(); setEditingParticipations({ email: code.student_email, value: String(participations) }); }}
-                  className={`flex items-center gap-1 bg-blue-50 border px-2.5 py-1.5 rounded-xl transition-colors hover:border-blue-400 ${manualParticipationsActive ? 'border-blue-500 border-dashed' : 'border-blue-200'}`}>
+                  disabled={!canEditManual}
+                  title={activeModule ? `Participações no ${activeModuleLabel}` : manualParticipationsActive ? 'Participações definidas manualmente — clique para editar' : 'Aulas assistidas + entregas + fórum + monitoria — clique para editar'}
+                  onClick={(e) => { e.stopPropagation(); if (!canEditManual) return; setEditingParticipations({ email: code.student_email, value: String(participations) }); }}
+                  className={`flex items-center gap-1 bg-blue-50 border px-2.5 py-1.5 rounded-xl transition-colors ${canEditManual ? 'hover:border-blue-400' : 'cursor-default'} ${manualParticipationsActive ? 'border-blue-500 border-dashed' : 'border-blue-200'}`}>
                         <Activity size={11} className="text-blue-500" />
                         <span className="text-xs font-bold text-blue-700">{participations}</span>
                         {manualParticipationsActive && <span className="text-[9px] font-bold uppercase text-blue-600">manual</span>}
-                        <Pencil size={10} className="text-blue-500" />
+                        {canEditManual && <Pencil size={10} className="text-blue-500" />}
                       </button>
                 )}
                     {isTeacher ? (
-                isEditingScoreRow ?
+                canEditManual && isEditingScoreRow ?
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <Input
                     type="text"
@@ -1115,13 +1292,14 @@ export default function ScoreControl() {
 
                 <button
                   type="button"
-                  title={manualScoreActive ? `Pontuação manual (cálculo automático: ${formatScore(pontuacaoAutomatica)}) — clique para editar` : 'Pontos publicados — clique para editar'}
-                  onClick={(e) => { e.stopPropagation(); setEditingScore({ email: code.student_email, value: formatScore(totalScore) }); }}
-                  className={`flex items-center gap-1 bg-yellow-50 border px-3 py-1.5 rounded-xl transition-colors hover:border-yellow-400 ${manualScoreActive ? 'border-yellow-500 border-dashed' : 'border-yellow-200'}`}>
+                  disabled={!canEditManual}
+                  title={activeModule ? `Pontuação do ${activeModuleLabel}` : manualScoreActive ? `Pontuação manual (cálculo automático: ${formatScore(pontuacaoAutomatica)}) — clique para editar` : 'Pontos publicados — clique para editar'}
+                  onClick={(e) => { e.stopPropagation(); if (!canEditManual) return; setEditingScore({ email: code.student_email, value: formatScore(totalScore) }); }}
+                  className={`flex items-center gap-1 bg-yellow-50 border px-3 py-1.5 rounded-xl transition-colors ${canEditManual ? 'hover:border-yellow-400' : 'cursor-default'} ${manualScoreActive ? 'border-yellow-500 border-dashed' : 'border-yellow-200'}`}>
                         <Star size={11} className="text-yellow-500 fill-yellow-500" />
                         <span className="text-sm font-black text-yellow-700">{formatScore(totalScore)}</span>
                         {manualScoreActive && <span className="text-[9px] font-bold uppercase text-yellow-600">manual</span>}
-                        <Pencil size={10} className="text-yellow-600" />
+                        {canEditManual && <Pencil size={10} className="text-yellow-600" />}
                       </button>
                 ) :
 
