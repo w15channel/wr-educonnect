@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, Archive } from 'lucide-react';
+import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, Archive, CheckCircle } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { capScore, formatScore, rankingScoreValue, roundScore, sumRoundedScores, parseUtcDate } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';

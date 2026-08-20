@@ -1020,17 +1020,22 @@ export default function ScoreControl() {
       for (const [index, item] of customOrder.map(resolveRow).entries()) {
         const code = item.code;
         const existing = studentProfiles.find((p) => p.student_email === code.student_email && p.dashboard_course === activeCourse);
+        const effectiveTotal = capScore(item.totalScore);
         const data = {
           student_email: code.student_email,
           full_name: code.profile_name || code.student_name || code.student_email,
-          points: capScore(item.totalScore),
-          pontuacao_total: capScore(item.totalScore),
+          points: effectiveTotal,
+          pontuacao_total: effectiveTotal,
           pontuacao_estudos: roundScore(code.pontuacao_estudos || 0),
           dashboard_rank: index + 1,
           dashboard_course: activeCourse
         };
         if (existing) await adminApi.update('StudentProfile', existing.id, data);
         else await adminApi.create('StudentProfile', data);
+        // AccessCode.pontuacao_total é a fonte principal lida pelo Ranking e pela
+        // Dashboard do aluno — sem isso, a sequência do módulo selecionado não
+        // aparece para os alunos, pois o valor antigo do AccessCode prevalece.
+        if (code.id) await adminApi.update('AccessCode', code.id, { pontuacao_total: effectiveTotal });
       }
     },
     onSuccess: async () => {
