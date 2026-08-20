@@ -53,6 +53,7 @@ import MonitorCertificate from './pages/MonitorCertificate';
 import MeuCertificado from './pages/MeuCertificado';
 import AdminCertificateGenerator from './pages/AdminCertificateGenerator';
 import AtendimentoSocial from './pages/AtendimentoSocial';
+import Practice from './pages/Practice';
 import CertificateVerifier from './pages/CertificateVerifier';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
@@ -108,6 +109,7 @@ function AppRoutesTree() {
         <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="apostila" element={<Apostila />} />
         <Route path="ring" element={<Notifications />} />
+        <Route path="practice" element={<Practice />} />
       </Route>
     </Routes>
   );
@@ -208,6 +210,7 @@ const AuthenticatedApp = () => {
       <Route path="/classe" element={<Navigate to={`${base}/classe`} replace />} />
       <Route path="/ofensivas" element={<Navigate to={`${base}/ofensivas`} replace />} />
       <Route path="/apostila" element={<Navigate to={`${base}/apostila`} replace />} />
+      <Route path="/practice" element={<Navigate to={`${base}/practice`} replace />} />
 
       {/* Old scoped paths with courseSlug → strip slug */}
       <Route path="/student/tcc/*" element={<Navigate to="/student/*" replace />} />

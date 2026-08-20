@@ -7,7 +7,7 @@ import {
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, Brain, Sparkles,
   ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame, GraduationCap,
-  ScrollText, ClipboardList, Medal, Star, Moon, Sun
+  ScrollText, ClipboardList, Medal, Star, Moon, Sun, HandHeart
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -67,6 +67,7 @@ const adminGroups = [
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
       { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
       { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
+      { icon: HandHeart,     label: 'Mentorias',               path: '/practice',          color: 'text-rose-400' },
     ],
   },
   {
@@ -111,6 +112,7 @@ const studentGroups = [
       { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
       { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
+      { icon: HandHeart,     label: 'Mentorias',               path: '/practice',          color: 'text-rose-400' },
     ],
   },
   {

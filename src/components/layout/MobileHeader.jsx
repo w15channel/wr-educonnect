@@ -44,6 +44,7 @@ const routeLabels = {
   '/bestseller': 'Meu Best Seller',
   '/historico': 'Histórico Acadêmico',
   '/classe': 'Classe',
+  '/practice': 'Mentorias',
 };
 
 function stripScopedPrefix(pathname) {
