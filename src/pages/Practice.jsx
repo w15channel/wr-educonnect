@@ -45,6 +45,9 @@ export default function Practice() {
         ref_title: `Mentoria: ${data.theme}`, score: 10, max_score: 10, verified: true,
         notes: `Atividade complementar realizada em ${data.date}`,
       })));
+      await Promise.all(selected.map(student =>
+        base44.functions.invoke('populateScoreCache', { student_email: student.student_email })
+      ));
       return mentorship;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mentorships'] }); queryClient.invalidateQueries({ queryKey: ['score-items-all'] }); setOpen(false); setForm(EMPTY); toast.success('Mentoria registrada e 10,0 pontos creditados aos participantes.'); },
@@ -57,8 +60,11 @@ export default function Practice() {
       const related = reflections.filter(r => r.mentorship_id === mentorship.id);
       await Promise.all([...scores.map(s => adminApi.delete('ScoreItem', s.id)), ...related.map(r => adminApi.delete('MentorshipReflection', r.id))]);
       await adminApi.delete('Mentorship', mentorship.id);
+      await Promise.all([...new Set(scores.map(score => score.student_email).filter(Boolean))].map(studentEmail =>
+        base44.functions.invoke('populateScoreCache', { student_email: studentEmail })
+      ));
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mentorships'] }); queryClient.invalidateQueries({ queryKey: ['mentorship-reflections'] }); toast.success('Mentoria e pontuações removidas.'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mentorships'] }); queryClient.invalidateQueries({ queryKey: ['mentorship-reflections'] }); queryClient.invalidateQueries({ queryKey: ['score-items-all'] }); toast.success('Mentoria e pontuações removidas.'); },
   });
 
   const saveReflection = useMutation({
