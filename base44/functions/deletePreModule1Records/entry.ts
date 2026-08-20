@@ -22,12 +22,25 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
+    // O filtro { $lt } não é suportado por created_date no backend, então
+    // buscamos todos os registros e filtramos a data manualmente antes de
+    // excluir em lotes por id.
     const results = {};
+    const cutoffTime = new Date(CUTOFF).getTime();
     for (const entityName of ENTITIES) {
-      const res = await base44.asServiceRole.entities[entityName].deleteMany({
-        created_date: { $lt: CUTOFF }
-      });
-      results[entityName] = res;
+      const all = await base44.asServiceRole.entities[entityName].filter({});
+      const oldIds = all
+        .filter((r) => new Date(r.created_date).getTime() < cutoffTime)
+        .map((r) => r.id);
+
+      let deleted = 0;
+      const batchSize = 100;
+      for (let i = 0; i < oldIds.length; i += batchSize) {
+        const batch = oldIds.slice(i, i + batchSize);
+        const res = await base44.asServiceRole.entities[entityName].deleteMany({ id: { $in: batch } });
+        deleted += res?.deleted || 0;
+      }
+      results[entityName] = { deleted, found: oldIds.length };
     }
 
     return Response.json({ success: true, cutoff: CUTOFF, results });
