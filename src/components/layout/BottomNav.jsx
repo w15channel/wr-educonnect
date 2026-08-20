@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Play, Video, FileText, LayoutGrid, BookOpen } from 'lucide-react';
+import { BarChart3, Play, FileText, LayoutGrid, BookOpen } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 const tabs = [
@@ -63,7 +63,7 @@ export default function BottomNav({ onMenuOpen }) {
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="absolute inset-0 bg-sidebar/95 backdrop-blur-xl border-t border-sidebar-border" />
+      <div className="shell-bar-glass absolute inset-0 border-t" />
       <div className="relative flex items-stretch">
         {tabs.map(({ icon: Icon, label, root }) => {
           if (root === '__menu__') {
@@ -71,7 +71,7 @@ export default function BottomNav({ onMenuOpen }) {
               <button
                 key="menu"
                 onClick={onMenuOpen}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] text-white/40 hover:text-white/70 transition-colors"
+                className="nav-shortcut-muted flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors"
               >
                 <Icon size={20} />
                 <span className="text-[9px] font-semibold uppercase tracking-wide">{label}</span>
@@ -85,14 +85,14 @@ export default function BottomNav({ onMenuOpen }) {
               key={root}
               onClick={() => handleTabPress(root)}
               className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors relative ${
-                active ? 'text-white' : 'text-white/40 hover:text-white/70'
+                active ? 'text-sidebar-primary' : 'nav-shortcut-muted'
               }`}
             >
               {active && (
                 <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-primary" />
               )}
               <Icon size={20} className={active ? 'text-primary' : ''} />
-              <span className={`text-[9px] font-semibold uppercase tracking-wide ${active ? 'text-white' : ''}`}>
+              <span className={`text-[9px] font-semibold uppercase tracking-wide ${active ? 'text-sidebar-primary' : ''}`}>
                 {label}
               </span>
             </button>

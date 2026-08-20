@@ -129,13 +129,13 @@ export default function AppShellTablet() {
       <Sidebar session={session} mobileOpen={drawerOpen} onMobileClose={() => setDrawerOpen(false)} />
 
       {/* Header tablet — mais largo que mobile, mostra título e breadcrumb */}
-      <header className="shrink-0 flex items-center gap-4 px-6 py-3.5 bg-[#07080f] border-b border-[#1e2540]">
+      <header className="shell-bar-glass shrink-0 flex items-center gap-4 px-6 py-3.5 border-b">
         <div className="w-8 h-8 shrink-0">
           <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-[#c8bfa8]/30 uppercase tracking-[0.2em] font-light leading-none mb-0.5">{BRAND_SHORT_NAME}</p>
-          <h1 className="text-sm font-light text-[#e8dfc8]/80 tracking-[0.12em] uppercase truncate">{pageTitle}</h1>
+          <p className="text-[10px] text-sidebar-foreground/55 uppercase tracking-[0.2em] font-light leading-none mb-0.5">{BRAND_SHORT_NAME}</p>
+          <h1 className="text-sm font-light text-sidebar-foreground/90 tracking-[0.12em] uppercase truncate">{pageTitle}</h1>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {session?.role === 'admin' && (
@@ -144,8 +144,8 @@ export default function AppShellTablet() {
             </div>
           )}
           <div className="text-right">
-            <p className="text-[11px] font-light text-[#e8dfc8]/60 tracking-wide truncate max-w-[140px]">{session?.name}</p>
-            <p className="text-[9px] text-[#c8bfa8]/25 uppercase tracking-[0.15em]">{session?.role === 'admin' ? 'Admin' : 'Aluno'}</p>
+            <p className="text-[11px] font-light text-sidebar-foreground/75 tracking-wide truncate max-w-[140px]">{session?.name}</p>
+            <p className="text-[9px] text-sidebar-foreground/50 uppercase tracking-[0.15em]">{session?.role === 'admin' ? 'Admin' : 'Aluno'}</p>
           </div>
         </div>
       </header>
@@ -196,13 +196,13 @@ export default function AppShellTablet() {
       </main>
 
       {/* Tab bar tablet — ícones maiores, labels visíveis */}
-      <nav className="shrink-0 bg-[#07080f]/97 border-t border-[#1e2540] backdrop-blur-xl" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <nav className="shell-bar-glass shrink-0 border-t" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-stretch">
           {tabs.map(({ icon: Icon, label, root }) => {
             if (root === '__menu__') {
               return (
                 <button key="menu" onClick={() => setDrawerOpen(true)}
-                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 min-h-[58px] text-white/40 hover:text-white/70 transition-colors">
+                  className="nav-shortcut-muted flex-1 flex flex-col items-center justify-center gap-1.5 py-3 min-h-[58px] transition-colors">
                   <Icon size={22} />
                   <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
                 </button>
@@ -211,7 +211,7 @@ export default function AppShellTablet() {
             const active = currentOwner === root;
             return (
               <button key={root} onClick={() => navigate(scoped(root))}
-                className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 min-h-[58px] transition-colors relative ${active ? 'text-[#e8dfc8]' : 'text-white/35 hover:text-white/60'}`}>
+                className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 min-h-[58px] transition-colors relative ${active ? 'text-sidebar-primary' : 'nav-shortcut-muted'}`}>
                 {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-b-full bg-[#d4b96a]" />}
                 <Icon size={22} className={active ? 'text-[#d4b96a]' : ''} />
                 <span className={`text-[10px] font-semibold uppercase tracking-wide ${active ? 'text-[#d4b96a]' : ''}`}>{label}</span>

@@ -417,7 +417,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
       <aside className={`
         fixed md:static inset-y-0 left-0 z-50
         w-56 flex flex-col
-        bg-sidebar text-sidebar-foreground
+        sidebar-glass text-sidebar-foreground
         border-r border-sidebar-border
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -436,7 +436,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               <p className="text-[9px] text-sidebar-foreground/55 -mt-0.5 leading-tight">Instituto de Desenvolvimento Humano</p>
             </div>
           </div>
-          <button onClick={handleClose} className="md:hidden text-white/40 hover:text-white p-1 rounded-lg transition-colors">
+          <button onClick={handleClose} className="md:hidden text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent p-1 rounded-lg transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -484,7 +484,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
           <p className="px-2 pb-1.5 text-[8.5px] leading-snug text-sidebar-foreground/40">
             {BRAND_LEGAL_NAME}<br />CNPJ {BRAND_CNPJ}
           </p>
-          <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/6 transition-colors mb-0.5">
+          <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-sidebar-accent/55 transition-colors mb-0.5">
             {session?.photoUrl ? (
               <img src={session.photoUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
             ) : (
@@ -499,7 +499,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               <p className="text-[12px] font-semibold text-sidebar-foreground truncate">{session?.name || 'Usuário'}</p>
               <p className="text-[9px] text-sidebar-foreground/50">{isAdmin ? 'Administrador' : 'Estudante'}</p>
             </div>
-            <Sparkles size={11} className="text-white/15 shrink-0" />
+            <Sparkles size={11} className="text-sidebar-primary/45 shrink-0" />
           </div>
           <div className="flex items-center gap-1">
             <button
