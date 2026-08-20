@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2, ArrowLeftRight, Send } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
@@ -11,6 +12,7 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
@@ -31,6 +33,7 @@ export default function TerapeutaDaSemana() {
   const [celebrating, setCelebrating] = useState(false);
   const [swapSelection, setSwapSelection] = useState(null); // id of first pairing selected for swap
   const [manualTherapist, setManualTherapist] = useState(null); // email of student selected as therapist for manual pairing
+  const [selectedModule, setSelectedModule] = useState('1');
 
   const { data: pairings = [] } = useQuery({
     queryKey: ['therapist-pairings'],
@@ -60,9 +63,27 @@ export default function TerapeutaDaSemana() {
   });
 
   const updatePairingMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.TherapistPairing.update(id, data),
+    mutationFn: async ({ id, data, pairing, role }) => {
+      const updated = await base44.entities.TherapistPairing.update(id, data);
+      if (!pairing || !role) return updated;
+      const studentEmail = role === 'therapist' ? pairing.therapist_email : pairing.patient_email;
+      const refId = `therapist_pairing:${pairing.id}:${role}`;
+      const existing = await adminApi.list('ScoreItem', { filter: { student_email: studentEmail, ref_id: refId }, limit: 10 });
+      const scoreData = {
+        student_email: studentEmail, category: 'task', ref_id: refId,
+        ref_title: role === 'therapist' ? `Relato Terapeuta da Semana (${pairing.pairing_date})` : `Relato Terapeuta da Semana — Paciente (${pairing.pairing_date})`,
+        score: 10, max_score: 10, verified: true, module_number: Number(pairing.module_number) || Number(selectedModule),
+        notes: `Relato enviado como ${role === 'therapist' ? 'terapeuta' : 'paciente'} na atividade Terapeuta da Semana: +10 pontos.`,
+      };
+      if (existing[0]) await adminApi.update('ScoreItem', existing[0].id, scoreData);
+      else await adminApi.create('ScoreItem', scoreData);
+      await base44.functions.invoke('populateScoreCache', { student_email: studentEmail });
+      return updated;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] });
+      queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       setEvalDialog(null);
       setComment('');
       setScore([7]);
@@ -183,6 +204,7 @@ export default function TerapeutaDaSemana() {
         patient_email: patient.student_email,
         patient_name: patient.profile_name || patient.student_name,
         pairing_date: date,
+        module_number: Number(selectedModule),
         is_published: false,
       });
     }
@@ -219,6 +241,7 @@ export default function TerapeutaDaSemana() {
       patient_email: student.student_email,
       patient_name: student.profile_name || student.student_name,
       pairing_date: hasDraftBatch ? latestPairingDate : todayStr,
+      module_number: Number(selectedModule),
       is_published: false,
     }, {
       onSuccess: () => {
@@ -247,7 +270,24 @@ export default function TerapeutaDaSemana() {
     const updateData = role === 'therapist'
       ? { therapist_comment: comment, therapist_score: roundScore(score[0]), therapist_submitted: true }
       : { patient_comment: comment, patient_score: roundScore(score[0]), patient_submitted: true };
-    updatePairingMutation.mutate({ id: pairing.id, data: updateData });
+    updatePairingMutation.mutate({ id: pairing.id, data: updateData, pairing, role });
+  };
+
+  const updatePairingModule = async (pairing, moduleNumber) => {
+    try {
+      await adminApi.update('TherapistPairing', pairing.id, { module_number: moduleNumber });
+      const refIds = [`therapist_pairing:${pairing.id}:therapist`, `therapist_pairing:${pairing.id}:patient`];
+      const scoreLists = await Promise.all(refIds.map(refId => adminApi.list('ScoreItem', { filter: { ref_id: refId }, limit: 20 })));
+      const scores = scoreLists.flat();
+      await Promise.all(scores.map(item => adminApi.update('ScoreItem', item.id, { module_number: moduleNumber })));
+      const affectedEmails = [...new Set(scores.map(item => item.student_email).filter(Boolean))];
+      await Promise.all(affectedEmails.map(studentEmail => base44.functions.invoke('populateScoreCache', { student_email: studentEmail })));
+      queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] });
+      queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
+      toast.success(`Pontuação destinada ao Módulo ${moduleNumber}.`);
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível alterar o módulo.');
+    }
   };
 
   const StudentAvatar = ({ email, size = 'md' }) => {
@@ -289,6 +329,14 @@ export default function TerapeutaDaSemana() {
 
       {isTeacher && (
         <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+          <div className="rounded-xl border border-violet-200 bg-violet-500/5 p-3">
+            <label className="mb-1 block text-sm font-bold text-foreground">Módulo de destino da pontuação</label>
+            <Select value={selectedModule} onValueChange={setSelectedModule}>
+              <SelectTrigger className="max-w-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>{Array.from({ length: 10 }, (_, index) => index + 1).map(module => <SelectItem key={module} value={String(module)}>Módulo {module}</SelectItem>)}</SelectContent>
+            </Select>
+            <p className="mt-1 text-xs text-muted-foreground">Novos pareamentos e seus 10,0 pontos serão enquadrados no módulo selecionado.</p>
+          </div>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-sm text-foreground">Alunos deste domínio</h3>
@@ -447,6 +495,7 @@ export default function TerapeutaDaSemana() {
                 getStudentInfo={getStudentInfo}
                 showScores={isTeacher}
                 onDelete={() => deletePairingMutation.mutate(p.id)}
+                onModuleChange={(moduleNumber) => updatePairingModule(p, moduleNumber)}
                 isDraft={!p.is_published}
                 swapSelectedId={swapSelection}
                 onSwap={() => {
@@ -470,7 +519,7 @@ export default function TerapeutaDaSemana() {
           <TabsContent value="past" className="mt-4 space-y-3">
             {pastPairings.length === 0 && <p className="text-muted-foreground text-sm text-center py-8">Nenhum pareamento anterior.</p>}
             {pastPairings.map(p => (
-              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} onDelete={() => deletePairingMutation.mutate(p.id)} />
+              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} onDelete={() => deletePairingMutation.mutate(p.id)} onModuleChange={(moduleNumber) => updatePairingModule(p, moduleNumber)} />
             ))}
           </TabsContent>
         </Tabs>
@@ -548,7 +597,7 @@ export default function TerapeutaDaSemana() {
   );
 }
 
-function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, swapSelectedId, onSwap }) {
+function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, swapSelectedId, onSwap, onModuleChange }) {
   const therapist = getStudentInfo(pairing.therapist_email);
   const patient = getStudentInfo(pairing.patient_email);
   const isSwapSelected = swapSelectedId === pairing.id;
@@ -597,6 +646,7 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, s
           )}
         </div>
       </div>
+      {showScores && onModuleChange && <div className="flex items-center gap-2 border-t border-border pt-3"><span className="text-xs font-semibold text-muted-foreground">Pontuação no</span><Select value={String(pairing.module_number || 1)} onValueChange={value => onModuleChange(Number(value))}><SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger><SelectContent>{Array.from({ length: 10 }, (_, index) => index + 1).map(module => <SelectItem key={module} value={String(module)}>Módulo {module}</SelectItem>)}</SelectContent></Select></div>}
       {showScores && (pairing.therapist_submitted || pairing.patient_submitted) && (
         <div className="border-t border-border pt-3 space-y-2">
           {pairing.therapist_submitted && (

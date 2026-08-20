@@ -9,6 +9,7 @@
     "facilitator": { "type": "string", "description": "Nome do mentor ou facilitador" },
     "duration_minutes": { "type": "number", "default": 60, "minimum": 1 },
     "course": { "type": "string", "enum": ["tcc", "psicanalise", "sexologia"], "default": "tcc" },
+    "module_number": { "type": "number", "minimum": 1, "maximum": 10, "description": "Módulo que recebe a pontuação da mentoria" },
     "participant_emails": { "type": "array", "items": { "type": "string" } },
     "participant_names": { "type": "array", "items": { "type": "string" } },
     "status": { "type": "string", "enum": ["realizada", "cancelada"], "default": "realizada" },

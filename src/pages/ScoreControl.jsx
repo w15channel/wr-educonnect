@@ -178,7 +178,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
   const myPairings = pairings.filter((p) =>
   (p.therapist_email === email || p.patient_email === email) && isPairingFromActiveCourse(p) &&
-  inModuleWindow(p.pairing_date || p.created_date)
+  (selectedModule && Number(p.module_number) ? Number(p.module_number) === selectedModule : inModuleWindow(p.pairing_date || p.created_date))
   );
 
   const lessonIds = new Set(lessons.map((l) => l.id));
@@ -197,7 +197,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const sequencedForumPosts = sortBySequence(studentForumPosts);
   const sequencedForumReplies = sortBySequence(scorableForumReplies);
   const studentMentorships = mentorships
-    .filter((mentorship) => (mentorship.participant_emails || []).includes(email) && inModuleWindow(mentorship.date || mentorship.created_date))
+    .filter((mentorship) => (mentorship.participant_emails || []).includes(email) && (selectedModule && Number(mentorship.module_number) ? Number(mentorship.module_number) === selectedModule : inModuleWindow(mentorship.date || mentorship.created_date)))
     .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
   const mentorshipIds = new Set(studentMentorships.map((mentorship) => mentorship.id));
   const sequencedPairings = sortBySequence(myPairings);
@@ -791,8 +791,16 @@ export default function ScoreControl() {
     () => new Map(therapistPairings.map((p) => [p.id, p.pairing_date || p.created_date])),
     [therapistPairings]
   );
+  const pairingModuleById = useMemo(
+    () => new Map(therapistPairings.map((p) => [p.id, parseModuleNumber(p.module_number)])),
+    [therapistPairings]
+  );
   const mentorshipDateById = useMemo(
     () => new Map(mentorships.map((mentorship) => [mentorship.id, mentorship.date || mentorship.created_date])),
+    [mentorships]
+  );
+  const mentorshipModuleById = useMemo(
+    () => new Map(mentorships.map((mentorship) => [mentorship.id, parseModuleNumber(mentorship.module_number)])),
     [mentorships]
   );
 
@@ -808,10 +816,14 @@ export default function ScoreControl() {
 
     if (item.category === 'therapist' || isTherapistScoreItem(item)) {
       const pairingId = item.category === 'therapist' ? refId : refId.split(':')[1];
+      if (pairingModuleById.get(pairingId)) return pairingModuleById.get(pairingId) === activeModule;
       return withinWindow(pairingDateById.get(pairingId) || item.created_date, start, end);
     }
     if (isOfensivaScoreItem(item)) return withinWindow(item.created_date, start, end);
-    if (item.category === 'mentorship') return withinWindow(mentorshipDateById.get(refId) || item.created_date, start, end);
+    if (item.category === 'mentorship') {
+      if (mentorshipModuleById.get(refId)) return mentorshipModuleById.get(refId) === activeModule;
+      return withinWindow(mentorshipDateById.get(refId) || item.created_date, start, end);
+    }
     if (item.category === 'lesson') return lessonModuleById.get(refId) === activeModule;
     if (item.category === 'task' || item.category === 'quiz') return taskModuleById.get(refId) === activeModule;
     if (item.category === 'exam') return examModuleById.get(refId.replace(/^exam:/, '')) === activeModule;

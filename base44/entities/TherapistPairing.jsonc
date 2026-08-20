@@ -23,6 +23,12 @@
       "format": "date",
       "description": "Data do pareamento"
     },
+    "module_number": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Módulo que recebe a pontuação desta rodada"
+    },
     "period_end": {
       "type": "string",
       "format": "date",
