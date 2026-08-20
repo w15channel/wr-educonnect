@@ -20,7 +20,7 @@ export function applyTheme(theme) {
 }
 
 export function getStoredTheme() {
-  return localStorage.getItem('wr_theme') || 'light';
+  return localStorage.getItem('wr_theme') || 'dark';
 }
 
 const routeLabels = {
