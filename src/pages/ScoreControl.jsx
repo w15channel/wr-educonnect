@@ -1121,7 +1121,7 @@ export default function ScoreControl() {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
             <Filter size={14} className="text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 leading-relaxed">
-              Exibindo apenas o <strong>{activeModuleLabel}</strong>. As somatórias de pontos e participações consideram somente as atividades desse módulo/período — atividades adiantadas de outros módulos ficam de fora.
+              Exibindo apenas o <strong>{activeModuleLabel}</strong>: aulas, tarefas, provas e demais atividades desse conteúdo. Qualquer aluno pode participar e pontuar neste módulo a qualquer momento, independente de quando entrou no curso.
               {isTeacher && ' Ajustes manuais ficam desativados nesse modo, e publicar o ranking enviará a pontuação deste módulo.'}
             </p>
           </div>
