@@ -8,20 +8,21 @@
  * - Avatar + nome + logout no rodapé fixo
  * - Respeita safe-area-inset de todos os lados
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Moon, Sun
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import { setSession, getSession } from '@/lib/customAuth';
+import { applyTheme, getStoredTheme } from './MobileHeader';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 const COURSE_LABELS = { tcc: '🧠 TC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
@@ -94,6 +95,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, login } = useCustomAuth();
+  const [theme, setTheme] = useState(() => getStoredTheme());
   const isAdmin = session?.role === 'admin';
 
   const prefix = (() => {
@@ -127,6 +129,18 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
   const initials = session?.name ? session.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
   const avatarBg = session?.avatarColor || (isAdmin ? '#5b5ef4' : '#7c3aed');
   const groups = isAdmin ? adminGroups : studentGroups;
+
+  useEffect(() => {
+    const syncTheme = (event) => setTheme(event.detail || getStoredTheme());
+    window.addEventListener('wr-theme-change', syncTheme);
+    return () => window.removeEventListener('wr-theme-change', syncTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    applyTheme(next);
+  };
 
   // Admin notifications count
   function useAdminUnread() {
@@ -162,21 +176,21 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed inset-y-0 right-0 z-[60] flex flex-col w-[82vw] max-w-[320px] bg-[#07080f] border-l border-[#151c30]"
+            className="fixed inset-y-0 right-0 z-[60] flex flex-col w-[82vw] max-w-[320px] bg-sidebar text-sidebar-foreground border-l border-sidebar-border"
             style={{
               paddingTop: 'env(safe-area-inset-top)',
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}
           >
             {/* Header drawer */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#151c30] shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-sidebar-border shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8">
                   <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <p className="text-[12px] font-light tracking-[0.22em] uppercase text-[#e8dfc8]/80">{BRAND_SHORT_NAME}</p>
-                  <p className="text-[8px] text-[#c8bfa8]/20 font-light uppercase tracking-[0.15em]">Plataforma EDU</p>
+                  <p className="text-[12px] font-light tracking-[0.22em] uppercase text-sidebar-foreground/80">{BRAND_SHORT_NAME}</p>
+                  <p className="text-[8px] text-sidebar-foreground/45 font-light uppercase tracking-[0.15em]">Plataforma EDU</p>
                 </div>
               </div>
               <button
@@ -191,7 +205,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
             <nav className="flex-1 overflow-y-auto scrollbar-invisible px-3 py-3">
               {groups.map((group, gi) => (
                 <div key={gi} className={gi > 0 ? 'mt-4' : ''}>
-                  <p className="text-[9px] font-light text-[#c8bfa8]/20 uppercase tracking-[0.3em] mb-1.5 px-2">
+                  <p className="text-[9px] font-light text-sidebar-foreground/45 uppercase tracking-[0.3em] mb-1.5 px-2">
                     {group.label}
                   </p>
                   {group.items.map(item => {
@@ -204,8 +218,8 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
                         onClick={handleNav}
                         className={`relative flex items-center gap-3 px-3 py-3.5 rounded-xl mb-0.5 min-h-[52px] transition-colors active:scale-[0.98] ${
                           active
-                            ? 'bg-[#161c32] text-[#e8dfc8]'
-                            : 'text-[#c8bfa8]/45 active:bg-white/5'
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                            : 'text-sidebar-foreground/65 active:bg-sidebar-accent/60'
                         }`}
                       >
                         {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[#d4b96a]" />}
@@ -281,6 +295,14 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
                     </p>
                   </div>
                 </div>
+                <button
+                  onClick={toggleTheme}
+                  className="mb-2 w-full flex items-center justify-center gap-2 py-3 border border-sidebar-border bg-sidebar-accent rounded-xl text-sidebar-accent-foreground text-[12px] font-medium active:scale-[0.97] transition-all"
+                  aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                >
+                  {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                  {theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                </button>
                 <button
                   onClick={() => { logout(); onClose(); }}
                   className="w-full flex items-center justify-center gap-2 py-3 border border-red-500/15 rounded-xl text-red-400/60 text-[12px] font-light active:scale-[0.97] transition-all"

@@ -175,6 +175,12 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     applyTheme(next);
   };
 
+  useEffect(() => {
+    const syncTheme = (event) => setTheme(event.detail || getStoredTheme());
+    window.addEventListener('wr-theme-change', syncTheme);
+    return () => window.removeEventListener('wr-theme-change', syncTheme);
+  }, []);
+
   const isAdmin = session?.role === 'admin';
   const base = isAdmin ? '/adm' : '/student';
   const groups = isAdmin ? adminGroups : studentGroups;
@@ -351,12 +357,12 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         onClick={handleClose}
         className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 relative ${
           active
-            ? 'bg-white/10 text-white shadow-sm'
-            : 'text-white/50 hover:bg-white/6 hover:text-white/80'
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+            : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
         }`}
       >
         {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-r-full bg-primary" />}
-        <item.icon size={15} className={active ? 'text-white' : item.color} />
+        <item.icon size={15} className={active ? 'text-sidebar-primary' : item.color} />
         <span className="font-medium text-[12.5px] flex-1 leading-tight">{item.label}</span>
         {badgeCount > 0 && (
           <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black leading-none flex items-center justify-center shadow-[0_0_0_2px_rgba(10,10,20,0.95)] animate-pulse">
@@ -377,12 +383,12 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     const unread = notifications.filter(notification => notification && !notification.is_read).length;
     const active = isActive('/ring');
     return (
-      <div className="px-3 py-2 border-t border-white/8">
+      <div className="px-3 py-2 border-t border-sidebar-border">
         <Link
           to={base + '/ring'}
           onClick={handleClose}
           className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${
-            active ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/6 hover:text-white/80'
+            active ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
           }`}
         >
           <div className="relative">
@@ -417,7 +423,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         {/* Logo */}
-        <div className="px-4 py-4 flex items-center justify-between border-b border-white/8">
+        <div className="px-4 py-4 flex items-center justify-between border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
             <div className="relative">
               <div className="w-8 h-8 flex items-center justify-center">
@@ -426,8 +432,8 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border-2 border-sidebar" />
             </div>
             <div>
-              <h1 className="text-[14px] font-bold tracking-tight text-white">{BRAND_SHORT_NAME}</h1>
-              <p className="text-[9px] text-white/35 -mt-0.5 leading-tight">Instituto de Desenvolvimento Humano</p>
+              <h1 className="text-[14px] font-bold tracking-tight text-sidebar-foreground">{BRAND_SHORT_NAME}</h1>
+              <p className="text-[9px] text-sidebar-foreground/55 -mt-0.5 leading-tight">Instituto de Desenvolvimento Humano</p>
             </div>
           </div>
           <button onClick={handleClose} className="md:hidden text-white/40 hover:text-white p-1 rounded-lg transition-colors">
@@ -447,7 +453,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
                 <button
                   onClick={() => toggleGroup(gi)}
                   className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors ${
-                    hasActiveItem ? 'text-white/70' : 'text-white/28 hover:text-white/50'
+                    hasActiveItem ? 'text-sidebar-foreground/80' : 'text-sidebar-foreground/45 hover:text-sidebar-foreground/70'
                   }`}
                 >
                   <span className="text-[9.5px] font-bold uppercase tracking-widest">
@@ -474,8 +480,8 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         {isAdmin && <NotificationsLink />}
 
         {/* User footer */}
-        <div className="p-2.5 border-t border-white/8">
-          <p className="px-2 pb-1.5 text-[8.5px] leading-snug text-white/25">
+        <div className="p-2.5 border-t border-sidebar-border">
+          <p className="px-2 pb-1.5 text-[8.5px] leading-snug text-sidebar-foreground/40">
             {BRAND_LEGAL_NAME}<br />CNPJ {BRAND_CNPJ}
           </p>
           <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/6 transition-colors mb-0.5">
@@ -490,15 +496,15 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-semibold text-white/90 truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-[9px] text-white/35">{isAdmin ? 'Administrador' : 'Estudante'}</p>
+              <p className="text-[12px] font-semibold text-sidebar-foreground truncate">{session?.name || 'Usuário'}</p>
+              <p className="text-[9px] text-sidebar-foreground/50">{isAdmin ? 'Administrador' : 'Estudante'}</p>
             </div>
             <Sparkles size={11} className="text-white/15 shrink-0" />
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={logout}
-              className="flex items-center gap-2 text-white/30 hover:text-red-400 flex-1 px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
+              className="flex items-center gap-2 text-sidebar-foreground/55 hover:text-red-500 flex-1 px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
             >
               <LogOut size={13} />
               Sair da conta
@@ -506,7 +512,8 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-              className="p-2 rounded-xl text-white/30 hover:text-white/70 hover:bg-white/8 transition-colors shrink-0"
+              className="p-2 rounded-xl text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0"
+              aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
             >
               {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
             </button>
