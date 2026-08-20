@@ -156,10 +156,10 @@ export default function AppShellMobile() {
         }}
       >
         {/* Header — não cobre a status bar */}
-        <header className="shrink-0 flex items-center gap-3 px-4 bg-[#07080f] border-b border-[#1a2035]"
+        <header className="shrink-0 flex items-center gap-3 px-4 bg-sidebar border-b border-sidebar-border"
           style={{ height: 52 }}>
           <img src={WR_PRIMARY_LOGO} alt="WR" className="w-7 h-7 object-contain shrink-0" />
-          <h1 className="flex-1 text-[11px] font-light text-[#e8dfc8]/75 tracking-[0.2em] uppercase truncate">{pageTitle}</h1>
+          <h1 className="flex-1 text-[11px] font-light text-sidebar-foreground/75 tracking-[0.2em] uppercase truncate">{pageTitle}</h1>
           {session?.role === 'admin' && (
             <div className="[&_button]:text-[#c8bfa8]/50 shrink-0">
               <NotificationsBell session={session} />
@@ -220,7 +220,7 @@ export default function AppShellMobile() {
 
         {/* Bottom nav */}
         <nav
-          className="shrink-0 bg-[#07080f]/98 border-t border-[#1a2035] backdrop-blur-xl z-40"
+          className="shrink-0 bg-sidebar/95 border-t border-sidebar-border backdrop-blur-xl z-40"
           style={{
             paddingBottom: 'env(safe-area-inset-bottom)',
             height: 'calc(56px + env(safe-area-inset-bottom))',
@@ -234,7 +234,7 @@ export default function AppShellMobile() {
                   key={root}
                   onClick={() => handleTabPress(root)}
                   className={`flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors relative ${
-                    active ? 'text-[#e8dfc8]' : 'text-white/30'
+                    active ? 'text-sidebar-primary' : 'text-sidebar-foreground/45'
                   }`}
                   style={{ WebkitTapHighlightColor: 'transparent', minWidth: 0 }}
                 >

@@ -16,10 +16,11 @@ export function applyTheme(theme) {
     root.classList.add('light');
   }
   localStorage.setItem('wr_theme', theme);
+  window.dispatchEvent(new CustomEvent('wr-theme-change', { detail: theme }));
 }
 
 export function getStoredTheme() {
-  return localStorage.getItem('wr_theme') || 'dark';
+  return localStorage.getItem('wr_theme') || 'light';
 }
 
 const routeLabels = {
@@ -69,6 +70,12 @@ export default function MobileHeader() {
     applyTheme(theme);
   }, [theme]);
 
+  useEffect(() => {
+    const syncTheme = (event) => setTheme(event.detail || getStoredTheme());
+    window.addEventListener('wr-theme-change', syncTheme);
+    return () => window.removeEventListener('wr-theme-change', syncTheme);
+  }, []);
+
   const toggleTheme = () => setTheme((prev) => prev === 'dark' ? 'light' : 'dark');
 
   return (
@@ -76,11 +83,11 @@ export default function MobileHeader() {
       <div className="w-7 h-7 flex items-center justify-center">
         <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
       </div>
-      <h1 className="text-sm font-bold text-white tracking-tight">{label}</h1>
+      <h1 className="text-sm font-bold text-sidebar-foreground tracking-tight">{label}</h1>
       <div className="ml-auto flex items-center gap-2">
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg border border-white/30 bg-white/20 text-white hover:bg-white/30 shadow-sm"
+          className="p-2 rounded-lg border border-sidebar-border bg-sidebar-accent text-sidebar-foreground hover:opacity-80 shadow-sm"
           title="Alternar tema"
           aria-label="Alternar tema claro e escuro"
         >
