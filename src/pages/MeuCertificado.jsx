@@ -158,8 +158,8 @@ export default function MeuCertificado() {
   return (
     <div className="p-4 lg:p-7 space-y-6 animate-fade-in-up max-w-7xl mx-auto">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
-          <Award size={24} className="text-white" />
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+          <Award size={24} className="text-primary-foreground" />
         </div>
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Certificado</h2>
@@ -182,7 +182,7 @@ export default function MeuCertificado() {
             <div className="flex-1 min-w-0">
               <p className="font-bold text-foreground">{cert.courseName}</p>
               <div className="flex items-center gap-2 mt-1">
-                <ShieldCheck size={13} className="text-emerald-500" />
+                <ShieldCheck size={13} className="text-primary" />
                 <span className="text-xs text-muted-foreground font-mono">{cert.verificationCode}</span>
               </div>
             </div>
@@ -219,8 +219,8 @@ export default function MeuCertificado() {
           </div>
 
           {/* Verify link */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800 flex items-center gap-3">
-            <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
+          <div className="bg-accent border border-primary rounded-xl p-4 text-sm text-primary flex items-center gap-3">
+            <ShieldCheck size={18} className="text-primary shrink-0" />
             <div>
               <p className="font-bold">Certificado com autenticidade verificável</p>
               <p className="text-xs mt-0.5">
@@ -229,7 +229,7 @@ export default function MeuCertificado() {
                   href={`/validar-certificado?codigo=${cert.verificationCode}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline hover:text-emerald-700"
+                  className="underline hover:text-primary"
                 >
                   Verificar autenticidade
                 </a>

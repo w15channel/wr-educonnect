@@ -244,8 +244,8 @@ ${sourceContent}`;
           <ChevronLeft size={16} /> Voltar
         </button>
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow">
-            <Sparkles size={16} className="text-white" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow">
+            <Sparkles size={16} className="text-primary-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-black text-foreground">Gerador de Provas com IA</h2>
@@ -260,13 +260,13 @@ ${sourceContent}`;
           <React.Fragment key={s}>
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all ${
               i === step ? 'bg-primary text-primary-foreground shadow' :
-              i < step ? 'bg-emerald-500/15 text-emerald-600' :
+              i < step ? 'bg-accent/15 text-primary' :
               'bg-secondary text-muted-foreground'
             }`}>
               {i < step ? <CheckCircle size={11} /> : <span>{i + 1}</span>}
               {s}
             </div>
-            {i < STEPS.length - 1 && <div className={`h-px w-5 shrink-0 ${i < step ? 'bg-emerald-400' : 'bg-border'}`} />}
+            {i < STEPS.length - 1 && <div className={`h-px w-5 shrink-0 ${i < step ? 'bg-primary' : 'bg-border'}`} />}
           </React.Fragment>
         ))}
       </div>
@@ -280,8 +280,8 @@ ${sourceContent}`;
             onClick={handleUseCustomText}
             className="w-full text-left bg-card border-2 border-primary/30 rounded-2xl p-5 hover:border-primary/60 hover:shadow-lg transition-all group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-3">
-              <FileText size={18} className="text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center mb-3">
+              <FileText size={18} className="text-primary-foreground" />
             </div>
             <p className="font-black text-sm text-foreground leading-tight mb-1 group-hover:text-primary transition-colors">📄 Texto Personalizado</p>
             <p className="text-xs text-muted-foreground">Cole qualquer texto para a IA gerar questões baseadas nele</p>
@@ -303,8 +303,8 @@ ${sourceContent}`;
                 onClick={() => handleSelectModule(mod)}
                 className="text-left bg-card border border-border rounded-2xl p-4 hover:border-primary/40 hover:shadow-md transition-all group"
               >
-                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${mod.color || 'from-slate-500 to-slate-700'} flex items-center justify-center mb-3`}>
-                  <GraduationCap size={16} className="text-white" />
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${mod.color || 'from-muted0 to-foreground'} flex items-center justify-center mb-3`}>
+                  <GraduationCap size={16} className="text-primary-foreground" />
                 </div>
                 <p className="font-black text-sm text-foreground leading-tight mb-1 group-hover:text-primary transition-colors">{mod.title}</p>
                 <p className="text-xs text-muted-foreground">{mod.lessons.length} aulas · {mod.subtitle}</p>
@@ -412,24 +412,24 @@ ${sourceContent}`;
           </div>
 
           {useCustomText ? (
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-start gap-3">
-              <FileText size={16} className="text-amber-400 mt-0.5 shrink-0" />
+            <div className="bg-accent/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-3">
+              <FileText size={16} className="text-primary mt-0.5 shrink-0" />
               <div className="flex-1">
-                <p className="text-xs font-black text-amber-300">Texto Personalizado</p>
-                <p className="text-[11px] text-amber-300/70 mt-0.5">
+                <p className="text-xs font-black text-primary">Texto Personalizado</p>
+                <p className="text-[11px] text-primary/70 mt-0.5">
                   {customText.length} caracteres serão analisados pela IA para gerar {questionCount} questões.
                 </p>
                 {customText.length < 100 && (
-                  <p className="text-[10px] text-amber-400 mt-1">⚠️ Texto muito curto. Mínimo recomendado: 100 caracteres.</p>
+                  <p className="text-[10px] text-primary mt-1">⚠️ Texto muito curto. Mínimo recomendado: 100 caracteres.</p>
                 )}
               </div>
             </div>
           ) : (
-            <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl p-4 flex items-start gap-3">
-              <Sparkles size={16} className="text-violet-400 mt-0.5 shrink-0" />
+            <div className="bg-accent/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-3">
+              <Sparkles size={16} className="text-primary mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs font-black text-violet-300">Módulo selecionado: {selectedMod.title}</p>
-                <p className="text-[11px] text-violet-300/70 mt-0.5">
+                <p className="text-xs font-black text-primary">Módulo selecionado: {selectedMod.title}</p>
+                <p className="text-[11px] text-primary/70 mt-0.5">
                   {selectedMod.lessons.length} aulas serão analisadas pela IA para gerar {questionCount} questões cobrindo todo o conteúdo do módulo.
                 </p>
               </div>
@@ -449,7 +449,7 @@ ${sourceContent}`;
             <Button
               onClick={handleGenerate}
               disabled={useCustomText && customText.length < 50}
-              className="flex-1 gap-2 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-black"
+              className="flex-1 gap-2 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground font-black"
             >
               <Sparkles size={15} /> Gerar Questões com IA
             </Button>
@@ -461,10 +461,10 @@ ${sourceContent}`;
       {step === 2 && generating && (
         <div className="flex flex-col items-center justify-center py-20 gap-5">
           <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow-xl shadow-violet-500/30">
-              <Sparkles size={32} className="text-white" />
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-xl shadow-violet-500/30">
+              <Sparkles size={32} className="text-primary-foreground" />
             </div>
-            <div className="absolute -inset-2 rounded-full border-4 border-violet-400/30 animate-ping" />
+            <div className="absolute -inset-2 rounded-full border-4 border-primary/30 animate-ping" />
           </div>
           <div className="text-center">
             <p className="text-lg font-black text-foreground mb-1">Gerando questões com IA...</p>
@@ -473,7 +473,7 @@ ${sourceContent}`;
             </p>
             <p className="text-xs text-muted-foreground/60 mt-1">Isso pode levar até 30 segundos</p>
           </div>
-          <Loader2 size={24} className="text-violet-400 animate-spin" />
+          <Loader2 size={24} className="text-primary animate-spin" />
         </div>
       )}
 
@@ -481,11 +481,11 @@ ${sourceContent}`;
       {step === 3 && generatedQuestions && (
         <div className="space-y-4">
           {/* Summary bar */}
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3">
-            <CheckCircle size={18} className="text-emerald-400 shrink-0" />
+          <div className="bg-accent/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-3">
+            <CheckCircle size={18} className="text-primary shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-black text-emerald-300">{generatedQuestions.length} questões geradas com sucesso!</p>
-              <p className="text-[11px] text-emerald-300/70">Revise, edite se necessário e publique a prova.</p>
+              <p className="text-sm font-black text-primary">{generatedQuestions.length} questões geradas com sucesso!</p>
+              <p className="text-[11px] text-primary/70">Revise, edite se necessário e publique a prova.</p>
             </div>
             <div className="text-right shrink-0">
               <p className="text-xs text-muted-foreground">Pontuação</p>
@@ -510,7 +510,7 @@ ${sourceContent}`;
               <div key={qi} className="bg-card border border-border rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-black text-muted-foreground uppercase tracking-wider">Questão {qi + 1}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${q.answer_type === 'choice' ? 'bg-blue-500/10 text-blue-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${q.answer_type === 'choice' ? 'bg-accent/10 text-primary' : 'bg-accent/10 text-primary'}`}>
                     {q.answer_type === 'choice' ? 'Múltipla Escolha' : 'Discursiva'}
                   </span>
                 </div>
@@ -528,7 +528,7 @@ ${sourceContent}`;
                       <div key={oi} className="flex items-center gap-2">
                         <button
                           onClick={() => updateQuestion(qi, 'correct_index', oi)}
-                          className={`w-5 h-5 rounded-full border-2 shrink-0 transition-all ${q.correct_index === oi ? 'border-emerald-500 bg-emerald-500' : 'border-border hover:border-primary/50'}`}
+                          className={`w-5 h-5 rounded-full border-2 shrink-0 transition-all ${q.correct_index === oi ? 'border-primary bg-accent' : 'border-border hover:border-primary/50'}`}
                         />
                         <input
                           value={opt}
@@ -559,7 +559,7 @@ ${sourceContent}`;
             <Button
               onClick={handlePublish}
               disabled={saveMutation.isPending}
-              className="flex-1 gap-2 h-11 font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+              className="flex-1 gap-2 h-11 font-black bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground"
             >
               <GraduationCap size={16} />
               {saveMutation.isPending ? 'Publicando...' : `Publicar Prova (${generatedQuestions.length} questões · ${maxGrade} pts)`}

@@ -12,12 +12,12 @@ import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE }
 import { saveBlobWithPicker } from '@/lib/fileExport';
 
 const CATEGORY_CONFIG = {
-  lesson:          { label: 'Aula Gravada',              icon: BookOpen,      color: 'bg-purple-100 text-purple-700' },
-  task:            { label: 'Atividade Complementar',    icon: Heart,         color: 'bg-pink-100 text-pink-700' },
-  exam:            { label: 'Prova / Avaliação',          icon: Trophy,        color: 'bg-blue-100 text-blue-700' },
-  forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
-  therapist:       { label: 'Atividade Complementar',    icon: Heart,         color: 'bg-pink-100 text-pink-700' },
-  other:           { label: 'Outras Pontuações',          icon: CircleHelp,    color: 'bg-slate-100 text-slate-700' },
+  lesson:          { label: 'Aula Gravada',              icon: BookOpen,      color: 'bg-accent text-primary' },
+  task:            { label: 'Atividade Complementar',    icon: Heart,         color: 'bg-accent text-primary' },
+  exam:            { label: 'Prova / Avaliação',          icon: Trophy,        color: 'bg-accent text-primary' },
+  forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-accent text-primary' },
+  therapist:       { label: 'Atividade Complementar',    icon: Heart,         color: 'bg-accent text-primary' },
+  other:           { label: 'Outras Pontuações',          icon: CircleHelp,    color: 'bg-muted text-foreground' },
 };
 
 // Mostra o detalhamento por categoria das atividades de um aluno dentro da janela
@@ -104,21 +104,21 @@ export default function PeriodStudentDetailModal({ email, name, points, periodSt
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4" onClick={onClose}>
       <div
         className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-border flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black text-white shrink-0 bg-primary">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-black text-primary-foreground shrink-0 bg-primary">
             {name?.charAt(0)?.toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-lg text-foreground truncate">{name}</h3>
             <p className="text-xs text-muted-foreground truncate">{email}</p>
             <div className="flex items-center gap-1.5 mt-1.5">
-              <Star size={14} className="text-yellow-400 fill-yellow-400" />
-              <span className="text-base font-black text-yellow-600">{formatScore(points)} pts</span>
+              <Star size={14} className="text-primary fill-yellow-400" />
+              <span className="text-base font-black text-primary">{formatScore(points)} pts</span>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary transition-colors shrink-0">
@@ -151,14 +151,14 @@ export default function PeriodStudentDetailModal({ email, name, points, periodSt
                     {React.createElement(cfg.icon, { size: 12 })}
                   </div>
                   <span className="text-xs font-bold text-foreground">{cfg.label}</span>
-                  <span className="ml-auto text-xs font-bold text-yellow-600 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
+                  <span className="ml-auto text-xs font-bold text-primary bg-accent border border-primary px-2 py-0.5 rounded-full">
                     {formatScore(catTotal)} pts
                   </span>
                 </div>
                 <div className="space-y-1.5">
                   {items.map((item) => (
                     <div key={item.id} className="flex items-center gap-2 bg-secondary/40 rounded-xl px-3 py-2">
-                      <CheckCircle size={12} className="text-green-500 shrink-0" />
+                      <CheckCircle size={12} className="text-primary shrink-0" />
                       <span className="text-xs text-foreground flex-1 truncate">{item.ref_title}</span>
                       <span className="text-xs font-bold text-foreground shrink-0">{formatScore(item.score)} pts</span>
                     </div>
@@ -177,7 +177,7 @@ export default function PeriodStudentDetailModal({ email, name, points, periodSt
       <div style={{ position: 'fixed', left: -9999, top: 0 }}>
         <div
           ref={printRef}
-          className="bg-white"
+          className="bg-card"
           style={{
             fontFamily: 'Georgia, "Times New Roman", serif',
             width: 794,

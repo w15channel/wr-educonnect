@@ -3,8 +3,8 @@ export const MOD4 = {
   id: 'mod4',
   title: 'Módulo 4 — Intervenções Práticas II',
   subtitle: 'Mediação, Limites e Campo Relacional',
-  colorLight: 'text-amber-400',
-  bgLight: 'bg-amber-500/10',
+  colorLight: 'text-primary',
+  bgLight: 'bg-accent/10',
   lessons: [
     {
       id: 'mod4-a1',

@@ -116,7 +116,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
       <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
         <div
           ref={certRef}
-          className="bg-white mx-auto"
+          className="bg-card mx-auto"
           style={{
             fontFamily: 'Georgia, "Times New Roman", serif',
             width: 794,
@@ -459,7 +459,7 @@ export default function HistoricoAcademico() {
       <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-5 animate-fade-in-up">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <GraduationCap size={20} className="text-white" />
+            <GraduationCap size={20} className="text-primary-foreground" />
           </div>
           <div>
             <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Histórico Acadêmico</h2>
@@ -575,7 +575,7 @@ export default function HistoricoAcademico() {
     <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-          <GraduationCap size={20} className="text-white" />
+          <GraduationCap size={20} className="text-primary-foreground" />
         </div>
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Histórico Acadêmico</h2>
@@ -598,7 +598,7 @@ export default function HistoricoAcademico() {
           const rate = max > 0 ? Math.round((total / max) * 100) : 0;
           return (
             <div key={code.id} onClick={() => openSelector({ name, email, code })} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-primary-foreground shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
                 {name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -608,7 +608,7 @@ export default function HistoricoAcademico() {
               <div className="flex items-center gap-3 shrink-0 text-right">
                 <div>
                   <p className="text-xs text-muted-foreground">Aproveitamento</p>
-                  <p className={`text-sm font-black ${Number(rate) >= 60 ? 'text-green-600' : 'text-orange-500'}`}>{rate}%</p>
+                  <p className={`text-sm font-black ${Number(rate) >= 60 ? 'text-primary' : 'text-primary'}`}>{rate}%</p>
                 </div>
                 <div className="bg-primary/10 px-3 py-1.5 rounded-xl">
                   <p className="text-xs text-muted-foreground">Estudos</p>

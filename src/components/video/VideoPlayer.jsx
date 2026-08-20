@@ -442,7 +442,7 @@ export default function VideoPlayer({
   const showPoster = Boolean(poster) && !started && canControl;
 
   const containerClass = [
-    'wr-video-player bg-black',
+    'wr-video-player bg-foreground',
     cssFullscreen ? 'wr-video-player--css-fullscreen' : '',
     cssFullscreen && isPortrait ? 'wr-video-player--rotated' : '',
     className,
@@ -485,13 +485,13 @@ export default function VideoPlayer({
         )}
 
         {canControl && !ready && !loadError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
+          <div className="absolute inset-0 flex items-center justify-center bg-foreground/70 text-primary-foreground">
             <Loader2 size={26} className="animate-spin" />
           </div>
         )}
 
         {loadError && (
-          <div className="absolute inset-0 z-[4] flex flex-col items-center justify-center gap-2 bg-black/80 px-4 text-center text-white">
+          <div className="absolute inset-0 z-[4] flex flex-col items-center justify-center gap-2 bg-foreground/80 px-4 text-center text-primary-foreground">
             <p className="text-sm">{loadError}</p>
             {source.originalUrl && (
               <a
@@ -514,8 +514,8 @@ export default function VideoPlayer({
             style={{ backgroundImage: `url("${poster}")` }}
             aria-label={`Reproduzir ${title}`}
           >
-            <span className="absolute inset-0 bg-black/35" />
-            <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-primary shadow-lg transition-transform hover:scale-105">
+            <span className="absolute inset-0 bg-foreground/35" />
+            <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-card/90 text-primary shadow-lg transition-transform hover:scale-105">
               <Play size={28} className="ml-1" fill="currentColor" />
             </span>
           </button>
@@ -526,7 +526,7 @@ export default function VideoPlayer({
             type="button"
             onClick={exitFullscreen}
             aria-label="Sair da tela cheia"
-            className="absolute right-3 top-3 z-[5] rounded-full bg-black/60 p-2 text-white"
+            className="absolute right-3 top-3 z-[5] rounded-full bg-foreground/60 p-2 text-primary-foreground"
           >
             <Minimize2 size={18} />
           </button>
@@ -534,9 +534,9 @@ export default function VideoPlayer({
       </div>
 
       {/* Controles integrados — ocupam o espaço que antes exibia o resumo da aula */}
-      <div className="wr-video-controls bg-neutral-950 px-3 py-2.5 text-white">
+      <div className="wr-video-controls bg-foreground px-3 py-2.5 text-primary-foreground">
         <div className="flex items-center gap-2">
-          <span className="w-11 shrink-0 text-[11px] font-semibold tabular-nums text-white/70">
+          <span className="w-11 shrink-0 text-[11px] font-semibold tabular-nums text-primary-foreground/70">
             {formatTime(displayTime)}
           </span>
           <input
@@ -557,7 +557,7 @@ export default function VideoPlayer({
             className="wr-video-range flex-1 disabled:opacity-40"
             style={{ background: rangeBackground(progressPct) }}
           />
-          <span className="w-11 shrink-0 text-right text-[11px] font-semibold tabular-nums text-white/70">
+          <span className="w-11 shrink-0 text-right text-[11px] font-semibold tabular-nums text-primary-foreground/70">
             {formatTime(duration)}
           </span>
         </div>
@@ -620,10 +620,10 @@ export default function VideoPlayer({
           </button>
         </div>
 
-        {rateNotice && <p className="mt-1.5 text-[11px] text-amber-300">{rateNotice}</p>}
+        {rateNotice && <p className="mt-1.5 text-[11px] text-primary">{rateNotice}</p>}
 
         {!canControl && source.kind !== 'unsupported' && (
-          <p className="mt-1.5 text-[11px] text-white/50">
+          <p className="mt-1.5 text-[11px] text-primary-foreground/50">
             Este vídeo é servido por {source.provider || 'um site externo'}, que não libera controle remoto de
             reprodução. Use os controles exibidos sobre o vídeo — o botão Girar tela continua disponível.
           </p>

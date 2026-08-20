@@ -55,12 +55,12 @@ export default function ServiceRequestChatModal({ serviceLabel, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/60 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-card rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col" style={{ height: '80vh', maxHeight: '620px' }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-[#5b5ef4]/5 to-[#1db89e]/5 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5b5ef4] to-[#1db89e] flex items-center justify-center shadow-md">
-              <MessageCircle size={18} className="text-white" />
+              <MessageCircle size={18} className="text-primary-foreground" />
             </div>
             <div>
               <p className="font-black text-sm text-foreground">{serviceLabel}</p>
@@ -87,7 +87,7 @@ export default function ServiceRequestChatModal({ serviceLabel, onClose }) {
                   Dados enviados! Em breve entraremos em contato pelo WhatsApp.
                 </div>
               ) : (
-                <button onClick={sendToWhatsApp} className="w-full py-3 rounded-2xl bg-[#25D366] text-white text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+                <button onClick={sendToWhatsApp} className="w-full py-3 rounded-2xl bg-[#25D366] text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
                   <Send size={14} /> Enviar dados pelo WhatsApp
                 </button>
               )}

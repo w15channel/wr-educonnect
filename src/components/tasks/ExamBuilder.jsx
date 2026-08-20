@@ -79,8 +79,8 @@ export default function ExamBuilder({ onBack, editingExam }) {
           <ChevronLeft size={16} /> Voltar
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
-            <GraduationCap size={16} className="text-purple-600" />
+          <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
+            <GraduationCap size={16} className="text-primary" />
           </div>
           <h2 className="text-xl font-bold text-foreground">{editingExam ? 'Editar Prova' : 'Criar Nova Prova'}</h2>
         </div>
@@ -148,7 +148,7 @@ export default function ExamBuilder({ onBack, editingExam }) {
                   <div key={oi} className="flex items-center gap-2">
                     <button
                       onClick={() => updateQuestion(qi, 'correct_index', oi)}
-                      className={`w-5 h-5 rounded-full border-2 shrink-0 transition-all ${q.correct_index === oi ? 'border-green-500 bg-green-500' : 'border-border'}`}
+                      className={`w-5 h-5 rounded-full border-2 shrink-0 transition-all ${q.correct_index === oi ? 'border-primary bg-accent' : 'border-border'}`}
                     />
                     <Input
                       placeholder={`Alternativa ${String.fromCharCode(65 + oi)}`}

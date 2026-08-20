@@ -28,7 +28,7 @@ function buildReports(pairings, getStudentInfo) {
         authorName: getStudentInfo(p.therapist_email).name,
         targetName: getStudentInfo(p.patient_email).name,
         roleLabel: 'Terapeuta → Paciente',
-        roleColor: 'text-pink-600',
+        roleColor: 'text-primary',
         comment: p.therapist_comment,
         score: p.therapist_score,
       });
@@ -43,7 +43,7 @@ function buildReports(pairings, getStudentInfo) {
         authorName: getStudentInfo(p.patient_email).name,
         targetName: getStudentInfo(p.therapist_email).name,
         roleLabel: 'Paciente → Terapeuta',
-        roleColor: 'text-blue-600',
+        roleColor: 'text-primary',
         comment: p.patient_comment,
         score: p.patient_score,
       });

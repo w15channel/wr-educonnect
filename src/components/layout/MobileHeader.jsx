@@ -94,11 +94,11 @@ export default function MobileHeader() {
           {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
         {session?.role === 'admin' && (
-          <div className="[&_button]:text-white/70 [&_button:hover]:bg-white/10">
+          <div className="[&_button]:text-primary-foreground/70 [&_button:hover]:bg-card/10">
             <NotificationsBell session={session} />
           </div>
         )}
-        <span className="hidden sm:inline text-[9px] font-bold text-white/30 uppercase tracking-widest">{BRAND_LEGAL_NAME}</span>
+        <span className="hidden sm:inline text-[9px] font-bold text-primary-foreground/30 uppercase tracking-widest">{BRAND_LEGAL_NAME}</span>
       </div>
     </header>
   );

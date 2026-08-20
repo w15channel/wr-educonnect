@@ -178,8 +178,8 @@ export default function LiveSessions() {
           <h2 className="text-sm font-bold text-foreground truncate flex-1 min-w-0">{selectedSession.title}</h2>
           <div className="flex items-center gap-2 shrink-0">
             {isLive && (
-              <span className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-100 border border-red-200 px-2 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> AO VIVO
+              <span className="flex items-center gap-1 text-xs font-bold text-destructive bg-destructive border border-destructive px-2 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" /> AO VIVO
               </span>
             )}
             {isTeacher && (
@@ -198,7 +198,7 @@ export default function LiveSessions() {
         {/* Layout: video top / chat bottom on mobile, side-by-side on desktop */}
         <div className="flex flex-col xl:flex-row flex-1 min-h-0 overflow-hidden">
           {/* Stream */}
-          <div className="flex flex-col bg-black relative flex-shrink-0 xl:flex-1 min-h-0">
+          <div className="flex flex-col bg-foreground relative flex-shrink-0 xl:flex-1 min-h-0">
             {/* 16:9 iframe */}
             <div className="w-full aspect-video xl:aspect-auto xl:flex-1" style={{ minHeight: 0 }}>
               <iframe
@@ -216,7 +216,7 @@ export default function LiveSessions() {
                 href={`${YT_CHANNEL}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium"
+                className="flex items-center gap-1.5 text-xs text-destructive hover:text-destructive font-medium"
               >
                 <Youtube size={13} /> Canal WR Mídia
                 <ExternalLink size={11} className="opacity-50" />
@@ -231,35 +231,35 @@ export default function LiveSessions() {
           </div>
 
           {/* Chat */}
-          <div className="w-full xl:w-[30rem] 2xl:w-[34rem] bg-white border-t xl:border-t-0 xl:border-l border-gray-200 flex flex-col h-[42dvh] min-h-[360px] md:h-[420px] xl:h-full xl:min-h-0">
-            <div className="px-3 py-2.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
+          <div className="w-full xl:w-[30rem] 2xl:w-[34rem] bg-card border-t xl:border-t-0 xl:border-l border-border flex flex-col h-[42dvh] min-h-[360px] md:h-[420px] xl:h-full xl:min-h-0">
+            <div className="px-3 py-2.5 border-b border-border flex items-center gap-2 bg-muted">
               <MessageSquare size={14} className="text-primary" />
               <h3 className="font-bold text-sm text-foreground flex-1">Chat ao Vivo</h3>
               <span className="text-[10px] text-muted-foreground">{chatMessages.length} msgs</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-white">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-card">
               {chatMessages.length === 0 && (
-                <p className="text-xs text-gray-400 text-center mt-6 px-2">
+                <p className="text-xs text-muted-foreground text-center mt-6 px-2">
                   O chat está vazio. Seja o primeiro a enviar uma mensagem!
                 </p>
               )}
               {chatMessages.map(msg => (
-                <div key={msg.id} className={`text-sm ${msg.is_hand_raised ? 'bg-amber-50 p-2 rounded-xl border border-amber-200' : 'py-0.5'}`}>
-                  <span className="font-bold text-xs text-gray-900">{msg.author_name}: </span>
-                  <span className="text-xs text-gray-800">{msg.content}</span>
+                <div key={msg.id} className={`text-sm ${msg.is_hand_raised ? 'bg-accent p-2 rounded-xl border border-primary' : 'py-0.5'}`}>
+                  <span className="font-bold text-xs text-foreground">{msg.author_name}: </span>
+                  <span className="text-xs text-foreground">{msg.content}</span>
                 </div>
               ))}
               <div ref={chatEndRef} />
             </div>
             {/* Attendance + Emojis + Hand */}
-            <div className="px-2 py-1.5 border-t border-gray-200 bg-gray-50 space-y-1.5">
+            <div className="px-2 py-1.5 border-t border-border bg-muted space-y-1.5">
               {!isTeacher && isLive && !alreadyAttended && !attendanceConfirmed && (
                 attendanceTimer > 0
                   ? <AttendanceWidget secondsLeft={attendanceTimer} onTick={setAttendanceTimer} onConfirm={() => confirmAttendanceMutation.mutate(selectedSession)} loading={confirmAttendanceMutation.isPending} />
                   : <span className="text-xs text-muted-foreground">Janela de presença encerrada</span>
               )}
               {!isTeacher && isLive && (alreadyAttended || attendanceConfirmed) && (
-                <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-1 rounded-full w-fit">
+                <span className="flex items-center gap-1 text-xs font-bold text-primary bg-accent border border-primary px-2 py-1 rounded-full w-fit">
                   <CheckCircle size={11} /> Presença confirmada
                 </span>
               )}
@@ -273,19 +273,19 @@ export default function LiveSessions() {
                   <button
                     onClick={handleRaiseHand}
                     title="Pedir para falar"
-                    className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg hover:bg-amber-100 transition-colors"
+                    className="flex items-center gap-1 text-xs text-primary bg-accent border border-primary px-2 py-1 rounded-lg hover:bg-accent transition-colors"
                   >
                     ✋ Falar
                   </button>
                 )}
               </div>
             </div>
-            <form onSubmit={handleSend} className="p-2 border-t border-gray-200 bg-white flex gap-2">
+            <form onSubmit={handleSend} className="p-2 border-t border-border bg-card flex gap-2">
               <input
                 value={newMsg}
                 onChange={e => setNewMsg(e.target.value)}
                 placeholder="Digite no chat..."
-                className="flex-1 h-9 text-xs px-3 rounded-md border border-gray-300 outline-none focus:ring-1 focus:ring-blue-400 text-gray-900 placeholder:text-gray-400 bg-white"
+                className="flex-1 h-9 text-xs px-3 rounded-md border border-border outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground bg-card"
               />
               <Button type="submit" size="sm" className="h-9 w-9 p-0 shrink-0"><Send size={14} /></Button>
             </form>
@@ -313,7 +313,7 @@ export default function LiveSessions() {
             href={`${YT_CHANNEL}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-red-500 border border-red-200 bg-red-50 px-3 py-2 rounded-xl hover:bg-red-100 transition-colors font-semibold"
+            className="flex items-center gap-1.5 text-xs text-destructive border border-destructive bg-destructive px-3 py-2 rounded-xl hover:bg-destructive transition-colors font-semibold"
           >
             <Youtube size={14} /> Canal WR Mídia
           </a>
@@ -355,8 +355,8 @@ export default function LiveSessions() {
       {/* Live now */}
       {liveNow.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-red-600 flex items-center gap-2 mb-3">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Ao Vivo Agora
+          <h3 className="text-sm font-bold text-destructive flex items-center gap-2 mb-3">
+            <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" /> Ao Vivo Agora
           </h3>
           <div className="space-y-3">
             {liveNow.map(sess => (
@@ -369,7 +369,7 @@ export default function LiveSessions() {
       {upcoming.length > 0 && (
         <div>
           <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            <Calendar size={15} className="text-blue-500" /> Próximas Sessões
+            <Calendar size={15} className="text-primary" /> Próximas Sessões
           </h3>
           <div className="space-y-3">
             {upcoming.map(sess => (
@@ -413,11 +413,11 @@ function AttendanceWidget({ secondsLeft, onConfirm, loading, onTick }) {
   const secs = secondsLeft % 60;
   if (secondsLeft <= 0) return <span className="text-xs text-muted-foreground">Janela de presença encerrada</span>;
   return (
-    <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 flex-wrap">
-      <UserCheck size={13} className="text-blue-600 shrink-0" />
-      <span className="text-xs font-semibold text-blue-800">Confirmar presença</span>
-      <span className="text-xs font-mono text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">{String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}</span>
-      <Button size="sm" className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700" onClick={onConfirm} disabled={loading}>
+    <div className="flex items-center gap-2 bg-accent border border-primary rounded-xl px-3 py-2 flex-wrap">
+      <UserCheck size={13} className="text-primary shrink-0" />
+      <span className="text-xs font-semibold text-primary">Confirmar presença</span>
+      <span className="text-xs font-mono text-primary bg-accent px-1.5 py-0.5 rounded">{String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}</span>
+      <Button size="sm" className="h-7 px-2.5 text-xs bg-primary hover:bg-primary" onClick={onConfirm} disabled={loading}>
         Confirmar
       </Button>
     </div>
@@ -430,10 +430,10 @@ function SessionCard({ sess, isTeacher, onEnter, onToggle, onDelete }) {
   const isEnded = sess.status === 'ended' && !isFutureSession;
 
   return (
-    <div className={`bg-card rounded-2xl border shadow-sm hover:shadow-md transition-all p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${isLive ? 'border-red-200' : 'border-border'}`}>
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 relative ${isLive ? 'bg-red-100' : isEnded ? 'bg-muted' : 'bg-blue-100'}`}>
-        <Video size={18} className={isLive ? 'text-red-600' : isEnded ? 'text-muted-foreground' : 'text-blue-600'} />
-        {isLive && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-card" />}
+    <div className={`bg-card rounded-2xl border shadow-sm hover:shadow-md transition-all p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${isLive ? 'border-destructive' : 'border-border'}`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 relative ${isLive ? 'bg-destructive' : isEnded ? 'bg-muted' : 'bg-accent'}`}>
+        <Video size={18} className={isLive ? 'text-destructive' : isEnded ? 'text-muted-foreground' : 'text-primary'} />
+        {isLive && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-accent border-2 border-card" />}
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-bold text-sm text-foreground truncate">{sess.title}</p>
@@ -444,7 +444,7 @@ function SessionCard({ sess, isTeacher, onEnter, onToggle, onDelete }) {
               <Clock size={11} /> {format(new Date(sess.scheduled_at), 'dd/MM/yyyy HH:mm')}
             </span>
           )}
-          <Badge className={`text-[10px] px-2 py-0.5 ${isLive ? 'bg-red-100 text-red-700 border-red-200' : isEnded ? 'bg-muted text-muted-foreground border-border' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
+          <Badge className={`text-[10px] px-2 py-0.5 ${isLive ? 'bg-destructive text-destructive border-destructive' : isEnded ? 'bg-muted text-muted-foreground border-border' : 'bg-accent text-primary border-primary'}`}>
             {isLive ? '🔴 Ao Vivo' : isEnded ? 'Encerrada' : 'Agendada'}
           </Badge>
         </div>

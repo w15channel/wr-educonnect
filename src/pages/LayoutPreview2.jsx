@@ -367,7 +367,7 @@ export default function LandingPage({ onLogin }) {
   );
 
   return (
-    <div className="site-page scrollbar-invisible text-white" style={{ background: BG }}>
+    <div className="site-page scrollbar-invisible text-primary-foreground" style={{ background: BG }}>
 
       {/* NAVBAR */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${navScrolled ? 'border-b backdrop-blur-xl' : ''}`}
@@ -382,14 +382,14 @@ export default function LandingPage({ onLogin }) {
               <img src={WR_PRIMARY_LOGO} alt="WR" className="w-7 h-7 object-contain" />
             </div>
             <div className="min-w-0">
-              <span className="block text-sm font-light tracking-[0.28em] uppercase text-white">{BRAND_SHORT_NAME}</span>
+              <span className="block text-sm font-light tracking-[0.28em] uppercase text-primary-foreground">{BRAND_SHORT_NAME}</span>
               <span className="hidden sm:block text-[9px] uppercase tracking-[0.25em] font-light" style={{ color: `${G}60` }}>Instituto de Desenvolvimento Humano</span>
             </div>
           </a>
 
-          <div className="hidden md:flex items-center gap-7 text-[11px] text-white/35 uppercase tracking-[0.18em] font-light">
+          <div className="hidden md:flex items-center gap-7 text-[11px] text-primary-foreground/35 uppercase tracking-[0.18em] font-light">
             {[['Metodologia', '#metodologia'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos'], ['FAQ', '#faq'], ['Atendimento Social', '/atendimento-social']].map(([label, href]) =>
-              <a key={label} href={href} className="hover:text-white/70 transition-colors"
+              <a key={label} href={href} className="hover:text-primary-foreground/70 transition-colors"
                 onMouseEnter={e => { e.currentTarget.style.color = G; }}
                 onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
               >{label}</a>
@@ -397,17 +397,17 @@ export default function LandingPage({ onLogin }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <button onClick={() => setShowLoginModal(true)} className="hidden md:flex text-[10px] uppercase tracking-[0.22em] font-light text-white/35 hover:text-white/60 transition-colors">
+            <button onClick={() => setShowLoginModal(true)} className="hidden md:flex text-[10px] uppercase tracking-[0.22em] font-light text-primary-foreground/35 hover:text-primary-foreground/60 transition-colors">
               Área do Aluno
             </button>
-            <div className="hidden md:block w-px h-3 bg-white/10" />
-            <a href="#cursos" className="hidden md:block text-[10px] uppercase tracking-[0.22em] font-medium px-5 py-2.5 border transition-all hover:text-black"
+            <div className="hidden md:block w-px h-3 bg-card/10" />
+            <a href="#cursos" className="hidden md:block text-[10px] uppercase tracking-[0.22em] font-medium px-5 py-2.5 border transition-all hover:text-foreground"
               style={{ borderColor: `${G}60`, color: G }}
               onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
               Inscreva-se
             </a>
-            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden w-9 h-9 border border-white/10 text-white/50 hover:text-white flex items-center justify-center">
+            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden w-9 h-9 border border-border/10 text-primary-foreground/50 hover:text-primary-foreground flex items-center justify-center">
               {mobileMenu ? <X size={15} /> : <Menu size={15} />}
             </button>
           </div>
@@ -416,10 +416,10 @@ export default function LandingPage({ onLogin }) {
         {mobileMenu && (
           <div className="md:hidden mx-5 mt-2 border px-5 py-5 space-y-3" style={{ background: BG3, borderColor: `${G}18` }}>
             {[['Metodologia', '#metodologia'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos'], ['FAQ', '#faq'], ['Atendimento Social', '/atendimento-social'], ['Validar Certificado', '/validar-certificado']].map(([label, href]) =>
-              <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/40 hover:text-white/70 py-2 text-[11px] uppercase tracking-[0.2em] transition-all">{label}</a>
+              <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-primary-foreground/40 hover:text-primary-foreground/70 py-2 text-[11px] uppercase tracking-[0.2em] transition-all">{label}</a>
             )}
             <div className="h-px" style={{ background: `${G}15` }} />
-            <button onClick={() => { setShowLoginModal(true); setMobileMenu(false); }} className="w-full text-center text-white/35 text-[11px] uppercase tracking-[0.2em] py-2">Área do Aluno</button>
+            <button onClick={() => { setShowLoginModal(true); setMobileMenu(false); }} className="w-full text-center text-primary-foreground/35 text-[11px] uppercase tracking-[0.2em] py-2">Área do Aluno</button>
             <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center border text-[11px] uppercase tracking-[0.2em] py-3" style={{ borderColor: `${G}60`, color: G }}>Inscreva-se</a>
           </div>
         )}
@@ -442,12 +442,12 @@ export default function LandingPage({ onLogin }) {
             <div className="h-px w-10" style={{ background: `${G}50` }} />
           </div>
 
-          <h1 className="font-thin leading-[0.9] mb-6 tracking-[-0.02em] text-white" style={{ fontSize: 'clamp(3rem,11vw,6.5rem)' }}>
+          <h1 className="font-thin leading-[0.9] mb-6 tracking-[-0.02em] text-primary-foreground" style={{ fontSize: 'clamp(3rem,11vw,6.5rem)' }}>
             Transforme vidas
             <span className="block font-light italic" style={{ color: G }}>através da cura.</span>
           </h1>
 
-          <p className="text-base lg:text-lg leading-relaxed max-w-xl mx-auto mb-4 font-light tracking-wide text-white/40">
+          <p className="text-base lg:text-lg leading-relaxed max-w-xl mx-auto mb-4 font-light tracking-wide text-primary-foreground/40">
             Torne-se terapeuta com formação profissionalizante reconhecida nacional e internacionalmente. Prática clínica desde a primeira semana.
           </p>
 
@@ -457,7 +457,7 @@ export default function LandingPage({ onLogin }) {
               { icon: '⚡', label: 'Prática desde a aula 1' },
               { icon: '🏆', label: 'Associado ABED' },
             ].map((b) => (
-              <div key={b.label} className="flex items-center gap-1.5 border px-3 py-1.5 text-[10px] font-light uppercase tracking-[0.15em] text-white/35"
+              <div key={b.label} className="flex items-center gap-1.5 border px-3 py-1.5 text-[10px] font-light uppercase tracking-[0.15em] text-primary-foreground/35"
                 style={{ borderColor: `${G}15` }}>
                 <span>{b.icon}</span> {b.label}
               </div>
@@ -471,13 +471,13 @@ export default function LandingPage({ onLogin }) {
               onMouseLeave={e => { e.currentTarget.style.background = `${G}12`; e.currentTarget.style.color = G; }}>
               Garantir Minha Vaga <ChevronRight size={13} />
             </a>
-            <a href="#metodologia" className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] px-8 py-4 border border-white/10 text-white/35 hover:border-white/25 hover:text-white/55 transition-all font-light">
+            <a href="#metodologia" className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] px-8 py-4 border border-border/10 text-primary-foreground/35 hover:border-border/25 hover:text-primary-foreground/55 transition-all font-light">
               <Play size={11} className="fill-current" /> Nossa Metodologia
             </a>
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/20 animate-bounce">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-primary-foreground/20 animate-bounce">
           <ArrowDown size={13} />
         </div>
         <div className="absolute bottom-8 right-8 flex gap-2 items-center">
@@ -500,7 +500,7 @@ export default function LandingPage({ onLogin }) {
           ].map((s, i) =>
             <div key={i} className="flex flex-col items-center">
               <p className="text-2xl lg:text-3xl font-thin tracking-wider" style={{ color: G }}>{s.value}</p>
-              <p className="text-white/30 text-[10px] mt-2 uppercase tracking-[0.22em] font-light leading-tight">{s.label}</p>
+              <p className="text-primary-foreground/30 text-[10px] mt-2 uppercase tracking-[0.22em] font-light leading-tight">{s.label}</p>
             </div>
           )}
         </div>
@@ -512,20 +512,20 @@ export default function LandingPage({ onLogin }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div>
               <SectionLabel>Nossa Metodologia</SectionLabel>
-              <h2 className="text-4xl lg:text-5xl font-thin text-white mb-2 leading-tight tracking-[-0.01em]">
+              <h2 className="text-4xl lg:text-5xl font-thin text-primary-foreground mb-2 leading-tight tracking-[-0.01em]">
                 Nossa
                 <span className="block font-light italic" style={{ color: G }}>Metodologia.</span>
               </h2>
               <div className="h-px my-7" style={{ background: `${G}15` }} />
               <blockquote className="border-l pl-5 mb-7" style={{ borderColor: `${G}30` }}>
-                <p className="text-white/40 text-sm italic leading-relaxed font-light">"Você pode ser ótimo(a) em muitas coisas na sua vida, mas a excelência vai se apresentar somente quando encontrar o que realmente nasceu para fazer."</p>
+                <p className="text-primary-foreground/40 text-sm italic leading-relaxed font-light">"Você pode ser ótimo(a) em muitas coisas na sua vida, mas a excelência vai se apresentar somente quando encontrar o que realmente nasceu para fazer."</p>
                 <p className="text-xs font-light mt-2 uppercase tracking-[0.2em]" style={{ color: `${G}70` }}>— William Ribeiro</p>
               </blockquote>
-              <p className="text-white/40 leading-relaxed mb-4 text-sm font-light">
-                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-white/70 font-normal">Terapia Comportamental</strong>, a <strong className="text-white/70 font-normal">profundidade da psicanálise</strong> e a <strong className="text-white/70 font-normal">complexidade da sexualidade humana</strong>.
+              <p className="text-primary-foreground/40 leading-relaxed mb-4 text-sm font-light">
+                Muitas pessoas sentem o chamado para ajudar o próximo, mas o medo de não saber o que fazer no primeiro atendimento acaba travando o início dessa jornada. Foi para romper essa barreira que criei uma formação onde você não apenas estuda, mas pratica a terapia desde as primeiras semanas. Aqui, unimos a <strong className="text-primary-foreground/70 font-normal">Terapia Comportamental</strong>, a <strong className="text-primary-foreground/70 font-normal">profundidade da psicanálise</strong> e a <strong className="text-primary-foreground/70 font-normal">complexidade da sexualidade humana</strong>.
               </p>
-              <p className="text-white/35 leading-relaxed mb-8 text-sm font-light">
-                Se você busca transformar sua vocação em uma carreira de impacto e <strong className="text-white/60 font-normal">excelência</strong>, este é o caminho para dominar as ferramentas que realmente <strong className="text-white/60 font-normal">mudam vidas</strong>.
+              <p className="text-primary-foreground/35 leading-relaxed mb-8 text-sm font-light">
+                Se você busca transformar sua vocação em uma carreira de impacto e <strong className="text-primary-foreground/60 font-normal">excelência</strong>, este é o caminho para dominar as ferramentas que realmente <strong className="text-primary-foreground/60 font-normal">mudam vidas</strong>.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {FEATURES.map(({ icon: Icon, title, desc }) =>
@@ -534,8 +534,8 @@ export default function LandingPage({ onLogin }) {
                       <Icon size={12} style={{ color: `${G}80` }} />
                     </div>
                     <div>
-                      <p className="font-medium text-white/70 text-xs uppercase tracking-[0.15em]">{title}</p>
-                      <p className="text-white/30 text-xs mt-0.5 font-light">{desc}</p>
+                      <p className="font-medium text-primary-foreground/70 text-xs uppercase tracking-[0.15em]">{title}</p>
+                      <p className="text-primary-foreground/30 text-xs mt-0.5 font-light">{desc}</p>
                     </div>
                   </div>
                 )}
@@ -553,7 +553,7 @@ export default function LandingPage({ onLogin }) {
                       <Zap size={12} style={{ color: G }} />
                     </div>
                     <div>
-                      <p className="text-white/70 font-light text-xs uppercase tracking-[0.2em]">Próxima turma</p>
+                      <p className="text-primary-foreground/70 font-light text-xs uppercase tracking-[0.2em]">Próxima turma</p>
                       <p className="text-xs font-light tracking-wide" style={{ color: `${G}70` }}>Setembro/2026 · Vagas limitadas</p>
                     </div>
                   </div>
@@ -570,8 +570,8 @@ export default function LandingPage({ onLogin }) {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <SectionLabel>Seu Mentor</SectionLabel>
-            <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Prof. William Ribeiro</h2>
-            <p className="text-white/35 mt-2 text-sm font-light uppercase tracking-[0.2em]">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
+            <h2 className="text-4xl lg:text-5xl font-thin text-primary-foreground tracking-[-0.01em]">Prof. William Ribeiro</h2>
+            <p className="text-primary-foreground/35 mt-2 text-sm font-light uppercase tracking-[0.2em]">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start mb-16">
@@ -594,7 +594,7 @@ export default function LandingPage({ onLogin }) {
                 `Dessa evolução natural, consolidou-se sua atuação como Psicoterapeuta, Psicanalista e Sexólogo Integrativo, com formações certificadas nacional e internacionalmente. Especialista em vícios e dinâmicas conjugais, William fundou o grupo Sinapse Coletiva.`,
                 `Atualmente, essa trajetória culmina na coordenação da plataforma ${BRAND_LEGAL_NAME}. Como mantenedor associado à ABED, William gerencia formações profissionalizantes que capacitam novos terapeutas através de um método focado na prática, na ética e na dignidade do atendimento.`
               ].map((text, i) =>
-                <p key={i} className="text-white/40 text-sm leading-relaxed font-light">{text}</p>
+                <p key={i} className="text-primary-foreground/40 text-sm leading-relaxed font-light">{text}</p>
               )}
             </div>
           </div>
@@ -603,7 +603,7 @@ export default function LandingPage({ onLogin }) {
           <div className="mb-14">
             <div className="flex items-center gap-3 mb-6">
               <CheckCircle size={11} style={{ color: G }} />
-              <span className="text-[10px] font-light text-white/30 uppercase tracking-[0.3em]">Credenciais e Certificações Verificáveis</span>
+              <span className="text-[10px] font-light text-primary-foreground/30 uppercase tracking-[0.3em]">Credenciais e Certificações Verificáveis</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {CERTS.map((c, i) =>
@@ -615,12 +615,12 @@ export default function LandingPage({ onLogin }) {
                       <CheckCircle size={11} style={{ color: G }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white/80 font-light text-sm uppercase tracking-[0.12em]">{c.title}</p>
-                      <p className="text-white/35 text-xs mt-0.5 font-light">{c.institution}</p>
+                      <p className="text-primary-foreground/80 font-light text-sm uppercase tracking-[0.12em]">{c.title}</p>
+                      <p className="text-primary-foreground/35 text-xs mt-0.5 font-light">{c.institution}</p>
                     </div>
                   </div>
-                  <p className="text-white/20 text-[10px] font-mono py-1.5 mb-2 truncate">Cód: {c.code}</p>
-                  {c.extra && <p className="text-white/30 text-xs mb-2 leading-relaxed font-light">{c.extra}</p>}
+                  <p className="text-primary-foreground/20 text-[10px] font-mono py-1.5 mb-2 truncate">Cód: {c.code}</p>
+                  {c.extra && <p className="text-primary-foreground/30 text-xs mb-2 leading-relaxed font-light">{c.extra}</p>}
                   {c.verifyLink && <a href={c.verifyLink} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-light hover:opacity-80 transition-opacity" style={{ color: G }}>
                     <ExternalLink size={10} /> {c.verifyLabel}
@@ -633,16 +633,16 @@ export default function LandingPage({ onLogin }) {
           {/* Atuação Atual */}
           <div>
             <div className="flex items-center gap-3 mb-6">
-              <Sparkles size={11} className="text-white/30" />
-              <span className="text-[10px] font-light text-white/30 uppercase tracking-[0.3em]">Atuação Atual</span>
+              <Sparkles size={11} className="text-primary-foreground/30" />
+              <span className="text-[10px] font-light text-primary-foreground/30 uppercase tracking-[0.3em]">Atuação Atual</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {CURRENT.map((item, i) =>
                 <div key={i} className="border p-5 transition-all" style={{ borderColor: `${G}10` }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = `${G}22`}
                   onMouseLeave={e => e.currentTarget.style.borderColor = `${G}10`}>
-                  <p className="text-white/70 font-light text-xs uppercase tracking-[0.12em] mb-2">{item.title}</p>
-                  <p className="text-white/35 text-xs leading-relaxed mb-3 font-light">{item.desc}</p>
+                  <p className="text-primary-foreground/70 font-light text-xs uppercase tracking-[0.12em] mb-2">{item.title}</p>
+                  <p className="text-primary-foreground/35 text-xs leading-relaxed mb-3 font-light">{item.desc}</p>
                   {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-light hover:opacity-80 transition-opacity" style={{ color: G }}>
                     <ExternalLink size={10} /> {item.linkLabel}
@@ -659,11 +659,11 @@ export default function LandingPage({ onLogin }) {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <SectionLabel>Atuação aberta à comunidade</SectionLabel>
-            <h2 className="text-4xl lg:text-5xl font-thin text-white leading-tight mb-5 tracking-[-0.01em]">Terapia também é<span className="block font-light italic" style={{ color: G }}>presença social.</span></h2>
-            <p className="text-white/40 leading-relaxed mb-4 text-sm font-light">
+            <h2 className="text-4xl lg:text-5xl font-thin text-primary-foreground leading-tight mb-5 tracking-[-0.01em]">Terapia também é<span className="block font-light italic" style={{ color: G }}>presença social.</span></h2>
+            <p className="text-primary-foreground/40 leading-relaxed mb-4 text-sm font-light">
               Nossa atuação vai além da sala de aula: produzimos conteúdo aberto, acolhimento emocional e reflexões para ouvintes e espectadores que buscam orientação, equilíbrio e consciência no dia a dia.
             </p>
-            <p className="text-white/30 leading-relaxed mb-7 text-sm font-light">
+            <p className="text-primary-foreground/30 leading-relaxed mb-7 text-sm font-light">
               Esse compromisso social mostra na prática a essência da nossa formação: técnica, humanidade e responsabilidade com pessoas reais.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -675,7 +675,7 @@ export default function LandingPage({ onLogin }) {
                 <Play size={12} className="fill-current" /> Assistir no Instagram
               </a>
               <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 border border-white/10 text-white/40 text-xs uppercase tracking-[0.2em] px-6 py-3 hover:border-white/20 hover:text-white/60 transition-all font-light">
+                className="inline-flex items-center justify-center gap-2 border border-border/10 text-primary-foreground/40 text-xs uppercase tracking-[0.2em] px-6 py-3 hover:border-border/20 hover:text-primary-foreground/60 transition-all font-light">
                 <Instagram size={12} /> @wrterapia
               </a>
             </div>
@@ -685,17 +685,17 @@ export default function LandingPage({ onLogin }) {
               <div className="flex items-center justify-between gap-3 px-4 py-3 border-b" style={{ borderColor: `${G}10`, background: BG3 }}>
                 <div className="flex items-center gap-2 min-w-0">
                   <Instagram size={14} style={{ color: G }} />
-                  <span className="text-xs font-light uppercase tracking-[0.15em] text-white/60">Instagram @wrterapia</span>
+                  <span className="text-xs font-light uppercase tracking-[0.15em] text-primary-foreground/60">Instagram @wrterapia</span>
                 </div>
-                <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="text-[11px] font-light uppercase tracking-[0.15em] hover:text-white/70 transition-colors" style={{ color: G }}>Ver perfil</a>
+                <a href={INSTAGRAM_PROFILE_URL} target="_blank" rel="noopener noreferrer" className="text-[11px] font-light uppercase tracking-[0.15em] hover:text-primary-foreground/70 transition-colors" style={{ color: G }}>Ver perfil</a>
               </div>
-              <div className="relative w-full bg-black aspect-[9/16] max-h-[520px]">
+              <div className="relative w-full bg-foreground aspect-[9/16] max-h-[520px]">
                 <iframe title="WR Terapia — Vídeo do Instagram" src={SOCIAL_REEL_EMBED_URL}
-                  className="absolute inset-0 w-full h-full bg-black"
+                  className="absolute inset-0 w-full h-full bg-foreground"
                   allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen loading="lazy" />
               </div>
               <div className="px-4 py-3 border-t text-center" style={{ borderColor: `${G}10`, background: BG3 }}>
-                <a href={SOCIAL_REEL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 text-[11px] font-light text-white/40 hover:text-white/60 uppercase tracking-[0.15em]">
+                <a href={SOCIAL_REEL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 text-[11px] font-light text-primary-foreground/40 hover:text-primary-foreground/60 uppercase tracking-[0.15em]">
                   <Play size={11} className="fill-current" /> Abrir no Instagram
                 </a>
               </div>
@@ -709,8 +709,8 @@ export default function LandingPage({ onLogin }) {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <SectionLabel>Formações</SectionLabel>
-            <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Oferta de Matrícula<span className="block font-light italic" style={{ color: G }}>Antecipada</span></h2>
-            <p className="text-white/35 mt-3 max-w-2xl mx-auto text-sm font-light">Entre na primeira turma com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto mantido até o final do curso.</p>
+            <h2 className="text-4xl lg:text-5xl font-thin text-primary-foreground tracking-[-0.01em]">Oferta de Matrícula<span className="block font-light italic" style={{ color: G }}>Antecipada</span></h2>
+            <p className="text-primary-foreground/35 mt-3 max-w-2xl mx-auto text-sm font-light">Entre na primeira turma com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto mantido até o final do curso.</p>
             <SocialInitiativeNotice className="mx-auto mt-6 max-w-3xl text-left" />
 
             {/* Timer oferta */}
@@ -718,14 +718,14 @@ export default function LandingPage({ onLogin }) {
               <div className="flex flex-col lg:flex-row items-center justify-between gap-5">
                 <div className="text-center lg:text-left">
                   <p className="text-[10px] uppercase tracking-[0.28em] font-light mb-2" style={{ color: `${G}80` }}>Janela especial de 48 horas</p>
-                  <p className="text-white/70 font-light text-base">Garanta 50% na 1ª mensalidade + 40% vitalício até o fim do curso</p>
-                  <p className="text-white/30 text-xs mt-1 font-light">A condição vitalícia vale para inscritos até a abertura da primeira turma.</p>
+                  <p className="text-primary-foreground/70 font-light text-base">Garanta 50% na 1ª mensalidade + 40% vitalício até o fim do curso</p>
+                  <p className="text-primary-foreground/30 text-xs mt-1 font-light">A condição vitalícia vale para inscritos até a abertura da primeira turma.</p>
                 </div>
                 <div className="shrink-0 grid grid-cols-3 gap-2 text-center">
                   {[['Horas', offerHours], ['Min', offerMinutes], ['Seg', offerSeconds]].map(([label, value]) => (
                     <div key={label} className="min-w-[68px] border px-3 py-2.5" style={{ borderColor: `${G}20`, background: BG }}>
-                      <p className="text-xl font-light text-white font-mono" style={{ color: G }}>{value}</p>
-                      <p className="text-[9px] text-white/25 uppercase tracking-[0.2em] mt-0.5">{label}</p>
+                      <p className="text-xl font-light text-primary-foreground font-mono" style={{ color: G }}>{value}</p>
+                      <p className="text-[9px] text-primary-foreground/25 uppercase tracking-[0.2em] mt-0.5">{label}</p>
                     </div>
                   ))}
                 </div>
@@ -739,7 +739,7 @@ export default function LandingPage({ onLogin }) {
                 onMouseEnter={e => e.currentTarget.style.borderColor = `${G}28`}
                 onMouseLeave={e => e.currentTarget.style.borderColor = `${G}12`}>
                 <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png" alt="ABED" className="h-16 object-contain opacity-50 group-hover:opacity-80 transition-opacity" />
-                <ExternalLink size={14} className="text-white/20 group-hover:text-white/50 transition-colors" />
+                <ExternalLink size={14} className="text-primary-foreground/20 group-hover:text-primary-foreground/50 transition-colors" />
               </a>
               <a href="https://ahde-global.org/?lang=pt-br" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-3 border px-5 py-3 transition-all group" style={{ borderColor: `${G}12` }}
@@ -747,14 +747,14 @@ export default function LandingPage({ onLogin }) {
                 onMouseLeave={e => e.currentTarget.style.borderColor = `${G}12`}>
                 <div className="text-center">
                   <p className="font-light text-sm uppercase tracking-[0.2em]" style={{ color: G }}>AHDE</p>
-                  <p className="text-white/25 text-[9px] uppercase tracking-widest mt-0.5">International</p>
+                  <p className="text-primary-foreground/25 text-[9px] uppercase tracking-widest mt-0.5">International</p>
                 </div>
-                <div className="h-6 w-px bg-white/10" />
+                <div className="h-6 w-px bg-card/10" />
                 <div className="text-left">
-                  <p className="text-white/50 text-xs font-light">Membro Registrado</p>
-                  <p className="text-white/25 text-[10px] mt-0.5 font-light">ID: 00403THE</p>
+                  <p className="text-primary-foreground/50 text-xs font-light">Membro Registrado</p>
+                  <p className="text-primary-foreground/25 text-[10px] mt-0.5 font-light">ID: 00403THE</p>
                 </div>
-                <ExternalLink size={10} className="text-white/20 group-hover:text-white/50 transition-colors" />
+                <ExternalLink size={10} className="text-primary-foreground/20 group-hover:text-primary-foreground/50 transition-colors" />
               </a>
             </div>
           </div>
@@ -780,11 +780,11 @@ export default function LandingPage({ onLogin }) {
                 </div>
 
                 <div className="p-5 flex flex-col flex-1" style={{ background: BG3 }}>
-                  <h3 className="font-light text-white text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
-                  <p className="text-white/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
+                  <h3 className="font-light text-primary-foreground text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
+                  <p className="text-primary-foreground/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
                   <div className="space-y-1.5 mb-5 flex-1">
                     {c.highlights.map((h, j) =>
-                      <div key={j} className="flex items-center gap-2 text-xs text-white/35 font-light">
+                      <div key={j} className="flex items-center gap-2 text-xs text-primary-foreground/35 font-light">
                         <div className="w-1 h-1 shrink-0" style={{ background: `${G}80` }} />
                         {h}
                       </div>
@@ -792,15 +792,15 @@ export default function LandingPage({ onLogin }) {
                   </div>
                   <div className="pt-4 border-t" style={{ borderColor: `${G}10` }}>
                     <div className="mb-4">
-                      <p className="text-[10px] text-white/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta ativa por 48h</p>
-                      <p className="text-xs text-white/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
+                      <p className="text-[10px] text-primary-foreground/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta ativa por 48h</p>
+                      <p className="text-xs text-primary-foreground/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
                       <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>Primeira mensalidade com 50%:</p>
-                      <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
-                      <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
-                      <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
+                      <p className="text-2xl font-thin text-primary-foreground">{c.firstMonthPrice}</p>
+                      <p className="text-[11px] text-primary-foreground/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
+                      <p className="text-xl font-thin text-primary-foreground">{c.price} <span className="text-xs font-light text-primary-foreground/30">{c.period}</span></p>
                       <SocialInitiativeNotice compact className="mt-4 rounded-none" />
                     </div>
-                    <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 border text-[11px] text-white/40 font-light uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:text-white/60 transition-all" style={{ borderColor: `${G}12` }}>
+                    <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 border text-[11px] text-primary-foreground/40 font-light uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:text-primary-foreground/60 transition-all" style={{ borderColor: `${G}12` }}>
                       <BookOpen size={11} /> Ver ementa do curso
                     </a>
                     <button onClick={() => openCourseReservation(c)}
@@ -834,8 +834,8 @@ export default function LandingPage({ onLogin }) {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <SectionLabel>Em breve</SectionLabel>
-            <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Próximas <span className="font-light italic" style={{ color: G }}>Formações</span></h2>
-            <p className="text-white/35 mt-3 max-w-2xl mx-auto text-sm font-light">Garanta sua vaga antecipada com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto vitalício até o final do curso.</p>
+            <h2 className="text-4xl lg:text-5xl font-thin text-primary-foreground tracking-[-0.01em]">Próximas <span className="font-light italic" style={{ color: G }}>Formações</span></h2>
+            <p className="text-primary-foreground/35 mt-3 max-w-2xl mx-auto text-sm font-light">Garanta sua vaga antecipada com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto vitalício até o final do curso.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
@@ -893,11 +893,11 @@ export default function LandingPage({ onLogin }) {
                 </div>
                 {/* Conteúdo */}
                 <div className="p-5 flex flex-col flex-1" style={{ background: BG3 }}>
-                  <h3 className="font-light text-white text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
-                  <p className="text-white/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
+                  <h3 className="font-light text-primary-foreground text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
+                  <p className="text-primary-foreground/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
                   <div className="space-y-1.5 mb-5 flex-1">
                     {c.highlights.map((h, j) => (
-                      <div key={j} className="flex items-center gap-2 text-xs text-white/35 font-light">
+                      <div key={j} className="flex items-center gap-2 text-xs text-primary-foreground/35 font-light">
                         <div className="w-1 h-1 shrink-0" style={{ background: `${G}80` }} />
                         {h}
                       </div>
@@ -905,12 +905,12 @@ export default function LandingPage({ onLogin }) {
                   </div>
                   <div className="pt-4 border-t" style={{ borderColor: `${G}10` }}>
                     <div className="mb-4">
-                      <p className="text-[10px] text-white/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta de reserva antecipada</p>
-                      <p className="text-xs text-white/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
+                      <p className="text-[10px] text-primary-foreground/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta de reserva antecipada</p>
+                      <p className="text-xs text-primary-foreground/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
                       <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>Primeira mensalidade com 50%:</p>
-                      <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
-                      <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
-                      <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
+                      <p className="text-2xl font-thin text-primary-foreground">{c.firstMonthPrice}</p>
+                      <p className="text-[11px] text-primary-foreground/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
+                      <p className="text-xl font-thin text-primary-foreground">{c.price} <span className="text-xs font-light text-primary-foreground/30">{c.period}</span></p>
                     </div>
                     <button
                       onClick={() => openCourseReservation({ title: c.title })}
@@ -934,8 +934,8 @@ export default function LandingPage({ onLogin }) {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <SectionLabel>Depoimentos Verificados</SectionLabel>
-            <h2 className="text-3xl font-thin text-white tracking-[-0.01em]">O que dizem nossos alunos</h2>
-            <p className="text-white/30 text-xs mt-2 font-light uppercase tracking-[0.2em]">Relatos reais · nomes e identidades preservados pelos próprios alunos</p>
+            <h2 className="text-3xl font-thin text-primary-foreground tracking-[-0.01em]">O que dizem nossos alunos</h2>
+            <p className="text-primary-foreground/30 text-xs mt-2 font-light uppercase tracking-[0.2em]">Relatos reais · nomes e identidades preservados pelos próprios alunos</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
             {testimonials.map((t, i) => {
@@ -947,13 +947,13 @@ export default function LandingPage({ onLogin }) {
                   onMouseLeave={e => e.currentTarget.style.borderColor = `${G}10`}>
                   <div className="flex gap-0.5 mb-4">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={11} style={{ color: G, fill: G }} />)}</div>
                   <Quote size={16} className="mb-2 shrink-0" style={{ color: `${G}20` }} />
-                  <p className="text-white/45 leading-relaxed mb-5 flex-1 text-sm font-light italic">"{t.text}"</p>
+                  <p className="text-primary-foreground/45 leading-relaxed mb-5 flex-1 text-sm font-light italic">"{t.text}"</p>
                   <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: `${G}08` }}>
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium shrink-0 text-white"
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium shrink-0 text-primary-foreground"
                       style={{ background: color }}>{t.name[0]}</div>
                     <div>
-                      <p className="text-white/65 text-xs font-medium uppercase tracking-[0.12em]">{t.name}</p>
-                      <p className="text-white/25 text-[10px] font-light mt-0.5">Aluno(a) verificado(a)</p>
+                      <p className="text-primary-foreground/65 text-xs font-medium uppercase tracking-[0.12em]">{t.name}</p>
+                      <p className="text-primary-foreground/25 text-[10px] font-light mt-0.5">Aluno(a) verificado(a)</p>
                     </div>
                   </div>
                 </div>
@@ -968,7 +968,7 @@ export default function LandingPage({ onLogin }) {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <SectionLabel>Perguntas Frequentes</SectionLabel>
-            <h2 className="text-3xl font-thin text-white tracking-[-0.01em]">Dúvidas comuns</h2>
+            <h2 className="text-3xl font-thin text-primary-foreground tracking-[-0.01em]">Dúvidas comuns</h2>
           </div>
           <FaqSection />
         </div>
@@ -979,8 +979,8 @@ export default function LandingPage({ onLogin }) {
         <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at center, ${G}08, transparent 65%)` }} />
         <div className="max-w-2xl mx-auto text-center relative z-10">
           <div className="h-px w-20 mx-auto mb-10" style={{ background: `${G}40` }} />
-          <h2 className="text-4xl lg:text-5xl font-thin text-white mb-4 tracking-[-0.01em]">Pronto para começar<span className="block font-light italic" style={{ color: G }}>sua jornada?</span></h2>
-          <p className="text-white/35 text-sm mb-10 font-light">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
+          <h2 className="text-4xl lg:text-5xl font-thin text-primary-foreground mb-4 tracking-[-0.01em]">Pronto para começar<span className="block font-light italic" style={{ color: G }}>sua jornada?</span></h2>
+          <p className="text-primary-foreground/35 text-sm mb-10 font-light">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="#cursos" className="inline-flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.25em] border px-10 py-4 font-medium transition-all"
               style={{ borderColor: `${G}60`, color: G }}
@@ -988,7 +988,7 @@ export default function LandingPage({ onLogin }) {
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
               Garantir Minha Vaga <ChevronRight size={13} />
             </a>
-            <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 border border-white/10 text-white/30 text-[11px] uppercase tracking-[0.25em] px-8 py-4 hover:border-white/20 hover:text-white/50 transition-all font-light">
+            <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 border border-border/10 text-primary-foreground/30 text-[11px] uppercase tracking-[0.25em] px-8 py-4 hover:border-border/20 hover:text-primary-foreground/50 transition-all font-light">
               Já sou aluno
             </button>
           </div>
@@ -1005,28 +1005,28 @@ export default function LandingPage({ onLogin }) {
                 <img src={WR_PRIMARY_LOGO} alt="WR" className="w-6 h-6 object-contain" />
               </div>
               <div>
-                <p className="text-white/70 font-light text-sm uppercase tracking-[0.2em]">{BRAND_LEGAL_NAME}</p>
-                <p className="text-white/25 text-[10px] font-light mt-0.5">CNPJ {BRAND_CNPJ}</p>
+                <p className="text-primary-foreground/70 font-light text-sm uppercase tracking-[0.2em]">{BRAND_LEGAL_NAME}</p>
+                <p className="text-primary-foreground/25 text-[10px] font-light mt-0.5">CNPJ {BRAND_CNPJ}</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-6 text-white/25 text-[11px] font-light uppercase tracking-[0.15em]">
+            <div className="flex flex-wrap gap-6 text-primary-foreground/25 text-[11px] font-light uppercase tracking-[0.15em]">
               {[{ label: 'Política de Trabalho', href: '/politica' }, { label: 'Termos de Uso', href: '/termos' }, { label: 'Privacidade', href: '/privacidade' }].map((l) =>
-                <a key={l.label} href={l.href} className="hover:text-white/50 transition-colors">{l.label}</a>
+                <a key={l.label} href={l.href} className="hover:text-primary-foreground/50 transition-colors">{l.label}</a>
               )}
             </div>
           </div>
           <div className="border-t pt-6 flex flex-col md:flex-row items-center justify-between gap-3" style={{ borderColor: `${G}08` }}>
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
-              <p className="text-white/20 text-[10px] font-light">{BRAND_LEGAL_NAME} © 2026 · CNPJ {BRAND_CNPJ}</p>
-              <span className="text-white/10 hidden sm:inline">·</span>
-              <p className="text-white/20 text-[10px] font-light">Feito com <span className="text-red-400/60">♥</span> pela <a href="/wr-tec" className="hover:text-white/40 transition-colors" style={{ color: `${G}60` }}>WR-TEC®</a> © 2026</p>
+              <p className="text-primary-foreground/20 text-[10px] font-light">{BRAND_LEGAL_NAME} © 2026 · CNPJ {BRAND_CNPJ}</p>
+              <span className="text-primary-foreground/10 hidden sm:inline">·</span>
+              <p className="text-primary-foreground/20 text-[10px] font-light">Feito com <span className="text-destructive/60">♥</span> pela <a href="/wr-tec" className="hover:text-primary-foreground/40 transition-colors" style={{ color: `${G}60` }}>WR-TEC®</a> © 2026</p>
             </div>
             <div className="flex items-center gap-4">
               <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png"
                 alt="ABED" className="h-7 object-contain opacity-20 hover:opacity-50 transition-opacity" />
               <div className="flex items-center gap-1.5 border px-3 py-1" style={{ borderColor: `${G}12` }}>
                 <div className="w-1.5 h-1.5 rounded-full" style={{ background: G }} />
-                <span className="text-white/20 text-[10px] font-mono font-light tracking-widest">V-003-00</span>
+                <span className="text-primary-foreground/20 text-[10px] font-mono font-light tracking-widest">V-003-00</span>
               </div>
             </div>
           </div>
@@ -1035,26 +1035,26 @@ export default function LandingPage({ onLogin }) {
 
       {/* MODAL ATENDIMENTO SOCIAL */}
       {socialOpen && (
-        <div className="fixed inset-0 z-[190] bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4" onClick={() => setSocialOpen(false)}>
+        <div className="fixed inset-0 z-[190] bg-foreground/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4" onClick={() => setSocialOpen(false)}>
           <div className="border w-full max-w-2xl max-h-[90dvh] shadow-2xl overflow-hidden flex flex-col" style={{ background: BG3, borderColor: `${G}20` }} onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b flex items-start justify-between gap-4" style={{ borderColor: `${G}12` }}>
               <div>
-                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><Heart size={14} style={{ color: G }} /> Atendimento Social</h3>
-                <p className="text-white/30 text-xs mt-1 font-light">Triagem breve · consulta social R$ 35,00 · retorno em até 48h</p>
+                <h3 className="text-primary-foreground/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><Heart size={14} style={{ color: G }} /> Atendimento Social</h3>
+                <p className="text-primary-foreground/30 text-xs mt-1 font-light">Triagem breve · consulta social R$ 35,00 · retorno em até 48h</p>
               </div>
-              <button onClick={() => setSocialOpen(false)} className="text-white/25 hover:text-white/60 transition-colors"><X size={16} /></button>
+              <button onClick={() => setSocialOpen(false)} className="text-primary-foreground/25 hover:text-primary-foreground/60 transition-colors"><X size={16} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ background: BG }}>
               <div className="space-y-3">
                 {socialMessages.map((message, index) => (
                   <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[86%] border px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap font-light ${message.role === 'user' ? 'text-black' : 'text-white/60'}`}
+                    <div className={`max-w-[86%] border px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap font-light ${message.role === 'user' ? 'text-foreground' : 'text-primary-foreground/60'}`}
                       style={message.role === 'user' ? { background: G, borderColor: G } : { background: BG3, borderColor: `${G}15` }}>
                       {message.content}
                     </div>
                   </div>
                 ))}
-                {socialLoading && <div className="text-xs text-white/25 font-light">A IA está digitando...</div>}
+                {socialLoading && <div className="text-xs text-primary-foreground/25 font-light">A IA está digitando...</div>}
               </div>
               {socialMessages.filter(m => m.role === 'user').length >= 5 && (
                 <div className="border p-4 space-y-4" style={{ background: BG3, borderColor: `${G}15` }}>
@@ -1076,7 +1076,7 @@ export default function LandingPage({ onLogin }) {
                     ))}
                   </div>
                   {socialBooked ? (
-                    <div className="border p-4 text-xs text-white/50 font-light" style={{ borderColor: `${G}20` }}>
+                    <div className="border p-4 text-xs text-primary-foreground/50 font-light" style={{ borderColor: `${G}20` }}>
                       Agendamento solicitado. Em até 48 horas um atendente entrará em contato para enviar o código Pix de R$ 35,00.
                     </div>
                   ) : (
@@ -1092,7 +1092,7 @@ export default function LandingPage({ onLogin }) {
                 <input value={socialInput} onChange={(e) => setSocialInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') sendSocialChatMessage(); }}
                   placeholder={socialMessages.filter(m => m.role === 'user').length >= 5 ? 'Entrevista concluída. Escolha data e horário acima.' : 'Responda aqui...'}
-                  className="flex-1 border text-white placeholder:text-white/20 h-11 px-3 text-sm focus:outline-none font-light"
+                  className="flex-1 border text-primary-foreground placeholder:text-primary-foreground/20 h-11 px-3 text-sm focus:outline-none font-light"
                   style={{ background: BG, borderColor: `${G}18`, color: 'white' }} />
                 <button onClick={sendSocialChatMessage} disabled={!socialInput.trim() || socialLoading || socialMessages.filter(m => m.role === 'user').length >= 5}
                   className="h-11 w-11 border flex items-center justify-center disabled:opacity-30 transition-all"
@@ -1105,14 +1105,14 @@ export default function LandingPage({ onLogin }) {
 
       {/* MODAL RESERVA */}
       {reserveOpen && (
-        <div className="fixed inset-0 z-[190] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
+        <div className="fixed inset-0 z-[190] bg-foreground/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
           <div className="border w-full max-w-lg max-h-[88dvh] shadow-2xl overflow-hidden flex flex-col" style={{ background: BG3, borderColor: `${G}20` }} onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b flex items-start justify-between gap-4" style={{ borderColor: `${G}12` }}>
               <div>
-                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><MessageCircle size={14} style={{ color: G }} /> Reserva Antecipada</h3>
-                <p className="text-white/30 text-xs mt-1 font-light">{selectedCourse?.title} · questionário guiado por IA</p>
+                <h3 className="text-primary-foreground/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><MessageCircle size={14} style={{ color: G }} /> Reserva Antecipada</h3>
+                <p className="text-primary-foreground/30 text-xs mt-1 font-light">{selectedCourse?.title} · questionário guiado por IA</p>
               </div>
-              <button onClick={() => setReserveOpen(false)} className="text-white/25 hover:text-white/60 transition-colors"><X size={16} /></button>
+              <button onClick={() => setReserveOpen(false)} className="text-primary-foreground/25 hover:text-primary-foreground/60 transition-colors"><X size={16} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ background: BG }}>
               {leadMessages.map((message, index) => (
@@ -1123,7 +1123,7 @@ export default function LandingPage({ onLogin }) {
                   </div>
                 </div>
               ))}
-              {leadLoading && <div className="text-xs text-white/25 font-light">A IA está digitando...</div>}
+              {leadLoading && <div className="text-xs text-primary-foreground/25 font-light">A IA está digitando...</div>}
             </div>
             <div className="p-4 border-t space-y-3" style={{ borderColor: `${G}12`, background: BG3 }}>
               <div className="flex gap-2">
@@ -1159,19 +1159,19 @@ export default function LandingPage({ onLogin }) {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
         </svg>
-        <span className="text-white text-xs font-medium uppercase tracking-wide hidden sm:block">Fale Conosco</span>
+        <span className="text-primary-foreground text-xs font-medium uppercase tracking-wide hidden sm:block">Fale Conosco</span>
       </a>
 
       {/* LOGIN MODAL */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
+        <div className="fixed inset-0 z-[200] bg-foreground/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
           <div className="border p-8 w-full max-w-sm shadow-2xl" style={{ background: BG3, borderColor: `${G}20` }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-7">
               <div>
-                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.25em]">Área do Aluno</h3>
-                <p className="text-white/25 text-[10px] mt-0.5 font-light uppercase tracking-[0.15em]">Acesso seguro à plataforma</p>
+                <h3 className="text-primary-foreground/80 font-light text-sm uppercase tracking-[0.25em]">Área do Aluno</h3>
+                <p className="text-primary-foreground/25 text-[10px] mt-0.5 font-light uppercase tracking-[0.15em]">Acesso seguro à plataforma</p>
               </div>
-              <button onClick={() => { setShowLoginModal(false); setError(''); }} className="text-white/25 hover:text-white/60 transition-colors"><X size={15} /></button>
+              <button onClick={() => { setShowLoginModal(false); setError(''); }} className="text-primary-foreground/25 hover:text-primary-foreground/60 transition-colors"><X size={15} /></button>
             </div>
 
             <div className="flex gap-2 border p-1.5 mb-5" style={{ borderColor: `${G}15` }}>
@@ -1185,15 +1185,15 @@ export default function LandingPage({ onLogin }) {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2.5 border text-white/50 text-xs p-3 mb-4 font-light" style={{ borderColor: 'rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.06)' }}>
-                <AlertCircle size={11} className="text-red-400/70 shrink-0" /> {error}
+              <div className="flex items-center gap-2.5 border text-primary-foreground/50 text-xs p-3 mb-4 font-light" style={{ borderColor: 'rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.06)' }}>
+                <AlertCircle size={11} className="text-destructive/70 shrink-0" /> {error}
               </div>
             )}
 
             {mode === 'code' ? (
               <form onSubmit={handleCodeLogin} className="space-y-4">
                 <input placeholder="EDU-XXXX-XXXX" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="w-full border text-white placeholder:text-white/20 h-12 text-center text-base tracking-[0.3em] font-mono focus:outline-none"
+                  className="w-full border text-primary-foreground placeholder:text-primary-foreground/20 h-12 text-center text-base tracking-[0.3em] font-mono focus:outline-none"
                   style={{ background: BG, borderColor: `${G}20` }} autoCapitalize="characters" />
                 <button type="submit" disabled={code.length < 3 || loading}
                   className="w-full h-12 border text-xs uppercase tracking-[0.22em] font-medium flex items-center justify-center gap-2 disabled:opacity-40 transition-all"
@@ -1202,7 +1202,7 @@ export default function LandingPage({ onLogin }) {
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
                   {loading ? <><div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" /> Verificando...</> : <>Entrar na Plataforma <ChevronRight size={12} /></>}
                 </button>
-                <label className="flex items-center justify-center gap-2 text-[11px] text-white/40 font-light cursor-pointer">
+                <label className="flex items-center justify-center gap-2 text-[11px] text-primary-foreground/40 font-light cursor-pointer">
                   <input type="checkbox" checked={rememberCode} onChange={(e) => setRememberCode(e.target.checked)} className="accent-[#d4b96a]" />
                   Lembrar acesso neste dispositivo
                 </label>
@@ -1210,10 +1210,10 @@ export default function LandingPage({ onLogin }) {
             ) : (
               <form onSubmit={handleAdminLogin} className="space-y-3">
                 <input type="email" placeholder="seu@email.com" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)}
-                  className="w-full border text-white placeholder:text-white/20 h-10 px-3 text-sm focus:outline-none font-light"
+                  className="w-full border text-primary-foreground placeholder:text-primary-foreground/20 h-10 px-3 text-sm focus:outline-none font-light"
                   style={{ background: BG, borderColor: `${G}18` }} />
                 <input type="password" placeholder="••••••••" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)}
-                  className="w-full border text-white placeholder:text-white/20 h-10 px-3 text-sm focus:outline-none font-light"
+                  className="w-full border text-primary-foreground placeholder:text-primary-foreground/20 h-10 px-3 text-sm focus:outline-none font-light"
                   style={{ background: BG, borderColor: `${G}18` }} />
                 <button type="submit" disabled={!adminEmail || !adminPassword || loading}
                   className="w-full h-10 border text-xs uppercase tracking-[0.2em] font-medium disabled:opacity-40 flex items-center justify-center gap-2 transition-all"
@@ -1222,7 +1222,7 @@ export default function LandingPage({ onLogin }) {
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
                   {loading ? <><div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" /> Entrando...</> : 'Entrar como Admin'}
                 </button>
-                <label className="flex items-center justify-center gap-2 text-[11px] text-white/40 font-light cursor-pointer">
+                <label className="flex items-center justify-center gap-2 text-[11px] text-primary-foreground/40 font-light cursor-pointer">
                   <input type="checkbox" checked={rememberAdmin} onChange={(e) => setRememberAdmin(e.target.checked)} className="accent-[#d4b96a]" />
                   Lembrar acesso neste dispositivo
                 </label>

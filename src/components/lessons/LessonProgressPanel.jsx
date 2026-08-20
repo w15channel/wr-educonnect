@@ -33,8 +33,8 @@ export default function LessonProgressPanel({ lesson, onBack }) {
       </button>
 
       <div className="flex items-start gap-3 mb-5">
-        <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-          <BookOpen size={18} className="text-purple-600" />
+        <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
+          <BookOpen size={18} className="text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-bold text-foreground truncate">{lesson.title}</h2>
@@ -74,7 +74,7 @@ export default function LessonProgressPanel({ lesson, onBack }) {
                 </div>
                 <span className="text-sm font-semibold text-foreground truncate flex-1">{p.student_email}</span>
                 {p.watched && (
-                  <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                  <span className="inline-flex items-center gap-1 text-primary bg-accent border border-primary text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
                     <CheckCircle size={9} /> Presente
                   </span>
                 )}

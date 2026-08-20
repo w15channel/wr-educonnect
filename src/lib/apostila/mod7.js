@@ -3,8 +3,8 @@ export const MOD7 = {
   id: 'mod7',
   title: 'Módulo 7 — Depressão: Clínica da Ausência',
   subtitle: 'Técnicas para trabalhar quando a vida parece apagada',
-  colorLight: 'text-indigo-400',
-  bgLight: 'bg-indigo-500/10',
+  colorLight: 'text-primary',
+  bgLight: 'bg-accent/10',
   lessons: [
     {
       id: 'mod7-a1',

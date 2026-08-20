@@ -147,7 +147,7 @@ export default function Forum() {
         <div className="flex items-start gap-3">
           {myAv.photoUrl
             ? <img src={myAv.photoUrl} alt={session?.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
-            : <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style={{ backgroundColor: myAv.avatarColor }}>{myAv.avatarEmoji || initials(session?.name)}</div>
+            : <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-primary-foreground shrink-0" style={{ backgroundColor: myAv.avatarColor }}>{myAv.avatarEmoji || initials(session?.name)}</div>
           }
           <div className="flex-1">
             <form onSubmit={e => { e.preventDefault(); if (newPost.trim()) createPostMutation.mutate({ content: newPost, topic }); }} className="space-y-3">

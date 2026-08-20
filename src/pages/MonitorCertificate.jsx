@@ -60,7 +60,7 @@ export default function MonitorCertificate() {
   if (!certStudent) {
     return (
       <div className="p-6 max-w-3xl mx-auto text-center space-y-4">
-        <Crown size={42} className="mx-auto text-yellow-500 opacity-60" />
+        <Crown size={42} className="mx-auto text-primary opacity-60" />
         <h2 className="text-xl font-bold">Certificado não encontrado</h2>
         <p className="text-sm text-muted-foreground">Verifique se o link recebido no aviso está correto.</p>
         <Button variant="outline" onClick={() => navigate(-1)} className="gap-2"><ArrowLeft size={14} /> Voltar</Button>
@@ -72,7 +72,7 @@ export default function MonitorCertificate() {
     <div className="p-4 lg:p-7 max-w-5xl mx-auto space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2"><Crown size={22} className="text-yellow-500" /> Certificado de Monitor</h2>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2"><Crown size={22} className="text-primary" /> Certificado de Monitor</h2>
           <p className="text-sm text-muted-foreground">Baixe em PDF ou PNG e escolha onde salvar no seu dispositivo.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -83,7 +83,7 @@ export default function MonitorCertificate() {
       </div>
 
       <div className="overflow-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
-        <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
+        <div ref={certRef} className="bg-card text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 28 }}>
             <img src={WR_CERTIFICATE_LOGO} alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
             <p style={{ fontSize: 12, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{BRAND_LEGAL_NAME}</p>
