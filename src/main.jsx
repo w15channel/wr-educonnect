@@ -8,7 +8,7 @@ installBenignMediaErrorGuard()
 
 // Apply saved theme BEFORE first render to prevent flash
 ;(function() {
-  const saved = localStorage.getItem('wr_theme') || 'light';
+  const saved = localStorage.getItem('wr_theme') || 'dark';
   const root = document.documentElement;
   if (saved === 'dark') {
     root.classList.add('dark');
