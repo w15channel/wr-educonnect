@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { GraduationCap, Download, Search, Settings2, CheckSquare, Square } from 'lucide-react';
+import { GraduationCap, Download, Search, Settings2, CheckSquare, Square, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
@@ -15,8 +15,13 @@ import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
-import { Archive } from 'lucide-react';
-import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
+
+const HISTORY_MODULES = Array.from({ length: 10 }, (_, index) => index + 1);
+const HISTORY_CATEGORY = {
+  'Aula Gravada': 'AULAS',
+  Tarefa: 'TAREFAS',
+  Prova: 'PROVAS',
+};
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
 function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, onClose, isAdmin = false }) {
@@ -248,6 +253,37 @@ function ItemCheckbox({ checked, onChange, label, sublabel }) {
   );
 }
 
+function ModuleSelector({ selectedModules, onToggle }) {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-3 flex items-start gap-2">
+        <Layers size={16} className="mt-0.5 shrink-0 text-primary" />
+        <div>
+          <p className="text-sm font-bold text-foreground">Módulos do histórico</p>
+          <p className="text-xs text-muted-foreground">Marque os módulos que deseja incluir. Não é necessário aguardar o encerramento de um período.</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {HISTORY_MODULES.map((moduleNumber) => {
+          const checked = selectedModules.has(moduleNumber);
+          return (
+            <button
+              key={moduleNumber}
+              type="button"
+              aria-pressed={checked}
+              onClick={() => onToggle(moduleNumber)}
+              className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${checked ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}
+            >
+              {checked ? <CheckSquare size={14} /> : <Square size={14} />}
+              Módulo {moduleNumber}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function HistoricoAcademico() {
   const { user: session } = useOutletContext();
@@ -257,6 +293,7 @@ export default function HistoricoAcademico() {
   const [showSelector, setShowSelector] = useState(false);
   // selectedItems: Set of "category_refId" keys
   const [selectedItems, setSelectedItems] = useState(new Set());
+  const [selectedModules, setSelectedModules] = useState(new Set());
   const [showDocument, setShowDocument] = useState(false);
 
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
@@ -301,7 +338,6 @@ export default function HistoricoAcademico() {
 
   // Build all possible rows for a student using buildStudentAcademicData
   function buildAllRows(student) {
-    const verifiedScores = scoreItems.filter(s => s.student_email === student.email && s.verified);
     const examsForCourse = visibleExams.filter(e => e.course === studentCourse);
     const examSubsForStudent = examSubmissions.filter(s => s.student_email === student.email && s.status === 'graded');
     
@@ -316,16 +352,35 @@ export default function HistoricoAcademico() {
       challengeResponses,
     });
     
-    return rows.map(r => ({
+    const academicRows = rows.filter((r) => r.status === 'Avaliado').map(r => ({
       ...r,
-      score: r.score === null ? '—' : r.score,
-      status: r.status || 'Pendente',
+      category: HISTORY_CATEGORY[r.category] || 'ATIVIDADES COMPLEMENTARES',
+      score: r.score,
     }));
+
+    const representedKeys = new Set(academicRows.map((row) => row.key));
+    const complementaryRows = scoreItems
+      .filter((item) => item.student_email === student.email && item.verified)
+      .filter((item) => !representedKeys.has(`${item.category}_${String(item.ref_id || '').replace(/^exam:/, '')}`))
+      .map((item) => ({
+        key: `complementary_${item.id || `${item.category}_${item.ref_id}`}`,
+        category: 'ATIVIDADES COMPLEMENTARES',
+        title: item.ref_title || 'Atividade complementar',
+        score: roundScore(item.score),
+        max: roundScore(item.max_score || item.score),
+        hours: 0,
+        status: 'Avaliado',
+        notes: item.notes || '',
+        module: Number(item.module_number) || null,
+      }));
+
+    return [...academicRows, ...complementaryRows];
   }
 
   function openSelector(student) {
     setSelectedStudent(student);
     setSelectedItems(new Set()); // start empty — teacher selects
+    setSelectedModules(new Set());
     setShowSelector(true);
     setShowDocument(false);
   }
@@ -333,13 +388,15 @@ export default function HistoricoAcademico() {
   function openStudentDirect(student) {
     setSelectedStudent(student);
     setSelectedItems(new Set()); // empty initially for student self-view — they see selector too
+    setSelectedModules(new Set());
     setShowSelector(true);
     setShowDocument(false);
   }
 
   const allRows = selectedStudent ? buildAllRows(selectedStudent) : [];
 
-  const selectedRows = allRows.filter(r => selectedItems.has(r.key));
+  const moduleRows = allRows.filter((r) => selectedModules.has(r.module));
+  const selectedRows = moduleRows.filter(r => selectedItems.has(r.key));
   const selectedScoreRows = selectedRows.filter(r => r.status === 'Avaliado');
   const totalScore = selectedScoreRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0);
   const totalMaxScore = selectedScoreRows.reduce((sum, r) => roundScore(sum + roundScore(r.max)), 0);
@@ -354,11 +411,19 @@ export default function HistoricoAcademico() {
     });
   };
 
-  const selectAll = () => setSelectedItems(new Set(allRows.map(r => r.key)));
+  const selectAll = () => setSelectedItems(new Set(moduleRows.map(r => r.key)));
   const clearAll = () => setSelectedItems(new Set());
 
+  const toggleModule = (moduleNumber) => {
+    setSelectedModules((previous) => {
+      const next = new Set(previous);
+      if (next.has(moduleNumber)) next.delete(moduleNumber); else next.add(moduleNumber);
+      return next;
+    });
+  };
+
   // Group rows by category label for the selector UI
-  const groupedRows = allRows.reduce((acc, r) => {
+  const groupedRows = moduleRows.reduce((acc, r) => {
     if (!acc[r.category]) acc[r.category] = [];
     acc[r.category].push(r);
     return acc;
@@ -430,12 +495,7 @@ export default function HistoricoAcademico() {
           </Button>
         </div>
 
-        <div>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
-            <Archive size={13} /> Módulos Encerrados
-          </p>
-          <ModuleHistoryPanel course={studentCourse} filterEmail={selectedStudent.email} />
-        </div>
+        <ModuleSelector selectedModules={selectedModules} onToggle={toggleModule} />
 
         {Object.entries(groupedRows).map(([cat, items]) => (
           <div key={cat}>
@@ -447,7 +507,7 @@ export default function HistoricoAcademico() {
             </div>
           </div>
         ))}
-        {allRows.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">Nenhuma atividade encontrada ainda.</div>}
+        {moduleRows.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">Selecione ao menos um módulo com atividades realizadas.</div>}
       </div>
     );
   }
@@ -486,6 +546,7 @@ export default function HistoricoAcademico() {
           <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5"><Square size={13} /> Limpar</Button>
           <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedItems.size === 0} onClick={() => setShowDocument(true)}><Download size={13} /> Gerar Histórico ({selectedItems.size})</Button>
         </div>
+        <ModuleSelector selectedModules={selectedModules} onToggle={toggleModule} />
         {Object.entries(groupedRows).map(([cat, items]) => (
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
@@ -494,7 +555,7 @@ export default function HistoricoAcademico() {
             </div>
           </div>
         ))}
-        {allRows.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">Nenhuma atividade encontrada para este aluno.</div>}
+        {moduleRows.length === 0 && <div className="text-center py-12 text-muted-foreground text-sm">Selecione ao menos um módulo com atividades realizadas.</div>}
       </div>
     );
   }
@@ -525,13 +586,6 @@ export default function HistoricoAcademico() {
       <div className="relative w-full sm:w-80">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
-      </div>
-
-      <div>
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
-          <Archive size={13} /> Módulos Encerrados
-        </p>
-        <ModuleHistoryPanel course={activeCourse} />
       </div>
 
       <div className="space-y-2">
