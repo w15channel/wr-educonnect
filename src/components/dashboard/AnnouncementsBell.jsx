@@ -23,7 +23,7 @@ const markAllRead = (ids) => {
 const typeIcons = { info: Info, warning: AlertCircle, urgent: Bell };
 const typeColors = {
   info: 'bg-primary/5 border-primary/20 text-primary',
-  warning: 'bg-accent border-primary text-primary',
+  warning: 'bg-yellow-50 border-yellow-200 text-yellow-700',
   urgent: 'bg-destructive/5 border-destructive/20 text-destructive',
 };
 
@@ -61,7 +61,7 @@ export default function AnnouncementsBell({ limit = 3 }) {
           <div className="relative">
             <Bell size={18} className={unread.length > 0 ? 'text-destructive' : 'text-muted-foreground'} />
             {unread.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-primary-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1.5 -right-1.5 bg-destructive text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
                 {unread.length > 9 ? '9+' : unread.length}
               </span>
             )}

@@ -9,8 +9,8 @@ export default function OptimizationSuggestionCard({ suggestion, onNext, onApply
   return (
     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-          <Lightbulb size={18} className="text-primary" />
+        <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0">
+          <Lightbulb size={18} className="text-yellow-700" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -22,13 +22,13 @@ export default function OptimizationSuggestionCard({ suggestion, onNext, onApply
       </div>
 
       <div className="grid gap-3">
-        <div className="bg-destructive border border-destructive rounded-xl p-3">
-          <p className="text-xs font-bold text-destructive mb-1">Falha ou risco percebido</p>
-          <p className="text-sm text-destructive leading-relaxed">{suggestion.problem}</p>
+        <div className="bg-red-50 border border-red-100 rounded-xl p-3">
+          <p className="text-xs font-bold text-red-700 mb-1">Falha ou risco percebido</p>
+          <p className="text-sm text-red-900 leading-relaxed">{suggestion.problem}</p>
         </div>
-        <div className="bg-accent border border-primary rounded-xl p-3">
-          <p className="text-xs font-bold text-primary mb-1">Ajuste sugerido</p>
-          <p className="text-sm text-primary leading-relaxed">{suggestion.solution}</p>
+        <div className="bg-green-50 border border-green-100 rounded-xl p-3">
+          <p className="text-xs font-bold text-green-700 mb-1">Ajuste sugerido</p>
+          <p className="text-sm text-green-900 leading-relaxed">{suggestion.solution}</p>
         </div>
       </div>
 

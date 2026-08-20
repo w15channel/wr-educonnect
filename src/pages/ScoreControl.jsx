@@ -15,14 +15,14 @@ import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, ranki
 import { sortBySequence } from '@/lib/sequenceUtils';
 
 const CATEGORY_CONFIG = {
-  lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-accent text-primary' },
-  task: { label: 'Tarefa', icon: FileText, color: 'bg-accent text-primary' },
-  quiz: { label: 'Prova', icon: Trophy, color: 'bg-accent text-primary' },
-  exam: { label: 'Prova do Módulo', icon: GraduationCap, color: 'bg-accent text-primary' },
-  forum: { label: 'Fórum', icon: MessageSquare, color: 'bg-accent text-primary' },
-  mentorship: { label: 'Mentoria', icon: HandHeart, color: 'bg-accent text-primary' },
-  therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-accent text-primary' },
-  ofensiva: { label: 'Ofensiva Diária', icon: Flame, color: 'bg-accent text-destructive' }
+  lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
+  task: { label: 'Tarefa', icon: FileText, color: 'bg-orange-100 text-orange-700' },
+  quiz: { label: 'Prova', icon: Trophy, color: 'bg-blue-100 text-blue-700' },
+  exam: { label: 'Prova do Módulo', icon: GraduationCap, color: 'bg-indigo-100 text-indigo-700' },
+  forum: { label: 'Fórum', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
+  mentorship: { label: 'Mentoria', icon: HandHeart, color: 'bg-rose-100 text-rose-700' },
+  therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' },
+  ofensiva: { label: 'Ofensiva Diária', icon: Flame, color: 'bg-orange-100 text-red-600' }
 };
 
 // ── Filtro por módulo ────────────────────────────────────────────────────────
@@ -320,7 +320,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
           
             {React.createElement(s.icon, { size: 13 })} {s.label}
             {sectionPending[s.key] &&
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-destructive" />
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
           }
           </button>
         )}
@@ -346,11 +346,11 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 readOnly={!isTeacher}>
                 
                   <div className="flex flex-wrap gap-2 mt-1.5">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${progress?.watched ? 'bg-accent text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${progress?.watched ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                       {progress?.watched ? '✅ Marcada como assistida' : '⏳ Não assistida'}
                     </span>
-                    {progress?.comment && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">💬 Comentou</span>}
-                    {progress?.summary && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">📝 Resumo enviado</span>}
+                    {progress?.comment && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">💬 Comentou</span>}
+                    {progress?.summary && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold">📝 Resumo enviado</span>}
                   </div>
                   {progress?.comment &&
                 <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
@@ -391,9 +391,9 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                     <Badge variant="secondary" className="text-[10px]">{task.type === 'quiz' ? 'Prova' : 'Tarefa'}</Badge>
                     {sub ?
                   <>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">✅ Entregue</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">✅ Entregue</span>
                         {sub.file_url && <a href={sub.file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">📎 Ver arquivo</a>}
-                        {sub.comment && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">💬 Com comentário</span>}
+                        {sub.comment && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">💬 Com comentário</span>}
                       </> :
 
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold">❌ Não entregue</span>
@@ -412,7 +412,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                           {q.answer_type === 'text' ?
                     <p className="text-muted-foreground mt-0.5">Resposta: {sub.quiz_answers?.[qi]?.text || '—'}</p> :
 
-                    <p className={`mt-0.5 ${sub.quiz_answers?.[qi] === q.correct_index ? 'text-primary' : 'text-destructive'}`}>
+                    <p className={`mt-0.5 ${sub.quiz_answers?.[qi] === q.correct_index ? 'text-green-600' : 'text-red-500'}`}>
                               Marcou: {q.options?.[sub.quiz_answers?.[qi]]} {sub.quiz_answers?.[qi] === q.correct_index ? '✅' : '❌'}
                             </p>
                     }
@@ -447,14 +447,14 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 readOnly={!isTeacher}>
                 
                   <div className="flex flex-wrap gap-2 mt-1.5">
-                    <Badge variant="secondary" className="text-[10px] bg-accent text-primary">Prova do Módulo</Badge>
-                    {exam.module_ref && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">{exam.module_ref}</span>}
+                    <Badge variant="secondary" className="text-[10px] bg-indigo-100 text-indigo-700">Prova do Módulo</Badge>
+                    {exam.module_ref && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold">{exam.module_ref}</span>}
                     {sub ?
                   <>
                         {sub.status === 'graded' ? (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">✅ Corrigida</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">✅ Corrigida</span>
                         ) : (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">⏳ Aguardando correção</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">⏳ Aguardando correção</span>
                         )}
                       </> :
 
@@ -534,8 +534,8 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
             saving={updateScoreMutation.isPending}
             readOnly={!isTeacher}>
               <div className="flex flex-wrap gap-2 mt-1.5">
-                {mentorship.date && <Badge variant="secondary" className="text-[10px] bg-accent text-primary">Realizada em {mentorship.date}</Badge>}
-                {mentorship.facilitator && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">Mentor(a): {mentorship.facilitator}</span>}
+                {mentorship.date && <Badge variant="secondary" className="text-[10px] bg-rose-100 text-rose-700">Realizada em {mentorship.date}</Badge>}
+                {mentorship.facilitator && <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-semibold">Mentor(a): {mentorship.facilitator}</span>}
               </div>
               {mentorship.objective &&
               <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
@@ -572,12 +572,12 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 readOnly={!isTeacher}>
                 
                   <div className="flex flex-wrap gap-2 mt-1.5">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${role === 'Terapeuta' ? 'bg-accent text-primary' : 'bg-accent text-primary'}`}>{role}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${submitted ? 'bg-accent text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${role === 'Terapeuta' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'}`}>{role}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${submitted ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                       {submitted ? '✅ Avaliação enviada' : '⏳ Sem avaliação'}
                     </span>
                     {partnerScore !== undefined && partnerScore !== null &&
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">Nota do par: {formatScore(partnerScore)}/10,000</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nota do par: {formatScore(partnerScore)}/10,000</span>
                   }
                   </div>
                   {comment &&
@@ -614,14 +614,14 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 readOnly={!isTeacher}>
                 
                   <div className="flex flex-wrap gap-2 mt-1.5">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-semibold">
                       🔥 {response.questions_answered || 0}/8 perguntas
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">
                       Pontos apurados: {formatScore(response.points_earned || 0, 3)}
                     </span>
                     {challenge?.lesson_ref &&
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-semibold">{challenge.lesson_ref}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold">{challenge.lesson_ref}</span>
                   }
                   </div>
                 </ScoreRow>);
@@ -1135,8 +1135,8 @@ export default function ScoreControl() {
     <div className="w-full max-w-[860px] mx-auto p-3 md:p-5 animate-fade-in-up overflow-x-hidden">
       <div className="mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <Trophy size={20} className="text-primary-foreground" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+            <Trophy size={20} className="text-white" />
           </div>
           <div>
             <h2 className="text-xl lg:text-2xl font-bold text-foreground">Controle de Pontuação</h2>
@@ -1144,9 +1144,9 @@ export default function ScoreControl() {
           </div>
         </div>
         {isTeacher && (courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0) > 0 &&
-        <div className="mt-3 bg-accent border border-primary rounded-xl p-3 flex items-center gap-2">
-            <Clock size={14} className="text-primary shrink-0" />
-            <p className="text-xs text-primary font-semibold">{courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0} atividade(s) aguardando verificação e pontuação</p>
+        <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-center gap-2">
+            <Clock size={14} className="text-orange-500 shrink-0" />
+            <p className="text-xs text-orange-800 font-semibold">{courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0} atividade(s) aguardando verificação e pontuação</p>
           </div>
         }
       </div>
@@ -1192,9 +1192,9 @@ export default function ScoreControl() {
           )}
         </div>
         {activeModule &&
-        <div className="bg-accent border border-primary rounded-xl p-3 flex items-start gap-2">
-            <Filter size={14} className="text-primary shrink-0 mt-0.5" />
-            <p className="text-xs text-primary leading-relaxed">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+            <Filter size={14} className="text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 leading-relaxed">
               Exibindo apenas o <strong>{activeModuleLabel}</strong>: aulas, tarefas, provas e demais atividades desse conteúdo. Qualquer aluno pode participar e pontuar neste módulo a qualquer momento, independente de quando entrou no curso.
               {isTeacher && ' Ajustes manuais ficam desativados nesse modo, e publicar o ranking enviará a pontuação deste módulo.'}
             </p>
@@ -1206,7 +1206,7 @@ export default function ScoreControl() {
         <AccordionItem value="current" className="bg-card border border-border rounded-2xl px-4 border-b-0">
           <AccordionTrigger className="hover:no-underline py-3.5">
             <div className="flex items-center gap-2.5">
-              <Trophy size={16} className="text-primary" />
+              <Trophy size={16} className="text-yellow-500" />
               <span className="font-bold text-sm text-foreground">Ranking Atual</span>
             </div>
           </AccordionTrigger>
@@ -1245,13 +1245,13 @@ export default function ScoreControl() {
                 setCustomOrder(next);
               }}
               onClick={() => (isTeacher || code.student_email === session?.email) && setSelectedCode(code)}
-              className={`bg-card rounded-2xl border p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${isTeacher || code.student_email === session?.email ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} transition-all ${hasPending ? 'border-destructive hover:border-destructive' : 'border-border hover:border-primary/30'}`}>
+              className={`bg-card rounded-2xl border p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${isTeacher || code.student_email === session?.email ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}>
               
                   <div className="w-7 text-center shrink-0">
                     {medal || <span className="text-xs font-black text-muted-foreground">#{index + 1}</span>}
                   </div>
                   <div
-                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-primary-foreground shrink-0"
+                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
                 style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
                 
                     {displayName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -1259,7 +1259,7 @@ export default function ScoreControl() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="font-bold text-sm text-foreground truncate">{displayName}</p>
-                      {isTeacher && hasPending && <AlertCircle size={14} className="text-destructive shrink-0" />}
+                      {isTeacher && hasPending && <AlertCircle size={14} className="text-red-500 shrink-0" />}
                     </div>
                     {isTeacher && <p className="text-xs text-muted-foreground">{code.student_email || '—'}</p>}
                   </div>
@@ -1313,11 +1313,11 @@ export default function ScoreControl() {
                   disabled={!canEditManual}
                   title={activeModule ? `Participações no ${activeModuleLabel}` : manualParticipationsActive ? 'Participações definidas manualmente — clique para editar' : 'Aulas assistidas + entregas + fórum + monitoria — clique para editar'}
                   onClick={(e) => { e.stopPropagation(); if (!canEditManual) return; setEditingParticipations({ email: code.student_email, value: String(participations) }); }}
-                  className={`flex items-center gap-1 bg-accent border px-2.5 py-1.5 rounded-xl transition-colors ${canEditManual ? 'hover:border-primary' : 'cursor-default'} ${manualParticipationsActive ? 'border-primary border-dashed' : 'border-primary'}`}>
-                        <Activity size={11} className="text-primary" />
-                        <span className="text-xs font-bold text-primary">{participations}</span>
-                        {manualParticipationsActive && <span className="text-[9px] font-bold uppercase text-primary">manual</span>}
-                        {canEditManual && <Pencil size={10} className="text-primary" />}
+                  className={`flex items-center gap-1 bg-blue-50 border px-2.5 py-1.5 rounded-xl transition-colors ${canEditManual ? 'hover:border-blue-400' : 'cursor-default'} ${manualParticipationsActive ? 'border-blue-500 border-dashed' : 'border-blue-200'}`}>
+                        <Activity size={11} className="text-blue-500" />
+                        <span className="text-xs font-bold text-blue-700">{participations}</span>
+                        {manualParticipationsActive && <span className="text-[9px] font-bold uppercase text-blue-600">manual</span>}
+                        {canEditManual && <Pencil size={10} className="text-blue-500" />}
                       </button>
                 )}
                     {isTeacher ? (
@@ -1374,18 +1374,18 @@ export default function ScoreControl() {
                   disabled={!canEditManual}
                   title={activeModule ? `Pontuação do ${activeModuleLabel}` : manualScoreActive ? `Pontuação manual (cálculo automático: ${formatScore(pontuacaoAutomatica)}) — clique para editar` : 'Pontos publicados — clique para editar'}
                   onClick={(e) => { e.stopPropagation(); if (!canEditManual) return; setEditingScore({ email: code.student_email, value: formatScore(totalScore) }); }}
-                  className={`flex items-center gap-1 bg-accent border px-3 py-1.5 rounded-xl transition-colors ${canEditManual ? 'hover:border-primary' : 'cursor-default'} ${manualScoreActive ? 'border-primary border-dashed' : 'border-primary'}`}>
-                        <Star size={11} className="text-primary fill-yellow-500" />
-                        <span className="text-sm font-black text-primary">{formatScore(totalScore)}</span>
-                        {manualScoreActive && <span className="text-[9px] font-bold uppercase text-primary">manual</span>}
-                        {canEditManual && <Pencil size={10} className="text-primary" />}
+                  className={`flex items-center gap-1 bg-yellow-50 border px-3 py-1.5 rounded-xl transition-colors ${canEditManual ? 'hover:border-yellow-400' : 'cursor-default'} ${manualScoreActive ? 'border-yellow-500 border-dashed' : 'border-yellow-200'}`}>
+                        <Star size={11} className="text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-black text-yellow-700">{formatScore(totalScore)}</span>
+                        {manualScoreActive && <span className="text-[9px] font-bold uppercase text-yellow-600">manual</span>}
+                        {canEditManual && <Pencil size={10} className="text-yellow-600" />}
                       </button>
                 ) :
 
                 <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-accent border border-primary px-3 py-1.5 rounded-xl" title="Pontos publicados">
-                          <Star size={11} className="text-primary fill-yellow-500" />
-                          <span className="text-sm font-black text-primary">{formatScore(totalScore)}</span>
+                        <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-3 py-1.5 rounded-xl" title="Pontos publicados">
+                          <Star size={11} className="text-yellow-500 fill-yellow-500" />
+                          <span className="text-sm font-black text-yellow-700">{formatScore(totalScore)}</span>
                         </div>
                         <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl" title="Posição na classificação">
                           <Trophy size={11} className="text-primary" />

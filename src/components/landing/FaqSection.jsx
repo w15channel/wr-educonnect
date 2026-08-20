@@ -59,7 +59,7 @@ export default function FaqSection() {
             className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition-all"
             style={{ background: open === i ? `${G}06` : 'transparent' }}
           >
-            <span className="text-primary-foreground/70 text-sm font-light leading-snug">{faq.q}</span>
+            <span className="text-white/70 text-sm font-light leading-snug">{faq.q}</span>
             <ChevronDown
               size={15}
               className="shrink-0 transition-transform duration-300"
@@ -71,7 +71,7 @@ export default function FaqSection() {
           </button>
           {open === i && (
             <div className="px-5 pb-5 border-t" style={{ borderColor: `${G}10` }}>
-              <p className="text-primary-foreground/40 text-sm leading-relaxed font-light pt-4">{faq.a}</p>
+              <p className="text-white/40 text-sm leading-relaxed font-light pt-4">{faq.a}</p>
             </div>
           )}
         </div>

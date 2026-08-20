@@ -8,13 +8,13 @@ import { WR_PRIMARY_LOGO, BRAND_SHORT_NAME } from '@/lib/brand';
 const G = '#d4b96a';
 
 const DIPLOMA_MENU = [
-  { icon: BookOpen, label: 'Aulas',              path: '/lessons',      color: 'text-primary' },
-  { icon: FileText, label: 'Tarefas',             path: '/tasks',        color: 'text-primary' },
-  { icon: ScrollText, label: 'Apostila TCC',      path: '/apostila',     color: 'text-primary' },
-  { icon: DollarSign, label: 'Mensalidades',      path: '/tuitions',     color: 'text-primary' },
-  { icon: History, label: 'Histórico Acadêmico',  path: '/historico',    color: 'text-primary' },
-  { icon: GraduationCap, label: 'Certificação',   path: '/certificadora',color: 'text-primary' },
-  { icon: User, label: 'Meu Perfil',              path: '/profile',      color: 'text-primary' },
+  { icon: BookOpen, label: 'Aulas',              path: '/lessons',      color: 'text-purple-400' },
+  { icon: FileText, label: 'Tarefas',             path: '/tasks',        color: 'text-orange-400' },
+  { icon: ScrollText, label: 'Apostila TCC',      path: '/apostila',     color: 'text-emerald-400' },
+  { icon: DollarSign, label: 'Mensalidades',      path: '/tuitions',     color: 'text-teal-400' },
+  { icon: History, label: 'Histórico Acadêmico',  path: '/historico',    color: 'text-cyan-400' },
+  { icon: GraduationCap, label: 'Certificação',   path: '/certificadora',color: 'text-yellow-400' },
+  { icon: User, label: 'Meu Perfil',              path: '/profile',      color: 'text-indigo-400' },
 ];
 
 export default function DiplomaLayout() {
@@ -67,7 +67,7 @@ export default function DiplomaLayout() {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${
                   active
                     ? 'bg-[#161c32] text-[#e8dfc8]'
-                    : 'text-primary-foreground/45 hover:bg-card/5 hover:text-primary-foreground/75'
+                    : 'text-white/45 hover:bg-white/5 hover:text-white/75'
                 }`}
               >
                 {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#d4b96a]" />}
@@ -85,7 +85,7 @@ export default function DiplomaLayout() {
             {session?.photoUrl ? (
               <img src={session.photoUrl} alt="Avatar" className="w-8 h-8 object-cover rounded-full ring-1 ring-[#d4b96a]/20" />
             ) : (
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-light text-primary-foreground ring-1 ring-[#d4b96a]/20"
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-light text-white ring-1 ring-[#d4b96a]/20"
                 style={{ backgroundColor: avatarBg }}>
                 {initials}
               </div>
@@ -97,7 +97,7 @@ export default function DiplomaLayout() {
           </div>
           <button
             onClick={logout}
-            className="flex items-center gap-2 text-[#c8bfa8]/25 hover:text-destructive/70 w-full px-3 py-2 transition-colors text-[11px] font-light"
+            className="flex items-center gap-2 text-[#c8bfa8]/25 hover:text-red-400/70 w-full px-3 py-2 transition-colors text-[11px] font-light"
           >
             <LogOut size={13} /> Sair da conta
           </button>
@@ -110,7 +110,7 @@ export default function DiplomaLayout() {
           <img src={WR_PRIMARY_LOGO} alt="WR" className="w-6 h-6 object-contain" />
           <span className="text-[11px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME} · Certificado</span>
         </div>
-        <button onClick={logout} className="text-primary-foreground/30 hover:text-destructive/70 transition-colors p-1">
+        <button onClick={logout} className="text-white/30 hover:text-red-400/70 transition-colors p-1">
           <LogOut size={15} />
         </button>
       </div>
@@ -128,7 +128,7 @@ export default function DiplomaLayout() {
             <Link
               key={item.path}
               to={prefix + item.path}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 transition-colors ${active ? 'text-[#d4b96a]' : 'text-primary-foreground/30'}`}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 transition-colors ${active ? 'text-[#d4b96a]' : 'text-white/30'}`}
             >
               <item.icon size={18} />
               <span className="text-[9px] font-light">{item.label.split(' ')[0]}</span>

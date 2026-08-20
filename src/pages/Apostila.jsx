@@ -404,14 +404,14 @@ export default function Apostila() {
       )}
 
       {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-primary/40 to-primary/30 border border-primary/20 p-6">
+      <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 p-6">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary flex items-center justify-center shadow-lg shrink-0">
-            <BookOpen size={26} className="text-primary-foreground" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shrink-0">
+            <BookOpen size={26} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold text-foreground">Apostila — Formação em Terapia Comportamental</h1>
-            <p className="text-sm text-primary font-medium mt-1">
+            <p className="text-sm text-emerald-400 font-medium mt-1">
               Prof. William Ribeiro · Psicoterapeuta, Psicanalista e Sexólogo
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -419,20 +419,20 @@ export default function Apostila() {
             </p>
             <div className="flex flex-wrap gap-3 mt-3">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
-                <BookOpen size={12} className="text-primary" />
+                <BookOpen size={12} className="text-emerald-400" />
                 {totalLessons} aulas
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
-                <GraduationCap size={12} className="text-primary" />
+                <GraduationCap size={12} className="text-violet-400" />
                 {chapters.length} módulos
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
-                <Award size={12} className="text-primary" />
+                <Award size={12} className="text-amber-400" />
                 Formação Profissional
               </div>
               {!isAdmin && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-accent/10 border border-primary/20 px-3 py-1.5 rounded-full">
-                  <BookMarked size={12} className="text-primary" />
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+                  <BookMarked size={12} className="text-emerald-400" />
                   {totalRead}/{totalLessons} lidas
                 </div>
               )}
@@ -441,11 +441,11 @@ export default function Apostila() {
         </div>
 
         {/* Teóricos */}
-        <div className="mt-5 pt-5 border-t border-primary/15">
+        <div className="mt-5 pt-5 border-t border-emerald-500/15">
           <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Fundamentação teórica</p>
           <div className="flex flex-wrap gap-2">
             {['Donald Winnicott ', 'Kurt Lewin', 'Heinz Kohut', 'George Engel', 'Viktor Frankl'].map((t) => (
-              <span key={t} className="text-xs bg-accent/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-medium">
+              <span key={t} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-medium">
                 {t}
               </span>
             ))}
@@ -465,8 +465,8 @@ export default function Apostila() {
       <div className="space-y-3">
         {chapters.map((chapter, chIdx) => {
           const isChOpen = openChapter === chapter.id;
-          const colorLight = chapter.colorLight || 'text-primary';
-          const bgLight = chapter.bgLight || 'bg-accent/10';
+          const colorLight = chapter.colorLight || 'text-emerald-400';
+          const bgLight = chapter.bgLight || 'bg-emerald-500/10';
           const isLocked = !isAdmin && !loadingUnlocks && !moduleUnlocked[chIdx];
 
           return (
@@ -516,14 +516,14 @@ export default function Apostila() {
                             if (reader.lessonKey === key) stopReader();
                             setOpenLesson(isOpen ? null : key);
                           }}
-                          className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-secondary/30 transition-colors text-left ${isRead ? 'bg-accent/5' : ''}`}
+                          className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-secondary/30 transition-colors text-left ${isRead ? 'bg-emerald-500/5' : ''}`}
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className={`w-6 h-6 rounded-lg ${isRead ? 'bg-accent/20' : bgLight} flex items-center justify-center shrink-0`}>
-                              {isRead ? <CheckCircle size={11} className="text-primary" /> : <BookOpen size={11} className={colorLight} />}
+                            <div className={`w-6 h-6 rounded-lg ${isRead ? 'bg-emerald-500/20' : bgLight} flex items-center justify-center shrink-0`}>
+                              {isRead ? <CheckCircle size={11} className="text-emerald-500" /> : <BookOpen size={11} className={colorLight} />}
                             </div>
-                            <span className={`text-sm font-medium leading-tight truncate ${isRead ? 'text-primary' : 'text-foreground'}`}>{lesson.title}</span>
-                            {isRead && <span className="text-[10px] text-primary font-bold shrink-0">✓ Lida</span>}
+                            <span className={`text-sm font-medium leading-tight truncate ${isRead ? 'text-emerald-600' : 'text-foreground'}`}>{lesson.title}</span>
+                            {isRead && <span className="text-[10px] text-emerald-500 font-bold shrink-0">✓ Lida</span>}
                           </div>
                           {isOpen
                             ? <ChevronDown size={14} className="text-muted-foreground shrink-0 ml-2" />
@@ -535,20 +535,20 @@ export default function Apostila() {
                           <div className="px-5 pb-5 bg-secondary/10">
                             {isEditing ? (
                               <div className="space-y-3">
-                                <div className="rounded-2xl border border-primary/20 bg-foreground/70 p-3 shadow-inner">
+                                <div className="rounded-2xl border border-emerald-500/20 bg-slate-950/70 p-3 shadow-inner">
                                   <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 font-semibold text-primary">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-300">
                                       <Edit2 size={12} /> Edição do conteúdo da apostila
                                     </span>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-card/5 px-3 py-1">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1">
                                       <Type size={12} /> Fonte, tamanho, cor e alinhamento disponíveis
                                     </span>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-card/5 px-3 py-1">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1">
                                       <AlignLeft size={12} /> Use a visualização para ajustar quebras e posicionamento
                                     </span>
                                   </div>
                                   <div
-                                    className="apostila-rich-editor overflow-hidden rounded-xl border border-border/10 bg-card shadow-2xl"
+                                    className="apostila-rich-editor overflow-hidden rounded-xl border border-white/10 bg-white shadow-2xl"
                                   >
                                     <ReactQuill
                                       theme="snow"
@@ -574,9 +574,9 @@ export default function Apostila() {
                               </div>
                             ) : (
                               <div className="space-y-3">
-                                <div className="rounded-xl border border-primary/20 bg-accent/10 p-3">
+                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
                                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
                                       <Volume2 size={16} />
                                       Leitor da apostila
                                       <span className="text-xs font-normal text-muted-foreground">
@@ -618,7 +618,7 @@ export default function Apostila() {
                                             key={rate}
                                             type="button"
                                             onClick={() => changeReaderRate(key, rate)}
-                                            className={`rounded-md px-2 py-1 text-xs font-bold transition-colors ${reader.rate === rate ? 'bg-accent text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+                                            className={`rounded-md px-2 py-1 text-xs font-bold transition-colors ${reader.rate === rate ? 'bg-emerald-500 text-white' : 'text-muted-foreground hover:bg-secondary'}`}
                                             aria-pressed={reader.rate === rate}
                                           >
                                             {rate.toFixed(1)}x
@@ -650,7 +650,7 @@ export default function Apostila() {
                                   )}
                                   {!isAdmin && (
                                     readLessons.has(`${chapter.id}__${lesson.id}`) ? (
-                                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-accent border border-primary px-3 py-1.5 rounded-xl">
+                                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
                                         <CheckCircle size={13} /> Leitura concluída!
                                       </span>
                                     ) : (

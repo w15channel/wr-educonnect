@@ -70,10 +70,10 @@ function StatCard({ title, value, icon: Icon, iconBg, to, subtitle, pulse }) {
       
       <div className="flex items-start justify-between mb-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} group-hover:scale-110 transition-transform`}>
-          <Icon size={18} className="text-primary-foreground" />
+          <Icon size={18} className="text-white" />
         </div>
-        {pulse && <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive px-2 py-1 rounded-full border border-destructive">
-          <span className="w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" /> AO VIVO
+        {pulse && <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full border border-red-100">
+          <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> AO VIVO
         </span>}
       </div>
       <p className="text-2xl font-bold text-foreground">{value}</p>
@@ -528,10 +528,10 @@ export default function Dashboard() {
         if (totalPending === 0) return null;
 
         return (
-          <div className="bg-card rounded-2xl border border-primary p-5">
+          <div className="bg-card rounded-2xl border border-orange-200 p-5">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-                <ClipboardList size={16} className="text-primary" />
+              <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
+                <ClipboardList size={16} className="text-orange-600" />
               </div>
               <div>
                 <h3 className="font-bold text-sm text-foreground">Minhas Pendências</h3>
@@ -544,71 +544,71 @@ export default function Dashboard() {
                 const otherName = isTherapist ? pairing.patient_name : pairing.therapist_name;
                 return (
               <button key={pairing.id} onClick={() => navigate(scoped('/terapeuta'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-accent border border-primary hover:bg-accent transition-colors text-left">
-                  <Heart size={13} className="text-primary shrink-0" />
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-pink-50 border border-pink-100 hover:bg-pink-100 transition-colors text-left">
+                  <Heart size={13} className="text-pink-600 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-primary truncate">{isTherapist ? 'Atender' : 'Ser atendido(a) por'}: {otherName || 'Pareamento da semana'}</p>
-                    <p className="text-[10px] text-primary">Terapeuta da semana pendente</p>
+                    <p className="text-xs font-bold text-pink-700 truncate">{isTherapist ? 'Atender' : 'Ser atendido(a) por'}: {otherName || 'Pareamento da semana'}</p>
+                    <p className="text-[10px] text-pink-500">Terapeuta da semana pendente</p>
                   </div>
-                  <ArrowRight size={12} className="text-primary shrink-0" />
+                  <ArrowRight size={12} className="text-pink-400 shrink-0" />
                 </button>
                 );
               })}
               {therapistPending.length > 3 &&
-              <button onClick={() => navigate(scoped('/terapeuta'))} className="w-full text-xs text-primary font-semibold py-1 hover:underline">
+              <button onClick={() => navigate(scoped('/terapeuta'))} className="w-full text-xs text-pink-600 font-semibold py-1 hover:underline">
                   +{therapistPending.length - 3} pendências de terapeuta → Ver todas
                 </button>
               }
               {SHOW_LESSON_TASK_PENDING_ALERTS && visiblePendingLessons.map((l) =>
               <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-accent border border-primary hover:bg-accent transition-colors text-left">
-                  <Circle size={13} className="text-primary shrink-0" />
-                  <BookOpen size={13} className="text-primary shrink-0" />
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
+                  <Circle size={13} className="text-purple-400 shrink-0" />
+                  <BookOpen size={13} className="text-purple-600 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-primary truncate">{extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}</p>
-                    <p className="text-[10px] text-primary">Aula não assistida · próximas pendências em ordem numérica</p>
+                    <p className="text-xs font-bold text-purple-700 truncate">{extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}</p>
+                    <p className="text-[10px] text-purple-500">Aula não assistida · próximas pendências em ordem numérica</p>
                   </div>
-                  <ArrowRight size={12} className="text-primary shrink-0" />
+                  <ArrowRight size={12} className="text-purple-400 shrink-0" />
                 </button>
               )}
               {SHOW_LESSON_TASK_PENDING_ALERTS && unwatchedLessons.length > visiblePendingLessons.length &&
-              <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-primary font-semibold py-1 hover:underline">
+              <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
                   +{unwatchedLessons.length - visiblePendingLessons.length} aulas no aguardo → Ver todas
                 </button>
               }
               {SHOW_LESSON_TASK_PENDING_ALERTS && visiblePendingTasks.map((t) =>
               <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-accent border border-primary hover:bg-accent transition-colors text-left">
-                  <ClipboardList size={13} className="text-primary shrink-0" />
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
+                  <ClipboardList size={13} className="text-orange-500 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-primary truncate">{extractSequenceNumber(t) ? `Tarefa ${extractSequenceNumber(t)} · ` : ''}{t.title}</p>
-                    <p className="text-[10px] text-primary">
+                    <p className="text-xs font-bold text-orange-700 truncate">{extractSequenceNumber(t) ? `Tarefa ${extractSequenceNumber(t)} · ` : ''}{t.title}</p>
+                    <p className="text-[10px] text-orange-500">
                       Tarefa pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
                     </p>
                   </div>
-                  <ArrowRight size={12} className="text-primary shrink-0" />
+                  <ArrowRight size={12} className="text-orange-400 shrink-0" />
                 </button>
               )}
               {SHOW_LESSON_TASK_PENDING_ALERTS && pendingTasksList.length > visiblePendingTasks.length &&
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-primary font-semibold py-1 hover:underline">
+              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
                   +{pendingTasksList.length - visiblePendingTasks.length} tarefas no aguardo → Ver todas
                 </button>
               }
               {pendingExams.slice(0, 3).map((e) =>
               <button key={e.id} onClick={() => navigate(scoped('/exams'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-accent border border-primary hover:bg-accent transition-colors text-left">
-                  <GraduationCap size={13} className="text-primary shrink-0" />
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
+                  <GraduationCap size={13} className="text-violet-500 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-primary truncate">{e.title}</p>
-                    <p className="text-[10px] text-primary">
+                    <p className="text-xs font-bold text-violet-700 truncate">{e.title}</p>
+                    <p className="text-[10px] text-violet-500">
                       Prova pendente{e.deadline ? ` · Entrega: ${format(new Date(e.deadline), 'dd/MM HH:mm')}` : ''}
                     </p>
                   </div>
-                  <ArrowRight size={12} className="text-primary shrink-0" />
+                  <ArrowRight size={12} className="text-violet-400 shrink-0" />
                 </button>
               )}
               {pendingExams.length > 3 &&
-              <button onClick={() => navigate(scoped('/exams'))} className="w-full text-xs text-primary font-semibold py-1 hover:underline">
+              <button onClick={() => navigate(scoped('/exams'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
                   +{pendingExams.length - 3} provas pendentes → Ver todas
                 </button>
               }
@@ -623,8 +623,8 @@ export default function Dashboard() {
           {/* Tutorial player */}
           <div className="bg-card rounded-2xl border border-border p-5 text-left">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-                <PlayCircle size={16} className="text-primary" />
+              <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
+                <PlayCircle size={16} className="text-purple-600" />
               </div>
               <div>
                 <h3 className="font-bold text-sm text-foreground">Tutorial da Plataforma</h3>
@@ -647,8 +647,8 @@ export default function Dashboard() {
           
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-                  <Trophy size={16} className="text-primary" />
+                <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+                  <Trophy size={16} className="text-yellow-600" />
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-foreground">Ranking Geral</h3>
@@ -686,13 +686,13 @@ export default function Dashboard() {
                           {avatarEmoji}
                         </div> :
 
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0" style={{ backgroundColor: avatarColor }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
                           {getInitials(displayName)}
                         </div>
                   }
                       <span className={`flex-1 text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{nameWithAvatar}</span>
                       <div className="flex items-center gap-1 shrink-0">
-                        <Star size={11} className="text-primary fill-yellow-400" />
+                        <Star size={11} className="text-yellow-400 fill-yellow-400" />
                         <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
                       </div>
                     </div>);
@@ -723,7 +723,7 @@ export default function Dashboard() {
                 {onlineClassmates.length === 0 ?
                 <span className="text-[11px] text-muted-foreground">sem colegas online no momento</span> :
                 onlineClassmates.slice(0, 8).map((student) =>
-                <span key={student.id} className="text-[11px] px-2 py-0.5 rounded-full border border-primary bg-accent text-primary">
+                <span key={student.id} className="text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
                       {getAvatarPrefixedName(student.profile_name || student.student_name || student.student_email, student.profile_avatar_emoji)}
                     </span>
                 )
@@ -803,8 +803,8 @@ export default function Dashboard() {
       <div className="bg-card rounded-2xl border border-border p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-                <Trophy size={16} className="text-primary" />
+              <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+                <Trophy size={16} className="text-yellow-600" />
               </div>
               <div>
                 <h3 className="font-bold text-sm text-foreground">Ranking Geral Manual</h3>
@@ -815,7 +815,7 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-center justify-end gap-2">
                 <button
               onClick={() => setMonitorSelectMode(true)}
-              className="flex items-center gap-1.5 text-xs font-bold bg-accent text-primary border border-primary px-3 py-1.5 rounded-xl hover:bg-accent transition-colors">
+              className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors">
               
                   <Crown size={12} /> Selecionar Monitores
                 </button>
@@ -837,7 +837,7 @@ export default function Dashboard() {
           }
           </div>
           {monitorSelectMode &&
-        <div className="bg-accent border border-primary rounded-xl p-3 text-xs text-primary mb-3">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800 mb-3">
 Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada monitor receberá um aviso individual com link para baixar o certificado.
             </div>
         }
@@ -869,35 +869,35 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
                 }}
                 onClick={() => monitorSelectMode && toggleMonitorEmail(r.email)}
                 className={`relative flex flex-col items-center text-center gap-1.5 p-3 rounded-xl border transition-colors ${
-                monitorSelectMode ? 'cursor-pointer hover:bg-accent' : ''} ${
+                monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''} ${
 
-                isSelected ? 'bg-accent border-primary' : 'border-border hover:bg-secondary/50'}`
+                isSelected ? 'bg-yellow-100 border-yellow-300' : 'border-border hover:bg-secondary/50'}`
                 }>
                 
                     {monitorSelectMode &&
                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                isSelected ? 'bg-accent border-primary' : 'border-muted-foreground/40'}`
+                isSelected ? 'bg-yellow-500 border-yellow-500' : 'border-muted-foreground/40'}`
                 }>
-                        {isSelected && <div className="w-2 h-2 rounded-full bg-card" />}
+                        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
                 }
                     <span className="absolute top-2 left-2 text-sm font-black">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground">#{i + 1}</span>}</span>
                     {photoUrl ?
                 <img src={photoUrl} alt={displayName} className="w-12 h-12 rounded-full object-cover shrink-0" /> :
 
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-primary-foreground shrink-0" style={{ backgroundColor: avatarColor }}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
                         {displayName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                       </div>
                 }
                     <div className="w-full min-w-0">
                       <div className="flex items-center justify-center gap-1">
                         <span className="text-xs font-bold text-foreground truncate max-w-full">{displayName}</span>
-                        {r.hasPending && <AlertTriangle size={12} className="text-destructive shrink-0" />}
+                        {r.hasPending && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 bg-accent border border-primary px-2.5 py-1 rounded-xl">
-                      <Star size={10} className="text-primary fill-yellow-500" />
-                      <span className="text-xs font-black text-primary">{formatScore(getAssignedPoints(r.email, r.total))}</span>
+                    <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-xl">
+                      <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                      <span className="text-xs font-black text-yellow-700">{formatScore(getAssignedPoints(r.email, r.total))}</span>
                     </div>
                     <div className="w-full space-y-1.5 mt-1">
                       <div className="text-[10px] text-muted-foreground">Sugestão: {formatScore(r.total)} pts</div>
@@ -936,7 +936,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
           title="Apostila"
           value={`${moduleUnlocked.filter(Boolean).length}/${moduleUnlocked.length || 10}`}
           icon={BookOpen}
-          iconBg="bg-accent"
+          iconBg="bg-emerald-500"
           to="/apostila"
           subtitle="Ir para Apostila" />
         
@@ -944,7 +944,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
           title={isTeacher ? 'Para Corrigir' : 'Tarefas Pendentes'}
           value={pendingTasks}
           icon={FileText}
-          iconBg="bg-accent"
+          iconBg="bg-orange-500"
           to={isTeacher ? '/scorecontrol?filter=pending' : '/tasks'}
           subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Ir para Tarefas'} />
         
@@ -952,7 +952,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
           title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}
           value={isTeacher ? studentCount : formatScore(totalPoints)}
           icon={isTeacher ? Users : Star}
-          iconBg={isTeacher ? 'bg-accent' : 'bg-accent'}
+          iconBg={isTeacher ? 'bg-emerald-500' : 'bg-yellow-500'}
           to={isTeacher ? '/students' : '/dashboard'}
           subtitle={isTeacher ? 'Ver alunos' : 'Pontuação publicada pelo administrador'} />
         
@@ -960,7 +960,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
           title={isTeacher ? 'Total de Aulas' : 'Aulas Assistidas'}
           value={isTeacher ? lessons.length : `${watchedCount}/${visibleLessons.length}`}
           icon={BookOpen}
-          iconBg="bg-accent"
+          iconBg="bg-purple-500"
           to="/lessons"
           subtitle="Ir para Videoaulas" />
         
@@ -972,27 +972,27 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
         return (
           <button
             onClick={() => navigate(scoped('/ofensivas'))}
-            className="w-full group relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-accent/15 via-accent/10 to-destructive/10 p-5 text-left hover:border-primary/60 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-200"
+            className="w-full group relative overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-red-500/10 p-5 text-left hover:border-orange-500/60 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-200"
           >
             {/* Animated background pulse */}
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent animate-pulse rounded-2xl" />
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent animate-pulse rounded-2xl" />
             {/* Spark sparkles decorative */}
-            <div className="absolute top-3 right-12 text-primary opacity-60 text-lg animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
-            <div className="absolute top-6 right-6 text-primary opacity-40 text-sm animate-bounce" style={{ animationDelay: '0.7s' }}>🔥</div>
-            <div className="absolute bottom-4 right-8 text-primary opacity-30 text-xs animate-bounce" style={{ animationDelay: '1.1s' }}>⭐</div>
+            <div className="absolute top-3 right-12 text-yellow-400 opacity-60 text-lg animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
+            <div className="absolute top-6 right-6 text-orange-400 opacity-40 text-sm animate-bounce" style={{ animationDelay: '0.7s' }}>🔥</div>
+            <div className="absolute bottom-4 right-8 text-amber-400 opacity-30 text-xs animate-bounce" style={{ animationDelay: '1.1s' }}>⭐</div>
             <div className="relative flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-destructive flex items-center justify-center shadow-lg shadow-orange-500/30 shrink-0 group-hover:scale-110 transition-transform duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/30 shrink-0 group-hover:scale-110 transition-transform duration-200">
                 <span className="text-2xl">🔥</span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="font-black text-base text-foreground">Ofensiva do Dia</p>
-                  <span className="text-[10px] font-bold bg-accent text-primary-foreground px-2 py-0.5 rounded-full animate-pulse">NOVO</span>
+                  <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full animate-pulse">NOVO</span>
                 </div>
-                <p className="text-xs text-muted-foreground">8 perguntas · até <span className="font-bold text-primary">+1,0 pt</span> hoje</p>
-                <p className="text-[11px] text-primary/80 mt-1 font-semibold">Sequências de 5, 10 e 20 dias ganham bônus! 🏆</p>
+                <p className="text-xs text-muted-foreground">8 perguntas · até <span className="font-bold text-orange-400">+1,0 pt</span> hoje</p>
+                <p className="text-[11px] text-orange-500/80 mt-1 font-semibold">Sequências de 5, 10 e 20 dias ganham bônus! 🏆</p>
               </div>
-              <div className="flex items-center gap-1 text-xs font-bold bg-accent text-primary-foreground px-3 py-1.5 rounded-xl shrink-0 group-hover:bg-primary transition-colors">
+              <div className="flex items-center gap-1 text-xs font-bold bg-orange-500 text-white px-3 py-1.5 rounded-xl shrink-0 group-hover:bg-orange-600 transition-colors">
                 Jogar <ArrowRight size={12} />
               </div>
             </div>
@@ -1011,8 +1011,8 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
       <div className="bg-card rounded-2xl border border-border p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-                <Bell size={16} className="text-primary" />
+              <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+                <Bell size={16} className="text-yellow-600" />
               </div>
               <h3 className="font-bold text-sm text-foreground">Avisos Recentes</h3>
             </div>
@@ -1022,11 +1022,11 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
           </div>
           <div className="space-y-2">
             {announcements.slice(0, 3).map((a) => {
-            const urgentClass = a.type === 'urgent' ? 'border-destructive bg-destructive/50' : a.type === 'warning' ? 'border-primary bg-accent/50' : 'border-border bg-secondary/30';
+            const urgentClass = a.type === 'urgent' ? 'border-red-200 bg-red-50/50' : a.type === 'warning' ? 'border-yellow-200 bg-yellow-50/50' : 'border-border bg-secondary/30';
             return (
               <div key={a.id} className={`p-3 rounded-xl border text-xs ${urgentClass}`}>
                   <div className="flex items-center gap-2">
-                    {a.type === 'urgent' && <AlertTriangle size={12} className="text-destructive shrink-0" />}
+                    {a.type === 'urgent' && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
                     <p className="font-semibold text-foreground truncate">{a.title || a.content}</p>
                     <span className="ml-auto text-muted-foreground shrink-0">{a.created_date ? format(new Date(a.created_date), 'dd/MM') : ''}</span>
                   </div>

@@ -77,17 +77,17 @@ const TERMS = [
 
 export default function TermosDeUso() {
   return (
-    <div className="min-h-screen bg-[#080b14] text-primary-foreground">
+    <div className="min-h-screen bg-[#080b14] text-white">
       {/* Header */}
-      <div className="bg-[#0d1120] border-b border-border/8 px-6 py-5">
+      <div className="bg-[#0d1120] border-b border-white/8 px-6 py-5">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <a href="/" className="flex items-center gap-2 text-primary-foreground/40 hover:text-primary-foreground transition-colors text-sm">
+          <a href="/" className="flex items-center gap-2 text-white/40 hover:text-white transition-colors text-sm">
             <ArrowLeft size={15} /> Voltar ao site
           </a>
-          <div className="h-4 w-px bg-card/10" />
+          <div className="h-4 w-px bg-white/10" />
           <div className="flex items-center gap-2">
             <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-6 h-6 object-contain" />
-            <span className="text-primary-foreground/60 text-sm font-semibold">{BRAND_LEGAL_NAME}</span>
+            <span className="text-white/60 text-sm font-semibold">{BRAND_LEGAL_NAME}</span>
           </div>
         </div>
       </div>
@@ -99,11 +99,11 @@ export default function TermosDeUso() {
             <FileText size={13} className="text-[#5b5ef4]" />
             <span className="text-xs font-bold text-[#5b5ef4] uppercase tracking-widest">Documento Legal</span>
           </div>
-          <h1 className="text-4xl font-black text-primary-foreground mb-3">Termos de Uso</h1>
-          <p className="text-primary-foreground/50 max-w-xl mx-auto text-sm leading-relaxed">
+          <h1 className="text-4xl font-black text-white mb-3">Termos de Uso</h1>
+          <p className="text-white/50 max-w-xl mx-auto text-sm leading-relaxed">
             Ao utilizar a plataforma {BRAND_LEGAL_NAME}, o usuário declara ter lido, compreendido e concordado integralmente com os termos a seguir.
           </p>
-          <p className="text-primary-foreground/30 text-xs mt-3">Última atualização: Maio de 2026</p>
+          <p className="text-white/30 text-xs mt-3">Última atualização: Maio de 2026</p>
         </div>
 
         {/* Termos */}
@@ -111,16 +111,16 @@ export default function TermosDeUso() {
           {TERMS.map((t) => {
             const Icon = t.icon;
             return (
-              <div key={t.num} className="bg-[#0d1120] border border-border/8 rounded-2xl p-6 hover:border-border/15 transition-all">
+              <div key={t.num} className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 hover:border-white/15 transition-all">
                 <div className="flex items-start gap-4">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: t.color + '20', border: `1px solid ${t.color}30` }}>
                     <Icon size={15} style={{ color: t.color }} />
                   </div>
                   <div>
-                    <p className="text-primary-foreground font-bold text-sm mb-2">
-                      <span className="text-primary-foreground/30 mr-2">Art. {t.num}.</span>{t.title}
+                    <p className="text-white font-bold text-sm mb-2">
+                      <span className="text-white/30 mr-2">Art. {t.num}.</span>{t.title}
                     </p>
-                    <p className="text-primary-foreground/55 text-sm leading-relaxed">{t.text}</p>
+                    <p className="text-white/55 text-sm leading-relaxed">{t.text}</p>
                   </div>
                 </div>
               </div>
@@ -129,34 +129,34 @@ export default function TermosDeUso() {
         </div>
 
         {/* Destaque Renovação Parcial */}
-        <div className="bg-gradient-to-r from-[#5b5ef4]/10 via-white/4 to-[#1db89e]/10 border border-border/10 rounded-3xl p-8 mb-10">
+        <div className="bg-gradient-to-r from-[#5b5ef4]/10 via-white/4 to-[#1db89e]/10 border border-white/10 rounded-3xl p-8 mb-10">
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl bg-[#f4a23d]/15 border border-[#f4a23d]/30 flex items-center justify-center shrink-0">
               <AlertTriangle size={16} className="text-[#f4a23d]" />
             </div>
             <div>
-              <p className="text-primary-foreground font-bold text-sm mb-2">Aviso sobre Renovação Parcial de Acesso</p>
-              <p className="text-primary-foreground/60 text-sm leading-relaxed">
-                O período de renovação parcial tem caráter exclusivamente de <strong className="text-primary-foreground">revisão e complementação de conteúdo gravado</strong>. Não inclui acesso a aulas ao vivo, suporte de tutor, participação em grupos de integração da turma ativa nem emissão de certificado. A renovação é uma cortesia oferecida ao aluno que, por razões justificadas, não concluiu o curso no período regular.
+              <p className="text-white font-bold text-sm mb-2">Aviso sobre Renovação Parcial de Acesso</p>
+              <p className="text-white/60 text-sm leading-relaxed">
+                O período de renovação parcial tem caráter exclusivamente de <strong className="text-white">revisão e complementação de conteúdo gravado</strong>. Não inclui acesso a aulas ao vivo, suporte de tutor, participação em grupos de integração da turma ativa nem emissão de certificado. A renovação é uma cortesia oferecida ao aluno que, por razões justificadas, não concluiu o curso no período regular.
               </p>
             </div>
           </div>
         </div>
 
         {/* Aviso legal geral */}
-        <div className="bg-accent/5 border border-primary/20 rounded-2xl p-6 mb-10 text-sm leading-relaxed">
-          <p className="text-primary/80">
-            <strong className="text-primary">Atenção:</strong> Os presentes Termos de Uso foram redigidos em conformidade com a legislação brasileira vigente, incluindo a Lei nº 9.394/96 (LDB), a Lei nº 8.078/90 (CDC) e as disposições aplicáveis ao ensino livre. Para questões relativas ao tratamento de dados pessoais (LGPD), consulte nossa Política de Privacidade.
+        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 mb-10 text-sm leading-relaxed">
+          <p className="text-yellow-200/80">
+            <strong className="text-yellow-200">Atenção:</strong> Os presentes Termos de Uso foram redigidos em conformidade com a legislação brasileira vigente, incluindo a Lei nº 9.394/96 (LDB), a Lei nº 8.078/90 (CDC) e as disposições aplicáveis ao ensino livre. Para questões relativas ao tratamento de dados pessoais (LGPD), consulte nossa Política de Privacidade.
           </p>
         </div>
 
         {/* Footer da página */}
-        <div className="border-t border-border/8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="border-t border-white/8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-8 h-8 object-contain" />
             <div>
-              <p className="text-primary-foreground font-bold text-sm">{BRAND_LEGAL_NAME}</p>
-              <p className="text-primary-foreground/30 text-xs">CNPJ {BRAND_CNPJ}</p>
+              <p className="text-white font-bold text-sm">{BRAND_LEGAL_NAME}</p>
+              <p className="text-white/30 text-xs">CNPJ {BRAND_CNPJ}</p>
             </div>
           </div>
           <div className="text-center">
@@ -168,13 +168,13 @@ export default function TermosDeUso() {
               display: 'block',
               lineHeight: 1.2,
             }}>William Ribeiro S.</span>
-            <div className="w-48 border-t border-border/15 pt-2 mx-auto">
-              <p className="text-primary-foreground/30 text-[10px] uppercase tracking-widest">Direção Geral · {BRAND_LEGAL_NAME}</p>
+            <div className="w-48 border-t border-white/15 pt-2 mx-auto">
+              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · {BRAND_LEGAL_NAME}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 bg-card/5 border border-border/8 rounded-full px-3 py-1">
+          <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
             <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-            <span className="text-primary-foreground/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
+            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
           </div>
         </div>
       </div>

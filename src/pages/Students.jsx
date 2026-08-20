@@ -203,9 +203,9 @@ export default function Students() {
     });
 
   const tuitionConfig = {
-    paid: { label: 'Em dia', class: 'text-primary bg-accent border-primary', icon: CheckCircle },
-    pending: { label: 'Pendente', class: 'text-primary bg-accent border-primary', icon: CheckCircle },
-    overdue: { label: 'Inadimplente', class: 'text-destructive bg-destructive border-destructive', icon: XCircle },
+    paid: { label: 'Em dia', class: 'text-green-700 bg-green-100 border-green-200', icon: CheckCircle },
+    pending: { label: 'Pendente', class: 'text-yellow-700 bg-yellow-100 border-yellow-200', icon: CheckCircle },
+    overdue: { label: 'Inadimplente', class: 'text-red-700 bg-red-100 border-red-200', icon: XCircle },
   };
 
   const courseLabel = { tcc: 'Terapia TC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' }[activeCourse] || activeCourse;
@@ -301,7 +301,7 @@ export default function Students() {
             </Button>
             <Button
               size="sm"
-              className="gap-1.5 h-10 text-xs w-full sm:w-auto bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-primary-foreground border-0"
+              className="gap-1.5 h-10 text-xs w-full sm:w-auto bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white border-0"
               onClick={syncStudents}
               disabled={syncing}
             >
@@ -334,7 +334,7 @@ export default function Students() {
                         <img src={code.profile_photo_url} alt={displayName} className="w-10 h-10 rounded-full object-cover shrink-0 border border-border" />
                       ) : (
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-primary-foreground shrink-0"
+                          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0"
                           style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}
                         >
                           {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -348,7 +348,7 @@ export default function Students() {
                           {tCfg && (
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tCfg.class}`}>{tCfg.label}</span>
                           )}
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${code.is_active ? 'bg-accent text-primary' : 'bg-muted text-muted-foreground'}`}>
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${code.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                             {code.is_active ? 'Ativo' : 'Inativo'}
                           </span>
                         </div>
@@ -385,7 +385,7 @@ export default function Students() {
                       </div>
 
                       <div className="w-full">
-                         <button onClick={() => { if (confirm('Remover este aluno? TODOS os dados dele (pontuação, entregas, fórum, presenças, mensalidades, certificados) serão apagados permanentemente e sem deixar rastros. Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} disabled={deleteCodeMutation.isPending} className="w-full h-10 px-3 text-destructive border border-destructive hover:bg-destructive rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50" title="Remover aluno">
+                         <button onClick={() => { if (confirm('Remover este aluno? TODOS os dados dele (pontuação, entregas, fórum, presenças, mensalidades, certificados) serão apagados permanentemente e sem deixar rastros. Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} disabled={deleteCodeMutation.isPending} className="w-full h-10 px-3 text-red-500 border border-red-200 hover:bg-red-100 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50" title="Remover aluno">
                            <Trash2 size={15} /> Remover
                          </button>
                       </div>
@@ -433,7 +433,7 @@ export default function Students() {
                                 {code.profile_photo_url ? (
                                 <img src={code.profile_photo_url} alt={displayName} className="w-9 h-9 rounded-full object-cover shrink-0 border border-border" />
                               ) : (
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-primary-foreground shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
+                                <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
                                   {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                 </div>
                               )}
@@ -474,7 +474,7 @@ export default function Students() {
                                 <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
                                   <Eye size={13} /> Detalhes
                                 </button>
-                                <button onClick={() => { if (confirm('Remover este aluno? TODOS os dados dele (pontuação, entregas, fórum, presenças, mensalidades, certificados) serão apagados permanentemente e sem deixar rastros. Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} disabled={deleteCodeMutation.isPending} className="flex items-center gap-1 text-xs text-destructive hover:underline font-semibold disabled:opacity-50">
+                                <button onClick={() => { if (confirm('Remover este aluno? TODOS os dados dele (pontuação, entregas, fórum, presenças, mensalidades, certificados) serão apagados permanentemente e sem deixar rastros. Esta ação não pode ser desfeita.')) deleteCodeMutation.mutate(code.id); }} disabled={deleteCodeMutation.isPending} className="flex items-center gap-1 text-xs text-red-500 hover:underline font-semibold disabled:opacity-50">
                                   <Trash2 size={13} /> Remover
                                 </button>
                               </div>

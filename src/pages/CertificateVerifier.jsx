@@ -96,39 +96,39 @@ export default function CertificateVerifier() {
   };
 
   return (
-    <div className="min-h-screen bg-foreground px-4 py-10 text-primary-foreground">
+    <div className="min-h-screen bg-slate-950 px-4 py-10 text-white">
       <main className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-3xl border border-border/10 bg-card/5 p-6 shadow-2xl backdrop-blur">
+        <header className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-card shadow-lg">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-lg">
                 <img src={WR_CERTIFICATE_LOGO} alt="Logo WR" className="h-12 w-12 object-contain" />
               </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.35em] text-primary">Autenticidade</p>
+                <p className="text-xs font-black uppercase tracking-[0.35em] text-amber-300">Autenticidade</p>
                 <h1 className="mt-1 text-2xl font-black">Validação de certificado</h1>
-                <p className="mt-1 text-sm text-primary-foreground/60">{BRAND_LEGAL_NAME} · CNPJ {BRAND_CNPJ}</p>
+                <p className="mt-1 text-sm text-white/60">{BRAND_LEGAL_NAME} · CNPJ {BRAND_CNPJ}</p>
               </div>
             </div>
-            <ShieldCheck className="h-14 w-14 text-primary" />
+            <ShieldCheck className="h-14 w-14 text-emerald-300" />
           </div>
         </header>
 
-        <section className="rounded-3xl border border-border/10 bg-card p-6 text-foreground shadow-2xl">
+        <section className="rounded-3xl border border-white/10 bg-white p-6 text-slate-950 shadow-2xl">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent text-primary">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
               <Search size={22} />
             </div>
             <div>
               <h2 className="text-xl font-black">Campo público de conferência</h2>
-              <p className="mt-1 text-sm text-foreground">Digite ou cole o código exibido no certificado e clique em pesquisar código para buscar o registro salvo no banco de dados.</p>
+              <p className="mt-1 text-sm text-slate-700">Digite ou cole o código exibido no certificado e clique em pesquisar código para buscar o registro salvo no banco de dados.</p>
             </div>
           </div>
 
           <label className="mt-5 block space-y-2">
-            <span className="text-xs font-black uppercase tracking-wide text-foreground">Código de autenticidade</span>
+            <span className="text-xs font-black uppercase tracking-wide text-slate-700">Código de autenticidade</span>
             <input
-              className="h-12 w-full rounded-2xl border border-border bg-card px-4 text-sm font-black uppercase tracking-widest text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+              className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-black uppercase tracking-widest text-black outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30"
               value={typedCode}
               onChange={(event) => setTypedCode(event.target.value.toUpperCase())}
               onKeyDown={(event) => {
@@ -142,50 +142,50 @@ export default function CertificateVerifier() {
             type="button"
             onClick={searchCertificateCode}
             disabled={isSearching}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-foreground px-5 py-3 text-sm font-black uppercase tracking-wide text-primary-foreground transition hover:bg-foreground disabled:opacity-50"
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-black px-5 py-3 text-sm font-black uppercase tracking-wide text-white transition hover:bg-slate-800 disabled:opacity-50"
           >
             <Search size={18} />
             {isSearching ? 'Pesquisando...' : 'Pesquisar código'}
           </button>
 
           {!hasCertificateData && (
-            <div className="mt-5 rounded-2xl border border-primary bg-accent p-4 text-sm text-primary">
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               Informe um código válido e clique em pesquisar para consultar os dados públicos do certificado emitido pela coordenação.
             </div>
           )}
 
           {hasCertificateData && !isCodeConfirmed && (
-            <div className="mt-5 rounded-2xl border border-destructive bg-destructive p-4 text-sm text-destructive">
+            <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
               O código digitado não corresponde ao código de autenticidade carregado nesta página.
             </div>
           )}
 
           {isCodeConfirmed && (
-            <div className="mt-5 rounded-2xl border border-primary bg-accent p-5 text-primary">
+            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={22} className="text-primary" />
+                <CheckCircle2 size={22} className="text-emerald-600" />
                 <h3 className="text-lg font-black">Certificado conferido</h3>
               </div>
-              <p className="mt-2 text-sm leading-6 text-primary">Os dados públicos abaixo correspondem às informações de conclusão salvas no banco de dados de autenticidade do certificado.</p>
+              <p className="mt-2 text-sm leading-6 text-emerald-950">Os dados públicos abaixo correspondem às informações de conclusão salvas no banco de dados de autenticidade do certificado.</p>
               <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-card p-4"><dt className="text-xs font-black uppercase tracking-wide text-foreground">Aluno</dt><dd className="mt-1 font-bold text-foreground">{certificateData.aluno}</dd></div>
-                <div className="rounded-2xl bg-card p-4"><dt className="text-xs font-black uppercase tracking-wide text-foreground">Curso</dt><dd className="mt-1 font-bold text-foreground">{certificateData.curso}</dd></div>
-                <div className="rounded-2xl bg-card p-4"><dt className="text-xs font-black uppercase tracking-wide text-foreground">Carga horária</dt><dd className="mt-1 font-bold text-foreground">{certificateData.carga}h</dd></div>
-                <div className="rounded-2xl bg-card p-4"><dt className="text-xs font-black uppercase tracking-wide text-foreground">Média final</dt><dd className="mt-1 font-bold text-foreground">{certificateData.media}</dd></div>
-                <div className="rounded-2xl bg-card p-4"><dt className="text-xs font-black uppercase tracking-wide text-foreground">Emissão</dt><dd className="mt-1 font-bold text-foreground">{certificateData.emissao}</dd></div>
-                <div className="rounded-2xl bg-card p-4"><dt className="text-xs font-black uppercase tracking-wide text-foreground">Código</dt><dd className="mt-1 font-black tracking-widest text-foreground">{certificateData.codigo}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Aluno</dt><dd className="mt-1 font-bold text-black">{certificateData.aluno}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Curso</dt><dd className="mt-1 font-bold text-black">{certificateData.curso}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Carga horária</dt><dd className="mt-1 font-bold text-black">{certificateData.carga}h</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Média final</dt><dd className="mt-1 font-bold text-black">{certificateData.media}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Emissão</dt><dd className="mt-1 font-bold text-black">{certificateData.emissao}</dd></div>
+                <div className="rounded-2xl bg-white p-4"><dt className="text-xs font-black uppercase tracking-wide text-black">Código</dt><dd className="mt-1 font-black tracking-widest text-black">{certificateData.codigo}</dd></div>
               </dl>
               {certificateData.honra && (
-                <div className="mt-3 rounded-2xl bg-card p-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-foreground">Destaque</p>
-                  <p className="mt-1 font-bold text-foreground">{certificateData.honra}</p>
+                <div className="mt-3 rounded-2xl bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-wide text-black">Destaque</p>
+                  <p className="mt-1 font-bold text-black">{certificateData.honra}</p>
                 </div>
               )}
             </div>
           )}
         </section>
 
-        <footer className="flex items-center justify-center gap-2 text-sm text-primary-foreground/60">
+        <footer className="flex items-center justify-center gap-2 text-sm text-white/60">
           <Award size={16} /> WR Educacional · Validação pública de certificados
         </footer>
       </main>

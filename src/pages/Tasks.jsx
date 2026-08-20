@@ -51,7 +51,7 @@ function SubmittedView({ submission }) {
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="inline-flex items-center gap-1 text-primary bg-accent border border-primary px-3 py-1.5 rounded-xl text-xs font-bold">
+        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
           <CheckCircle size={12} /> Entregue
         </span>
 
@@ -80,7 +80,7 @@ function SubmittedView({ submission }) {
           )}
           {submission.feedback && (
             <div className="border-t border-border pt-2">
-              <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-primary" /> Feedback:</p>
+              <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Feedback:</p>
               <p className="text-muted-foreground">{submission.feedback}</p>
             </div>
           )}
@@ -218,7 +218,7 @@ export default function Tasks({ mode = 'tasks' }) {
               <Button
                 variant="outline"
                 onClick={() => setShowAIGenerator(true)}
-                className="gap-2 h-9 text-sm shrink-0 border-primary/40 text-primary hover:bg-accent/10 hover:text-primary"
+                className="gap-2 h-9 text-sm shrink-0 border-violet-500/40 text-violet-400 hover:bg-violet-500/10 hover:text-violet-300"
               >
                 <Sparkles size={14} /> Gerar com IA
               </Button>
@@ -297,42 +297,42 @@ export default function Tasks({ mode = 'tasks' }) {
               <div key={task.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden opacity-50">
                 <div className="flex items-center gap-3 p-4">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-muted text-xl">🔒</div>
-                  <div className="p-2 rounded-xl shrink-0 bg-accent text-primary"><FileText size={15} /></div>
+                  <div className="p-2 rounded-xl shrink-0 bg-blue-100 text-blue-600"><FileText size={15} /></div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-sm text-foreground truncate">{task.title}</h3>
-                    <p className="text-[10px] text-primary font-semibold mt-0.5">⏳ Conclua o módulo anterior na apostila para liberar</p>
+                    <p className="text-[10px] text-amber-600 font-semibold mt-0.5">⏳ Conclua o módulo anterior na apostila para liberar</p>
                   </div>
                 </div>
               </div>
             );
 
             return (
-              <div key={task.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-primary' : 'border-border hover:shadow-md'} ${isTeacher && task.is_hidden ? 'opacity-60' : ''}`}>
+              <div key={task.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200' : 'border-border hover:shadow-md'} ${isTeacher && task.is_hidden ? 'opacity-60' : ''}`}>
                 <div
                   className="flex items-center gap-3 p-4 cursor-pointer select-none"
                   onClick={() => !isTeacher && setExpandedId(isExpanded ? null : task.id)}
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${isDone ? 'bg-accent border-primary text-primary-foreground' : 'bg-secondary border-border text-foreground'}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${isDone ? 'bg-green-500 border-green-400 text-white' : 'bg-secondary border-border text-foreground'}`}>
                     {isDone ? <CheckCircle size={18} /> : taskNum}
                   </div>
 
-                  <div className={`p-2 rounded-xl shrink-0 ${task.type === 'quiz' ? 'bg-accent text-primary' : 'bg-accent text-primary'}`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${task.type === 'quiz' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
                     {task.type === 'quiz' ? <GraduationCap size={15} /> : <FileText size={15} />}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-sm text-foreground truncate">{task.title}</h3>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {isDone && <Badge className="text-[9px] bg-accent text-primary border-primary py-0 px-1.5">✓ Entregue</Badge>}
+                      {isDone && <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200 py-0 px-1.5">✓ Entregue</Badge>}
 
                       {!isDone && task.deadline && (
-                        <span className={`text-[10px] font-semibold ${isPastDeadline ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        <span className={`text-[10px] font-semibold ${isPastDeadline ? 'text-red-500' : 'text-muted-foreground'}`}>
                           Prazo: {format(new Date(task.deadline), 'dd/MM HH:mm')}{isPastDeadline ? ' · Expirou' : ''}
                         </span>
                       )}
                       {!isDone && !task.deadline && <span className="text-[10px] text-muted-foreground">Em aberto</span>}
                       {isTeacher && task.is_hidden && (
-                        <Badge className="text-[9px] bg-accent text-primary border-primary py-0 px-1.5">Oculta para alunos</Badge>
+                        <Badge className="text-[9px] bg-amber-100 text-amber-700 border-amber-200 py-0 px-1.5">Oculta para alunos</Badge>
                       )}
                     </div>
                   </div>
@@ -345,7 +345,7 @@ export default function Tasks({ mode = 'tasks' }) {
                       <button onClick={e => { e.stopPropagation(); task.type === 'quiz' ? navigate(`${prefix}/tasks/builder/${task.id}`) : openEdit(task); }} className="p-2 text-muted-foreground hover:text-primary rounded-lg"><Pencil size={13} /></button>
                       <button
                         onClick={e => { e.stopPropagation(); toggleVisibilityMutation.mutate({ id: task.id, isHidden: !task.is_hidden }); }}
-                        className={`p-2 rounded-lg ${task.is_hidden ? 'text-destructive hover:text-destructive' : 'text-primary hover:text-primary'}`}
+                        className={`p-2 rounded-lg ${task.is_hidden ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
                         title={task.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
                       >
                         {task.is_hidden ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -381,8 +381,8 @@ export default function Tasks({ mode = 'tasks' }) {
           })}
 
           {!isTeacher && totalSubmitted >= sortedTasks.length && sortedTasks.length > 0 && (
-            <div className="mt-4 bg-gradient-to-r from-accent to-accent border border-primary rounded-2xl p-5 text-center">
-              <Trophy size={30} className="mx-auto mb-2 text-primary" />
+            <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 text-center">
+              <Trophy size={30} className="mx-auto mb-2 text-green-500" />
               <p className="font-black text-base text-foreground">Todas as tarefas entregues! 🎉</p>
             </div>
           )}

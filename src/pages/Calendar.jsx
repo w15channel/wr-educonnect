@@ -14,11 +14,11 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 const EVENT_TYPES = {
-  personal: { label: 'Pessoal', color: 'bg-accent', dot: 'bg-accent' },
-  study: { label: 'Estudo', color: 'bg-accent', dot: 'bg-accent' },
-  task: { label: 'Tarefa', color: 'bg-accent', dot: 'bg-accent' },
-  exam: { label: 'Prova', color: 'bg-accent', dot: 'bg-accent' },
-  reminder: { label: 'Lembrete', color: 'bg-accent', dot: 'bg-accent' },
+  personal: { label: 'Pessoal', color: 'bg-purple-500', dot: 'bg-purple-500' },
+  study: { label: 'Estudo', color: 'bg-blue-500', dot: 'bg-blue-500' },
+  task: { label: 'Tarefa', color: 'bg-orange-500', dot: 'bg-orange-500' },
+  exam: { label: 'Prova', color: 'bg-pink-500', dot: 'bg-pink-500' },
+  reminder: { label: 'Lembrete', color: 'bg-green-500', dot: 'bg-green-500' },
 };
 
 const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -176,7 +176,7 @@ export default function Calendar() {
                       {dayEvents.slice(0, 3).map((e, ei) => (
                         <span
                           key={ei}
-                          className={`w-1.5 h-1.5 rounded-full ${isSel ? 'bg-card/70' : (EVENT_TYPES[e.type]?.dot || 'bg-primary')}`}
+                          className={`w-1.5 h-1.5 rounded-full ${isSel ? 'bg-white/70' : (EVENT_TYPES[e.type]?.dot || 'bg-primary')}`}
                         />
                       ))}
                     </div>

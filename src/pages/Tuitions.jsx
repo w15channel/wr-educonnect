@@ -12,9 +12,9 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 const STATUS_CONFIG = {
-  paid: { label: 'Pago', icon: CheckCircle, card: 'border-primary/20 bg-accent/10', badge: 'text-primary bg-accent/10 border-primary/20', text: 'text-primary', iconBg: 'bg-accent/15' },
-  pending: { label: 'Pendente', icon: AlertCircle, card: 'border-primary/20 bg-accent/10', badge: 'text-primary bg-accent/10 border-primary/20', text: 'text-primary', iconBg: 'bg-accent/15' },
-  overdue: { label: 'Inadimplente', icon: XCircle, card: 'border-destructive/20 bg-destructive/10', badge: 'text-destructive bg-destructive/10 border-destructive/20', text: 'text-destructive', iconBg: 'bg-destructive/15' },
+  paid: { label: 'Pago', icon: CheckCircle, card: 'border-green-500/20 bg-green-500/10', badge: 'text-green-500 bg-green-500/10 border-green-500/20', text: 'text-green-500', iconBg: 'bg-green-500/15' },
+  pending: { label: 'Pendente', icon: AlertCircle, card: 'border-yellow-500/20 bg-yellow-500/10', badge: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-500', iconBg: 'bg-yellow-500/15' },
+  overdue: { label: 'Inadimplente', icon: XCircle, card: 'border-red-500/20 bg-red-500/10', badge: 'text-red-500 bg-red-500/10 border-red-500/20', text: 'text-red-500', iconBg: 'bg-red-500/15' },
 };
 
 export default function Tuitions() {
@@ -201,7 +201,7 @@ export default function Tuitions() {
               <button
                 key={opt.v}
                 onClick={() => setBulk(b => ({ ...b, mode: opt.v, selectedEmails: [] }))}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${bulk.mode === opt.v ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${bulk.mode === opt.v ? 'bg-primary text-white border-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
               >
                 {opt.label}
               </button>
@@ -274,7 +274,7 @@ export default function Tuitions() {
             const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending;
             const StatusIcon = cfg.icon;
             return (
-              <div key={t.id} className={`bg-card rounded-2xl border p-4 flex items-center gap-3 flex-wrap ${t.status === 'overdue' ? 'border-destructive/20' : t.status === 'paid' ? 'border-primary/20' : 'border-border'}`}>
+              <div key={t.id} className={`bg-card rounded-2xl border p-4 flex items-center gap-3 flex-wrap ${t.status === 'overdue' ? 'border-red-500/20' : t.status === 'paid' ? 'border-green-500/20' : 'border-border'}`}>
                 <div className="flex-1 min-w-0">
                   {isAdmin && <p className="font-bold text-sm text-foreground">{t.student_name || t.student_email}</p>}
                   <div className="flex items-center gap-2 flex-wrap mt-0.5">

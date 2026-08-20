@@ -29,7 +29,7 @@ function SubmittedView({ submission }) {
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="inline-flex items-center gap-1 text-primary bg-accent border border-primary px-3 py-1.5 rounded-xl text-xs font-bold">
+        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
           <CheckCircle size={12} /> Enviada
         </span>
         {submission.grade != null ? (
@@ -37,7 +37,7 @@ function SubmittedView({ submission }) {
             Nota: {formatScore(submission.grade)}
           </span>
         ) : (
-          <span className="text-xs font-bold text-primary bg-accent border border-primary px-3 py-1.5 rounded-xl">
+          <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
             ⏳ Aguardando correção
           </span>
         )}
@@ -49,7 +49,7 @@ function SubmittedView({ submission }) {
       </div>
       {open && submission.feedback && (
         <div className="bg-secondary/40 border border-border rounded-xl p-3 text-xs">
-          <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-primary" /> Feedback:</p>
+          <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Feedback:</p>
           <p className="text-muted-foreground">{submission.feedback}</p>
         </div>
       )}
@@ -178,13 +178,13 @@ export default function Exams() {
             </select>
             <Button
               onClick={() => { setEditingExam(null); setShowEditor(true); }}
-              className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground font-bold"
+              className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white font-bold"
             >
               <Pencil size={14} /> Criar Manual
             </Button>
             <Button
               onClick={() => setShowAIGenerator(true)}
-              className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground font-bold"
+              className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
             >
               <Sparkles size={14} /> Gerar com IA
             </Button>
@@ -224,7 +224,7 @@ export default function Exams() {
             const isPastDeadline = exam.deadline && new Date(exam.deadline) < new Date();
 
             return (
-              <div key={exam.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-primary/50' : 'border-border hover:shadow-md'} ${isTeacher && exam.is_hidden ? 'opacity-60' : ''}`}>
+              <div key={exam.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200/50' : 'border-border hover:shadow-md'} ${isTeacher && exam.is_hidden ? 'opacity-60' : ''}`}>
                 <div
                   className="flex items-center gap-3 p-4 cursor-pointer select-none"
                   onClick={() => setExpandedId(isExpanded ? null : exam.id)}
@@ -232,8 +232,8 @@ export default function Exams() {
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${
                     isDone
                       ? submission?.status === 'graded'
-                        ? 'bg-accent border-primary text-primary-foreground'
-                        : 'bg-accent border-primary text-primary-foreground'
+                        ? 'bg-green-500 border-green-400 text-white'
+                        : 'bg-amber-500 border-amber-400 text-white'
                       : 'bg-secondary border-border text-foreground'
                   }`}>
                     {isDone ? (submission?.status === 'graded' ? <CheckCircle size={18} /> : <HelpCircle size={16} />) : <GraduationCap size={16} />}
@@ -243,20 +243,20 @@ export default function Exams() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-sm text-foreground">{exam.title}</h3>
                       {exam.generated_by_ai && (
-                        <span className="text-[9px] font-bold bg-accent/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                        <span className="text-[9px] font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                           <Sparkles size={8} /> IA
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {isDone && submission?.status === 'graded' && (
-                        <Badge className="text-[9px] bg-accent text-primary border-primary py-0 px-1.5">✓ Corrigida</Badge>
+                        <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200 py-0 px-1.5">✓ Corrigida</Badge>
                       )}
                       {isDone && submission?.status === 'submitted' && (
-                        <Badge className="text-[9px] bg-accent text-primary border-primary py-0 px-1.5">⏳ Pendente</Badge>
+                        <Badge className="text-[9px] bg-amber-100 text-amber-700 border-amber-200 py-0 px-1.5">⏳ Pendente</Badge>
                       )}
                       {isDone && submission?.grade != null && (
-                        <span className="text-[10px] text-primary font-bold flex items-center gap-0.5">
+                        <span className="text-[10px] text-yellow-600 font-bold flex items-center gap-0.5">
                           <Star size={9} className="fill-yellow-500" /> {formatScore(submission.grade)}
                         </span>
                       )}
@@ -264,13 +264,13 @@ export default function Exams() {
                         <span className="text-[10px] text-muted-foreground">{exam.quiz_questions.length} questões · {exam.max_grade} pts</span>
                       )}
                       {!isDone && exam.deadline && (
-                        <span className={`text-[10px] font-semibold ${isPastDeadline ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        <span className={`text-[10px] font-semibold ${isPastDeadline ? 'text-red-500' : 'text-muted-foreground'}`}>
                           Prazo: {format(new Date(exam.deadline), 'dd/MM HH:mm')}{isPastDeadline ? ' · Expirou' : ''}
                         </span>
                       )}
                       {!isDone && !exam.deadline && <span className="text-[10px] text-muted-foreground">Sem prazo definido</span>}
                       {isTeacher && exam.is_hidden && (
-                        <span className="text-[10px] font-semibold text-primary bg-accent border border-primary px-2 py-0.5 rounded-full">Oculta para alunos</span>
+                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Oculta para alunos</span>
                       )}
                     </div>
                   </div>
@@ -290,7 +290,7 @@ export default function Exams() {
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); toggleVisibilityMutation.mutate({ id: exam.id, isHidden: !exam.is_hidden }); }}
-                        className={`p-2 rounded-lg ${exam.is_hidden ? 'text-destructive hover:text-destructive' : 'text-primary hover:text-primary'}`}
+                        className={`p-2 rounded-lg ${exam.is_hidden ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
                         title={exam.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
                       >
                         {exam.is_hidden ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -310,7 +310,7 @@ export default function Exams() {
                 {exam.description && <p className="text-sm text-muted-foreground leading-relaxed">{exam.description}</p>}
 
                 {isPastDeadline && !isDone ? (
-                  <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 border border-destructive/20 rounded-xl p-3">
+                  <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3">
                     <AlertCircle size={15} /> Prazo encerrado para esta prova.
                   </div>
                 ) : isDone ? (
@@ -318,7 +318,7 @@ export default function Exams() {
                     <div className="flex items-center gap-3">
                       <Button
                         size="sm"
-                        className="gap-1.5 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground font-bold"
+                        className="gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold"
                         onClick={() => setGradingSubmission(submission)}
                       >
                         <Award size={13} /> Corrigir Prova
@@ -331,7 +331,7 @@ export default function Exams() {
                 ) : (
                   <Button
                     size="sm"
-                    className="gap-1.5 bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground font-bold"
+                    className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
                     onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
                   >
                     <Play size={13} /> Iniciar Prova
@@ -344,8 +344,8 @@ export default function Exams() {
           })}
 
           {!isTeacher && totalDone >= visibleExams.length && visibleExams.length > 0 && (
-            <div className="mt-4 bg-gradient-to-r from-accent to-accent border border-primary rounded-2xl p-5 text-center">
-              <Trophy size={30} className="mx-auto mb-2 text-primary" />
+            <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 text-center">
+              <Trophy size={30} className="mx-auto mb-2 text-green-500" />
               <p className="font-black text-base text-foreground">Todas as provas realizadas! 🎉</p>
             </div>
           )}

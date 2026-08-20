@@ -3,8 +3,8 @@ export const MOD5 = {
   id: 'mod5',
   title: 'Módulo 5 — Luto: Clínica do Que Não Se Fala',
   subtitle: 'Técnicas para acompanhar perdas reais',
-  colorLight: 'text-muted-foreground',
-  bgLight: 'bg-muted0/10',
+  colorLight: 'text-slate-400',
+  bgLight: 'bg-slate-500/10',
   lessons: [
     {
       id: 'mod5-a1',

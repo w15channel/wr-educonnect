@@ -68,7 +68,7 @@ const PAGE_FORMATS = [
 ];
 
 const STATUS_LABELS = { draft: 'Rascunho', in_progress: 'Em andamento', finished: 'Finalizado' };
-const STATUS_COLORS = { draft: 'bg-muted text-muted-foreground', in_progress: 'bg-accent text-primary', finished: 'bg-accent text-primary' };
+const STATUS_COLORS = { draft: 'bg-muted text-muted-foreground', in_progress: 'bg-blue-100 text-blue-700', finished: 'bg-green-100 text-green-700' };
 
 const WRITING_GUIDE = [
   { title: '1. Defina seu propósito', content: 'Antes de escrever, responda: Por que escrever este livro? Para quem? Qual transformação quero causar no leitor? Escreva suas respostas em poucas linhas — isso vai guiar toda a obra.' },
@@ -390,11 +390,11 @@ export default function MeuBestSeller() {
                 {selectedBook.cover_image_url
                   ? <img src={selectedBook.cover_image_url} alt="capa" className="w-full h-full object-cover" />
                   : <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <BookOpen size={24} className="text-primary-foreground opacity-60" />
+                      <BookOpen size={24} className="text-white opacity-60" />
                     </div>
                 }
-                <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Image size={16} className="text-primary-foreground" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Image size={16} className="text-white" />
                 </div>
               </div>
               <div className="flex-1 space-y-2 min-w-[200px]">
@@ -525,7 +525,7 @@ export default function MeuBestSeller() {
                 onChange={e => updateBookMutation.mutate({ id: selectedBook.id, data: { references: e.target.value } })}
                 className="font-mono text-xs"
               />
-              <div className="bg-accent border border-primary rounded-xl p-3 text-xs text-primary">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
                 <strong>Formato ABNT:</strong> SOBRENOME, Nome. <em>Título em itálico</em>. Nº ed. Cidade: Editora, Ano.
               </div>
             </TabsContent>
@@ -625,7 +625,7 @@ export default function MeuBestSeller() {
                 {book.cover_image_url
                   ? <img src={book.cover_image_url} alt="capa" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   : <div className="w-full h-full bg-gradient-to-br from-primary/80 to-accent/80 flex items-center justify-center">
-                      <BookOpen size={32} className="text-primary-foreground opacity-60" />
+                      <BookOpen size={32} className="text-white opacity-60" />
                     </div>
                 }
               </div>

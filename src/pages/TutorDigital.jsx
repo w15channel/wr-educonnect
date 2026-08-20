@@ -97,12 +97,12 @@ Contexto do aluno:
     <div className="flex flex-col h-full max-h-screen bg-background">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border bg-card flex items-center gap-3 shrink-0">
-        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-md shadow-purple-500/30">
-          <Brain size={20} className="text-primary-foreground" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-500/30">
+          <Brain size={20} className="text-white" />
         </div>
         <div>
           <h2 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-            EDU — Tutor Digital <Sparkles size={13} className="text-primary fill-yellow-400" />
+            EDU — Tutor Digital <Sparkles size={13} className="text-yellow-400 fill-yellow-400" />
           </h2>
           <p className="text-xs text-muted-foreground">Seu assistente de aprendizado e bem-estar</p>
         </div>
@@ -122,8 +122,8 @@ Contexto do aluno:
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
             {msg.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shrink-0 shadow-sm">
-                <Brain size={14} className="text-primary-foreground" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+                <Brain size={14} className="text-white" />
               </div>
             )}
             <div
@@ -142,8 +142,8 @@ Contexto do aluno:
 
         {loading && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shrink-0 shadow-sm">
-              <Brain size={14} className="text-primary-foreground" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+              <Brain size={14} className="text-white" />
             </div>
             <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
               <div className="flex gap-1">
@@ -184,12 +184,12 @@ Contexto do aluno:
             className="flex-1 h-11"
             disabled={loading}
           />
-          <Button type="submit" className="h-11 w-11 p-0 shrink-0 bg-gradient-to-br from-accent to-primary border-0 hover:opacity-90" disabled={!input.trim() || loading}>
+          <Button type="submit" className="h-11 w-11 p-0 shrink-0 bg-gradient-to-br from-pink-500 to-purple-600 border-0 hover:opacity-90" disabled={!input.trim() || loading}>
             <Send size={16} />
           </Button>
         </form>
         <p className="text-[10px] text-muted-foreground text-center mt-2 flex items-center justify-center gap-1">
-          <Heart size={9} className="text-primary fill-pink-400" /> EDU oferece suporte com empatia e cuidado
+          <Heart size={9} className="text-pink-400 fill-pink-400" /> EDU oferece suporte com empatia e cuidado
         </p>
       </div>
     </div>

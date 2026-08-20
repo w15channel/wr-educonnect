@@ -2,9 +2,9 @@ export const MOD1 = {
   id: 'mod1',
   title: 'Módulo 1 — Fundamentos da Terapia Comportamental',
   subtitle: 'Aulas 1–5',
-  color: 'from-accent to-primary',
-  colorLight: 'text-primary',
-  bgLight: 'bg-accent/10',
+  color: 'from-violet-500 to-purple-700',
+  colorLight: 'text-violet-400',
+  bgLight: 'bg-violet-500/10',
   lessons: [
     {
       id: 'mod1-a1',

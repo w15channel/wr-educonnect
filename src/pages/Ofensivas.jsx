@@ -131,19 +131,19 @@ function TrailNode({ question, idx, answered, locked, isChest, onPress, points }
         className={`relative flex flex-col items-center transition-transform active:scale-95 ${locked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105'}`}
       >
         <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-xl border-4 transition-all ${
-          answered ? 'bg-primary border-primary shadow-yellow-400/40'
+          answered ? 'bg-yellow-400 border-yellow-300 shadow-yellow-400/40'
           : locked ? 'bg-secondary border-border'
-          : 'bg-accent border-primary shadow-amber-400/50'
+          : 'bg-amber-500 border-amber-400 shadow-amber-400/50'
         }`}>
-          {answered ? <CheckCircle size={32} className="text-primary-foreground" />
+          {answered ? <CheckCircle size={32} className="text-white" />
            : locked ? <Lock size={24} className="text-muted-foreground" />
            : <span className="text-4xl">🗝️</span>}
         </div>
         {!locked && !answered && (
-          <div className="absolute -top-2 -right-2 bg-accent text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-primary shadow-lg">+{points}</div>
+          <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-amber-300 shadow-lg">+{points}</div>
         )}
-        {answered && <div className="absolute -top-2 -right-2 bg-accent text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-primary">✓</div>}
-        <span className={`mt-1.5 text-[11px] font-bold ${answered ? 'text-primary' : locked ? 'text-muted-foreground' : 'text-primary'}`}>Baú do Saber</span>
+        {answered && <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-green-300">✓</div>}
+        <span className={`mt-1.5 text-[11px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-amber-400'}`}>Baú do Saber</span>
         <span className="text-[10px] text-muted-foreground/60">+{points} pts</span>
       </button>
     );
@@ -157,19 +157,19 @@ function TrailNode({ question, idx, answered, locked, isChest, onPress, points }
       className={`relative flex flex-col items-center transition-transform active:scale-95 ${locked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105'}`}
     >
       <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 transition-all ${
-        answered ? 'bg-accent border-primary shadow-green-400/40'
+        answered ? 'bg-green-500 border-green-400 shadow-green-400/40'
         : locked ? 'bg-secondary border-border'
         : 'bg-primary border-primary/70 shadow-primary/30'
       }`}>
-        {answered ? <CheckCircle size={24} className="text-primary-foreground" />
+        {answered ? <CheckCircle size={24} className="text-white" />
          : locked ? <Lock size={18} className="text-muted-foreground" />
-         : <Flame size={22} className="text-primary-foreground" />}
+         : <Flame size={22} className="text-white" />}
       </div>
       {!locked && !answered && (
         <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-primary/50 shadow">+{points}</div>
       )}
-      {answered && <div className="absolute -top-1.5 -right-1.5 bg-accent text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full">✓</div>}
-      <span className={`mt-1 text-[10px] font-bold ${answered ? 'text-primary' : locked ? 'text-muted-foreground' : 'text-foreground/60'}`}>
+      {answered && <div className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">✓</div>}
+      <span className={`mt-1 text-[10px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-foreground/60'}`}>
         {answered ? 'Feita' : locked ? 'Bloqueada' : `Nº ${idx + 1}`}
       </span>
       <span className="text-[10px] text-muted-foreground/50">+{points}</span>
@@ -180,7 +180,7 @@ function TrailNode({ question, idx, answered, locked, isChest, onPress, points }
 function Connector({ answered }) {
   return (
     <div className="flex justify-center my-0.5">
-      <div className={`w-1 h-7 rounded-full transition-colors ${answered ? 'bg-primary' : 'bg-border'}`} />
+      <div className={`w-1 h-7 rounded-full transition-colors ${answered ? 'bg-green-400' : 'bg-border'}`} />
     </div>
   );
 }
@@ -195,16 +195,16 @@ function QuestionModal({ question, idx, isChest, points, answered, savedAnswer, 
       <DialogContent className="max-w-sm mx-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            {isChest ? <span className="text-xl">🗝️</span> : <Flame size={16} className="text-primary" />}
+            {isChest ? <span className="text-xl">🗝️</span> : <Flame size={16} className="text-orange-500" />}
             {isChest ? 'Baú do Saber' : `Pergunta ${idx + 1}`}
-            <span className="ml-auto text-xs font-bold text-primary flex items-center gap-0.5">
+            <span className="ml-auto text-xs font-bold text-yellow-500 flex items-center gap-0.5">
               <Star size={11} className="fill-yellow-400" /> +{points} pts
             </span>
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-1">
           {isChest && (
-            <div className="bg-accent/10 border border-primary/20 rounded-xl p-2.5 text-xs text-primary font-semibold flex items-center gap-1.5">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-xs text-amber-500 font-semibold flex items-center gap-1.5">
               🗝️ Pergunta desafio! Reflita com cuidado — vale mais pontos.
             </div>
           )}
@@ -215,8 +215,8 @@ function QuestionModal({ question, idx, isChest, points, answered, savedAnswer, 
             </p>
           )}
           {answered ? (
-            <div className="bg-accent/10 border border-primary/30 rounded-xl p-3 space-y-1">
-              <p className="text-xs font-bold text-primary flex items-center gap-1"><CheckCircle size={11} /> Resposta registrada!</p>
+            <div className="bg-green-500/10 border border-green-400/30 rounded-xl p-3 space-y-1">
+              <p className="text-xs font-bold text-green-500 flex items-center gap-1"><CheckCircle size={11} /> Resposta registrada!</p>
               {savedAnswer && <p className="text-xs text-muted-foreground whitespace-pre-wrap">{savedAnswer}</p>}
             </div>
           ) : (
@@ -245,16 +245,16 @@ function QuestionModal({ question, idx, isChest, points, answered, savedAnswer, 
 function StreakBadge({ streak }) {
   const nextBonus = STREAK_BONUSES.find(b => b.days > streak);
   return (
-    <div className="flex items-center gap-3 bg-accent/10 border border-primary/20 rounded-2xl px-4 py-3">
+    <div className="flex items-center gap-3 bg-orange-500/10 border border-orange-500/20 rounded-2xl px-4 py-3">
       <div className="flex flex-col items-center shrink-0">
         <span className="text-2xl">🔥</span>
-        <span className="text-[10px] font-bold text-primary mt-0.5">{streak}d</span>
+        <span className="text-[10px] font-bold text-orange-500 mt-0.5">{streak}d</span>
       </div>
       <div className="flex-1 min-w-0">
         {nextBonus ? (
           <p className="text-xs text-muted-foreground">
             Mais {nextBonus.days - streak} dia{nextBonus.days - streak !== 1 ? 's' : ''} para ganhar
-            <span className="font-bold text-primary"> +{nextBonus.bonus} pts {nextBonus.emoji}</span>
+            <span className="font-bold text-yellow-500"> +{nextBonus.bonus} pts {nextBonus.emoji}</span>
           </p>
         ) : (
           <p className="text-xs text-muted-foreground">Sequência máxima desbloqueada! 👑</p>
@@ -442,7 +442,7 @@ export default function Ofensivas() {
         <select
           value={selectedModuleId}
           onChange={e => setSelectedModuleId(e.target.value)}
-          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-primary"
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-orange-400"
         >
           {APOSTILA_MODULES.map(module => (
             <option key={module.id} value={module.id}>{module.title}</option>
@@ -454,7 +454,7 @@ export default function Ofensivas() {
         <select
           value={selectedLesson?.id || ''}
           onChange={e => setSelectedLessonId(e.target.value)}
-          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-primary"
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-orange-400"
         >
           {selectedModule.lessons.map(lesson => (
             <option key={lesson.id} value={lesson.id}>{lesson.title}</option>
@@ -466,7 +466,7 @@ export default function Ofensivas() {
         <select
           value={durationDays}
           onChange={e => setDurationDays(Number(e.target.value))}
-          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-primary"
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:border-orange-400"
         >
           {DURATION_OPTIONS.map(option => (
             <option key={option.value} value={option.value}>{option.label}</option>
@@ -487,13 +487,13 @@ export default function Ofensivas() {
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Flame size={22} className="text-primary" /> Ofensivas Diárias
+            <Flame size={22} className="text-orange-500" /> Ofensivas Diárias
           </h2>
           <p className="text-muted-foreground text-sm mt-0.5 capitalize">{todayLabel}</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2">
-            <Button onClick={() => handleGenerate(false)} disabled={generating} size="sm" className="gap-1.5 bg-accent hover:bg-primary text-primary-foreground shrink-0">
+            <Button onClick={() => handleGenerate(false)} disabled={generating} size="sm" className="gap-1.5 bg-orange-500 hover:bg-orange-600 text-white shrink-0">
               {generating ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
               {challenge ? 'Gerar período' : 'Gerar'}
             </Button>
@@ -530,31 +530,31 @@ export default function Ofensivas() {
           {/* Streak milestone chips */}
           <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
             {STREAK_BONUSES.map(b => (
-              <div key={b.days} className={`shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border text-center transition-all ${streak >= b.days ? 'bg-accent/15 border-primary/30' : 'bg-card border-border opacity-50'}`}>
+              <div key={b.days} className={`shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border text-center transition-all ${streak >= b.days ? 'bg-yellow-500/15 border-yellow-400/30' : 'bg-card border-border opacity-50'}`}>
                 <span className="text-lg">{b.emoji}</span>
                 <span className="text-[10px] font-bold text-foreground">{b.label}</span>
-                <span className="text-[10px] text-primary font-bold">+{b.bonus} pts</span>
-                {streak >= b.days && <span className="text-[9px] text-primary">Ganho ✓</span>}
+                <span className="text-[10px] text-yellow-500 font-bold">+{b.bonus} pts</span>
+                {streak >= b.days && <span className="text-[9px] text-green-500">Ganho ✓</span>}
               </div>
             ))}
           </div>
 
           {/* Topic */}
           {challenge.lesson_ref && (
-            <div className="flex items-center gap-2 bg-accent/10 border border-primary/20 rounded-xl p-3 text-xs text-primary font-semibold mb-4">
+            <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 text-xs text-orange-500 font-semibold mb-4">
               <BookOpen size={13} /> {challenge.lesson_ref}
             </div>
           )}
 
           {/* Complete banner */}
           {isComplete && (
-            <div className="bg-gradient-to-br from-accent/15 to-accent/10 border border-primary/30 rounded-2xl p-5 text-center mb-4">
+            <div className="bg-gradient-to-br from-yellow-500/15 to-amber-500/10 border border-yellow-400/30 rounded-2xl p-5 text-center mb-4">
               <div className="text-4xl mb-2">🏆</div>
               <p className="font-black text-xl text-foreground">{justCompleted ? 'Parabéns! Ofensiva Completa! 🔥' : 'Ofensiva do Dia Concluída! ✅'}</p>
-              <p className="text-sm text-muted-foreground mt-1">+{TOTAL_POINTS.toFixed(1)} pts ganhos · Sequência: <span className="font-bold text-primary">{streak} dia{streak !== 1 ? 's' : ''} 🔥</span></p>
+              <p className="text-sm text-muted-foreground mt-1">+{TOTAL_POINTS.toFixed(1)} pts ganhos · Sequência: <span className="font-bold text-orange-500">{streak} dia{streak !== 1 ? 's' : ''} 🔥</span></p>
               {bonusEarned && (
-                <div className="mt-3 bg-accent/20 border border-primary/40 rounded-xl px-4 py-2 inline-block">
-                  <p className="font-black text-primary text-sm">{bonusEarned.emoji} Bônus: +{bonusEarned.bonus} pts!</p>
+                <div className="mt-3 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-4 py-2 inline-block">
+                  <p className="font-black text-yellow-500 text-sm">{bonusEarned.emoji} Bônus: +{bonusEarned.bonus} pts!</p>
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-2">Volte amanhã para manter sua sequência!</p>
@@ -569,10 +569,10 @@ export default function Ofensivas() {
                 const isAnswered = q && !!answeredMap[q?.id];
                 return (
                   <div key={i} className={`flex flex-col items-center gap-0.5 ${s.type === 'chest' ? 'mx-1' : ''}`}>
-                    <div className={`rounded-full flex items-center justify-center border-2 text-[10px] font-bold transition-all ${s.type === 'chest' ? 'w-9 h-9 rounded-xl' : 'w-7 h-7'} ${isAnswered ? 'bg-accent border-primary text-primary-foreground' : 'bg-secondary border-border text-muted-foreground'}`}>
+                    <div className={`rounded-full flex items-center justify-center border-2 text-[10px] font-bold transition-all ${s.type === 'chest' ? 'w-9 h-9 rounded-xl' : 'w-7 h-7'} ${isAnswered ? 'bg-green-500 border-green-400 text-white' : 'bg-secondary border-border text-muted-foreground'}`}>
                       {isAnswered ? '✓' : s.type === 'chest' ? '🗝️' : i + 1}
                     </div>
-                    <span className={`text-[9px] font-bold ${s.type === 'chest' ? 'text-primary' : 'text-muted-foreground/60'}`}>{s.points}</span>
+                    <span className={`text-[9px] font-bold ${s.type === 'chest' ? 'text-amber-400' : 'text-muted-foreground/60'}`}>{s.points}</span>
                   </div>
                 );
               })}
@@ -654,11 +654,11 @@ export default function Ofensivas() {
                 const schema = QUESTION_SCHEMA[i];
                 const isChest = schema?.type === 'chest';
                 return (
-                  <div key={q.id} className={`flex items-start gap-2 p-2.5 rounded-xl text-xs ${isChest ? 'bg-accent/10 border border-primary/20' : 'bg-secondary/30'}`}>
-                    <span className={`font-black shrink-0 ${isChest ? 'text-primary' : 'text-primary'}`}>{isChest ? '🗝️' : `${i + 1}.`}</span>
+                  <div key={q.id} className={`flex items-start gap-2 p-2.5 rounded-xl text-xs ${isChest ? 'bg-amber-500/10 border border-amber-400/20' : 'bg-secondary/30'}`}>
+                    <span className={`font-black shrink-0 ${isChest ? 'text-amber-400' : 'text-primary'}`}>{isChest ? '🗝️' : `${i + 1}.`}</span>
                     <div className="flex-1">
                       <span className="text-foreground">{q.text}</span>
-                      <span className={`ml-1 font-bold text-[10px] ${isChest ? 'text-primary' : 'text-muted-foreground'}`}>(+{schema?.points ?? 0.1}pts)</span>
+                      <span className={`ml-1 font-bold text-[10px] ${isChest ? 'text-amber-400' : 'text-muted-foreground'}`}>(+{schema?.points ?? 0.1}pts)</span>
                     </div>
                   </div>
                 );
@@ -681,7 +681,7 @@ export default function Ofensivas() {
                     <span className="font-semibold text-foreground truncate">{r.student_name || r.student_email}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-muted-foreground">{r.questions_answered || 0}/8</span>
-                      <span className="text-primary font-bold flex items-center gap-0.5">
+                      <span className="text-yellow-500 font-bold flex items-center gap-0.5">
                         <Star size={9} className="fill-yellow-400" /> +{(r.points_earned || 0).toFixed(2)}
                       </span>
                     </div>
@@ -696,7 +696,7 @@ export default function Ofensivas() {
               <h3 className="font-bold text-sm mb-3">Histórico</h3>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {allChallenges.map(c => (
-                  <div key={c.id} className={`flex items-center justify-between p-2 rounded-xl text-xs ${c.date === today ? 'bg-accent/10 border border-primary/20' : 'bg-secondary/30'}`}>
+                  <div key={c.id} className={`flex items-center justify-between p-2 rounded-xl text-xs ${c.date === today ? 'bg-orange-500/10 border border-orange-400/20' : 'bg-secondary/30'}`}>
                     <span className="font-semibold">{c.date}</span>
                     <span className="text-muted-foreground truncate max-w-[160px]">{c.lesson_ref || '—'}</span>
                     <span className="text-muted-foreground shrink-0">{(c.questions || []).length}q</span>

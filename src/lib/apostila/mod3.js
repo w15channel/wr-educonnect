@@ -3,8 +3,8 @@ export const MOD3 = {
   id: 'mod3',
   title: 'Módulo 3 — Intervenções Práticas I',
   subtitle: 'Confrontar, Modular e Mover o Campo',
-  colorLight: 'text-primary',
-  bgLight: 'bg-accent/10',
+  colorLight: 'text-rose-400',
+  bgLight: 'bg-rose-500/10',
   lessons: [
     {
       id: 'mod3-a1',

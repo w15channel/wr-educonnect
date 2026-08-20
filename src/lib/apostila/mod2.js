@@ -3,8 +3,8 @@ export const MOD2 = {
   id: 'mod2',
   title: 'Módulo 2 — O Terapeuta em Ação',
   subtitle: 'Presença, Vínculo e Manejo Clínico',
-  colorLight: 'text-primary',
-  bgLight: 'bg-accent/10',
+  colorLight: 'text-blue-400',
+  bgLight: 'bg-blue-500/10',
   lessons: [
     {
       id: 'mod2-a1',

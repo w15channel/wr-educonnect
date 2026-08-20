@@ -54,8 +54,8 @@ export default function ExamGrader({ submission, exam, onBack }) {
           <ChevronLeft size={16} /> Voltar
         </button>
         <div className="flex items-center gap-2.5 flex-1">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow">
-            <Award size={16} className="text-primary-foreground" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow">
+            <Award size={16} className="text-white" />
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-black text-foreground">Corrigir Prova</h2>
@@ -100,12 +100,12 @@ export default function ExamGrader({ submission, exam, onBack }) {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-black text-muted-foreground uppercase tracking-wider">Questão {qi + 1}</span>
                 {isChoice && (
-                  <Badge className={`text-[10px] py-0 px-1.5 ${isCorrect ? 'bg-accent text-primary border-primary' : 'bg-destructive text-destructive border-destructive'}`}>
+                  <Badge className={`text-[10px] py-0 px-1.5 ${isCorrect ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
                     {isCorrect ? <><CheckCircle size={9} className="inline mr-1" /> Correta</> : <><XCircle size={9} className="inline mr-1" /> Incorreta</>}
                   </Badge>
                 )}
                 {!isChoice && (
-                  <Badge className="text-[10px] bg-accent text-primary border-primary py-0 px-1.5">
+                  <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-200 py-0 px-1.5">
                     <FileText size={9} className="inline mr-1" /> Discursiva
                   </Badge>
                 )}
@@ -120,9 +120,9 @@ export default function ExamGrader({ submission, exam, onBack }) {
                       key={oi}
                       className={`p-2.5 rounded-lg border text-sm flex items-center gap-2 ${
                         oi === q.correct_index
-                          ? 'border-primary bg-accent text-primary font-medium'
+                          ? 'border-green-300 bg-green-50 text-green-800 font-medium'
                           : Number(answer) === oi
-                          ? 'border-destructive bg-destructive text-destructive'
+                          ? 'border-red-300 bg-red-50 text-red-800'
                           : 'border-border text-muted-foreground'
                       }`}
                     >
@@ -150,7 +150,7 @@ export default function ExamGrader({ submission, exam, onBack }) {
       {/* Grading Form */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4 mb-5">
         <h3 className="text-sm font-black text-foreground flex items-center gap-2">
-          <Star size={15} className="text-primary" /> Correção
+          <Star size={15} className="text-yellow-500" /> Correção
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -186,7 +186,7 @@ export default function ExamGrader({ submission, exam, onBack }) {
         <Button
           onClick={handleSave}
           disabled={saveMutation.isPending}
-          className="flex-1 gap-2 h-11 font-black bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground"
+          className="flex-1 gap-2 h-11 font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
         >
           <Save size={16} />
           {saveMutation.isPending ? 'Salvando...' : `Salvar Correção (${grade !== null ? formatScore(grade) + ' pts' : 'Sem nota'})`}

@@ -15,8 +15,8 @@ export default function Keys() {
   return (
     <div className="app-page app-page--compact animate-fade-in-up">
       <div className="mb-5 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-          <Key size={20} className="text-primary-foreground" />
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+          <Key size={20} className="text-white" />
         </div>
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Códigos de Acesso — {label}</h2>

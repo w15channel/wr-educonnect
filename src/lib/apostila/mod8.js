@@ -3,8 +3,8 @@ export const MOD8 = {
   id: 'mod8',
   title: 'Módulo 8 — Sexualidade na Clínica',
   subtitle: 'Presença, técnica e manejo sem tabu',
-  colorLight: 'text-primary',
-  bgLight: 'bg-accent/10',
+  colorLight: 'text-pink-400',
+  bgLight: 'bg-pink-500/10',
   lessons: [
     {
       id: 'mod8-a1',

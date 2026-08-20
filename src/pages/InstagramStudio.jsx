@@ -31,10 +31,10 @@ function SuggestionCard({ item, selected, onSelect }) {
   return (
     <button
       onClick={() => onSelect(item)}
-      className={`w-full text-left rounded-2xl border p-4 transition-all hover:shadow-md ${selected ? 'border-primary bg-accent' : 'border-border bg-card hover:border-primary/30'}`}
+      className={`w-full text-left rounded-2xl border p-4 transition-all hover:shadow-md ${selected ? 'border-pink-400 bg-pink-50' : 'border-border bg-card hover:border-primary/30'}`}
     >
       <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.type === 'ranking' ? 'bg-accent text-primary' : item.type === 'lesson' ? 'bg-accent text-primary' : 'bg-accent text-primary'}`}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.type === 'ranking' ? 'bg-yellow-100 text-yellow-700' : item.type === 'lesson' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
           <Icon size={18} />
         </div>
         <div className="flex-1 min-w-0">
@@ -44,8 +44,8 @@ function SuggestionCard({ item, selected, onSelect }) {
           </div>
           <p className="text-xs text-muted-foreground line-clamp-2">“{item.quote}”</p>
           {item.points !== undefined && (
-            <div className="flex items-center gap-1 mt-2 text-xs font-bold text-primary">
-              <Star size={12} className="fill-yellow-500 text-primary" /> {formatScore(item.points)} pontos
+            <div className="flex items-center gap-1 mt-2 text-xs font-bold text-yellow-700">
+              <Star size={12} className="fill-yellow-500 text-yellow-500" /> {formatScore(item.points)} pontos
             </div>
           )}
         </div>
@@ -56,31 +56,31 @@ function SuggestionCard({ item, selected, onSelect }) {
 
 function PostPreview({ item, courseLabel }) {
   return (
-    <div className="bg-gradient-to-br from-[#151128] via-[#6328a8] to-[#f04f88] rounded-[2rem] p-5 text-primary-foreground shadow-xl aspect-square flex flex-col justify-between overflow-hidden relative">
-      <div className="absolute -top-16 -right-16 w-44 h-44 bg-card/10 rounded-full blur-2xl" />
+    <div className="bg-gradient-to-br from-[#151128] via-[#6328a8] to-[#f04f88] rounded-[2rem] p-5 text-white shadow-xl aspect-square flex flex-col justify-between overflow-hidden relative">
+      <div className="absolute -top-16 -right-16 w-44 h-44 bg-white/10 rounded-full blur-2xl" />
       <div className="relative flex items-center justify-between">
         <div>
-          <p className="text-[9px] uppercase tracking-[0.12em] text-primary-foreground/70 font-bold leading-tight max-w-[75%]">{BRAND_LEGAL_NAME}</p>
-          <p className="text-xs text-primary-foreground/70">Turma {courseLabel}</p>
+          <p className="text-[9px] uppercase tracking-[0.12em] text-white/70 font-bold leading-tight max-w-[75%]">{BRAND_LEGAL_NAME}</p>
+          <p className="text-xs text-white/70">Turma {courseLabel}</p>
         </div>
-        <Instagram size={24} className="text-primary-foreground/80" />
+        <Instagram size={24} className="text-white/80" />
       </div>
 
       <div className="relative space-y-4">
-        <div className="inline-flex items-center gap-2 bg-card/15 border border-border/20 px-3 py-1.5 rounded-full text-xs font-bold">
+        <div className="inline-flex items-center gap-2 bg-white/15 border border-white/20 px-3 py-1.5 rounded-full text-xs font-bold">
           {item.type === 'ranking' ? <Award size={13} /> : item.type === 'lesson' ? <TrendingUp size={13} /> : <MessageSquare size={13} />}
           {item.label}
         </div>
         <div>
           <h3 className="text-2xl font-black leading-tight">{item.studentName}</h3>
-          <p className="text-sm text-primary-foreground/75 mt-1">Resultado positivo na jornada acadêmica</p>
+          <p className="text-sm text-white/75 mt-1">Resultado positivo na jornada acadêmica</p>
         </div>
-        <div className="bg-card/12 border border-border/15 rounded-2xl p-4">
+        <div className="bg-white/12 border border-white/15 rounded-2xl p-4">
           <p className="text-sm leading-relaxed">“{item.quote}”</p>
         </div>
       </div>
 
-      <div className="relative flex items-center justify-between text-xs text-primary-foreground/80">
+      <div className="relative flex items-center justify-between text-xs text-white/80">
         <span>Instituto WR</span>
         {item.points !== undefined && <span className="font-black">{formatScore(item.points)} pts</span>}
       </div>
@@ -186,8 +186,8 @@ export default function InstagramStudio() {
   return (
     <div className="p-4 lg:p-7 max-w-6xl mx-auto space-y-5 animate-fade-in-up">
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent via-accent to-primary flex items-center justify-center shadow-lg">
-          <Instagram size={22} className="text-primary-foreground" />
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-500 to-orange-400 flex items-center justify-center shadow-lg">
+          <Instagram size={22} className="text-white" />
         </div>
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Instagram Institucional</h2>
@@ -195,7 +195,7 @@ export default function InstagramStudio() {
         </div>
       </div>
 
-      <div className="bg-accent border border-primary rounded-2xl p-4 text-sm text-primary flex items-start gap-2">
+      <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 text-sm text-pink-900 flex items-start gap-2">
         <CheckCircle size={16} className="mt-0.5 shrink-0" />
         <p>Esta tela apenas prepara o conteúdo. A publicação no feed será ativada depois que a conta Instagram Business institucional for conectada.</p>
       </div>

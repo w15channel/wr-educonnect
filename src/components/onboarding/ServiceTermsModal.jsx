@@ -15,26 +15,26 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-foreground/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
       {/* Modal container */}
-      <div className="bg-card rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden" style={{ height: 'min(92dvh, 760px)', maxHeight: 'calc(100dvh - 24px)' }}>
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden" style={{ height: 'min(92dvh, 760px)', maxHeight: 'calc(100dvh - 24px)' }}>
         {/* Header */}
-        <div className="bg-gradient-to-br from-[#1e3a8a] to-[#5b5ef4] p-4 sm:p-6 text-primary-foreground shrink-0">
+        <div className="bg-gradient-to-br from-[#1e3a8a] to-[#5b5ef4] p-4 sm:p-6 text-white shrink-0">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-11 h-11 bg-card/15 rounded-2xl flex items-center justify-center">
-              <Shield size={22} className="text-primary-foreground" />
+            <div className="w-11 h-11 bg-white/15 rounded-2xl flex items-center justify-center">
+              <Shield size={22} className="text-white" />
             </div>
             <div>
               <h2 className="font-bold text-lg leading-tight">Termo de Prestação de Serviços</h2>
-              <p className="text-primary-foreground/60 text-xs">{BRAND_LEGAL_NAME}</p>
+              <p className="text-white/60 text-xs">{BRAND_LEGAL_NAME}</p>
             </div>
           </div>
-          <p className="text-primary-foreground/80 text-sm">Olá, <strong>{studentName}</strong>! Antes de continuar, leia e aceite nossos termos.</p>
+          <p className="text-white/80 text-sm">Olá, <strong>{studentName}</strong>! Antes de continuar, leia e aceite nossos termos.</p>
         </div>
 
         {/* Scrollable content — with extra bottom padding so content isn't hidden behind floating footer */}
         <div
-          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-sm text-foreground"
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-sm text-gray-700"
           style={{ paddingBottom: 'clamp(8rem, 22dvh, 10rem)' }}
           onScroll={handleScroll}
         >
@@ -42,9 +42,9 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
           <section>
             <div className="flex items-center gap-2 mb-2">
               <Shield size={16} className="text-[#5b5ef4]" />
-              <h3 className="font-bold text-foreground">Proteção de Dados — LGPD</h3>
+              <h3 className="font-bold text-gray-800">Proteção de Dados — LGPD</h3>
             </div>
-            <p className="leading-relaxed text-foreground">
+            <p className="leading-relaxed text-gray-600">
               Em conformidade com a <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</strong>, a {BRAND_LEGAL_NAME} coleta e trata seus dados pessoais exclusivamente para fins educacionais, incluindo nome, e-mail, WhatsApp, data de nascimento e foto de perfil.
             </p>
             <ul className="mt-2 space-y-1 list-none">
@@ -54,8 +54,8 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
                 'Os dados são utilizados apenas para gestão do curso e comunicação interna.',
                 'Ao aceitar estes termos, você consente com o tratamento de seus dados.',
               ].map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-foreground">
-                  <CheckCircle size={12} className="text-primary mt-0.5 shrink-0" />
+                <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
+                  <CheckCircle size={12} className="text-green-500 mt-0.5 shrink-0" />
                   {item}
                 </li>
               ))}
@@ -63,17 +63,17 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
           </section>
 
           {/* Certificação */}
-          <section className="bg-accent border border-primary rounded-2xl p-4">
+          <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-2">
-              <GraduationCap size={16} className="text-primary" />
-              <h3 className="font-bold text-primary">Certificação</h3>
+              <GraduationCap size={16} className="text-amber-600" />
+              <h3 className="font-bold text-amber-800">Certificação</h3>
             </div>
-            <p className="text-primary text-xs leading-relaxed">
+            <p className="text-amber-700 text-xs leading-relaxed">
               <strong>Nossa certificadora é externa.</strong> O certificado de conclusão é emitido pela <strong>Escola Venes</strong>, que é a instituição responsável pela emissão dos certificados de formação. O credenciamento e reconhecimento são realizados pela <strong>AHDE — Associação de Homeopatia e Desenvolvimento Educacional</strong>.
             </p>
-            <div className="flex items-start gap-2 mt-3 bg-accent rounded-xl p-3">
-              <AlertTriangle size={14} className="text-primary mt-0.5 shrink-0" />
-              <p className="text-xs text-primary">
+            <div className="flex items-start gap-2 mt-3 bg-amber-100 rounded-xl p-3">
+              <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-700">
                 <strong>Importante:</strong> A certificação estará disponível ao aluno apenas a partir de <strong>90% de conclusão do curso</strong>, conforme os critérios de aproveitamento da plataforma {BRAND_LEGAL_NAME}.
               </p>
             </div>
@@ -83,36 +83,36 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Award size={16} className="text-[#1db89e]" />
-              <h3 className="font-bold text-foreground">Entidades Parceiras</h3>
+              <h3 className="font-bold text-gray-800">Entidades Parceiras</h3>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-accent border border-primary rounded-xl p-3 text-center">
-                <p className="font-black text-primary text-sm">Escola Venes</p>
-                <p className="text-[10px] text-primary mt-0.5">Emissora dos Certificados</p>
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center">
+                <p className="font-black text-blue-700 text-sm">Escola Venes</p>
+                <p className="text-[10px] text-blue-500 mt-0.5">Emissora dos Certificados</p>
               </div>
-              <div className="bg-accent border border-primary rounded-xl p-3 text-center">
-                <p className="font-black text-primary text-sm">AHDE</p>
-                <p className="text-[10px] text-primary mt-0.5">Credenciamento e Reconhecimento</p>
+              <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-center">
+                <p className="font-black text-green-700 text-sm">AHDE</p>
+                <p className="text-[10px] text-green-500 mt-0.5">Credenciamento e Reconhecimento</p>
               </div>
             </div>
           </section>
 
           {/* Prestação de serviços */}
           <section>
-            <h3 className="font-bold text-foreground mb-2">Prestação de Serviços Educacionais</h3>
-            <p className="text-foreground text-xs leading-relaxed">
+            <h3 className="font-bold text-gray-800 mb-2">Prestação de Serviços Educacionais</h3>
+            <p className="text-gray-600 text-xs leading-relaxed">
               A {BRAND_LEGAL_NAME} oferece formação em terapia e desenvolvimento pessoal através de videoaulas, apostila digital, tarefas, quizzes e práticas terapêuticas. CNPJ {BRAND_CNPJ}. A participação ativa do aluno é fundamental para o aproveitamento e certificação. O acesso à plataforma é pessoal e intransferível, vinculado ao código de acesso fornecido.
             </p>
           </section>
 
           {!scrolledToBottom && (
-            <p className="text-center text-xs text-muted-foreground animate-pulse">↓ Role até o final para aceitar os termos</p>
+            <p className="text-center text-xs text-gray-400 animate-pulse">↓ Role até o final para aceitar os termos</p>
           )}
         </div>
       </div>
 
       {/* Floating footer — always visible at bottom, centered */}
-      <div className="fixed bottom-0 left-0 right-0 z-[101] flex justify-center px-3 sm:px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 bg-card/95 backdrop-blur-md border-t border-border shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-[101] flex justify-center px-3 sm:px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg">
         <div className="w-full max-w-xl space-y-3">
           <label className="flex items-start gap-3 cursor-pointer">
             <input
@@ -122,14 +122,14 @@ export default function ServiceTermsModal({ studentName, onAccept }) {
               disabled={!scrolledToBottom}
               className="mt-0.5 w-4 h-4 accent-[#5b5ef4] shrink-0"
             />
-            <span className={`text-xs leading-relaxed ${!scrolledToBottom ? 'text-foreground' : 'text-foreground'}`}>
+            <span className={`text-xs leading-relaxed ${!scrolledToBottom ? 'text-gray-300' : 'text-gray-700'}`}>
               Li e aceito os <strong>Termos de Prestação de Serviços</strong> da <strong>{BRAND_SHORT_NAME}</strong>, estou ciente sobre a <strong>LGPD</strong>, sobre a certificação pela <strong>Escola Venes</strong> e credenciamento pela <strong>AHDE</strong>, e sobre o requisito de <strong>90% de conclusão</strong> para obtenção do certificado.
             </span>
           </label>
           <Button
             onClick={onAccept}
             disabled={!checked || !scrolledToBottom}
-            className="w-full h-11 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-primary-foreground font-bold"
+            className="w-full h-11 bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white font-bold"
           >
             <CheckCircle size={16} className="mr-2" />
             Aceitar e Continuar

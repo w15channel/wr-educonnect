@@ -19,7 +19,7 @@ import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
 
 function MonitorBadge({ rank }) {
-  const colors = { 1: 'bg-primary text-primary', 2: 'bg-secondary text-foreground', 3: 'bg-primary text-primary' };
+  const colors = { 1: 'bg-yellow-400 text-yellow-900', 2: 'bg-slate-300 text-slate-800', 3: 'bg-amber-600 text-amber-100' };
   const labels = { 1: '🥇 1º Monitor', 2: '🥈 2º Monitor', 3: '🥉 3º Monitor' };
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${colors[rank] || 'bg-primary/10 text-primary'}`}>
@@ -247,7 +247,7 @@ export default function Monitores() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Crown size={22} className="text-primary" /> Monitores do Período
+            <Crown size={22} className="text-yellow-500" /> Monitores do Período
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Turma {courseLabel} · {currentMonitors.length > 0
@@ -273,9 +273,9 @@ export default function Monitores() {
 
       {/* Critérios */}
       {isTeacher && (
-        <div className="bg-accent border border-primary rounded-xl p-3 text-xs text-primary">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
           <p className="font-bold mb-1">Critérios de seleção dos Monitores:</p>
-          <ol className="list-decimal list-inside space-y-0.5 text-primary">
+          <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
             <li>Ranking lido diretamente do cache pontuacao_total, sem recalcular a cada acesso</li>
             <li>1º Monitor: +0,500pts / 2º Monitor: +0,300pts / 3º Monitor: +0,200pts em entregas de atividades e trabalhos</li>
           </ol>
@@ -285,7 +285,7 @@ export default function Monitores() {
       {/* Monitores atuais */}
       {currentMonitors.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-10 text-center">
-          <Crown size={40} className="mx-auto mb-3 text-primary opacity-40" />
+          <Crown size={40} className="mx-auto mb-3 text-yellow-400 opacity-40" />
           <p className="font-semibold text-muted-foreground">Nenhum monitor definido no momento</p>
           {isTeacher && (
             <p className="text-xs text-muted-foreground mt-1">Clique em "Definir Monitores" para selecionar automaticamente os 3 primeiros do ranking.</p>
@@ -297,11 +297,11 @@ export default function Monitores() {
             const info = getStudentInfo(m.student_email);
             const isMe = m.student_email === session?.email;
             return (
-              <div key={m.id} className={`bg-card rounded-2xl border p-5 flex flex-col items-center gap-3 text-center shadow-sm transition-all ${isMe ? 'border-primary shadow-yellow-100' : 'border-border'}`}>
+              <div key={m.id} className={`bg-card rounded-2xl border p-5 flex flex-col items-center gap-3 text-center shadow-sm transition-all ${isMe ? 'border-yellow-300 shadow-yellow-100' : 'border-border'}`}>
                 {info.photo ? (
-                  <img src={info.photo} alt={info.name} className="w-16 h-16 rounded-full object-cover border-4 border-primary" />
+                  <img src={info.photo} alt={info.name} className="w-16 h-16 rounded-full object-cover border-4 border-yellow-200" />
                 ) : (
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-primary-foreground border-4 border-primary" style={{ backgroundColor: info.color }}>
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white border-4 border-yellow-200" style={{ backgroundColor: info.color }}>
                     {info.name?.charAt(0)?.toUpperCase()}
                   </div>
                 )}
@@ -309,7 +309,7 @@ export default function Monitores() {
                   <p className="font-bold text-sm text-foreground">{info.name}</p>
                   <MonitorBadge rank={m.rank_position} />
                   <p className="text-xs text-muted-foreground mt-1.5 flex items-center justify-center gap-1">
-                    <Star size={11} className="text-primary fill-yellow-400" />
+                    <Star size={11} className="text-yellow-400 fill-yellow-400" />
                     Bônus: +{formatScore(MONITOR_BONUSES[m.rank_position] || 0.2)} por atividade
                   </p>
                 </div>
@@ -337,18 +337,18 @@ export default function Monitores() {
               return (
                 <div key={period} className={`rounded-xl p-3 ${isCurrent ? 'bg-primary/5 border border-primary/20' : 'bg-secondary/40'}`}>
                   <p className="text-xs font-bold text-muted-foreground mb-2 flex items-center gap-2">
-                    {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />}
+                    {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                     Período: {format(new Date(period + 'T00:00:00'), 'dd/MM/yyyy')}
-                    {isCurrent && <span className="text-primary font-bold">· Atual</span>}
+                    {isCurrent && <span className="text-green-600 font-bold">· Atual</span>}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {group.map(m => (
                       <div key={m.id} className="flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg border border-border text-xs">
-                        <Crown size={10} className="text-primary" />
+                        <Crown size={10} className="text-yellow-500" />
                         <span className="font-semibold">{m.student_name}</span>
                         <span className="text-muted-foreground">#{m.rank_position}</span>
                         {isTeacher && (
-                          <button onClick={() => handleDeleteHistory(m.id)} className="text-destructive hover:text-destructive">
+                          <button onClick={() => handleDeleteHistory(m.id)} className="text-red-500 hover:text-red-700">
                             <Trash2 size={12} />
                           </button>
                         )}
@@ -401,7 +401,7 @@ export default function Monitores() {
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Certificado de Monitor</DialogTitle></DialogHeader>
           <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3 scroll-smooth">
-          <div ref={certRef} className="bg-card text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 820, minHeight: 520, padding: '48px 56px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
+          <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 820, minHeight: 520, padding: '48px 56px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
               <img src={WR_CERTIFICATE_LOGO} alt="WR" style={{ width: 60, height: 60, objectFit: 'contain' }} crossOrigin="anonymous" />
               <p style={{ fontSize: 11, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{BRAND_LEGAL_NAME}</p>

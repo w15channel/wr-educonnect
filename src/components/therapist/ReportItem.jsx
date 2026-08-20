@@ -23,7 +23,7 @@ export default function ReportItem({ report, isTeacher, onDelete }) {
               <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">{report.comment}</p>
               {typeof report.score === 'number' && (
                 <div className="flex items-center gap-1 mt-2">
-                  <Star size={11} className="text-primary fill-yellow-400" />
+                  <Star size={11} className="text-yellow-400 fill-yellow-400" />
                   <span className="text-xs font-bold">{formatScore(report.score)}/10,000</span>
                 </div>
               )}

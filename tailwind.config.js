@@ -5,12 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['var(--font-heading)'],
-        body: ['var(--font-body)'],
-        serif: ['var(--font-heading)'],
-        sans: ['var(--font-body)'],
-        inter: ['var(--font-heading)'],
-        jakarta: ['var(--font-body)'],
+        inter: ['var(--font-inter)'],
+        jakarta: ['var(--font-jakarta)'],
       },
       colors: {
         background: "hsl(var(--background))",

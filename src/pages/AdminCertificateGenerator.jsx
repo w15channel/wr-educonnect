@@ -875,7 +875,7 @@ export default function AdminCertificateGenerator() {
     <div className="p-4 lg:p-6 space-y-5 animate-fade-in-up">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary text-primary-foreground shadow">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-600 text-white shadow">
             <Award size={22} />
           </div>
           <div>
@@ -888,7 +888,7 @@ export default function AdminCertificateGenerator() {
             {isRescuing ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
             {isRescuing ? 'Buscando...' : 'Resgatar'}
           </button>
-          <button onClick={saveCertificate} disabled={isSaving} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary disabled:opacity-50">
+          <button onClick={saveCertificate} disabled={isSaving} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
             {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {isSaving ? 'Salvando...' : 'Salvar'}
           </button>
@@ -944,7 +944,7 @@ export default function AdminCertificateGenerator() {
                 <button onClick={copyToClipboard} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-xs font-bold hover:bg-secondary">
                   <Copy size={12} /> Copiar
                 </button>
-                <button onClick={pasteFromClipboard} className="inline-flex items-center gap-1 rounded-lg border border-primary/50 bg-primary/10 px-2 py-1 text-xs font-bold text-primary hover:bg-primary/20">
+                <button onClick={pasteFromClipboard} className="inline-flex items-center gap-1 rounded-lg border border-amber-400/50 bg-amber-400/10 px-2 py-1 text-xs font-bold text-amber-500 hover:bg-amber-400/20">
                   <ClipboardPaste size={12} /> Colar
                 </button>
               </div>
@@ -1064,13 +1064,13 @@ export default function AdminCertificateGenerator() {
               <div className="flex gap-2 ml-auto items-center">
                 <button
                   onClick={() => setEditMode((value) => !value)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition border ${editMode ? 'bg-primary border-primary text-primary-foreground' : 'border-border bg-background text-foreground hover:bg-secondary'}`}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition border ${editMode ? 'bg-violet-600 border-violet-600 text-white' : 'border-border bg-background text-foreground hover:bg-secondary'}`}
                 >
                   {editMode ? <><Lock size={12} /> Sair da edicao</> : <><Move size={12} /> Arrastar elementos</>}
                 </button>
                 {editMode && (
                   <>
-                    <button onClick={handleSavePositions} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary">
+                    <button onClick={handleSavePositions} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">
                       <Save size={12} /> Salvar posicoes
                     </button>
                     <button onClick={handleResetPositions} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs font-bold hover:bg-secondary">
@@ -1083,7 +1083,7 @@ export default function AdminCertificateGenerator() {
           </div>
 
           {editMode && activeTab === 'front' && (
-            <div className="rounded-lg border border-primary/30 bg-accent/10 px-4 py-2 text-xs text-primary flex items-center gap-2">
+            <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs text-violet-300 flex items-center gap-2">
               <Move size={13} />
               Clique e arraste qualquer elemento para reposicionar. Depois clique em <strong>Salvar posicoes</strong>.
             </div>
