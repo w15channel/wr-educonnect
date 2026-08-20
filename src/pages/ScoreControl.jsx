@@ -6,7 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers, Filter } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, HandHeart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ const CATEGORY_CONFIG = {
   quiz: { label: 'Prova', icon: Trophy, color: 'bg-blue-100 text-blue-700' },
   exam: { label: 'Prova do Módulo', icon: GraduationCap, color: 'bg-indigo-100 text-indigo-700' },
   forum: { label: 'Fórum', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
+  mentorship: { label: 'Mentoria', icon: HandHeart, color: 'bg-rose-100 text-rose-700' },
   therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' },
   ofensiva: { label: 'Ofensiva Diária', icon: Flame, color: 'bg-orange-100 text-red-600' }
 };
@@ -74,6 +75,10 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   });
   const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies', email], queryFn: () => base44.entities.ForumReply.filter({ author_email: email }, '-created_date', 100) });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items', email], queryFn: () => base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 500) });
+  const { data: mentorships = [] } = useQuery({
+    queryKey: ['mentorships-score-detail', activeCourse],
+    queryFn: () => base44.entities.Mentorship.filter({ course: activeCourse }, '-date', 500)
+  });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-score', email], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
   const { data: studentProfiles = [] } = useQuery({
     queryKey: ['student-profile-score', email],
@@ -191,6 +196,10 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const sequencedTasks = sortBySequence(tasks);
   const sequencedForumPosts = sortBySequence(studentForumPosts);
   const sequencedForumReplies = sortBySequence(scorableForumReplies);
+  const studentMentorships = mentorships
+    .filter((mentorship) => (mentorship.participant_emails || []).includes(email) && inModuleWindow(mentorship.date || mentorship.created_date))
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  const mentorshipIds = new Set(studentMentorships.map((mentorship) => mentorship.id));
   const sequencedPairings = sortBySequence(myPairings);
   const therapistScoreRefIds = new Set(myPairings.flatMap((p) => {
     const ids = [];
@@ -212,6 +221,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   s.category === 'exam' && (examIds.has(s.ref_id) || examIds.has(String(s.ref_id || '').replace(/^exam:/, ''))) ||
   isOfensivaScoreItem(s) && ofensivaScoreRefIds.has(s.ref_id) ||
   s.category === 'forum' && !isOfensivaScoreItem(s) && (forumPostIds.has(s.ref_id) || forumReplyIds.has(s.ref_id)) ||
+  s.category === 'mentorship' && mentorshipIds.has(s.ref_id) ||
   s.category === 'therapist' && myPairings.some((p) => p.id === s.ref_id) ||
   isTherapistScoreItem(s) && therapistScoreRefIds.has(s.ref_id))
   ).
@@ -244,6 +254,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   { key: 'tasks', label: 'Tarefas', icon: FileText },
   { key: 'exams', label: 'Provas', icon: GraduationCap },
   { key: 'forum', label: 'Fórum', icon: MessageSquare },
+  { key: 'mentorship', label: 'Mentoria', icon: HandHeart },
   { key: 'therapist', label: 'Terapeutas', icon: Heart },
   { key: 'ofensivas', label: 'Ofensivas', icon: Flame }];
 
@@ -263,6 +274,9 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
     }),
     forum: [...studentForumPosts, ...scorableForumReplies].some((item) =>
     !scoreItems.find((s) => s.category === 'forum' && s.ref_id === item.id && s.verified)
+    ),
+    mentorship: studentMentorships.some((mentorship) =>
+      !scoreItems.find((s) => s.category === 'mentorship' && s.ref_id === mentorship.id && s.verified)
     ),
     therapist: sequencedPairings.some((p) => {
       const role = p.therapist_email === email ? 'therapist' : 'patient';
@@ -502,6 +516,37 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
           </>
         }
 
+        {activeSection === 'mentorship' &&
+        <>
+            {studentMentorships.length === 0 &&
+          <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação em mentoria.</p>
+          }
+            {studentMentorships.map((mentorship) =>
+          <ScoreRow
+            key={mentorship.id}
+            category="mentorship"
+            icon={CATEGORY_CONFIG.mentorship.icon}
+            refId={mentorship.id}
+            refTitle={`Mentoria: ${mentorship.theme}`}
+            maxScore={10}
+            item={getScoreItem('mentorship', mentorship.id)}
+            onSave={(data) => updateScoreMutation.mutate(data)}
+            saving={updateScoreMutation.isPending}
+            readOnly={!isTeacher}>
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                {mentorship.date && <Badge variant="secondary" className="text-[10px] bg-rose-100 text-rose-700">Realizada em {mentorship.date}</Badge>}
+                {mentorship.facilitator && <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-semibold">Mentor(a): {mentorship.facilitator}</span>}
+              </div>
+              {mentorship.objective &&
+              <div className="mt-1.5 bg-secondary/50 rounded-lg p-2 text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">Objetivo: </span>{mentorship.objective}
+              </div>
+              }
+            </ScoreRow>
+          )}
+          </>
+        }
+
         {activeSection === 'therapist' &&
         <>
             {myPairings.length === 0 &&
@@ -662,6 +707,11 @@ export default function ScoreControl() {
     queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500)
   });
 
+  const { data: mentorships = [] } = useQuery({
+    queryKey: ['mentorships-score-overview', activeCourse],
+    queryFn: () => base44.entities.Mentorship.filter({ course: activeCourse }, '-date', 500)
+  });
+
   const { data: studentProfiles = [] } = useQuery({
     queryKey: ['student-profiles-score-overview'],
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000)
@@ -741,6 +791,10 @@ export default function ScoreControl() {
     () => new Map(therapistPairings.map((p) => [p.id, p.pairing_date || p.created_date])),
     [therapistPairings]
   );
+  const mentorshipDateById = useMemo(
+    () => new Map(mentorships.map((mentorship) => [mentorship.id, mentorship.date || mentorship.created_date])),
+    [mentorships]
+  );
 
   // Um ScoreItem pertence ao módulo selecionado quando a atividade de origem é
   // daquele módulo (aula/tarefa/prova) ou, para atividades sem módulo, quando
@@ -757,6 +811,7 @@ export default function ScoreControl() {
       return withinWindow(pairingDateById.get(pairingId) || item.created_date, start, end);
     }
     if (isOfensivaScoreItem(item)) return withinWindow(item.created_date, start, end);
+    if (item.category === 'mentorship') return withinWindow(mentorshipDateById.get(refId) || item.created_date, start, end);
     if (item.category === 'lesson') return lessonModuleById.get(refId) === activeModule;
     if (item.category === 'task' || item.category === 'quiz') return taskModuleById.get(refId) === activeModule;
     if (item.category === 'exam') return examModuleById.get(refId.replace(/^exam:/, '')) === activeModule;
@@ -812,6 +867,13 @@ export default function ScoreControl() {
     filter((p) => !courseEmails || courseEmails.size === 0 || courseEmails.has(p.therapist_email || '') && courseEmails.has(p.patient_email || '')).
     map((p) => p.id)
   );
+  const courseMentorshipIdsByEmail = new Map();
+  mentorships.forEach((mentorship) => {
+    (mentorship.participant_emails || []).forEach((studentEmail) => {
+      if (!courseMentorshipIdsByEmail.has(studentEmail)) courseMentorshipIdsByEmail.set(studentEmail, new Set());
+      courseMentorshipIdsByEmail.get(studentEmail).add(mentorship.id);
+    });
+  });
 
   const getCourseScoreTotal = (email) => {
     const studentSpecificForumPosts = forumPosts.filter(
@@ -829,6 +891,7 @@ export default function ScoreControl() {
       }).
       map((r) => r.id)
     );
+    const studentMentorshipIds = courseMentorshipIdsByEmail.get(email) || new Set();
 
     return scoreItems.
     filter((s) => s.student_email === email && s.verified && scoreItemInSelectedModule(s) && (
@@ -837,6 +900,7 @@ export default function ScoreControl() {
     s.category === 'exam' ||
     isOfensivaScoreItem(s) ||
     s.category === 'forum' && !isOfensivaScoreItem(s) && (studentForumPostIds.has(s.ref_id) || studentForumReplyIds.has(s.ref_id)) ||
+    s.category === 'mentorship' && studentMentorshipIds.has(s.ref_id) ||
     s.category === 'therapist' && coursePairingIds.has(s.ref_id) ||
     isTherapistScoreItem(s) && coursePairingIds.has(String(s.ref_id || '').split(':')[1]))
     ).
@@ -883,7 +947,7 @@ export default function ScoreControl() {
       totals.set(studentEmail, capScore(getCourseScoreTotal(studentEmail)));
     }
     return totals;
-  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, exams, therapistPairings, activeCourse, selectedModule, moduleWindows]);
+  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, exams, therapistPairings, mentorships, activeCourse, selectedModule, moduleWindows]);
 
   const sortedRows = filtered.
   map((code) => {

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, Archive, CheckCircle } from 'lucide-react';
+import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, HandHeart, Archive, CheckCircle } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { capScore, formatScore, rankingScoreValue, roundScore, sumRoundedScores, parseUtcDate } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
@@ -15,6 +15,7 @@ const CATEGORY_CONFIG = {
   task:            { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
   exam:            { label: 'Prova / Avaliação',          icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
+  mentorship:      { label: 'Mentoria',                    icon: HandHeart,     color: 'bg-rose-100 text-rose-700' },
   therapist:       { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
   other:           { label: 'Outras Pontuações',          icon: CircleHelp,    color: 'bg-slate-100 text-slate-700' },
 };
@@ -217,6 +218,10 @@ export default function RankingGeral() {
     queryKey: ['ranking-forum-replies'],
     queryFn: () => base44.entities.ForumReply.list('-created_date', 5000),
   });
+  const { data: courseMentorships = [] } = useQuery({
+    queryKey: ['ranking-mentorships', activeCourseForQuery],
+    queryFn: () => base44.entities.Mentorship.filter({ course: activeCourseForQuery }, '-date', 1000),
+  });
 
   // Fontes originais das atividades — usadas para o corte de período com a MESMA
   // lógica do painel admin (data do registro de origem, não do ScoreItem)
@@ -272,6 +277,7 @@ export default function RankingGeral() {
     courseExams.forEach(e => { set.add(`exam:${e.id}`); set.add(e.id); });
     courseForumPosts.forEach(p => set.add(p.id));
     allForumReplies.forEach(r => set.add(r.id));
+    courseMentorships.forEach(mentorship => set.add(mentorship.id));
     // Terapeuta da Semana: ref_id = `therapist_pairing:{id}:{role}`
     const courseEmailSet = new Set(
       accessCodes
@@ -291,7 +297,7 @@ export default function RankingGeral() {
       set.add(`ofensiva:${r.challenge_id}:${r.student_email}`);
     });
     return set;
-  }, [courseLessons, courseTasks, courseExams, courseForumPosts, allForumReplies,
+  }, [courseLessons, courseTasks, courseExams, courseForumPosts, allForumReplies, courseMentorships,
       allPairings, allChallengeResponses, accessCodes, activeCourseForQuery]);
 
   // ── Determine which course to show (same as activeCourseForQuery above) ──
@@ -362,10 +368,13 @@ export default function RankingGeral() {
         return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostRefIds.has(parentPost.id) && isAfterCutoff(r);
       }).length;
       const monitorCount = allMonitorHistory.filter(m => m.student_email === email && isAfterCutoff(m)).length;
-      map[email] = lessonCount + taskCount + postCount + replyCount + monitorCount;
+      const mentorshipCount = courseMentorships.filter(mentorship =>
+        (mentorship.participant_emails || []).includes(email) && isAfterCutoff(mentorship)
+      ).length;
+      map[email] = lessonCount + taskCount + postCount + replyCount + monitorCount + mentorshipCount;
     });
     return map;
-  }, [courseEmailSet, allLessonProgress, allSubmissions, courseForumPosts, allForumReplies, allMonitorHistory, lessonRefIds, taskRefIds, forumPostRefIds, forumParentById, periodCutoff]);
+  }, [courseEmailSet, allLessonProgress, allSubmissions, courseForumPosts, allForumReplies, allMonitorHistory, courseMentorships, lessonRefIds, taskRefIds, forumPostRefIds, forumParentById, periodCutoff]);
 
   // ── Build and sort ranking — pontuação publicada é a fonte única da verdade,
   // igual ao painel admin (evita divergência quando o período foi encerrado) ──
