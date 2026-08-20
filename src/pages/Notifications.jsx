@@ -94,8 +94,8 @@ export default function Notifications() {
     <div className="p-4 lg:p-7 max-w-3xl mx-auto space-y-5 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-destructive flex items-center justify-center shadow-lg">
-          <Bell size={22} className="text-primary-foreground" />
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center shadow-lg">
+          <Bell size={22} className="text-white" />
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Notificações</h2>
@@ -118,7 +118,7 @@ export default function Notifications() {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-card border border-border rounded-2xl p-4">
           <p className="text-xs text-muted-foreground">Não lidas</p>
-          <p className="text-2xl font-black text-primary">{unread.length}</p>
+          <p className="text-2xl font-black text-orange-500">{unread.length}</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-4">
           <p className="text-xs text-muted-foreground">Total</p>
@@ -147,11 +147,11 @@ export default function Notifications() {
               }}
               className={`flex gap-3 p-4 rounded-2xl border cursor-pointer transition-all hover:shadow-md ${
                 !n.is_read
-                  ? 'bg-accent/50 border-primary hover:border-primary'
+                  ? 'bg-orange-50/50 border-orange-200 hover:border-orange-300'
                   : 'bg-card border-border hover:border-primary/20'
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center shrink-0 text-sm font-black text-primary">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0 text-sm font-black text-orange-700">
                 {(n.sender_name || 'A').charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -168,7 +168,7 @@ export default function Notifications() {
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {!n.is_read && <span className="w-2 h-2 bg-accent rounded-full" />}
+                {!n.is_read && <span className="w-2 h-2 bg-orange-500 rounded-full" />}
                 <ArrowRight size={14} className="text-muted-foreground" />
               </div>
             </div>

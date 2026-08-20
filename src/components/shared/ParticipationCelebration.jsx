@@ -45,13 +45,13 @@ export default function ParticipationCelebration({ message = 'Parabéns! Você p
       style={{ animation: 'fadeIn 0.2s ease' }}
     >
       <div
-        className="pointer-events-auto flex items-center gap-3 bg-gradient-to-r from-accent to-accent text-primary-foreground px-6 py-4 rounded-2xl shadow-2xl animate-fade-in-up"
+        className="pointer-events-auto flex items-center gap-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fade-in-up"
         style={{ maxWidth: 380 }}
       >
         <span className="text-3xl">🥳</span>
         <div>
           <p className="font-black text-base leading-tight">{message}</p>
-          <p className="text-primary text-xs mt-0.5">Sua voz faz a turma crescer!</p>
+          <p className="text-emerald-100 text-xs mt-0.5">Sua voz faz a turma crescer!</p>
         </div>
       </div>
     </div>

@@ -102,15 +102,15 @@ export default function ExamQuizView({ exam, user, onBack }) {
       <Button variant="ghost" className="gap-2 mb-4" onClick={onBack}><ArrowLeft size={16} /> Voltar</Button>
       
       {/* Timer Header */}
-      <div className={`sticky top-0 z-50 mb-4 p-3 rounded-xl border-2 flex items-center justify-between gap-3 ${tabSwitchDetected ? 'bg-destructive/10 border-destructive' : 'bg-card border-border'}`}>
+      <div className={`sticky top-0 z-50 mb-4 p-3 rounded-xl border-2 flex items-center justify-between gap-3 ${tabSwitchDetected ? 'bg-red-500/10 border-red-500' : 'bg-card border-border'}`}>
         <div className="flex items-center gap-2">
-          <Clock size={20} className={tabSwitchDetected ? 'text-destructive' : 'text-primary'} />
-          <span className={`font-mono font-black text-xl ${tabSwitchDetected ? 'text-destructive' : 'text-foreground'}`}>
+          <Clock size={20} className={tabSwitchDetected ? 'text-red-500' : 'text-primary'} />
+          <span className={`font-mono font-black text-xl ${tabSwitchDetected ? 'text-red-500' : 'text-foreground'}`}>
             {formatTime(timeLeft)}
           </span>
         </div>
         {tabSwitchDetected && (
-          <div className="flex items-center gap-2 text-destructive text-xs font-bold">
+          <div className="flex items-center gap-2 text-red-500 text-xs font-bold">
             <AlertTriangle size={14} /> Saída da tela detectada
           </div>
         )}
@@ -122,26 +122,26 @@ export default function ExamQuizView({ exam, user, onBack }) {
       {submitted ? (
         <div className="bg-card p-8 rounded-2xl border border-border text-center">
           <div className="flex justify-center mb-4">
-            <CheckCircle size={64} className="text-primary" />
-            <PartyPopper size={32} className="text-primary absolute -mt-8 ml-16 animate-bounce" />
+            <CheckCircle size={64} className="text-green-500" />
+            <PartyPopper size={32} className="text-yellow-500 absolute -mt-8 ml-16 animate-bounce" />
           </div>
           <h3 className="text-2xl font-black text-foreground mb-2">🎉 Parabéns pela Conclusão!</h3>
           <p className="text-sm text-muted-foreground mb-4">Sua prova foi enviada com sucesso.</p>
           {hasTextQuestions ? (
-            <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-              <p className="text-sm text-primary font-bold">⏳ Nota em breve</p>
-              <p className="text-xs text-primary/70 mt-1">O professor irá corrigir sua prova.</p>
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <p className="text-sm text-emerald-400 font-bold">⏳ Nota em breve</p>
+              <p className="text-xs text-emerald-300/70 mt-1">O professor irá corrigir sua prova.</p>
             </div>
           ) : (
-            <div className="p-4 bg-accent/10 border border-primary/20 rounded-xl">
-              <p className="text-sm text-primary font-bold">📋 Aguarde a correção</p>
-              <p className="text-xs text-primary/70 mt-1">Sua nota será publicada em breve.</p>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+              <p className="text-sm text-amber-400 font-bold">📋 Aguarde a correção</p>
+              <p className="text-xs text-amber-300/70 mt-1">Sua nota será publicada em breve.</p>
             </div>
           )}
           {tabSwitchDetected && (
-            <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-xl">
-              <p className="text-xs text-destructive font-bold">⚠️ Registro de saída da tela</p>
-              <p className="text-[10px] text-destructive/70 mt-1">Sua saída da tela foi registrada. Suas respostas escritas foram zeradas.</p>
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-xs text-red-400 font-bold">⚠️ Registro de saída da tela</p>
+              <p className="text-[10px] text-red-300/70 mt-1">Sua saída da tela foi registrada. Suas respostas escritas foram zeradas.</p>
             </div>
           )}
         </div>
@@ -151,7 +151,7 @@ export default function ExamQuizView({ exam, user, onBack }) {
             <div key={qi} className="bg-card p-5 rounded-2xl border border-border">
               <p className="font-semibold text-foreground mb-4 text-sm">
                 {qi + 1}. {q.question}
-                <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full font-bold ${q.answer_type === 'text' ? 'bg-accent text-primary' : 'bg-accent text-primary'}`}>
+                <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full font-bold ${q.answer_type === 'text' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
                   {q.answer_type === 'text' ? 'Dissertativa' : 'Objetiva'}
                 </span>
               </p>

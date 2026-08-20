@@ -115,34 +115,34 @@ export default function LoginScreen({ onLogin }) {
                 <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
               </div>
               <div>
-                <span className="text-xl font-bold text-primary-foreground tracking-tight">{BRAND_SHORT_NAME}</span>
-                <p className="text-[10px] text-primary-foreground/40 -mt-0.5 tracking-widest uppercase">Instituto de Desenvolvimento Humano</p>
+                <span className="text-xl font-bold text-white tracking-tight">{BRAND_SHORT_NAME}</span>
+                <p className="text-[10px] text-white/40 -mt-0.5 tracking-widest uppercase">Instituto de Desenvolvimento Humano</p>
               </div>
             </div>
 
             {/* Center content */}
             <div className="hidden lg:block">
-              <div className="inline-flex items-center gap-2 bg-card/10 backdrop-blur-sm border border-border/15 rounded-full px-4 py-1.5 mb-6">
-                <Sparkles size={12} className="text-primary" />
-                <span className="text-xs font-semibold text-primary-foreground/80">Escola de Formação de Terapeutas</span>
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-1.5 mb-6">
+                <Sparkles size={12} className="text-yellow-400" />
+                <span className="text-xs font-semibold text-white/80">Escola de Formação de Terapeutas</span>
               </div>
-              <h1 className="text-5xl lg:text-6xl font-bold text-primary-foreground leading-[1.1] mb-6 max-w-lg">
+              <h1 className="text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6 max-w-lg">
                 Transforme vidas
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]">
                   através da cura.
                 </span>
               </h1>
-              <p className="text-primary-foreground/60 text-lg leading-relaxed max-w-md mb-10">
+              <p className="text-white/60 text-lg leading-relaxed max-w-md mb-10">
                 Uma formação completa em terapia, com o diferencial da prática terapêutica ao longo de toda a jornada.
               </p>
 
               {/* Feature cards */}
               <div className="grid grid-cols-2 gap-3 max-w-sm">
                 {FEATURES.map(({ icon: Icon, title, desc }) => (
-                  <div key={title} className="bg-card/8 backdrop-blur-sm border border-border/10 rounded-2xl p-3.5">
+                  <div key={title} className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-2xl p-3.5">
                     <Icon size={16} className="text-[#1db89e] mb-2" />
-                    <p className="text-primary-foreground font-semibold text-sm">{title}</p>
-                    <p className="text-primary-foreground/50 text-xs mt-0.5">{desc}</p>
+                    <p className="text-white font-semibold text-sm">{title}</p>
+                    <p className="text-white/50 text-xs mt-0.5">{desc}</p>
                   </div>
                 ))}
               </div>
@@ -154,7 +154,7 @@ export default function LoginScreen({ onLogin }) {
                 <button
                   key={i}
                   onClick={() => setHeroImg(i)}
-                  className={`h-1 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-card/20 w-5'}`}
+                  className={`h-1 rounded-full transition-all ${i === heroImg ? 'bg-[#5b5ef4] w-10' : 'bg-white/20 w-5'}`}
                 />
               ))}
             </div>
@@ -162,7 +162,7 @@ export default function LoginScreen({ onLogin }) {
         </div>
 
         {/* Right — Login panel */}
-        <div className="w-full lg:w-[440px] bg-[#0d1120] border-l border-border/8 flex flex-col justify-center p-7 lg:p-10 relative overflow-hidden">
+        <div className="w-full lg:w-[440px] bg-[#0d1120] border-l border-white/8 flex flex-col justify-center p-7 lg:p-10 relative overflow-hidden">
           {/* Ambient glows */}
           <div className="absolute top-0 right-0 w-72 h-72 bg-[#5b5ef4]/12 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-56 h-56 bg-[#1db89e]/10 rounded-full blur-3xl pointer-events-none translate-y-1/2 -translate-x-1/2" />
@@ -174,8 +174,8 @@ export default function LoginScreen({ onLogin }) {
               <div className="w-16 h-16 flex items-center justify-center mb-3">
                 <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
               </div>
-              <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">{BRAND_SHORT_NAME}</h1>
-              <p className="text-primary-foreground/35 text-xs mt-1 tracking-widest uppercase">Instituto de Desenvolvimento Humano</p>
+              <h1 className="text-2xl font-bold text-white tracking-tight">{BRAND_SHORT_NAME}</h1>
+              <p className="text-white/35 text-xs mt-1 tracking-widest uppercase">Instituto de Desenvolvimento Humano</p>
             </div>
 
             <div>
@@ -185,18 +185,18 @@ export default function LoginScreen({ onLogin }) {
                   <Zap size={11} className="text-[#7c5ef4]" />
                   <span className="text-[11px] font-semibold text-[#a09ef4] tracking-wide">Acesso Seguro</span>
                 </div>
-                <h2 className="text-[26px] font-bold text-primary-foreground leading-tight">Entrar na plataforma</h2>
-                <p className="text-primary-foreground/35 text-sm mt-1.5">Escolha seu tipo de acesso abaixo</p>
+                <h2 className="text-[26px] font-bold text-white leading-tight">Entrar na plataforma</h2>
+                <p className="text-white/35 text-sm mt-1.5">Escolha seu tipo de acesso abaixo</p>
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1.5 bg-card/4 rounded-2xl p-1.5 mb-6 border border-border/8 shadow-inner">
+              <div className="flex gap-1.5 bg-white/4 rounded-2xl p-1.5 mb-6 border border-white/8 shadow-inner">
                 <button
                   onClick={() => { setMode('code'); setError(''); }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
                     mode === 'code'
-                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-primary-foreground shadow-lg shadow-[#5b5ef4]/40 scale-[1.01]'
-                      : 'text-primary-foreground/35 hover:text-primary-foreground/65 hover:bg-card/5'
+                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg shadow-[#5b5ef4]/40 scale-[1.01]'
+                      : 'text-white/35 hover:text-white/65 hover:bg-white/5'
                   }`}
                 >
                   <Key size={14} /> Código de Aluno
@@ -205,8 +205,8 @@ export default function LoginScreen({ onLogin }) {
                   onClick={() => { setMode('admin'); setError(''); }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
                     mode === 'admin'
-                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-primary-foreground shadow-lg shadow-[#5b5ef4]/40 scale-[1.01]'
-                      : 'text-primary-foreground/35 hover:text-primary-foreground/65 hover:bg-card/5'
+                      ? 'bg-gradient-to-br from-[#5b5ef4] to-[#7c3aed] text-white shadow-lg shadow-[#5b5ef4]/40 scale-[1.01]'
+                      : 'text-white/35 hover:text-white/65 hover:bg-white/5'
                   }`}
                 >
                   <Shield size={14} /> Admin
@@ -214,20 +214,20 @@ export default function LoginScreen({ onLogin }) {
               </div>
 
               {error && (
-                <div className="flex items-center gap-2.5 bg-destructive/10 border border-destructive/25 text-destructive text-sm p-4 rounded-2xl mb-5 animate-fade-in">
-                  <div className="w-7 h-7 rounded-full bg-destructive/15 flex items-center justify-center shrink-0">
-                    <AlertCircle size={14} className="text-destructive" />
+                <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/25 text-red-300 text-sm p-4 rounded-2xl mb-5 animate-fade-in">
+                  <div className="w-7 h-7 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+                    <AlertCircle size={14} className="text-red-400" />
                   </div>
                   {error}
                 </div>
               )}
 
               {/* Form card */}
-              <div className="bg-gradient-to-b from-white/7 to-white/3 backdrop-blur-md border border-border/10 rounded-2xl p-6 shadow-2xl shadow-black/30">
+              <div className="bg-gradient-to-b from-white/7 to-white/3 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/30">
                 {mode === 'code' ? (
                   <form onSubmit={handleCodeLogin} className="space-y-5">
                     <div>
-                      <label className="text-primary-foreground/50 text-[11px] font-bold uppercase tracking-widest block mb-2.5 flex items-center gap-1.5">
+                      <label className="text-white/50 text-[11px] font-bold uppercase tracking-widest block mb-2.5 flex items-center gap-1.5">
                         <Key size={10} className="text-[#5b5ef4]" /> Código de acesso
                       </label>
                       <div className="relative">
@@ -235,20 +235,20 @@ export default function LoginScreen({ onLogin }) {
                           placeholder="EDU-XXXX-XXXX"
                           value={code}
                           onChange={(e) => setCode(e.target.value.toUpperCase())}
-                          className="bg-card/6 border-border/10 text-primary-foreground placeholder:text-primary-foreground/20 h-14 text-center text-xl tracking-[0.3em] font-mono focus:border-[#5b5ef4]/60 focus:bg-card/8 transition-all rounded-xl"
+                          className="bg-white/6 border-white/10 text-white placeholder:text-white/20 h-14 text-center text-xl tracking-[0.3em] font-mono focus:border-[#5b5ef4]/60 focus:bg-white/8 transition-all rounded-xl"
                           autoCapitalize="characters"
                         />
                         {code.length >= 3 && (
                           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#1db89e] animate-pulse" />
                         )}
                       </div>
-                      <p className="text-primary-foreground/25 text-xs mt-2.5 text-center flex items-center justify-center gap-1">
+                      <p className="text-white/25 text-xs mt-2.5 text-center flex items-center justify-center gap-1">
                         <Lock size={9} /> Código fornecido pelo seu professor
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox id="remember-code" checked={rememberCode} onCheckedChange={(checked) => setRememberCode(Boolean(checked))} />
-                      <label htmlFor="remember-code" className="text-xs text-primary-foreground/55 cursor-pointer">
+                      <label htmlFor="remember-code" className="text-xs text-white/55 cursor-pointer">
                         Lembrar acesso neste dispositivo
                       </label>
                     </div>
@@ -258,7 +258,7 @@ export default function LoginScreen({ onLogin }) {
                       disabled={code.length < 3 || loading}
                     >
                       {loading
-                        ? <><div className="w-4 h-4 border-2 border-border/30 border-t-white rounded-full animate-spin" /> Verificando...</>
+                        ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verificando...</>
                         : <><span>Entrar na Plataforma</span> <ChevronRight size={16} /></>
                       }
                     </Button>
@@ -266,29 +266,29 @@ export default function LoginScreen({ onLogin }) {
                 ) : (
                   <form onSubmit={handleAdminLogin} className="space-y-4">
                     <div>
-                      <label className="text-primary-foreground/50 text-[11px] font-bold uppercase tracking-widest block mb-2">Email administrativo</label>
+                      <label className="text-white/50 text-[11px] font-bold uppercase tracking-widest block mb-2">Email administrativo</label>
                       <Input
                         type="email"
                         placeholder="seu@email.com"
                         value={adminEmail}
                         onChange={(e) => setAdminEmail(e.target.value)}
-                        className="bg-card/6 border-border/10 text-primary-foreground placeholder:text-primary-foreground/20 h-11 focus:border-[#5b5ef4]/60 focus:bg-card/8 transition-all rounded-xl"
+                        className="bg-white/6 border-white/10 text-white placeholder:text-white/20 h-11 focus:border-[#5b5ef4]/60 focus:bg-white/8 transition-all rounded-xl"
                       />
                     </div>
                     <div>
-                      <label className="text-primary-foreground/50 text-[11px] font-bold uppercase tracking-widest block mb-2">Senha</label>
+                      <label className="text-white/50 text-[11px] font-bold uppercase tracking-widest block mb-2">Senha</label>
                       <div className="relative">
                         <Input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           value={adminPassword}
                           onChange={(e) => setAdminPassword(e.target.value)}
-                          className="bg-card/6 border-border/10 text-primary-foreground placeholder:text-primary-foreground/20 h-11 pr-11 focus:border-[#5b5ef4]/60 focus:bg-card/8 transition-all rounded-xl"
+                          className="bg-white/6 border-white/10 text-white placeholder:text-white/20 h-11 pr-11 focus:border-[#5b5ef4]/60 focus:bg-white/8 transition-all rounded-xl"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-foreground/25 hover:text-primary-foreground/70 transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/70 transition-colors"
                         >
                           {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
@@ -296,7 +296,7 @@ export default function LoginScreen({ onLogin }) {
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox id="remember-admin" checked={rememberAdmin} onCheckedChange={(checked) => setRememberAdmin(Boolean(checked))} />
-                      <label htmlFor="remember-admin" className="text-xs text-primary-foreground/55 cursor-pointer">
+                      <label htmlFor="remember-admin" className="text-xs text-white/55 cursor-pointer">
                         Lembrar acesso neste dispositivo
                       </label>
                     </div>
@@ -306,7 +306,7 @@ export default function LoginScreen({ onLogin }) {
                       disabled={!adminEmail || !adminPassword || loading}
                     >
                       {loading
-                        ? <><div className="w-4 h-4 border-2 border-border/30 border-t-white rounded-full animate-spin" /> Entrando...</>
+                        ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Entrando...</>
                         : <><span>Entrar como Admin</span> <ChevronRight size={16} /></>
                       }
                     </Button>
@@ -319,10 +319,10 @@ export default function LoginScreen({ onLogin }) {
                 <div className="flex justify-center mt-5">
                   <button
                     onClick={() => setShowSetup(true)}
-                    className="flex items-center gap-2.5 bg-accent/10 border border-primary/20 backdrop-blur text-primary hover:text-primary hover:bg-accent/20 transition-all px-5 py-3 rounded-2xl text-sm font-medium"
+                    className="flex items-center gap-2.5 bg-blue-500/10 border border-blue-400/20 backdrop-blur text-blue-300 hover:text-blue-200 hover:bg-blue-500/20 transition-all px-5 py-3 rounded-2xl text-sm font-medium"
                   >
-                    <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
-                      <Lock size={12} className="text-primary" />
+                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <Lock size={12} className="text-blue-400" />
                     </div>
                     Configurar acesso administrativo
                   </button>
@@ -331,18 +331,18 @@ export default function LoginScreen({ onLogin }) {
             </div>
 
             {/* Footer */}
-            <div className="text-center space-y-2 pt-2 border-t border-border/6">
-              <div className="flex items-center justify-center gap-1.5 text-primary-foreground/20 text-xs">
+            <div className="text-center space-y-2 pt-2 border-t border-white/6">
+              <div className="flex items-center justify-center gap-1.5 text-white/20 text-xs">
                 <Star size={9} className="fill-current" />
                 <span>{BRAND_LEGAL_NAME} © {new Date().getFullYear()} · CNPJ {BRAND_CNPJ}</span>
                 <Star size={9} className="fill-current" />
               </div>
-              <p className="text-primary-foreground/12 text-[10px]">
-                Desenvolvido com <Heart size={8} className="inline fill-current text-destructive/50" /> para transformar vidas
+              <p className="text-white/12 text-[10px]">
+                Desenvolvido com <Heart size={8} className="inline fill-current text-red-400/50" /> para transformar vidas
               </p>
-              <div className="inline-flex items-center gap-1.5 bg-card/5 border border-border/8 rounded-full px-3 py-1">
+              <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-                <span className="text-primary-foreground/30 text-[10px] font-mono font-semibold tracking-widest">V-001-00</span>
+                <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-001-00</span>
               </div>
             </div>
           </div>

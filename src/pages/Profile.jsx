@@ -200,22 +200,22 @@ export default function Profile({ focusStudyProfile = false }) {
           {/* Avatar preview */}
           <div className="relative">
             {photoUrl ? (
-              <img src={photoUrl} alt="Foto" className="w-24 h-24 rounded-2xl object-cover shadow-lg border-4 border-border ring-2 ring-primary/20" />
+              <img src={photoUrl} alt="Foto" className="w-24 h-24 rounded-2xl object-cover shadow-lg border-4 border-white ring-2 ring-primary/20" />
             ) : avatarEmoji ? (
-              <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-4xl shadow-lg border-4 border-border" style={{ backgroundColor: avatarColor }}>
+              <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-4xl shadow-lg border-4 border-white" style={{ backgroundColor: avatarColor }}>
                 {avatarEmoji}
               </div>
             ) : (
-              <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-2xl font-black text-primary-foreground shadow-lg border-4 border-border" style={{ backgroundColor: avatarColor }}>
+              <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg border-4 border-white" style={{ backgroundColor: avatarColor }}>
                 {initials}
               </div>
             )}
             <button
               onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
+              className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
               disabled={uploading}
             >
-              {uploading ? <div className="w-3 h-3 border-2 border-border/30 border-t-white rounded-full animate-spin" /> : <Camera size={13} />}
+              {uploading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Camera size={13} />}
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
           </div>

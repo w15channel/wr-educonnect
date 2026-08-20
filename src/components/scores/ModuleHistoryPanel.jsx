@@ -54,8 +54,8 @@ export default function ModuleHistoryPanel({ course, filterEmail = null }) {
               onClick={() => setExpanded(isOpen ? null : closure.id)}
               className="w-full flex items-center gap-3 p-4 hover:bg-secondary/40 transition-colors text-left"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-                <Archive size={18} className="text-primary-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0">
+                <Archive size={18} className="text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-foreground">{closure.module_label || `Módulo ${closure.module_number}`}</p>
@@ -88,9 +88,9 @@ export default function ModuleHistoryPanel({ course, filterEmail = null }) {
                           {s.student_name || s.student_email}
                           {isMe && <span className="text-xs font-normal text-primary/70 ml-1">(você)</span>}
                         </span>
-                        <div className="flex items-center gap-1.5 shrink-0 bg-accent border border-primary px-2.5 py-1 rounded-lg">
-                          <Star size={11} className="text-primary fill-yellow-500" />
-                          <span className="text-xs font-black text-primary">{formatScore(s.points)}</span>
+                        <div className="flex items-center gap-1.5 shrink-0 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-lg">
+                          <Star size={11} className="text-yellow-500 fill-yellow-500" />
+                          <span className="text-xs font-black text-yellow-700">{formatScore(s.points)}</span>
                         </div>
                       </button>
                     );

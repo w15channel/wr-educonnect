@@ -187,7 +187,7 @@ export default function SiteEditorAgent() {
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-            <Bot size={24} className="text-primary-foreground" />
+            <Bot size={24} className="text-white" />
           </div>
           <div>
             <h2 className="text-xl lg:text-2xl font-bold text-foreground">Agente Editor IA</h2>
@@ -265,7 +265,7 @@ export default function SiteEditorAgent() {
         <div className="space-y-4 lg:sticky lg:top-5">
           <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-primary" />
+              <ShieldCheck size={16} className="text-green-600" />
               <h3 className="font-bold text-sm">Liberdade assistida</h3>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -281,7 +281,7 @@ export default function SiteEditorAgent() {
               {SITE_TOOLS.slice(0, 12).map((tool) => <Badge key={tool} variant="secondary" className="text-[10px]">{tool}</Badge>)}
             </div>
           </div>
-          <div className="bg-accent border border-primary rounded-2xl p-3 flex items-start gap-2 text-xs text-primary">
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 flex items-start gap-2 text-xs text-amber-800">
             <AlertTriangle size={14} className="mt-0.5" />
             <p>Para diagnóstico completo do site, amplie gradualmente o catálogo interno de itens com posição e comportamento observado em produção.</p>
           </div>
@@ -293,7 +293,7 @@ export default function SiteEditorAgent() {
             applying={saveMutation.isPending}
           />
           {saveMutation.isSuccess && (
-            <div className="bg-accent border border-primary rounded-2xl p-3 flex items-center gap-2 text-sm text-primary">
+            <div className="bg-green-50 border border-green-100 rounded-2xl p-3 flex items-center gap-2 text-sm text-green-800">
               <ClipboardCheck size={15} /> Ideia pronta para ser aplicada pelo desenvolvimento.
             </div>
           )}

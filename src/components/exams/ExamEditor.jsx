@@ -89,8 +89,8 @@ export default function ExamEditor({ exam, onBack, course }) {
           <ChevronLeft size={16} /> Voltar
         </button>
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow">
-            <Pencil size={16} className="text-primary-foreground" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow">
+            <Pencil size={16} className="text-white" />
           </div>
           <div>
             <h2 className="text-xl font-black text-foreground">{exam?.id ? 'Editar Prova' : 'Nova Prova'}</h2>
@@ -130,7 +130,7 @@ export default function ExamEditor({ exam, onBack, course }) {
                 type="checkbox"
                 checked={isPublished}
                 onChange={e => setIsPublished(e.target.checked)}
-                className="w-4 h-4 rounded border-border"
+                className="w-4 h-4 rounded border-gray-300"
               />
               <span className="text-sm font-bold text-foreground">Publicada</span>
             </label>
@@ -173,7 +173,7 @@ export default function ExamEditor({ exam, onBack, course }) {
 
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-xs font-black text-muted-foreground uppercase tracking-wider">Questão {qi + 1}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${q.answer_type === 'choice' ? 'bg-accent/10 text-primary' : 'bg-accent/10 text-primary'}`}>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${q.answer_type === 'choice' ? 'bg-blue-500/10 text-blue-400' : 'bg-amber-500/10 text-amber-400'}`}>
                     {q.answer_type === 'choice' ? 'Múltipla Escolha' : 'Discursiva'}
                   </span>
                 </div>
@@ -192,7 +192,7 @@ export default function ExamEditor({ exam, onBack, course }) {
                       <div key={oi} className="flex items-center gap-2">
                         <button
                           onClick={() => updateQuestion(qi, 'correct_index', oi)}
-                          className={`w-5 h-5 rounded-full border-2 shrink-0 transition-all ${q.correct_index === oi ? 'border-primary bg-accent' : 'border-border hover:border-primary/50'}`}
+                          className={`w-5 h-5 rounded-full border-2 shrink-0 transition-all ${q.correct_index === oi ? 'border-emerald-500 bg-emerald-500' : 'border-border hover:border-primary/50'}`}
                         />
                         <input
                           value={opt}
@@ -225,7 +225,7 @@ export default function ExamEditor({ exam, onBack, course }) {
         <Button
           onClick={handleSave}
           disabled={saveMutation.isPending}
-          className="flex-1 gap-2 h-11 font-black bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground"
+          className="flex-1 gap-2 h-11 font-black bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white"
         >
           <Save size={16} />
           {saveMutation.isPending ? 'Salvando...' : `Salvar Prova (${questions.length} questões)`}

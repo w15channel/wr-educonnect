@@ -3,16 +3,16 @@ import confetti from 'canvas-confetti';
 
 // Module names aligned with Apostila themes
 export const MODULE_THEMES = [
-  { id: 1, label: 'Fundamentos da Terapia Comportamental', emoji: '🧠', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 2, label: 'O Terapeuta em Ação', emoji: '🎯', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 3, label: 'Demandas Clínicas Contemporâneas', emoji: '🌿', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 4, label: 'Sexualidade e Clínica', emoji: '💛', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 5, label: 'Psicossomática e Corpo', emoji: '🫀', color: 'from-accent to-destructive', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 6, label: 'Família, Infância e Desenvolvimento', emoji: '👨‍👩‍👧', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 7, label: 'Sofrimento e Sentido de Vida', emoji: '✨', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 8, label: 'Prática Clínica Avançada', emoji: '⚡', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 9, label: 'TCC e Abordagens Integrativas', emoji: '🔬', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
-  { id: 10, label: 'Identidade e Formação Profissional', emoji: '🎓', color: 'from-accent to-primary', light: 'text-primary', bg: 'bg-accent/10' },
+  { id: 1, label: 'Fundamentos da Terapia Comportamental', emoji: '🧠', color: 'from-violet-500 to-purple-700', light: 'text-violet-400', bg: 'bg-violet-500/10' },
+  { id: 2, label: 'O Terapeuta em Ação', emoji: '🎯', color: 'from-blue-500 to-indigo-700', light: 'text-blue-400', bg: 'bg-blue-500/10' },
+  { id: 3, label: 'Demandas Clínicas Contemporâneas', emoji: '🌿', color: 'from-emerald-500 to-teal-700', light: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  { id: 4, label: 'Sexualidade e Clínica', emoji: '💛', color: 'from-yellow-500 to-amber-700', light: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+  { id: 5, label: 'Psicossomática e Corpo', emoji: '🫀', color: 'from-rose-500 to-red-700', light: 'text-rose-400', bg: 'bg-rose-500/10' },
+  { id: 6, label: 'Família, Infância e Desenvolvimento', emoji: '👨‍👩‍👧', color: 'from-orange-500 to-amber-600', light: 'text-orange-400', bg: 'bg-orange-500/10' },
+  { id: 7, label: 'Sofrimento e Sentido de Vida', emoji: '✨', color: 'from-cyan-500 to-sky-700', light: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  { id: 8, label: 'Prática Clínica Avançada', emoji: '⚡', color: 'from-fuchsia-500 to-pink-700', light: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10' },
+  { id: 9, label: 'TCC e Abordagens Integrativas', emoji: '🔬', color: 'from-lime-500 to-green-700', light: 'text-lime-400', bg: 'bg-lime-500/10' },
+  { id: 10, label: 'Identidade e Formação Profissional', emoji: '🎓', color: 'from-amber-500 to-yellow-700', light: 'text-amber-400', bg: 'bg-amber-500/10' },
 ];
 
 // Play a little trumpet / celebration sound via Web Audio API
@@ -62,7 +62,7 @@ export default function ModuleCompletionCelebration({ module: mod, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/70 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -72,21 +72,21 @@ export default function ModuleCompletionCelebration({ module: mod, onClose }) {
         {/* Gradient bg */}
         <div className={`bg-gradient-to-br ${theme.color} p-8 text-center`}>
           <div className="text-7xl mb-4">{theme.emoji}</div>
-          <div className="text-primary-foreground/80 text-xs font-bold uppercase tracking-widest mb-1">Módulo {mod?.index + 1} Concluído!</div>
-          <h2 className="text-primary-foreground text-xl font-black leading-tight mb-2">{theme.label}</h2>
-          <p className="text-primary-foreground/70 text-sm leading-relaxed">
+          <div className="text-white/80 text-xs font-bold uppercase tracking-widest mb-1">Módulo {mod?.index + 1} Concluído!</div>
+          <h2 className="text-white text-xl font-black leading-tight mb-2">{theme.label}</h2>
+          <p className="text-white/70 text-sm leading-relaxed">
             Parabéns! Você completou todas as 5 aulas deste módulo. Continue assim! 🚀
           </p>
 
           <div className="mt-6 flex items-center justify-center gap-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-3 h-3 rounded-full bg-card shadow-lg" />
+              <div key={i} className="w-3 h-3 rounded-full bg-white shadow-lg" />
             ))}
           </div>
 
           <button
             onClick={onClose}
-            className="mt-6 w-full bg-card/20 hover:bg-card/30 border border-border/30 text-primary-foreground font-bold py-3 rounded-2xl transition-all text-sm"
+            className="mt-6 w-full bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold py-3 rounded-2xl transition-all text-sm"
           >
             Continuar aprendendo ✨
           </button>

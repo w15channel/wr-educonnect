@@ -35,8 +35,8 @@ export default function LessonCommentsPanel() {
     return (
       <div className="bg-card rounded-2xl border border-border p-5">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-            <MessageSquare size={16} className="text-primary" />
+          <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+            <MessageSquare size={16} className="text-blue-600" />
           </div>
           <h3 className="font-bold text-sm text-foreground">Resumos e Comentários das Aulas</h3>
         </div>

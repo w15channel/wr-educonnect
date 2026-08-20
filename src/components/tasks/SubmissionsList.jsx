@@ -60,7 +60,7 @@ function SubmissionRow({ sub, task }) {
           <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(sub.created_date), 'dd/MM/yyyy HH:mm')}</p>
         </div>
         {isGraded && (
-          <Badge className="bg-accent text-primary gap-1 shrink-0">
+          <Badge className="bg-green-100 text-green-700 gap-1 shrink-0">
             <CheckCircle size={12} /> Corrigido · {formatScore(sub.grade)} pts
           </Badge>
         )}

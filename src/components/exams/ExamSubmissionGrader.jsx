@@ -115,7 +115,7 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
           )}
         </div>
         {submission.tab_switch_detected && (
-          <div className="mt-3 flex items-center gap-2 text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-2.5">
+          <div className="mt-3 flex items-center gap-2 text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl p-2.5">
             <XCircle size={14} className="shrink-0" />
             <p className="text-xs font-bold">Saída de tela detectada durante a prova</p>
           </div>
@@ -123,29 +123,29 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
       </div>
 
       {/* Score Summary */}
-      <div className="bg-gradient-to-r from-accent/10 to-accent/10 border border-primary/20 rounded-2xl p-5 mb-5">
+      <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl p-5 mb-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-black text-primary flex items-center gap-2">
+          <h3 className="text-sm font-black text-emerald-700 flex items-center gap-2">
             <Award size={16} /> Resumo da Correção
           </h3>
           <div className="text-right">
-            <p className="text-xs text-primary font-bold">Nota Parcial</p>
-            <p className="font-mono font-black text-3xl text-primary">{formatScore(totalGrade)} / {formatScore(50)}</p>
+            <p className="text-xs text-emerald-600 font-bold">Nota Parcial</p>
+            <p className="font-mono font-black text-3xl text-emerald-700">{formatScore(totalGrade)} / {formatScore(50)}</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="bg-card/50 rounded-xl p-3">
+          <div className="bg-white/50 rounded-xl p-3">
             <p className="text-muted-foreground mb-1">Questões Objetivas</p>
             <p className="font-bold text-foreground">
               {objectiveQuestions.length} questões · 
-              <span className="text-primary ml-1">{formatScore(objectiveScore)} pts</span>
+              <span className="text-emerald-600 ml-1">{formatScore(objectiveScore)} pts</span>
             </p>
           </div>
-          <div className="bg-card/50 rounded-xl p-3">
+          <div className="bg-white/50 rounded-xl p-3">
             <p className="text-muted-foreground mb-1">Questões Discursivas</p>
             <p className="font-bold text-foreground">
               {discursiveCount} questões · 
-              <span className="text-primary ml-1">
+              <span className="text-blue-600 ml-1">
                 {approvedDiscursive}/{discursiveCount} aprovadas ({formatScore(discursiveScore)} pts)
               </span>
             </p>
@@ -170,15 +170,15 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold text-muted-foreground">Questão {qi + 1}</span>
                     {isText ? (
-                      <span className="text-[9px] font-bold bg-accent text-primary px-1.5 py-0.5 rounded-full">Discursiva</span>
+                      <span className="text-[9px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">Discursiva</span>
                     ) : (
-                      <span className="text-[9px] font-bold bg-accent text-primary px-1.5 py-0.5 rounded-full">Objetiva</span>
+                      <span className="text-[9px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">Objetiva</span>
                     )}
                   </div>
                   <p className="font-semibold text-foreground text-sm">{q.question}</p>
                 </div>
                 {!isText && (
-                  <span className={`text-[10px] px-2 py-1 rounded-full font-bold shrink-0 ml-3 ${isCorrect ? 'bg-accent text-primary' : 'bg-destructive text-destructive'}`}>
+                  <span className={`text-[10px] px-2 py-1 rounded-full font-bold shrink-0 ml-3 ${isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {isCorrect ? '✓ Automática' : '✗ Automática'}
                   </span>
                 )}
@@ -186,13 +186,13 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
                   <div className="flex items-center gap-1.5 shrink-0 ml-3">
                     <button
                       onClick={() => toggleDiscursive(qi, true)}
-                      className={`p-1.5 rounded-lg transition-all ${discursiveApproved === true ? 'bg-accent text-primary-foreground' : 'bg-secondary hover:bg-accent/20 text-muted-foreground'}`}
+                      className={`p-1.5 rounded-lg transition-all ${discursiveApproved === true ? 'bg-green-500 text-white' : 'bg-secondary hover:bg-green-500/20 text-muted-foreground'}`}
                     >
                       <CheckCircle size={14} />
                     </button>
                     <button
                       onClick={() => toggleDiscursive(qi, false)}
-                      className={`p-1.5 rounded-lg transition-all ${discursiveApproved === false ? 'bg-destructive text-primary-foreground' : 'bg-secondary hover:bg-destructive/20 text-muted-foreground'}`}
+                      className={`p-1.5 rounded-lg transition-all ${discursiveApproved === false ? 'bg-red-500 text-white' : 'bg-secondary hover:bg-red-500/20 text-muted-foreground'}`}
                     >
                       <XCircle size={14} />
                     </button>
@@ -210,10 +210,10 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
                         <p className="text-sm text-foreground whitespace-pre-wrap">{studentAnswer || <span className="italic text-muted-foreground">Não respondida</span>}</p>
                       </div>
                       {q.options && (
-                        <div className="bg-accent/10 border border-primary/20 rounded-xl p-3">
-                          <p className="text-xs font-bold text-primary mb-2">Gabarito sugerido:</p>
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                          <p className="text-xs font-bold text-emerald-600 mb-2">Gabarito sugerido:</p>
                           {q.options.map((opt, oi) => (
-                            <div key={oi} className="text-xs text-primary mb-1">{String.fromCharCode(65 + oi)}) {opt}</div>
+                            <div key={oi} className="text-xs text-emerald-700 mb-1">{String.fromCharCode(65 + oi)}) {opt}</div>
                           ))}
                         </div>
                       )}
@@ -221,11 +221,11 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
                   ) : (
                     <div className="space-y-1.5">
                       {q.options?.map((opt, oi) => (
-                        <div key={oi} className={`flex items-center gap-2 p-2 rounded-lg text-xs ${oi === q.correct_index ? 'bg-accent/10 border border-primary/30' : oi === Number(studentAnswer) ? 'bg-accent/10 border border-primary/30' : 'bg-secondary/30'}`}>
+                        <div key={oi} className={`flex items-center gap-2 p-2 rounded-lg text-xs ${oi === q.correct_index ? 'bg-emerald-500/10 border border-emerald-500/30' : oi === Number(studentAnswer) ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-secondary/30'}`}>
                           <span className="font-bold">{String.fromCharCode(65 + oi)})</span>
                           <span className="flex-1">{opt}</span>
-                          {oi === q.correct_index && <CheckCircle size={12} className="text-primary" />}
-                          {oi === Number(studentAnswer) && oi !== q.correct_index && <XCircle size={12} className="text-destructive" />}
+                          {oi === q.correct_index && <CheckCircle size={12} className="text-emerald-500" />}
+                          {oi === Number(studentAnswer) && oi !== q.correct_index && <XCircle size={12} className="text-red-500" />}
                         </div>
                       ))}
                     </div>
@@ -261,7 +261,7 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
         <Button 
           onClick={() => saveMutation.mutate()} 
           disabled={saveMutation.isPending} 
-          className="flex-1 gap-2 h-12 font-black bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-primary text-primary-foreground shadow-lg"
+          className="flex-1 gap-2 h-12 font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
         >
           <CheckCircle size={18} /> 
           {saveMutation.isPending ? 'Salvando...' : `Salvar Correção (${formatScore(totalGrade)}/${50} pts)`}

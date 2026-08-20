@@ -45,9 +45,9 @@ export default function NotificationsBell({ session }) {
         onClick={() => { setOpen(v => !v); }}
         className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-secondary transition-colors"
       >
-        <Bell size={18} className={unread.length > 0 ? 'text-primary' : 'text-muted-foreground'} />
+        <Bell size={18} className={unread.length > 0 ? 'text-orange-500' : 'text-muted-foreground'} />
         {unread.length > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 bg-accent text-primary-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+          <span className="absolute -top-0.5 -right-0.5 bg-orange-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
             {unread.length > 9 ? '9+' : unread.length}
           </span>
         )}
@@ -59,10 +59,10 @@ export default function NotificationsBell({ session }) {
           <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-14 sm:top-11 z-50 sm:w-80 max-w-[calc(100vw-1rem)] bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-fade-in">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <Bell size={15} className="text-primary" />
+                <Bell size={15} className="text-orange-500" />
                 <span className="font-bold text-sm text-foreground">Entregas dos Alunos</span>
                 {unread.length > 0 && (
-                  <span className="bg-accent text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">{unread.length} nova{unread.length > 1 ? 's' : ''}</span>
+                  <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{unread.length} nova{unread.length > 1 ? 's' : ''}</span>
                 )}
               </div>
               {unread.length > 0 && (
@@ -86,16 +86,16 @@ export default function NotificationsBell({ session }) {
                   <div
                     key={n.id}
                     onClick={() => { navigate(`${prefix}/scorecontrol`); setOpen(false); }}
-                    className={`flex gap-3 px-4 py-3 border-b border-border/50 cursor-pointer hover:bg-secondary/30 transition-colors ${!n.is_read ? 'bg-accent/50' : ''}`}
+                    className={`flex gap-3 px-4 py-3 border-b border-border/50 cursor-pointer hover:bg-secondary/30 transition-colors ${!n.is_read ? 'bg-orange-50/50' : ''}`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0 text-[11px] font-bold text-primary">
+                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0 text-[11px] font-bold text-orange-700">
                       {(n.sender_name || 'A').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-xs leading-snug ${!n.is_read ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{n.message}</p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">{format(new Date(n.created_date), 'dd/MM HH:mm')}</p>
                     </div>
-                    {!n.is_read && <span className="w-2 h-2 bg-accent rounded-full shrink-0 mt-1" />}
+                    {!n.is_read && <span className="w-2 h-2 bg-orange-500 rounded-full shrink-0 mt-1" />}
                   </div>
                 ))
               )}

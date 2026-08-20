@@ -295,7 +295,7 @@ export default function TerapeutaDaSemana() {
     const sz = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-12 h-12 text-base';
     return info.photo
       ? <img src={info.photo} alt={info.name} className={`${sz} rounded-full object-cover`} />
-      : <div className={`${sz} rounded-full flex items-center justify-center font-bold text-primary-foreground`} style={{ backgroundColor: info.color }}>{info.avatarEmoji || info.name?.charAt(0)?.toUpperCase()}</div>;
+      : <div className={`${sz} rounded-full flex items-center justify-center font-bold text-white`} style={{ backgroundColor: info.color }}>{info.avatarEmoji || info.name?.charAt(0)?.toUpperCase()}</div>;
   };
 
   return (
@@ -304,7 +304,7 @@ export default function TerapeutaDaSemana() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Heart size={22} className="text-primary" /> Terapeuta da Semana
+            <Heart size={22} className="text-pink-500" /> Terapeuta da Semana
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">Pareamento manual, definido pelo administrador</p>
         </div>
@@ -316,7 +316,7 @@ export default function TerapeutaDaSemana() {
             {currentPairings.length > 0 && !currentPairings.every(p => p.is_published) && (
               <Button
                 variant="default"
-                className="gap-2 bg-primary hover:bg-primary"
+                className="gap-2 bg-green-600 hover:bg-green-700"
                 onClick={() => publishPairingsMutation.mutate(currentPairings.filter(p => !p.is_published).map(p => p.id))}
                 disabled={publishPairingsMutation.isPending}
               >
@@ -329,7 +329,7 @@ export default function TerapeutaDaSemana() {
 
       {isTeacher && (
         <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
-          <div className="rounded-xl border border-primary bg-accent/5 p-3">
+          <div className="rounded-xl border border-violet-200 bg-violet-500/5 p-3">
             <label className="mb-1 block text-sm font-bold text-foreground">Módulo de destino da pontuação</label>
             <Select value={selectedModule} onValueChange={setSelectedModule}>
               <SelectTrigger className="max-w-xs"><SelectValue /></SelectTrigger>
@@ -347,7 +347,7 @@ export default function TerapeutaDaSemana() {
             <Badge variant="secondary">{activeDomainStudents.length} alunos</Badge>
           </div>
           {manualTherapist && (
-            <div className="bg-accent border border-primary rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm text-primary">
+            <div className="bg-pink-50 border border-pink-200 rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm text-pink-800">
               <UserCheck size={15} className="shrink-0" />
               <span>
                 <strong>{getStudentInfo(manualTherapist).name}</strong> será o(a) terapeuta. Clique em outro aluno para escolher o(a) paciente, ou clique novamente para cancelar.
@@ -365,10 +365,10 @@ export default function TerapeutaDaSemana() {
                   onClick={() => handleManualStudentClick(student)}
                   className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition-colors ${
                     isSelected
-                      ? 'bg-accent ring-2 ring-primary'
+                      ? 'bg-pink-100 ring-2 ring-pink-400'
                       : isPaired
                         ? 'bg-secondary/40 opacity-60 cursor-not-allowed'
-                        : 'bg-secondary/40 hover:bg-accent'
+                        : 'bg-secondary/40 hover:bg-pink-50'
                   }`}
                   title={isPaired ? 'Já em dupla nesta rodada' : isSelected ? 'Clique para cancelar a seleção' : manualTherapist ? 'Clique para definir como paciente' : 'Clique para definir como terapeuta'}
                 >
@@ -378,9 +378,9 @@ export default function TerapeutaDaSemana() {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {isSelected ? (
-                      <Badge className="text-[9px] bg-accent text-primary-foreground border-primary">Terapeuta selecionado</Badge>
+                      <Badge className="text-[9px] bg-pink-500 text-white border-pink-500">Terapeuta selecionado</Badge>
                     ) : isPaired ? (
-                      <Badge className="text-[9px] bg-accent text-primary border-primary">Em dupla</Badge>
+                      <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200">Em dupla</Badge>
                     ) : (
                       <Badge className="text-[9px] bg-secondary text-muted-foreground border-border">Disponível</Badge>
                     )}
@@ -397,10 +397,10 @@ export default function TerapeutaDaSemana() {
       {!isTeacher && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Sou terapeuta de... */}
-          <div className={`bg-card rounded-2xl border p-5 space-y-3 ${myTherapistPairing ? 'border-primary' : 'border-border'}`}>
+          <div className={`bg-card rounded-2xl border p-5 space-y-3 ${myTherapistPairing ? 'border-pink-200' : 'border-border'}`}>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-                <UserCheck size={16} className="text-primary" />
+              <div className="w-8 h-8 rounded-xl bg-pink-100 flex items-center justify-center">
+                <UserCheck size={16} className="text-pink-600" />
               </div>
               <div>
                 <p className="font-bold text-sm text-foreground">Você é Terapeuta de</p>
@@ -409,7 +409,7 @@ export default function TerapeutaDaSemana() {
             </div>
             {myTherapistPairing ? (
               <>
-                <div className="flex items-center gap-3 rounded-xl p-3 border border-primary bg-transparent backdrop-blur-sm">
+                <div className="flex items-center gap-3 rounded-xl p-3 border border-pink-200 bg-transparent backdrop-blur-sm">
                   <StudentAvatar email={myTherapistPairing.patient_email} />
                   <div>
                     <ClickableStudent email={myTherapistPairing.patient_email} className="font-bold text-sm">{getStudentInfo(myTherapistPairing.patient_email).name}</ClickableStudent>
@@ -417,7 +417,7 @@ export default function TerapeutaDaSemana() {
                   </div>
                 </div>
                 {myTherapistPairing.therapist_submitted ? (
-                  <Badge className="bg-accent text-primary border-primary gap-1"><CheckCircle2 size={11} /> Avaliação enviada</Badge>
+                  <Badge className="bg-green-100 text-green-700 border-green-200 gap-1"><CheckCircle2 size={11} /> Avaliação enviada</Badge>
                 ) : (
                   <Button size="sm" className="w-full gap-2" onClick={() => { setEvalDialog({ pairing: myTherapistPairing, role: 'therapist' }); setComment(''); setScore([7]); }}>
                     <ClipboardList size={14} /> Avaliar Paciente
@@ -430,10 +430,10 @@ export default function TerapeutaDaSemana() {
           </div>
 
           {/* Sou paciente de... */}
-          <div className={`bg-card rounded-2xl border p-5 space-y-3 ${myPatientPairing ? 'border-primary' : 'border-border'}`}>
+          <div className={`bg-card rounded-2xl border p-5 space-y-3 ${myPatientPairing ? 'border-blue-200' : 'border-border'}`}>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
-                <Heart size={16} className="text-primary" />
+              <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+                <Heart size={16} className="text-blue-600" />
               </div>
               <div>
                 <p className="font-bold text-sm text-foreground">Seu Terapeuta é</p>
@@ -442,7 +442,7 @@ export default function TerapeutaDaSemana() {
             </div>
             {myPatientPairing ? (
               <>
-                <div className="flex items-center gap-3 rounded-xl p-3 border border-primary bg-transparent backdrop-blur-sm">
+                <div className="flex items-center gap-3 rounded-xl p-3 border border-blue-200 bg-transparent backdrop-blur-sm">
                   <StudentAvatar email={myPatientPairing.therapist_email} />
                   <div>
                     <ClickableStudent email={myPatientPairing.therapist_email} className="font-bold text-sm">{getStudentInfo(myPatientPairing.therapist_email).name}</ClickableStudent>
@@ -450,7 +450,7 @@ export default function TerapeutaDaSemana() {
                   </div>
                 </div>
                 {myPatientPairing.patient_submitted ? (
-                  <Badge className="bg-accent text-primary border-primary gap-1"><CheckCircle2 size={11} /> Avaliação enviada</Badge>
+                  <Badge className="bg-green-100 text-green-700 border-green-200 gap-1"><CheckCircle2 size={11} /> Avaliação enviada</Badge>
                 ) : (
                   <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => { setEvalDialog({ pairing: myPatientPairing, role: 'patient' }); setComment(''); setScore([7]); }}>
                     <ClipboardList size={14} /> Avaliar Terapeuta
@@ -479,7 +479,7 @@ export default function TerapeutaDaSemana() {
               </div>
             )}
             {currentPairings.length > 0 && !currentPairings.every(p => p.is_published) && (
-              <div className="bg-accent border border-primary rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-primary">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-yellow-800">
                 <ArrowLeftRight size={15} className="shrink-0" />
                 <span>
                   <strong>Rascunho</strong> — Os alunos ainda não podem ver estes pareamentos.
@@ -534,9 +534,9 @@ export default function TerapeutaDaSemana() {
               <div key={p.id} className="flex items-center gap-3 p-3 bg-secondary/40 rounded-xl">
                 <StudentAvatar email={p.therapist_email} size="sm" />
                 <span className="text-xs font-semibold text-foreground truncate flex-1">{getStudentInfo(p.therapist_email).name}</span>
-                <span className="text-[10px] text-muted-foreground bg-accent text-primary px-2 py-0.5 rounded-full">terapeuta</span>
+                <span className="text-[10px] text-muted-foreground bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">terapeuta</span>
                 <span className="text-xs text-muted-foreground">→</span>
-                <span className="text-[10px] text-muted-foreground bg-accent text-primary px-2 py-0.5 rounded-full">paciente</span>
+                <span className="text-[10px] text-muted-foreground bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">paciente</span>
                 <span className="text-xs font-semibold text-foreground truncate flex-1 text-right">{getStudentInfo(p.patient_email).name}</span>
                 <StudentAvatar email={p.patient_email} size="sm" />
               </div>
@@ -603,42 +603,42 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, s
   const isSwapSelected = swapSelectedId === pairing.id;
   const isSwapPending = !!swapSelectedId && swapSelectedId !== pairing.id;
   return (
-    <div className={`bg-card rounded-2xl border p-4 space-y-3 transition-colors ${isSwapSelected ? 'border-primary ring-2 ring-primary' : isDraft ? 'border-dashed border-primary' : 'border-border'}`}>
+    <div className={`bg-card rounded-2xl border p-4 space-y-3 transition-colors ${isSwapSelected ? 'border-yellow-400 ring-2 ring-yellow-300' : isDraft ? 'border-dashed border-yellow-300' : 'border-border'}`}>
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-1">
           {therapist.photo
             ? <img src={therapist.photo} alt={therapist.name} className="w-9 h-9 rounded-full object-cover" />
-            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-primary-foreground text-sm" style={{ backgroundColor: therapist.color || '#ec4899' }}>{therapist.avatarEmoji || therapist.name?.charAt(0)}</div>
+            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: therapist.color || '#ec4899' }}>{therapist.avatarEmoji || therapist.name?.charAt(0)}</div>
           }
           <div>
             <p className="text-xs font-bold text-foreground">{therapist.name}</p>
-            <Badge className="text-[9px] bg-accent text-primary border-primary">Terapeuta</Badge>
+            <Badge className="text-[9px] bg-pink-100 text-pink-700 border-pink-200">Terapeuta</Badge>
           </div>
         </div>
         <span className="text-muted-foreground text-sm">⇄</span>
         <div className="flex items-center gap-2 flex-1">
           {patient.photo
             ? <img src={patient.photo} alt={patient.name} className="w-9 h-9 rounded-full object-cover" />
-            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-primary-foreground text-sm" style={{ backgroundColor: patient.color || '#3b82f6' }}>{patient.avatarEmoji || patient.name?.charAt(0)}</div>
+            : <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: patient.color || '#3b82f6' }}>{patient.avatarEmoji || patient.name?.charAt(0)}</div>
           }
           <div>
             <p className="text-xs font-bold text-foreground">{patient.name}</p>
-            <Badge className="text-[9px] bg-accent text-primary border-primary">Paciente</Badge>
+            <Badge className="text-[9px] bg-blue-100 text-blue-700 border-blue-200">Paciente</Badge>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {isDraft && onSwap && (
             <button
               onClick={onSwap}
-              className={`p-1.5 rounded-lg transition-colors text-xs font-semibold flex items-center gap-1 ${isSwapSelected ? 'bg-primary text-primary-foreground' : isSwapPending ? 'bg-accent text-primary hover:bg-accent' : 'text-muted-foreground hover:text-primary hover:bg-accent'}`}
+              className={`p-1.5 rounded-lg transition-colors text-xs font-semibold flex items-center gap-1 ${isSwapSelected ? 'bg-yellow-400 text-white' : isSwapPending ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'text-muted-foreground hover:text-yellow-700 hover:bg-yellow-50'}`}
               title={isSwapSelected ? 'Cancelar seleção' : isSwapPending ? 'Trocar paciente com este par' : 'Selecionar para trocar paciente'}
             >
               <ArrowLeftRight size={13} />
               {isSwapSelected ? 'Selecionado' : isSwapPending ? 'Trocar aqui' : 'Trocar'}
             </button>
           )}
-          {pairing.therapist_submitted ? <CheckCircle2 size={13} className="text-primary" /> : <div className="w-3 h-3 rounded-full bg-primary" />}
-          {pairing.patient_submitted ? <CheckCircle2 size={13} className="text-primary" /> : <div className="w-3 h-3 rounded-full bg-primary" />}
+          {pairing.therapist_submitted ? <CheckCircle2 size={13} className="text-green-500" /> : <div className="w-3 h-3 rounded-full bg-orange-300" />}
+          {pairing.patient_submitted ? <CheckCircle2 size={13} className="text-green-500" /> : <div className="w-3 h-3 rounded-full bg-orange-300" />}
           {onDelete && (
             <button onClick={onDelete} className="ml-1 p-1.5 text-muted-foreground hover:text-destructive rounded-lg transition-colors" title="Excluir pareamento">
               <Trash2 size={13} />
@@ -650,21 +650,21 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, s
       {showScores && (pairing.therapist_submitted || pairing.patient_submitted) && (
         <div className="border-t border-border pt-3 space-y-2">
           {pairing.therapist_submitted && (
-            <div className="border border-primary rounded-xl p-3 bg-transparent">
-              <p className="text-xs font-bold text-primary mb-1">Avaliação do Terapeuta → Paciente</p>
+            <div className="border border-pink-200 rounded-xl p-3 bg-transparent">
+              <p className="text-xs font-bold text-pink-600 mb-1">Avaliação do Terapeuta → Paciente</p>
               <p className="text-xs text-foreground">{pairing.therapist_comment}</p>
               <div className="flex items-center gap-1 mt-1.5">
-                <Star size={11} className="text-primary fill-yellow-400" />
+                <Star size={11} className="text-yellow-400 fill-yellow-400" />
                 <span className="text-xs font-bold">{formatScore(pairing.therapist_score)}/10,000</span>
               </div>
             </div>
           )}
           {pairing.patient_submitted && (
-            <div className="border border-primary rounded-xl p-3 bg-transparent">
-              <p className="text-xs font-bold text-primary mb-1">Avaliação do Paciente → Terapeuta</p>
+            <div className="border border-blue-200 rounded-xl p-3 bg-transparent">
+              <p className="text-xs font-bold text-blue-600 mb-1">Avaliação do Paciente → Terapeuta</p>
               <p className="text-xs text-foreground">{pairing.patient_comment}</p>
               <div className="flex items-center gap-1 mt-1.5">
-                <Star size={11} className="text-primary fill-yellow-400" />
+                <Star size={11} className="text-yellow-400 fill-yellow-400" />
                 <span className="text-xs font-bold">{formatScore(pairing.patient_score)}/10,000</span>
               </div>
             </div>

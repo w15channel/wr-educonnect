@@ -67,7 +67,7 @@ export default function StudentProfileCard({ email, onClose }) {
       onClick={onClose}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Card */}
       <div
@@ -80,7 +80,7 @@ export default function StudentProfileCard({ email, onClose }) {
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-foreground/50 transition-colors"
+          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/30 flex items-center justify-center text-white hover:bg-black/50 transition-colors"
         >
           <X size={13} />
         </button>
@@ -94,7 +94,7 @@ export default function StudentProfileCard({ email, onClose }) {
             </div>
           ) : (
             <div
-              className="w-20 h-20 rounded-full border-4 border-card shadow-lg flex items-center justify-center font-black text-2xl text-primary-foreground"
+              className="w-20 h-20 rounded-full border-4 border-card shadow-lg flex items-center justify-center font-black text-2xl text-white"
               style={{ backgroundColor: color }}
             >
               {avatarEmoji || initials}
@@ -103,7 +103,7 @@ export default function StudentProfileCard({ email, onClose }) {
 
           <h3 className="mt-3 font-bold text-foreground text-base text-center leading-tight">{publicName}</h3>
           {nickname && <p className="text-sm text-muted-foreground mt-0.5">"{nickname}"</p>}
-          <p className={`text-[11px] font-semibold mt-1 ${isOnline ? 'text-primary' : 'text-destructive'}`}>{isOnline ? '🟢' : '🔴'} {lastSeenText}</p>
+          <p className={`text-[11px] font-semibold mt-1 ${isOnline ? 'text-green-600' : 'text-red-500'}`}>{isOnline ? '🟢' : '🔴'} {lastSeenText}</p>
 
           {bio && (
             <p className="text-xs text-muted-foreground text-center mt-2 leading-relaxed whitespace-pre-wrap">{bio}</p>
@@ -129,7 +129,7 @@ export default function StudentProfileCard({ email, onClose }) {
               href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 flex items-center gap-2 text-xs text-primary font-semibold bg-accent border border-primary px-3 py-1.5 rounded-xl hover:bg-accent transition-colors"
+              className="mt-3 flex items-center gap-2 text-xs text-green-600 font-semibold bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl hover:bg-green-100 transition-colors"
             >
               <Phone size={12} /> {whatsapp}
             </a>

@@ -36,15 +36,15 @@ export default function MobileSplash() {
             <motion.div
               animate={{ boxShadow: ['0 0 0 rgba(29,184,158,0)', '0 0 45px rgba(29,184,158,0.35)', '0 0 0 rgba(29,184,158,0)'] }}
               transition={{ repeat: Infinity, duration: 1.6 }}
-              className="mb-6 flex h-24 w-24 items-center justify-center rounded-[2rem] border border-border/15 bg-card/8 backdrop-blur-xl"
+              className="mb-6 flex h-24 w-24 items-center justify-center rounded-[2rem] border border-white/15 bg-white/8 backdrop-blur-xl"
             >
               <img src={WR_PRIMARY_LOGO} alt="WR" className="h-20 w-20 object-contain" />
             </motion.div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#1db89e]/25 bg-[#1db89e]/10 px-4 py-1.5 text-xs font-bold text-[#8ff5e3]">
               <Sparkles size={13} /> Plataforma terapêutica
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-primary-foreground">{BRAND_SHORT_NAME}</h1>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-primary-foreground/55">
+            <h1 className="text-2xl font-black tracking-tight text-white">{BRAND_SHORT_NAME}</h1>
+            <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/55">
               Aprendizado, acolhimento e evolução em um só lugar.
             </p>
             <motion.div
@@ -53,8 +53,8 @@ export default function MobileSplash() {
               transition={{ duration: 1.8, ease: 'easeInOut' }}
               className="mt-7 h-1 rounded-full bg-gradient-to-r from-[#5b5ef4] to-[#1db89e]"
             />
-            <div className="mt-5 flex items-center gap-1.5 text-[11px] font-medium text-primary-foreground/30">
-              <Heart size={11} className="fill-pink-400 text-primary" /> preparando sua jornada
+            <div className="mt-5 flex items-center gap-1.5 text-[11px] font-medium text-white/30">
+              <Heart size={11} className="fill-pink-400 text-pink-400" /> preparando sua jornada
             </div>
           </motion.div>
         </motion.div>

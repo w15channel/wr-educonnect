@@ -71,7 +71,7 @@ export default function BottomNav({ onMenuOpen }) {
               <button
                 key="menu"
                 onClick={onMenuOpen}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] text-primary-foreground/40 hover:text-primary-foreground/70 transition-colors"
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] text-white/40 hover:text-white/70 transition-colors"
               >
                 <Icon size={20} />
                 <span className="text-[9px] font-semibold uppercase tracking-wide">{label}</span>
@@ -85,14 +85,14 @@ export default function BottomNav({ onMenuOpen }) {
               key={root}
               onClick={() => handleTabPress(root)}
               className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors relative ${
-                active ? 'text-primary-foreground' : 'text-primary-foreground/40 hover:text-primary-foreground/70'
+                active ? 'text-white' : 'text-white/40 hover:text-white/70'
               }`}
             >
               {active && (
                 <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-primary" />
               )}
               <Icon size={20} className={active ? 'text-primary' : ''} />
-              <span className={`text-[9px] font-semibold uppercase tracking-wide ${active ? 'text-primary-foreground' : ''}`}>
+              <span className={`text-[9px] font-semibold uppercase tracking-wide ${active ? 'text-white' : ''}`}>
                 {label}
               </span>
             </button>

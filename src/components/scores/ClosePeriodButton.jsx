@@ -69,18 +69,18 @@ export default function ClosePeriodButton({ course, nextModuleNumber = 1 }) {
       <Button
         size="sm"
         variant="outline"
-        className="text-xs gap-1.5 border-primary text-primary hover:bg-accent"
+        className="text-xs gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
         onClick={() => setOpen(true)}
       >
         <Lock size={13} /> Encerrar Período
       </Button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4" onClick={() => !loading && setOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !loading && setOpen(false)}>
           <div className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-border flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                <Lock size={18} className="text-primary" />
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <Lock size={18} className="text-amber-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-foreground">Encerrar Período</h3>
@@ -92,9 +92,9 @@ export default function ClosePeriodButton({ course, nextModuleNumber = 1 }) {
             </div>
 
             <div className="p-5 space-y-4">
-              <div className="bg-accent border border-primary rounded-xl p-3 flex gap-2.5">
-                <AlertTriangle size={16} className="text-primary shrink-0 mt-0.5" />
-                <p className="text-xs text-primary leading-relaxed">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2.5">
+                <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-relaxed">
                   A pontuação geral atual de cada aluno será <strong>congelada no Ranking por Período</strong>.
                   Em seguida, o <strong>ranking atual reinicia do zero</strong> para o novo período. As atividades já registradas
                   permanecem no histórico individual, mas não contam mais para o novo ranking.
@@ -136,7 +136,7 @@ export default function ClosePeriodButton({ course, nextModuleNumber = 1 }) {
                 <Button variant="outline" className="flex-1" onClick={() => setOpen(false)} disabled={loading}>
                   Cancelar
                 </Button>
-                <Button className="flex-1 bg-primary hover:bg-primary" onClick={handleClose} disabled={loading}>
+                <Button className="flex-1 bg-amber-600 hover:bg-amber-700" onClick={handleClose} disabled={loading}>
                   {loading ? 'Encerrando...' : 'Confirmar Encerramento'}
                 </Button>
               </div>
