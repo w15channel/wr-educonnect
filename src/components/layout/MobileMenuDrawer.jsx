@@ -176,7 +176,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed inset-y-0 right-0 z-[60] flex flex-col w-[82vw] max-w-[320px] bg-sidebar text-sidebar-foreground border-l border-sidebar-border"
+            className="sidebar-glass fixed inset-y-0 right-0 z-[60] flex flex-col w-[82vw] max-w-[320px] text-sidebar-foreground border-l"
             style={{
               paddingTop: 'env(safe-area-inset-top)',
               paddingBottom: 'env(safe-area-inset-bottom)',
@@ -195,7 +195,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
               </div>
               <button
                 onClick={onClose}
-                className="w-9 h-9 flex items-center justify-center border border-[#1e2540] rounded-full text-[#c8bfa8]/40 active:scale-90 transition-all"
+                className="w-9 h-9 flex items-center justify-center border border-sidebar-border rounded-full text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground active:scale-90 transition-all"
               >
                 <X size={16} />
               </button>
@@ -235,12 +235,12 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
               {/* Notificações admin */}
               {isAdmin && (
                 <div className="mt-4">
-                  <p className="text-[9px] font-light text-[#c8bfa8]/20 uppercase tracking-[0.3em] mb-1.5 px-2">Sistema</p>
+                  <p className="text-[9px] font-light text-sidebar-foreground/45 uppercase tracking-[0.3em] mb-1.5 px-2">Sistema</p>
                   <Link
                     to={scoped('/ring')}
                     onClick={handleNav}
                     className={`relative flex items-center gap-3 px-3 py-3.5 rounded-xl min-h-[52px] transition-colors ${
-                      isActive('/ring') ? 'bg-[#161c32] text-[#e8dfc8]' : 'text-[#c8bfa8]/45 active:bg-white/5'
+                      isActive('/ring') ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/65 active:bg-sidebar-accent/60'
                     }`}
                   >
                     <div className="relative shrink-0">
@@ -261,7 +261,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
             </nav>
 
             {/* Footer fixo — turma + usuário + logout */}
-            <div className="shrink-0 border-t border-[#151c30]">
+            <div className="shrink-0 border-t border-sidebar-border">
               {/* Turma (admin) */}
               {isAdmin && session?.course && (
                 <div className="flex items-center justify-between px-5 py-3 border-b border-[#151c30]">
@@ -289,8 +289,8 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-light text-[#e8dfc8]/80 truncate">{session?.name || 'Usuário'}</p>
-                    <p className="text-[9px] text-[#c8bfa8]/25 uppercase tracking-[0.15em] font-light">
+                    <p className="text-[13px] font-light text-sidebar-foreground/90 truncate">{session?.name || 'Usuário'}</p>
+                    <p className="text-[9px] text-sidebar-foreground/50 uppercase tracking-[0.15em] font-light">
                       {isAdmin ? 'Administrador' : 'Estudante'}
                     </p>
                   </div>
@@ -310,7 +310,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
                   <LogOut size={14} />
                   Sair da conta
                 </button>
-                <p className="text-center text-[8px] text-[#c8bfa8]/12 mt-3 font-light leading-snug">{BRAND_LEGAL_NAME}</p>
+                <p className="text-center text-[8px] text-sidebar-foreground/35 mt-3 font-light leading-snug">{BRAND_LEGAL_NAME}</p>
               </div>
             </div>
           </motion.div>
