@@ -12,12 +12,22 @@ import {
   Minimize2,
   ExternalLink,
   Loader2,
+  Captions,
+  MonitorUp,
 } from 'lucide-react';
 import { getVideoSource } from '@/lib/videoEmbed';
 import { loadYouTubeApi, loadVimeoApi } from '@/lib/videoProviderApi';
 
 const SPEEDS = [1, 1.25, 1.5, 2, 2.5];
 const SKIP_SECONDS = 10;
+const DEFAULT_QUALITY = 'hd720';
+
+const YOUTUBE_QUALITY_LABELS = {
+  highres: '2160p', hd2160: '2160p', hd1440: '1440p', hd1080: '1080p',
+  hd720: '720p', large: '480p', medium: '360p', small: '240p', tiny: '144p', auto: 'Automática',
+};
+
+const qualityLabel = (value) => YOUTUBE_QUALITY_LABELS[value] || (/^\d+p$/.test(value) ? value : value || 'Automática');
 
 const formatTime = (seconds) => {
   const total = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -43,10 +53,8 @@ const isNativeFullscreen = () =>
  *  - arquivos diretos (mp4/webm/…)  → elemento <video> nativo, sem controles do navegador
  *  - YouTube                        → IFrame Player API oficial (controls=0)
  *  - Vimeo                          → Player SDK oficial (controls=false)
- *  - demais embeds (Drive, Instagram, Facebook, TikTok…) → o provedor não
- *    permite controle externo por segurança do navegador, então mantemos o
- *    embed com os controles dele e ainda oferecemos "Girar tela" e o link
- *    original. A interface avisa o usuário nesse caso.
+ *  - demais embeds (Drive, Instagram, Facebook, TikTok…) → usamos os controles
+ *    nativos do próprio embed e mostramos apenas ações que realmente funcionam.
  */
 export default function VideoPlayer({
   url,
@@ -85,6 +93,10 @@ export default function VideoPlayer({
   const [nativeFullscreen, setNativeFullscreen] = useState(false);
   const [cssFullscreen, setCssFullscreen] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [qualities, setQualities] = useState([]);
+  const [quality, setQuality] = useState('');
+  const [captionTracks, setCaptionTracks] = useState([]);
+  const [captionTrack, setCaptionTrack] = useState('off');
   const [isPortrait, setIsPortrait] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)').matches : false
   );
@@ -109,6 +121,10 @@ export default function VideoPlayer({
     setRate(1);
     setRateNotice('');
     setLoadError('');
+    setQualities([]);
+    setQuality('');
+    setCaptionTracks([]);
+    setCaptionTrack('off');
   }, [url, canControl]);
 
   // ── Motor: arquivo de vídeo nativo ──────────────────────────────────────────
@@ -126,7 +142,16 @@ export default function VideoPlayer({
       setRate: (value) => { el.playbackRate = value; return value; },
     };
 
-    const onLoaded = () => setDuration(el.duration || 0);
+    const onLoaded = () => {
+      setDuration(el.duration || 0);
+      const tracks = Array.from(el.textTracks || []);
+      tracks.forEach((track) => { track.mode = 'disabled'; });
+      setCaptionTracks(tracks.map((track, index) => ({
+        id: String(index), label: track.label || track.language || `Legenda ${index + 1}`,
+      })));
+      setQualities([{ id: 'original', label: 'Original' }]);
+      setQuality('original');
+    };
     const onTime = () => setCurrentTime(el.currentTime || 0);
     const onPlayEvent = () => { setPlaying(true); setStarted(true); onPlayRef.current?.(); };
     const onPauseEvent = () => { setPlaying(false); onPauseRef.current?.(); };
@@ -203,10 +228,35 @@ export default function VideoPlayer({
                   event.target.setPlaybackRate(value);
                   return event.target.getPlaybackRate?.() ?? value;
                 },
+                setQuality: (value) => event.target.setPlaybackQuality?.(value),
+                setCaption: (value) => {
+                  if (value === 'off') event.target.unloadModule?.('captions');
+                  else {
+                    event.target.loadModule?.('captions');
+                    event.target.setOption?.('captions', 'track', { languageCode: value });
+                  }
+                },
               };
               setDuration(event.target.getDuration?.() || 0);
               setVolume((event.target.getVolume?.() ?? 100) / 100);
               setMuted(Boolean(event.target.isMuted?.()));
+              // Carrega apenas os metadados das faixas e descarrega em seguida:
+              // assim a legenda sempre começa desligada, mesmo se o usuário a
+              // deixou ativa anteriormente no YouTube.
+              event.target.loadModule?.('captions');
+              window.setTimeout(() => {
+                if (cancelled) return;
+                const tracks = event.target.getOption?.('captions', 'tracklist') || [];
+                setCaptionTracks(tracks.map((track) => ({
+                  id: track.languageCode, label: track.displayName || track.name || track.languageCode,
+                })));
+                event.target.unloadModule?.('captions');
+              }, 0);
+              const available = event.target.getAvailableQualityLevels?.() || [];
+              setQualities(available.map((id) => ({ id, label: qualityLabel(id) })));
+              const initialQuality = available.includes(DEFAULT_QUALITY) ? DEFAULT_QUALITY : (available[0] || '');
+              if (initialQuality) event.target.setPlaybackQuality?.(initialQuality);
+              setQuality(initialQuality);
               setReady(true);
             },
             onStateChange: (event) => {
@@ -218,6 +268,16 @@ export default function VideoPlayer({
                 setStarted(true);
                 setDuration(event.target.getDuration?.() || 0);
                 onPlayRef.current?.();
+                const available = event.target.getAvailableQualityLevels?.() || [];
+                if (available.length) {
+                  setQualities(available.map((id) => ({ id, label: qualityLabel(id) })));
+                  setQuality((current) => {
+                    if (current) return current;
+                    const preferred = available.includes(DEFAULT_QUALITY) ? DEFAULT_QUALITY : available[0];
+                    event.target.setPlaybackQuality?.(preferred);
+                    return preferred;
+                  });
+                }
               } else if (event.data === states.PAUSED) {
                 onPauseRef.current?.();
               }
@@ -285,6 +345,10 @@ export default function VideoPlayer({
             });
             return value;
           },
+          setQuality: (value) => player.setQuality(value).catch(() => {}),
+          setCaption: (value) => value === 'off'
+            ? player.disableTextTrack().catch(() => {})
+            : player.enableTextTrack(value).catch(() => {}),
         };
 
         player.on('timeupdate', (data) => {
@@ -295,6 +359,17 @@ export default function VideoPlayer({
         player.on('loaded', () => {
           if (cancelled) return;
           player.getDuration().then((value) => setDuration(value || 0)).catch(() => {});
+          player.disableTextTrack().catch(() => {});
+          player.getTextTracks().then((tracks) => setCaptionTracks(tracks.map((track) => ({
+            id: track.language, label: track.label || track.language,
+          })))).catch(() => {});
+          player.getQualities().then((items) => {
+            const available = items.filter((item) => item.id !== 'auto');
+            setQualities(items.map((item) => ({ id: item.id, label: item.label || qualityLabel(item.id) })));
+            const preferred = available.find((item) => item.id === '720p')?.id || 'auto';
+            player.setQuality(preferred).catch(() => {});
+            setQuality(preferred);
+          }).catch(() => {});
           setReady(true);
         });
         player.on('play', () => { if (!cancelled) { setPlaying(true); setStarted(true); onPlayRef.current?.(); } });
@@ -395,6 +470,22 @@ export default function VideoPlayer({
       setRateNotice(`Este provedor aceita no máximo ${applied}x.`);
     }
   }, []);
+
+  const handleQuality = useCallback((value) => {
+    setQuality(value);
+    apiRef.current?.setQuality?.(value);
+  }, []);
+
+  const handleCaption = useCallback((value) => {
+    setCaptionTrack(value);
+    if (source.kind === 'file') {
+      Array.from(videoRef.current?.textTracks || []).forEach((track, index) => {
+        track.mode = value === String(index) ? 'showing' : 'disabled';
+      });
+      return;
+    }
+    apiRef.current?.setCaption?.(value);
+  }, [source.kind]);
 
   const enterFullscreen = useCallback(async () => {
     const element = containerRef.current;
@@ -533,8 +624,28 @@ export default function VideoPlayer({
         )}
       </div>
 
-      {/* Controles integrados — ocupam o espaço que antes exibia o resumo da aula */}
-      <div className="wr-video-controls bg-neutral-950 px-3 py-2.5 text-white">
+      {/* Embeds sem API (inclusive Drive) preservam os controles nativos. */}
+      {!canControl && source.kind !== 'unsupported' && (
+        <div className="wr-video-controls wr-video-controls--compact px-3 py-2.5 text-white">
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-xs font-medium text-white/75">
+              Controles do {source.provider || 'provedor'} disponíveis no próprio vídeo
+            </span>
+            {source.originalUrl && (
+              <a href={source.originalUrl} target="_blank" rel="noopener noreferrer" className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold">
+                <ExternalLink size={14} /> <span className="hidden sm:inline">Abrir original</span>
+              </a>
+            )}
+            <button type="button" onClick={toggleFullscreen} title={fullscreen ? 'Sair da tela cheia' : 'Girar tela (tela cheia)'} className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold">
+              {fullscreen ? <Minimize2 size={15} /> : <RotateCw size={15} />}
+              <span>{fullscreen ? 'Sair' : 'Girar tela'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Controles integrados para provedores com API pública de reprodução. */}
+      {canControl && <div className="wr-video-controls px-3 py-2.5 text-white">
         <div className="flex items-center gap-2">
           <span className="w-11 shrink-0 text-[11px] font-semibold tabular-nums text-white/70">
             {formatTime(displayTime)}
@@ -609,6 +720,25 @@ export default function VideoPlayer({
             ))}
           </div>
 
+          {qualities.length > 0 && (
+            <label className="wr-video-select-wrap" title="Qualidade do vídeo">
+              <MonitorUp size={15} aria-hidden="true" />
+              <span className="sr-only">Qualidade</span>
+              <select value={quality} onChange={(event) => handleQuality(event.target.value)} aria-label="Qualidade do vídeo" className="wr-video-select">
+                {qualities.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </select>
+            </label>
+          )}
+
+          <label className={`wr-video-select-wrap ${captionTrack !== 'off' ? 'wr-video-select-wrap--active' : ''}`} title="Legendas">
+            <Captions size={16} aria-hidden="true" />
+            <span className="sr-only">Legendas</span>
+            <select value={captionTrack} onChange={(event) => handleCaption(event.target.value)} aria-label="Legendas" className="wr-video-select">
+              <option value="off">Legendas: desligadas</option>
+              {captionTracks.map((track) => <option key={track.id} value={track.id}>{track.label}</option>)}
+            </select>
+          </label>
+
           <button
             type="button"
             onClick={toggleFullscreen}
@@ -622,17 +752,11 @@ export default function VideoPlayer({
 
         {rateNotice && <p className="mt-1.5 text-[11px] text-amber-300">{rateNotice}</p>}
 
-        {!canControl && source.kind !== 'unsupported' && (
-          <p className="mt-1.5 text-[11px] text-white/50">
-            Este vídeo é servido por {source.provider || 'um site externo'}, que não libera controle remoto de
-            reprodução. Use os controles exibidos sobre o vídeo — o botão Girar tela continua disponível.
-          </p>
-        )}
-      </div>
+      </div>}
 
       {/* Pergunta de qualidade + link original */}
       {!fullscreen && (
-        <div className="wr-video-quality border-t border-border bg-card px-4 py-3">
+        <div className="wr-video-quality px-4 py-3">
           <p className="text-xs leading-relaxed text-muted-foreground">
             A visualização da aula está em boa qualidade? Se preferir, você pode abrir esse vídeo externamente
             no site de origem, basta clicar nesse link:{' '}
