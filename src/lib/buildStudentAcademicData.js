@@ -67,6 +67,7 @@ export function buildStudentAcademicData({
       hours: HOURS_MAP.lesson,
       status: si ? 'Avaliado' : 'Pendente',
       notes: si?.notes || '',
+      module: Number(l.module_number) || null,
     });
   });
 
@@ -85,6 +86,7 @@ export function buildStudentAcademicData({
       hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task,
       status: si ? 'Avaliado' : 'Pendente',
       notes: si?.notes || '',
+      module: Number(t.module_number) || null,
     });
   });
 
@@ -103,6 +105,7 @@ export function buildStudentAcademicData({
         hours: HOURS_MAP.exam,
         status: 'Avaliado',
         notes: sub.feedback || si?.notes || '',
+        module: Number(String(exam.module_ref || '').match(/\d+/)?.[0]) || null,
       });
     });
   }
