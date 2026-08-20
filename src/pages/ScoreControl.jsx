@@ -5,10 +5,8 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
-import ClosePeriodButton from '@/components/scores/ClosePeriodButton';
-import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap, Archive, Flame, Pencil, Check, X, Layers, Filter } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -108,7 +106,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       });
       const normalizedScore = roundScore(String(score).replace(',', '.'));
       const scoreRefId = category === 'exam' ? `exam:${ref_id}` : ref_id;
-      const data = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score: roundScore(max_score), verified: true, notes: itemNotes || '' };
+      const data = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score: roundScore(max_score), verified: true, notes: itemNotes || '', ...(selectedModule ? { module_number: selectedModule } : {}) };
       const result = existing ? await adminApi.update('ScoreItem', existing.id, data) : await adminApi.create('ScoreItem', data);
 
       if (category === 'exam') {
@@ -136,7 +134,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
         });
         const normalizedScore = roundScore(String(score).replace(',', '.'));
         const scoreRefId = category === 'exam' ? `exam:${ref_id}` : ref_id;
-        const updated = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score, verified: true, notes: itemNotes || '', id: existing?.id || `optimistic_${ref_id}` };
+        const updated = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score, verified: true, notes: itemNotes || '', ...(selectedModule ? { module_number: selectedModule } : {}), id: existing?.id || `optimistic_${ref_id}` };
         if (existing) return old.map((s) => s.id === existing.id ? updated : s);
         return [...old, updated];
       });
@@ -749,6 +747,7 @@ export default function ScoreControl() {
   // aconteceu dentro da janela de datas do período.
   const scoreItemInSelectedModule = (item) => {
     if (!activeModule) return true;
+    if (Number(item.module_number)) return Number(item.module_number) === activeModule;
     const refId = String(item.ref_id || '');
     const start = activeModuleWindow?.start || null;
     const end = activeModuleWindow?.end || null;
@@ -1095,7 +1094,6 @@ export default function ScoreControl() {
               {saveOrderMutation.isPending ? 'Salvando...' : 'Salvar sequência'}
             </Button>
           }
-          {isTeacher && <ClosePeriodButton course={activeCourse} nextModuleNumber={nextModuleNumber} />}
         </div>
       </div>
 
@@ -1329,17 +1327,6 @@ export default function ScoreControl() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="periods" className="bg-card border border-border rounded-2xl px-4 border-b-0">
-          <AccordionTrigger className="hover:no-underline py-3.5">
-            <div className="flex items-center gap-2.5">
-              <Archive size={16} className="text-amber-500" />
-              <span className="font-bold text-sm text-foreground">Ranking por Período</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <ModuleHistoryPanel course={activeCourse} filterEmail={isTeacher ? null : session?.email} />
-          </AccordionContent>
-        </AccordionItem>
       </Accordion>
     </div>);
 

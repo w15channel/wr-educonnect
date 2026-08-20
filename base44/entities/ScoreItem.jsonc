@@ -28,6 +28,12 @@
       "type": "string",
       "description": "Título do item de referência"
     },
+    "module_number": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Módulo acadêmico (1-10) usado na classificação e no histórico"
+    },
     "score": {
       "type": "number",
       "default": 0,
