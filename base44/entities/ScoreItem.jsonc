@@ -16,7 +16,8 @@
         "forum",
         "exam",
         "therapist",
-        "ofensiva"
+        "ofensiva",
+        "mentorship"
       ],
       "description": "Categoria do item pontuável"
     },

@@ -1,0 +1,16 @@
+{
+  "name": "MentorshipReflection",
+  "type": "object",
+  "properties": {
+    "mentorship_id": { "type": "string" },
+    "student_email": { "type": "string" },
+    "student_name": { "type": "string" },
+    "experience": { "type": "string", "description": "Relato da vivência do aluno" },
+    "insights": { "type": "string", "description": "Percepções e aprendizados da prática" },
+    "application": { "type": "string", "description": "Como o aluno pretende aplicar o aprendizado" },
+    "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+    "is_private": { "type": "boolean", "default": true }
+  },
+  "required": ["mentorship_id", "student_email"],
+  "rls": { "create": true, "read": true, "update": true, "delete": true }
+}
