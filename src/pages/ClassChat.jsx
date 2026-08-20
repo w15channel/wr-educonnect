@@ -47,7 +47,7 @@ function MessageItem({ msg, isMe, name, color, email, time }) {
 
   if (isAttention || isAction) {
     return (
-      <div className={`text-[12px] px-2 py-1 rounded border ${isAttention ? 'bg-yellow-50 border-yellow-200 text-yellow-800' : 'bg-[#eef6ff] border-[#c8d7f5] text-[#31558c]'}`} style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
+      <div className={`text-[12px] px-2 py-1 rounded border ${isAttention ? 'bg-accent border-primary text-primary' : 'bg-[#eef6ff] border-[#c8d7f5] text-[#31558c]'}`} style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
         <span className="text-[11px] opacity-70">[{time}] </span>
         <span className="font-bold">{isAttention ? '🔔 Atenção: ' : '⚡ Ação MSN: '}</span>{cleanContent}
       </div>
@@ -234,7 +234,7 @@ export default function ClassChat() {
   return (
     <div className="w-full max-w-screen-2xl mx-auto h-full min-h-0 p-2 sm:p-3 bg-[#b9cdf3] overflow-hidden">
       <div className="h-full rounded-md border border-[#3a5db6] shadow-[0_2px_0_#fff,inset_0_1px_0_rgba(255,255,255,.7)] bg-[#dfe9fb] overflow-hidden">
-        <div className="h-8 px-3 bg-gradient-to-r from-[#2f58b6] via-[#4e7de0] to-[#2f58b6] text-white flex items-center">
+        <div className="h-8 px-3 bg-gradient-to-r from-[#2f58b6] via-[#4e7de0] to-[#2f58b6] text-primary-foreground flex items-center">
           <img src={MSN_LOGO_URL} alt="MSN" className="w-5 h-5 object-contain mr-2" />
           <span className="font-bold text-xs tracking-wide">EDU Live Messenger - Conversa da Turma</span>
           <div className="ml-auto flex items-center gap-2"><Minus size={13}/><Square size={11}/><X size={13}/></div>
@@ -242,17 +242,17 @@ export default function ClassChat() {
 
         <div className="h-9 px-3 bg-[#eaf1ff] border-b border-[#abc0ea] flex items-center justify-between text-[11px]">
           <div className="flex gap-2">
-            <button onClick={() => setActiveTab('geral')} className={`px-3 py-1 rounded ${activeTab==='geral'?'bg-white border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Users size={12} className="inline mr-1"/>Chat geral</button>
-            <button onClick={() => setActiveTab('particular')} className={`px-3 py-1 rounded ${activeTab==='particular'?'bg-white border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Lock size={11} className="inline mr-1"/>Particular</button>
+            <button onClick={() => setActiveTab('geral')} className={`px-3 py-1 rounded ${activeTab==='geral'?'bg-card border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Users size={12} className="inline mr-1"/>Chat geral</button>
+            <button onClick={() => setActiveTab('particular')} className={`px-3 py-1 rounded ${activeTab==='particular'?'bg-card border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Lock size={11} className="inline mr-1"/>Particular</button>
           </div>
-          <button onClick={enableNotifications} className={`flex items-center gap-1 px-2 py-1 rounded border ${notificationsEnabled ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-[#abc0ea] text-[#5471b9]'}`} title="Ativar notificações neste aparelho">
+          <button onClick={enableNotifications} className={`flex items-center gap-1 px-2 py-1 rounded border ${notificationsEnabled ? 'bg-accent border-primary text-primary' : 'bg-card border-[#abc0ea] text-[#5471b9]'}`} title="Ativar notificações neste aparelho">
             <Bell size={11} /> {notificationsEnabled ? 'Notificações ativas' : 'Ativar notificações'}
           </button>
         </div>
 
         <div className="h-[calc(100%-68px)] flex flex-col lg:flex-row overflow-hidden">
           {activeTab === 'geral' && <>
-            <div className="w-full lg:w-[68%] h-[65%] lg:h-full border-b lg:border-b-0 lg:border-r border-[#abc0ea] flex flex-col bg-white min-h-0">
+            <div className="w-full lg:w-[68%] h-[65%] lg:h-full border-b lg:border-b-0 lg:border-r border-[#abc0ea] flex flex-col bg-card min-h-0">
               <div className="px-3 py-1 text-[11px] bg-[#f4f8ff] border-b border-[#dae5fa] text-[#5a6d9e]">Sala geral • {courseLabel} • mensagens públicas</div>
               <div className="flex-1 p-3 overflow-y-auto space-y-1">
                 {messages.length === 0 ? <p className="text-sm text-[#7182ac]">Ninguém falou ainda. Inicie com um “Oi :)”.</p> : messages.map((msg) => {
@@ -269,40 +269,40 @@ export default function ClassChat() {
               </div>}
 
               <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) sendMessage(text); }} className="border-t border-[#abc0ea] bg-[#edf3ff] p-2 flex items-center gap-2">
-                <button type="button" onClick={() => setShowPicker(v => !v)} className="p-2 border border-[#abc0ea] bg-white rounded hover:bg-[#f2f7ff]"><Smile size={16} className="text-[#3f62ba]"/></button>
-                <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite aqui e pressione Enter..." className="flex-1 h-9 px-3 text-sm border border-[#abc0ea] rounded bg-white focus:outline-none" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }} />
-                <button type="submit" className="h-9 px-4 rounded bg-[#4f7de0] text-white text-sm font-semibold disabled:opacity-50" disabled={!text.trim()}><Send size={14} className="inline mr-1"/>Enviar</button>
+                <button type="button" onClick={() => setShowPicker(v => !v)} className="p-2 border border-[#abc0ea] bg-card rounded hover:bg-[#f2f7ff]"><Smile size={16} className="text-[#3f62ba]"/></button>
+                <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite aqui e pressione Enter..." className="flex-1 h-9 px-3 text-sm border border-[#abc0ea] rounded bg-card focus:outline-none" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }} />
+                <button type="submit" className="h-9 px-4 rounded bg-[#4f7de0] text-primary-foreground text-sm font-semibold disabled:opacity-50" disabled={!text.trim()}><Send size={14} className="inline mr-1"/>Enviar</button>
               </form>
             </div>
 
             <div className="w-full lg:w-[32%] h-[35%] lg:h-full bg-[#f2f6ff] p-2 min-h-0">
               <div className="space-y-2 max-h-full overflow-y-auto">
                 <div>
-                  <div className="text-[11px] font-bold text-[#2f7d32] mb-1 border-b border-green-200 pb-1">🟢 Online ({onlineStudents.length})</div>
+                  <div className="text-[11px] font-bold text-[#2f7d32] mb-1 border-b border-primary pb-1">🟢 Online ({onlineStudents.length})</div>
                   {onlineStudents.slice(0, 60).map((c) => {
                     const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] truncate"><span className="text-green-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
+                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-card border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] truncate"><span className="text-primary">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
                   })}
                 </div>
                 <div>
-                  <div className="text-[11px] font-bold text-[#b42318] mb-1 border-b border-red-200 pb-1">🔴 Ausentes ({awayStudents.length})</div>
+                  <div className="text-[11px] font-bold text-[#b42318] mb-1 border-b border-destructive pb-1">🔴 Ausentes ({awayStudents.length})</div>
                   {awayStudents.slice(0, 60).map((c) => {
                     const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] truncate"><span className="text-red-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Visto por último: {formatLastSeen(c.last_seen_at)}</span></button>;
+                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-card border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] truncate"><span className="text-destructive">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Visto por último: {formatLastSeen(c.last_seen_at)}</span></button>;
                   })}
                 </div>
               </div>
             </div>
           </>}
 
-          {activeTab === 'particular' && <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-white">
+          {activeTab === 'particular' && <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-card">
             <p className="text-sm text-[#4f5f87] mb-3">Selecione um contato para abrir chat privado.</p>
-            <div className="relative mb-3"><Search size={14} className="absolute left-2.5 top-2.5 text-gray-400"/><input value={dmSearch} onChange={e => setDmSearch(e.target.value)} className="w-full h-9 pl-8 pr-3 border border-[#abc0ea] rounded" placeholder="Buscar contato..."/></div>
+            <div className="relative mb-3"><Search size={14} className="absolute left-2.5 top-2.5 text-muted-foreground"/><input value={dmSearch} onChange={e => setDmSearch(e.target.value)} className="w-full h-9 pl-8 pr-3 border border-[#abc0ea] rounded" placeholder="Buscar contato..."/></div>
             <div className="grid md:grid-cols-2 gap-2">
               {otherStudents.map((c) => {
                 const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
                 const online = isStudentOnline(c);
-                return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="border border-[#c8d7f5] rounded px-3 py-2 text-left hover:bg-[#f6f9ff] text-sm"><span className={online ? 'text-green-500' : 'text-red-500'}>●</span> 🔒 {name}<span className="block text-[10px] text-[#6f7ba8] ml-4">{online ? 'Online agora' : `Visto por último: ${formatLastSeen(c.last_seen_at)}`}</span></button>;
+                return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="border border-[#c8d7f5] rounded px-3 py-2 text-left hover:bg-[#f6f9ff] text-sm"><span className={online ? 'text-primary' : 'text-destructive'}>●</span> 🔒 {name}<span className="block text-[10px] text-[#6f7ba8] ml-4">{online ? 'Online agora' : `Visto por último: ${formatLastSeen(c.last_seen_at)}`}</span></button>;
               })}
             </div>
           </div>}

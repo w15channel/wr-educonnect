@@ -120,8 +120,8 @@ export default function DiplomaDashboard() {
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
-              <BookOpen size={16} className="text-purple-600" />
+            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
+              <BookOpen size={16} className="text-primary" />
             </div>
             <div>
               <h3 className="font-bold text-sm text-foreground">Progresso nas Aulas</h3>
@@ -142,25 +142,25 @@ export default function DiplomaDashboard() {
       <div className="grid grid-cols-3 gap-3">
         <button
           onClick={() => navigate(scoped('/lessons'))}
-          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-purple-300 transition-all text-center"
+          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-primary transition-all text-center"
         >
-          <BookOpen size={20} className="text-purple-500" />
+          <BookOpen size={20} className="text-primary" />
           <p className="text-xl font-black text-foreground">{unwatchedLessons.length}</p>
           <p className="text-[10px] text-muted-foreground">Aulas pendentes</p>
         </button>
         <button
           onClick={() => navigate(scoped('/tasks'))}
-          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-orange-300 transition-all text-center"
+          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-primary transition-all text-center"
         >
-          <FileText size={20} className="text-orange-500" />
+          <FileText size={20} className="text-primary" />
           <p className="text-xl font-black text-foreground">{pendingUploadTasks.length}</p>
           <p className="text-[10px] text-muted-foreground">Tarefas pendentes</p>
         </button>
         <button
           onClick={() => navigate(scoped('/tasks'))}
-          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-violet-300 transition-all text-center"
+          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-primary transition-all text-center"
         >
-          <GraduationCap size={20} className="text-violet-500" />
+          <GraduationCap size={20} className="text-primary" />
           <p className="text-xl font-black text-foreground">{pendingQuizzes.length}</p>
           <p className="text-[10px] text-muted-foreground">Provas pendentes</p>
         </button>
@@ -168,10 +168,10 @@ export default function DiplomaDashboard() {
 
       {/* Pendências */}
       {totalPending > 0 && (
-        <div className="bg-card rounded-xl border border-orange-200 p-5">
+        <div className="bg-card rounded-xl border border-primary p-5">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
-              <ClipboardList size={16} className="text-orange-600" />
+            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
+              <ClipboardList size={16} className="text-primary" />
             </div>
             <div>
               <h3 className="font-bold text-sm text-foreground">Minhas Pendências</h3>
@@ -182,20 +182,20 @@ export default function DiplomaDashboard() {
             {/* Aulas */}
             {visibleLessons.map(l => (
               <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
-                <Circle size={13} className="text-purple-400 shrink-0" />
-                <BookOpen size={13} className="text-purple-600 shrink-0" />
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-accent border border-primary hover:bg-accent transition-colors text-left">
+                <Circle size={13} className="text-primary shrink-0" />
+                <BookOpen size={13} className="text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-purple-700 truncate">
+                  <p className="text-xs font-bold text-primary truncate">
                     {extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}
                   </p>
-                  <p className="text-[10px] text-purple-500">Aula não assistida</p>
+                  <p className="text-[10px] text-primary">Aula não assistida</p>
                 </div>
-                <ArrowRight size={12} className="text-purple-400 shrink-0" />
+                <ArrowRight size={12} className="text-primary shrink-0" />
               </button>
             ))}
             {unwatchedLessons.length > visibleLessons.length && (
-              <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
+              <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-primary font-semibold py-1 hover:underline">
                 +{unwatchedLessons.length - visibleLessons.length} aulas no aguardo → Ver todas
               </button>
             )}
@@ -203,21 +203,21 @@ export default function DiplomaDashboard() {
             {/* Tarefas */}
             {visibleTasks.map(t => (
               <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
-                <ClipboardList size={13} className="text-orange-500 shrink-0" />
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-accent border border-primary hover:bg-accent transition-colors text-left">
+                <ClipboardList size={13} className="text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-orange-700 truncate">
+                  <p className="text-xs font-bold text-primary truncate">
                     {extractSequenceNumber(t) ? `Tarefa ${extractSequenceNumber(t)} · ` : ''}{t.title}
                   </p>
-                  <p className="text-[10px] text-orange-500">
+                  <p className="text-[10px] text-primary">
                     Tarefa pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
                   </p>
                 </div>
-                <ArrowRight size={12} className="text-orange-400 shrink-0" />
+                <ArrowRight size={12} className="text-primary shrink-0" />
               </button>
             ))}
             {pendingUploadTasks.length > visibleTasks.length && (
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
+              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-primary font-semibold py-1 hover:underline">
                 +{pendingUploadTasks.length - visibleTasks.length} tarefas no aguardo → Ver todas
               </button>
             )}
@@ -225,19 +225,19 @@ export default function DiplomaDashboard() {
             {/* Provas */}
             {pendingQuizzes.slice(0, 1).map(t => (
               <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
-                <GraduationCap size={13} className="text-violet-500 shrink-0" />
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-accent border border-primary hover:bg-accent transition-colors text-left">
+                <GraduationCap size={13} className="text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-violet-700 truncate">{t.title}</p>
-                  <p className="text-[10px] text-violet-500">
+                  <p className="text-xs font-bold text-primary truncate">{t.title}</p>
+                  <p className="text-[10px] text-primary">
                     Prova pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
                   </p>
                 </div>
-                <ArrowRight size={12} className="text-violet-400 shrink-0" />
+                <ArrowRight size={12} className="text-primary shrink-0" />
               </button>
             ))}
             {pendingQuizzes.length > 1 && (
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
+              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-primary font-semibold py-1 hover:underline">
                 +{pendingQuizzes.length - 1} provas no aguardo → Ver todas
               </button>
             )}
@@ -246,7 +246,7 @@ export default function DiplomaDashboard() {
       )}
 
       {totalPending === 0 && (
-        <div className="bg-card rounded-xl border border-green-200 p-8 text-center">
+        <div className="bg-card rounded-xl border border-primary p-8 text-center">
           <p className="text-3xl mb-2">🎉</p>
           <p className="font-bold text-foreground">Tudo em dia!</p>
           <p className="text-sm text-muted-foreground mt-1">Nenhuma pendência no momento. Continue assim!</p>

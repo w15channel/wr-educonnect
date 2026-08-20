@@ -249,32 +249,32 @@ export default function DashboardMobile() {
             label: isTeacher ? 'Para Corrigir' : 'Tarefas',
             value: pendingTasks,
             icon: FileText,
-            color: 'bg-orange-500/15',
-            iconColor: 'text-orange-400',
+            color: 'bg-accent/15',
+            iconColor: 'text-primary',
             path: isTeacher ? '/scorecontrol' : '/tasks',
           },
           {
             label: isTeacher ? 'Alunos' : 'Pontos',
             value: isTeacher ? studentCount : formatScore(totalPoints),
             icon: isTeacher ? Users : Star,
-            color: isTeacher ? 'bg-emerald-500/15' : 'bg-yellow-500/15',
-            iconColor: isTeacher ? 'text-emerald-400' : 'text-yellow-400',
+            color: isTeacher ? 'bg-accent/15' : 'bg-accent/15',
+            iconColor: isTeacher ? 'text-primary' : 'text-primary',
             path: isTeacher ? '/students' : '/dashboard',
           },
           {
             label: isTeacher ? 'Aulas' : 'Aulas Assistidas',
             value: isTeacher ? lessons.length : `${watchedCount}/${visibleLessons.length}`,
             icon: BookOpen,
-            color: 'bg-purple-500/15',
-            iconColor: 'text-purple-400',
+            color: 'bg-accent/15',
+            iconColor: 'text-primary',
             path: '/lessons',
           },
           {
             label: 'Meu Rank',
             value: myRank > 0 ? `#${myRank}` : '—',
             icon: Trophy,
-            color: 'bg-yellow-500/15',
-            iconColor: 'text-yellow-400',
+            color: 'bg-accent/15',
+            iconColor: 'text-primary',
             path: '/ranking',
             hideAdmin: true,
           },
@@ -303,8 +303,8 @@ export default function DashboardMobile() {
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-purple-500/15 flex items-center justify-center">
-                <TrendingUp size={15} className="text-purple-400" />
+              <div className="w-8 h-8 rounded-xl bg-accent/15 flex items-center justify-center">
+                <TrendingUp size={15} className="text-primary" />
               </div>
               <div>
                 <p className="text-[12px] font-light text-[#e8dfc8]/80">Progresso</p>
@@ -340,8 +340,8 @@ export default function DashboardMobile() {
         <div className="bg-[#0d1120] border border-[#1e2540] rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-yellow-500/15 flex items-center justify-center">
-                <Trophy size={15} className="text-yellow-400" />
+              <div className="w-8 h-8 rounded-xl bg-accent/15 flex items-center justify-center">
+                <Trophy size={15} className="text-primary" />
               </div>
               <p className="text-[12px] font-light text-[#e8dfc8]/80">Ranking</p>
             </div>
@@ -363,11 +363,11 @@ export default function DashboardMobile() {
                     ? <img src={r.photoUrl} alt={r.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
                     : r.avatarEmoji
                     ? <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ background: r.avatarColor }}>{r.avatarEmoji}</div>
-                    : <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-light text-white shrink-0" style={{ background: r.avatarColor }}>{getInitials(r.name)}</div>
+                    : <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-light text-primary-foreground shrink-0" style={{ background: r.avatarColor }}>{getInitials(r.name)}</div>
                   }
                   <span className={`flex-1 text-[12px] font-light truncate ${isMe ? 'text-[#d4b96a]' : 'text-[#e8dfc8]/70'}`}>{nameWithAvatar}</span>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                    <Star size={10} className="text-primary fill-yellow-400" />
                     <span className="text-[11px] font-light text-[#e8dfc8]/60">{formatScore(r.total)}</span>
                   </div>
                 </div>
@@ -384,21 +384,21 @@ export default function DashboardMobile() {
           <div className="space-y-2">
             <button onClick={() => navigate(scoped('/students'))} className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a0c18] active:scale-[0.98] transition-all">
               <div className="flex items-center gap-2.5">
-                <Users size={15} className="text-emerald-400" />
+                <Users size={15} className="text-primary" />
                 <span className="text-[12px] font-light text-[#e8dfc8]/70">Alunos ativos</span>
               </div>
               <span className="text-sm font-light text-[#d4b96a]">{studentCount}</span>
             </button>
             <button onClick={() => navigate(scoped('/scorecontrol'))} className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a0c18] active:scale-[0.98] transition-all">
               <div className="flex items-center gap-2.5">
-                <FileText size={15} className="text-orange-400" />
+                <FileText size={15} className="text-primary" />
                 <span className="text-[12px] font-light text-[#e8dfc8]/70">Entregas para corrigir</span>
               </div>
               <span className="text-sm font-light text-[#d4b96a]">{pendingTasks}</span>
             </button>
             <button onClick={() => navigate(scoped('/lessons'))} className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a0c18] active:scale-[0.98] transition-all">
               <div className="flex items-center gap-2.5">
-                <BookOpen size={15} className="text-purple-400" />
+                <BookOpen size={15} className="text-primary" />
                 <span className="text-[12px] font-light text-[#e8dfc8]/70">Total de aulas</span>
               </div>
               <span className="text-sm font-light text-[#d4b96a]">{lessons.length}</span>
@@ -409,17 +409,17 @@ export default function DashboardMobile() {
 
       {/* Pendências — acordeão mobile */}
       {!isTeacher && totalPending > 0 && (
-        <div className="bg-[#0d1120] border border-orange-500/20 rounded-2xl overflow-hidden">
+        <div className="bg-[#0d1120] border border-primary/20 rounded-2xl overflow-hidden">
           <button
             onClick={() => setPendingOpen(v => !v)}
-            className="w-full flex items-center gap-2.5 p-4 active:bg-white/4 transition-colors"
+            className="w-full flex items-center gap-2.5 p-4 active:bg-card/4 transition-colors"
           >
-            <div className="w-8 h-8 rounded-xl bg-orange-500/15 flex items-center justify-center shrink-0">
-              <ClipboardList size={15} className="text-orange-400" />
+            <div className="w-8 h-8 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
+              <ClipboardList size={15} className="text-primary" />
             </div>
             <div className="flex-1 text-left">
               <p className="text-[12px] font-light text-[#e8dfc8]/80">Minhas Pendências</p>
-              <p className="text-[10px] text-orange-400/70">{totalPending} {totalPending === 1 ? 'item' : 'itens'} aguardando</p>
+              <p className="text-[10px] text-primary/70">{totalPending} {totalPending === 1 ? 'item' : 'itens'} aguardando</p>
             </div>
             {pendingOpen ? <ChevronUp size={16} className="text-[#c8bfa8]/30 shrink-0" /> : <ChevronDown size={16} className="text-[#c8bfa8]/30 shrink-0" />}
           </button>
@@ -430,35 +430,35 @@ export default function DashboardMobile() {
                 const isTherapist = p.therapist_email === session?.email;
                 return (
                   <button key={p.id} onClick={() => navigate(scoped('/terapeuta'))}
-                    className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-pink-500/8 border border-pink-500/15 active:scale-[0.98] text-left transition-all">
-                    <Heart size={13} className="text-pink-400 shrink-0" />
-                    <span className="text-[11px] text-pink-300/80 flex-1 truncate">{isTherapist ? 'Atender' : 'Ser atendido por'}: {p.patient_name || p.therapist_name}</span>
-                    <ArrowRight size={12} className="text-pink-400/40 shrink-0" />
+                    className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-accent/8 border border-primary/15 active:scale-[0.98] text-left transition-all">
+                    <Heart size={13} className="text-primary shrink-0" />
+                    <span className="text-[11px] text-primary/80 flex-1 truncate">{isTherapist ? 'Atender' : 'Ser atendido por'}: {p.patient_name || p.therapist_name}</span>
+                    <ArrowRight size={12} className="text-primary/40 shrink-0" />
                   </button>
                 );
               })}
               {unwatchedLessons.slice(0, 1).map(l => (
                 <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
-                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-purple-500/8 border border-purple-500/15 active:scale-[0.98] text-left transition-all">
-                  <BookOpen size={13} className="text-purple-400 shrink-0" />
-                  <span className="text-[11px] text-purple-300/80 flex-1 truncate">{extractSeq(l) ? `Aula ${extractSeq(l)} · ` : ''}{l.title}</span>
-                  <ArrowRight size={12} className="text-purple-400/40 shrink-0" />
+                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-accent/8 border border-primary/15 active:scale-[0.98] text-left transition-all">
+                  <BookOpen size={13} className="text-primary shrink-0" />
+                  <span className="text-[11px] text-primary/80 flex-1 truncate">{extractSeq(l) ? `Aula ${extractSeq(l)} · ` : ''}{l.title}</span>
+                  <ArrowRight size={12} className="text-primary/40 shrink-0" />
                 </button>
               ))}
               {pendingTasksList.slice(0, 1).map(t => (
                 <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-orange-500/8 border border-orange-500/15 active:scale-[0.98] text-left transition-all">
-                  <ClipboardList size={13} className="text-orange-400 shrink-0" />
-                  <span className="text-[11px] text-orange-300/80 flex-1 truncate">{extractSeq(t) ? `Tarefa ${extractSeq(t)} · ` : ''}{t.title}</span>
-                  <ArrowRight size={12} className="text-orange-400/40 shrink-0" />
+                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-accent/8 border border-primary/15 active:scale-[0.98] text-left transition-all">
+                  <ClipboardList size={13} className="text-primary shrink-0" />
+                  <span className="text-[11px] text-primary/80 flex-1 truncate">{extractSeq(t) ? `Tarefa ${extractSeq(t)} · ` : ''}{t.title}</span>
+                  <ArrowRight size={12} className="text-primary/40 shrink-0" />
                 </button>
               ))}
               {pendingQuizzes.slice(0, 1).map(t => (
                 <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-violet-500/8 border border-violet-500/15 active:scale-[0.98] text-left transition-all">
-                  <GraduationCap size={13} className="text-violet-400 shrink-0" />
-                  <span className="text-[11px] text-violet-300/80 flex-1 truncate">{t.title}</span>
-                  <ArrowRight size={12} className="text-violet-400/40 shrink-0" />
+                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-accent/8 border border-primary/15 active:scale-[0.98] text-left transition-all">
+                  <GraduationCap size={13} className="text-primary shrink-0" />
+                  <span className="text-[11px] text-primary/80 flex-1 truncate">{t.title}</span>
+                  <ArrowRight size={12} className="text-primary/40 shrink-0" />
                 </button>
               ))}
               {totalPending > 5 && (
@@ -474,7 +474,7 @@ export default function DashboardMobile() {
         <div className="bg-[#0d1120] border border-[#1e2540] rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Bell size={14} className="text-yellow-400" />
+              <Bell size={14} className="text-primary" />
               <p className="text-[12px] font-light text-[#e8dfc8]/80">Avisos</p>
             </div>
             <button onClick={() => navigate(scoped('/announcements'))} className="text-[10px] text-[#d4b96a]/60 active:opacity-60">Ver todos</button>

@@ -85,7 +85,7 @@ function OfferCard({ course: c, onReserve }) {
   return (
     <div className="border flex flex-col overflow-hidden transition-all" style={{ borderColor: `${G}20` }}>
       {/* Vídeo animado */}
-      <div className="relative h-44 overflow-hidden bg-black">
+      <div className="relative h-44 overflow-hidden bg-foreground">
         <video
           src={c.video}
           className="absolute inset-0 w-full h-full object-cover brightness-75"
@@ -98,13 +98,13 @@ function OfferCard({ course: c, onReserve }) {
 
       {/* Conteúdo */}
       <div className="p-5 flex flex-col flex-1" style={{ background: BG3 }}>
-        <h3 className="font-light text-white text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
-        <p className="text-white/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
+        <h3 className="font-light text-primary-foreground text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
+        <p className="text-primary-foreground/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
 
         {/* Highlights */}
         <div className="space-y-1.5 mb-5 flex-1">
           {c.highlights.map((h, j) => (
-            <div key={j} className="flex items-center gap-2 text-xs text-white/35 font-light">
+            <div key={j} className="flex items-center gap-2 text-xs text-primary-foreground/35 font-light">
               <div className="w-1 h-1 shrink-0" style={{ background: `${G}80` }} />
               {h}
             </div>
@@ -113,12 +113,12 @@ function OfferCard({ course: c, onReserve }) {
 
         {/* Preços */}
         <div className="pt-4 border-t mb-4" style={{ borderColor: `${G}10` }}>
-          <p className="text-[10px] text-white/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta de reserva antecipada</p>
-          <p className="text-xs text-white/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
+          <p className="text-[10px] text-primary-foreground/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta de reserva antecipada</p>
+          <p className="text-xs text-primary-foreground/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
           <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>Primeira mensalidade com 50%:</p>
-          <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
-          <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
-          <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
+          <p className="text-2xl font-thin text-primary-foreground">{c.firstMonthPrice}</p>
+          <p className="text-[11px] text-primary-foreground/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
+          <p className="text-xl font-thin text-primary-foreground">{c.price} <span className="text-xs font-light text-primary-foreground/30">{c.period}</span></p>
           <SocialInitiativeNotice compact className="mt-4 rounded-none" />
         </div>
 
@@ -152,7 +152,7 @@ function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStu
       onMouseLeave={() => {}}
     >
       {/* Video area */}
-      <div className="relative h-44 overflow-hidden bg-black">
+      <div className="relative h-44 overflow-hidden bg-foreground">
         <video
           ref={videoRef}
           src={course.video}
@@ -172,8 +172,8 @@ function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStu
         {/* Lock */}
         {!isActive && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="border border-white/10 p-4" style={{ background: `${BG}90` }}>
-              <Lock size={22} className="text-white/30" />
+            <div className="border border-border/10 p-4" style={{ background: `${BG}90` }}>
+              <Lock size={22} className="text-primary-foreground/30" />
             </div>
           </div>
         )}
@@ -185,10 +185,10 @@ function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStu
           <div className="w-6 h-6 border flex items-center justify-center shrink-0" style={{ borderColor: `${G}25` }}>
             <Icon size={12} style={{ color: isActive ? G : 'rgba(255,255,255,0.3)' }} />
           </div>
-          <h3 className={`font-light text-sm uppercase tracking-[0.15em] ${isActive ? 'text-[#e8dfc8]' : 'text-white/35'}`}>{course.title}</h3>
+          <h3 className={`font-light text-sm uppercase tracking-[0.15em] ${isActive ? 'text-[#e8dfc8]' : 'text-primary-foreground/35'}`}>{course.title}</h3>
         </div>
         <p className="text-[10px] uppercase tracking-[0.2em] font-light mb-3" style={{ color: `${G}50` }}>{course.subtitle}</p>
-        <p className={`text-xs leading-relaxed flex-1 mb-5 font-light ${isActive ? 'text-white/45' : 'text-white/20'}`}>{course.desc}</p>
+        <p className={`text-xs leading-relaxed flex-1 mb-5 font-light ${isActive ? 'text-primary-foreground/45' : 'text-primary-foreground/20'}`}>{course.desc}</p>
 
         {isAdmin ? (
           <button
@@ -223,7 +223,7 @@ function CourseCard({ course, isActive, isAdmin, onAdminSelect, onReserve, onStu
             Acessar Plataforma <ChevronRight size={13} />
           </a>
         ) : (
-          <div className="w-full py-3 border border-[#1e2540] text-[11px] font-light uppercase tracking-[0.2em] text-white/20 flex items-center justify-center gap-2 cursor-default">
+          <div className="w-full py-3 border border-[#1e2540] text-[11px] font-light uppercase tracking-[0.2em] text-primary-foreground/20 flex items-center justify-center gap-2 cursor-default">
             <Lock size={11} /> Plataforma em breve
           </div>
         )}
@@ -317,16 +317,16 @@ export default function CourseLobby() {
             <img src={WR_PRIMARY_LOGO} alt={BRAND_LEGAL_NAME} className="w-6 h-6 object-contain" />
           </div>
           <div>
-            <p className="text-xs font-light uppercase tracking-[0.25em] text-white/70">{BRAND_SHORT_NAME}</p>
-            <p className="text-[9px] font-light text-white/25 uppercase tracking-[0.2em] hidden sm:block">Instituto de Desenvolvimento Humano</p>
+            <p className="text-xs font-light uppercase tracking-[0.25em] text-primary-foreground/70">{BRAND_SHORT_NAME}</p>
+            <p className="text-[9px] font-light text-primary-foreground/25 uppercase tracking-[0.2em] hidden sm:block">Instituto de Desenvolvimento Humano</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-light text-white/60 uppercase tracking-[0.15em]">{session?.name}</p>
-            <p className="text-[9px] text-white/25 uppercase tracking-[0.15em]">{isAdmin ? 'Administrador' : 'Aluno(a)'}</p>
+            <p className="text-xs font-light text-primary-foreground/60 uppercase tracking-[0.15em]">{session?.name}</p>
+            <p className="text-[9px] text-primary-foreground/25 uppercase tracking-[0.15em]">{isAdmin ? 'Administrador' : 'Aluno(a)'}</p>
           </div>
-          <button onClick={logout} className="border border-white/10 p-2 text-white/30 hover:text-white/60 hover:border-white/20 transition-all" title="Sair">
+          <button onClick={logout} className="border border-border/10 p-2 text-primary-foreground/30 hover:text-primary-foreground/60 hover:border-border/20 transition-all" title="Sair">
             <LogOut size={14} />
           </button>
         </div>
@@ -336,7 +336,7 @@ export default function CourseLobby() {
 
   if (isAdmin) {
     return (
-      <div className="app-shell-bg h-[100dvh] overflow-y-auto overflow-x-hidden scrollbar-invisible text-white" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="app-shell-bg h-[100dvh] overflow-y-auto overflow-x-hidden scrollbar-invisible text-primary-foreground" style={{ WebkitOverflowScrolling: 'touch' }}>
         <Header />
         <div className="internal-page-shell">
           <div className="text-center mb-14">
@@ -345,10 +345,10 @@ export default function CourseLobby() {
               <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Painel do Administrador</span>
               <div className="h-px w-8" style={{ background: `${G}50` }} />
             </div>
-            <h1 className="text-4xl lg:text-5xl font-thin text-white mb-3 tracking-[-0.01em]">
+            <h1 className="text-4xl lg:text-5xl font-thin text-primary-foreground mb-3 tracking-[-0.01em]">
               Escolha a <span className="font-light italic" style={{ color: G }}>Turma</span>
             </h1>
-            <p className="text-white/35 max-w-md mx-auto text-sm font-light">
+            <p className="text-primary-foreground/35 max-w-md mx-auto text-sm font-light">
               Selecione o curso que deseja gerenciar. Cada turma tem seu painel isolado.
             </p>
           </div>
@@ -376,7 +376,7 @@ export default function CourseLobby() {
   }
 
   return (
-    <div className="app-shell-bg relative h-[100dvh] text-white overflow-y-auto overflow-x-hidden scrollbar-invisible" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="app-shell-bg relative h-[100dvh] text-primary-foreground overflow-y-auto overflow-x-hidden scrollbar-invisible" style={{ WebkitOverflowScrolling: 'touch' }}>
       {/* Subtle cosmos gradient */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 20% 20%, rgba(212,185,106,0.04), transparent 45%), radial-gradient(circle at 80% 80%, rgba(212,185,106,0.03), transparent 50%)` }} />
@@ -392,10 +392,10 @@ export default function CourseLobby() {
             <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Área do Aluno</span>
             <div className="h-px w-8" style={{ background: `${G}50` }} />
           </div>
-          <h1 className="text-4xl lg:text-5xl font-thin text-white mb-3 tracking-[-0.01em]">
+          <h1 className="text-4xl lg:text-5xl font-thin text-primary-foreground mb-3 tracking-[-0.01em]">
             Olá, <span className="font-light italic" style={{ color: G }}>{session?.name?.split(' ')[0]}!</span>
           </h1>
-          <p className="text-white/35 max-w-md mx-auto text-sm font-light">
+          <p className="text-primary-foreground/35 max-w-md mx-auto text-sm font-light">
             Acesse sua formação em Terapia Comportamental.
           </p>
         </div>
@@ -429,21 +429,21 @@ export default function CourseLobby() {
           ))}
         </div>
 
-        <p className="text-center text-white/20 text-[10px] mt-6 mb-4 font-light uppercase tracking-[0.15em]">
-          Matriculado(a) em <span className="text-white/35">{COURSES.find(c => c.id === userCourse)?.title}</span> · Dúvidas? Fale com a coordenação.
+        <p className="text-center text-primary-foreground/20 text-[10px] mt-6 mb-4 font-light uppercase tracking-[0.15em]">
+          Matriculado(a) em <span className="text-primary-foreground/35">{COURSES.find(c => c.id === userCourse)?.title}</span> · Dúvidas? Fale com a coordenação.
         </p>
       </div>
 
       {/* Reserve Modal */}
       {reserveOpen && (
-        <div className="fixed inset-0 z-[120] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
+        <div className="fixed inset-0 z-[120] bg-foreground/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setReserveOpen(false)}>
           <div className="border w-full max-w-lg max-h-[88dvh] shadow-2xl overflow-hidden flex flex-col" style={{ background: BG3, borderColor: `${G}20` }} onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b flex items-start justify-between gap-4" style={{ borderColor: `${G}12` }}>
               <div>
-                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><MessageCircle size={14} style={{ color: G }} /> Reserva Antecipada</h3>
-                <p className="text-white/30 text-xs mt-1 font-light">{selectedCourse?.title} · atendimento guiado por IA</p>
+                <h3 className="text-primary-foreground/80 font-light text-sm uppercase tracking-[0.22em] flex items-center gap-2"><MessageCircle size={14} style={{ color: G }} /> Reserva Antecipada</h3>
+                <p className="text-primary-foreground/30 text-xs mt-1 font-light">{selectedCourse?.title} · atendimento guiado por IA</p>
               </div>
-              <button onClick={() => setReserveOpen(false)} className="text-white/25 hover:text-white/60 transition-colors"><X size={15} /></button>
+              <button onClick={() => setReserveOpen(false)} className="text-primary-foreground/25 hover:text-primary-foreground/60 transition-colors"><X size={15} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ background: BG }}>
               {leadMessages.map((message, index) => (
@@ -456,7 +456,7 @@ export default function CourseLobby() {
                   </div>
                 </div>
               ))}
-              {leadLoading && <p className="text-xs text-white/25 font-light">IA digitando...</p>}
+              {leadLoading && <p className="text-xs text-primary-foreground/25 font-light">IA digitando...</p>}
             </div>
             <div className="p-4 border-t space-y-3" style={{ borderColor: `${G}12`, background: BG3 }}>
               <div className="flex gap-2">

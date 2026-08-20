@@ -3,8 +3,8 @@ export const MOD10 = {
   id: 'mod10',
   title: 'Módulo 10 — Atendimentos Especializados',
   subtitle: 'Casais, Idosos e Adolescentes',
-  colorLight: 'text-cyan-400',
-  bgLight: 'bg-cyan-500/10',
+  colorLight: 'text-primary',
+  bgLight: 'bg-accent/10',
   lessons: [
     {
       id: 'mod10-a1',

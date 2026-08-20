@@ -29,65 +29,65 @@ const COURSE_LABELS = { tcc: '🧠 TC', psicanalise: '🪞 Psicanálise', sexolo
 
 const adminGroups = [
   { label: 'Classe', items: [
-    { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
-    { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
-    { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
-    { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
-    { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
+    { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-primary' },
+    { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-primary' },
+    { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-primary' },
+    { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-primary' },
+    { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-primary' },
   ]},
   { label: 'Geral', items: [
-    { icon: Trophy, label: 'Ranking Geral', path: '/ranking', color: 'text-yellow-400' },
+    { icon: Trophy, label: 'Ranking Geral', path: '/ranking', color: 'text-primary' },
   ]},
   { label: 'Comunidade', items: [
-    { icon: Hash, label: 'EDU Messenger', path: '/chat', color: 'text-blue-400' },
-    { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-green-400' },
-    { icon: Hash, label: 'Debates', path: '/debates', color: 'text-fuchsia-400' },
-    { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
-    { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
+    { icon: Hash, label: 'EDU Messenger', path: '/chat', color: 'text-primary' },
+    { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-primary' },
+    { icon: Hash, label: 'Debates', path: '/debates', color: 'text-primary' },
+    { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-primary' },
+    { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-primary' },
   ]},
   { label: 'Gestão', items: [
-    { icon: Users, label: 'Alunos', path: '/students', color: 'text-indigo-400' },
-    { icon: Key, label: 'Acessos', path: '/keys', color: 'text-emerald-400' },
-    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
-    { icon: Trophy, label: 'Pontuação', path: '/scorecontrol', color: 'text-yellow-400' },
-    { icon: GraduationCap, label: 'Histórico', path: '/historico', color: 'text-cyan-400' },
-    { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
+    { icon: Users, label: 'Alunos', path: '/students', color: 'text-primary' },
+    { icon: Key, label: 'Acessos', path: '/keys', color: 'text-primary' },
+    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-primary' },
+    { icon: Trophy, label: 'Pontuação', path: '/scorecontrol', color: 'text-primary' },
+    { icon: GraduationCap, label: 'Histórico', path: '/historico', color: 'text-primary' },
+    { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-primary' },
   ]},
   { label: 'Ferramentas', items: [
-    { icon: Brain, label: 'Tutor Digital', path: '/tutor', color: 'text-pink-400' },
-    { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
-    { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },
-    { icon: FileText, label: 'Gerar Certificado', path: '/gerar-certificado', color: 'text-amber-400' },
+    { icon: Brain, label: 'Tutor Digital', path: '/tutor', color: 'text-primary' },
+    { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-primary' },
+    { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-primary' },
+    { icon: FileText, label: 'Gerar Certificado', path: '/gerar-certificado', color: 'text-primary' },
   ]},
 ];
 
 const studentGroups = [
   { label: 'Classe', items: [
-    { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
-    { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
-    { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
-    { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
-    { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
+    { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-primary' },
+    { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-primary' },
+    { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-primary' },
+    { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-primary' },
+    { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-primary' },
   ]},
   { label: 'Comunidade', items: [
-    { icon: Hash, label: 'EDU Messenger', path: '/chat', color: 'text-blue-400' },
-    { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-green-400' },
-    { icon: Hash, label: 'Debates', path: '/debates', color: 'text-fuchsia-400' },
-    { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
-    { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-yellow-400' },
-    { icon: UsersRound, label: 'Classe', path: '/classe', color: 'text-sky-400' },
+    { icon: Hash, label: 'EDU Messenger', path: '/chat', color: 'text-primary' },
+    { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-primary' },
+    { icon: Hash, label: 'Debates', path: '/debates', color: 'text-primary' },
+    { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-primary' },
+    { icon: Crown, label: 'Monitores', path: '/monitores', color: 'text-primary' },
+    { icon: UsersRound, label: 'Classe', path: '/classe', color: 'text-primary' },
   ]},
   { label: 'Minha Área', items: [
-    { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
-    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
-    { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
-    { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
+    { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-primary' },
+    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-primary' },
+    { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-primary' },
+    { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-primary' },
   ]},
   { label: 'Ferramentas', items: [
-    { icon: Brain, label: 'Tutor Digital', path: '/tutor', color: 'text-pink-400' },
-    { icon: BookOpen, label: 'Best Seller', path: '/bestseller', color: 'text-emerald-400' },
-    { icon: GraduationCap, label: 'Histórico', path: '/historico', color: 'text-cyan-400' },
-    { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },
+    { icon: Brain, label: 'Tutor Digital', path: '/tutor', color: 'text-primary' },
+    { icon: BookOpen, label: 'Best Seller', path: '/bestseller', color: 'text-primary' },
+    { icon: GraduationCap, label: 'Histórico', path: '/historico', color: 'text-primary' },
+    { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-primary' },
   ]},
 ];
 
@@ -165,7 +165,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-foreground/70 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -240,20 +240,20 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
                     to={scoped('/ring')}
                     onClick={handleNav}
                     className={`relative flex items-center gap-3 px-3 py-3.5 rounded-xl min-h-[52px] transition-colors ${
-                      isActive('/ring') ? 'bg-[#161c32] text-[#e8dfc8]' : 'text-[#c8bfa8]/45 active:bg-white/5'
+                      isActive('/ring') ? 'bg-[#161c32] text-[#e8dfc8]' : 'text-[#c8bfa8]/45 active:bg-card/5'
                     }`}
                   >
                     <div className="relative shrink-0">
-                      <Bell size={18} className={unreadCount > 0 ? 'text-orange-400' : 'text-[#c8bfa8]/50'} />
+                      <Bell size={18} className={unreadCount > 0 ? 'text-primary' : 'text-[#c8bfa8]/50'} />
                       {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[8px] font-bold min-w-[14px] h-[14px] px-0.5 rounded-full flex items-center justify-center">
+                        <span className="absolute -top-1 -right-1 bg-accent text-primary-foreground text-[8px] font-bold min-w-[14px] h-[14px] px-0.5 rounded-full flex items-center justify-center">
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                       )}
                     </div>
                     <span className="text-[13px] font-light flex-1">Notificações</span>
                     {unreadCount > 0 && (
-                      <span className="text-[9px] font-light text-orange-400 shrink-0">{unreadCount} nova{unreadCount > 1 ? 's' : ''}</span>
+                      <span className="text-[9px] font-light text-primary shrink-0">{unreadCount} nova{unreadCount > 1 ? 's' : ''}</span>
                     )}
                   </Link>
                 </div>
@@ -282,7 +282,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
                     <img src={session.photoUrl} alt="Avatar" className="w-10 h-10 rounded-full object-cover ring-1 ring-[#d4b96a]/15 shrink-0" />
                   ) : (
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-light text-white ring-1 ring-[#d4b96a]/15 shrink-0"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-light text-primary-foreground ring-1 ring-[#d4b96a]/15 shrink-0"
                       style={{ backgroundColor: avatarBg }}
                     >
                       {initials}
@@ -305,7 +305,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
                 </button>
                 <button
                   onClick={() => { logout(); onClose(); }}
-                  className="w-full flex items-center justify-center gap-2 py-3 border border-red-500/15 rounded-xl text-red-400/60 text-[12px] font-light active:scale-[0.97] transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3 border border-destructive/15 rounded-xl text-destructive/60 text-[12px] font-light active:scale-[0.97] transition-all"
                 >
                   <LogOut size={14} />
                   Sair da conta

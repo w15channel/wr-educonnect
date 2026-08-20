@@ -208,7 +208,7 @@ export default function CodeManager({ course: lockedCourse }) {
                               if (e.key === 'Escape') setEditingEmailId(null);
                             }}
                           />
-                          <button onClick={() => updateEmailMutation.mutate({ id: c.id, email: editingEmailValue })} className="p-0.5 text-green-600 hover:text-green-700"><Check size={13} /></button>
+                          <button onClick={() => updateEmailMutation.mutate({ id: c.id, email: editingEmailValue })} className="p-0.5 text-primary hover:text-primary"><Check size={13} /></button>
                           <button onClick={() => setEditingEmailId(null)} className="p-0.5 text-muted-foreground hover:text-destructive"><X size={13} /></button>
                         </div>
                       ) : (
@@ -231,7 +231,7 @@ export default function CodeManager({ course: lockedCourse }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Badge className={c.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
+                  <Badge className={c.is_active ? 'bg-accent text-primary' : 'bg-muted text-muted-foreground'}>
                     {c.is_active ? 'Ativo' : 'Inativo'}
                   </Badge>
                   <button onClick={() => setEditingProfileCode(c)} title="Editar perfil do aluno" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
@@ -248,9 +248,9 @@ export default function CodeManager({ course: lockedCourse }) {
                     title={c.is_active ? 'Desativar' : 'Ativar'}
                     className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {c.is_active ? <ToggleRight size={18} className="text-green-600" /> : <ToggleLeft size={18} />}
+                    {c.is_active ? <ToggleRight size={18} className="text-primary" /> : <ToggleLeft size={18} />}
                   </button>
-                  <button onClick={() => { if (confirm(`Excluir "${c.student_name}" permanentemente? Todos os dados do aluno serão apagados.`)) deleteMutation.mutate(c); }} title="Excluir" disabled={deleteMutation.isPending} className="p-1.5 rounded-lg hover:bg-red-50 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button onClick={() => { if (confirm(`Excluir "${c.student_name}" permanentemente? Todos os dados do aluno serão apagados.`)) deleteMutation.mutate(c); }} title="Excluir" disabled={deleteMutation.isPending} className="p-1.5 rounded-lg hover:bg-destructive text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     <Trash2 size={15} className={deleteMutation.isPending ? 'animate-spin' : ''} />
                   </button>
                 </div>

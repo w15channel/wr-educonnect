@@ -3,8 +3,8 @@ export const MOD6 = {
   id: 'mod6',
   title: 'Módulo 6 — Vícios e Compulsões',
   subtitle: 'Clínica do Comportamento Repetido',
-  colorLight: 'text-orange-400',
-  bgLight: 'bg-orange-500/10',
+  colorLight: 'text-primary',
+  bgLight: 'bg-accent/10',
   lessons: [
     {
       id: 'mod6-a1',

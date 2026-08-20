@@ -61,43 +61,43 @@ const adminGroups = [
   {
     label: 'Classe',
     items: [
-      { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
-      { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
-      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-emerald-400' },
-      { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
-      { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
-      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
-      { icon: HandHeart,     label: 'Mentorias',               path: '/practice',          color: 'text-rose-400' },
+      { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-primary' },
+      { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-primary' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-primary' },
+      { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-primary' },
+      { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-primary' },
+      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-primary' },
+      { icon: HandHeart,     label: 'Mentorias',               path: '/practice',          color: 'text-primary' },
     ],
   },
   {
     label: 'Comunidade',
     items: [
-      { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
-      { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
-      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
-      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-pink-400' },
-      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
+      { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-primary' },
+      { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-primary' },
+      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-primary' },
+      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-primary' },
+      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-primary' },
     ],
   },
   {
     label: 'Gestão',
     items: [
-      { icon: Users,         label: 'Gestão de Alunos',       path: '/students',          color: 'text-indigo-400' },
-      { icon: Key,           label: 'Códigos de Acesso',      path: '/keys',              color: 'text-emerald-400' },
-      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
-      { icon: Trophy,        label: 'Controle de Pontuação',  path: '/scorecontrol',      color: 'text-yellow-400' },
-      { icon: ScrollText,    label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
-      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
+      { icon: Users,         label: 'Gestão de Alunos',       path: '/students',          color: 'text-primary' },
+      { icon: Key,           label: 'Códigos de Acesso',      path: '/keys',              color: 'text-primary' },
+      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-primary' },
+      { icon: Trophy,        label: 'Controle de Pontuação',  path: '/scorecontrol',      color: 'text-primary' },
+      { icon: ScrollText,    label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-primary' },
+      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-primary' },
     ],
   },
   {
     label: 'Ferramentas',
     items: [
-      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
-      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
-      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
-      { icon: Award,         label: 'Gerar Certificado',      path: '/gerar-certificado', color: 'text-amber-300' },
+      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-primary' },
+      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-primary' },
+      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-primary' },
+      { icon: Award,         label: 'Gerar Certificado',      path: '/gerar-certificado', color: 'text-primary' },
     ],
   },
 ];
@@ -106,45 +106,45 @@ const studentGroups = [
   {
     label: 'Classe',
     items: [
-      { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
-      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
-      { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
-      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
-      { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
-      { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
-      { icon: HandHeart,     label: 'Mentorias',               path: '/practice',          color: 'text-rose-400' },
+      { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-primary' },
+      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-primary' },
+      { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-primary' },
+      { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-primary' },
+      { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-primary' },
+      { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-primary' },
+      { icon: HandHeart,     label: 'Mentorias',               path: '/practice',          color: 'text-primary' },
     ],
   },
   {
     label: 'Comunidade',
     items: [
-      { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
-      { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
-      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
-      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-rose-400' },
-      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
-      { icon: Star,          label: 'Ranking Geral',          path: '/ranking',           color: 'text-yellow-300' },
-      { icon: Users,         label: 'Classe',                 path: '/classe',            color: 'text-sky-400' },
+      { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-primary' },
+      { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-primary' },
+      { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-primary' },
+      { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-primary' },
+      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-primary' },
+      { icon: Star,          label: 'Ranking Geral',          path: '/ranking',           color: 'text-primary' },
+      { icon: Users,         label: 'Classe',                 path: '/classe',            color: 'text-primary' },
     ],
   },
   {
     label: 'Minha Área',
     items: [
-      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
-      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
-      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
-      { icon: GraduationCap, label: 'Perfil de Estudos',      path: '/study-profile',     color: 'text-violet-400' },
-      { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-indigo-400' },
+      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-primary' },
+      { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-primary' },
+      { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-primary' },
+      { icon: GraduationCap, label: 'Perfil de Estudos',      path: '/study-profile',     color: 'text-primary' },
+      { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-primary' },
     ],
   },
   {
     label: 'Ferramentas',
     items: [
-      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-pink-400' },
-      { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-emerald-400' },
-      { icon: Trophy,        label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
-      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
-      { icon: Award,         label: 'Meu Certificado',        path: '/meu-certificado',   color: 'text-amber-400' },
+      { icon: Brain,         label: 'Tutor Digital EDU',      path: '/tutor',             color: 'text-primary' },
+      { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-primary' },
+      { icon: Trophy,        label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-primary' },
+      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-primary' },
+      { icon: Award,         label: 'Meu Certificado',        path: '/meu-certificado',   color: 'text-primary' },
     ],
   },
 ];
@@ -365,7 +365,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         <item.icon size={15} className={active ? 'text-sidebar-primary' : item.color} />
         <span className="font-medium text-[12.5px] flex-1 leading-tight">{item.label}</span>
         {badgeCount > 0 && (
-          <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black leading-none flex items-center justify-center shadow-[0_0_0_2px_rgba(10,10,20,0.95)] animate-pulse">
+          <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-destructive text-primary-foreground text-[9px] font-black leading-none flex items-center justify-center shadow-[0_0_0_2px_rgba(10,10,20,0.95)] animate-pulse">
             {capBadge(badgeCount)}
           </span>
         )}
@@ -392,16 +392,16 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
           }`}
         >
           <div className="relative">
-            <Bell size={15} className={unread > 0 ? 'text-orange-400' : ''} />
+            <Bell size={15} className={unread > 0 ? 'text-primary' : ''} />
             {unread > 0 && (
-              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold min-w-[14px] h-[14px] px-0.5 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-accent text-primary-foreground text-[9px] font-bold min-w-[14px] h-[14px] px-0.5 rounded-full flex items-center justify-center">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
           </div>
           <span className="font-medium text-[12.5px] flex-1">Notificações</span>
           {unread > 0 && !active && (
-            <span className="text-[10px] font-bold text-orange-300">{unread} nova{unread > 1 ? 's' : ''}</span>
+            <span className="text-[10px] font-bold text-primary">{unread} nova{unread > 1 ? 's' : ''}</span>
           )}
         </Link>
       </div>
@@ -411,7 +411,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   return (
     <>
       {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={handleClose} />
+        <div className="md:hidden fixed inset-0 bg-foreground/60 backdrop-blur-sm z-40" onClick={handleClose} />
       )}
 
       <aside className={`
@@ -436,7 +436,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               <p className="text-[9px] text-sidebar-foreground/55 -mt-0.5 leading-tight">Instituto de Desenvolvimento Humano</p>
             </div>
           </div>
-          <button onClick={handleClose} className="md:hidden text-white/40 hover:text-white p-1 rounded-lg transition-colors">
+          <button onClick={handleClose} className="md:hidden text-primary-foreground/40 hover:text-primary-foreground p-1 rounded-lg transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -484,12 +484,12 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
           <p className="px-2 pb-1.5 text-[8.5px] leading-snug text-sidebar-foreground/40">
             {BRAND_LEGAL_NAME}<br />CNPJ {BRAND_CNPJ}
           </p>
-          <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/6 transition-colors mb-0.5">
+          <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-card/6 transition-colors mb-0.5">
             {session?.photoUrl ? (
               <img src={session.photoUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
             ) : (
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] text-white ring-2 ring-white/20 shrink-0"
+                className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] text-primary-foreground ring-2 ring-white/20 shrink-0"
                 style={{ backgroundColor: avatarBg }}
               >
                 {initials}
@@ -499,12 +499,12 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               <p className="text-[12px] font-semibold text-sidebar-foreground truncate">{session?.name || 'Usuário'}</p>
               <p className="text-[9px] text-sidebar-foreground/50">{isAdmin ? 'Administrador' : 'Estudante'}</p>
             </div>
-            <Sparkles size={11} className="text-white/15 shrink-0" />
+            <Sparkles size={11} className="text-primary-foreground/15 shrink-0" />
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={logout}
-              className="flex items-center gap-2 text-sidebar-foreground/55 hover:text-red-500 flex-1 px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
+              className="flex items-center gap-2 text-sidebar-foreground/55 hover:text-destructive flex-1 px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
             >
               <LogOut size={13} />
               Sair da conta

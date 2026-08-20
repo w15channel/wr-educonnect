@@ -39,7 +39,7 @@ function ItemRow({ row, checked, onToggle }) {
         : <Square size={14} className="text-muted-foreground mt-0.5 shrink-0" />}
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold text-foreground leading-tight">{row.title}</p>
-        <p className={`text-[10px] mt-0.5 ${row.status === 'Avaliado' ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+        <p className={`text-[10px] mt-0.5 ${row.status === 'Avaliado' ? 'text-primary' : 'text-muted-foreground'}`}>
           {row.status} · {hoursLabel} · {scoreLabel}
         </p>
         {row.notes && (
@@ -155,7 +155,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
 
       {/* Quick-select buttons */}
       <div className="flex gap-1.5 flex-wrap">
-        <button onClick={selectEvaluated} className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-600 hover:bg-emerald-500/20 transition">
+        <button onClick={selectEvaluated} className="inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-accent/10 px-2 py-1 text-[10px] font-bold text-primary hover:bg-accent/20 transition">
           <CheckSquare size={10} /> Só avaliados
         </button>
         <button onClick={selectAll} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[10px] font-bold hover:bg-secondary transition">

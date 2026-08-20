@@ -3,8 +3,8 @@ export const MOD9 = {
   id: 'mod9',
   title: 'Módulo 9 — Ferramentas de Consultório I',
   subtitle: 'Comunicação, Anamnese e Perfil Comportamental',
-  colorLight: 'text-teal-400',
-  bgLight: 'bg-teal-500/10',
+  colorLight: 'text-primary',
+  bgLight: 'bg-accent/10',
   lessons: [
     {
       id: 'mod9-a1',

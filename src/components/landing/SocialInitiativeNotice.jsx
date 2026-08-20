@@ -15,11 +15,11 @@ export default function SocialInitiativeNotice({ compact = false, className = ''
         </div>
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1db89e]">Diferencial social</p>
-          <p className={`mt-1 ${compact ? 'text-xs' : 'text-sm'} leading-relaxed text-white/62 font-light`}>
-            Alunos selecionados por grupos de encaminhamento e pelo projeto <strong className="font-semibold text-white/82">ABERTAMENTE</strong> podem estudar com contribuição mensal pessoal e voluntária, sem valor mínimo estipulado, dentro de suas possibilidades financeiras.
+          <p className={`mt-1 ${compact ? 'text-xs' : 'text-sm'} leading-relaxed text-primary-foreground/62 font-light`}>
+            Alunos selecionados por grupos de encaminhamento e pelo projeto <strong className="font-semibold text-primary-foreground/82">ABERTAMENTE</strong> podem estudar com contribuição mensal pessoal e voluntária, sem valor mínimo estipulado, dentro de suas possibilidades financeiras.
           </p>
           {!compact && (
-            <p className="mt-2 text-xs leading-relaxed text-white/42 font-light">
+            <p className="mt-2 text-xs leading-relaxed text-primary-foreground/42 font-light">
               Como instituto, asseguramos que não haverá cobranças posteriores nem qualquer distinção financeira ou social entre participantes. Simpatizantes também podem apoiar com doações mensais de valor livre, ajudando a manter o projeto e abrir novas vagas.
             </p>
           )}

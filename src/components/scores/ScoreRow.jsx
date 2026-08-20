@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 const CATEGORY_CONFIG = {
-  lesson: { iconColor: 'bg-purple-100 text-purple-700' },
-  task: { iconColor: 'bg-orange-100 text-orange-700' },
-  quiz: { iconColor: 'bg-blue-100 text-blue-700' },
-  forum: { iconColor: 'bg-green-100 text-green-700' },
-  therapist: { iconColor: 'bg-pink-100 text-pink-700' },
-  ofensiva: { iconColor: 'bg-orange-100 text-red-600' },
+  lesson: { iconColor: 'bg-accent text-primary' },
+  task: { iconColor: 'bg-accent text-primary' },
+  quiz: { iconColor: 'bg-accent text-primary' },
+  forum: { iconColor: 'bg-accent text-primary' },
+  therapist: { iconColor: 'bg-accent text-primary' },
+  ofensiva: { iconColor: 'bg-accent text-destructive' },
 };
 
 export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxScore = 10, item, needsCorrection, onSave, saving, readOnly = false, children }) {
@@ -26,7 +26,7 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
   const normalizedScore = roundScore(String(score || 0).replace(',', '.'));
 
   return (
-    <div className={`p-3 sm:p-4 rounded-xl border transition-all max-w-full overflow-hidden ${needsCorrection ? 'border-red-300 bg-red-50/40' : item?.verified ? 'border-green-200 bg-green-50/30' : 'border-border bg-card'}`}>
+    <div className={`p-3 sm:p-4 rounded-xl border transition-all max-w-full overflow-hidden ${needsCorrection ? 'border-destructive bg-destructive/40' : item?.verified ? 'border-primary bg-accent/30' : 'border-border bg-card'}`}>
       <div className="flex items-start gap-3 mb-3 min-w-0">
         <div className={`p-1.5 rounded-lg shrink-0 ${color}`}>
           <Icon size={13} />
@@ -34,11 +34,11 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="text-sm font-semibold text-foreground leading-snug break-words min-w-0">{refTitle}</p>
-            {needsCorrection && <AlertCircle size={13} className="text-red-500 shrink-0" />}
+            {needsCorrection && <AlertCircle size={13} className="text-destructive shrink-0" />}
           </div>
           {children}
         </div>
-        {item?.verified && <CheckCircle size={15} className="text-green-600 shrink-0 mt-0.5" />}
+        {item?.verified && <CheckCircle size={15} className="text-primary shrink-0 mt-0.5" />}
       </div>
       {readOnly ? (
         <div className="flex items-center gap-2 flex-wrap mt-2 bg-secondary/50 rounded-xl px-3 py-2">

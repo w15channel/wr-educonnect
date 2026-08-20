@@ -31,7 +31,7 @@ function StudentAvatar({ name, photoUrl, avatarColor, avatarEmoji, size = 56 }) 
   }
   return (
     <div
-      className="rounded-full flex items-center justify-center font-bold text-white ring-4 ring-white/30"
+      className="rounded-full flex items-center justify-center font-bold text-primary-foreground ring-4 ring-white/30"
       style={{ width: size, height: size, backgroundColor: bg, fontSize: size * 0.34, border: `3px solid ${bg}` }}
     >
       {avatarEmoji ? <span style={{ fontSize: size * 0.45 }}>{avatarEmoji}</span> : initials}
@@ -67,17 +67,17 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
   };
 
   return (
-    <div role="button" tabIndex={0} onClick={() => onOpenDetails?.({ profile, code })} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenDetails?.({ profile, code }); }} className="relative w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-3 text-center shadow-sm hover:shadow-lg hover:border-white/20 transition-all duration-200 cursor-pointer">
+    <div role="button" tabIndex={0} onClick={() => onOpenDetails?.({ profile, code })} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenDetails?.({ profile, code }); }} className="relative w-full bg-card/5 backdrop-blur-md border border-border/10 rounded-2xl p-5 flex flex-col items-center gap-3 text-center shadow-sm hover:shadow-lg hover:border-border/20 transition-all duration-200 cursor-pointer">
       {/* Destaques/badges */}
       <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
         {isMonitor && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
             <Crown size={9} /> Monitor
             {monitorRank && <span>#{monitorRank}</span>}
           </span>
         )}
         {isTopTask && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-400 border border-emerald-400/30">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
             <Star size={9} /> Top Tarefas
           </span>
         )}
@@ -108,8 +108,8 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
         {bio && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{bio}</p>}
         {points > 0 && (
           <div className="flex items-center justify-center gap-1 mt-1.5">
-            <Trophy size={11} className="text-yellow-500" />
-            <span className="text-[11px] font-bold text-yellow-600">{formatScore(points)} pts</span>
+            <Trophy size={11} className="text-primary" />
+            <span className="text-[11px] font-bold text-primary">{formatScore(points)} pts</span>
           </div>
         )}
       </div>
@@ -126,7 +126,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
           {whatsapp && (
             <button
               onClick={handleWhatsapp}
-              className="flex-1 flex items-center justify-center gap-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-600 border border-green-500/20 rounded-xl py-2 text-xs font-bold transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 bg-accent/10 hover:bg-accent/20 text-primary border border-primary/20 rounded-xl py-2 text-xs font-bold transition-colors"
             >
               <Phone size={13} /> WhatsApp
             </button>
@@ -255,13 +255,13 @@ export default function Classe() {
       {(currentMonitors.length > 0 || weeklyTopEmail) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           {currentMonitors.length > 0 && (
-            <div className="bg-yellow-500/5 backdrop-blur-md border border-yellow-400/20 rounded-2xl p-4 flex items-center gap-3">
-              <Crown size={28} className="text-yellow-400 shrink-0" />
+            <div className="bg-accent/5 backdrop-blur-md border border-primary/20 rounded-2xl p-4 flex items-center gap-3">
+              <Crown size={28} className="text-primary shrink-0" />
               <div>
-                <p className="text-xs font-bold text-yellow-600 uppercase tracking-wide">Monitores da Semana</p>
+                <p className="text-xs font-bold text-primary uppercase tracking-wide">Monitores da Semana</p>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {currentMonitors.sort((a, b) => a.rank_position - b.rank_position).map(m => (
-                    <span key={m.id} className="text-xs font-semibold text-foreground bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full">
+                    <span key={m.id} className="text-xs font-semibold text-foreground bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
                       {m.rank_position === 1 ? '🥇' : m.rank_position === 2 ? '🥈' : '🥉'} {m.student_name}
                     </span>
                   ))}
@@ -270,10 +270,10 @@ export default function Classe() {
             </div>
           )}
           {weeklyTopEmail && (
-            <div className="bg-emerald-500/5 backdrop-blur-md border border-emerald-400/20 rounded-2xl p-4 flex items-center gap-3">
-              <Star size={28} className="text-emerald-400 shrink-0" />
+            <div className="bg-accent/5 backdrop-blur-md border border-primary/20 rounded-2xl p-4 flex items-center gap-3">
+              <Star size={28} className="text-primary shrink-0" />
               <div>
-                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Maior Pontuador da Semana</p>
+                <p className="text-xs font-bold text-primary uppercase tracking-wide">Maior Pontuador da Semana</p>
                 <p className="text-sm font-bold text-foreground mt-0.5">
                   {(() => {
                     const c = codes.find(c => c.student_email === weeklyTopEmail);
@@ -332,9 +332,9 @@ export default function Classe() {
       <p className="text-center text-xs text-muted-foreground mt-6">{filtered.length} aluno{filtered.length !== 1 ? 's' : ''} na turma</p>
 
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-white/15 rounded-3xl p-5 relative" style={{ backgroundColor: (selectedStudent?.profile?.avatar_color || selectedStudent?.code?.profile_avatar_color || '#0f172a') }} onClick={(e) => e.stopPropagation()}>
-            <button type="button" onClick={() => setSelectedStudent(null)} className="absolute right-3 top-3 text-white/70 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-foreground/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border border-border/15 rounded-3xl p-5 relative" style={{ backgroundColor: (selectedStudent?.profile?.avatar_color || selectedStudent?.code?.profile_avatar_color || '#0f172a') }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setSelectedStudent(null)} className="absolute right-3 top-3 text-primary-foreground/70 hover:text-primary-foreground">
               <X size={18} />
             </button>
             {(() => {
@@ -350,28 +350,28 @@ export default function Classe() {
               const whatsapp = profile?.whatsapp || '';
               const publicName = getAvatarPrefixedName(name, profile?.avatar_emoji || code?.profile_avatar_emoji);
               return (
-                <div className="text-white">
+                <div className="text-primary-foreground">
                   <div className="mx-auto w-fit mb-4">
                     <StudentAvatar name={name} photoUrl={photoUrl} avatarColor={avatarColor} avatarEmoji={avatarEmoji} size={132} />
                   </div>
                   <h3 className="text-xl font-bold text-center">{publicName}</h3>
-                  {nickname && <p className="text-center text-sm text-white/70 mt-0.5">"{nickname}"</p>}
+                  {nickname && <p className="text-center text-sm text-primary-foreground/70 mt-0.5">"{nickname}"</p>}
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-                      <p className="text-white/60">Idade</p>
+                    <div className="bg-card/5 border border-border/10 rounded-xl px-3 py-2">
+                      <p className="text-primary-foreground/60">Idade</p>
                       <p className="font-semibold">{age !== null ? `${age} anos` : 'Não informado'}</p>
                     </div>
-                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-                      <p className="text-white/60">WhatsApp</p>
+                    <div className="bg-card/5 border border-border/10 rounded-xl px-3 py-2">
+                      <p className="text-primary-foreground/60">WhatsApp</p>
                       <p className="font-semibold">{whatsapp || 'Não informado'}</p>
                     </div>
-                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-                      <p className="text-white/60">E-mail</p>
+                    <div className="bg-card/5 border border-border/10 rounded-xl px-3 py-2">
+                      <p className="text-primary-foreground/60">E-mail</p>
                       <p className="font-semibold break-all">{code?.student_email || profile?.email || 'Não informado'}</p>
                     </div>
                   </div>
-                  <div className="mt-4 bg-white/5 border border-white/10 rounded-xl p-3">
-                    <p className="text-xs text-white/60 mb-1">Apresentação pessoal / descrição completa</p>
+                  <div className="mt-4 bg-card/5 border border-border/10 rounded-xl p-3">
+                    <p className="text-xs text-primary-foreground/60 mb-1">Apresentação pessoal / descrição completa</p>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{bio || 'Este colega ainda não adicionou descrição no perfil.'}</p>
                   </div>
                 </div>

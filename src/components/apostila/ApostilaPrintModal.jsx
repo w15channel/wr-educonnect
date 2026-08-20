@@ -1164,12 +1164,12 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/82 backdrop-blur-sm p-3">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-foreground/82 backdrop-blur-sm p-3">
       <div
         className="flex flex-wrap items-center gap-2 mb-3 w-full justify-center"
         style={{ maxWidth: IMG_W * SCALE + 40 }}
       >
-        <button onClick={onClose} className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors shrink-0">
+        <button onClick={onClose} className="flex items-center gap-1.5 text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors shrink-0">
           <X size={15} /> Fechar
         </button>
 
@@ -1177,25 +1177,25 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
           <button
             onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
             disabled={currentPage === 0}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 transition"
+            className="p-1.5 rounded-lg bg-card/10 hover:bg-card/20 disabled:opacity-30 transition"
           >
-            <ChevronLeft size={15} className="text-white" />
+            <ChevronLeft size={15} className="text-primary-foreground" />
           </button>
-          <span className="text-white/70 text-sm min-w-[80px] text-center">
+          <span className="text-primary-foreground/70 text-sm min-w-[80px] text-center">
             Pág. {currentPage + 1} / {totalPages}
           </span>
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
             disabled={currentPage >= totalPages - 1}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 transition"
+            className="p-1.5 rounded-lg bg-card/10 hover:bg-card/20 disabled:opacity-30 transition"
           >
-            <ChevronRight size={15} className="text-white" />
+            <ChevronRight size={15} className="text-primary-foreground" />
           </button>
         </div>
 
         <button
           onClick={() => setEditMode((value) => !value)}
-          className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-bold transition-colors ${editMode ? 'border-emerald-400 bg-emerald-500/20 text-emerald-100' : 'border-white/20 bg-white/10 text-white hover:bg-white/20'}`}
+          className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-bold transition-colors ${editMode ? 'border-primary bg-accent/20 text-primary' : 'border-border/20 bg-card/10 text-primary-foreground hover:bg-card/20'}`}
         >
           <Move size={14} /> {editMode ? 'Movendo itens' : 'Mover itens'}
         </button>
@@ -1203,30 +1203,30 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
           <>
             <button
               onClick={handleSavePositions}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground hover:bg-primary transition-colors"
             >
               <Save size={14} /> Salvar posições
             </button>
             <button
               onClick={handleApplyPositionsToAll}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground hover:bg-primary transition-colors"
             >
               <Save size={14} /> Reposicionar para todos
             </button>
             <button
               onClick={handleResetPositions}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold text-white hover:bg-white/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border/20 bg-card/10 px-3 py-1.5 text-sm font-bold text-primary-foreground hover:bg-card/20 transition-colors"
             >
               <RotateCcw size={14} /> Resetar
             </button>
-            <span className="text-xs text-white/60">Título X: {positions.title.x}px · Y: {positions.title.y}px | Texto X: {positions.text.x}px · Y: {positions.text.y}px</span>
+            <span className="text-xs text-primary-foreground/60">Título X: {positions.title.x}px · Y: {positions.title.y}px | Texto X: {positions.text.x}px · Y: {positions.text.y}px</span>
           </>
         )}
 
         <button
           onClick={handleExportPng}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold text-white hover:bg-white/20 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border/20 bg-card/10 px-3 py-1.5 text-sm font-bold text-primary-foreground hover:bg-card/20 disabled:opacity-50 transition-colors"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Image size={14} />}
           PNG (esta pág.)
@@ -1234,7 +1234,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
         <button
           onClick={handleExportTextPdf}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground hover:bg-primary disabled:opacity-60 transition-colors"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
           PDF A4 retrato
@@ -1250,7 +1250,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       </div>
 
       <div
-        className="rounded-xl overflow-hidden border border-white/10 shadow-2xl"
+        className="rounded-xl overflow-hidden border border-border/10 shadow-2xl"
         style={{ width: IMG_W * SCALE, height: IMG_H * SCALE, flexShrink: 0 }}
       >
         <div style={{ width: IMG_W, height: IMG_H, transform: `scale(${SCALE})`, transformOrigin: 'top left', pointerEvents: editMode ? 'auto' : 'none' }}>

@@ -19,7 +19,7 @@ function Avatar({ photoUrl, name, color, avatarEmoji = '', size = 9 }) {
   const cls = `w-${size} h-${size} rounded-full shrink-0`;
   if (photoUrl) return <img src={photoUrl} alt={name} className={`${cls} object-cover`} />;
   return (
-    <div className={`${cls} flex items-center justify-center font-bold text-white`} style={{ fontSize: size < 9 ? 10 : 13, backgroundColor: color || '#7c3aed' }}>
+    <div className={`${cls} flex items-center justify-center font-bold text-primary-foreground`} style={{ fontSize: size < 9 ? 10 : 13, backgroundColor: color || '#7c3aed' }}>
       {avatarEmoji || initials}
     </div>
   );
@@ -58,7 +58,7 @@ export default function PostCard({
   const myReplied = replies?.some(r => r.author_email === myEmail) || myPostParticipated;
 
   return (
-    <div className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${myReplied ? 'border-emerald-400/40' : 'border-border'}`}>
+    <div className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${myReplied ? 'border-primary/40' : 'border-border'}`}>
       {/* Post header */}
       <div className="p-4 sm:p-5">
         <div className="flex items-start gap-3">
@@ -86,7 +86,7 @@ export default function PostCard({
               <div className="flex gap-2 mt-1">
                 <Textarea value={editingPost.content} onChange={e => setEditingPost({ ...editingPost, content: e.target.value })} className="resize-none text-sm flex-1" rows={2} />
                 <div className="flex flex-col gap-1">
-                  <button onClick={() => onUpdatePost(post.id, editingPost.content)} className="text-green-600 hover:text-green-700 p-1"><Check size={14} /></button>
+                  <button onClick={() => onUpdatePost(post.id, editingPost.content)} className="text-primary hover:text-primary p-1"><Check size={14} /></button>
                   <button onClick={() => setEditingPost(null)} className="text-muted-foreground hover:text-foreground p-1"><X size={14} /></button>
                 </div>
               </div>
@@ -122,11 +122,11 @@ export default function PostCard({
         {/* Participation badge */}
         {!isTeacher && (
           myReplied ? (
-            <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+            <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold text-primary bg-accent border border-primary px-2.5 py-1 rounded-full">
               😄 Parabéns, você participou!
             </span>
           ) : (
-            <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold text-red-500 bg-red-50 border border-red-200 px-2.5 py-1 rounded-full">
+            <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold text-destructive bg-destructive border border-destructive px-2.5 py-1 rounded-full">
               😢 Você ainda não participou
             </span>
           )
@@ -158,7 +158,7 @@ export default function PostCard({
                   {editingReply?.id === reply.id ? (
                     <div className="flex gap-2 mt-1">
                       <Input value={editingReply.content} onChange={e => setEditingReply({ ...editingReply, content: e.target.value })} className="flex-1 h-8 text-sm" />
-                      <button onClick={() => onUpdateReply(reply.id, editingReply.content)} className="text-green-600 hover:text-green-700"><Check size={14} /></button>
+                      <button onClick={() => onUpdateReply(reply.id, editingReply.content)} className="text-primary hover:text-primary"><Check size={14} /></button>
                       <button onClick={() => setEditingReply(null)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
                     </div>
                   ) : (

@@ -202,7 +202,7 @@ export default function AppShellTablet() {
             if (root === '__menu__') {
               return (
                 <button key="menu" onClick={() => setDrawerOpen(true)}
-                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 min-h-[58px] text-white/40 hover:text-white/70 transition-colors">
+                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 min-h-[58px] text-primary-foreground/40 hover:text-primary-foreground/70 transition-colors">
                   <Icon size={22} />
                   <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
                 </button>
@@ -211,7 +211,7 @@ export default function AppShellTablet() {
             const active = currentOwner === root;
             return (
               <button key={root} onClick={() => navigate(scoped(root))}
-                className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 min-h-[58px] transition-colors relative ${active ? 'text-[#e8dfc8]' : 'text-white/35 hover:text-white/60'}`}>
+                className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-3 min-h-[58px] transition-colors relative ${active ? 'text-[#e8dfc8]' : 'text-primary-foreground/35 hover:text-primary-foreground/60'}`}>
                 {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-b-full bg-[#d4b96a]" />}
                 <Icon size={22} className={active ? 'text-[#d4b96a]' : ''} />
                 <span className={`text-[10px] font-semibold uppercase tracking-wide ${active ? 'text-[#d4b96a]' : ''}`}>{label}</span>

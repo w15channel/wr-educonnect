@@ -64,9 +64,9 @@ const getLessonModuleNumber = (lesson, fallbackIndex = 0) => {
 };
 
 const LESSON_TYPE_CONFIG = {
-  video_external:   { label: 'Vídeo Externo', icon: Video, color: 'text-purple-500', desc: 'YouTube, Vimeo, Instagram...' },
-  text_written:     { label: 'Aula em Texto', icon: FileText, color: 'text-blue-500', desc: 'Escrita diretamente na plataforma' },
-  content_external: { label: 'Material Externo', icon: Globe, color: 'text-green-500', desc: 'Link para artigo, site ou PDF externo' },
+  video_external:   { label: 'Vídeo Externo', icon: Video, color: 'text-primary', desc: 'YouTube, Vimeo, Instagram...' },
+  text_written:     { label: 'Aula em Texto', icon: FileText, color: 'text-primary', desc: 'Escrita diretamente na plataforma' },
+  content_external: { label: 'Material Externo', icon: Globe, color: 'text-primary', desc: 'Link para artigo, site ou PDF externo' },
 };
 
 export default function Lessons() {
@@ -512,8 +512,8 @@ export default function Lessons() {
         <div className="bg-card rounded-2xl border border-border p-5 mb-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
-                <BookOpen size={16} className="text-purple-600" />
+              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
+                <BookOpen size={16} className="text-primary" />
               </div>
               <div>
                 <p className="font-bold text-sm text-foreground">Progresso Geral</p>

@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 
 const tuitionConfig = {
-  paid:    { label: 'Em dia',       class: 'text-green-700 bg-green-100 border-green-200',   icon: CheckCircle },
-  pending: { label: 'Pendente',     class: 'text-yellow-700 bg-yellow-100 border-yellow-200', icon: CheckCircle },
-  overdue: { label: 'Inadimplente', class: 'text-red-700 bg-red-100 border-red-200',          icon: XCircle },
+  paid:    { label: 'Em dia',       class: 'text-primary bg-accent border-primary',   icon: CheckCircle },
+  pending: { label: 'Pendente',     class: 'text-primary bg-accent border-primary', icon: CheckCircle },
+  overdue: { label: 'Inadimplente', class: 'text-destructive bg-destructive border-destructive',          icon: XCircle },
 };
 
 const COURSE_LABELS = {
@@ -110,7 +110,7 @@ export default function StudentDetail() {
                   />
                 ) : (
                   <div
-                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-black text-white border-4 border-card shadow-md"
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-black text-primary-foreground border-4 border-card shadow-md"
                     style={{ backgroundColor: avatarColor }}
                   >
                     {avatarEmoji || initials}
@@ -136,7 +136,7 @@ export default function StudentDetail() {
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
                 <BookOpen size={11} /> {COURSE_LABELS[code.course] || code.course || '—'}
               </span>
-              <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full ${code.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+              <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full ${code.is_active ? 'bg-accent text-primary' : 'bg-muted text-muted-foreground'}`}>
                 {code.is_active ? '● Ativo' : '○ Inativo'}
               </span>
             </div>
@@ -213,8 +213,8 @@ export default function StudentDetail() {
               <p className="text-2xl font-black text-primary">{avg}</p>
               <p className="text-[10px] text-muted-foreground font-semibold">Nota Total</p>
             </div>
-            <div className="bg-yellow-500/10 rounded-xl p-3 text-center border border-yellow-500/20">
-              <p className="text-2xl font-black text-yellow-500">{formatScore(total)}</p>
+            <div className="bg-accent/10 rounded-xl p-3 text-center border border-primary/20">
+              <p className="text-2xl font-black text-primary">{formatScore(total)}</p>
               <p className="text-[10px] text-muted-foreground font-semibold">Pontos</p>
             </div>
           </div>
