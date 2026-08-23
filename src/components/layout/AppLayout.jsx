@@ -90,8 +90,6 @@ export default function AppLayout() {
   }, [pullY, refreshing, queryClient]);
 
   const showIndicator = pullY > 8;
-  const isCertPage = location.pathname.endsWith('/certificadora');
-
   return (
     <div className="app-shell-bg flex h-screen overflow-hidden md:pt-0">
       <MobileSplash />
@@ -139,7 +137,6 @@ export default function AppLayout() {
               data-scroll-container
               className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden"
               style={{
-                paddingBottom: !isCertPage ? 'calc(76px + env(safe-area-inset-bottom))' : undefined,
                 transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
                 transition: isPulling.current ? 'none' : 'transform 0.3s ease',
               }}

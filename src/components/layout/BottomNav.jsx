@@ -60,18 +60,20 @@ export default function BottomNav({ onMenuOpen }) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="shell-bar-glass shrink-0 border-t z-40 md:hidden"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        height: 'calc(60px + env(safe-area-inset-bottom))',
+      }}
     >
-      <div className="shell-bar-glass absolute inset-0 border-t" />
-      <div className="relative flex items-stretch">
+      <div className="flex items-stretch h-[60px]">
         {tabs.map(({ icon: Icon, label, root }) => {
           if (root === '__menu__') {
             return (
               <button
                 key="menu"
                 onClick={onMenuOpen}
-                className="nav-shortcut-muted flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors"
+                className="nav-shortcut-muted flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors"
               >
                 <Icon size={20} />
                 <span className="text-[9px] font-semibold uppercase tracking-wide">{label}</span>
@@ -84,7 +86,7 @@ export default function BottomNav({ onMenuOpen }) {
             <button
               key={root}
               onClick={() => handleTabPress(root)}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] transition-colors relative ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors relative ${
                 active ? 'text-sidebar-primary' : 'nav-shortcut-muted'
               }`}
             >
