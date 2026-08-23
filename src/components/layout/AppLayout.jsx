@@ -144,9 +144,7 @@ export default function AppLayout() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <div className={isCertPage ? 'flex-1 min-h-0 flex flex-col' : ''}>
-                <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role !== 'admin' }} />
-              </div>
+              <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role !== 'admin' }} />
             </motion.div>
           </AnimatePresence>
         </div>
