@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
+import { isLegacyMsnAction, isSinceOvercomingWallCutoff } from '@/lib/overcomingWall';
 
 const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
@@ -22,21 +23,10 @@ function formatBRT(dateStr) {
 }
 
 function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onDelete }) {
-  const isAttention = msg.content?.startsWith(ATTENTION_PREFIX);
-  const isAction = msg.content?.startsWith('[MSN_ACTION]');
   const cleanContent = (msg.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim();
 
-  if (isAttention || isAction) {
-    return (
-      <div className={`text-[12px] px-2 py-1 rounded border ${isAttention ? 'bg-yellow-50 border-yellow-200 text-yellow-800' : 'bg-[#eef6ff] border-[#c8d7f5] text-[#31558c]'}`} style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
-        <span className="text-[11px] opacity-70">[{time}] </span>
-        <span className="font-bold">{isAttention ? '🔔 Atenção: ' : '⚡ Ação MSN: '}</span>{cleanContent}
-      </div>
-    );
-  }
-
   return (
-    <div className="group rounded-xl border border-rose-100 bg-white px-3 py-2.5 shadow-sm" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
+    <div className="group rounded-xl border border-rose-100 bg-white px-3 py-2.5 text-[#3f2932] shadow-sm dark:border-white/20 dark:bg-black dark:text-white" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
       <div className="flex items-start gap-2">
         <span className="mt-0.5 text-lg" aria-hidden="true">🌟</span>
         <div className="min-w-0 flex-1">
@@ -48,7 +38,7 @@ function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onD
               {isAdmin && <button type="button" onClick={() => onDelete(msg)} className="rounded p-1 text-[#9f667a] hover:bg-red-50 hover:text-red-700" title="Excluir permanentemente" aria-label="Excluir permanentemente"><Trash2 size={13}/></button>}
             </div>
           </div>
-          <p className="mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-[#3f2932]">{cleanContent}</p>
+          <p className="mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-inherit">{cleanContent}</p>
           {msg.updated_date && msg.updated_date !== msg.created_date && <span className="text-[9px] italic text-[#a38a94]">editada</span>}
         </div>
       </div>
@@ -96,12 +86,14 @@ export default function ClassChat() {
   const { data: recentAchievements = [] } = useQuery({
     queryKey: ['class-chat-achievements', userCourse],
     queryFn: async () => {
-      const [progresses, submissions, examSubmissions, challenges, lessons, tasks, exams] = await Promise.all([
-        base44.entities.LessonProgress.list('-created_date', 1000),
-        base44.entities.TaskSubmission.list('-created_date', 1000),
-        base44.entities.ExamSubmission.list('-submitted_at', 1000),
-        base44.entities.DailyChallengeResponse.list('-created_date', 1000),
-        base44.entities.Lesson.list('-created_date', 500),
+      const [progresses, submissions, examSubmissions, challenges, forumPosts, pairings, lessons, tasks, exams] = await Promise.all([
+        base44.entities.LessonProgress.list('-created_date', 10000),
+        base44.entities.TaskSubmission.list('-created_date', 10000),
+        base44.entities.ExamSubmission.list('-submitted_at', 10000),
+        base44.entities.DailyChallengeResponse.list('-created_date', 10000),
+        base44.entities.ForumPost.list('-created_date', 10000),
+        base44.entities.TherapistPairing.list('-updated_date', 10000),
+        base44.entities.RecordedLesson.list('-created_date', 500),
         base44.entities.Task.list('-created_date', 500),
         base44.entities.Exam.list('-created_date', 500),
       ]);
@@ -114,7 +106,12 @@ export default function ClassChat() {
         ...submissions.filter((record) => taskById[record.task_id]).map((record) => makeAchievement(record, 'task', `respondeu a tarefa “${taskById[record.task_id].title}”.`, record.submitted_at || record.created_date)),
         ...examSubmissions.filter((record) => examById[record.exam_id]).map((record) => makeAchievement(record, 'exam', `concluiu “${examById[record.exam_id].title}”.`, record.submitted_at || record.created_date)),
         ...challenges.map((record) => makeAchievement(record, 'challenge', 'venceu mais uma etapa da ofensiva diária.', record.updated_date || record.created_date || record.date)),
-      ];
+        ...forumPosts.filter((record) => record.author_role !== 'teacher').map((record) => makeAchievement({ ...record, student_email: record.author_email }, record.space === 'debates' ? 'debate' : 'forum', record.space === 'debates' ? 'participou da sala de debates.' : 'compartilhou conhecimento no fórum.', record.created_date)),
+        ...pairings.flatMap((record) => [
+          record.therapist_submitted && makeAchievement({ ...record, id: `${record.id}-therapist`, student_email: record.therapist_email }, 'report', 'concluiu seu relato como terapeuta da semana.', record.updated_date || record.created_date),
+          record.patient_submitted && makeAchievement({ ...record, id: `${record.id}-patient`, student_email: record.patient_email }, 'report', 'concluiu seu relato como paciente da semana.', record.updated_date || record.created_date),
+        ].filter(Boolean)),
+      ].filter((achievement) => isSinceOvercomingWallCutoff(achievement.occurredAt));
     },
     staleTime: 30000,
   });
@@ -240,11 +237,10 @@ export default function ClassChat() {
     .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
   const onlineStudents = otherStudents.filter(isStudentOnline);
   const awayStudents = otherStudents.filter(c => !isStudentOnline(c));
-  const tenDaysAgo = Date.now() - 10 * 24 * 60 * 60 * 1000;
   const courseStudentEmails = new Set(codes.filter((code) => !userCourse || code.course === userCourse || (userCourse === 'tcc' && !code.course)).map((code) => code.student_email));
   const wallFeed = [
-    ...messages.map((message) => ({ ...message, feedType: 'message', occurredAt: message.created_date || message.updated_date })),
-    ...recentAchievements.filter((achievement) => courseStudentEmails.has(achievement.student_email) && new Date(achievement.occurredAt).getTime() >= tenDaysAgo).map((achievement) => ({ ...achievement, feedType: 'achievement' })),
+    ...messages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({ ...message, feedType: 'message', occurredAt: message.created_date || message.updated_date })),
+    ...recentAchievements.filter((achievement) => courseStudentEmails.has(achievement.student_email)).map((achievement) => ({ ...achievement, feedType: 'achievement' })),
   ].sort((a, b) => new Date(a.occurredAt || 0) - new Date(b.occurredAt || 0));
 
   const enableNotifications = async () => {
@@ -284,7 +280,7 @@ export default function ClassChat() {
                 {wallFeed.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : wallFeed.map((msg) => {
                   if (msg.feedType === 'achievement') {
                     const profile = getProfile(msg.student_email);
-                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"><span aria-hidden="true">🏆 </span><strong>{profile.name || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></div>;
+                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black"><span aria-hidden="true">🏆 </span><strong className="dark:text-[#b8860b]">{profile.name || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></div>;
                   }
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);
