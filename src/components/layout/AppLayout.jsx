@@ -91,7 +91,7 @@ export default function AppLayout() {
 
   const showIndicator = pullY > 8;
   return (
-    <div className="app-shell-bg flex h-screen overflow-hidden md:pt-0">
+    <div className="app-shell-bg flex overflow-hidden md:pt-0" style={{ height: '100dvh' }}>
       <MobileSplash />
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
