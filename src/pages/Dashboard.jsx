@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import VideoPlayer from '@/components/video/VideoPlayer';
+import RumbleEmbed from '@/components/video/RumbleEmbed';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -597,8 +597,9 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="rounded-xl overflow-hidden border border-border">
-              <VideoPlayer
-                url="https://drive.google.com/file/d/1cIKz1staWdnYROSBlyfXh7H3bjX7vb3w/preview"
+              <RumbleEmbed
+                videoId="v7cfewe"
+                publisherId="u4qbnem"
                 title="Tutorial da Plataforma"
               />
             </div>
