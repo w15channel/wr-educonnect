@@ -15,7 +15,7 @@ import {
   MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Moon, Sun
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -23,6 +23,7 @@ import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import { setSession, getSession } from '@/lib/customAuth';
 import { applyTheme, getStoredTheme } from './MobileHeader';
+import ThemeToggle from './ThemeToggle';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 const COURSE_LABELS = { tcc: '🧠 TC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
@@ -295,14 +296,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={toggleTheme}
-                  className="mb-2 w-full flex items-center justify-center gap-2 py-3 border border-sidebar-border bg-sidebar-accent rounded-xl text-sidebar-accent-foreground text-[12px] font-medium active:scale-[0.97] transition-all"
-                  aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-                >
-                  {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-                  {theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-                </button>
+                <ThemeToggle theme={theme} onToggle={toggleTheme} showLabel className="mb-2" />
                 <button
                   onClick={() => { logout(); onClose(); }}
                   className="w-full flex items-center justify-center gap-2 py-3 border border-red-500/15 rounded-xl text-red-400/60 text-[12px] font-light active:scale-[0.97] transition-all"
