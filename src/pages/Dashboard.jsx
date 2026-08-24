@@ -4,7 +4,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, MessageSquare, Send, Smile } from 'lucide-react';
+import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, Send, Smile, Sparkles } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -266,6 +266,21 @@ export default function Dashboard() {
     refetchInterval: 3000,
   });
 
+  const { data: publicAchievementRecords } = useQuery({
+    queryKey: ['dashboard-public-achievements', userCourse || 'all'],
+    queryFn: async () => {
+      const [lessonProgresses, taskSubmissions, examSubmissions, challengeResponses] = await Promise.all([
+        base44.entities.LessonProgress.list('-created_date', 1000),
+        base44.entities.TaskSubmission.list('-created_date', 1000),
+        base44.entities.ExamSubmission.list('-submitted_at', 1000),
+        base44.entities.DailyChallengeResponse.list('-created_date', 1000),
+      ]);
+      return { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses };
+    },
+    enabled: !isTeacher && !!session?.email,
+    staleTime: 30000,
+  });
+
   const { data: unlockRules = [] } = useQuery({
     queryKey: ['unlock-rules-lessons', userCourse || 'all'],
     queryFn: () => userCourse
@@ -446,7 +461,69 @@ export default function Dashboard() {
     .filter((c) => !userCourse || c.course === userCourse || userCourse === 'tcc' && !c.course)
     .filter(isStudentOnline)
     .sort((a, b) => (a.profile_name || a.student_name || a.student_email || '').localeCompare(b.profile_name || b.student_name || b.student_email || '', 'pt-BR'));
-  const recentMiniChatMessages = miniChatMessages.slice(-12);
+  const encouragementPosts = React.useMemo(() => miniChatMessages.map((message) => ({
+    ...message,
+    feedType: 'encouragement',
+    occurredAt: message.created_date || message.created_at || message.updated_date,
+  })), [miniChatMessages]);
+
+  const achievementPosts = React.useMemo(() => {
+    if (!publicAchievementRecords) return [];
+    const courseStudents = new Set(courseCodes.map((student) => student.student_email));
+    const lessonById = Object.fromEntries(lessons.map((lesson) => [lesson.id, lesson]));
+    const taskById = Object.fromEntries(tasks.map((task) => [task.id, task]));
+    const examById = Object.fromEntries(exams.map((exam) => [exam.id, exam]));
+    const getStudentName = (email) => {
+      const student = accessCodes.find((code) => code.student_email === email);
+      return student?.profile_name || student?.student_name || 'Um aluno da turma';
+    };
+    const makePost = (record, kind, text, occurredAt) => ({
+      id: `achievement-${kind}-${record.id}`,
+      feedType: 'achievement',
+      studentEmail: record.student_email,
+      studentName: getStudentName(record.student_email),
+      content: text,
+      occurredAt,
+    });
+
+    return [
+      ...publicAchievementRecords.lessonProgresses
+        .filter((record) => record.watched && courseStudents.has(record.student_email) && lessonById[record.lesson_id])
+        .map((record) => makePost(record, 'lesson', `concluiu a aula “${lessonById[record.lesson_id]?.title || 'Nova aula'}”.`, record.updated_date || record.created_date)),
+      ...publicAchievementRecords.taskSubmissions
+        .filter((record) => courseStudents.has(record.student_email) && taskById[record.task_id])
+        .map((record) => makePost(record, 'task', `respondeu a tarefa “${taskById[record.task_id]?.title || 'Nova tarefa'}”.`, record.submitted_at || record.created_date)),
+      ...publicAchievementRecords.examSubmissions
+        .filter((record) => courseStudents.has(record.student_email) && examById[record.exam_id])
+        .map((record) => makePost(record, 'exam', `concluiu “${examById[record.exam_id]?.title || 'uma avaliação'}”.`, record.submitted_at || record.created_date)),
+      ...publicAchievementRecords.challengeResponses
+        .filter((record) => courseStudents.has(record.student_email))
+        .map((record) => makePost(record, 'challenge', 'venceu mais uma etapa da ofensiva diária.', record.updated_date || record.created_date || record.date)),
+    ].filter((post) => post.occurredAt).sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt));
+  }, [publicAchievementRecords, courseCodes, lessons, tasks, exams, accessCodes]);
+
+  const overcomingWallFeed = React.useMemo(() => {
+    const encouragements = [...encouragementPosts].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)).slice(0, 8);
+    const achievements = achievementPosts.slice(0, 8);
+    const feed = [];
+    let encouragementIndex = 0;
+    let achievementIndex = 0;
+    let nextType = new Date(encouragements[0]?.occurredAt || 0) >= new Date(achievements[0]?.occurredAt || 0)
+      ? 'encouragement'
+      : 'achievement';
+    while (feed.length < 12 && (encouragementIndex < encouragements.length || achievementIndex < achievements.length)) {
+      if (nextType === 'encouragement' && encouragementIndex < encouragements.length) {
+        feed.push(encouragements[encouragementIndex++]);
+        nextType = 'achievement';
+      } else if (achievementIndex < achievements.length) {
+        feed.push(achievements[achievementIndex++]);
+        nextType = 'encouragement';
+      } else {
+        feed.push(encouragements[encouragementIndex++]);
+      }
+    }
+    return feed;
+  }, [encouragementPosts, achievementPosts]);
 
   const sendMiniChatMutation = useMutation({
     mutationFn: async (content) => {
@@ -466,6 +543,7 @@ export default function Dashboard() {
       setMiniChatText('');
       setShowMiniChatEmojiPicker(false);
       await queryClient.invalidateQueries({ queryKey: ['dashboard-mini-chat', chatSessionId] });
+      toast.success('Sua palavra de superação foi publicada!');
     },
   });
 
@@ -704,18 +782,13 @@ export default function Dashboard() {
             <div className="mt-4 pt-4 border-t border-border space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <MessageSquare size={14} className="text-primary" />
-                  <p className="text-xs font-bold text-foreground">Chat da turma</p>
+                  <Heart size={14} className="text-rose-500 fill-rose-100" />
+                  <p className="text-xs font-bold text-foreground">Mural de superação</p>
                 </div>
-                <button
-                  onClick={() => navigate(scoped('/chat'))}
-                  className="flex items-center gap-1 text-[11px] text-primary font-semibold hover:underline shrink-0"
-                >
-                  Abrir chat completo →
-                </button>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">Inspire a turma</span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                🎉 Interaja com sua turma agora — compartilhe ideias, tire dúvidas e celebre conquistas juntos!
+                Compartilhe palavras de ânimo. As conquistas recentes da turma aparecem aqui para celebrar cada passo da jornada.
               </p>
 
               <div className="flex flex-wrap items-center gap-1.5">
@@ -730,18 +803,25 @@ export default function Dashboard() {
                 }
               </div>
 
-              <div className="rounded-xl border border-border bg-secondary/20 p-2 h-40 overflow-y-auto space-y-1.5">
-                {recentMiniChatMessages.length === 0 ?
-                <p className="text-xs text-muted-foreground">Ainda nao ha mensagens no chat geral.</p> :
-                recentMiniChatMessages.map((msg) => {
+              <div className="rounded-xl border border-rose-100 bg-gradient-to-b from-rose-50/40 to-secondary/20 p-2 h-48 overflow-y-auto space-y-2">
+                {overcomingWallFeed.length === 0 ?
+                <p className="text-xs text-muted-foreground text-center py-8">Seja a primeira pessoa a deixar uma palavra de força para a turma.</p> :
+                overcomingWallFeed.map((msg) => {
+                  if (msg.feedType === 'achievement') return (
+                    <div key={msg.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed">
+                      <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                      <p><span className="font-bold text-amber-800">Conquista desbloqueada!</span> <span className="font-semibold text-foreground">{msg.studentName}</span> <span className="text-muted-foreground">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
+                    </div>
+                  );
                   const isMe = msg.author_email === session?.email;
                   const authorCode = accessCodes.find((c) => c.student_email === msg.author_email);
                   const authorName = authorCode?.profile_name || authorCode?.student_name || msg.author_name || 'Aluno';
                   const authorDisplayName = getAvatarPrefixedName(isMe ? 'Voce' : authorName, authorCode?.profile_avatar_emoji);
                   return (
-                    <div key={msg.id} className="text-[11px] leading-relaxed">
-                      <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{authorDisplayName}:</span>
-                      <span className="ml-1 text-muted-foreground">{msg.content}</span>
+                    <div key={msg.id} className="rounded-lg border border-border/70 bg-background/85 p-2 text-[11px] leading-relaxed">
+                      <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{authorDisplayName}</span>
+                      <span className="ml-1 text-muted-foreground">compartilhou:</span>
+                      <p className="mt-0.5 text-foreground">“{msg.content}”</p>
                     </div>);
                 })
                 }
@@ -782,7 +862,7 @@ export default function Dashboard() {
                 <input
                   value={miniChatText}
                   onChange={(e) => setMiniChatText(e.target.value)}
-                  placeholder="Escreva para a turma..."
+                  placeholder="Deixe uma palavra de ânimo..."
                   className="flex-1 h-9 px-3 text-xs border border-border rounded-lg bg-background focus:outline-none"
                 />
                 <button
@@ -790,7 +870,7 @@ export default function Dashboard() {
                   disabled={!miniChatText.trim() || sendMiniChatMutation.isPending}
                   className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50 flex items-center gap-1">
                   
-                  <Send size={12} /> {sendMiniChatMutation.isPending ? 'Enviando...' : 'Enviar'}
+                  <Send size={12} /> {sendMiniChatMutation.isPending ? 'Publicando...' : 'Publicar'}
                 </button>
               </form>
             </div>
