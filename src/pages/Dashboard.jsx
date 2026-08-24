@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { capScore, formatScore } from '@/lib/scoreUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
+import { isLegacyMsnAction, isSinceOvercomingWallCutoff } from '@/lib/overcomingWall';
 import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
@@ -270,10 +271,10 @@ export default function Dashboard() {
     queryKey: ['dashboard-public-achievements', userCourse || 'all'],
     queryFn: async () => {
       const [lessonProgresses, taskSubmissions, examSubmissions, challengeResponses] = await Promise.all([
-        base44.entities.LessonProgress.list('-created_date', 1000),
-        base44.entities.TaskSubmission.list('-created_date', 1000),
-        base44.entities.ExamSubmission.list('-submitted_at', 1000),
-        base44.entities.DailyChallengeResponse.list('-created_date', 1000),
+        base44.entities.LessonProgress.list('-created_date', 10000),
+        base44.entities.TaskSubmission.list('-created_date', 10000),
+        base44.entities.ExamSubmission.list('-submitted_at', 10000),
+        base44.entities.DailyChallengeResponse.list('-created_date', 10000),
       ]);
       return { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses };
     },
@@ -461,7 +462,7 @@ export default function Dashboard() {
     .filter((c) => !userCourse || c.course === userCourse || userCourse === 'tcc' && !c.course)
     .filter(isStudentOnline)
     .sort((a, b) => (a.profile_name || a.student_name || a.student_email || '').localeCompare(b.profile_name || b.student_name || b.student_email || '', 'pt-BR'));
-  const encouragementPosts = React.useMemo(() => miniChatMessages.map((message) => ({
+  const encouragementPosts = React.useMemo(() => miniChatMessages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({
     ...message,
     feedType: 'encouragement',
     occurredAt: message.created_date || message.created_at || message.updated_date,
@@ -499,7 +500,7 @@ export default function Dashboard() {
       ...publicAchievementRecords.challengeResponses
         .filter((record) => courseStudents.has(record.student_email))
         .map((record) => makePost(record, 'challenge', 'venceu mais uma etapa da ofensiva diária.', record.updated_date || record.created_date || record.date)),
-    ].filter((post) => post.occurredAt && new Date(post.occurredAt).getTime() >= Date.now() - 10 * 24 * 60 * 60 * 1000)
+    ].filter((post) => isSinceOvercomingWallCutoff(post.occurredAt))
       .sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt));
   }, [publicAchievementRecords, courseCodes, lessons, tasks, exams, accessCodes]);
 
@@ -695,9 +696,9 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground text-center py-8">Seja a primeira pessoa a deixar uma palavra de força para a turma.</p> :
                 overcomingWallFeed.map((msg) => {
                   if (msg.feedType === 'achievement') return (
-                    <div key={msg.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed">
+                    <div key={msg.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed dark:border-white dark:bg-white dark:text-black">
                       <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
-                      <p><span className="font-bold text-amber-800">Conquista desbloqueada!</span> <span className="font-semibold text-foreground">{msg.studentName}</span> <span className="text-muted-foreground">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
+                      <p><span className="font-bold text-amber-800 dark:text-black">Conquista desbloqueada!</span> <span className="font-semibold text-foreground dark:text-[#b8860b]">{msg.studentName}</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
                     </div>
                   );
                   const isMe = msg.author_email === session?.email;
@@ -705,10 +706,10 @@ export default function Dashboard() {
                   const authorName = authorCode?.profile_name || authorCode?.student_name || msg.author_name || 'Aluno';
                   const authorDisplayName = getAvatarPrefixedName(isMe ? 'Voce' : authorName, authorCode?.profile_avatar_emoji);
                   return (
-                    <div key={msg.id} className="rounded-lg border border-border/70 bg-background/85 p-2 text-[11px] leading-relaxed">
+                    <div key={msg.id} className="rounded-lg border border-border/70 bg-background/85 p-2 text-[11px] leading-relaxed dark:border-white/20 dark:bg-black dark:text-white">
                       <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{authorDisplayName}</span>
                       <span className="ml-1 text-muted-foreground">compartilhou:</span>
-                      <p className="mt-0.5 text-foreground">“{msg.content}”</p>
+                      <p className="mt-0.5 text-foreground dark:text-white">“{msg.content}”</p>
                     </div>);
                 })
                 }
