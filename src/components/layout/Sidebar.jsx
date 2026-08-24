@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { applyTheme, getStoredTheme } from '@/components/layout/MobileHeader';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 import {
   MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, Brain, Sparkles,
   ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame, GraduationCap,
-  ScrollText, ClipboardList, Medal, Star, Moon, Sun, HandHeart
+  ScrollText, ClipboardList, Medal, Star, HandHeart
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -509,14 +510,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               <LogOut size={13} />
               Sair da conta
             </button>
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-              className="p-2 rounded-xl text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0"
-              aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-            >
-              {theme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
-            </button>
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
         </div>
       </aside>

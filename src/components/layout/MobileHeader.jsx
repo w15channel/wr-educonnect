@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import NotificationsBell from '@/components/dashboard/NotificationsBell';
-import { Moon, Sun } from 'lucide-react';
 import { BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 // ── Shared theme util (used by MobileHeader + Sidebar)
 export function applyTheme(theme) {
@@ -85,14 +85,7 @@ export default function MobileHeader() {
       </div>
       <h1 className="text-sm font-bold text-sidebar-foreground tracking-tight">{label}</h1>
       <div className="ml-auto flex items-center gap-2">
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-lg border border-sidebar-border bg-sidebar-accent text-sidebar-foreground hover:opacity-80 shadow-sm"
-          title="Alternar tema"
-          aria-label="Alternar tema claro e escuro"
-        >
-          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
+        <ThemeToggle theme={theme} onToggle={toggleTheme} />
         {session?.role === 'admin' && (
           <div className="[&_button]:text-white/70 [&_button:hover]:bg-white/10">
             <NotificationsBell session={session} />
