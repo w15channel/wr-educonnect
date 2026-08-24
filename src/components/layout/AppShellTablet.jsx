@@ -30,7 +30,7 @@ const pageVariants = {
 };
 
 const routeLabels = {
-  '/dashboard': 'Dashboard', '/lessons': 'Aulas', '/chat': 'Messenger',
+  '/dashboard': 'Dashboard', '/lessons': 'Aulas', '/chat': 'Mural de Superação',
   '/apostila': 'Apostila', '/tasks': 'Tarefas', '/forum': 'Fórum',
   '/students': 'Alunos', '/announcements': 'Avisos', '/profile': 'Perfil',
   '/calendar': 'Calendário', '/tuitions': 'Mensalidades', '/tutor': 'Tutor EDU',

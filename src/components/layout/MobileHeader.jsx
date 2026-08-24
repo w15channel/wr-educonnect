@@ -26,7 +26,7 @@ export function getStoredTheme() {
 const routeLabels = {
   '/dashboard': 'Dashboard',
   '/lessons': 'Aulas',
-  '/chat': 'Chat da Turma',
+  '/chat': 'Mural de Superação',
   '/apostila': 'Apostila',
   '/tasks': 'Tarefas e Provas',
   '/forum': 'Fórum de Dúvidas',

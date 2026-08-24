@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Send, Smile, Lock, Users, Search, Minus, Square, X, Bell } from 'lucide-react';
+import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
+import { adminApi } from '@/lib/adminApi';
 
 const MSN_CLASSIC_EMOJIS = [
   { code: ':-)', icon: '🙂' }, { code: ';-)', icon: '😉' }, { code: ':-D', icon: '😄' },
@@ -40,7 +41,7 @@ function formatBRT(dateStr) {
   return d.toISOString().slice(11, 16);
 }
 
-function MessageItem({ msg, isMe, name, color, email, time }) {
+function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onDelete }) {
   const isAttention = msg.content?.startsWith(ATTENTION_PREFIX);
   const isAction = msg.content?.startsWith(ACTION_PREFIX);
   const cleanContent = (msg.content || '').replace(ATTENTION_PREFIX, '').replace(ACTION_PREFIX, '').trim();
@@ -55,19 +56,28 @@ function MessageItem({ msg, isMe, name, color, email, time }) {
   }
 
   return (
-    <div className="text-[13px] leading-relaxed" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
-      <span className="text-[11px] text-[#6f7ba8]">[{time}] </span>
-      <ClickableStudent email={email} className="font-bold" style={{ color: isMe ? '#0d5d9a' : color }}>
-        {name}
-      </ClickableStudent>
-      <span className="text-[#1f2937]"> diz:</span>
-      <span className="ml-1 text-[#0f172a]">{cleanContent}</span>
+    <div className="group rounded-xl border border-rose-100 bg-white px-3 py-2.5 shadow-sm" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 text-lg" aria-hidden="true">🌟</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <ClickableStudent email={email} className="font-bold text-[12px]" style={{ color: isMe ? '#be123c' : color }}>{name}</ClickableStudent>
+            <span className="text-[10px] text-[#8b7180]">{time}</span>
+            <div className="ml-auto flex items-center gap-1">
+              {isMe && <button type="button" onClick={() => onEdit(msg)} className="rounded p-1 text-[#9f667a] hover:bg-rose-50 hover:text-rose-700" title="Editar minha mensagem" aria-label="Editar minha mensagem"><Pencil size={13}/></button>}
+              {isAdmin && <button type="button" onClick={() => onDelete(msg)} className="rounded p-1 text-[#9f667a] hover:bg-red-50 hover:text-red-700" title="Excluir permanentemente" aria-label="Excluir permanentemente"><Trash2 size={13}/></button>}
+            </div>
+          </div>
+          <p className="mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-[#3f2932]">{cleanContent}</p>
+          {msg.updated_date && msg.updated_date !== msg.created_date && <span className="text-[9px] italic text-[#a38a94]">editada</span>}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function ClassChat() {
-  const { user: session } = useOutletContext();
+  const { user: session, isAdmin } = useOutletContext();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -76,6 +86,8 @@ export default function ClassChat() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTab, setPickerTab] = useState('emoji');
   const [dmSearch, setDmSearch] = useState('');
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [editText, setEditText] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
   const bottomRef = useRef(null);
   const lastAttentionRef = useRef(null);
@@ -178,6 +190,28 @@ export default function ClassChat() {
     queryClient.invalidateQueries({ queryKey: ['class-chat'] });
   };
 
+  const startEditing = (message) => {
+    if (message.author_email !== session?.email) return;
+    setEditingMessage(message);
+    setEditText((message.content || '').replace(ATTENTION_PREFIX, '').replace(ACTION_PREFIX, '').trim());
+  };
+
+  const saveEdit = async (event) => {
+    event.preventDefault();
+    const content = editText.trim();
+    if (!editingMessage?.id || !content || editingMessage.author_email !== session?.email) return;
+    await base44.entities.ChatMessage.update(editingMessage.id, { content });
+    setEditingMessage(null);
+    setEditText('');
+    await queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
+  };
+
+  const deleteMessage = async (message) => {
+    if (!isAdmin || !message?.id || !window.confirm('Excluir esta mensagem permanentemente? Esta ação não pode ser desfeita.')) return;
+    await adminApi.delete('ChatMessage', message.id);
+    await queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
+  };
+
   const handleMsnAction = async (action) => {
     const name = session?.name || 'Aluno';
     if (action.attention) {
@@ -236,13 +270,13 @@ export default function ClassChat() {
       <div className="h-full rounded-md border border-[#3a5db6] shadow-[0_2px_0_#fff,inset_0_1px_0_rgba(255,255,255,.7)] bg-[#dfe9fb] overflow-hidden">
         <div className="h-8 px-3 bg-gradient-to-r from-[#2f58b6] via-[#4e7de0] to-[#2f58b6] text-white flex items-center">
           <img src={MSN_LOGO_URL} alt="MSN" className="w-5 h-5 object-contain mr-2" />
-          <span className="font-bold text-xs tracking-wide">EDU Live Messenger - Conversa da Turma</span>
+          <span className="font-bold text-xs tracking-wide">Mural de Superação • {courseLabel}</span>
           <div className="ml-auto flex items-center gap-2"><Minus size={13}/><Square size={11}/><X size={13}/></div>
         </div>
 
         <div className="h-9 px-3 bg-[#eaf1ff] border-b border-[#abc0ea] flex items-center justify-between text-[11px]">
           <div className="flex gap-2">
-            <button onClick={() => setActiveTab('geral')} className={`px-3 py-1 rounded ${activeTab==='geral'?'bg-white border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Users size={12} className="inline mr-1"/>Chat geral</button>
+            <button onClick={() => setActiveTab('geral')} className={`px-3 py-1 rounded ${activeTab==='geral'?'bg-white border border-[#abc0ea] text-[#be123c] font-bold':'text-[#4f5f87]'}`}><Heart size={12} className="inline mr-1 fill-rose-100"/>Mural de Superação</button>
             <button onClick={() => setActiveTab('particular')} className={`px-3 py-1 rounded ${activeTab==='particular'?'bg-white border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Lock size={11} className="inline mr-1"/>Particular</button>
           </div>
           <button onClick={enableNotifications} className={`flex items-center gap-1 px-2 py-1 rounded border ${notificationsEnabled ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-[#abc0ea] text-[#5471b9]'}`} title="Ativar notificações neste aparelho">
@@ -253,12 +287,12 @@ export default function ClassChat() {
         <div className="h-[calc(100%-68px)] flex flex-col lg:flex-row overflow-hidden">
           {activeTab === 'geral' && <>
             <div className="w-full lg:w-[68%] h-[65%] lg:h-full border-b lg:border-b-0 lg:border-r border-[#abc0ea] flex flex-col bg-white min-h-0">
-              <div className="px-3 py-1 text-[11px] bg-[#f4f8ff] border-b border-[#dae5fa] text-[#5a6d9e]">Sala geral • {courseLabel} • mensagens públicas</div>
-              <div className="flex-1 p-3 overflow-y-auto space-y-1">
-                {messages.length === 0 ? <p className="text-sm text-[#7182ac]">Ninguém falou ainda. Inicie com um “Oi :)”.</p> : messages.map((msg) => {
+              <div className="px-3 py-2 text-[11px] bg-gradient-to-r from-rose-50 to-amber-50 border-b border-rose-100 text-[#815568]"><strong>Inspire a turma.</strong> Compartilhe uma conquista, uma palavra de força ou um passo importante da sua jornada.</div>
+              <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-gradient-to-b from-[#fffafb] to-white">
+                {messages.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : messages.map((msg) => {
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);
-                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} />;
+                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} />;
                 })}
                 <div ref={bottomRef} />
               </div>
@@ -268,10 +302,13 @@ export default function ClassChat() {
                 {pickerTab === 'emoji' ? <div className="p-2 grid grid-cols-6 gap-1">{MSN_CLASSIC_EMOJIS.map((em) => <button key={em.code} onClick={() => setText(t => `${t}${em.code} `)} className="border border-[#d5e2fa] rounded px-2 py-1 hover:bg-[#ecf3ff] text-left text-xs"><span className="mr-1">{em.icon}</span>{em.code}</button>)}</div> : <div className="p-2 grid grid-cols-3 gap-1.5">{STICKERS.map(s => <button key={s.id} onClick={() => handleMsnAction(s)} className="border border-[#d5e2fa] rounded px-2 py-1 hover:bg-[#ecf3ff] text-xs text-left"><span className="mr-1">{s.emoji}</span>{s.label}</button>)}</div>}
               </div>}
 
-              <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) sendMessage(text); }} className="border-t border-[#abc0ea] bg-[#edf3ff] p-2 flex items-center gap-2">
+              {editingMessage && <form onSubmit={saveEdit} className="border-t border-amber-200 bg-amber-50 p-2 flex items-center gap-2">
+                <Pencil size={14} className="text-amber-700 shrink-0"/><input autoFocus value={editText} onChange={(e) => setEditText(e.target.value)} className="flex-1 h-9 px-3 text-sm border border-amber-300 rounded bg-white focus:outline-none" aria-label="Editar mensagem"/><button type="button" onClick={() => setEditingMessage(null)} className="text-xs text-slate-600 px-2">Cancelar</button><button type="submit" disabled={!editText.trim()} className="h-9 px-3 rounded bg-amber-600 text-white text-xs font-semibold disabled:opacity-50"><Check size={14} className="inline mr-1"/>Salvar</button>
+              </form>}
+              <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) sendMessage(text); }} className="border-t border-rose-100 bg-rose-50/70 p-2 flex items-center gap-2">
                 <button type="button" onClick={() => setShowPicker(v => !v)} className="p-2 border border-[#abc0ea] bg-white rounded hover:bg-[#f2f7ff]"><Smile size={16} className="text-[#3f62ba]"/></button>
-                <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Digite aqui e pressione Enter..." className="flex-1 h-9 px-3 text-sm border border-[#abc0ea] rounded bg-white focus:outline-none" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }} />
-                <button type="submit" className="h-9 px-4 rounded bg-[#4f7de0] text-white text-sm font-semibold disabled:opacity-50" disabled={!text.trim()}><Send size={14} className="inline mr-1"/>Enviar</button>
+                <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Compartilhe uma mensagem de superação..." className="flex-1 h-9 px-3 text-sm border border-rose-200 rounded bg-white focus:outline-none focus:border-rose-400" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }} />
+                <button type="submit" className="h-9 px-4 rounded bg-rose-600 text-white text-sm font-semibold disabled:opacity-50" disabled={!text.trim()}><Send size={14} className="inline mr-1"/>Publicar</button>
               </form>
             </div>
 
