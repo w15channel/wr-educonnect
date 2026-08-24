@@ -20,8 +20,6 @@ import { loadYouTubeApi, loadVimeoApi } from '@/lib/videoProviderApi';
 
 const SPEEDS = [1, 1.25, 1.5, 2, 2.5];
 const SKIP_SECONDS = 10;
-const DEFAULT_QUALITY = 'hd720';
-
 const YOUTUBE_QUALITY_LABELS = {
   highres: '2160p', hd2160: '2160p', hd1440: '1440p', hd1080: '1080p',
   hd720: '720p', large: '480p', medium: '360p', small: '240p', tiny: '144p', auto: 'Automática',
@@ -216,7 +214,11 @@ export default function VideoPlayer({
         player = new YT.Player(mount, {
           videoId: source.videoId,
           playerVars: {
-            controls: 0,
+            // O YouTube deixou de garantir a troca de qualidade pela IFrame
+            // API. Mantemos os controles nativos visíveis para que qualidade
+            // e legendas sejam alteradas pelo próprio player (e reflitam o
+            // estado real), sem oferecer seletores que apenas simulam a troca.
+            controls: 1,
             disablekb: 1,
             modestbranding: 1,
             rel: 0,
@@ -237,44 +239,10 @@ export default function VideoPlayer({
                   event.target.setPlaybackRate(value);
                   return event.target.getPlaybackRate?.() ?? value;
                 },
-                setQuality: (value) => {
-                  // `setPlaybackQuality` sozinho virou apenas uma sugestão nos
-                  // players HTML5. O intervalo fixa a representação quando a
-                  // versão atual da API oferece esse método.
-                  event.target.setPlaybackQualityRange?.(value, value);
-                  event.target.setPlaybackQuality?.(value);
-                },
-                setCaption: (value) => {
-                  if (value === 'off') event.target.unloadModule?.('captions');
-                  else {
-                    const track = captionTracksRef.current.find((item) => item.id === value)?.providerTrack;
-                    event.target.loadModule?.('captions');
-                    event.target.setOption?.('captions', 'track', track || { languageCode: value });
-                  }
-                },
               };
               setDuration(event.target.getDuration?.() || 0);
               setVolume((event.target.getVolume?.() ?? 100) / 100);
               setMuted(Boolean(event.target.isMuted?.()));
-              // Carrega apenas os metadados das faixas e descarrega em seguida:
-              // assim a legenda sempre começa desligada, mesmo se o usuário a
-              // deixou ativa anteriormente no YouTube.
-              event.target.loadModule?.('captions');
-              window.setTimeout(() => {
-                if (cancelled) return;
-                const tracks = event.target.getOption?.('captions', 'tracklist') || [];
-                setCaptionTracks(tracks.map((track, index) => ({
-                  id: `${track.languageCode || 'track'}:${track.kind || ''}:${track.name || index}`,
-                  label: track.displayName || track.name || track.languageCode,
-                  providerTrack: track,
-                })));
-                event.target.unloadModule?.('captions');
-              }, 0);
-              const available = event.target.getAvailableQualityLevels?.() || [];
-              setQualities(available.map((id) => ({ id, label: qualityLabel(id) })));
-              const initialQuality = available.includes(DEFAULT_QUALITY) ? DEFAULT_QUALITY : (available[0] || '');
-              if (initialQuality) event.target.setPlaybackQuality?.(initialQuality);
-              setQuality(initialQuality);
               setReady(true);
             },
             onStateChange: (event) => {
@@ -286,24 +254,11 @@ export default function VideoPlayer({
                 setStarted(true);
                 setDuration(event.target.getDuration?.() || 0);
                 onPlayRef.current?.();
-                const available = event.target.getAvailableQualityLevels?.() || [];
-                if (available.length) {
-                  setQualities(available.map((id) => ({ id, label: qualityLabel(id) })));
-                  setQuality((current) => {
-                    if (current) return current;
-                    const preferred = available.includes(DEFAULT_QUALITY) ? DEFAULT_QUALITY : available[0];
-                    event.target.setPlaybackQuality?.(preferred);
-                    return preferred;
-                  });
-                }
               } else if (event.data === states.PAUSED) {
                 onPauseRef.current?.();
               }
             },
             onPlaybackRateChange: (event) => setRate(event.data || 1),
-            onPlaybackQualityChange: (event) => {
-              if (!cancelled && event.data) setQuality(event.data);
-            },
             onError: () => setLoadError('O YouTube não permitiu a reprodução deste vídeo aqui.'),
           },
         });
@@ -366,7 +321,10 @@ export default function VideoPlayer({
             });
             return value;
           },
-          setQuality: (value) => player.setQuality(value),
+          setQuality: async (value) => {
+            await player.setQuality(value);
+            return player.getQuality();
+          },
           setCaption: (value) => value === 'off'
             ? player.disableTextTrack()
             : (() => {
@@ -403,6 +361,17 @@ export default function VideoPlayer({
         player.on('pause', () => { if (!cancelled) { setPlaying(false); onPauseRef.current?.(); } });
         player.on('ended', () => { if (!cancelled) setPlaying(false); });
         player.on('volumechange', (data) => { if (!cancelled && typeof data?.volume === 'number') setVolume(data.volume); });
+        player.on('qualitychange', (data) => { if (!cancelled && data?.id) setQuality(data.id); });
+        player.on('texttrackchange', (data) => {
+          if (cancelled) return;
+          if (!data?.language) setCaptionTrack('off');
+          else {
+            const selected = captionTracksRef.current.find(
+              (track) => track.language === data.language && (!data.kind || track.kind === data.kind)
+            );
+            setCaptionTrack(selected?.id || 'off');
+          }
+        });
         player.on('error', () => { if (!cancelled) setLoadError('O Vimeo não permitiu a reprodução deste vídeo aqui.'); });
         player.ready().then(() => { if (!cancelled) setReady(true); }).catch(() => {});
       })
@@ -499,10 +468,12 @@ export default function VideoPlayer({
   }, []);
 
   const handleQuality = useCallback((value) => {
-    setQuality(value);
-    setSettingsNotice(`Qualidade alterada para ${qualityLabel(value)}.`);
     const result = apiRef.current?.setQuality?.(value);
-    result?.catch?.(() => setSettingsNotice('Não foi possível alterar a qualidade neste vídeo.'));
+    result?.then?.((applied) => {
+      const actual = applied || value;
+      setQuality(actual);
+      setSettingsNotice(`Qualidade alterada para ${qualityLabel(actual)}.`);
+    }).catch?.(() => setSettingsNotice('Não foi possível alterar a qualidade neste vídeo.'));
   }, []);
 
   const handleCaption = useCallback((value) => {
