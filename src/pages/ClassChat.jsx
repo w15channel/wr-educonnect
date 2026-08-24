@@ -8,30 +8,10 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
 
-const MSN_CLASSIC_EMOJIS = [
-  { code: ':-)', icon: '🙂' }, { code: ';-)', icon: '😉' }, { code: ':-D', icon: '😄' },
-  { code: ':-P', icon: '😛' }, { code: ':-O', icon: '😮' }, { code: ':-(', icon: '😢' },
-  { code: '(H)', icon: '😎' }, { code: '(L)', icon: '❤️' }, { code: '(U)', icon: '💔' },
-  { code: '(Y)', icon: '👍' }, { code: '(N)', icon: '👎' }, { code: '(C)', icon: '☕' },
-  { code: '(PI)', icon: '🍕' }, { code: '(B)', icon: '🍺' }, { code: '(Z)', icon: '😴' },
-  { code: '(F)', icon: '🌹' }, { code: '(W)', icon: '🥀' }, { code: '(K)', icon: '💋' },
-];
+const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
 const MSN_LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/10fc0b060_pngegg.png';
-const ACTION_PREFIX = '[MSN_ACTION]';
 const ATTENTION_PREFIX = '[MSN_ATTENTION]';
-
-const STICKERS = [
-  { id: 'attention', emoji: '🔔', label: 'Chamar atenção', message: 'chamou a atenção da sala.', attention: true },
-  { id: 'brb', emoji: '⏳', label: 'Volto já', message: 'ficou com status: volto já.' },
-  { id: 'afk', emoji: '🌙', label: 'Ausente', message: 'avisou que está ausente por alguns minutos.' },
-  { id: 'help', emoji: '🙋', label: 'Pedir ajuda', message: 'pediu ajuda para a turma.' },
-  { id: 'material', emoji: '📎', label: 'Pedir material', message: 'pediu o material ou link citado no chat.' },
-  { id: 'summary', emoji: '📝', label: 'Pedir resumo', message: 'pediu um resumo dos pontos principais.' },
-  { id: 'coffee', emoji: '☕', label: 'Pausa rápida', message: 'avisou que fará uma pausa rápida.' },
-  { id: 'done', emoji: '✅', label: 'Concluído', message: 'marcou que concluiu essa etapa.' },
-  { id: 'celebrate', emoji: '🎉', label: 'Comemorar', message: 'comemorou com a turma.' },
-];
 
 const MSN_COLORS = ['#4f6edc', '#0a7ad1', '#9a59c5', '#de4f8b', '#f2a327', '#17a589'];
 
@@ -43,8 +23,8 @@ function formatBRT(dateStr) {
 
 function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onDelete }) {
   const isAttention = msg.content?.startsWith(ATTENTION_PREFIX);
-  const isAction = msg.content?.startsWith(ACTION_PREFIX);
-  const cleanContent = (msg.content || '').replace(ATTENTION_PREFIX, '').replace(ACTION_PREFIX, '').trim();
+  const isAction = msg.content?.startsWith('[MSN_ACTION]');
+  const cleanContent = (msg.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim();
 
   if (isAttention || isAction) {
     return (
@@ -84,7 +64,6 @@ export default function ClassChat() {
   const [activeTab, setActiveTab] = useState('geral');
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
-  const [pickerTab, setPickerTab] = useState('emoji');
   const [dmSearch, setDmSearch] = useState('');
   const [editingMessage, setEditingMessage] = useState(null);
   const [editText, setEditText] = useState('');
@@ -112,6 +91,32 @@ export default function ClassChat() {
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
     refetchInterval: 15000,
+  });
+
+  const { data: recentAchievements = [] } = useQuery({
+    queryKey: ['class-chat-achievements', userCourse],
+    queryFn: async () => {
+      const [progresses, submissions, examSubmissions, challenges, lessons, tasks, exams] = await Promise.all([
+        base44.entities.LessonProgress.list('-created_date', 1000),
+        base44.entities.TaskSubmission.list('-created_date', 1000),
+        base44.entities.ExamSubmission.list('-submitted_at', 1000),
+        base44.entities.DailyChallengeResponse.list('-created_date', 1000),
+        base44.entities.Lesson.list('-created_date', 500),
+        base44.entities.Task.list('-created_date', 500),
+        base44.entities.Exam.list('-created_date', 500),
+      ]);
+      const lessonById = Object.fromEntries(lessons.map((item) => [item.id, item]));
+      const taskById = Object.fromEntries(tasks.map((item) => [item.id, item]));
+      const examById = Object.fromEntries(exams.map((item) => [item.id, item]));
+      const makeAchievement = (record, kind, content, occurredAt) => ({ id: `achievement-${kind}-${record.id}`, student_email: record.student_email, content, occurredAt });
+      return [
+        ...progresses.filter((record) => record.watched && lessonById[record.lesson_id]).map((record) => makeAchievement(record, 'lesson', `concluiu a aula “${lessonById[record.lesson_id].title}”.`, record.updated_date || record.created_date)),
+        ...submissions.filter((record) => taskById[record.task_id]).map((record) => makeAchievement(record, 'task', `respondeu a tarefa “${taskById[record.task_id].title}”.`, record.submitted_at || record.created_date)),
+        ...examSubmissions.filter((record) => examById[record.exam_id]).map((record) => makeAchievement(record, 'exam', `concluiu “${examById[record.exam_id].title}”.`, record.submitted_at || record.created_date)),
+        ...challenges.map((record) => makeAchievement(record, 'challenge', 'venceu mais uma etapa da ofensiva diária.', record.updated_date || record.created_date || record.date)),
+      ];
+    },
+    staleTime: 30000,
   });
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, activeTab]);
@@ -193,7 +198,7 @@ export default function ClassChat() {
   const startEditing = (message) => {
     if (message.author_email !== session?.email) return;
     setEditingMessage(message);
-    setEditText((message.content || '').replace(ATTENTION_PREFIX, '').replace(ACTION_PREFIX, '').trim());
+    setEditText((message.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim());
   };
 
   const saveEdit = async (event) => {
@@ -210,25 +215,6 @@ export default function ClassChat() {
     if (!isAdmin || !message?.id || !window.confirm('Excluir esta mensagem permanentemente? Esta ação não pode ser desfeita.')) return;
     await adminApi.delete('ChatMessage', message.id);
     await queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
-  };
-
-  const handleMsnAction = async (action) => {
-    const name = session?.name || 'Aluno';
-    if (action.attention) {
-      const key = `msn_attention_${CHAT_SESSION}_${session?.email || 'anon'}`;
-      const now = Date.now();
-      const saved = JSON.parse(localStorage.getItem(key) || '{"count":0,"blockedUntil":0}');
-      if (saved.blockedUntil > now) {
-        alert(`Aguarde ${Math.ceil((saved.blockedUntil - now) / 1000)}s para chamar atenção novamente.`);
-        return;
-      }
-      const nextCount = (saved.count || 0) + 1;
-      localStorage.setItem(key, JSON.stringify({ count: nextCount >= 3 ? 0 : nextCount, blockedUntil: nextCount >= 3 ? now + 60000 : 0 }));
-      await sendMessage(`${ATTENTION_PREFIX} ${name} ${action.message}`, true);
-      playAttention();
-      return;
-    }
-    await sendMessage(`${ACTION_PREFIX} ${action.emoji} ${name} ${action.message}`, true);
   };
 
   const getProfile = (email) => {
@@ -254,6 +240,12 @@ export default function ClassChat() {
     .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
   const onlineStudents = otherStudents.filter(isStudentOnline);
   const awayStudents = otherStudents.filter(c => !isStudentOnline(c));
+  const tenDaysAgo = Date.now() - 10 * 24 * 60 * 60 * 1000;
+  const courseStudentEmails = new Set(codes.filter((code) => !userCourse || code.course === userCourse || (userCourse === 'tcc' && !code.course)).map((code) => code.student_email));
+  const wallFeed = [
+    ...messages.map((message) => ({ ...message, feedType: 'message', occurredAt: message.created_date || message.updated_date })),
+    ...recentAchievements.filter((achievement) => courseStudentEmails.has(achievement.student_email) && new Date(achievement.occurredAt).getTime() >= tenDaysAgo).map((achievement) => ({ ...achievement, feedType: 'achievement' })),
+  ].sort((a, b) => new Date(a.occurredAt || 0) - new Date(b.occurredAt || 0));
 
   const enableNotifications = async () => {
     if (typeof Notification === 'undefined') return alert('Este aparelho não suporta notificações do navegador.');
@@ -289,7 +281,11 @@ export default function ClassChat() {
             <div className="w-full lg:w-[68%] h-[65%] lg:h-full border-b lg:border-b-0 lg:border-r border-[#abc0ea] flex flex-col bg-white min-h-0">
               <div className="px-3 py-2 text-[11px] bg-gradient-to-r from-rose-50 to-amber-50 border-b border-rose-100 text-[#815568]"><strong>Inspire a turma.</strong> Compartilhe uma conquista, uma palavra de força ou um passo importante da sua jornada.</div>
               <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-gradient-to-b from-[#fffafb] to-white">
-                {messages.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : messages.map((msg) => {
+                {wallFeed.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : wallFeed.map((msg) => {
+                  if (msg.feedType === 'achievement') {
+                    const profile = getProfile(msg.student_email);
+                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"><span aria-hidden="true">🏆 </span><strong>{profile.name || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></div>;
+                  }
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);
                   return <MessageItem key={msg.id} msg={msg} isMe={isMe} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} />;
@@ -298,8 +294,8 @@ export default function ClassChat() {
               </div>
 
               {showPicker && <div className="border-t border-[#dae5fa] bg-[#f8fbff]">
-                <div className="flex text-[11px] border-b border-[#dae5fa]"><button onClick={() => setPickerTab('emoji')} className={`px-3 py-1.5 ${pickerTab==='emoji'?'font-bold text-[#25449c]':''}`}>Emoticons clássicos</button><button onClick={() => setPickerTab('sticker')} className={`px-3 py-1.5 ${pickerTab==='sticker'?'font-bold text-[#25449c]':''}`}>Ações MSN</button></div>
-                {pickerTab === 'emoji' ? <div className="p-2 grid grid-cols-6 gap-1">{MSN_CLASSIC_EMOJIS.map((em) => <button key={em.code} onClick={() => setText(t => `${t}${em.code} `)} className="border border-[#d5e2fa] rounded px-2 py-1 hover:bg-[#ecf3ff] text-left text-xs"><span className="mr-1">{em.icon}</span>{em.code}</button>)}</div> : <div className="p-2 grid grid-cols-3 gap-1.5">{STICKERS.map(s => <button key={s.id} onClick={() => handleMsnAction(s)} className="border border-[#d5e2fa] rounded px-2 py-1 hover:bg-[#ecf3ff] text-xs text-left"><span className="mr-1">{s.emoji}</span>{s.label}</button>)}</div>}
+                <div className="px-3 py-1.5 text-[11px] font-bold text-[#25449c] border-b border-[#dae5fa]">Emojis</div>
+                <div className="p-2 grid grid-cols-8 gap-1">{WALL_EMOJIS.map((emoji) => <button type="button" key={emoji} onClick={() => setText((current) => `${current}${emoji}`)} className="h-9 border border-[#d5e2fa] rounded hover:bg-[#ecf3ff] text-lg" aria-label={`Inserir ${emoji}`}>{emoji}</button>)}</div>
               </div>}
 
               {editingMessage && <form onSubmit={saveEdit} className="border-t border-amber-200 bg-amber-50 p-2 flex items-center gap-2">
