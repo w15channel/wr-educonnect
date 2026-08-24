@@ -38,6 +38,15 @@ const formatTime = (seconds) => {
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+const youtubeCaptionId = (track, index) =>
+  `${track.languageCode || 'track'}:${track.kind || 'standard'}:${track.vssId || index}`;
+
+const normalizeYouTubeCaptionTracks = (tracks = []) => tracks.map((track, index) => ({
+  id: youtubeCaptionId(track, index),
+  label: track.languageName || track.name || track.languageCode || `Legenda ${index + 1}`,
+  providerTrack: track,
+}));
+
 const isNativeFullscreen = () =>
   typeof document !== 'undefined' &&
   Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
@@ -201,6 +210,37 @@ export default function VideoPlayer({
     let player = null;
     let ticker = null;
     let cancelled = false;
+    let captionsInitialized = false;
+    let pendingCaption = null;
+
+    const refreshCaptions = (target) => {
+      if (cancelled || !target?.getOptions?.().includes('captions')) return;
+      const tracks = normalizeYouTubeCaptionTracks(target.getOption('captions', 'tracklist') || []);
+      captionTracksRef.current = tracks;
+      setCaptionTracks(tracks);
+
+      // Carregar o módulo pode restaurar a preferência de CC da conta do
+      // usuário. Na primeira carga sempre a anulamos, conforme o padrão da
+      // plataforma. Nas próximas mudanças preservamos a escolha feita aqui.
+      if (!captionsInitialized) {
+        target.setOption('captions', 'track', {});
+        captionsInitialized = true;
+        setCaptionTrack('off');
+      }
+
+      if (pendingCaption) {
+        const { value, resolve, reject } = pendingCaption;
+        pendingCaption = null;
+        try {
+          const selected = tracks.find((track) => track.id === value);
+          target.setOption('captions', 'track', value === 'off' ? {} : selected?.providerTrack || {});
+          if (value !== 'off' && !selected) throw new Error('Caption track unavailable');
+          resolve(value);
+        } catch (error) {
+          reject(error);
+        }
+      }
+    };
 
     // A API substitui o elemento passado por um <iframe>. Criamos um filho
     // descartável para o React nunca perder a referência do container.
@@ -214,15 +254,12 @@ export default function VideoPlayer({
         player = new YT.Player(mount, {
           videoId: source.videoId,
           playerVars: {
-            // O YouTube deixou de garantir a troca de qualidade pela IFrame
-            // API. Mantemos os controles nativos visíveis para que qualidade
-            // e legendas sejam alteradas pelo próprio player (e reflitam o
-            // estado real), sem oferecer seletores que apenas simulam a troca.
-            controls: 1,
+            controls: 0,
             disablekb: 1,
             modestbranding: 1,
             rel: 0,
             fs: 0,
+            cc_load_policy: 0,
             iv_load_policy: 3,
             playsinline: 1,
           },
@@ -239,12 +276,32 @@ export default function VideoPlayer({
                   event.target.setPlaybackRate(value);
                   return event.target.getPlaybackRate?.() ?? value;
                 },
+                setCaption: (value) => new Promise((resolve, reject) => {
+                  const tracks = captionTracksRef.current;
+                  const selected = tracks.find((track) => track.id === value);
+                  if (event.target.getOptions?.().includes('captions')) {
+                    try {
+                      event.target.setOption('captions', 'track', value === 'off' ? {} : selected?.providerTrack || {});
+                      if (value !== 'off' && !selected) throw new Error('Caption track unavailable');
+                      resolve(value);
+                    } catch (error) {
+                      reject(error);
+                    }
+                    return;
+                  }
+                  pendingCaption = { value, resolve, reject };
+                  event.target.loadModule?.('captions');
+                }),
               };
               setDuration(event.target.getDuration?.() || 0);
               setVolume((event.target.getVolume?.() ?? 100) / 100);
               setMuted(Boolean(event.target.isMuted?.()));
+              // O módulo é necessário para consultar as faixas disponíveis e
+              // controlar o CC pelo botão do player virtual.
+              event.target.loadModule?.('captions');
               setReady(true);
             },
+            onApiChange: (event) => refreshCaptions(event.target),
             onStateChange: (event) => {
               if (cancelled) return;
               const states = window.YT?.PlayerState || {};
