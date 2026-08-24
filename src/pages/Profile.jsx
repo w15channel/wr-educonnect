@@ -186,7 +186,7 @@ export default function Profile({ focusStudyProfile = false }) {
   const avatarEmoji = resolveAvatarEmoji(selectedAvatar);
 
   return (
-    <div className="p-4 lg:p-7 max-w-2xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-2xl mx-auto animate-fade-in-up">
       <div className="mb-6">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">{focusStudyProfile ? 'Perfil de Estudos' : 'Meu Perfil'}</h2>
         <p className="text-muted-foreground text-sm mt-0.5">

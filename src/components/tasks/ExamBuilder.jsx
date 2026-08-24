@@ -73,7 +73,7 @@ export default function ExamBuilder({ onBack, editingExam }) {
   };
 
   return (
-    <div className="p-4 lg:p-7 max-w-3xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-3xl mx-auto animate-fade-in-up">
       <div className="flex items-center gap-3 mb-5">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ChevronLeft size={16} /> Voltar

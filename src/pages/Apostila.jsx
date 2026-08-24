@@ -393,7 +393,7 @@ export default function Apostila() {
   const totalRead = readLessons.size;
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-24">
+    <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-24">
       {celebrating && <ParticipationCelebration message={celebrationMsg} onClose={() => setCelebrating(false)} />}
       {printLesson && (
         <ApostilaPrintModal

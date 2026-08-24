@@ -85,7 +85,7 @@ export default function StudentDetail() {
   const publicName = getAvatarPrefixedName(displayName, code.profile_avatar_emoji || profile?.avatar_emoji);
 
   return (
-    <div className="p-4 lg:p-7 max-w-xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-xl mx-auto animate-fade-in-up">
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-5"

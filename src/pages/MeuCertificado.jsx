@@ -156,7 +156,7 @@ export default function MeuCertificado() {
   }
 
   return (
-    <div className="p-4 lg:p-7 space-y-6 animate-fade-in-up max-w-7xl mx-auto">
+    <div className="app-page space-y-6 animate-fade-in-up max-w-7xl mx-auto">
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
           <Award size={24} className="text-white" />

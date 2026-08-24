@@ -148,7 +148,7 @@ export default function Exams() {
   }
 
   return (
-    <div className="p-3 md:p-5 max-w-[900px] mx-auto animate-fade-in-up">
+    <div className="app-page max-w-[900px] mx-auto animate-fade-in-up">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-5">
         <div>

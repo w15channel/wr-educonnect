@@ -195,7 +195,7 @@ export default function Tasks({ mode = 'tasks' }) {
   if (showAIGenerator && mode === 'tests') return <AIExamGenerator onBack={() => setShowAIGenerator(false)} course={userCourse} />;
 
   return (
-    <div className="p-3 md:p-5 max-w-[900px] mx-auto animate-fade-in-up">
+    <div className="app-page max-w-[900px] mx-auto animate-fade-in-up">
       {celebrating && <ParticipationCelebration message="Tarefa entregue! Parabéns pela dedicação! 🎉" onClose={() => setCelebrating(false)} />}
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-5">

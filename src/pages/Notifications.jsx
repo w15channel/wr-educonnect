@@ -84,14 +84,14 @@ export default function Notifications() {
 
   if (!isAdmin) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="app-page max-w-2xl mx-auto">
         <p className="text-sm text-muted-foreground text-center py-12">Esta página é restrita a administradores.</p>
       </div>
     );
   }
 
   return (
-    <div className="p-4 lg:p-7 max-w-3xl mx-auto space-y-5 animate-fade-in-up">
+    <div className="app-page max-w-3xl mx-auto space-y-5 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center shadow-lg">

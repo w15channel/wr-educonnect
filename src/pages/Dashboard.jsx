@@ -474,7 +474,7 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
   return (
-    <div className="p-4 lg:p-7 max-w-7xl mx-auto space-y-5 animate-fade-in-up">
+    <div className="app-page max-w-7xl mx-auto space-y-5 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

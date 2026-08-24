@@ -211,7 +211,7 @@ export default function Students() {
   const courseLabel = { tcc: 'Terapia TC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' }[activeCourse] || activeCourse;
 
   return (
-    <div className="p-3 md:p-5 max-w-[1100px] mx-auto animate-fade-in-up">
+    <div className="app-page max-w-[1100px] mx-auto animate-fade-in-up">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Gestão de Alunos — {courseLabel}</h2>

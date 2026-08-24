@@ -59,7 +59,7 @@ export default function MonitorCertificate() {
 
   if (!certStudent) {
     return (
-      <div className="p-6 max-w-3xl mx-auto text-center space-y-4">
+      <div className="app-page max-w-3xl mx-auto text-center space-y-4">
         <Crown size={42} className="mx-auto text-yellow-500 opacity-60" />
         <h2 className="text-xl font-bold">Certificado não encontrado</h2>
         <p className="text-sm text-muted-foreground">Verifique se o link recebido no aviso está correto.</p>
@@ -69,7 +69,7 @@ export default function MonitorCertificate() {
   }
 
   return (
-    <div className="p-4 lg:p-7 max-w-5xl mx-auto space-y-4 animate-fade-in-up">
+    <div className="app-page max-w-5xl mx-auto space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2"><Crown size={22} className="text-yellow-500" /> Certificado de Monitor</h2>

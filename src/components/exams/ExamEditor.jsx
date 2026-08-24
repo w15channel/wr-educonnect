@@ -82,7 +82,7 @@ export default function ExamEditor({ exam, onBack, course }) {
   };
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-4xl mx-auto animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">

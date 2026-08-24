@@ -329,7 +329,7 @@ export default function MeuBestSeller() {
   // ── Editor de capítulo ──
   if (editingChapter) {
     return (
-      <div className="flex flex-col h-full p-4 lg:p-7 max-w-4xl mx-auto space-y-4 animate-fade-in-up">
+      <div className="flex flex-col h-full app-page max-w-4xl mx-auto space-y-4 animate-fade-in-up">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => setEditingChapter(null)} className="gap-1.5 text-xs">
             <ChevronLeft size={14} /> Voltar ao Livro
@@ -364,7 +364,7 @@ export default function MeuBestSeller() {
   // ── Detalhes do livro ──
   if (selectedBook) {
     return (
-      <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-5 animate-fade-in-up">
+      <div className="app-page max-w-4xl mx-auto space-y-5 animate-fade-in-up">
         <div className="flex items-center gap-3 justify-between flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => setSelectedBook(null)} className="gap-1.5 text-xs">
             <ChevronLeft size={14} /> Meus Livros
@@ -593,7 +593,7 @@ export default function MeuBestSeller() {
 
   // ── Lista de livros ──
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+    <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">

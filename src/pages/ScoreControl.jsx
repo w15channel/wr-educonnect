@@ -295,7 +295,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
 
   return (
-    <div className="w-full max-w-[860px] mx-auto p-3 md:p-5 animate-fade-in-up overflow-x-hidden">
+    <div className="w-full max-w-[860px] mx-auto app-page animate-fade-in-up overflow-x-hidden">
       <div className="flex items-center gap-3 mb-5">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ChevronLeft size={16} /> Voltar
@@ -1132,7 +1132,7 @@ export default function ScoreControl() {
   [['alpha', 'A–Z'], ['points', 'Classificação']];
 
   return (
-    <div className="w-full max-w-[860px] mx-auto p-3 md:p-5 animate-fade-in-up overflow-x-hidden">
+    <div className="w-full max-w-[860px] mx-auto app-page animate-fade-in-up overflow-x-hidden">
       <div className="mb-5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
