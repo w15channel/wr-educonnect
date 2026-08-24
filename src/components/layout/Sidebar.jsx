@@ -73,7 +73,7 @@ const adminGroups = [
   {
     label: 'Comunidade',
     items: [
-      { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
+      { icon: UsersRound,    label: 'Mural de Superação',      path: '/chat',              color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
       { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
       { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-pink-400' },
@@ -118,7 +118,7 @@ const studentGroups = [
   {
     label: 'Comunidade',
     items: [
-      { icon: UsersRound,    label: 'Chat da Turma',          path: '/chat',              color: 'text-blue-400' },
+      { icon: UsersRound,    label: 'Mural de Superação',      path: '/chat',              color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Fórum de Dúvidas',       path: '/forum',             color: 'text-green-400' },
       { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
       { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-rose-400' },
@@ -244,7 +244,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   });
   const { data: chatMessages = [] } = useQuery({
     queryKey: ['sidebar-chat-messages', userCourse],
-    queryFn: () => base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: `class-${userCourse}` }).then(res => res?.data?.records || res?.data || []),
+    queryFn: () => base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: `class_chat_${userCourse}` }).then(res => res?.data?.records || res?.data || []),
     ...queryDefaults,
     refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL,
   });

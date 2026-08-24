@@ -39,7 +39,7 @@ const adminGroups = [
     { icon: Trophy, label: 'Ranking Geral', path: '/ranking', color: 'text-yellow-400' },
   ]},
   { label: 'Comunidade', items: [
-    { icon: Hash, label: 'EDU Messenger', path: '/chat', color: 'text-blue-400' },
+    { icon: Hash, label: 'Mural de Superação', path: '/chat', color: 'text-blue-400' },
     { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-green-400' },
     { icon: Hash, label: 'Debates', path: '/debates', color: 'text-fuchsia-400' },
     { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-pink-400' },
@@ -70,7 +70,7 @@ const studentGroups = [
     { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
   ]},
   { label: 'Comunidade', items: [
-    { icon: Hash, label: 'EDU Messenger', path: '/chat', color: 'text-blue-400' },
+    { icon: Hash, label: 'Mural de Superação', path: '/chat', color: 'text-blue-400' },
     { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-green-400' },
     { icon: Hash, label: 'Debates', path: '/debates', color: 'text-fuchsia-400' },
     { icon: Heart, label: 'Terapeuta da Semana', path: '/terapeuta', color: 'text-rose-400' },
