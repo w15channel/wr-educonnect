@@ -745,6 +745,19 @@ export default function VideoPlayer({
             </select>
           </label>
 
+          {source.originalUrl && (
+            <button
+              type="button"
+              onClick={handleOpenSource}
+              title={`Abrir vídeo no site de origem${source.provider ? ` (${source.provider})` : ''}`}
+              aria-label={`Abrir vídeo no site de origem${source.provider ? `: ${source.provider}` : ''}`}
+              className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold"
+            >
+              <ExternalLink size={15} aria-hidden="true" />
+              <span className="hidden sm:inline">Abrir original</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={toggleFullscreen}
