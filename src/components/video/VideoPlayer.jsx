@@ -20,8 +20,6 @@ import { loadYouTubeApi, loadVimeoApi } from '@/lib/videoProviderApi';
 
 const SPEEDS = [1, 1.25, 1.5, 2, 2.5];
 const SKIP_SECONDS = 10;
-const DEFAULT_QUALITY = 'hd720';
-
 const YOUTUBE_QUALITY_LABELS = {
   highres: '2160p', hd2160: '2160p', hd1440: '1440p', hd1080: '1080p',
   hd720: '720p', large: '480p', medium: '360p', small: '240p', tiny: '144p', auto: 'Automática',
@@ -39,6 +37,15 @@ const formatTime = (seconds) => {
 };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const youtubeCaptionId = (track, index) =>
+  `${track.languageCode || 'track'}:${track.kind || 'standard'}:${track.vssId || index}`;
+
+const normalizeYouTubeCaptionTracks = (tracks = []) => tracks.map((track, index) => ({
+  id: youtubeCaptionId(track, index),
+  label: track.languageName || track.name || track.languageCode || `Legenda ${index + 1}`,
+  providerTrack: track,
+}));
 
 const isNativeFullscreen = () =>
   typeof document !== 'undefined' &&
@@ -74,6 +81,7 @@ export default function VideoPlayer({
   const onPlayRef = useRef(onPlay);
   const onPauseRef = useRef(onPause);
   const captionTrackRef = useRef('off');
+  const captionTracksRef = useRef([]);
 
   useEffect(() => {
     onPlayRef.current = onPlay;
@@ -98,11 +106,16 @@ export default function VideoPlayer({
   const [quality, setQuality] = useState('');
   const [captionTracks, setCaptionTracks] = useState([]);
   const [captionTrack, setCaptionTrack] = useState('off');
+  const [settingsNotice, setSettingsNotice] = useState('');
   const [isPortrait, setIsPortrait] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)').matches : false
   );
 
   const fullscreen = nativeFullscreen || cssFullscreen;
+
+  useEffect(() => {
+    captionTracksRef.current = captionTracks;
+  }, [captionTracks]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -127,6 +140,7 @@ export default function VideoPlayer({
     setCaptionTracks([]);
     setCaptionTrack('off');
     captionTrackRef.current = 'off';
+    setSettingsNotice('');
   }, [url, canControl]);
 
   // ── Motor: arquivo de vídeo nativo ──────────────────────────────────────────
@@ -151,8 +165,10 @@ export default function VideoPlayer({
       setCaptionTracks(tracks.map((track, index) => ({
         id: String(index), label: track.label || track.language || `Legenda ${index + 1}`,
       })));
-      setQualities([{ id: 'original', label: 'Original' }]);
-      setQuality('original');
+      // Um arquivo direto tem somente a representação enviada pelo servidor;
+      // não exibimos um seletor que não teria como trocar a qualidade.
+      setQualities([]);
+      setQuality('');
     };
     const onDurationChange = () => setDuration(el.duration || 0);
     const onTime = () => setCurrentTime(el.currentTime || 0);
@@ -253,6 +269,7 @@ export default function VideoPlayer({
             modestbranding: 1,
             rel: 0,
             fs: 0,
+            cc_load_policy: 0,
             iv_load_policy: 3,
             playsinline: 1,
           },
@@ -300,7 +317,9 @@ export default function VideoPlayer({
                     event.target.setOption?.('captions', 'track', { languageCode: value });
                     event.target.setOption?.('cc', 'track', { languageCode: value });
                   }
-                },
+                  pendingCaption = { value, resolve, reject };
+                  event.target.loadModule?.('captions');
+                }),
               };
               setDuration(event.target.getDuration?.() || 0);
               setVolume((event.target.getVolume?.() ?? 100) / 100);
@@ -313,6 +332,7 @@ export default function VideoPlayer({
               setQuality(initialQuality);
               setReady(true);
             },
+            onApiChange: (event) => refreshCaptions(event.target),
             onStateChange: (event) => {
               if (cancelled) return;
               const states = window.YT?.PlayerState || {};
@@ -404,8 +424,11 @@ export default function VideoPlayer({
             setRateNotice('O Vimeo não permitiu alterar a qualidade deste vídeo.');
           }),
           setCaption: (value) => value === 'off'
-            ? player.disableTextTrack().catch(() => {})
-            : player.enableTextTrack(value).catch(() => {}),
+            ? player.disableTextTrack()
+            : (() => {
+              const track = captionTracksRef.current.find((item) => item.id === value);
+              return player.enableTextTrack(track?.language || value, track?.kind);
+            })(),
         };
 
         player.on('timeupdate', (data) => {
@@ -417,8 +440,11 @@ export default function VideoPlayer({
           if (cancelled) return;
           player.getDuration().then((value) => setDuration(value || 0)).catch(() => {});
           player.disableTextTrack().catch(() => {});
-          player.getTextTracks().then((tracks) => setCaptionTracks(tracks.map((track) => ({
-            id: track.language, label: track.label || track.language,
+          player.getTextTracks().then((tracks) => setCaptionTracks(tracks.map((track, trackIndex) => ({
+            id: `${track.language}:${track.kind || trackIndex}`,
+            language: track.language,
+            kind: track.kind,
+            label: track.label || track.language,
           })))).catch(() => {});
           player.getQualities().then((items) => {
             const available = items.filter((item) => item.id !== 'auto');
@@ -433,6 +459,17 @@ export default function VideoPlayer({
         player.on('pause', () => { if (!cancelled) { setPlaying(false); onPauseRef.current?.(); } });
         player.on('ended', () => { if (!cancelled) setPlaying(false); });
         player.on('volumechange', (data) => { if (!cancelled && typeof data?.volume === 'number') setVolume(data.volume); });
+        player.on('qualitychange', (data) => { if (!cancelled && data?.id) setQuality(data.id); });
+        player.on('texttrackchange', (data) => {
+          if (cancelled) return;
+          if (!data?.language) setCaptionTrack('off');
+          else {
+            const selected = captionTracksRef.current.find(
+              (track) => track.language === data.language && (!data.kind || track.kind === data.kind)
+            );
+            setCaptionTrack(selected?.id || 'off');
+          }
+        });
         player.on('error', () => { if (!cancelled) setLoadError('O Vimeo não permitiu a reprodução deste vídeo aqui.'); });
         player.ready().then(() => { if (!cancelled) setReady(true); }).catch(() => {});
       })
@@ -529,8 +566,12 @@ export default function VideoPlayer({
   }, []);
 
   const handleQuality = useCallback((value) => {
-    setQuality(value);
-    apiRef.current?.setQuality?.(value);
+    const result = apiRef.current?.setQuality?.(value);
+    result?.then?.((applied) => {
+      const actual = applied || value;
+      setQuality(actual);
+      setSettingsNotice(`Qualidade alterada para ${qualityLabel(actual)}.`);
+    }).catch?.(() => setSettingsNotice('Não foi possível alterar a qualidade neste vídeo.'));
   }, []);
 
   const handleCaption = useCallback((value) => {
@@ -542,8 +583,14 @@ export default function VideoPlayer({
       });
       return;
     }
-    apiRef.current?.setCaption?.(value);
+    const result = apiRef.current?.setCaption?.(value);
+    result?.catch?.(() => setSettingsNotice('Não foi possível alterar a legenda neste vídeo.'));
   }, [source.kind]);
+
+  const handleOpenSource = useCallback(() => {
+    if (!source.originalUrl) return;
+    window.open(source.originalUrl, '_blank', 'noopener,noreferrer');
+  }, [source.originalUrl]);
 
   const enterFullscreen = useCallback(async () => {
     const element = containerRef.current;
@@ -650,7 +697,7 @@ export default function VideoPlayer({
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <ExternalLink size={14} /> Abrir no site de origem
-              </a>
+              </button>
             )}
           </div>
         )}
@@ -690,9 +737,9 @@ export default function VideoPlayer({
               Controles do {source.provider || 'provedor'} disponíveis no próprio vídeo
             </span>
             {source.originalUrl && (
-              <a href={source.originalUrl} target="_blank" rel="noopener noreferrer" className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold">
+              <button type="button" onClick={handleOpenSource} className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold">
                 <ExternalLink size={14} /> <span className="hidden sm:inline">Abrir original</span>
-              </a>
+              </button>
             )}
             <button type="button" onClick={toggleFullscreen} title={fullscreen ? 'Sair da tela cheia' : 'Girar tela (tela cheia)'} className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold">
               {fullscreen ? <Minimize2 size={15} /> : <RotateCw size={15} />}
@@ -797,6 +844,19 @@ export default function VideoPlayer({
             </select>
           </label>
 
+          {source.originalUrl && (
+            <button
+              type="button"
+              onClick={handleOpenSource}
+              title={`Abrir vídeo no site de origem${source.provider ? ` (${source.provider})` : ''}`}
+              aria-label={`Abrir vídeo no site de origem${source.provider ? `: ${source.provider}` : ''}`}
+              className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold"
+            >
+              <ExternalLink size={15} aria-hidden="true" />
+              <span className="hidden sm:inline">Abrir original</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={toggleFullscreen}
@@ -809,6 +869,7 @@ export default function VideoPlayer({
         </div>
 
         {rateNotice && <p className="mt-1.5 text-[11px] text-amber-300">{rateNotice}</p>}
+        <p className="sr-only" role="status" aria-live="polite">{settingsNotice}</p>
 
       </div>}
 
