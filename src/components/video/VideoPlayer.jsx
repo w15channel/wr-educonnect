@@ -80,7 +80,6 @@ export default function VideoPlayer({
   const apiRef = useRef(null);
   const onPlayRef = useRef(onPlay);
   const onPauseRef = useRef(onPause);
-  const captionTrackRef = useRef('off');
   const captionTracksRef = useRef([]);
 
   useEffect(() => {
@@ -139,7 +138,6 @@ export default function VideoPlayer({
     setQuality('');
     setCaptionTracks([]);
     setCaptionTrack('off');
-    captionTrackRef.current = 'off';
     setSettingsNotice('');
   }, [url, canControl]);
 
@@ -170,7 +168,6 @@ export default function VideoPlayer({
       setQualities([]);
       setQuality('');
     };
-    const onDurationChange = () => setDuration(el.duration || 0);
     const onTime = () => setCurrentTime(el.currentTime || 0);
     const onPlayEvent = () => { setPlaying(true); setStarted(true); onPlayRef.current?.(); };
     const onPauseEvent = () => { setPlaying(false); onPauseRef.current?.(); };
@@ -180,7 +177,7 @@ export default function VideoPlayer({
     const onError = () => setLoadError('Não foi possível carregar este vídeo.');
 
     el.addEventListener('loadedmetadata', onLoaded);
-    el.addEventListener('durationchange', onDurationChange);
+    el.addEventListener('durationchange', onLoaded);
     el.addEventListener('timeupdate', onTime);
     el.addEventListener('play', onPlayEvent);
     el.addEventListener('pause', onPauseEvent);
@@ -192,7 +189,7 @@ export default function VideoPlayer({
 
     return () => {
       el.removeEventListener('loadedmetadata', onLoaded);
-      el.removeEventListener('durationchange', onDurationChange);
+      el.removeEventListener('durationchange', onLoaded);
       el.removeEventListener('timeupdate', onTime);
       el.removeEventListener('play', onPlayEvent);
       el.removeEventListener('pause', onPauseEvent);
@@ -213,43 +210,36 @@ export default function VideoPlayer({
     let player = null;
     let ticker = null;
     let cancelled = false;
-    let captionsFound = false;
-    let captionPolling = false;
+    let captionsInitialized = false;
+    let pendingCaption = null;
 
-    // A tracklist de legendas do YouTube só é preenchida depois que o módulo
-    // é carregado (e às vezes só após o vídeo começar a tocar). Por isso o
-    // carregamento é feito com novas tentativas, consultando os dois nomes de
-    // módulo que a API usa ('captions' no HTML5 e 'cc' no player antigo).
-    const refreshCaptionTracks = (target) => {
-      if (captionsFound || captionPolling) return;
-      captionPolling = true;
-      target.loadModule?.('captions');
-      target.loadModule?.('cc');
-      let attempts = 0;
-      const poll = () => {
-        if (cancelled) return;
-        const list = target.getOption?.('captions', 'tracklist') || [];
-        const tracks = list.length ? list : (target.getOption?.('cc', 'tracklist') || []);
-        if (tracks.length) {
-          captionsFound = true;
-          setCaptionTracks(tracks.map((track) => ({
-            id: track.languageCode, label: track.displayName || track.name || track.languageCode,
-          })));
+    const refreshCaptions = (target) => {
+      if (cancelled || !target?.getOptions?.().includes('captions')) return;
+      const tracks = normalizeYouTubeCaptionTracks(target.getOption('captions', 'tracklist') || []);
+      captionTracksRef.current = tracks;
+      setCaptionTracks(tracks);
+
+      // Carregar o módulo pode restaurar a preferência de CC da conta do
+      // usuário. Na primeira carga sempre a anulamos, conforme o padrão da
+      // plataforma. Nas próximas mudanças preservamos a escolha feita aqui.
+      if (!captionsInitialized) {
+        target.setOption('captions', 'track', {});
+        captionsInitialized = true;
+        setCaptionTrack('off');
+      }
+
+      if (pendingCaption) {
+        const { value, resolve, reject } = pendingCaption;
+        pendingCaption = null;
+        try {
+          const selected = tracks.find((track) => track.id === value);
+          target.setOption('captions', 'track', value === 'off' ? {} : selected?.providerTrack || {});
+          if (value !== 'off' && !selected) throw new Error('Caption track unavailable');
+          resolve(value);
+        } catch (error) {
+          reject(error);
         }
-        if (tracks.length || attempts >= 20) {
-          captionPolling = false;
-          // Mantém a legenda desligada por padrão, mesmo que o usuário a
-          // tenha deixado ativa anteriormente no YouTube.
-          if (captionTrackRef.current === 'off') {
-            target.unloadModule?.('captions');
-            target.unloadModule?.('cc');
-          }
-          return;
-        }
-        attempts += 1;
-        window.setTimeout(poll, 250);
-      };
-      poll();
+      }
     };
 
     // A API substitui o elemento passado por um <iframe>. Criamos um filho
@@ -286,36 +276,18 @@ export default function VideoPlayer({
                   event.target.setPlaybackRate(value);
                   return event.target.getPlaybackRate?.() ?? value;
                 },
-                setQuality: (value) => {
-                  const target = event.target;
-                  target.setPlaybackQualityRange?.(value, value);
-                  target.setPlaybackQuality?.(value);
-                  // A API do YouTube ignora setPlaybackQuality há anos; a única
-                  // forma confiável de trocar a resolução é recarregar o vídeo
-                  // no mesmo ponto informando a qualidade sugerida.
-                  const time = target.getCurrentTime?.() || 0;
-                  const states = window.YT?.PlayerState || {};
-                  const wasPlaying = target.getPlayerState?.() === states.PLAYING;
-                  const payload = { videoId: source.videoId, startSeconds: time, suggestedQuality: value };
-                  if (wasPlaying) target.loadVideoById?.(payload);
-                  else target.cueVideoById?.(payload);
-                  captionsFound = false;
-                  const desiredCaption = captionTrackRef.current;
-                  if (desiredCaption && desiredCaption !== 'off') {
-                    window.setTimeout(() => {
-                      if (!cancelled) apiRef.current?.setCaption?.(desiredCaption);
-                    }, 700);
-                  }
-                },
-                setCaption: (value) => {
-                  if (value === 'off') {
-                    event.target.unloadModule?.('captions');
-                    event.target.unloadModule?.('cc');
-                  } else {
-                    event.target.loadModule?.('captions');
-                    event.target.loadModule?.('cc');
-                    event.target.setOption?.('captions', 'track', { languageCode: value });
-                    event.target.setOption?.('cc', 'track', { languageCode: value });
+                setCaption: (value) => new Promise((resolve, reject) => {
+                  const tracks = captionTracksRef.current;
+                  const selected = tracks.find((track) => track.id === value);
+                  if (event.target.getOptions?.().includes('captions')) {
+                    try {
+                      event.target.setOption('captions', 'track', value === 'off' ? {} : selected?.providerTrack || {});
+                      if (value !== 'off' && !selected) throw new Error('Caption track unavailable');
+                      resolve(value);
+                    } catch (error) {
+                      reject(error);
+                    }
+                    return;
                   }
                   pendingCaption = { value, resolve, reject };
                   event.target.loadModule?.('captions');
@@ -324,12 +296,9 @@ export default function VideoPlayer({
               setDuration(event.target.getDuration?.() || 0);
               setVolume((event.target.getVolume?.() ?? 100) / 100);
               setMuted(Boolean(event.target.isMuted?.()));
-              refreshCaptionTracks(event.target);
-              const available = event.target.getAvailableQualityLevels?.() || [];
-              setQualities(available.map((id) => ({ id, label: qualityLabel(id) })));
-              const initialQuality = available.includes(DEFAULT_QUALITY) ? DEFAULT_QUALITY : (available[0] || '');
-              if (initialQuality) event.target.setPlaybackQuality?.(initialQuality);
-              setQuality(initialQuality);
+              // O módulo é necessário para consultar as faixas disponíveis e
+              // controlar o CC pelo botão do player virtual.
+              event.target.loadModule?.('captions');
               setReady(true);
             },
             onApiChange: (event) => refreshCaptions(event.target),
@@ -342,17 +311,6 @@ export default function VideoPlayer({
                 setStarted(true);
                 setDuration(event.target.getDuration?.() || 0);
                 onPlayRef.current?.();
-                refreshCaptionTracks(event.target);
-                const available = event.target.getAvailableQualityLevels?.() || [];
-                if (available.length) {
-                  setQualities(available.map((id) => ({ id, label: qualityLabel(id) })));
-                  setQuality((current) => {
-                    if (current) return current;
-                    const preferred = available.includes(DEFAULT_QUALITY) ? DEFAULT_QUALITY : available[0];
-                    event.target.setPlaybackQuality?.(preferred);
-                    return preferred;
-                  });
-                }
               } else if (event.data === states.PAUSED) {
                 onPauseRef.current?.();
               }
@@ -420,9 +378,10 @@ export default function VideoPlayer({
             });
             return value;
           },
-          setQuality: (value) => player.setQuality(value).catch(() => {
-            setRateNotice('O Vimeo não permitiu alterar a qualidade deste vídeo.');
-          }),
+          setQuality: async (value) => {
+            await player.setQuality(value);
+            return player.getQuality();
+          },
           setCaption: (value) => value === 'off'
             ? player.disableTextTrack()
             : (() => {
@@ -576,7 +535,7 @@ export default function VideoPlayer({
 
   const handleCaption = useCallback((value) => {
     setCaptionTrack(value);
-    captionTrackRef.current = value;
+    setSettingsNotice(value === 'off' ? 'Legendas desligadas.' : 'Legendas ativadas.');
     if (source.kind === 'file') {
       Array.from(videoRef.current?.textTracks || []).forEach((track, index) => {
         track.mode = value === String(index) ? 'showing' : 'disabled';
@@ -690,11 +649,10 @@ export default function VideoPlayer({
           <div className="absolute inset-0 z-[4] flex flex-col items-center justify-center gap-2 bg-black/80 px-4 text-center text-white">
             <p className="text-sm">{loadError}</p>
             {source.originalUrl && (
-              <a
-                href={source.originalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              <button
+                type="button"
+                onClick={handleOpenSource}
+                className="wr-video-source-btn"
               >
                 <ExternalLink size={14} /> Abrir no site de origem
               </button>
@@ -873,30 +831,25 @@ export default function VideoPlayer({
 
       </div>}
 
-      {/* Pergunta de qualidade + botão para abrir na fonte */}
+      {/* Pergunta de qualidade + link original */}
       {!fullscreen && (
         <div className="wr-video-quality px-4 py-3">
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              A visualização da aula está em boa qualidade? Se preferir, você pode abrir esse vídeo
-              externamente no site de origem.
-            </p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            A visualização da aula está em boa qualidade? Se preferir, você pode abrir esse vídeo externamente
+            no site de origem pelo botão abaixo:{' '}
             {source.originalUrl ? (
-              <a
-                href={source.originalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              <button
+                type="button"
+                onClick={handleOpenSource}
+                className="wr-video-source-btn ml-1"
               >
-                <ExternalLink size={14} />
-                Abrir no site de origem{source.provider ? ` (${source.provider})` : ''}
-              </a>
+                <ExternalLink size={12} />
+                abrir no site de origem{source.provider ? ` (${source.provider})` : ''}
+              </button>
             ) : (
-              <span className="text-xs italic text-muted-foreground">
-                Link original não informado nesta aula.
-              </span>
+              <span className="italic">link original não informado nesta aula.</span>
             )}
-          </div>
+          </p>
         </div>
       )}
     </div>
