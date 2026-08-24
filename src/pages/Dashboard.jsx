@@ -499,7 +499,8 @@ export default function Dashboard() {
       ...publicAchievementRecords.challengeResponses
         .filter((record) => courseStudents.has(record.student_email))
         .map((record) => makePost(record, 'challenge', 'venceu mais uma etapa da ofensiva diária.', record.updated_date || record.created_date || record.date)),
-    ].filter((post) => post.occurredAt).sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt));
+    ].filter((post) => post.occurredAt && new Date(post.occurredAt).getTime() >= Date.now() - 10 * 24 * 60 * 60 * 1000)
+      .sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt));
   }, [publicAchievementRecords, courseCodes, lessons, tasks, exams, accessCodes]);
 
   const overcomingWallFeed = React.useMemo(() => {
@@ -579,6 +580,190 @@ export default function Dashboard() {
           </Button>
         }
       </div>
+
+      {/* Student: progress + ranking */}
+      {!isTeacher &&
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Tutorial player */}
+          <div className="bg-card rounded-2xl border border-border p-5 text-left">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
+                <PlayCircle size={16} className="text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Tutorial da Plataforma</h3>
+                <p className="text-xs text-muted-foreground">Assista quando quiser para aprender a usar o site</p>
+              </div>
+            </div>
+            <div className="rounded-xl overflow-hidden border border-border">
+              <VideoPlayer
+                url="https://drive.google.com/file/d/1cIKz1staWdnYROSBlyfXh7H3bjX7vb3w/preview"
+                title="Tutorial da Plataforma"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Este vídeo é o tutorial de como usar o site adequadamente. Você pode assisti-lo sempre que precisar — tudo o que você precisa para começar a usar a plataforma está nele.
+            </p>
+          </div>
+
+          {/* Ranking */}
+          <div className="order-first lg:col-span-2 bg-card rounded-2xl border border-border p-5 text-left flex flex-col">
+            <div className="order-2 mt-5 pt-5 border-t border-border">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
+                  <Trophy size={16} className="text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">Ranking Geral</h3>
+                  <p className="text-xs text-muted-foreground">Pontuação publicada manualmente pelo administrador</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {myRank > 0 &&
+              <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full">#{myRank}</span>
+              }
+              </div>
+            </div>
+            {visibleStudentRanking.length === 0 ?
+          <p className="text-sm text-muted-foreground text-center py-6">O ranking será exibido após as primeiras notas</p> :
+
+          <div className="max-h-72 overflow-y-auto pr-1 space-y-1.5">
+                {visibleStudentRanking.map((r, i) => {
+              const isMe = r.email === session?.email;
+              const code = accessCodes.find((c) => c.student_email === r.email);
+              const displayName = code?.profile_name || code?.student_name || r.email;
+              const avatarColor = code?.profile_avatar_color || '#5b5ef4';
+              const photoUrl = code?.profile_photo_url || '';
+              const avatarEmoji = resolveAvatarEmoji(code?.profile_avatar_emoji);
+              const nameWithAvatar = getAvatarPrefixedName(displayName, code?.profile_avatar_emoji);
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+              return (
+                <div key={r.email} className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/8 border border-primary/15' : 'hover:bg-secondary/50'}`}>
+                      <span className="w-5 text-center text-sm shrink-0">
+                        {medal || <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}
+                      </span>
+                      {photoUrl ?
+                  <img src={photoUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover shrink-0" /> :
+                  avatarEmoji ?
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ backgroundColor: avatarColor }}>
+                          {avatarEmoji}
+                        </div> :
+
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                          {getInitials(displayName)}
+                        </div>
+                  }
+                      <span className={`flex-1 text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{nameWithAvatar}</span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Star size={11} className="text-yellow-400 fill-yellow-400" />
+                        <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
+                      </div>
+                    </div>);
+
+            })}
+              </div>
+          }
+            </div>
+
+            <div className="order-1 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Heart size={14} className="text-rose-500 fill-rose-100" />
+                  <p className="text-xs font-bold text-foreground">Mural de superação</p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">Inspire a turma</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Compartilhe palavras de ânimo. As conquistas recentes da turma aparecem aqui para celebrar cada passo da jornada.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-foreground">Online agora:</span>
+                {onlineClassmates.length === 0 ?
+                <span className="text-[11px] text-muted-foreground">sem colegas online no momento</span> :
+                onlineClassmates.slice(0, 8).map((student) =>
+                <span key={student.id} className="text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
+                      {getAvatarPrefixedName(student.profile_name || student.student_name || student.student_email, student.profile_avatar_emoji)}
+                    </span>
+                )
+                }
+              </div>
+
+              <div className="rounded-xl border border-rose-100 bg-gradient-to-b from-rose-50/40 to-secondary/20 p-2 h-48 overflow-y-auto space-y-2">
+                {overcomingWallFeed.length === 0 ?
+                <p className="text-xs text-muted-foreground text-center py-8">Seja a primeira pessoa a deixar uma palavra de força para a turma.</p> :
+                overcomingWallFeed.map((msg) => {
+                  if (msg.feedType === 'achievement') return (
+                    <div key={msg.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed">
+                      <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                      <p><span className="font-bold text-amber-800">Conquista desbloqueada!</span> <span className="font-semibold text-foreground">{msg.studentName}</span> <span className="text-muted-foreground">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
+                    </div>
+                  );
+                  const isMe = msg.author_email === session?.email;
+                  const authorCode = accessCodes.find((c) => c.student_email === msg.author_email);
+                  const authorName = authorCode?.profile_name || authorCode?.student_name || msg.author_name || 'Aluno';
+                  const authorDisplayName = getAvatarPrefixedName(isMe ? 'Voce' : authorName, authorCode?.profile_avatar_emoji);
+                  return (
+                    <div key={msg.id} className="rounded-lg border border-border/70 bg-background/85 p-2 text-[11px] leading-relaxed">
+                      <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{authorDisplayName}</span>
+                      <span className="ml-1 text-muted-foreground">compartilhou:</span>
+                      <p className="mt-0.5 text-foreground">“{msg.content}”</p>
+                    </div>);
+                })
+                }
+              </div>
+
+              {showMiniChatEmojiPicker &&
+              <div className="rounded-xl border border-border bg-secondary/20 p-2">
+                  <div className="grid grid-cols-7 gap-1">
+                    {MINI_CHAT_EMOJIS.map((emoji) =>
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setMiniChatText((prev) => `${prev}${emoji}`)}
+                    className="h-9 rounded-lg bg-background hover:bg-secondary text-lg transition-colors"
+                    aria-label={`Inserir ${emoji}`}>
+                    
+                        {emoji}
+                      </button>
+                  )}
+                  </div>
+                </div>
+              }
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const content = miniChatText.trim();
+                  if (!content || sendMiniChatMutation.isPending) return;
+                  sendMiniChatMutation.mutate(content);
+                }}
+                className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowMiniChatEmojiPicker((prev) => !prev)}
+                  className={`h-9 w-9 rounded-lg border flex items-center justify-center transition-colors ${showMiniChatEmojiPicker ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:text-foreground'}`}>
+                  
+                  <Smile size={15} />
+                </button>
+                <input
+                  value={miniChatText}
+                  onChange={(e) => setMiniChatText(e.target.value)}
+                  placeholder="Deixe uma palavra de ânimo..."
+                  className="flex-1 h-9 px-3 text-xs border border-border rounded-lg bg-background focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!miniChatText.trim() || sendMiniChatMutation.isPending}
+                  className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50 flex items-center gap-1">
+                  
+                  <Send size={12} /> {sendMiniChatMutation.isPending ? 'Publicando...' : 'Publicar'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      }
 
       {/* Pendências do Aluno */}
       {!isTeacher && (() => {
@@ -695,188 +880,6 @@ export default function Dashboard() {
 
       })()}
 
-      {/* Student: progress + ranking */}
-      {!isTeacher &&
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Tutorial player */}
-          <div className="bg-card rounded-2xl border border-border p-5 text-left">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
-                <PlayCircle size={16} className="text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-foreground">Tutorial da Plataforma</h3>
-                <p className="text-xs text-muted-foreground">Assista quando quiser para aprender a usar o site</p>
-              </div>
-            </div>
-            <div className="rounded-xl overflow-hidden border border-border">
-              <VideoPlayer
-                url="https://drive.google.com/file/d/1cIKz1staWdnYROSBlyfXh7H3bjX7vb3w/preview"
-                title="Tutorial da Plataforma"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Este vídeo é o tutorial de como usar o site adequadamente. Você pode assisti-lo sempre que precisar — tudo o que você precisa para começar a usar a plataforma está nele.
-            </p>
-          </div>
-
-          {/* Ranking */}
-          <div className="bg-card rounded-2xl border border-border p-5 text-left">
-          
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
-                  <Trophy size={16} className="text-yellow-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-foreground">Ranking Geral</h3>
-                  <p className="text-xs text-muted-foreground">Pontuação publicada manualmente pelo administrador</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {myRank > 0 &&
-              <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full">#{myRank}</span>
-              }
-              </div>
-            </div>
-            {visibleStudentRanking.length === 0 ?
-          <p className="text-sm text-muted-foreground text-center py-6">O ranking será exibido após as primeiras notas</p> :
-
-          <div className="max-h-72 overflow-y-auto pr-1 space-y-1.5">
-                {visibleStudentRanking.map((r, i) => {
-              const isMe = r.email === session?.email;
-              const code = accessCodes.find((c) => c.student_email === r.email);
-              const displayName = code?.profile_name || code?.student_name || r.email;
-              const avatarColor = code?.profile_avatar_color || '#5b5ef4';
-              const photoUrl = code?.profile_photo_url || '';
-              const avatarEmoji = resolveAvatarEmoji(code?.profile_avatar_emoji);
-              const nameWithAvatar = getAvatarPrefixedName(displayName, code?.profile_avatar_emoji);
-              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
-              return (
-                <div key={r.email} className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/8 border border-primary/15' : 'hover:bg-secondary/50'}`}>
-                      <span className="w-5 text-center text-sm shrink-0">
-                        {medal || <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}
-                      </span>
-                      {photoUrl ?
-                  <img src={photoUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover shrink-0" /> :
-                  avatarEmoji ?
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ backgroundColor: avatarColor }}>
-                          {avatarEmoji}
-                        </div> :
-
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
-                          {getInitials(displayName)}
-                        </div>
-                  }
-                      <span className={`flex-1 text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{nameWithAvatar}</span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                        <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
-                      </div>
-                    </div>);
-
-            })}
-              </div>
-          }
-
-            <div className="mt-4 pt-4 border-t border-border space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Heart size={14} className="text-rose-500 fill-rose-100" />
-                  <p className="text-xs font-bold text-foreground">Mural de superação</p>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">Inspire a turma</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Compartilhe palavras de ânimo. As conquistas recentes da turma aparecem aqui para celebrar cada passo da jornada.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] font-semibold text-foreground">Online agora:</span>
-                {onlineClassmates.length === 0 ?
-                <span className="text-[11px] text-muted-foreground">sem colegas online no momento</span> :
-                onlineClassmates.slice(0, 8).map((student) =>
-                <span key={student.id} className="text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
-                      {getAvatarPrefixedName(student.profile_name || student.student_name || student.student_email, student.profile_avatar_emoji)}
-                    </span>
-                )
-                }
-              </div>
-
-              <div className="rounded-xl border border-rose-100 bg-gradient-to-b from-rose-50/40 to-secondary/20 p-2 h-48 overflow-y-auto space-y-2">
-                {overcomingWallFeed.length === 0 ?
-                <p className="text-xs text-muted-foreground text-center py-8">Seja a primeira pessoa a deixar uma palavra de força para a turma.</p> :
-                overcomingWallFeed.map((msg) => {
-                  if (msg.feedType === 'achievement') return (
-                    <div key={msg.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed">
-                      <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
-                      <p><span className="font-bold text-amber-800">Conquista desbloqueada!</span> <span className="font-semibold text-foreground">{msg.studentName}</span> <span className="text-muted-foreground">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
-                    </div>
-                  );
-                  const isMe = msg.author_email === session?.email;
-                  const authorCode = accessCodes.find((c) => c.student_email === msg.author_email);
-                  const authorName = authorCode?.profile_name || authorCode?.student_name || msg.author_name || 'Aluno';
-                  const authorDisplayName = getAvatarPrefixedName(isMe ? 'Voce' : authorName, authorCode?.profile_avatar_emoji);
-                  return (
-                    <div key={msg.id} className="rounded-lg border border-border/70 bg-background/85 p-2 text-[11px] leading-relaxed">
-                      <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{authorDisplayName}</span>
-                      <span className="ml-1 text-muted-foreground">compartilhou:</span>
-                      <p className="mt-0.5 text-foreground">“{msg.content}”</p>
-                    </div>);
-                })
-                }
-              </div>
-
-              {showMiniChatEmojiPicker &&
-              <div className="rounded-xl border border-border bg-secondary/20 p-2">
-                  <div className="grid grid-cols-7 gap-1">
-                    {MINI_CHAT_EMOJIS.map((emoji) =>
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => setMiniChatText((prev) => `${prev}${emoji}`)}
-                    className="h-9 rounded-lg bg-background hover:bg-secondary text-lg transition-colors"
-                    aria-label={`Inserir ${emoji}`}>
-                    
-                        {emoji}
-                      </button>
-                  )}
-                  </div>
-                </div>
-              }
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const content = miniChatText.trim();
-                  if (!content || sendMiniChatMutation.isPending) return;
-                  sendMiniChatMutation.mutate(content);
-                }}
-                className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowMiniChatEmojiPicker((prev) => !prev)}
-                  className={`h-9 w-9 rounded-lg border flex items-center justify-center transition-colors ${showMiniChatEmojiPicker ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:text-foreground'}`}>
-                  
-                  <Smile size={15} />
-                </button>
-                <input
-                  value={miniChatText}
-                  onChange={(e) => setMiniChatText(e.target.value)}
-                  placeholder="Deixe uma palavra de ânimo..."
-                  className="flex-1 h-9 px-3 text-xs border border-border rounded-lg bg-background focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={!miniChatText.trim() || sendMiniChatMutation.isPending}
-                  className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50 flex items-center gap-1">
-                  
-                  <Send size={12} /> {sendMiniChatMutation.isPending ? 'Publicando...' : 'Publicar'}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      }
 
       {/* Admin ranking */}
       {isTeacher &&
