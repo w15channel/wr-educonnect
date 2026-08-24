@@ -480,7 +480,7 @@ export default function Ofensivas() {
   );
 
   return (
-    <div className="p-3 md:p-5 max-w-[560px] mx-auto animate-fade-in-up">
+    <div className="app-page max-w-[560px] mx-auto animate-fade-in-up">
       {showFireworks && <Fireworks onDone={() => setShowFireworks(false)} />}
 
       {/* Header */}

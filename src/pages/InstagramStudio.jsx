@@ -174,7 +174,7 @@ export default function InstagramStudio() {
 
   if (!isTeacher) {
     return (
-      <div className="p-4 lg:p-7 max-w-3xl mx-auto">
+      <div className="app-page max-w-3xl mx-auto">
         <div className="bg-card border border-border rounded-2xl p-8 text-center">
           <Instagram size={40} className="mx-auto text-muted-foreground mb-3" />
           <p className="font-bold text-foreground">Área disponível apenas para administradores.</p>
@@ -184,7 +184,7 @@ export default function InstagramStudio() {
   }
 
   return (
-    <div className="p-4 lg:p-7 max-w-6xl mx-auto space-y-5 animate-fade-in-up">
+    <div className="app-page max-w-6xl mx-auto space-y-5 animate-fade-in-up">
       <div className="flex items-center gap-3">
         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-500 to-orange-400 flex items-center justify-center shadow-lg">
           <Instagram size={22} className="text-white" />

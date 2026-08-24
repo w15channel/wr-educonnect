@@ -173,7 +173,7 @@ export default function SiteEditorAgent() {
 
   if (!isTeacher) {
     return (
-      <div className="p-4 lg:p-7 max-w-3xl mx-auto">
+      <div className="app-page max-w-3xl mx-auto">
         <div className="bg-card border border-border rounded-2xl p-8 text-center">
           <Bot size={42} className="mx-auto text-muted-foreground mb-3" />
           <p className="font-bold text-foreground">Ferramenta disponível apenas no administrativo.</p>
@@ -183,7 +183,7 @@ export default function SiteEditorAgent() {
   }
 
   return (
-    <div className="p-4 lg:p-7 max-w-6xl mx-auto space-y-5 animate-fade-in-up">
+    <div className="app-page max-w-6xl mx-auto space-y-5 animate-fade-in-up">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">

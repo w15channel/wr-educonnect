@@ -244,7 +244,7 @@ export default function Classe() {
   });
 
   return (
-    <div className="p-4 lg:p-7 max-w-6xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-6xl mx-auto animate-fade-in-up">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Classe</h2>

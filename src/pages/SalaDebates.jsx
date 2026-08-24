@@ -127,7 +127,7 @@ export default function SalaDebates() {
   const filteredPosts = filterTopic === 'Todos' ? sortBySequence(posts) : sortBySequence(posts).filter(p => p.topic === filterTopic);
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-4xl mx-auto animate-fade-in-up">
       {celebrating && <ParticipationCelebration message={celebrationMsg} onClose={() => setCelebrating(false)} />}
 
       <div className="mb-5">

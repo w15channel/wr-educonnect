@@ -115,7 +115,7 @@ export default function Certificadora() {
 
   if (isTeacher) {
     return (
-      <div className="p-4 lg:p-7 max-w-3xl mx-auto flex flex-col items-center justify-center min-h-[400px] text-center">
+      <div className="app-page max-w-3xl mx-auto flex flex-col items-center justify-center min-h-[400px] text-center">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg mb-5">
           <Award size={30} className="text-white" />
         </div>
@@ -128,7 +128,7 @@ export default function Certificadora() {
   }
 
   return (
-    <div className="p-4 lg:p-7 max-w-3xl mx-auto space-y-5 animate-fade-in-up">
+    <div className="app-page max-w-3xl mx-auto space-y-5 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-md">

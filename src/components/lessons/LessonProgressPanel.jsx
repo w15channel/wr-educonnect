@@ -24,7 +24,7 @@ export default function LessonProgressPanel({ lesson, onBack }) {
   const watchedCount = entries.filter(p => p.watched).length;
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-4xl mx-auto animate-fade-in-up">
       <button
         onClick={onBack}
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"

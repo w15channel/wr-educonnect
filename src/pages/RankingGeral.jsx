@@ -419,7 +419,7 @@ export default function RankingGeral() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-4 lg:p-7 max-w-3xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-3xl mx-auto animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shrink-0">

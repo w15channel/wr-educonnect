@@ -87,7 +87,7 @@ export default function Calendar() {
   const selectedDayEvents = getEventsForDay(selectedDay);
 
   return (
-    <div className="p-4 lg:p-7 max-w-5xl mx-auto animate-fade-in-up">
+    <div className="app-page max-w-5xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Calendário</h2>

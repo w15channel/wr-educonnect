@@ -441,7 +441,7 @@ export default function HistoricoAcademico() {
 
     if (showDocument) {
       return (
-        <div className="p-4 lg:p-7 max-w-4xl mx-auto">
+        <div className="app-page max-w-4xl mx-auto">
           <button onClick={() => setShowDocument(false)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">← Voltar</button>
           <AcademicRecord
             student={selectedStudent}
@@ -456,7 +456,7 @@ export default function HistoricoAcademico() {
     }
 
     return (
-      <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-5 animate-fade-in-up">
+      <div className="app-page max-w-4xl mx-auto space-y-5 animate-fade-in-up">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <GraduationCap size={20} className="text-white" />
@@ -515,7 +515,7 @@ export default function HistoricoAcademico() {
   // ── TEACHER: document view ───────────────────────────────────────────────
   if (showDocument && selectedStudent) {
     return (
-      <div className="p-4 lg:p-7 max-w-4xl mx-auto">
+      <div className="app-page max-w-4xl mx-auto">
         <button onClick={() => setShowDocument(false)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">← Voltar para Seleção</button>
         <AcademicRecord student={selectedStudent} rows={selectedRows} totalScore={totalScore} totalMaxScore={totalMaxScore} totalHours={totalHours} approvalRate={approvalRate} isAdmin={isTeacher} onClose={() => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); }} />
       </div>
@@ -525,7 +525,7 @@ export default function HistoricoAcademico() {
   // ── TEACHER: selector view ───────────────────────────────────────────────
   if (showSelector && selectedStudent) {
     return (
-      <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-5 animate-fade-in-up">
+      <div className="app-page max-w-4xl mx-auto space-y-5 animate-fade-in-up">
         <div className="flex items-center gap-3 flex-wrap">
           <button onClick={() => { setShowSelector(false); setSelectedStudent(null); }} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">← Voltar</button>
           <div className="flex-1 min-w-0">
@@ -572,7 +572,7 @@ export default function HistoricoAcademico() {
   });
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+    <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
           <GraduationCap size={20} className="text-white" />

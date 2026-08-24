@@ -299,7 +299,7 @@ export default function TerapeutaDaSemana() {
   };
 
   return (
-    <div className="p-4 lg:p-7 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+    <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up">
       {celebrating && <ParticipationCelebration message="Relato enviado! Obrigado por cuidar da turma! 🎉" onClose={() => setCelebrating(false)} />}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
