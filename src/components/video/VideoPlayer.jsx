@@ -73,6 +73,7 @@ export default function VideoPlayer({
   const apiRef = useRef(null);
   const onPlayRef = useRef(onPlay);
   const onPauseRef = useRef(onPause);
+  const captionTracksRef = useRef([]);
 
   useEffect(() => {
     onPlayRef.current = onPlay;
@@ -97,11 +98,16 @@ export default function VideoPlayer({
   const [quality, setQuality] = useState('');
   const [captionTracks, setCaptionTracks] = useState([]);
   const [captionTrack, setCaptionTrack] = useState('off');
+  const [settingsNotice, setSettingsNotice] = useState('');
   const [isPortrait, setIsPortrait] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)').matches : false
   );
 
   const fullscreen = nativeFullscreen || cssFullscreen;
+
+  useEffect(() => {
+    captionTracksRef.current = captionTracks;
+  }, [captionTracks]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -125,6 +131,7 @@ export default function VideoPlayer({
     setQuality('');
     setCaptionTracks([]);
     setCaptionTrack('off');
+    setSettingsNotice('');
   }, [url, canControl]);
 
   // ── Motor: arquivo de vídeo nativo ──────────────────────────────────────────
@@ -149,8 +156,10 @@ export default function VideoPlayer({
       setCaptionTracks(tracks.map((track, index) => ({
         id: String(index), label: track.label || track.language || `Legenda ${index + 1}`,
       })));
-      setQualities([{ id: 'original', label: 'Original' }]);
-      setQuality('original');
+      // Um arquivo direto tem somente a representação enviada pelo servidor;
+      // não exibimos um seletor que não teria como trocar a qualidade.
+      setQualities([]);
+      setQuality('');
     };
     const onTime = () => setCurrentTime(el.currentTime || 0);
     const onPlayEvent = () => { setPlaying(true); setStarted(true); onPlayRef.current?.(); };
@@ -228,12 +237,19 @@ export default function VideoPlayer({
                   event.target.setPlaybackRate(value);
                   return event.target.getPlaybackRate?.() ?? value;
                 },
-                setQuality: (value) => event.target.setPlaybackQuality?.(value),
+                setQuality: (value) => {
+                  // `setPlaybackQuality` sozinho virou apenas uma sugestão nos
+                  // players HTML5. O intervalo fixa a representação quando a
+                  // versão atual da API oferece esse método.
+                  event.target.setPlaybackQualityRange?.(value, value);
+                  event.target.setPlaybackQuality?.(value);
+                },
                 setCaption: (value) => {
                   if (value === 'off') event.target.unloadModule?.('captions');
                   else {
+                    const track = captionTracksRef.current.find((item) => item.id === value)?.providerTrack;
                     event.target.loadModule?.('captions');
-                    event.target.setOption?.('captions', 'track', { languageCode: value });
+                    event.target.setOption?.('captions', 'track', track || { languageCode: value });
                   }
                 },
               };
@@ -247,8 +263,10 @@ export default function VideoPlayer({
               window.setTimeout(() => {
                 if (cancelled) return;
                 const tracks = event.target.getOption?.('captions', 'tracklist') || [];
-                setCaptionTracks(tracks.map((track) => ({
-                  id: track.languageCode, label: track.displayName || track.name || track.languageCode,
+                setCaptionTracks(tracks.map((track, index) => ({
+                  id: `${track.languageCode || 'track'}:${track.kind || ''}:${track.name || index}`,
+                  label: track.displayName || track.name || track.languageCode,
+                  providerTrack: track,
                 })));
                 event.target.unloadModule?.('captions');
               }, 0);
@@ -283,6 +301,9 @@ export default function VideoPlayer({
               }
             },
             onPlaybackRateChange: (event) => setRate(event.data || 1),
+            onPlaybackQualityChange: (event) => {
+              if (!cancelled && event.data) setQuality(event.data);
+            },
             onError: () => setLoadError('O YouTube não permitiu a reprodução deste vídeo aqui.'),
           },
         });
@@ -345,10 +366,13 @@ export default function VideoPlayer({
             });
             return value;
           },
-          setQuality: (value) => player.setQuality(value).catch(() => {}),
+          setQuality: (value) => player.setQuality(value),
           setCaption: (value) => value === 'off'
-            ? player.disableTextTrack().catch(() => {})
-            : player.enableTextTrack(value).catch(() => {}),
+            ? player.disableTextTrack()
+            : (() => {
+              const track = captionTracksRef.current.find((item) => item.id === value);
+              return player.enableTextTrack(track?.language || value, track?.kind);
+            })(),
         };
 
         player.on('timeupdate', (data) => {
@@ -360,8 +384,11 @@ export default function VideoPlayer({
           if (cancelled) return;
           player.getDuration().then((value) => setDuration(value || 0)).catch(() => {});
           player.disableTextTrack().catch(() => {});
-          player.getTextTracks().then((tracks) => setCaptionTracks(tracks.map((track) => ({
-            id: track.language, label: track.label || track.language,
+          player.getTextTracks().then((tracks) => setCaptionTracks(tracks.map((track, trackIndex) => ({
+            id: `${track.language}:${track.kind || trackIndex}`,
+            language: track.language,
+            kind: track.kind,
+            label: track.label || track.language,
           })))).catch(() => {});
           player.getQualities().then((items) => {
             const available = items.filter((item) => item.id !== 'auto');
@@ -473,19 +500,28 @@ export default function VideoPlayer({
 
   const handleQuality = useCallback((value) => {
     setQuality(value);
-    apiRef.current?.setQuality?.(value);
+    setSettingsNotice(`Qualidade alterada para ${qualityLabel(value)}.`);
+    const result = apiRef.current?.setQuality?.(value);
+    result?.catch?.(() => setSettingsNotice('Não foi possível alterar a qualidade neste vídeo.'));
   }, []);
 
   const handleCaption = useCallback((value) => {
     setCaptionTrack(value);
+    setSettingsNotice(value === 'off' ? 'Legendas desligadas.' : 'Legendas ativadas.');
     if (source.kind === 'file') {
       Array.from(videoRef.current?.textTracks || []).forEach((track, index) => {
         track.mode = value === String(index) ? 'showing' : 'disabled';
       });
       return;
     }
-    apiRef.current?.setCaption?.(value);
+    const result = apiRef.current?.setCaption?.(value);
+    result?.catch?.(() => setSettingsNotice('Não foi possível alterar a legenda neste vídeo.'));
   }, [source.kind]);
+
+  const handleOpenSource = useCallback(() => {
+    if (!source.originalUrl) return;
+    window.open(source.originalUrl, '_blank', 'noopener,noreferrer');
+  }, [source.originalUrl]);
 
   const enterFullscreen = useCallback(async () => {
     const element = containerRef.current;
@@ -585,14 +621,13 @@ export default function VideoPlayer({
           <div className="absolute inset-0 z-[4] flex flex-col items-center justify-center gap-2 bg-black/80 px-4 text-center text-white">
             <p className="text-sm">{loadError}</p>
             {source.originalUrl && (
-              <a
-                href={source.originalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+              <button
+                type="button"
+                onClick={handleOpenSource}
+                className="wr-video-source-btn"
               >
                 <ExternalLink size={14} /> Abrir no site de origem
-              </a>
+              </button>
             )}
           </div>
         )}
@@ -632,9 +667,9 @@ export default function VideoPlayer({
               Controles do {source.provider || 'provedor'} disponíveis no próprio vídeo
             </span>
             {source.originalUrl && (
-              <a href={source.originalUrl} target="_blank" rel="noopener noreferrer" className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold">
+              <button type="button" onClick={handleOpenSource} className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold">
                 <ExternalLink size={14} /> <span className="hidden sm:inline">Abrir original</span>
-              </a>
+              </button>
             )}
             <button type="button" onClick={toggleFullscreen} title={fullscreen ? 'Sair da tela cheia' : 'Girar tela (tela cheia)'} className="wr-video-btn gap-1.5 px-2.5 text-[11px] font-semibold">
               {fullscreen ? <Minimize2 size={15} /> : <RotateCw size={15} />}
@@ -751,6 +786,7 @@ export default function VideoPlayer({
         </div>
 
         {rateNotice && <p className="mt-1.5 text-[11px] text-amber-300">{rateNotice}</p>}
+        <p className="sr-only" role="status" aria-live="polite">{settingsNotice}</p>
 
       </div>}
 
@@ -759,17 +795,16 @@ export default function VideoPlayer({
         <div className="wr-video-quality px-4 py-3">
           <p className="text-xs leading-relaxed text-muted-foreground">
             A visualização da aula está em boa qualidade? Se preferir, você pode abrir esse vídeo externamente
-            no site de origem, basta clicar nesse link:{' '}
+            no site de origem pelo botão abaixo:{' '}
             {source.originalUrl ? (
-              <a
-                href={source.originalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+              <button
+                type="button"
+                onClick={handleOpenSource}
+                className="wr-video-source-btn ml-1"
               >
                 <ExternalLink size={12} />
                 abrir no site de origem{source.provider ? ` (${source.provider})` : ''}
-              </a>
+              </button>
             ) : (
               <span className="italic">link original não informado nesta aula.</span>
             )}
