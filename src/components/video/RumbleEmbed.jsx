@@ -7,7 +7,7 @@ import { Minimize2, RotateCw } from 'lucide-react';
  * contêiner já desmontado pelo React ("appendChild of null"); o iframe é
  * estável e não depende de estado global.
  */
-export default function RumbleEmbed({ videoId, title = 'Vídeo do Rumble', showFullscreenButton = true }) {
+export default function RumbleEmbed({ videoId, publisherId = 'u4qbnem', title = 'Vídeo do Rumble', showFullscreenButton = true }) {
   const frameRef = useRef(null);
   const [fullscreen, setFullscreen] = useState(false);
 
@@ -36,7 +36,7 @@ export default function RumbleEmbed({ videoId, title = 'Vídeo do Rumble', showF
   return (
     <div ref={frameRef} className="rumble-fullscreen-frame group relative aspect-video w-full bg-black">
       <iframe
-        src={`https://rumble.com/embed/${videoId}/?pub=4`}
+        src={`https://rumble.com/embed/${videoId}/?pub=${publisherId}`}
         title={title}
         className="absolute inset-0 h-full w-full border-0"
         allow="autoplay; fullscreen; picture-in-picture"
