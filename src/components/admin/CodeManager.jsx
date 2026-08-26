@@ -120,9 +120,12 @@ export default function CodeManager({ course: lockedCourse }) {
     },
   });
 
-  const copyCode = (code) => {
-    navigator.clipboard.writeText(code);
-    toast.success('Código copiado!');
+  // Copia o link de acesso direto: o aluno clica e cai na própria dashboard,
+  // já com o acesso lembrado no dispositivo dele.
+  const copyAccessLink = (code) => {
+    const link = `${window.location.origin}/?acesso=${encodeURIComponent(code)}`;
+    navigator.clipboard.writeText(link);
+    toast.success('Link de acesso direto copiado!');
   };
 
   return (
@@ -237,7 +240,7 @@ export default function CodeManager({ course: lockedCourse }) {
                   <button onClick={() => setEditingProfileCode(c)} title="Editar perfil do aluno" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                     <UserCog size={15} />
                   </button>
-                  <button onClick={() => copyCode(c.code)} title="Copiar código" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                  <button onClick={() => copyAccessLink(c.code)} title="Copiar link de acesso direto" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                     <Copy size={15} />
                   </button>
                   <button onClick={() => regenerateMutation.mutate({ id: c.id, course: c.course })} title="Regenerar código" className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
