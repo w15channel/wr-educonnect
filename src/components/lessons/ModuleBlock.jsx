@@ -15,6 +15,7 @@ import { MODULE_THEMES } from './ModuleCompletionCelebration';
 import MinLengthHint from '@/components/shared/MinLengthHint';
 import { isTextLongEnough } from '@/lib/minTextLength';
 import LessonShortcuts from './LessonShortcuts';
+import LessonSummaryField from './LessonSummaryField';
 
 const LESSON_TYPE_CONFIG = {
   video_external: { label: 'Vídeo Externo', icon: Play },
@@ -236,12 +237,6 @@ export default function ModuleBlock({
                 {/* Expanded content */}
                 {isExpanded && (
                   <div className="border-t border-border bg-secondary/10">
-                    {lesson.description && (
-                      <div className="px-4 py-3 bg-secondary/20">
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">Resumo da Aula</p>
-                        <p className="text-sm text-foreground/80">{lesson.description}</p>
-                      </div>
-                    )}
                     {lesson.lesson_type === 'text_written' && lesson.text_content && (
                       <div className="px-4 py-3 border-t border-border">
                         <p className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5"><FileText size={13} className="text-blue-500" /> Conteúdo da Aula</p>
@@ -301,13 +296,13 @@ export default function ModuleBlock({
                       </div>
                     ) : (
                       <div className="px-4 pb-4 space-y-4 pt-3">
-                        <div>
-                          <label className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5"><BookOpen size={12} className="text-primary" /> Meu Resumo</label>
-                          <Textarea placeholder="Anote os principais pontos e aprendizados (mínimo de 1000 caracteres)..." value={summaryDraft[lesson.id] ?? prog?.summary ?? ''} onChange={e => setSummaryDraft(prev => ({ ...prev, [lesson.id]: e.target.value }))} rows={3} className="text-sm" />
-                          <MinLengthHint value={summaryDraft[lesson.id] ?? prog?.summary ?? ''} />
-                          <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" disabled={!isTextLongEnough(summaryDraft[lesson.id] ?? prog?.summary ?? '')} onClick={() => onSaveSummary(lesson.id)}>Salvar Resumo</Button>
-                          {prog?.summary && <div className="mt-2 bg-secondary/50 rounded-xl p-3"><p className="text-[10px] text-muted-foreground font-semibold mb-1">Resumo salvo:</p><p className="text-xs text-foreground/80">{prog.summary}</p></div>}
-                        </div>
+                        <LessonSummaryField
+                          lessonId={lesson.id}
+                          savedSummary={prog?.summary || ''}
+                          draft={summaryDraft[lesson.id]}
+                          onDraftChange={(v) => setSummaryDraft(prev => ({ ...prev, [lesson.id]: v }))}
+                          onSave={onSaveSummary}
+                        />
                         <LessonShortcuts lesson={lesson} />
                         {(() => {
                           const canWatch = isTextLongEnough(summaryDraft[lesson.id] ?? prog?.summary ?? '');

@@ -671,15 +671,6 @@ export default function Apostila() {
                                     </Button>
                                   )}
                                   {!isAdmin && (
-                                    <NextStepLink
-                                      to="/ofensivas"
-                                      icon={Flame}
-                                      tone="orange"
-                                      size="sm"
-                                      title="Usar na Ofensiva do dia"
-                                    />
-                                  )}
-                                  {!isAdmin && (
                                     readLessons.has(`${chapter.id}__${lesson.id}`) ? (
                                       <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
                                         <CheckCircle size={13} /> Leitura concluída!
@@ -692,6 +683,15 @@ export default function Apostila() {
                                         <BookMarked size={13} /> Marcar como lida
                                       </button>
                                     )
+                                  )}
+                                  {!isAdmin && (
+                                    <NextStepLink
+                                      to="/ofensivas"
+                                      icon={Flame}
+                                      tone="orange"
+                                      size="sm"
+                                      title="Usar o conhecimento na Ofensiva"
+                                    />
                                   )}
                                 </div>
                               </div>

@@ -46,8 +46,11 @@ function taskSorter(a, b) {
   return (a.created_date || '').localeCompare(b.created_date || '');
 }
 
-function SubmittedView({ submission }) {
+function SubmittedView({ submission, onSaveEdit, isSaving }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(submission.comment || '');
+
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
@@ -63,8 +66,37 @@ function SubmittedView({ submission }) {
             <Eye size={11} /> {open ? 'Ocultar' : 'Ver minha entrega'}
           </button>
         )}
+
+        {submission.comment && (
+          <button
+            onClick={() => { setDraft(submission.comment || ''); setEditing(true); setOpen(true); }}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground border border-border px-2.5 py-1.5 rounded-xl hover:text-primary hover:border-primary/30 transition-colors"
+            title="Editar minha resposta"
+          >
+            <Pencil size={11} /> Editar
+          </button>
+        )}
       </div>
-      {open && (
+
+      {open && editing && (
+        <div className="bg-secondary/40 border border-border rounded-xl p-3 space-y-2">
+          <p className="text-xs font-bold text-foreground">Editar minha resposta</p>
+          <Textarea value={draft} onChange={e => setDraft(e.target.value)} rows={6} className="text-xs" />
+          <MinLengthHint value={draft} />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="gap-1.5"
+              disabled={!isTextLongEnough(draft) || isSaving}
+              onClick={() => { if (!isTextLongEnough(draft)) { toast.error(insufficientTextMessage(draft)); return; } onSaveEdit(draft, () => setEditing(false)); }}
+            >
+              <Send size={12} /> Salvar alterações
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
+          </div>
+        </div>
+      )}
+      {open && !editing && (
         <div className="bg-secondary/40 border border-border rounded-xl p-3 space-y-2 text-xs">
           {submission.file_name && (
             <div className="flex items-center gap-2 text-primary">
@@ -183,6 +215,15 @@ export default function Tasks({ mode = 'tasks' }) {
       toast.success('Resposta enviada!');
       setCelebrating(true);
     },
+  });
+
+  const editSubmissionMutation = useMutation({
+    mutationFn: ({ id, comment }) => base44.entities.TaskSubmission.update(id, { comment }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
+      toast.success('Resposta atualizada!');
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível atualizar sua resposta.'),
   });
 
   const openEdit = (task) => {
@@ -360,7 +401,11 @@ export default function Tasks({ mode = 'tasks' }) {
                     {task.description && <p className="text-sm text-muted-foreground leading-relaxed">{task.description}</p>}
 
                     {isDone ? (
-                      <SubmittedView submission={submission} />
+                      <SubmittedView
+                        submission={submission}
+                        isSaving={editSubmissionMutation.isPending}
+                        onSaveEdit={(comment, done) => editSubmissionMutation.mutate({ id: submission.id, comment }, { onSuccess: done })}
+                      />
                     ) : task.type === 'quiz' ? (
                       <Button size="sm" className="gap-1.5" onClick={() => navigate(`${prefix}/tasks/quiz/${task.id}`)}>
                         <Play size={13} /> Iniciar Prova

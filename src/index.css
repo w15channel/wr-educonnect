@@ -267,17 +267,20 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
     mix-blend-mode: soft-light;
   }
+  /* Tema claro: rosa salmão suave com ouro em gradiente e textura azul discreta. */
   :root:not(.dark) .app-shell-bg:not(.lobby-shell) {
-    background-color: #f3ecdc;
+    background-color: #fbe7de;
     background-image:
-      radial-gradient(68rem 54rem at -10% -12%, rgba(255, 248, 225, 0.88), transparent 69%),
-      radial-gradient(64rem 52rem at 108% 0%, rgba(187, 167, 214, 0.38), transparent 67%),
-      radial-gradient(60rem 48rem at 48% 112%, rgba(205, 172, 93, 0.24), transparent 72%),
-      linear-gradient(135deg, #f4eddd 0%, #eee7ed 52%, #eadfca 100%);
+      radial-gradient(66rem 52rem at -8% -12%, rgba(255, 214, 198, 0.92), transparent 68%),
+      radial-gradient(62rem 50rem at 106% 2%, rgba(240, 198, 132, 0.42), transparent 66%),
+      radial-gradient(58rem 46rem at 46% 112%, rgba(214, 176, 96, 0.26), transparent 72%),
+      linear-gradient(135deg, #fce9e1 0%, #f9dfd2 46%, #f4e3c4 100%);
   }
   :root:not(.dark) .app-shell-bg:not(.lobby-shell)::before {
-    opacity: 0.08;
-    mix-blend-mode: soft-light;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%236f9ac9' stroke-opacity='0.16' stroke-width='1'%3E%3Cpath d='M0 30h120M0 60h120M0 90h120M30 0v120M60 0v120M90 0v120'/%3E%3Ccircle cx='30' cy='30' r='6'/%3E%3Ccircle cx='90' cy='90' r='6'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 120px 120px;
   }
 
   /* Superfícies deixam o gradiente respirar, sem reflexos brancos agressivos. */
