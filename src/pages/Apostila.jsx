@@ -153,7 +153,15 @@ export default function Apostila() {
   // Persisted read completions: Set of "chapterId__lessonId"
   const [readLessons, setReadLessons] = useState(() => {
     const key = APOSTILA_READ_KEY(session?.email || session?.code || 'guest', session?.course || 'tcc');
-    try { const r = localStorage.getItem(key); return r ? new Set(JSON.parse(r)) : new Set(); } catch { return new Set(); }
+    try {
+      const stored = JSON.parse(localStorage.getItem(key) || '[]');
+      const moduleOneOnly = stored.filter((lessonKey) => String(lessonKey).startsWith('mod1__'));
+      localStorage.setItem(key, JSON.stringify(moduleOneOnly));
+      return new Set(moduleOneOnly);
+    } catch {
+      localStorage.removeItem(key);
+      return new Set();
+    }
   });
 
   const markRead = async (chapterId, lessonId) => {
