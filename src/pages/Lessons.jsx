@@ -64,7 +64,7 @@ const getLessonModuleNumber = (lesson, fallbackIndex = 0) => {
 };
 
 const LESSON_TYPE_CONFIG = {
-  video_external:   { label: 'Vídeo Externo', icon: Video, color: 'text-purple-500', desc: 'YouTube, Vimeo, Instagram...' },
+  video_external:   { label: 'Vídeo Externo', icon: Video, color: 'text-purple-500', desc: 'Rumble, YouTube, Vimeo, Instagram...' },
   text_written:     { label: 'Aula em Texto', icon: FileText, color: 'text-blue-500', desc: 'Escrita diretamente na plataforma' },
   content_external: { label: 'Material Externo', icon: Globe, color: 'text-green-500', desc: 'Link para artigo, site ou PDF externo' },
 };
@@ -481,7 +481,7 @@ export default function Lessons() {
                     )}
                   </div>
 
-                  {form.lesson_type === 'video_external' && <Input placeholder="URL do vídeo (YouTube, Vimeo...)" value={form.video_url} onChange={e => setForm({ ...form, video_url: e.target.value })} />}
+                  {form.lesson_type === 'video_external' && <Input placeholder="URL do vídeo (Rumble, YouTube, Vimeo...)" value={form.video_url} onChange={e => setForm({ ...form, video_url: e.target.value })} />}
                   {form.lesson_type === 'content_external' && <Input placeholder="URL do material externo" value={form.external_url} onChange={e => setForm({ ...form, external_url: e.target.value })} />}
                   {form.lesson_type === 'text_written' && <Textarea placeholder="Conteúdo da aula em texto..." value={form.text_content} onChange={e => setForm({ ...form, text_content: e.target.value })} rows={8} />}
                   <div>

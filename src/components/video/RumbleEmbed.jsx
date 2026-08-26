@@ -1,57 +1,66 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-const RUMBLE_EMBED_BASE_URL = 'https://rumble.com/embedJS/';
+const isRumbleEmbed = (value) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.hostname === 'rumble.com' && parsed.pathname.startsWith('/embed/');
+  } catch {
+    return false;
+  }
+};
 
-function initializeRumble(publisherId) {
-  if (window.Rumble) return;
-
-  window._Rumble = 'Rumble';
-  window.Rumble = function rumble(command, options) {
-    window.Rumble._ = window.Rumble._ || [];
-    window.Rumble._.push([command, options]);
-
-    if (window.Rumble._.length !== 1) return;
-
-    const script = document.createElement('script');
-    const firstScript = document.getElementsByTagName('script')[0];
-    const videoSuffix = options?.video ? `.${options.video}` : '';
-
-    script.async = true;
-    script.src = `${RUMBLE_EMBED_BASE_URL}${publisherId}${videoSuffix}/?url=${encodeURIComponent(window.location.href)}&args=${encodeURIComponent(JSON.stringify([[command, options]]))}`;
-    firstScript.parentNode.insertBefore(script, firstScript);
-  };
-}
+const extractEmbedFromOEmbed = (html = '') => {
+  if (typeof DOMParser === 'undefined') return '';
+  const document = new DOMParser().parseFromString(html, 'text/html');
+  const src = document.querySelector('iframe')?.getAttribute('src') || '';
+  return isRumbleEmbed(src) ? src : '';
+};
 
 /**
  * Incorpora o player oficial do Rumble sem executar HTML arbitrário no React.
- * O carregador é inicializado sob demanda, seguindo o snippet fornecido pelo
- * Rumble, e pode ser reutilizado por outros vídeos da plataforma.
+ * URLs públicas são resolvidas pelo oEmbed oficial porque o identificador da
+ * página nem sempre é igual ao identificador interno usado no iframe.
  */
-export default function RumbleEmbed({ videoId, publisherId, title }) {
-  const reactId = useId();
-  const containerId = `rumble_${videoId}_${reactId.replace(/:/g, '')}`;
-  const requestedRef = useRef(false);
+export default function RumbleEmbed({ videoId, publisherId, src = '', url = '', title = 'Vídeo do Rumble' }) {
+  const fallbackSrc = useMemo(() => {
+    if (isRumbleEmbed(src)) return src;
+    if (!videoId) return '';
+    const query = publisherId ? `?pub=${encodeURIComponent(publisherId)}` : '';
+    return `https://rumble.com/embed/${videoId}/${query}`;
+  }, [publisherId, src, videoId]);
+  const [embedSrc, setEmbedSrc] = useState(fallbackSrc);
 
   useEffect(() => {
-    // O StrictMode executa effects duas vezes em desenvolvimento; a proteção
-    // evita solicitar dois players para o mesmo contêiner.
-    if (requestedRef.current) return;
-    requestedRef.current = true;
+    setEmbedSrc(fallbackSrc);
+    if (!url || isRumbleEmbed(url)) return undefined;
 
-    initializeRumble(publisherId);
-    window.Rumble('play', {
-      video: videoId,
-      div: containerId,
-    });
-  }, [containerId, publisherId, videoId]);
+    const controller = new AbortController();
+    const endpoint = `https://rumble.com/api/Media/oembed.json?url=${encodeURIComponent(url)}`;
+    fetch(endpoint, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('Rumble oEmbed indisponível');
+        return response.json();
+      })
+      .then((data) => {
+        const canonicalSrc = extractEmbedFromOEmbed(data?.html);
+        if (canonicalSrc) setEmbedSrc(canonicalSrc);
+      })
+      .catch(() => {
+        // Mantém o endereço inferido; o botão "Abrir original" segue disponível.
+      });
+
+    return () => controller.abort();
+  }, [fallbackSrc, url]);
 
   return (
     <div className="aspect-video w-full bg-black">
-      <div
-        id={containerId}
-        className="h-full w-full"
-        role="region"
-        aria-label={title}
+      <iframe
+        src={embedSrc}
+        title={title}
+        className="h-full w-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allowFullScreen
       />
     </div>
   );

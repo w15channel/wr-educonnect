@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { getVideoSource } from '@/lib/videoEmbed';
 import { loadYouTubeApi, loadVimeoApi } from '@/lib/videoProviderApi';
+import RumbleEmbed from '@/components/video/RumbleEmbed';
 
 const SPEEDS = [1, 1.25, 1.5, 2, 2.5];
 const SKIP_SECONDS = 10;
@@ -60,7 +61,7 @@ const isNativeFullscreen = () =>
  *  - arquivos diretos (mp4/webm/…)  → elemento <video> nativo, sem controles do navegador
  *  - YouTube                        → IFrame Player API oficial (controls=0)
  *  - Vimeo                          → Player SDK oficial (controls=false)
- *  - demais embeds (Drive, Instagram, Facebook, TikTok…) → usamos os controles
+ *  - Rumble e demais embeds (Drive, Instagram, Facebook, TikTok…) → usamos os controles
  *    nativos do próprio embed e mostramos apenas ações que realmente funcionam.
  */
 export default function VideoPlayer({
@@ -621,6 +622,17 @@ export default function VideoPlayer({
 
         {(source.kind === 'youtube' || source.kind === 'vimeo') && (
           <div ref={hostRef} className="absolute inset-0" />
+        )}
+
+        {source.kind === 'rumble' && (
+          <div className="absolute inset-0">
+            <RumbleEmbed
+              videoId={source.videoId}
+              src={source.embedSrc}
+              url={source.originalUrl}
+              title={title}
+            />
+          </div>
         )}
 
         {source.kind === 'iframe' && (
