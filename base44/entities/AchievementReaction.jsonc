@@ -1,0 +1,15 @@
+{
+  "name": "AchievementReaction",
+  "type": "object",
+  "properties": {
+    "dedupe_key": { "type": "string", "description": "Uma reação de cada tipo por pessoa e publicação" },
+    "target_id": { "type": "string" },
+    "target_type": { "type": "string", "enum": ["achievement", "publication"] },
+    "target_owner_email": { "type": "string" },
+    "actor_email": { "type": "string" },
+    "actor_name": { "type": "string" },
+    "reaction": { "type": "string", "enum": ["love", "celebrate", "applaud"] }
+  },
+  "required": ["dedupe_key", "target_id", "target_type", "target_owner_email", "actor_email", "reaction"],
+  "rls": { "create": false, "read": true, "update": false, "delete": false }
+}

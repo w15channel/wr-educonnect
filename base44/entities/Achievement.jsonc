@@ -1,0 +1,16 @@
+{
+  "name": "Achievement",
+  "type": "object",
+  "properties": {
+    "dedupe_key": { "type": "string", "description": "Chave estável que impede a publicação duplicada" },
+    "student_email": { "type": "string" },
+    "course": { "type": "string" },
+    "kind": { "type": "string", "enum": ["lesson", "book_lesson", "task", "exam", "challenge", "module"] },
+    "title": { "type": "string" },
+    "message": { "type": "string" },
+    "source_id": { "type": "string" },
+    "occurred_at": { "type": "string", "format": "date-time" }
+  },
+  "required": ["dedupe_key", "student_email", "kind", "message", "occurred_at"],
+  "rls": { "create": false, "read": true, "update": false, "delete": false }
+}

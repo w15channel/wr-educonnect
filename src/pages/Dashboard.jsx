@@ -4,7 +4,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, Send, Smile, Sparkles } from 'lucide-react';
+import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, Send, Smile, Sparkles, PartyPopper, Hand } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -107,6 +107,7 @@ export default function Dashboard() {
   const [manualScoreEmails, setManualScoreEmails] = React.useState(new Set());
   const [miniChatText, setMiniChatText] = React.useState('');
   const [showMiniChatEmojiPicker, setShowMiniChatEmojiPicker] = React.useState(false);
+  const [syncingAchievements, setSyncingAchievements] = React.useState(false);
 
 
   useEffect(() => {
@@ -280,6 +281,25 @@ export default function Dashboard() {
     },
     enabled: !isTeacher && !!session?.email,
     staleTime: 30000,
+  });
+
+  const { data: savedAchievements = [] } = useQuery({
+    queryKey: ['overcoming-wall-achievements', userCourse || 'all'],
+    queryFn: () => base44.entities.Achievement.filter({ course: userCourse || 'tcc' }, '-occurred_at', 500),
+    enabled: !isTeacher && !!session?.email,
+    refetchInterval: 30000,
+  });
+
+  const { data: wallReactions = [] } = useQuery({
+    queryKey: ['overcoming-wall-reactions', userCourse || 'all'],
+    queryFn: () => base44.entities.AchievementReaction.list('-created_date', 2000),
+    enabled: !isTeacher && !!session?.email,
+  });
+
+  const { data: myWallNotifications = [] } = useQuery({
+    queryKey: ['overcoming-wall-notifications', session?.email],
+    queryFn: () => base44.entities.Notification.filter({ recipient_email: session.email, type: 'wall_reaction' }, '-created_date', 50),
+    enabled: !isTeacher && !!session?.email,
   });
 
   const { data: unlockRules = [] } = useQuery({
@@ -487,7 +507,16 @@ export default function Dashboard() {
       occurredAt,
     });
 
+    const recovered = savedAchievements.map((record) => ({
+      id: record.id,
+      feedType: 'achievement',
+      studentEmail: record.student_email,
+      studentName: getStudentName(record.student_email),
+      content: record.message,
+      occurredAt: record.occurred_at || record.created_date,
+    }));
     return [
+      ...recovered,
       ...publicAchievementRecords.lessonProgresses
         .filter((record) => record.watched && courseStudents.has(record.student_email) && lessonById[record.lesson_id])
         .map((record) => makePost(record, 'lesson', `concluiu a aula “${lessonById[record.lesson_id]?.title || 'Nova aula'}”.`, record.updated_date || record.created_date)),
@@ -500,9 +529,9 @@ export default function Dashboard() {
       ...publicAchievementRecords.challengeResponses
         .filter((record) => courseStudents.has(record.student_email))
         .map((record) => makePost(record, 'challenge', 'venceu mais uma etapa da ofensiva diária.', record.updated_date || record.created_date || record.date)),
-    ].filter((post) => isSinceOvercomingWallCutoff(post.occurredAt))
+    ].filter((post, index, posts) => isSinceOvercomingWallCutoff(post.occurredAt) && posts.findIndex((candidate) => candidate.studentEmail === post.studentEmail && candidate.content === post.content) === index)
       .sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt));
-  }, [publicAchievementRecords, courseCodes, lessons, tasks, exams, accessCodes]);
+  }, [publicAchievementRecords, savedAchievements, courseCodes, lessons, tasks, exams, accessCodes]);
 
   const overcomingWallFeed = React.useMemo(() => {
     const encouragements = [...encouragementPosts].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)).slice(0, 8);
@@ -524,8 +553,14 @@ export default function Dashboard() {
         feed.push(encouragements[encouragementIndex++]);
       }
     }
-    return feed;
-  }, [encouragementPosts, achievementPosts]);
+    const privateNotifications = myWallNotifications.slice(0, 6).map((notification) => ({
+      ...notification,
+      id: `notification-${notification.id}`,
+      feedType: 'notification',
+      occurredAt: notification.created_date,
+    }));
+    return [...privateNotifications, ...feed].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)).slice(0, 15);
+  }, [encouragementPosts, achievementPosts, myWallNotifications]);
 
   const sendMiniChatMutation = useMutation({
     mutationFn: async (content) => {
@@ -548,6 +583,48 @@ export default function Dashboard() {
       toast.success('Sua palavra de superação foi publicada!');
     },
   });
+
+  const reactMutation = useMutation({
+    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'react', actor_email: session?.email, access_code: session?.code, ...payload }),
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-reactions'] });
+      toast.success(response?.data?.duplicate ? 'Você já registrou esta reação.' : 'Sua reação foi enviada!');
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível enviar sua reação.'),
+  });
+
+  const recoverAchievements = async () => {
+    setSyncingAchievements(true);
+    try {
+      // Migra também as marcações antigas que existiam somente neste navegador.
+      const storageKey = `wr_apostila_read_${userCourse || 'tcc'}_${session?.email || session?.code || 'guest'}`;
+      const localReads = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      for (const readKey of localReads) {
+        const [chapterId, lessonId] = String(readKey).split('__');
+        if (!chapterId || !lessonId) continue;
+        await base44.functions.invoke('saveStudentRecord', { action: 'lessonProgressUpsert', lesson_id: `apostila:${chapterId}:${lessonId}`, student_email: session?.email, student_identifiers: [session?.email, session?.code].filter(Boolean), patch: { watched: true } });
+      }
+      const response = await base44.functions.invoke('manageOvercomingWall', { action: 'sync', course: userCourse || 'tcc', actor_email: session?.email, access_code: session?.code });
+      await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
+      toast.success(response?.data?.created ? `${response.data.created} conquista(s) resgatada(s)!` : 'Mural conferido: todas as conquistas já estão registradas.');
+    } catch (error) { toast.error(error?.message || 'Não foi possível resgatar as conquistas.'); }
+    finally { setSyncingAchievements(false); }
+  };
+
+  const reactionButtons = (item, targetType, ownerEmail) => {
+    const options = [
+      { key: 'love', label: 'Amar', Icon: Heart, active: 'text-rose-600 bg-rose-50' },
+      { key: 'celebrate', label: 'Celebrar', Icon: PartyPopper, active: 'text-amber-700 bg-amber-50' },
+      { key: 'applaud', label: 'Aplaudir', Icon: Hand, active: 'text-sky-700 bg-sky-50' },
+    ];
+    return <div className="mt-2 flex flex-wrap gap-1 border-t border-current/10 pt-1.5" aria-label="Interações com esta publicação">
+      {options.map(({ key, label, Icon, active }) => {
+        const count = wallReactions.filter((r) => r.target_id === item.id && r.reaction === key).length;
+        const reacted = wallReactions.some((r) => r.target_id === item.id && r.reaction === key && r.actor_email === session?.email);
+        return <button key={key} type="button" disabled={ownerEmail === session?.email || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={ownerEmail === session?.email ? 'Você não pode reagir ao próprio conteúdo' : label} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-background/70 text-muted-foreground hover:bg-secondary'}`}><Icon size={12} fill={key === 'love' && reacted ? 'currentColor' : 'none'} />{label}{count > 0 && <span>{count}</span>}</button>;
+      })}
+    </div>;
+  };
 
   const firstName = (session?.name || 'Usuário').split(' ')[0];
   const hour = new Date().getHours();
@@ -674,7 +751,10 @@ export default function Dashboard() {
                   <Heart size={14} className="text-rose-500 fill-rose-100" />
                   <p className="text-xs font-bold text-foreground">Mural de superação</p>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">Inspire a turma</span>
+                <div className="flex items-center gap-1.5">
+                  <button type="button" onClick={recoverAchievements} disabled={syncingAchievements} className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60" title="Busca conclusões antigas e publica as que estiverem faltando"><RefreshCw size={11} className={syncingAchievements ? 'animate-spin' : ''} />{syncingAchievements ? 'Buscando...' : 'Resgatar conquistas'}</button>
+                  <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-wide text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">Inspire a turma</span>
+                </div>
               </div>
               <p className="text-[11px] text-muted-foreground">
                 Compartilhe palavras de ânimo. As conquistas recentes da turma aparecem aqui para celebrar cada passo da jornada.
@@ -696,10 +776,19 @@ export default function Dashboard() {
                 {overcomingWallFeed.length === 0 ?
                 <p className="text-xs text-muted-foreground text-center py-8">Seja a primeira pessoa a deixar uma palavra de força para a turma.</p> :
                 overcomingWallFeed.map((msg) => {
+                  if (msg.feedType === 'notification') return (
+                    <div key={msg.id} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
+                      <Bell size={14} className="mt-0.5 shrink-0 text-violet-600" />
+                      <div><span className="font-bold">Interação na sua conquista</span><p>{msg.message}</p><span className="text-[10px] text-violet-700">Visível somente para você</span></div>
+                    </div>
+                  );
                   if (msg.feedType === 'achievement') return (
-                    <div key={msg.id} className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed dark:border-white dark:bg-white dark:text-black">
+                    <div key={msg.id} className="rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed dark:border-white dark:bg-white dark:text-black">
+                      <div className="flex gap-2">
                       <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
                       <p><span className="font-bold text-amber-800 dark:text-black">Conquista desbloqueada!</span> <span className="font-semibold text-foreground dark:text-[#b8860b]">{msg.studentName}</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
+                      </div>
+                      {reactionButtons(msg, 'achievement', msg.studentEmail)}
                     </div>
                   );
                   const isMe = msg.author_email === session?.email;
@@ -711,6 +800,7 @@ export default function Dashboard() {
                       <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{authorDisplayName}</span>
                       <span className="ml-1 text-muted-foreground">compartilhou:</span>
                       <p className="mt-0.5 text-foreground dark:text-white">“{msg.content}”</p>
+                      {reactionButtons(msg, 'publication', msg.author_email)}
                     </div>);
                 })
                 }
