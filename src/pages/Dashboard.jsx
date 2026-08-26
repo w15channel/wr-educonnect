@@ -4,7 +4,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle } from 'lucide-react';
+import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2 } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -292,6 +292,22 @@ export default function Dashboard() {
     refetchInterval: 30000,
   });
 
+  const { data: wallInstitutionalRecords } = useQuery({
+    queryKey: ['overcoming-wall-institutional', userCourse || 'tcc'],
+    queryFn: async () => {
+      const course = userCourse || 'tcc';
+      const [shared, notices, liveSessions, calendarEvents] = await Promise.all([
+        base44.entities.WallPublication.filter({ course }, '-published_at', 100),
+        base44.entities.Announcement.filter({ course }, '-created_date', 100),
+        base44.entities.LiveSession.filter({ course }, '-scheduled_at', 100),
+        base44.entities.CalendarEvent.list('-date', 300),
+      ]);
+      return { shared, notices, liveSessions, calendarEvents };
+    },
+    enabled: !isTeacher && !!session?.email,
+    refetchInterval: 30000,
+  });
+
   const { data: wallReactions = [] } = useQuery({
     queryKey: ['overcoming-wall-reactions', userCourse || 'all'],
     queryFn: () => base44.entities.AchievementReaction.list('-created_date', 2000),
@@ -564,8 +580,19 @@ export default function Dashboard() {
       feedType: 'notification',
       occurredAt: notification.created_date,
     }));
-    return [...privateNotifications, ...feed].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)).slice(0, 15);
-  }, [encouragementPosts, achievementPosts, myWallNotifications]);
+    const now = Date.now();
+    const upcomingLimit = now + 45 * 24 * 60 * 60 * 1000;
+    const recentLimit = now - 45 * 24 * 60 * 60 * 1000;
+    const institutional = wallInstitutionalRecords ? [
+      ...wallInstitutionalRecords.shared.map((item) => ({ ...item, feedType: 'institutional', icon: 'share', occurredAt: item.published_at || item.created_date })),
+      ...wallInstitutionalRecords.notices.filter((item) => item.type !== 'unlock_rule' && new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `notice-${item.id}`, feedType: 'institutional', icon: 'notice', title: item.title || 'Recado importante', content: item.content, occurredAt: item.created_date })),
+      ...lessons.filter((item) => new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `lesson-${item.id}`, feedType: 'institutional', icon: 'content', title: 'Novo conteúdo disponível', content: item.title, occurredAt: item.created_date })),
+      ...tasks.filter((item) => new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `task-${item.id}`, feedType: 'institutional', icon: 'content', title: 'Nova atividade disponível', content: item.title, occurredAt: item.created_date })),
+      ...wallInstitutionalRecords.liveSessions.filter((item) => { const date = new Date(item.scheduled_at).getTime(); return date >= now && date <= upcomingLimit; }).map((item) => ({ id: `live-${item.id}`, feedType: 'institutional', icon: 'event', title: 'Próximo evento', content: `${item.title} • ${new Date(item.scheduled_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, occurredAt: item.created_date || item.scheduled_at })),
+      ...wallInstitutionalRecords.calendarEvents.filter((item) => { const rawDate = item.date || item.event_date; const date = rawDate ? new Date(`${rawDate}T${item.time || item.event_time || '12:00'}`).getTime() : 0; return date >= now && date <= upcomingLimit && (!item.student_email || item.student_email === session?.email); }).map((item) => ({ id: `calendar-${item.id}`, feedType: 'institutional', icon: 'event', title: 'Compromisso próximo', content: `${item.title} • ${new Date(`${item.date || item.event_date}T${item.time || item.event_time || '12:00'}`).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, occurredAt: item.created_date || item.date || item.event_date })),
+    ].filter((item, index, items) => item.content && items.findIndex((candidate) => candidate.id === item.id) === index) : [];
+    return [...privateNotifications, ...institutional, ...feed].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)).slice(0, 20);
+  }, [encouragementPosts, achievementPosts, myWallNotifications, wallInstitutionalRecords, lessons, tasks, session?.email]);
 
   const sendMiniChatMutation = useMutation({
     mutationFn: async (content) => {
@@ -804,6 +831,14 @@ export default function Dashboard() {
                     <div key={msg.id} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
                       <Bell size={14} className="mt-0.5 shrink-0 text-violet-600" />
                       <div><span className="font-bold">{msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista'}</span><p>{msg.message}</p>{msg.reply_text && <p className="mt-1 rounded-md bg-white/70 px-2 py-1 text-violet-950">“{msg.reply_text}”</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>
+                    </div>
+                  );
+                  if (msg.feedType === 'institutional') return (
+                    <div key={msg.id} className="rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 to-indigo-50 p-2 text-[11px] leading-relaxed text-slate-900 dark:border-sky-800 dark:from-sky-950/50 dark:to-indigo-950/50 dark:text-white" role="status">
+                      <div className="flex gap-2">
+                        {msg.icon === 'event' ? <Bell size={14} className="mt-0.5 shrink-0 text-indigo-600" /> : msg.icon === 'content' ? <BookOpen size={14} className="mt-0.5 shrink-0 text-sky-600" /> : <Share2 size={14} className="mt-0.5 shrink-0 text-rose-600" />}
+                        <div className="min-w-0"><p className="font-bold text-slate-900 dark:text-white">{msg.title || 'Destaque para a turma'}</p><p className="whitespace-pre-wrap break-words text-slate-700 dark:text-slate-200">{msg.content}</p>{msg.author_name && <span className="text-[10px] text-slate-500 dark:text-slate-400">Compartilhado por {msg.author_name}</span>}</div>
+                      </div>
                     </div>
                   );
                   if (msg.feedType === 'achievement') return (

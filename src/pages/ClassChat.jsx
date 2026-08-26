@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check, PartyPopper, Hand } from 'lucide-react';
+import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check, PartyPopper, Hand, Share2 } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -23,7 +23,7 @@ function formatBRT(dateStr) {
   return d.toISOString().slice(11, 16);
 }
 
-function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onDelete, reactions }) {
+function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onDelete, onShare, sharing, shared, reactions }) {
   const cleanContent = (msg.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim();
 
   return (
@@ -35,6 +35,7 @@ function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onD
             <ClickableStudent email={email} className="font-bold text-[12px] dark:!text-black" style={{ color: isMe ? '#be123c' : color }}>{name}</ClickableStudent>
             <span className="text-[10px] text-[#8b7180]">{time}</span>
             <div className="ml-auto flex items-center gap-1">
+              {isAdmin && <button type="button" onClick={() => onShare(msg)} disabled={sharing || shared} className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-default disabled:opacity-60" title="Encaminhar para o Mural de Superação da dashboard" aria-label="Compartilhar publicação no mural"><Share2 size={12}/>{shared ? 'No mural' : sharing ? 'Enviando...' : 'Compartilhar'}</button>}
               {isMe && <button type="button" onClick={() => onEdit(msg)} className="rounded p-1 text-[#9f667a] hover:bg-rose-50 hover:text-rose-700" title="Editar minha mensagem" aria-label="Editar minha mensagem"><Pencil size={13}/></button>}
               {isAdmin && <button type="button" onClick={() => onDelete(msg)} className="rounded p-1 text-[#9f667a] hover:bg-red-50 hover:text-red-700" title="Excluir permanentemente" aria-label="Excluir permanentemente"><Trash2 size={13}/></button>}
             </div>
@@ -59,6 +60,7 @@ export default function ClassChat() {
   const [dmSearch, setDmSearch] = useState('');
   const [editingMessage, setEditingMessage] = useState(null);
   const [editText, setEditText] = useState('');
+  const [sharingMessageId, setSharingMessageId] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
   const bottomRef = useRef(null);
   const lastAttentionRef = useRef(null);
@@ -127,6 +129,12 @@ export default function ClassChat() {
   const { data: wallReactions = [] } = useQuery({
     queryKey: ['overcoming-wall-reactions', userCourse],
     queryFn: () => base44.entities.AchievementReaction.list('-created_date', 2000),
+    refetchInterval: 5000,
+  });
+
+  const { data: sharedPublications = [] } = useQuery({
+    queryKey: ['wall-publications', userCourse],
+    queryFn: () => base44.entities.WallPublication.filter({ course: userCourse }, '-published_at', 500),
     refetchInterval: 5000,
   });
 
@@ -237,6 +245,33 @@ export default function ClassChat() {
     await queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
   };
 
+  const shareToWall = async (message) => {
+    if (!isAdmin || !message?.id || sharingMessageId) return;
+    if (sharedPublications.some((post) => post.source_type === 'chat' && post.source_id === message.id)) {
+      toast.info('Esta publicação já está no mural.');
+      return;
+    }
+    setSharingMessageId(message.id);
+    try {
+      await adminApi.create('WallPublication', {
+        course: userCourse,
+        source_type: 'chat',
+        source_id: message.id,
+        title: 'Destaque da comunidade',
+        content: (message.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim(),
+        author_name: message.author_name || 'Comunidade EDU',
+        published_by: session?.email,
+        published_at: new Date().toISOString(),
+      });
+      await queryClient.invalidateQueries({ queryKey: ['wall-publications', userCourse] });
+      toast.success('Publicação encaminhada ao mural da dashboard dos alunos!');
+    } catch (error) {
+      toast.error(error?.message || 'Não foi possível compartilhar a publicação.');
+    } finally {
+      setSharingMessageId(null);
+    }
+  };
+
   const getProfile = (email) => {
     const code = codes.find(c => c.student_email === email);
     const idx = Math.abs(email?.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 0) % MSN_COLORS.length;
@@ -321,7 +356,7 @@ export default function ClassChat() {
                   }
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);
-                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} reactions={reactionButtons(msg, 'publication', msg.author_email)} />;
+                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} onShare={shareToWall} sharing={sharingMessageId === msg.id} shared={sharedPublications.some((post) => post.source_type === 'chat' && post.source_id === msg.id)} reactions={reactionButtons(msg, 'publication', msg.author_email)} />;
                 })}
                 <div ref={bottomRef} />
               </div>

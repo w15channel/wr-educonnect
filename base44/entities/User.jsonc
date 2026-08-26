@@ -49,5 +49,11 @@
       "description": "Cache DECIMAL(10,3) da pontuação de estudos: aulas assistidas, trabalhos entregues e provas."
     }
   },
-  "required": []
+  "required": [],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
 }

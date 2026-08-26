@@ -11,5 +11,5 @@
     "reaction": { "type": "string", "enum": ["love", "celebrate", "applaud"] }
   },
   "required": ["dedupe_key", "target_id", "target_type", "target_owner_email", "actor_email", "reaction"],
-  "rls": { "create": false, "read": true, "update": false, "delete": false }
+  "rls": { "create": true, "read": true, "update": true, "delete": true }
 }

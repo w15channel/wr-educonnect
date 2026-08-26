@@ -1,0 +1,16 @@
+{
+  "name": "WallPublication",
+  "type": "object",
+  "properties": {
+    "course": { "type": "string", "description": "Curso que receberá a publicação" },
+    "source_type": { "type": "string", "description": "Origem da publicação (chat, aviso, conteúdo ou evento)" },
+    "source_id": { "type": "string", "description": "ID da origem para evitar compartilhamentos duplicados" },
+    "title": { "type": "string" },
+    "content": { "type": "string" },
+    "author_name": { "type": "string" },
+    "published_by": { "type": "string" },
+    "published_at": { "type": "string", "format": "date-time" }
+  },
+  "required": ["course", "source_type", "source_id", "content", "published_at"],
+  "rls": { "create": true, "read": true, "update": true, "delete": true }
+}
