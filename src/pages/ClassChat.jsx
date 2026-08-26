@@ -245,26 +245,27 @@ export default function ClassChat() {
     await queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
   };
 
-  const shareToWall = async (message) => {
-    if (!isAdmin || !message?.id || sharingMessageId) return;
-    if (sharedPublications.some((post) => post.source_type === 'chat' && post.source_id === message.id)) {
-      toast.info('Esta publicação já está no mural.');
+  const shareToWall = async (item, sourceType = 'chat') => {
+    if (!isAdmin || !item?.id || sharingMessageId) return;
+    if (sharedPublications.some((post) => post.source_type === sourceType && post.source_id === item.id)) {
+      toast.info(sourceType === 'achievement' ? 'Esta conquista já está no mural.' : 'Esta publicação já está no mural.');
       return;
     }
-    setSharingMessageId(message.id);
+    setSharingMessageId(item.id);
     try {
+      const profile = sourceType === 'achievement' ? getProfile(item.student_email) : null;
       await adminApi.create('WallPublication', {
         course: userCourse,
-        source_type: 'chat',
-        source_id: message.id,
-        title: 'Destaque da comunidade',
-        content: (message.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim(),
-        author_name: message.author_name || 'Comunidade EDU',
+        source_type: sourceType,
+        source_id: item.id,
+        title: sourceType === 'achievement' ? 'Conquista da turma' : 'Destaque da comunidade',
+        content: sourceType === 'achievement' ? item.content : (item.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim(),
+        author_name: sourceType === 'achievement' ? (profile?.name || 'Aluno da turma') : (item.author_name || 'Comunidade EDU'),
         published_by: session?.email,
         published_at: new Date().toISOString(),
       });
       await queryClient.invalidateQueries({ queryKey: ['wall-publications', userCourse] });
-      toast.success('Publicação encaminhada ao mural da dashboard dos alunos!');
+      toast.success(`${sourceType === 'achievement' ? 'Conquista' : 'Publicação'} encaminhada ao mural da dashboard dos alunos!`);
     } catch (error) {
       toast.error(error?.message || 'Não foi possível compartilhar a publicação.');
     } finally {
@@ -352,7 +353,8 @@ export default function ClassChat() {
                 {wallFeed.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : wallFeed.map((msg) => {
                   if (msg.feedType === 'achievement') {
                     const profile = getProfile(msg.student_email);
-                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black"><span aria-hidden="true">🏆 </span><strong className="text-black">{profile.name || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span>{reactionButtons(msg, 'achievement', msg.student_email)}</div>;
+                    const shared = sharedPublications.some((post) => post.source_type === 'achievement' && post.source_id === msg.id);
+                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black"><div className="flex items-start gap-2"><p className="min-w-0 flex-1"><span aria-hidden="true">🏆 </span><strong className="text-black">{profile.name || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></p>{isAdmin && <button type="button" onClick={() => shareToWall(msg, 'achievement')} disabled={sharingMessageId === msg.id || shared} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-bold text-amber-800 transition hover:bg-amber-100 disabled:cursor-default disabled:opacity-60" title="Compartilhar conquista na dashboard dos alunos"><Share2 size={12}/>{shared ? 'No mural' : sharingMessageId === msg.id ? 'Enviando...' : 'Compartilhar'}</button>}</div>{reactionButtons(msg, 'achievement', msg.student_email)}</div>;
                   }
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);
