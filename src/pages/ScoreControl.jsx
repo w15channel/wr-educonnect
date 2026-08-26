@@ -928,7 +928,7 @@ export default function ScoreControl() {
       totals.set(studentEmail, capScore(getCourseScoreTotal(studentEmail)));
     }
     return totals;
-  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, exams, therapistPairings, mentorships, activeCourse, selectedModule, moduleWindows]);
+  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, exams, therapistPairings, mentorships, activeCourse, selectedModule]);
 
   const sortedRows = filtered.
   map((code) => {

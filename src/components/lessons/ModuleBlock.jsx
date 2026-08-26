@@ -12,6 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MODULE_THEMES } from './ModuleCompletionCelebration';
+import MinLengthHint from '@/components/shared/MinLengthHint';
+import { isTextLongEnough } from '@/lib/minTextLength';
 
 const LESSON_TYPE_CONFIG = {
   video_external: { label: 'Vídeo Externo', icon: Play },
@@ -200,7 +202,7 @@ export default function ModuleBlock({
                         {(() => {
                           const comment = commentDraft[lesson.id] ?? prog?.comment ?? '';
                           const summary = summaryDraft[lesson.id] ?? prog?.summary ?? '';
-                          const canWatch = comment.trim() && summary.trim();
+                          const canWatch = isTextLongEnough(comment) && isTextLongEnough(summary);
                           return (
                             <button
                               onClick={() => onToggleWatched(lesson.id)}
@@ -293,25 +295,27 @@ export default function ModuleBlock({
                       <div className="px-4 pb-4 space-y-4 pt-3">
                         <div>
                           <label className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5"><BookOpen size={12} className="text-primary" /> Meu Resumo</label>
-                          <Textarea placeholder="Anote os principais pontos e aprendizados..." value={summaryDraft[lesson.id] ?? prog?.summary ?? ''} onChange={e => setSummaryDraft(prev => ({ ...prev, [lesson.id]: e.target.value }))} rows={3} className="text-sm" />
-                          <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" onClick={() => onSaveSummary(lesson.id)}>Salvar Resumo</Button>
+                          <Textarea placeholder="Anote os principais pontos e aprendizados (mínimo de 1000 caracteres)..." value={summaryDraft[lesson.id] ?? prog?.summary ?? ''} onChange={e => setSummaryDraft(prev => ({ ...prev, [lesson.id]: e.target.value }))} rows={3} className="text-sm" />
+                          <MinLengthHint value={summaryDraft[lesson.id] ?? prog?.summary ?? ''} />
+                          <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" disabled={!isTextLongEnough(summaryDraft[lesson.id] ?? prog?.summary ?? '')} onClick={() => onSaveSummary(lesson.id)}>Salvar Resumo</Button>
                           {prog?.summary && <div className="mt-2 bg-secondary/50 rounded-xl p-3"><p className="text-[10px] text-muted-foreground font-semibold mb-1">Resumo salvo:</p><p className="text-xs text-foreground/80">{prog.summary}</p></div>}
                         </div>
                         <div>
                           <label className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5"><MessageSquare size={12} className="text-accent" /> Meu Comentário</label>
-                          <Textarea placeholder="Compartilhe sua percepção sobre esta aula..." value={commentDraft[lesson.id] ?? prog?.comment ?? ''} onChange={e => setCommentDraft(prev => ({ ...prev, [lesson.id]: e.target.value }))} rows={2} className="text-sm" />
-                          <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" onClick={() => onSaveComment(lesson.id)}>Salvar Comentário</Button>
+                          <Textarea placeholder="Compartilhe sua percepção sobre esta aula (mínimo de 1000 caracteres)..." value={commentDraft[lesson.id] ?? prog?.comment ?? ''} onChange={e => setCommentDraft(prev => ({ ...prev, [lesson.id]: e.target.value }))} rows={4} className="text-sm" />
+                          <MinLengthHint value={commentDraft[lesson.id] ?? prog?.comment ?? ''} />
+                          <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" disabled={!isTextLongEnough(commentDraft[lesson.id] ?? prog?.comment ?? '')} onClick={() => onSaveComment(lesson.id)}>Salvar Comentário</Button>
                         </div>
                         {(() => {
                           const comment = commentDraft[lesson.id] ?? prog?.comment ?? '';
                           const summary = summaryDraft[lesson.id] ?? prog?.summary ?? '';
-                          const canWatch = comment.trim() && summary.trim();
+                          const canWatch = isTextLongEnough(comment) && isTextLongEnough(summary);
                           if (isWatched) return null;
                           return (
                             <div className={`rounded-xl p-3 border text-xs flex items-center gap-2 ${canWatch ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
                               {canWatch
                                 ? <p className="text-green-700 font-semibold flex-1">✅ Pronto! Você pode concluir esta aula.</p>
-                                : <p className="text-amber-700 font-semibold flex-1">🔒 Preencha o <strong>Resumo</strong> e o <strong>Comentário</strong> para liberar a conclusão.</p>
+                                : <p className="text-amber-700 font-semibold flex-1">🔒 O <strong>Resumo</strong> e o <strong>Comentário</strong> precisam ter no mínimo <strong>1000 caracteres</strong> cada. Trabalhe mais o texto adicionando mais detalhes para liberar a conclusão.</p>
                               }
                             </div>
                           );

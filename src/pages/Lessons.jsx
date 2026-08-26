@@ -28,6 +28,7 @@ import { MOD8 } from '@/lib/apostila/mod8';
 import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
 import VideoPlayer from '@/components/video/VideoPlayer';
+import { isTextLongEnough, insufficientTextMessage } from '@/lib/minTextLength';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
@@ -221,8 +222,8 @@ export default function Lessons() {
     if (!existing?.watched) {
       const comment = commentDraft[lessonId] ?? existing?.comment ?? '';
       const summary = summaryDraft[lessonId] ?? existing?.summary ?? '';
-      if (!comment.trim() || !summary.trim()) {
-        toast.error('Preencha o Resumo e o Comentário da aula antes de confirmar presença.');
+      if (!isTextLongEnough(summary) || !isTextLongEnough(comment)) {
+        toast.error(insufficientTextMessage(isTextLongEnough(summary) ? comment : summary));
         return;
       }
       await upsertProgress(lessonId, { summary: summaryDraft[lessonId] ?? existing?.summary ?? '', comment: commentDraft[lessonId] ?? existing?.comment ?? '', watched: true });
@@ -234,11 +235,15 @@ export default function Lessons() {
   };
 
   const saveComment = async (lessonId) => {
-    await upsertProgress(lessonId, { comment: commentDraft[lessonId] || '' });
+    const value = commentDraft[lessonId] || '';
+    if (!isTextLongEnough(value)) { toast.error(insufficientTextMessage(value)); return; }
+    await upsertProgress(lessonId, { comment: value });
     toast.success('Comentário salvo!');
   };
   const saveSummary = async (lessonId) => {
-    await upsertProgress(lessonId, { summary: summaryDraft[lessonId] || '' });
+    const value = summaryDraft[lessonId] || '';
+    if (!isTextLongEnough(value)) { toast.error(insufficientTextMessage(value)); return; }
+    await upsertProgress(lessonId, { summary: value });
     toast.success('Resumo salvo!');
   };
 
