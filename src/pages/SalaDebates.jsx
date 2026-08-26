@@ -8,7 +8,6 @@ import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
 import PostCard from '@/components/shared/PostCard';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { resolveAvatarEmoji } from '@/lib/avatarUtils';
@@ -128,7 +127,7 @@ export default function SalaDebates() {
 
   return (
     <div className="app-page max-w-4xl mx-auto animate-fade-in-up">
-      {celebrating && <ParticipationCelebration message={celebrationMsg} onClose={() => setCelebrating(false)} />}
+      {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'debate', message: 'participou da sala de debates.' }} message={celebrationMsg} onClose={() => setCelebrating(false)} />}
 
       <div className="mb-5">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Sala de Debates</h2>

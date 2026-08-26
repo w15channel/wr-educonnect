@@ -372,10 +372,11 @@ export default function Lessons() {
       {celebrationModule !== null && (
         <ModuleCompletionCelebration
           module={celebrationModule}
+          session={session}
           onClose={() => setCelebrationModule(null)}
         />
       )}
-      {celebrating && <ParticipationCelebration message="Aula concluída! Continue assim! 🎉" onClose={() => setCelebrating(false)} />}
+      {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'lesson', message: 'concluiu uma nova aula.' }} message="Aula concluída! Continue assim! 🎉" onClose={() => setCelebrating(false)} />}
 
       {/* Video modal — player integrado da plataforma */}
       <Dialog open={!!selectedVideo} onOpenChange={handleVideoDialogChange}>

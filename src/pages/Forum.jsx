@@ -4,11 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { MessageSquare, Send, BookOpen } from 'lucide-react';
+import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
 import PostCard from '@/components/shared/PostCard';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { resolveAvatarEmoji } from '@/lib/avatarUtils';
@@ -135,7 +134,7 @@ export default function Forum() {
 
   return (
     <div className="app-page app-page--narrow animate-fade-in-up">
-      {celebrating && <ParticipationCelebration message={celebrationMsg} onClose={() => setCelebrating(false)} />}
+      {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'forum', message: 'compartilhou conhecimento no fórum.' }} message={celebrationMsg} onClose={() => setCelebrating(false)} />}
 
       <div className="mb-5">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Fórum de Dúvidas</h2>
