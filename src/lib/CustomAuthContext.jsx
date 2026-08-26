@@ -22,8 +22,8 @@ async function loginFromAccessLink() {
     persistSession(session, { remember: true });
     localStorage.setItem('wr_remember_student_code', 'yes');
     localStorage.setItem('wr_saved_student_code', code);
-    const target = session?.study_mode === 'diploma' ? '/degree/student/dashboard' : '/student/dashboard';
-    window.history.replaceState({}, '', target);
+    // O aluno passa primeiro pelo lobby, onde vê os tutoriais antes de entrar.
+    window.history.replaceState({}, '', '/lobby');
     return session;
   } catch {
     // Código inválido/desativado — segue para a tela de login normal.

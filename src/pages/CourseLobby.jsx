@@ -245,17 +245,11 @@ export default function CourseLobby() {
   const [leadInput, setLeadInput] = useState('');
   const [leadLoading, setLeadLoading] = useState(false);
 
-  // Primeiro acesso ao lobby: oferece o tutorial escrito ou em vídeo.
-  const tutorialKey = `wr_lobby_tutorial_${session?.code || session?.email || 'aluno'}`;
-  const [showTutorialChoice, setShowTutorialChoice] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return !localStorage.getItem(tutorialKey);
-  });
+  // Em todo acesso ao lobby o aluno pode rever os tutoriais (escrito ou vídeo),
+  // com a opção de pular caso não queira ver novamente.
+  const [showTutorialChoice, setShowTutorialChoice] = useState(true);
 
-  const finishTutorialChoice = () => {
-    localStorage.setItem(tutorialKey, 'done');
-    setShowTutorialChoice(false);
-  };
+  const finishTutorialChoice = () => setShowTutorialChoice(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

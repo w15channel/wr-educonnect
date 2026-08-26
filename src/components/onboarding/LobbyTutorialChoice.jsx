@@ -38,12 +38,12 @@ export default function LobbyTutorialChoice({ studentName, onFinish }) {
   return (
     <div className="fixed inset-0 z-[99] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-md rounded-3xl bg-background p-6 shadow-2xl text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Primeiro acesso</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tutoriais da plataforma</p>
         <h2 className="mt-2 text-xl font-bold text-foreground">
           Boas-vindas{studentName ? `, ${String(studentName).split(' ')[0]}` : ''}!
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Como você prefere conhecer a plataforma: por um tutorial escrito ou pelo vídeo tutorial oficial?
+          Quer conhecer (ou rever) a plataforma? Escolha o tutorial escrito ou o vídeo tutorial oficial.
         </p>
         <div className="mt-5 grid grid-cols-1 gap-3">
           <button
@@ -67,8 +67,8 @@ export default function LobbyTutorialChoice({ studentName, onFinish }) {
             </span>
           </button>
         </div>
-        <button onClick={onFinish} className="mt-4 text-xs font-semibold text-muted-foreground hover:text-foreground">
-          Ver depois
+        <button onClick={onFinish} className="mt-4 text-[11px] font-semibold text-muted-foreground/80 underline hover:text-foreground">
+          Pular
         </button>
       </div>
     </div>
