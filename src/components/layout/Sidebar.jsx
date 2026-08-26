@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
+import { functionLabel } from '@/lib/profileRoles';
 
 
 const STUDENT_BADGE_PATHS = new Set(['/ofensivas', '/lessons', '/tasks', '/exams', '/chat', '/forum', '/debates', '/terapeuta', '/announcements', '/tuitions']);
@@ -498,7 +499,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
             )}
             <div className="min-w-0 flex-1">
               <p className="text-[12px] font-semibold text-sidebar-foreground truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-[9px] text-sidebar-foreground/50">{isAdmin ? 'Administrador' : 'Estudante'}</p>
+              <p className="text-[9px] text-sidebar-foreground/50">{functionLabel(session?.profileCategory, session?.role)}</p>
             </div>
             <Sparkles size={11} className="text-sidebar-primary/45 shrink-0" />
           </div>

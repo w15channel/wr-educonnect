@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { examScoreNote } from '../../shared/scoreMessages.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -35,7 +36,7 @@ Deno.serve(async (req) => {
       score: 50,
       max_score: 50,
       verified: true,
-      notes: feedback || `Prova entregue/corrigida conforme a regra atual: +50 pontos de estudo. Nota registrada: ${grade}/${exam.max_grade || 50}`,
+      notes: feedback || examScoreNote(exam_id, grade),
     };
 
     if (matchingScore) {

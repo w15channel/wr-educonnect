@@ -39,10 +39,15 @@ Deno.serve(async (req) => {
 
       await base44.asServiceRole.entities.AccessCode.update(record.id, { last_login: nowBRT(), is_active: true });
 
+      // A função (profile_category) salva pelo admin concede os privilégios do papel.
+      const profileCategory = record.profile_category || 'student';
+      const privileged = ['admin', 'teacher', 'management'].includes(profileCategory);
+
       return Response.json({
         success: true,
         session: {
-          role: 'student',
+          role: privileged ? 'admin' : 'student',
+          profileCategory,
           codeId: record.id,
           code,
           name: record.profile_name || record.student_name || 'Aluno',
@@ -69,6 +74,7 @@ Deno.serve(async (req) => {
         success: true,
         session: {
           role: 'admin',
+          profileCategory: 'admin',
           name: 'Professor',
           email: credential.email,
           course: null,

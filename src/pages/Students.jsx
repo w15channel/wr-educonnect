@@ -4,7 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Trash2 } from 'lucide-react';
+import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Trash2, Pencil } from 'lucide-react';
+import StudentQuickEdit from '@/components/admin/StudentQuickEdit';
+import { functionLabel } from '@/lib/profileRoles';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,24 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
-const PROFILE_CATEGORIES = [
-  { value: 'admin', label: 'ADM' },
-  { value: 'teacher', label: 'PROFESSOR' },
-  { value: 'student', label: 'ALUNO' },
-  { value: 'support', label: 'SUPORTE' },
-  { value: 'management', label: 'GESTÃO' },
-];
-
-function ProfileCategorySelect({ code, onChange }) {
+function FunctionBadge({ code }) {
   return (
-    <Select value={code.profile_category || 'student'} onValueChange={onChange}>
-      <SelectTrigger className="h-10 text-xs w-full" aria-label={`Categoria do perfil de ${code.profile_name || code.student_name || 'usuário'}`}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {PROFILE_CATEGORIES.map((category) => <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>)}
-      </SelectContent>
-    </Select>
+    <span className="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+      {functionLabel(code.profile_category, 'student')}
+    </span>
   );
 }
 
@@ -48,6 +37,7 @@ export default function Students() {
   const [sortBy, setSortBy] = useState('date_desc');
   const [enrollingCode, setEnrollingCode] = useState(null);
   const [enrollNewCourse, setEnrollNewCourse] = useState('');
+  const [editingCodeId, setEditingCodeId] = useState(null);
   const queryClient = useQueryClient();
 
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
