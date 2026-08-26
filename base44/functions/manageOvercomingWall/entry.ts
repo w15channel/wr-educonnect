@@ -85,6 +85,38 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Notification.create({ recipient_email: owner, sender_email: actor, sender_name: actorName, message: `${actorName} ${verbs[reaction]} sua ${targetType === 'achievement' ? 'Conquista' : 'Publicação'}`, type: 'wall_reaction', target_id: payload.target_id, reaction, is_read: false });
       return Response.json({ success: true });
     }
+    if (payload.action === 'reply') {
+      const replyText = String(payload.reply_text || '').trim();
+      const targetType = ['achievement', 'publication'].includes(payload.target_type) ? payload.target_type : null;
+      if (!targetType || !payload.target_id || !replyText || replyText.length > 500) {
+        return Response.json({ error: 'Resposta inválida. Escreva entre 1 e 500 caracteres.' }, { status: 400 });
+      }
+      const targetEntity = targetType === 'achievement' ? 'Achievement' : 'ChatMessage';
+      let target = await base44.asServiceRole.entities[targetEntity].get(payload.target_id).catch(() => null);
+      if (!target && targetType === 'achievement' && String(payload.target_id).startsWith('achievement-')) {
+        const match = String(payload.target_id).match(/^achievement-(lesson|task|exam|challenge)-(.+)$/);
+        const sourceEntities = { lesson: 'LessonProgress', task: 'TaskSubmission', exam: 'ExamSubmission', challenge: 'DailyChallengeResponse' };
+        if (match) target = await base44.asServiceRole.entities[sourceEntities[match[1]]].get(match[2]).catch(() => null);
+      }
+      const owner = norm(targetType === 'achievement' ? target?.student_email : target?.author_email);
+      const actor = norm(user.email);
+      if (!target || !owner || owner !== norm(payload.target_owner_email)) {
+        return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
+      }
+      if (owner === actor) return Response.json({ error: 'Você não pode responder à própria publicação.' }, { status: 400 });
+      const actorName = user.full_name || user.name || 'Uma pessoa da turma';
+      await base44.asServiceRole.entities.Notification.create({
+        recipient_email: owner,
+        sender_email: actor,
+        sender_name: actorName,
+        message: `${actorName} respondeu à sua ${targetType === 'achievement' ? 'Conquista' : 'Publicação'}`,
+        type: 'wall_reply',
+        target_id: payload.target_id,
+        reply_text: replyText,
+        is_read: false,
+      });
+      return Response.json({ success: true });
+    }
     return Response.json({ error: 'Ação inválida.' }, { status: 400 });
   } catch (error) { return Response.json({ error: error.message || 'Erro interno.' }, { status: error.message === 'Acesso não autorizado.' ? 401 : 500 }); }
 });

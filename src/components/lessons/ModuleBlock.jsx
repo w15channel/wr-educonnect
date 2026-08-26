@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MODULE_THEMES } from './ModuleCompletionCelebration';
-import VideoPlayer from '@/components/video/VideoPlayer';
 
 const LESSON_TYPE_CONFIG = {
   video_external: { label: 'Vídeo Externo', icon: Play },
@@ -32,6 +31,7 @@ export default function ModuleBlock({
   summaryDraft, setSummaryDraft,
   uploadStatus, uploadFile, setUploadFile,
   expandedLesson, setExpandedLesson,
+  selectedVideo, setSelectedVideo,
   onToggleWatched,
   onSaveComment,
   onSaveSummary,
@@ -124,11 +124,11 @@ export default function ModuleBlock({
               <div key={lesson.id} className={`transition-all ${isWatched ? 'bg-emerald-500/5' : ''} ${isTeacher && lesson.is_hidden ? 'opacity-60' : ''}`}>
                 {/* Lesson row */}
                 <div className="flex items-center gap-3 p-3 sm:p-4">
-                  {/* Non-video lessons retain a compact visual identifier. Videos
-                      use the full inline player rendered directly below. */}
-                  {lesson.lesson_type !== 'video_external' && <div
-                    className="w-12 h-9 sm:w-20 sm:h-14 bg-muted rounded-xl overflow-hidden relative flex items-center justify-center shrink-0"
+                  {/* Thumbnail */}
+                  <div
+                    className={`w-12 h-9 sm:w-20 sm:h-14 bg-muted rounded-xl overflow-hidden relative flex items-center justify-center shrink-0 ${lesson.lesson_type === 'video_external' ? 'cursor-pointer group' : 'cursor-default'}`}
                     style={{ minWidth: '3rem' }}
+                    onClick={() => lesson.lesson_type === 'video_external' && setSelectedVideo(lesson)}
                   >
                     {lesson.thumbnail_url
                       ? <img src={lesson.thumbnail_url} alt={lesson.title} className="absolute inset-0 w-full h-full object-cover" />
@@ -139,13 +139,13 @@ export default function ModuleBlock({
                         ? <FileText size={12} className="text-blue-500" />
                         : lesson.lesson_type === 'content_external'
                           ? <Globe size={12} className="text-green-500" />
-                        : <Play size={12} className="text-primary ml-0.5" />
+                          : <Play size={12} className="text-primary ml-0.5" />
                       }
                     </div>
                     {lesson.duration && (
                       <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 py-0.5 rounded z-10">{lesson.duration}</span>
                     )}
-                  </div>}
+                  </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
@@ -217,27 +217,11 @@ export default function ModuleBlock({
                     <button
                       onClick={() => setExpandedLesson(isExpanded ? null : lesson.id)}
                       className="p-2 min-w-[32px] min-h-[32px] flex items-center justify-center hover:bg-secondary rounded-xl transition-colors text-muted-foreground"
-                      aria-label={`${isExpanded ? 'Recolher' : 'Ver'} detalhes de ${lesson.title}`}
-                      title={`${isExpanded ? 'Recolher' : 'Ver'} detalhes da aula`}
                     >
                       {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                     </button>
                   </div>
                 </div>
-
-                {/* The lesson is the primary content: keep the player broad and
-                    ready inside the module instead of hiding it behind a cover
-                    thumbnail and a second modal interaction. */}
-                {lesson.lesson_type === 'video_external' && lesson.video_url && (
-                  <section className="px-3 pb-4 sm:px-4" aria-label={`Player da aula ${lesson.title}`}>
-                    <VideoPlayer
-                      url={lesson.video_url}
-                      title={lesson.title}
-                      poster={lesson.thumbnail_url || ''}
-                      className="wr-video-player--lesson"
-                    />
-                  </section>
-                )}
 
                 {/* Expanded content */}
                 {isExpanded && (

@@ -60,7 +60,7 @@ const isNativeFullscreen = () =>
  *  - arquivos diretos (mp4/webm/…)  → elemento <video> nativo, sem controles do navegador
  *  - YouTube                        → IFrame Player API oficial (controls=0)
  *  - Vimeo                          → Player SDK oficial (controls=false)
- *  - Rumble e demais embeds (Drive, Instagram, Facebook, TikTok…) → usamos os controles
+ *  - demais embeds (Drive, Instagram, Facebook, TikTok…) → usamos os controles
  *    nativos do próprio embed e mostramos apenas ações que realmente funcionam.
  */
 export default function VideoPlayer({
@@ -68,8 +68,8 @@ export default function VideoPlayer({
   title = 'Vídeo',
   poster = '',
   className = '',
-  onPlay = undefined,
-  onPause = undefined,
+  onPlay,
+  onPause,
 }) {
   const source = useMemo(() => getVideoSource(url), [url]);
   const canControl = source.kind === 'file' || source.kind === 'youtube' || source.kind === 'vimeo';
@@ -621,18 +621,6 @@ export default function VideoPlayer({
 
         {(source.kind === 'youtube' || source.kind === 'vimeo') && (
           <div ref={hostRef} className="absolute inset-0" />
-        )}
-
-        {/* O embedJS oficial só carrega vídeos do publisher configurado; o iframe
-            /embed/<id>/ funciona para qualquer vídeo público do Rumble. */}
-        {source.kind === 'rumble' && (
-          <iframe
-            title={title}
-            src={source.embedSrc}
-            allowFullScreen
-            allow="autoplay; encrypted-media; picture-in-picture; web-share"
-            referrerPolicy="strict-origin-when-cross-origin"
-          />
         )}
 
         {source.kind === 'iframe' && (
