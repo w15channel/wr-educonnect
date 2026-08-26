@@ -12,5 +12,5 @@
     "occurred_at": { "type": "string", "format": "date-time" }
   },
   "required": ["dedupe_key", "student_email", "kind", "message", "occurred_at"],
-  "rls": { "create": false, "read": true, "update": false, "delete": false }
+  "rls": { "create": true, "read": true, "update": true, "delete": true }
 }

@@ -10,6 +10,7 @@ const ADMIN_ENTITIES = new Set([
   'Notification', 'DailyChallenge', 'AdminCredential',
   'DailyChallengeResponse', 'ForumPost', 'ForumReply', 'LessonProgress',
   'LiveAttendance', 'ChatMessage', 'Exam', 'Mentorship', 'MentorshipReflection',
+  'WallPublication',
 ]);
 
 function cleanObject(obj = {}) {
