@@ -7,6 +7,7 @@ import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
 import LobbyTutorialChoice from '@/components/onboarding/LobbyTutorialChoice';
+import ProfileCompletionPrompt from '@/components/onboarding/ProfileCompletionPrompt';
 import { toast } from 'sonner';
 
 const G = '#d4b96a';
@@ -249,7 +250,17 @@ export default function CourseLobby() {
   // com a opção de pular caso não queira ver novamente.
   const [showTutorialChoice, setShowTutorialChoice] = useState(true);
 
-  const finishTutorialChoice = () => setShowTutorialChoice(false);
+  // No primeiro acesso, depois do tutorial, convidamos o aluno a completar o perfil.
+  const profilePromptKey = `wr_profile_prompt_${session?.code || session?.email || 'aluno'}`;
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
+
+  const finishTutorialChoice = () => {
+    setShowTutorialChoice(false);
+    if (typeof window !== 'undefined' && !localStorage.getItem(profilePromptKey)) {
+      localStorage.setItem(profilePromptKey, 'done');
+      setShowProfilePrompt(true);
+    }
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -393,6 +404,10 @@ export default function CourseLobby() {
 
       {showTutorialChoice && (
         <LobbyTutorialChoice studentName={session?.name} onFinish={finishTutorialChoice} />
+      )}
+
+      {showProfilePrompt && (
+        <ProfileCompletionPrompt onClose={() => setShowProfilePrompt(false)} />
       )}
 
       <div className="internal-page-shell">
