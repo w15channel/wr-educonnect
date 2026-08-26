@@ -4,9 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import {
-  ClipboardList, CheckCircle, Star, Plus, Pencil, Trash2, Play, Send,
-  MessageSquare, GraduationCap, FileText, ChevronDown, ChevronUp,
-  Trophy, Eye, EyeOff, Award, Sparkles, Lock
+  ClipboardList, CheckCircle, Plus, Pencil, Trash2, Play, Send, GraduationCap, FileText, ChevronDown, ChevronUp,
+  Trophy, Eye, EyeOff, Award, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatScore } from '@/lib/scoreUtils';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -196,7 +194,7 @@ export default function Tasks({ mode = 'tasks' }) {
 
   return (
     <div className="app-page max-w-[900px] mx-auto animate-fade-in-up">
-      {celebrating && <ParticipationCelebration message="Tarefa entregue! Parabéns pela dedicação! 🎉" onClose={() => setCelebrating(false)} />}
+      {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'task', message: 'respondeu uma tarefa com dedicação.' }} message="Tarefa entregue! Parabéns pela dedicação! 🎉" onClose={() => setCelebrating(false)} />}
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-5">
         <div>

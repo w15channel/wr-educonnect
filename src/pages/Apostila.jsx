@@ -407,7 +407,7 @@ export default function Apostila() {
 
   return (
     <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-24">
-      {celebrating && <ParticipationCelebration message={celebrationMsg} onClose={() => setCelebrating(false)} />}
+      {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'book_lesson', message: 'concluiu uma aula na apostila.' }} message={celebrationMsg} onClose={() => setCelebrating(false)} />}
       {printLesson && (
         <ApostilaPrintModal
           lesson={printLesson.lesson}

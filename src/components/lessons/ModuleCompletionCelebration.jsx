@@ -1,5 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
+import { Check, Share2 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 
 // Module names aligned with Apostila themes
 export const MODULE_THEMES = [
@@ -48,8 +50,9 @@ export function fireCelebrationConfetti() {
   fire(0.1, { spread: 120, startVelocity: 45 });
 }
 
-export default function ModuleCompletionCelebration({ module: mod, onClose }) {
+export default function ModuleCompletionCelebration({ module: mod, onClose, session }) {
   const theme = MODULE_THEMES[(mod?.index ?? 0) % MODULE_THEMES.length];
+  const [shareState, setShareState] = useState('idle');
 
   useEffect(() => {
     playCelebrationSound();
@@ -59,6 +62,18 @@ export default function ModuleCompletionCelebration({ module: mod, onClose }) {
     }, 800);
     return () => clearTimeout(t);
   }, []);
+
+  const share = async () => {
+    if (!session?.email || !session?.code || shareState === 'sharing' || shareState === 'shared') return;
+    setShareState('sharing');
+    try {
+      await base44.functions.invoke('manageOvercomingWall', {
+        action: 'publish', actor_email: session.email, access_code: session.code, course: session.course || 'tcc',
+        kind: 'module', title: theme.label, message: `concluiu o módulo “${theme.label}”.`, source_id: `module:${mod?.index ?? theme.id}`,
+      });
+      setShareState('shared');
+    } catch (_) { setShareState('error'); }
+  };
 
   return (
     <div
@@ -85,8 +100,17 @@ export default function ModuleCompletionCelebration({ module: mod, onClose }) {
           </div>
 
           <button
+            type="button"
+            onClick={share}
+            disabled={shareState === 'sharing' || shareState === 'shared'}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/40 bg-white/20 py-3 text-sm font-bold text-white transition-all hover:bg-white/30 disabled:opacity-80"
+          >
+            {shareState === 'shared' ? <Check size={17}/> : <Share2 size={17}/>} {shareState === 'sharing' ? 'Publicando...' : shareState === 'shared' ? 'Publicado no mural!' : shareState === 'error' ? 'Tentar novamente' : 'Compartilhar no mural'}
+          </button>
+
+          <button
             onClick={onClose}
-            className="mt-6 w-full bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold py-3 rounded-2xl transition-all text-sm"
+            className="mt-3 w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-3 rounded-2xl transition-all text-sm"
           >
             Continuar aprendendo ✨
           </button>

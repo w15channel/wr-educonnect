@@ -300,7 +300,7 @@ export default function TerapeutaDaSemana() {
 
   return (
     <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up">
-      {celebrating && <ParticipationCelebration message="Relato enviado! Obrigado por cuidar da turma! 🎉" onClose={() => setCelebrating(false)} />}
+      {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'report', message: 'concluiu seu relato da semana.' }} message="Relato enviado! Obrigado por cuidar da turma! 🎉" onClose={() => setCelebrating(false)} />}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">

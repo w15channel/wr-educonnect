@@ -61,6 +61,21 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({})); const user = await authenticatedUser(base44, payload);
     if (payload.action === 'sync') return Response.json({ success: true, ...(await syncAchievements(base44, user, payload.course)) });
+    if (payload.action === 'publish') {
+      const kind = String(payload.kind || 'achievement').trim().slice(0, 40);
+      const title = String(payload.title || '').trim().slice(0, 160);
+      const message = String(payload.message || '').trim().slice(0, 500);
+      if (!message) return Response.json({ error: 'Informe a conquista que deseja compartilhar.' }, { status: 400 });
+      const sourceId = String(payload.source_id || crypto.randomUUID()).trim().slice(0, 300);
+      const dedupeKey = `shared:${norm(user.email)}:${sourceId}`;
+      const prior = await base44.asServiceRole.entities.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
+      if (prior.length) return Response.json({ success: true, duplicate: true, achievement: prior[0] });
+      const achievement = await base44.asServiceRole.entities.Achievement.create({
+        dedupe_key: dedupeKey, student_email: norm(user.email), course: payload.course || user.course || 'tcc',
+        kind, title, message, source_id: sourceId, occurred_at: new Date().toISOString(),
+      });
+      return Response.json({ success: true, achievement });
+    }
     if (payload.action === 'react') {
       const reaction = ['love', 'celebrate', 'applaud'].includes(payload.reaction) ? payload.reaction : null;
       const targetType = ['achievement', 'publication'].includes(payload.target_type) ? payload.target_type : null;

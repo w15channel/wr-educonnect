@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check } from 'lucide-react';
+import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check, PartyPopper, Hand } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
@@ -22,16 +23,16 @@ function formatBRT(dateStr) {
   return d.toISOString().slice(11, 16);
 }
 
-function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onDelete }) {
+function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onDelete, reactions }) {
   const cleanContent = (msg.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim();
 
   return (
-    <div className="group rounded-xl border border-rose-100 bg-white px-3 py-2.5 text-[#3f2932] shadow-sm dark:border-white/20 dark:bg-black dark:text-white" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
+    <div className="group rounded-xl border border-rose-100 bg-white px-3 py-2.5 text-[#3f2932] shadow-sm dark:border-white dark:bg-white dark:text-black" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
       <div className="flex items-start gap-2">
         <span className="mt-0.5 text-lg" aria-hidden="true">🌟</span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <ClickableStudent email={email} className="font-bold text-[12px]" style={{ color: isMe ? '#be123c' : color }}>{name}</ClickableStudent>
+            <ClickableStudent email={email} className="font-bold text-[12px] dark:!text-black" style={{ color: isMe ? '#be123c' : color }}>{name}</ClickableStudent>
             <span className="text-[10px] text-[#8b7180]">{time}</span>
             <div className="ml-auto flex items-center gap-1">
               {isMe && <button type="button" onClick={() => onEdit(msg)} className="rounded p-1 text-[#9f667a] hover:bg-rose-50 hover:text-rose-700" title="Editar minha mensagem" aria-label="Editar minha mensagem"><Pencil size={13}/></button>}
@@ -39,6 +40,7 @@ function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onD
             </div>
           </div>
           <p className="mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-inherit">{cleanContent}</p>
+          {reactions}
           {msg.updated_date && msg.updated_date !== msg.created_date && <span className="text-[9px] italic text-[#a38a94]">editada</span>}
         </div>
       </div>
@@ -114,6 +116,27 @@ export default function ClassChat() {
       ].filter((achievement) => isSinceOvercomingWallCutoff(achievement.occurredAt));
     },
     staleTime: 30000,
+  });
+
+  const { data: savedAchievements = [] } = useQuery({
+    queryKey: ['class-chat-saved-achievements', userCourse],
+    queryFn: () => base44.entities.Achievement.filter({ course: userCourse }, '-occurred_at', 500),
+    refetchInterval: 5000,
+  });
+
+  const { data: wallReactions = [] } = useQuery({
+    queryKey: ['overcoming-wall-reactions', userCourse],
+    queryFn: () => base44.entities.AchievementReaction.list('-created_date', 2000),
+    refetchInterval: 5000,
+  });
+
+  const reactMutation = useMutation({
+    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'react', actor_email: session?.email, access_code: session?.code, ...payload }),
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-reactions'] });
+      toast.success(response?.data?.duplicate ? 'Você já registrou esta reação.' : 'Sua reação foi enviada!');
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível enviar sua reação.'),
   });
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, activeTab]);
@@ -238,10 +261,24 @@ export default function ClassChat() {
   const onlineStudents = otherStudents.filter(isStudentOnline);
   const awayStudents = otherStudents.filter(c => !isStudentOnline(c));
   const courseStudentEmails = new Set(codes.filter((code) => !userCourse || code.course === userCourse || (userCourse === 'tcc' && !code.course)).map((code) => code.student_email));
+  const persistedAchievements = savedAchievements.map((achievement) => ({ ...achievement, content: achievement.message, occurredAt: achievement.occurred_at || achievement.created_date }));
   const wallFeed = [
     ...messages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({ ...message, feedType: 'message', occurredAt: message.created_date || message.updated_date })),
     ...recentAchievements.filter((achievement) => courseStudentEmails.has(achievement.student_email)).map((achievement) => ({ ...achievement, feedType: 'achievement' })),
-  ].sort((a, b) => new Date(a.occurredAt || 0) - new Date(b.occurredAt || 0));
+    ...persistedAchievements.filter((achievement) => courseStudentEmails.has(achievement.student_email)).map((achievement) => ({ ...achievement, feedType: 'achievement' })),
+  ].filter((item, index, items) => items.findIndex((candidate) => candidate.feedType === item.feedType && candidate.student_email === item.student_email && candidate.content === item.content) === index).sort((a, b) => new Date(a.occurredAt || 0) - new Date(b.occurredAt || 0));
+
+  const reactionButtons = (item, targetType, ownerEmail) => <div className="mt-2 flex flex-wrap gap-1 border-t border-amber-200 pt-2" aria-label="Reações à publicação">
+    {[
+      ['love', 'Amar', Heart, 'text-rose-700 bg-rose-100'],
+      ['celebrate', 'Celebrar', PartyPopper, 'text-amber-800 bg-amber-100'],
+      ['applaud', 'Aplaudir', Hand, 'text-sky-800 bg-sky-100'],
+    ].map(([key, label, Icon, active]) => {
+      const count = wallReactions.filter((reaction) => reaction.target_id === item.id && reaction.reaction === key).length;
+      const reacted = wallReactions.some((reaction) => reaction.target_id === item.id && reaction.reaction === key && reaction.actor_email === session?.email);
+      return <button key={key} type="button" disabled={ownerEmail === session?.email || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={ownerEmail === session?.email ? 'Você não pode reagir à própria publicação' : label} className={`inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-white text-slate-600 hover:bg-slate-100'}`}><Icon size={12}/>{label}{count > 0 && <span>{count}</span>}</button>;
+    })}
+  </div>;
 
   const enableNotifications = async () => {
     if (typeof Notification === 'undefined') return alert('Este aparelho não suporta notificações do navegador.');
@@ -280,11 +317,11 @@ export default function ClassChat() {
                 {wallFeed.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : wallFeed.map((msg) => {
                   if (msg.feedType === 'achievement') {
                     const profile = getProfile(msg.student_email);
-                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black"><span aria-hidden="true">🏆 </span><strong className="dark:text-[#b8860b]">{profile.name || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></div>;
+                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black"><span aria-hidden="true">🏆 </span><strong className="text-black">{profile.name || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span>{reactionButtons(msg, 'achievement', msg.student_email)}</div>;
                   }
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);
-                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} />;
+                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} reactions={reactionButtons(msg, 'publication', msg.author_email)} />;
                 })}
                 <div ref={bottomRef} />
               </div>
@@ -310,14 +347,14 @@ export default function ClassChat() {
                   <div className="text-[11px] font-bold text-[#2f7d32] mb-1 border-b border-green-200 pb-1">🟢 Online ({onlineStudents.length})</div>
                   {onlineStudents.slice(0, 60).map((c) => {
                     const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] truncate"><span className="text-green-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
+                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] dark:text-black truncate"><span className="text-green-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
                   })}
                 </div>
                 <div>
                   <div className="text-[11px] font-bold text-[#b42318] mb-1 border-b border-red-200 pb-1">🔴 Ausentes ({awayStudents.length})</div>
                   {awayStudents.slice(0, 60).map((c) => {
                     const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] truncate"><span className="text-red-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Visto por último: {formatLastSeen(c.last_seen_at)}</span></button>;
+                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] dark:text-black truncate"><span className="text-red-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Visto por último: {formatLastSeen(c.last_seen_at)}</span></button>;
                   })}
                 </div>
               </div>
