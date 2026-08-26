@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -27,7 +27,6 @@ import { MOD7 } from '@/lib/apostila/mod7';
 import { MOD8 } from '@/lib/apostila/mod8';
 import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
-import VideoPlayer from '@/components/video/VideoPlayer';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
@@ -77,7 +76,6 @@ export default function Lessons() {
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [selectedVideo, setSelectedVideo] = useState(null);
   const [expandedLesson, setExpandedLesson] = useState(null);
   const [viewProgressLesson, setViewProgressLesson] = useState(null);
   const [commentDraft, setCommentDraft] = useState({});
@@ -86,12 +84,6 @@ export default function Lessons() {
   const [uploadFile, setUploadFile] = useState({});
   const [showModuleEditor, setShowModuleEditor] = useState(false);
   const [moduleEditorState, setModuleEditorState] = useState([]);
-
-  // A tela cheia (botão "Girar tela") e todos os demais controles agora ficam
-  // dentro do <VideoPlayer>, que é o player integrado da plataforma.
-  const handleVideoDialogChange = useCallback((open) => {
-    if (!open) setSelectedVideo(null);
-  }, []);
 
   // Module completion state (persisted to localStorage)
   const [celebrationModule, setCelebrationModule] = useState(null); // { index, name }
@@ -377,23 +369,6 @@ export default function Lessons() {
       )}
       {celebrating && <ParticipationCelebration message="Aula concluída! Continue assim! 🎉" onClose={() => setCelebrating(false)} />}
 
-      {/* Video modal — player integrado da plataforma */}
-      <Dialog open={!!selectedVideo} onOpenChange={handleVideoDialogChange}>
-        <DialogContent className="video-dialog w-[96vw] max-w-[1180px] p-0 overflow-hidden">
-          <div className="p-4 border-b border-border bg-card">
-            <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
-          </div>
-          {selectedVideo && (
-            <VideoPlayer
-              url={selectedVideo.video_url}
-              title={selectedVideo.title}
-              poster={selectedVideo.thumbnail_url || ''}
-              className="wr-video-player--wide"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Header */}
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
@@ -561,8 +536,6 @@ export default function Lessons() {
               setUploadFile={setUploadFile}
               expandedLesson={expandedLesson}
               setExpandedLesson={setExpandedLesson}
-              selectedVideo={selectedVideo}
-              setSelectedVideo={setSelectedVideo}
               onToggleWatched={toggleWatched}
               onSaveComment={saveComment}
               onSaveSummary={saveSummary}

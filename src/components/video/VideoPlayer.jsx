@@ -69,8 +69,8 @@ export default function VideoPlayer({
   title = 'Vídeo',
   poster = '',
   className = '',
-  onPlay,
-  onPause,
+  onPlay = undefined,
+  onPause = undefined,
 }) {
   const source = useMemo(() => getVideoSource(url), [url]);
   const canControl = source.kind === 'file' || source.kind === 'youtube' || source.kind === 'vimeo';
