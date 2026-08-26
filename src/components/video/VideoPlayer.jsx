@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { getVideoSource } from '@/lib/videoEmbed';
 import { loadYouTubeApi, loadVimeoApi } from '@/lib/videoProviderApi';
-import RumbleEmbed from '@/components/video/RumbleEmbed';
 
 const SPEEDS = [1, 1.25, 1.5, 2, 2.5];
 const SKIP_SECONDS = 10;
@@ -624,13 +623,16 @@ export default function VideoPlayer({
           <div ref={hostRef} className="absolute inset-0" />
         )}
 
+        {/* O embedJS oficial só carrega vídeos do publisher configurado; o iframe
+            /embed/<id>/ funciona para qualquer vídeo público do Rumble. */}
         {source.kind === 'rumble' && (
-          <div className="absolute inset-0">
-            <RumbleEmbed
-              videoId={source.videoId}
-              title={title}
-            />
-          </div>
+          <iframe
+            title={title}
+            src={source.embedSrc}
+            allowFullScreen
+            allow="autoplay; encrypted-media; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
         )}
 
         {source.kind === 'iframe' && (
