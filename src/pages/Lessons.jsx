@@ -379,7 +379,7 @@ export default function Lessons() {
 
       {/* Video modal — player integrado da plataforma */}
       <Dialog open={!!selectedVideo} onOpenChange={handleVideoDialogChange}>
-        <DialogContent className="video-dialog max-w-4xl p-0 overflow-hidden">
+        <DialogContent className="video-dialog w-[96vw] max-w-[1180px] p-0 overflow-hidden">
           <div className="p-4 border-b border-border bg-card">
             <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
           </div>
@@ -388,6 +388,7 @@ export default function Lessons() {
               url={selectedVideo.video_url}
               title={selectedVideo.title}
               poster={selectedVideo.thumbnail_url || ''}
+              className="wr-video-player--wide"
             />
           )}
         </DialogContent>
