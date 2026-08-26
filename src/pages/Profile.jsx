@@ -9,6 +9,7 @@ import { Save, CheckCircle, Camera, User, Trash2, GraduationCap, Users } from 'l
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { AVATAR_OPTIONS, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
+import { functionLabel } from '@/lib/profileRoles';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -223,6 +224,9 @@ export default function Profile({ focusStudyProfile = false }) {
           <div className="text-center">
             <p className="font-bold text-foreground">{name || 'Seu Nome'}</p>
             {nickname && <p className="text-sm text-muted-foreground">"{nickname}"</p>}
+            <span className="mt-2 inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+              Função: {functionLabel(session?.profileCategory, session?.role)}
+            </span>
           </div>
 
           {/* Color picker */}

@@ -304,6 +304,10 @@ export default function Students() {
                   const tCfg = tStatus ? tuitionConfig[tStatus] : null;
                   return (
                     <div key={code.id} className="bg-card rounded-2xl border border-border p-3.5 flex flex-col gap-3">
+                      {editingCodeId === code.id ? (
+                        <StudentQuickEdit code={code} onDone={() => setEditingCodeId(null)} />
+                      ) : (
+                      <>
                       <div className="flex items-center gap-3">
                       {code.profile_photo_url ? (
                         <img src={code.profile_photo_url} alt={displayName} className="w-10 h-10 rounded-full object-cover shrink-0 border border-border" />
@@ -343,21 +347,12 @@ export default function Students() {
 
                       <div className="grid grid-cols-2 gap-2">
                         <div className="col-span-2">
-                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Categoria do perfil</p>
-                          <ProfileCategorySelect code={code} onChange={(profile_category) => updateCodeMutation.mutate({ id: code.id, data: { profile_category } })} />
+                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Função</p>
+                          <FunctionBadge code={code} />
                         </div>
-                        <Select
-                          value={code.is_active ? 'active' : 'inactive'}
-                          onValueChange={(v) => updateCodeMutation.mutate({ id: code.id, data: { is_active: v === 'active' } })}
-                        >
-                          <SelectTrigger className="h-10 text-xs w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">Ativo</SelectItem>
-                            <SelectItem value="inactive">Inativo</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <button onClick={() => setEditingCodeId(code.id)} className="h-10 px-3 text-foreground border border-border hover:bg-secondary rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5" title="Editar dados">
+                          <Pencil size={15} /> Editar
+                        </button>
                         <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="h-10 px-3 text-primary border border-border hover:bg-primary/10 rounded-xl transition-colors text-xs font-semibold flex items-center justify-center gap-1.5">
                            <Eye size={15} /> Detalhes
                          </button>
@@ -368,6 +363,8 @@ export default function Students() {
                            <Trash2 size={15} /> Remover
                          </button>
                       </div>
+                      </>
+                      )}
                     </div>
                   );
                 })}
@@ -384,7 +381,7 @@ export default function Students() {
                         <th className="p-4">Entregas</th>
                         <th className="p-4">Pontuação total</th>
                         <th className="p-4">Mensalidade</th>
-                        <th className="p-4">Categoria</th>
+                        <th className="p-4">Função</th>
                         <th className="p-4">Status</th>
                         <th className="p-4">Ações</th>
                       </tr>
@@ -395,6 +392,15 @@ export default function Students() {
                         const displayName = code.profile_name || code.student_name || 'Sem nome';
                         const tStatus = getStudentTuitionStatus(code);
                         const tCfg = tStatus ? tuitionConfig[tStatus] : null;
+                        if (editingCodeId === code.id) {
+                          return (
+                            <tr key={code.id} className="border-b border-border bg-secondary/10">
+                              <td className="p-4" colSpan={8}>
+                                <StudentQuickEdit code={code} onDone={() => setEditingCodeId(null)} />
+                              </td>
+                            </tr>
+                          );
+                        }
                         return (
                           <tr key={code.id} className="border-b border-border hover:bg-secondary/20 transition-colors">
                             <td className="p-4">
@@ -425,7 +431,7 @@ export default function Students() {
                               ) : <span className="text-xs text-muted-foreground">—</span>}
                             </td>
                             <td className="p-4 min-w-36">
-                              <ProfileCategorySelect code={code} onChange={(profile_category) => updateCodeMutation.mutate({ id: code.id, data: { profile_category } })} />
+                              <FunctionBadge code={code} />
                             </td>
                             <td className="p-4">
                               <Select
@@ -443,6 +449,9 @@ export default function Students() {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center gap-2">
+                                <button onClick={() => setEditingCodeId(code.id)} className="flex items-center gap-1 text-xs text-foreground hover:underline font-semibold" title="Editar dados">
+                                  <Pencil size={13} /> Editar
+                                </button>
                                 <button onClick={() => navigate(`${scopedPrefix}/students/${code.id}`)} className="flex items-center gap-1 text-xs text-primary hover:underline font-semibold">
                                   <Eye size={13} /> Detalhes
                                 </button>
