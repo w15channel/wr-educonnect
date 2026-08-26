@@ -41,15 +41,28 @@
     transition: transform 240ms ease, background-color 300ms ease, box-shadow 300ms ease;
   }
 
-  .dark .theme-lamp { color: #facc15; }
+  /* Modo claro: lâmpada preta com luz amarela. */
+  :root:not(.dark) .theme-lamp { color: #facc15; }
+  :root:not(.dark) .theme-lamp__halo {
+    border-color: rgb(17 17 17 / 45%);
+    background: rgb(17 17 17 / 8%);
+    box-shadow: 0 0 0 0 rgb(250 204 21 / 34%), 0 4px 14px rgb(17 17 17 / 22%);
+  }
+  :root:not(.dark) .theme-lamp__bulb {
+    background: linear-gradient(145deg, #262626, #0a0a0a);
+    box-shadow: inset 0 1px 1px rgb(250 204 21 / 22%), 0 0 12px rgb(250 204 21 / 32%);
+  }
+
+  /* Modo escuro: lâmpada preta com luz branca. */
+  .dark .theme-lamp { color: #ffffff; }
   .dark .theme-lamp__halo {
-    border-color: rgb(250 204 21 / 42%);
-    background: rgb(250 204 21 / 10%);
-    box-shadow: 0 0 0 0 rgb(250 204 21 / 27%), 0 4px 16px rgb(250 204 21 / 18%);
+    border-color: rgb(255 255 255 / 38%);
+    background: rgb(255 255 255 / 8%);
+    box-shadow: 0 0 0 0 rgb(255 255 255 / 24%), 0 4px 16px rgb(255 255 255 / 14%);
   }
   .dark .theme-lamp__bulb {
-    background: linear-gradient(145deg, #3f3618, #18170f);
-    box-shadow: inset 0 1px 1px rgb(255 244 160 / 16%), 0 0 12px rgb(250 204 21 / 24%);
+    background: linear-gradient(145deg, #2a2a2a, #050505);
+    box-shadow: inset 0 1px 1px rgb(255 255 255 / 18%), 0 0 12px rgb(255 255 255 / 22%);
   }
 
   .theme-lamp:hover { transform: translateY(-1px) scale(1.05); filter: brightness(1.08); }
@@ -267,20 +280,34 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
     mix-blend-mode: soft-light;
   }
-  /* Tema claro: rosa salmão suave com ouro em gradiente e textura azul discreta. */
+  /* Tema claro: roxo suave em progressão para o ouro, com ondas azuis discretas. */
   :root:not(.dark) .app-shell-bg:not(.lobby-shell) {
-    background-color: #fbe7de;
+    background-color: #efe6f7;
     background-image:
-      radial-gradient(66rem 52rem at -8% -12%, rgba(255, 214, 198, 0.92), transparent 68%),
-      radial-gradient(62rem 50rem at 106% 2%, rgba(240, 198, 132, 0.42), transparent 66%),
-      radial-gradient(58rem 46rem at 46% 112%, rgba(214, 176, 96, 0.26), transparent 72%),
-      linear-gradient(135deg, #fce9e1 0%, #f9dfd2 46%, #f4e3c4 100%);
+      radial-gradient(66rem 52rem at -8% -12%, rgba(214, 198, 240, 0.92), transparent 68%),
+      radial-gradient(62rem 50rem at 106% 2%, rgba(196, 173, 227, 0.5), transparent 66%),
+      radial-gradient(58rem 46rem at 52% 112%, rgba(226, 189, 104, 0.34), transparent 72%),
+      linear-gradient(135deg, #f0e7f9 0%, #e9e0f2 44%, #f4e6c6 100%);
   }
   :root:not(.dark) .app-shell-bg:not(.lobby-shell)::before {
-    opacity: 0.5;
+    opacity: 0.55;
     mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%236f9ac9' stroke-opacity='0.16' stroke-width='1'%3E%3Cpath d='M0 30h120M0 60h120M0 90h120M30 0v120M60 0v120M90 0v120'/%3E%3Ccircle cx='30' cy='30' r='6'/%3E%3Ccircle cx='90' cy='90' r='6'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 120px 120px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='120' viewBox='0 0 240 120'%3E%3Cg fill='none' stroke='%237fa6d0' stroke-opacity='0.18' stroke-width='1.4'%3E%3Cpath d='M0 20c30-16 60-16 90 0s60 16 90 0 60-16 60 0'/%3E%3Cpath d='M0 50c30-16 60-16 90 0s60 16 90 0 60-16 60 0' stroke-opacity='0.14'/%3E%3Cpath d='M0 80c30-16 60-16 90 0s60 16 90 0 60-16 60 0' stroke-opacity='0.11'/%3E%3Cpath d='M0 110c30-16 60-16 90 0s60 16 90 0 60-16 60 0' stroke-opacity='0.08'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 240px 120px;
+  }
+  /* Menus (sidebar e barra inferior) em tom branco no modo claro. */
+  :root:not(.dark) .sidebar-glass {
+    background:
+      linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86)),
+      linear-gradient(180deg, rgba(226, 189, 104, 0.08), transparent 32%);
+    border-color: rgba(148, 132, 178, 0.28);
+  }
+  :root:not(.dark) .shell-bar-glass {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88));
+    border-color: rgba(148, 132, 178, 0.28);
+  }
+  :root:not(.dark) .app-shell-bg .bg-sidebar {
+    background-color: rgba(255, 255, 255, 0.92);
   }
 
   /* Superfícies deixam o gradiente respirar, sem reflexos brancos agressivos. */
@@ -672,6 +699,92 @@
 .wr-video-select option {
   color: #fff;
   background: #17171c;
+}
+
+/* ── Ofensivas Diárias — o setor mais animado da plataforma ─────────────── */
+.ofensiva-owl {
+  animation: ofensivaOwlBob 2.6s ease-in-out infinite;
+  transform-origin: bottom center;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
+}
+.ofensiva-bubble {
+  animation: ofensivaBubblePop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.ofensiva-status {
+  animation: ofensivaFloat 3.4s ease-in-out infinite;
+}
+.ofensiva-chest {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.ofensiva-chest__lid {
+  transform-origin: 50% 88%;
+}
+.ofensiva-chest--ready {
+  animation: ofensivaChestShake 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(242, 193, 78, 0.55));
+}
+.ofensiva-chest--ready .ofensiva-chest__lid {
+  animation: ofensivaChestLid 2.4s ease-in-out infinite;
+}
+.ofensiva-chest--done { filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.45)); }
+.ofensiva-chest--locked { filter: grayscale(0.85); opacity: 0.65; }
+.ofensiva-coin {
+  position: absolute;
+  top: -0.35rem;
+  font-size: 0.85rem;
+  animation: ofensivaCoin 2.4s ease-in-out infinite;
+}
+.ofensiva-coin--1 { left: 0.1rem; }
+.ofensiva-coin--2 { right: 0.1rem; animation-delay: 0.8s; }
+.ofensiva-node-ready {
+  animation: ofensivaNodePulse 1.9s ease-in-out infinite;
+}
+.ofensiva-node-done {
+  animation: ofensivaNodePop 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+@keyframes ofensivaOwlBob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+@keyframes ofensivaBubblePop {
+  from { opacity: 0; transform: translateY(6px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ofensivaFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes ofensivaChestShake {
+  0%, 62%, 100% { transform: translateY(0) rotate(0deg); }
+  70% { transform: translateY(-2px) rotate(-3deg); }
+  78% { transform: translateY(-2px) rotate(3deg); }
+  86% { transform: translateY(0) rotate(0deg); }
+}
+@keyframes ofensivaChestLid {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  72% { transform: rotate(-14deg); }
+  84% { transform: rotate(-4deg); }
+}
+@keyframes ofensivaCoin {
+  0%, 55%, 100% { opacity: 0; transform: translateY(4px) scale(0.7); }
+  70% { opacity: 1; transform: translateY(-10px) scale(1); }
+  85% { opacity: 0.4; transform: translateY(-16px) scale(0.9); }
+}
+@keyframes ofensivaNodePulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 hsl(var(--primary) / 0.45); }
+  70% { transform: scale(1.06); box-shadow: 0 0 0 0.7rem transparent; }
+}
+@keyframes ofensivaNodePop {
+  from { transform: scale(0.6); }
+  to { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ofensiva-owl, .ofensiva-status, .ofensiva-chest--ready, .ofensiva-chest--ready .ofensiva-chest__lid,
+  .ofensiva-coin, .ofensiva-node-ready, .ofensiva-node-done { animation: none; }
 }
 
 @keyframes fadeInUp {

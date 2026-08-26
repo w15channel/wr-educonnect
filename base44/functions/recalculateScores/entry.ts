@@ -1,4 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import {
+  lessonScoreNote,
+  taskScoreNote,
+  examScoreNote,
+  forumScoreNote,
+  ofensivaScoreNote,
+  therapistScoreNote,
+  LIVE_ATTENDANCE_NOTE,
+} from '../../shared/scoreMessages.ts';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCORING RULES — canonical reference (update here, propagates everywhere)
@@ -339,7 +348,7 @@ Deno.serve(async (req) => {
       for (const p of progresses) {
         const lesson = lessonMap.get(p.lesson_id);
         if (!p.watched || !courseEmails.has(p.student_email) || !lesson) continue;
-        queueScore({ studentEmail: p.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: STUDY_POINTS.lesson, maxScore: STUDY_POINTS.lesson, notes: 'Aula assistida por completo: +2 pontos de estudo.' });
+        queueScore({ studentEmail: p.student_email, category: 'lesson', refId: lesson.id, refTitle: lesson.title, score: STUDY_POINTS.lesson, maxScore: STUDY_POINTS.lesson, notes: lessonScoreNote(lesson.id) });
         if (afterCutoff(p)) addBothCalc(p.student_email, STUDY_POINTS.lesson);
       }
 
@@ -347,7 +356,7 @@ Deno.serve(async (req) => {
       for (const a of attendances) {
         const live = liveMap.get(a.session_id);
         if (!courseEmails.has(a.student_email) || !live) continue;
-        queueScore({ studentEmail: a.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || a.session_title || 'Presença em live', score: LIVE_ATTENDANCE_POINTS, maxScore: LIVE_ATTENDANCE_POINTS, notes: 'Presença confirmada em live: sem pontuação pela regra atual.' });
+        queueScore({ studentEmail: a.student_email, category: 'live_attendance', refId: live.id, refTitle: live.title || a.session_title || 'Presença em live', score: LIVE_ATTENDANCE_POINTS, maxScore: LIVE_ATTENDANCE_POINTS, notes: LIVE_ATTENDANCE_NOTE });
       }
 
       // Task/quiz submissions
@@ -357,8 +366,7 @@ Deno.serve(async (req) => {
         const baseScore = task.type === 'quiz' ? STUDY_POINTS.quiz : STUDY_POINTS.task;
         const score = baseScore;
         const category = task.type === 'quiz' ? 'quiz' : 'task';
-        const label = task.type === 'quiz' ? 'Prova' : 'Trabalho';
-        const feedback = `${label} pontuado conforme a regra atual: +${String(roundScore(baseScore)).replace('.', ',')} pontos.`;
+        const feedback = taskScoreNote(task.id, roundScore(baseScore), task.type === 'quiz');
         queueScore({ studentEmail: s.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
         if (afterCutoff(s)) addBothCalc(s.student_email, baseScore);
         if (s.status !== 'graded' || roundScore(s.grade) !== roundScore(score) || s.feedback !== feedback) {
@@ -381,7 +389,7 @@ Deno.serve(async (req) => {
           refTitle: exam.title,
           score: grade,
           maxScore: STUDY_POINTS.exam,
-          notes: sub.feedback || `Prova corrigida pelo professor: ${grade} pontos.`
+          notes: sub.feedback || examScoreNote(refId, grade)
         });
         if (afterCutoff(sub)) addBothCalc(sub.student_email, grade);
       }
@@ -393,7 +401,7 @@ Deno.serve(async (req) => {
         const pts = forumScore(post.author_email);
         const pos = rankPositionMap.get(post.author_email) ?? 0;
         const bonusNote = pos <= 3 ? ` (bônus de classificação: ${pos}º lugar)` : '';
-        queueScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: `Publicação — ${space}`, score: pts, maxScore: 0.4, notes: `Publicação criada na ${space}: +${pts.toFixed(3)} ponto(s)${bonusNote}.` });
+        queueScore({ studentEmail: post.author_email, category: 'forum', refId: post.id, refTitle: `Publicação — ${space}`, score: pts, maxScore: 0.4, notes: `${forumScoreNote(post.id, pts, space, false)}${bonusNote}` });
         if (afterCutoff(post)) addCalc(post.author_email, pts);
       }
 
@@ -405,7 +413,7 @@ Deno.serve(async (req) => {
         const pts = forumScore(reply.author_email);
         const pos = rankPositionMap.get(reply.author_email) ?? 0;
         const bonusNote = pos <= 3 ? ` (bônus de classificação: ${pos}º lugar)` : '';
-        queueScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: `Resposta a colega — ${space}`, score: pts, maxScore: 0.4, notes: `Resposta na ${space}: +${pts.toFixed(3)} ponto(s)${bonusNote}.` });
+        queueScore({ studentEmail: reply.author_email, category: 'forum', refId: reply.id, refTitle: `Resposta a colega — ${space}`, score: pts, maxScore: 0.4, notes: `${forumScoreNote(reply.id, pts, space, true)}${bonusNote}` });
         if (afterCutoff(reply)) addCalc(reply.author_email, pts);
       }
 
@@ -417,14 +425,14 @@ Deno.serve(async (req) => {
         if (courseEmails.has(pairing.therapist_email) && pairing.therapist_submitted) {
           const refId = `therapist_pairing:${pairing.id}:therapist`;
           const dateStr = pairing.pairing_date || 'data não informada';
-          queueScore({ studentEmail: pairing.therapist_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana (${dateStr})`, score: THERAPIST_SESSION_POINTS, maxScore: THERAPIST_SESSION_POINTS, notes: 'Relato enviado como terapeuta na atividade Terapeuta da Semana: +10 pontos.', moduleNumber: pairing.module_number });
+          queueScore({ studentEmail: pairing.therapist_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana (${dateStr})`, score: THERAPIST_SESSION_POINTS, maxScore: THERAPIST_SESSION_POINTS, notes: therapistScoreNote(refId, 'terapeuta'), moduleNumber: pairing.module_number });
           if (afterCutoff(pairing)) addCalc(pairing.therapist_email, THERAPIST_SESSION_POINTS);
         }
 
         if (courseEmails.has(pairing.patient_email) && pairing.patient_submitted) {
           const refId = `therapist_pairing:${pairing.id}:patient`;
           const dateStr = pairing.pairing_date || 'data não informada';
-          queueScore({ studentEmail: pairing.patient_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana — Paciente (${dateStr})`, score: THERAPIST_SESSION_POINTS, maxScore: THERAPIST_SESSION_POINTS, notes: 'Relato enviado como paciente na atividade Terapeuta da Semana: +10 pontos.', moduleNumber: pairing.module_number });
+          queueScore({ studentEmail: pairing.patient_email, category: 'task', refId, refTitle: `Relato Terapeuta da Semana — Paciente (${dateStr})`, score: THERAPIST_SESSION_POINTS, maxScore: THERAPIST_SESSION_POINTS, notes: therapistScoreNote(refId, 'paciente'), moduleNumber: pairing.module_number });
           if (afterCutoff(pairing)) addCalc(pairing.patient_email, THERAPIST_SESSION_POINTS);
         }
       }
@@ -435,7 +443,7 @@ Deno.serve(async (req) => {
         const pts = roundScore(r.points_earned || 0);
         if (pts <= 0) continue;
         const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
-        queueScore({ studentEmail: r.student_email, category: 'forum', refId, refTitle: `Ofensiva Diária (${r.date || 'data'})`, score: pts, maxScore: 1.0, notes: `Ofensiva diária concluída — ${r.questions_answered || 0}/5 perguntas respondidas: +${pts.toFixed(3)} ponto(s).` });
+        queueScore({ studentEmail: r.student_email, category: 'forum', refId, refTitle: `Ofensiva Diária (${r.date || 'data'})`, score: pts, maxScore: 1.0, notes: ofensivaScoreNote(refId, pts, r.questions_answered || 0) });
         if (afterCutoff(r)) addCalc(r.student_email, pts);
       }
 

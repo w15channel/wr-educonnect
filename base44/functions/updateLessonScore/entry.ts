@@ -10,6 +10,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { lessonScoreNote } from '../../shared/scoreMessages.ts';
 
 const MAX_RANKING_POINTS = 100;
 
@@ -75,7 +76,7 @@ Deno.serve(async (req) => {
       score: 2,
       max_score: 2,
       verified: true,
-      notes: 'Aula assistida por completo: +2 pontos de estudo.',
+      notes: lessonScoreNote(lessonId),
     };
 
     let scoreAction = 'skipped';

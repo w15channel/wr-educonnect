@@ -7,6 +7,8 @@ import {
   Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send, ClipboardList
 } from 'lucide-react';
 import GameModal from '@/components/ofensivas/GameModal';
+import OwlGuide from '@/components/ofensivas/OwlGuide';
+import TreasureChest from '@/components/ofensivas/TreasureChest';
 import NextStepLink from '@/components/shared/NextStepLink';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -133,13 +135,11 @@ function TrailNode({ question, idx, answered, locked, isChest, onPress, points, 
         className={`relative flex flex-col items-center transition-transform active:scale-95 ${locked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105'}`}
       >
         <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-xl border-4 transition-all ${
-          answered ? 'bg-yellow-400 border-yellow-300 shadow-yellow-400/40'
+          answered ? 'bg-yellow-400/20 border-yellow-300 shadow-yellow-400/40'
           : locked ? 'bg-secondary border-border'
-          : 'bg-amber-500 border-amber-400 shadow-amber-400/50'
+          : 'bg-amber-500/15 border-amber-400 shadow-amber-400/50'
         }`}>
-          {answered ? <CheckCircle size={32} className="text-white" />
-           : locked ? <Lock size={24} className="text-muted-foreground" />
-           : <span className="text-4xl">🗝️</span>}
+          <TreasureChest state={answered ? 'done' : locked ? 'locked' : 'open'} />
         </div>
         {!locked && !answered && (
           <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-amber-300 shadow-lg">+{points}</div>
@@ -159,9 +159,9 @@ function TrailNode({ question, idx, answered, locked, isChest, onPress, points, 
       className={`relative flex flex-col items-center transition-transform active:scale-95 ${locked ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105'}`}
     >
       <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg border-4 transition-all ${
-        answered ? 'bg-green-500 border-green-400 shadow-green-400/40'
+        answered ? 'bg-green-500 border-green-400 shadow-green-400/40 ofensiva-node-done'
         : locked ? 'bg-secondary border-border'
-        : 'bg-primary border-primary/70 shadow-primary/30'
+        : 'bg-primary border-primary/70 shadow-primary/30 ofensiva-node-ready'
       }`}>
         {answered ? <CheckCircle size={24} className="text-white" />
          : locked ? <Lock size={18} className="text-muted-foreground" />
@@ -591,14 +591,14 @@ export default function Ofensivas() {
 
           {/* Trail */}
           <div className="relative flex flex-col items-center py-4 select-none" style={{ minHeight: 680 }}>
-            <div className="mb-5 flex flex-col items-center">
-              <div className="text-5xl" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.18))' }}>🦉</div>
-              {!isComplete && (
-                <div className="mt-2 bg-card border border-border rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground text-center shadow max-w-[200px]">
-                  {answeredCount === 0 ? 'Toque numa bolinha! 🔥' : `${8 - answeredCount} pergunta${8 - answeredCount !== 1 ? 's' : ''} restante${8 - answeredCount !== 1 ? 's' : ''}`}
-                </div>
-              )}
-            </div>
+            <OwlGuide
+              name={session?.name || session?.full_name || 'aluno'}
+              status={isComplete
+                ? null
+                : answeredCount === 0
+                  ? 'Toque no primeiro desafio! 🔥'
+                  : `${8 - answeredCount} desafio${8 - answeredCount !== 1 ? 's' : ''} restante${8 - answeredCount !== 1 ? 's' : ''}`}
+            />
 
             {questions.slice(0, 8).map((q, idx) => {
               const isAnswered = !!answeredMap[q.id];

@@ -8,6 +8,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { ofensivaScoreNote } from '../../shared/scoreMessages.ts';
 
 const MAX_RANKING_POINTS = 100;
 
@@ -73,7 +74,7 @@ Deno.serve(async (req) => {
       score: pts,
       max_score: 1.0,
       verified: true,
-      notes: `Ofensiva diária — ${questions_answered || 0}/8 perguntas respondidas: +${pts.toFixed(3)} ponto(s).`,
+      notes: ofensivaScoreNote(refId, pts, questions_answered || 0),
     };
 
     if (existingItems.length > 0) {
