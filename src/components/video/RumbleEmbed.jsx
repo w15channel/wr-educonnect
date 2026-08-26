@@ -7,19 +7,28 @@ function initializeRumble(publisherId) {
   if (window.Rumble) return;
 
   window._Rumble = 'Rumble';
-  window.Rumble = function rumble(command, options) {
+  window.Rumble = function rumble(...args) {
     window.Rumble._ = window.Rumble._ || [];
-    window.Rumble._.push([command, options]);
+    window.Rumble._.push(args);
 
     if (window.Rumble._.length !== 1) return;
 
+    const [, options] = args;
     const script = document.createElement('script');
     const firstScript = document.getElementsByTagName('script')[0];
     const videoSuffix = options?.video ? `.${options.video}` : '';
 
     script.async = true;
-    script.src = `${RUMBLE_EMBED_BASE_URL}${publisherId}${videoSuffix}/?url=${encodeURIComponent(window.location.href)}&args=${encodeURIComponent(JSON.stringify([[command, options]]))}`;
-    firstScript.parentNode.insertBefore(script, firstScript);
+    // O snippet oficial serializa os argumentos da chamada diretamente como
+    // ["play", { video, div }]. Um nível extra de array faz o embedJS receber
+    // um comando inválido e deixa o contêiner vazio.
+    script.src = `${RUMBLE_EMBED_BASE_URL}${publisherId}${videoSuffix}/?url=${encodeURIComponent(window.location.href)}&args=${encodeURIComponent(JSON.stringify(args))}`;
+
+    if (firstScript?.parentNode) {
+      firstScript.parentNode.insertBefore(script, firstScript);
+    } else {
+      document.head.appendChild(script);
+    }
   };
 }
 
