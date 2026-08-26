@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import SubmissionsList from '../components/tasks/SubmissionsList';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
+import TaskModuleHeader from '@/components/tasks/TaskModuleHeader';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import MinLengthHint from '@/components/shared/MinLengthHint';
@@ -194,6 +195,27 @@ export default function Tasks({ mode = 'tasks' }) {
   const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, user);
   const isTaskLocked = (task) => !isTeacher && task.module_number && !moduleUnlocked[Number(task.module_number) - 1];
 
+  // Cada módulo tem 5 trabalhos: agrupamos pelo módulo salvo ou pelo número do título.
+  const moduleOf = (task) => {
+    if (task.module_number) return Number(task.module_number);
+    const n = extractTaskNumber(task.title);
+    return n ? Math.min(10, Math.ceil(n / 5)) : 0;
+  };
+
+  const moduleGroups = Object.entries(
+    sortedTasks.reduce((acc, task) => {
+      const m = moduleOf(task);
+      (acc[m] = acc[m] || []).push(task);
+      return acc;
+    }, {})
+  )
+    .map(([m, list]) => ({
+      module: Number(m),
+      tasks: list,
+      locked: !isTeacher && Number(m) > 0 && !moduleUnlocked[Number(m) - 1],
+    }))
+    .sort((a, b) => a.module - b.module);
+
   const submitCommentMutation = useMutation({
     mutationFn: async ({ taskId, comment }) => {
       await base44.functions.invoke('saveStudentRecord', {
@@ -325,8 +347,18 @@ export default function Tasks({ mode = 'tasks' }) {
           {isTeacher && <p className="text-sm mt-1">Clique em "Nova Tarefa" para adicionar</p>}
         </div>
       ) : (
-        <div className="space-y-3">
-          {sortedTasks.map((task, idx) => {
+        <div className="space-y-6">
+          {moduleGroups.map(({ module, tasks: moduleTasks, locked: moduleLocked }) => (
+            <div key={module} className="space-y-3">
+              {module > 0 && (
+                <TaskModuleHeader
+                  module={module}
+                  total={moduleTasks.length}
+                  done={moduleTasks.filter(t => submissionByTaskId[t.id]).length}
+                  locked={moduleLocked}
+                />
+              )}
+              {!moduleLocked && moduleTasks.map((task, idx) => {
             const submission = submissionByTaskId[task.id];
             const isDone = !!submission;
             const isExpanded = expandedId === task.id;
@@ -424,7 +456,9 @@ export default function Tasks({ mode = 'tasks' }) {
                 )}
               </div>
             );
-          })}
+              })}
+            </div>
+          ))}
 
           {!isTeacher && totalSubmitted >= sortedTasks.length && sortedTasks.length > 0 && (
             <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 text-center">
