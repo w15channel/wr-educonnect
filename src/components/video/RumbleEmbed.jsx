@@ -19,6 +19,9 @@ function initializeRumble(publisherId) {
     const videoSuffix = options?.video ? `.${options.video}` : '';
 
     script.async = true;
+    // Sem crossOrigin o navegador esconde qualquer falha do script do Rumble
+    // atrás de um "Script error." genérico, que aparece como erro do app.
+    script.crossOrigin = 'anonymous';
     // O snippet oficial serializa os argumentos da chamada diretamente como
     // ["play", { video, div }]. Um nível extra de array faz o embedJS receber
     // um comando inválido e deixa o contêiner vazio.
