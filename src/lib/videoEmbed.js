@@ -9,6 +9,7 @@
  *   src,          // direct media URL (kind === 'file')
  *   embedSrc,     // iframe URL (kind === 'youtube' | 'vimeo' | 'iframe')
  *   videoId,      // provider id (kind === 'youtube' | 'vimeo' | 'rumble')
+ *   publisherId,  // Rumble publisher id, when supplied by the URL
  *   provider,     // human readable origin, used in the "open externally" hint
  *   originalUrl,  // normalized original URL, always safe to open in a new tab
  * }
@@ -18,7 +19,7 @@
  *  - 'rumble' / 'iframe'          → cross-origin embed, only fullscreen is ours
  */
 export function getVideoSource(url) {
-  const empty = { kind: 'unsupported', src: null, embedSrc: null, videoId: null, provider: '', originalUrl: '' };
+  const empty = { kind: 'unsupported', src: null, embedSrc: null, videoId: null, publisherId: null, provider: '', originalUrl: '' };
   if (!url || typeof url !== 'string') return empty;
 
   let parsed;
@@ -30,7 +31,7 @@ export function getVideoSource(url) {
   const host = parsed.hostname.replace('www.', '').toLowerCase();
   const path = parsed.pathname;
   const originalUrl = parsed.toString();
-  const base = { src: null, embedSrc: null, videoId: null, originalUrl };
+  const base = { src: null, embedSrc: null, videoId: null, publisherId: null, originalUrl };
 
   // YouTube
   if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtu.be' || host === 'youtube-nocookie.com') {
@@ -60,19 +61,20 @@ export function getVideoSource(url) {
 
   // Rumble. Links copied from the address bar use /v...-slug.html, while the
   // official share dialog may provide /embed/v.../. Both are accepted. For a
-  // public page URL the Rumble component resolves the canonical embed through
-  // the provider's oEmbed endpoint before falling back to this inferred URL.
+  // public page URL is passed to Rumble's official embedJS loader, matching the
+  // integration used by the platform tutorial on the student dashboard.
   if (host === 'rumble.com') {
     const embedMatch = path.match(/^\/embed\/([a-zA-Z0-9_-]+)/i);
     const pageMatch = path.match(/^\/(v[a-zA-Z0-9]+)(?:-|\/|\.html|$)/i);
     const videoId = embedMatch?.[1] || pageMatch?.[1] || '';
     if (videoId) {
-      const publisher = parsed.searchParams.get('pub');
-      const query = publisher ? `?pub=${encodeURIComponent(publisher)}` : '';
+      const publisherId = parsed.searchParams.get('pub');
+      const query = publisherId ? `?pub=${encodeURIComponent(publisherId)}` : '';
       return {
         ...base,
         kind: 'rumble',
         videoId,
+        publisherId,
         provider: 'Rumble',
         embedSrc: `https://rumble.com/embed/${videoId}/${query}`,
       };
