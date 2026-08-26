@@ -628,8 +628,7 @@ export default function VideoPlayer({
           <div className="absolute inset-0">
             <RumbleEmbed
               videoId={source.videoId}
-              src={source.embedSrc}
-              url={source.originalUrl}
+              publisherId={source.publisherId || undefined}
               title={title}
             />
           </div>
