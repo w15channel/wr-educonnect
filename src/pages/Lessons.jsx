@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -27,6 +27,7 @@ import { MOD7 } from '@/lib/apostila/mod7';
 import { MOD8 } from '@/lib/apostila/mod8';
 import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
+import VideoPlayer from '@/components/video/VideoPlayer';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
@@ -63,7 +64,7 @@ const getLessonModuleNumber = (lesson, fallbackIndex = 0) => {
 };
 
 const LESSON_TYPE_CONFIG = {
-  video_external:   { label: 'Vídeo Externo', icon: Video, color: 'text-purple-500', desc: 'Rumble, YouTube, Vimeo, Instagram...' },
+  video_external:   { label: 'Vídeo Externo', icon: Video, color: 'text-purple-500', desc: 'YouTube, Vimeo, Instagram...' },
   text_written:     { label: 'Aula em Texto', icon: FileText, color: 'text-blue-500', desc: 'Escrita diretamente na plataforma' },
   content_external: { label: 'Material Externo', icon: Globe, color: 'text-green-500', desc: 'Link para artigo, site ou PDF externo' },
 };
@@ -76,6 +77,7 @@ export default function Lessons() {
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const [expandedLesson, setExpandedLesson] = useState(null);
   const [viewProgressLesson, setViewProgressLesson] = useState(null);
   const [commentDraft, setCommentDraft] = useState({});
@@ -84,6 +86,12 @@ export default function Lessons() {
   const [uploadFile, setUploadFile] = useState({});
   const [showModuleEditor, setShowModuleEditor] = useState(false);
   const [moduleEditorState, setModuleEditorState] = useState([]);
+
+  // A tela cheia (botão "Girar tela") e todos os demais controles agora ficam
+  // dentro do <VideoPlayer>, que é o player integrado da plataforma.
+  const handleVideoDialogChange = useCallback((open) => {
+    if (!open) setSelectedVideo(null);
+  }, []);
 
   // Module completion state (persisted to localStorage)
   const [celebrationModule, setCelebrationModule] = useState(null); // { index, name }
@@ -369,6 +377,22 @@ export default function Lessons() {
       )}
       {celebrating && <ParticipationCelebration message="Aula concluída! Continue assim! 🎉" onClose={() => setCelebrating(false)} />}
 
+      {/* Video modal — player integrado da plataforma */}
+      <Dialog open={!!selectedVideo} onOpenChange={handleVideoDialogChange}>
+        <DialogContent className="video-dialog max-w-4xl p-0 overflow-hidden">
+          <div className="p-4 border-b border-border bg-card">
+            <h3 className="font-bold text-foreground">{selectedVideo?.title}</h3>
+          </div>
+          {selectedVideo && (
+            <VideoPlayer
+              url={selectedVideo.video_url}
+              title={selectedVideo.title}
+              poster={selectedVideo.thumbnail_url || ''}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
@@ -457,7 +481,7 @@ export default function Lessons() {
                     )}
                   </div>
 
-                  {form.lesson_type === 'video_external' && <Input placeholder="URL do vídeo (Rumble, YouTube, Vimeo...)" value={form.video_url} onChange={e => setForm({ ...form, video_url: e.target.value })} />}
+                  {form.lesson_type === 'video_external' && <Input placeholder="URL do vídeo (YouTube, Vimeo...)" value={form.video_url} onChange={e => setForm({ ...form, video_url: e.target.value })} />}
                   {form.lesson_type === 'content_external' && <Input placeholder="URL do material externo" value={form.external_url} onChange={e => setForm({ ...form, external_url: e.target.value })} />}
                   {form.lesson_type === 'text_written' && <Textarea placeholder="Conteúdo da aula em texto..." value={form.text_content} onChange={e => setForm({ ...form, text_content: e.target.value })} rows={8} />}
                   <div>
@@ -536,6 +560,8 @@ export default function Lessons() {
               setUploadFile={setUploadFile}
               expandedLesson={expandedLesson}
               setExpandedLesson={setExpandedLesson}
+              selectedVideo={selectedVideo}
+              setSelectedVideo={setSelectedVideo}
               onToggleWatched={toggleWatched}
               onSaveComment={saveComment}
               onSaveSummary={saveSummary}

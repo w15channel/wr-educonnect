@@ -445,12 +445,6 @@
   border: 0;
 }
 
-/* Player amplo das aulas: a mídia ocupa toda a largura disponível em 16/9,
- * como o tutorial da dashboard, sem o recorte de altura do antigo mini player. */
-.wr-video-player--lesson .wr-video-surface {
-  max-height: none;
-}
-
 .wr-video-player:fullscreen,
 .wr-video-player:-webkit-full-screen {
   width: 100vw;

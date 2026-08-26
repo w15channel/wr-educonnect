@@ -4,7 +4,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, Send, Smile, Sparkles, PartyPopper, Hand } from 'lucide-react';
+import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -107,6 +107,8 @@ export default function Dashboard() {
   const [manualScoreEmails, setManualScoreEmails] = React.useState(new Set());
   const [miniChatText, setMiniChatText] = React.useState('');
   const [showMiniChatEmojiPicker, setShowMiniChatEmojiPicker] = React.useState(false);
+  const [replyTarget, setReplyTarget] = React.useState(null);
+  const [replyText, setReplyText] = React.useState('');
   const [syncingAchievements, setSyncingAchievements] = React.useState(false);
 
 
@@ -298,7 +300,10 @@ export default function Dashboard() {
 
   const { data: myWallNotifications = [] } = useQuery({
     queryKey: ['overcoming-wall-notifications', session?.email],
-    queryFn: () => base44.entities.Notification.filter({ recipient_email: session.email, type: 'wall_reaction' }, '-created_date', 50),
+    queryFn: async () => {
+      const notifications = await base44.entities.Notification.filter({ recipient_email: session.email }, '-created_date', 100);
+      return notifications.filter((item) => item.type === 'wall_reaction' || item.type === 'wall_reply');
+    },
     enabled: !isTeacher && !!session?.email,
   });
 
@@ -593,6 +598,16 @@ export default function Dashboard() {
     onError: (error) => toast.error(error?.message || 'Não foi possível enviar sua reação.'),
   });
 
+  const replyMutation = useMutation({
+    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'reply', actor_email: session?.email, access_code: session?.code, ...payload }),
+    onSuccess: () => {
+      setReplyTarget(null);
+      setReplyText('');
+      toast.success('Resposta enviada somente para a pessoa escolhida.');
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível enviar a resposta.'),
+  });
+
   const recoverAchievements = async () => {
     setSyncingAchievements(true);
     try {
@@ -623,8 +638,17 @@ export default function Dashboard() {
         const reacted = wallReactions.some((r) => r.target_id === item.id && r.reaction === key && r.actor_email === session?.email);
         return <button key={key} type="button" disabled={ownerEmail === session?.email || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={ownerEmail === session?.email ? 'Você não pode reagir ao próprio conteúdo' : label} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-background/70 text-muted-foreground hover:bg-secondary'}`}><Icon size={12} fill={key === 'love' && reacted ? 'currentColor' : 'none'} />{label}{count > 0 && <span>{count}</span>}</button>;
       })}
+      <button type="button" disabled={ownerEmail === session?.email} onClick={() => { setReplyTarget({ id: item.id, targetType, ownerEmail }); setReplyText(''); }} title={ownerEmail === session?.email ? 'Você não pode responder ao próprio conteúdo' : 'Responder em privado'} className="inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-45"><MessageCircle size={12} />Responder</button>
     </div>;
   };
+
+  const privateReplyForm = (item) => replyTarget?.id === item.id && (
+    <form className="mt-2 flex items-center gap-1.5 border-t border-current/10 pt-2" onSubmit={(event) => { event.preventDefault(); const content = replyText.trim(); if (!content || replyMutation.isPending) return; replyMutation.mutate({ target_id: replyTarget.id, target_type: replyTarget.targetType, target_owner_email: replyTarget.ownerEmail, reply_text: content }); }}>
+      <input autoFocus maxLength={500} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder="Resposta privada..." aria-label="Resposta privada" className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+      <button type="submit" disabled={!replyText.trim() || replyMutation.isPending} className="h-8 rounded-lg bg-primary px-2.5 text-[10px] font-bold text-primary-foreground disabled:opacity-50">{replyMutation.isPending ? 'Enviando...' : 'Enviar'}</button>
+      <button type="button" onClick={() => { setReplyTarget(null); setReplyText(''); }} className="h-8 rounded-lg px-2 text-[10px] font-bold text-muted-foreground hover:bg-secondary">Cancelar</button>
+    </form>
+  );
 
   const firstName = (session?.name || 'Usuário').split(' ')[0];
   const hour = new Date().getHours();
@@ -779,7 +803,7 @@ export default function Dashboard() {
                   if (msg.feedType === 'notification') return (
                     <div key={msg.id} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
                       <Bell size={14} className="mt-0.5 shrink-0 text-violet-600" />
-                      <div><span className="font-bold">Interação na sua conquista</span><p>{msg.message}</p><span className="text-[10px] text-violet-700">Visível somente para você</span></div>
+                      <div><span className="font-bold">{msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista'}</span><p>{msg.message}</p>{msg.reply_text && <p className="mt-1 rounded-md bg-white/70 px-2 py-1 text-violet-950">“{msg.reply_text}”</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>
                     </div>
                   );
                   if (msg.feedType === 'achievement') return (
@@ -789,6 +813,7 @@ export default function Dashboard() {
                       <p><span className="font-bold text-amber-800 dark:text-black">Conquista desbloqueada!</span> <span className="font-semibold text-foreground dark:text-[#b8860b]">{msg.studentName}</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
                       </div>
                       {reactionButtons(msg, 'achievement', msg.studentEmail)}
+                      {privateReplyForm(msg)}
                     </div>
                   );
                   const isMe = msg.author_email === session?.email;
@@ -801,6 +826,7 @@ export default function Dashboard() {
                       <span className="ml-1 text-muted-foreground">compartilhou:</span>
                       <p className="mt-0.5 text-foreground dark:text-white">“{msg.content}”</p>
                       {reactionButtons(msg, 'publication', msg.author_email)}
+                      {privateReplyForm(msg)}
                     </div>);
                 })
                 }

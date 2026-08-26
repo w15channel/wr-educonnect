@@ -31,7 +31,8 @@
       "enum": [
         "task_submission",
         "quiz_submission",
-        "wall_reaction"
+        "wall_reaction",
+        "wall_reply"
       ],
       "default": "task_submission",
       "description": "Tipo de notificação"
@@ -42,7 +43,8 @@
       "description": "Se a notificação foi lida"
     },
     "target_id": { "type": "string", "description": "Publicação ou conquista que recebeu a interação" },
-    "reaction": { "type": "string", "enum": ["love", "celebrate", "applaud"] }
+    "reaction": { "type": "string", "enum": ["love", "celebrate", "applaud"] },
+    "reply_text": { "type": "string", "description": "Resposta privada enviada ao autor da publicação" }
   },
   "required": [
     "recipient_email",
