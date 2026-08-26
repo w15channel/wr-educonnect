@@ -156,14 +156,27 @@ export default function Apostila() {
     try { const r = localStorage.getItem(key); return r ? new Set(JSON.parse(r)) : new Set(); } catch { return new Set(); }
   });
 
-  const markRead = (chapterId, lessonId) => {
+  const markRead = async (chapterId, lessonId) => {
     const key = APOSTILA_READ_KEY(session?.email || session?.code || 'guest', session?.course || 'tcc');
     const readKey = `${chapterId}__${lessonId}`;
     if (readLessons.has(readKey)) return;
+    try {
+      await base44.functions.invoke('saveStudentRecord', {
+        action: 'lessonProgressUpsert',
+        lesson_id: `apostila:${chapterId}:${lessonId}`,
+        student_email: session?.email,
+        student_identifiers: [session?.email, session?.code].filter(Boolean),
+        patch: { watched: true },
+      });
+    } catch (error) {
+      toast.error(error?.message || 'Não foi possível registrar esta conquista. Tente novamente.');
+      return;
+    }
     const next = new Set(readLessons);
     next.add(readKey);
     setReadLessons(next);
     localStorage.setItem(key, JSON.stringify([...next]));
+    queryClient.invalidateQueries({ queryKey: ['apostila-unlock-progress', session?.email] });
     setCelebrationMsg('Aula concluída! Continue assim! 📖✨');
     setCelebrating(true);
   };

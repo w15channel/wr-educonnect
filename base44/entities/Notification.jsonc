@@ -30,7 +30,8 @@
       "type": "string",
       "enum": [
         "task_submission",
-        "quiz_submission"
+        "quiz_submission",
+        "wall_reaction"
       ],
       "default": "task_submission",
       "description": "Tipo de notificação"
@@ -39,7 +40,9 @@
       "type": "boolean",
       "default": false,
       "description": "Se a notificação foi lida"
-    }
+    },
+    "target_id": { "type": "string", "description": "Publicação ou conquista que recebeu a interação" },
+    "reaction": { "type": "string", "enum": ["love", "celebrate", "applaud"] }
   },
   "required": [
     "recipient_email",
