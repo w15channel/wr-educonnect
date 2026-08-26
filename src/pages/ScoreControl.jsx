@@ -643,6 +643,7 @@ export default function ScoreControl() {
   const [sortBy, setSortBy] = useState('points');
   const autoStudentEmail = new URLSearchParams(location.search).get('student') || null;
   const [retroLoading, setRetroLoading] = useState(false);
+  const [automaticSyncComplete, setAutomaticSyncComplete] = useState(false);
   const [draggedEmail, setDraggedEmail] = useState(null);
   const [customOrder, setCustomOrder] = useState([]);
   const [editingScore, setEditingScore] = useState(null);
@@ -721,6 +722,20 @@ export default function ScoreControl() {
     queryKey: ['module-closures', activeCourse],
     queryFn: () => base44.entities.ModuleClosure.filter({ course: activeCourse }, '-module_number', 100)
   });
+
+  // Reconstitui ScoreItems e observações a partir das atividades reais ao abrir
+  // o controle. Isso também cobre instalações em que a automação de entidade
+  // deixou de disparar, sem exigir que o administrador clique em recalcular.
+  useEffect(() => {
+    if (automaticSyncComplete) return;
+    setAutomaticSyncComplete(true);
+    base44.functions.invoke('recalculateScores', {})
+      .then(() => queryClient.invalidateQueries())
+      .catch((error) => {
+        console.error('Falha ao sincronizar automaticamente as pontuações:', error);
+        toast.error('Não foi possível sincronizar as pontuações automaticamente. Use “Recalcular Pontuações”.');
+      });
+  }, [automaticSyncComplete, queryClient]);
 
   const nextModuleNumber = (moduleClosures.reduce((max, c) => Math.max(max, Number(c.module_number) || 0), 0)) + 1;
 

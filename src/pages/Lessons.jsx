@@ -151,11 +151,20 @@ export default function Lessons() {
   });
   const toggleVisibilityMutation = useMutation({
     mutationFn: ({ id, isHidden }) => adminApi.update('RecordedLesson', id, { is_hidden: isHidden }),
+    onMutate: async ({ id, isHidden }) => {
+      await queryClient.cancelQueries({ queryKey: ['lessons'] });
+      const snapshots = queryClient.getQueriesData({ queryKey: ['lessons'] });
+      queryClient.setQueriesData({ queryKey: ['lessons'] }, (current = []) => current.map((lesson) => lesson.id === id ? { ...lesson, is_hidden: isHidden } : lesson));
+      return { snapshots };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
       toast.success('Visibilidade da aula atualizada.');
     },
-    onError: (error) => toast.error(`Erro ao atualizar visibilidade: ${error.message || 'tente novamente.'}`),
+    onError: (error, _variables, context) => {
+      context?.snapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      toast.error(`Erro ao atualizar visibilidade: ${error.message || 'tente novamente.'}`);
+    },
   });
   const updateUnlockMutation = useMutation({
     mutationFn: async (unlockUntil) => {

@@ -12,6 +12,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
+const PROFILE_CATEGORIES = [
+  { value: 'admin', label: 'ADM' },
+  { value: 'teacher', label: 'PROFESSOR' },
+  { value: 'student', label: 'ALUNO' },
+  { value: 'support', label: 'SUPORTE' },
+  { value: 'management', label: 'GESTÃO' },
+];
+
+function ProfileCategorySelect({ code, onChange }) {
+  return (
+    <Select value={code.profile_category || 'student'} onValueChange={onChange}>
+      <SelectTrigger className="h-10 text-xs w-full" aria-label={`Categoria do perfil de ${code.profile_name || code.student_name || 'usuário'}`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {PROFILE_CATEGORIES.map((category) => <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export default function Students() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -367,6 +388,10 @@ export default function Students() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2">
+                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Categoria do perfil</p>
+                          <ProfileCategorySelect code={code} onChange={(profile_category) => updateCodeMutation.mutate({ id: code.id, data: { profile_category } })} />
+                        </div>
                         <Select
                           value={code.is_active ? 'active' : 'inactive'}
                           onValueChange={(v) => updateCodeMutation.mutate({ id: code.id, data: { is_active: v === 'active' } })}
@@ -416,6 +441,7 @@ export default function Students() {
                           </Select>
                         </th>
                         <th className="p-4">Mensalidade</th>
+                        <th className="p-4">Categoria</th>
                         <th className="p-4">Status</th>
                         <th className="p-4">Ações</th>
                       </tr>
@@ -454,6 +480,9 @@ export default function Students() {
                                   <tCfg.icon size={11} /> {tCfg.label}
                                 </span>
                               ) : <span className="text-xs text-muted-foreground">—</span>}
+                            </td>
+                            <td className="p-4 min-w-36">
+                              <ProfileCategorySelect code={code} onChange={(profile_category) => updateCodeMutation.mutate({ id: code.id, data: { profile_category } })} />
                             </td>
                             <td className="p-4">
                               <Select

@@ -29,6 +29,18 @@
       "default": "tcc",
       "description": "Curso vinculado ao aluno"
     },
+    "profile_category": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "teacher",
+        "student",
+        "support",
+        "management"
+      ],
+      "default": "student",
+      "description": "Categoria organizacional do perfil"
+    },
     "profile_name": {
       "type": "string",
       "description": "Student's display name after login"
