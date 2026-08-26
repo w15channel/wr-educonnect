@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MODULE_THEMES } from './ModuleCompletionCelebration';
 import MinLengthHint from '@/components/shared/MinLengthHint';
 import { isTextLongEnough } from '@/lib/minTextLength';
+import LessonShortcuts from './LessonShortcuts';
 
 const LESSON_TYPE_CONFIG = {
   video_external: { label: 'Vídeo Externo', icon: Play },
@@ -29,13 +30,11 @@ export default function ModuleBlock({
   studentIdentifiers,
   unlockedLessonCount,
   globalOffset,        // how many lessons come before this module
-  commentDraft, setCommentDraft,
   summaryDraft, setSummaryDraft,
   uploadStatus, uploadFile, setUploadFile,
   expandedLesson, setExpandedLesson,
   selectedVideo, setSelectedVideo,
   onToggleWatched,
-  onSaveComment,
   onSaveSummary,
   onFileUpload,
   onEdit,
@@ -211,9 +210,7 @@ export default function ModuleBlock({
                     ) : (
                       <>
                         {(() => {
-                          const comment = commentDraft[lesson.id] ?? prog?.comment ?? '';
-                          const summary = summaryDraft[lesson.id] ?? prog?.summary ?? '';
-                          const canWatch = isTextLongEnough(comment) && isTextLongEnough(summary);
+                          const canWatch = isTextLongEnough(summaryDraft[lesson.id] ?? prog?.summary ?? '');
                           return (
                             <button
                               onClick={() => onToggleWatched(lesson.id)}
@@ -311,22 +308,15 @@ export default function ModuleBlock({
                           <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" disabled={!isTextLongEnough(summaryDraft[lesson.id] ?? prog?.summary ?? '')} onClick={() => onSaveSummary(lesson.id)}>Salvar Resumo</Button>
                           {prog?.summary && <div className="mt-2 bg-secondary/50 rounded-xl p-3"><p className="text-[10px] text-muted-foreground font-semibold mb-1">Resumo salvo:</p><p className="text-xs text-foreground/80">{prog.summary}</p></div>}
                         </div>
-                        <div>
-                          <label className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5"><MessageSquare size={12} className="text-accent" /> Meu Comentário</label>
-                          <Textarea placeholder="Compartilhe sua percepção sobre esta aula (mínimo de 1000 caracteres)..." value={commentDraft[lesson.id] ?? prog?.comment ?? ''} onChange={e => setCommentDraft(prev => ({ ...prev, [lesson.id]: e.target.value }))} rows={4} className="text-sm" />
-                          <MinLengthHint value={commentDraft[lesson.id] ?? prog?.comment ?? ''} />
-                          <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" disabled={!isTextLongEnough(commentDraft[lesson.id] ?? prog?.comment ?? '')} onClick={() => onSaveComment(lesson.id)}>Salvar Comentário</Button>
-                        </div>
+                        <LessonShortcuts lesson={lesson} />
                         {(() => {
-                          const comment = commentDraft[lesson.id] ?? prog?.comment ?? '';
-                          const summary = summaryDraft[lesson.id] ?? prog?.summary ?? '';
-                          const canWatch = isTextLongEnough(comment) && isTextLongEnough(summary);
+                          const canWatch = isTextLongEnough(summaryDraft[lesson.id] ?? prog?.summary ?? '');
                           if (isWatched) return null;
                           return (
                             <div className={`rounded-xl p-3 border text-xs flex items-center gap-2 ${canWatch ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
                               {canWatch
                                 ? <p className="text-green-700 font-semibold flex-1">✅ Pronto! Você pode concluir esta aula.</p>
-                                : <p className="text-amber-700 font-semibold flex-1">🔒 O <strong>Resumo</strong> e o <strong>Comentário</strong> precisam ter no mínimo <strong>1000 caracteres</strong> cada. Trabalhe mais o texto adicionando mais detalhes para liberar a conclusão.</p>
+                                : <p className="text-amber-700 font-semibold flex-1">🔒 O <strong>Meu Resumo</strong> precisa ter no mínimo <strong>1000 caracteres</strong>. Trabalhe mais o texto adicionando mais detalhes para liberar a conclusão.</p>
                               }
                             </div>
                           );

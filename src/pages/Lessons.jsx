@@ -82,7 +82,6 @@ export default function Lessons() {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [expandedLesson, setExpandedLesson] = useState(null);
   const [viewProgressLesson, setViewProgressLesson] = useState(null);
-  const [commentDraft, setCommentDraft] = useState({});
   const [summaryDraft, setSummaryDraft] = useState({});
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFile, setUploadFile] = useState({});
@@ -224,13 +223,12 @@ export default function Lessons() {
   const toggleWatched = async (lessonId) => {
     const existing = progresses.find(p => p.lesson_id === lessonId && studentIdentifiers.includes(normalizeStudentId(p.student_email)));
     if (!existing?.watched) {
-      const comment = commentDraft[lessonId] ?? existing?.comment ?? '';
       const summary = summaryDraft[lessonId] ?? existing?.summary ?? '';
-      if (!isTextLongEnough(summary) || !isTextLongEnough(comment)) {
-        toast.error(insufficientTextMessage(isTextLongEnough(summary) ? comment : summary));
+      if (!isTextLongEnough(summary)) {
+        toast.error(insufficientTextMessage(summary));
         return;
       }
-      await upsertProgress(lessonId, { summary: summaryDraft[lessonId] ?? existing?.summary ?? '', comment: commentDraft[lessonId] ?? existing?.comment ?? '', watched: true });
+      await upsertProgress(lessonId, { summary, watched: true });
       setCelebrating(true);
     } else {
       await upsertProgress(lessonId, { watched: false });
@@ -238,12 +236,6 @@ export default function Lessons() {
     toast.success(!existing?.watched ? '✅ Aula concluída!' : 'Marcação removida.');
   };
 
-  const saveComment = async (lessonId) => {
-    const value = commentDraft[lessonId] || '';
-    if (!isTextLongEnough(value)) { toast.error(insufficientTextMessage(value)); return; }
-    await upsertProgress(lessonId, { comment: value });
-    toast.success('Comentário salvo!');
-  };
   const saveSummary = async (lessonId) => {
     const value = summaryDraft[lessonId] || '';
     if (!isTextLongEnough(value)) { toast.error(insufficientTextMessage(value)); return; }
@@ -570,8 +562,6 @@ export default function Lessons() {
               studentIdentifiers={studentIdentifiers}
               unlockedLessonCount={unlockedLessonCount}
               globalOffset={moduleEntry.globalOffset}
-              commentDraft={commentDraft}
-              setCommentDraft={setCommentDraft}
               summaryDraft={summaryDraft}
               setSummaryDraft={setSummaryDraft}
               uploadStatus={uploadStatus}
@@ -582,7 +572,6 @@ export default function Lessons() {
               selectedVideo={selectedVideo}
               setSelectedVideo={setSelectedVideo}
               onToggleWatched={toggleWatched}
-              onSaveComment={saveComment}
               onSaveSummary={saveSummary}
               onFileUpload={handleFileUploadToGDrive}
               onEdit={openEdit}
