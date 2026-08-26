@@ -29,6 +29,7 @@ import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
 import VideoPlayer from '@/components/video/VideoPlayer';
 import { isTextLongEnough, insufficientTextMessage } from '@/lib/minTextLength';
+import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycd1dcbc1UTonX4c_-z9Xa4tpJpR7UE6h_uZjWBMXnOlxdKz89PZwaIfUUNwSxkPB3/exec';
 const EMPTY_FORM = { title: '', description: '', lesson_type: 'video_external', video_url: '', external_url: '', text_content: '', thumbnail_url: '', duration: '', material_links: '', research_links: '', module_type: 'apostila', module_number: '', apostila_chapter_id: '', apostila_lesson_id: '' };
@@ -107,6 +108,9 @@ export default function Lessons() {
 
   const { course: routeCourse } = useCourseFilteredEmails();
   const userCourse = routeCourse || session?.course || 'tcc';
+  // Liberação progressiva: um módulo só abre após todas as atividades do anterior
+  // serem cumpridas e a prova daquele módulo ser finalizada.
+  const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, session);
 
   const { data: lessons = [], isLoading } = useQuery({
     queryKey: ['lessons', userCourse],
@@ -587,6 +591,7 @@ export default function Lessons() {
               onViewProgress={setViewProgressLesson}
               moduleCompletions={moduleCompletions}
               onCompleteModule={handleCompleteModule}
+              moduleLocked={!isTeacher && moduleUnlocked[moduleEntry.moduleIndex] === false}
             />
           ))}
         </div>

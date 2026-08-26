@@ -44,6 +44,7 @@ export default function ModuleBlock({
   onViewProgress,
   moduleCompletions,    // Set of completed module indices
   onCompleteModule,     // (moduleIndex) => void
+  moduleLocked = false, // módulo bloqueado até o anterior ser concluído + prova feita
 }) {
   const theme = MODULE_THEMES[moduleIndex % MODULE_THEMES.length];
 
@@ -79,7 +80,12 @@ export default function ModuleBlock({
               )}
             </div>
             <p className={`font-bold text-sm text-foreground leading-tight`}>{theme.label}</p>
-            {!isTeacher && (
+            {moduleLocked && (
+              <p className="text-xs text-amber-600 font-semibold mt-0.5">
+                🔒 Conclua as atividades e a prova do módulo anterior para liberar
+              </p>
+            )}
+            {!isTeacher && !moduleLocked && (
               <p className="text-xs text-muted-foreground mt-0.5">
                 {watchedInModule}/5 aulas concluídas
               </p>
@@ -101,7 +107,12 @@ export default function ModuleBlock({
       </button>
 
       {/* Lesson list */}
-      {moduleOpen && (
+      {moduleOpen && moduleLocked && (
+        <div className="border-t border-border p-4 text-center text-xs text-muted-foreground">
+          Este módulo será liberado depois que você concluir todas as atividades disponíveis do módulo anterior e finalizar a prova dele.
+        </div>
+      )}
+      {moduleOpen && !moduleLocked && (
         <div className="border-t border-border divide-y divide-border">
           {lessons.map((lesson, lessonIdx) => {
             const globalIdx = globalOffset + lessonIdx;

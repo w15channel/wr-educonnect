@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, HandHeart, CheckCircle } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { capScore, formatScore, rankingScoreValue, roundScore, sumRoundedScores } from '@/lib/scoreUtils';
+import { capScore, formatScore, rankingScoreValue, sumRoundedScores } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -30,7 +30,7 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTotal, onClose }) {
+function StudentProfileModal({ code, scoreItems, courseItemRefIds, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
@@ -53,11 +53,9 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
     return [...seen.values()];
   }, [scoreItems, email, courseItemRefIds]);
 
-  // Soma transparente dos itens verificados exibidos no modal.
-  // Se houver total publicado maior que a soma dos itens, mostramos o ajuste para fechar a conta.
-  const liveSum = sumRoundedScores(myItems.map(rankingScoreValue));
-  const publishedAdjustment = roundScore(Math.max(0, roundScore(publishedTotal ?? 0) - liveSum));
-  const liveTotal = roundScore(liveSum + publishedAdjustment);
+  // Soma transparente: apenas os itens verificados exibidos no modal contam.
+  // Nunca criamos "ajustes" artificiais para fechar com o total publicado/cache.
+  const liveTotal = sumRoundedScores(myItems.map(rankingScoreValue));
 
   // Build exam bucket: prefer teacher-graded 'exam' items (ref_id = 'exam:{id}') over
   // auto-graded 'quiz' items for the same underlying exam. If a teacher-graded entry
@@ -78,11 +76,6 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
     if (!byCategory[category]) byCategory[category] = [];
     byCategory[category].push(item);
   });
-  if (publishedAdjustment > 0) {
-    byCategory.other = byCategory.other || [];
-    byCategory.other.push({ id: 'published-adjustment', ref_title: 'Ajuste de pontuação publicada/cache', score: publishedAdjustment, max_score: publishedAdjustment });
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
@@ -535,7 +528,6 @@ export default function RankingGeral() {
           code={selected}
           scoreItems={allScoreItems}
           courseItemRefIds={courseItemRefIds}
-          publishedTotal={capScore(selected.pontuacao_total ?? publishedScoreMap[selected.student_email] ?? 0)}
           onClose={() => setSelected(null)}
         />
       )}
