@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User, Trash2, GraduationCap, Users } from 'lucide-react';
+import { Save, CheckCircle, Camera, User, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { AVATAR_OPTIONS, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
@@ -22,9 +21,8 @@ const AVATAR_COLORS = [
   '#2563eb', '#0891b2', '#9333ea', '#c2410c',
 ];
 
-export default function Profile({ focusStudyProfile = false }) {
+export default function Profile() {
   const session = getSession();
-  const navigate = useNavigate();
   const { logout } = useCustomAuth();
   const [name, setName] = useState(session?.name || '');
   const [nickname, setNickname] = useState('');
@@ -41,7 +39,7 @@ export default function Profile({ focusStudyProfile = false }) {
   const [deleting, setDeleting] = useState(false);
   const [studyMode, setStudyMode] = useState(session?.study_mode || 'interativa');
   const fileRef = useRef();
-  const studyProfileRef = useRef(null);
+
 
   useEffect(() => {
     // CRITICAL: Only load profile if we have a unique codeId to identify this student.
@@ -65,45 +63,6 @@ export default function Profile({ focusStudyProfile = false }) {
         }
       });
   }, []);
-
-  useEffect(() => {
-    if (!focusStudyProfile) return;
-    const timer = setTimeout(() => {
-      studyProfileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 80);
-    return () => clearTimeout(timer);
-  }, [focusStudyProfile]);
-
-  const saveStudyModePreference = async (mode) => {
-    if (!session?.codeId) return;
-    const existing = await base44.entities.StudentProfile.filter({ code_id: session.codeId }, '-created_date', 1);
-    if (existing.length > 0) {
-      await base44.entities.StudentProfile.update(existing[0].id, { study_mode: mode });
-      return;
-    }
-    await base44.entities.StudentProfile.create({
-      code_id: session.codeId,
-      student_email: session?.email || '',
-      full_name: session?.name || '',
-      study_mode: mode,
-    });
-  };
-
-  const handleSelectStudyMode = async (mode) => {
-    const currentSession = getSession() || {};
-    setStudyMode(mode);
-    setSession({ ...currentSession, study_mode: mode });
-    try {
-      await saveStudyModePreference(mode);
-    } catch {
-      toast.error('Não foi possível salvar a preferência de estudos. Tentando abrir a interface selecionada.');
-    }
-    if (mode === 'diploma') {
-      navigate('/degree/student/dashboard');
-      return;
-    }
-    navigate('/student/dashboard');
-  };
 
   const initials = getInitials(name);
 
@@ -189,10 +148,8 @@ export default function Profile({ focusStudyProfile = false }) {
   return (
     <div className="app-page max-w-2xl mx-auto animate-fade-in-up">
       <div className="mb-6">
-        <h2 className="text-xl lg:text-2xl font-bold text-foreground">{focusStudyProfile ? 'Perfil de Estudos' : 'Meu Perfil'}</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          {focusStudyProfile ? 'Escolha seu estilo de formação e vá direto para a interface correspondente.' : 'Personalize suas informações'}
-        </p>
+        <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Perfil</h2>
+        <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações</p>
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
@@ -307,57 +264,6 @@ export default function Profile({ focusStudyProfile = false }) {
               <label className="text-xs font-bold text-foreground block mb-1.5">Código de Acesso</label>
               <Input value={session.code} disabled className="font-mono text-center tracking-widest opacity-60 bg-secondary" />
               <p className="text-[10px] text-muted-foreground mt-1">Este é seu código exclusivo de acesso à plataforma</p>
-            </div>
-          )}
-
-          {/* Perfil de Estudos */}
-          {session?.role !== 'admin' && (
-            <div ref={studyProfileRef}>
-              <label className="text-xs font-bold text-foreground block mb-2">Perfil de Estudos</label>
-              <p className="text-[11px] text-muted-foreground mb-2">
-                Escolha como deseja viver sua jornada. Você pode trocar quando quiser e a navegação será ajustada automaticamente.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleSelectStudyMode('diploma')}
-                  className={`text-left p-3 rounded-xl border-2 transition-all ${studyMode === 'diploma' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <GraduationCap size={18} />
-                    <span className="text-xs font-bold uppercase tracking-wide">Experiência Simplificada (Diploma)</span>
-                  </div>
-                  <p className="text-[11px] leading-relaxed mb-2">
-                    Ideal para quem quer foco direto no conteúdo essencial, com rotina mais enxuta e estudo no próprio ritmo.
-                  </p>
-                  <ul className="text-[10px] leading-relaxed space-y-1">
-                    <li>• Videoaulas e tarefas com caminho objetivo</li>
-                    <li>• Menos distrações e navegação simplificada</li>
-                    <li>• Ótima opção para conciliar com rotina corrida</li>
-                  </ul>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectStudyMode('interativa')}
-                  className={`text-left p-3 rounded-xl border-2 transition-all ${studyMode === 'interativa' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Users size={18} />
-                    <span className="text-xs font-bold uppercase tracking-wide">Formação Prática (Completa)</span>
-                  </div>
-                  <p className="text-[11px] leading-relaxed mb-2">
-                    Para quem busca experiência completa, com vivência real, prática contínua e participação ativa na comunidade.
-                  </p>
-                  <ul className="text-[10px] leading-relaxed space-y-1">
-                    <li>• Inclui todos os recursos da modalidade diploma</li>
-                    <li>• Comunidade, fórum, ofensivas e tutor digital</li>
-                    <li>• Mais prática aplicada e preparação profissional</li>
-                  </ul>
-                </button>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-1.5">
-                Ao selecionar um modelo, você é direcionado imediatamente para a interface correspondente.
-              </p>
             </div>
           )}
 

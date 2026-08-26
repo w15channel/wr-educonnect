@@ -41,7 +41,9 @@ Deno.serve(async (req) => {
 
       // A função (profile_category) salva pelo admin concede os privilégios do papel.
       const profileCategory = record.profile_category || 'student';
-      const privileged = ['admin', 'teacher', 'management'].includes(profileCategory);
+      // Professor acompanha a plataforma pela navegação do aluno (sem gestão de
+      // alunos/códigos de acesso), por isso não recebe o painel administrativo.
+      const privileged = ['admin', 'management'].includes(profileCategory);
 
       return Response.json({
         success: true,
