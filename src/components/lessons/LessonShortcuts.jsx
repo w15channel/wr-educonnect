@@ -38,10 +38,10 @@ export default function LessonShortcuts({ lesson }) {
       >
         <MessagesSquare size={16} className="mt-0.5 shrink-0 text-purple-500" />
         <div>
-          <p className="text-sm font-bold text-purple-600 dark:text-purple-300">Debater na Sala de Debates</p>
+          <p className="text-sm font-bold text-purple-600 dark:text-purple-300">Gostou do Tema e quer Falar Sobre ele?</p>
           <p className="text-xs text-muted-foreground">
-            Abra um debate sobre o tema desta aula ou responda os colegas. Discutir o assunto
-            amadurece o que você acabou de estudar.
+            Que tal abrir um debate sobre esse tema ou responder os debates abertos por seus colegas.
+            Discutir sobre o assunto amadurece o tema que você acabou de estudar.
           </p>
         </div>
       </Link>

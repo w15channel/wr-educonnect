@@ -144,7 +144,7 @@ const STEPS = [
         <ul className="space-y-2">
           {[
             { icon: '💬', text: 'Chat da Turma em tempo real — converse com seus colegas' },
-            { icon: '❓', text: 'Fórum de Dúvidas — faça perguntas e ajude a turma, ganhando pontos' },
+            { icon: '❓', text: 'Suporte ao Aluno — abra um chamado quando algo der errado e a equipe entra em contato' },
             { icon: '🗣️', text: 'Sala de Debates — discussões temáticas moderadas pelo professor' },
             { icon: '👑', text: 'Monitores — acompanhe os alunos destaque escolhidos pelo professor' },
           ].map((item, i) => (

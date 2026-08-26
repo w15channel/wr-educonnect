@@ -4,8 +4,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { base44 } from '@/api/base44Client';
 import {
-  Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send
+  Flame, CheckCircle, Star, Zap, BookOpen, Loader2, Users, Calendar, Lock, Send, ClipboardList
 } from 'lucide-react';
+import GameModal from '@/components/ofensivas/GameModal';
+import NextStepLink from '@/components/shared/NextStepLink';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -26,11 +28,11 @@ import { MOD10 } from '@/lib/apostila/mod10';
 // ─── Schema: 8 perguntas ──────────────────────────────────────────────────────
 // q1(0.1) q2(0.1) q3-baú(0.2) q4(0.1) q5(0.1) q6-baú(0.2) q7(0.1) q8(0.1) = 1.0
 const QUESTION_SCHEMA = [
-  { id: 'q1', type: 'normal', points: 0.1 },
+  { id: 'q1', type: 'normal', points: 0.1, game: 'memory' },
   { id: 'q2', type: 'normal', points: 0.1 },
   { id: 'q3', type: 'chest',  points: 0.2 },
   { id: 'q4', type: 'normal', points: 0.1 },
-  { id: 'q5', type: 'normal', points: 0.1 },
+  { id: 'q5', type: 'normal', points: 0.1, game: 'colors' },
   { id: 'q6', type: 'chest',  points: 0.2 },
   { id: 'q7', type: 'normal', points: 0.1 },
   { id: 'q8', type: 'normal', points: 0.1 },
@@ -119,7 +121,7 @@ function Fireworks({ onDone }) {
 }
 
 // ─── Trail Node ────────────────────────────────────────────────────────────────
-function TrailNode({ question, idx, answered, locked, isChest, onPress, points }) {
+function TrailNode({ question, idx, answered, locked, isChest, onPress, points, game }) {
   const offsetX = TRAIL_X[idx] ?? 0;
 
   if (isChest) {
@@ -170,7 +172,7 @@ function TrailNode({ question, idx, answered, locked, isChest, onPress, points }
       )}
       {answered && <div className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">✓</div>}
       <span className={`mt-1 text-[10px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-foreground/60'}`}>
-        {answered ? 'Feita' : locked ? 'Bloqueada' : `Nº ${idx + 1}`}
+      {answered ? 'Feita' : locked ? 'Bloqueada' : game === 'memory' ? '🧠 Memória' : game === 'colors' ? '🎨 Cores' : `Nº ${idx + 1}`}
       </span>
       <span className="text-[10px] text-muted-foreground/50">+{points}</span>
     </button>
@@ -558,6 +560,14 @@ export default function Ofensivas() {
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-2">Volte amanhã para manter sua sequência!</p>
+              <div className="mt-4 text-left">
+                <NextStepLink
+                  to="/tasks"
+                  icon={ClipboardList}
+                  title="Agora vá para as Tarefas"
+                  description="Você acabou de revisar o conteúdo na ofensiva — aproveite o embalo e entregue a tarefa do módulo agora."
+                />
+              </div>
             </div>
           )}
 
@@ -604,6 +614,7 @@ export default function Ofensivas() {
                     locked={isLocked}
                     isChest={schema?.type === 'chest'}
                     points={schema?.points ?? q.points ?? 0.1}
+                    game={schema?.game}
                     onPress={() => setActiveQuestion(idx)}
                   />
                   {idx < Math.min(questions.length, 8) - 1 && <Connector answered={isAnswered} />}
@@ -612,8 +623,20 @@ export default function Ofensivas() {
             })}
           </div>
 
-          {/* Question modal */}
-          {activeQuestion !== null && questions[activeQuestion] && (
+          {/* Question / game modal */}
+          {activeQuestion !== null && questions[activeQuestion] && QUESTION_SCHEMA[activeQuestion]?.game && (
+            <GameModal
+              gameType={QUESTION_SCHEMA[activeQuestion].game}
+              idx={activeQuestion}
+              points={QUESTION_SCHEMA[activeQuestion]?.points ?? 0.1}
+              answered={!!answeredMap[questions[activeQuestion]?.id]}
+              open={activeQuestion !== null}
+              onClose={() => setActiveQuestion(null)}
+              onComplete={(result) => handleSubmitAnswer(questions[activeQuestion].id, result)}
+              isPending={!!submitting[questions[activeQuestion]?.id]}
+            />
+          )}
+          {activeQuestion !== null && questions[activeQuestion] && !QUESTION_SCHEMA[activeQuestion]?.game && (
             <QuestionModal
               question={questions[activeQuestion]}
               idx={activeQuestion}

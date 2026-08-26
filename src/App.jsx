@@ -21,7 +21,7 @@ import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
 import Tasks from './pages/Tasks';
 import Tests from './pages/Tests';
-import Forum from './pages/Forum';
+import Support from './pages/Support';
 import SalaDebates from './pages/SalaDebates';
 import Students from './pages/Students';
 import Announcements from './pages/Announcements';
@@ -81,7 +81,8 @@ function AppRoutesTree() {
         <Route path="exams/quiz/:id" element={<ExamQuizView />} />
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
         <Route path="tasks/builder/:id" element={<TaskExamBuilder />} />
-        <Route path="forum" element={<Forum />} />
+        <Route path="forum" element={<Support />} />
+        <Route path="suporte" element={<Support />} />
         <Route path="debates" element={<SalaDebates />} />
         <Route path="chat" element={<ClassChat />} />
         <Route path="students" element={<Students />} />

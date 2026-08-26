@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2, Lock } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2, Lock, Flame } from 'lucide-react';
+import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -668,6 +669,15 @@ export default function Apostila() {
                                     <Button size="sm" variant="outline" onClick={() => handleEditLesson(chapter.id, lesson.id, lesson.content)}>
                                       <Edit2 size={13} /> Editar conteúdo
                                     </Button>
+                                  )}
+                                  {!isAdmin && (
+                                    <NextStepLink
+                                      to="/ofensivas"
+                                      icon={Flame}
+                                      tone="orange"
+                                      size="sm"
+                                      title="Usar na Ofensiva do dia"
+                                    />
                                   )}
                                   {!isAdmin && (
                                     readLessons.has(`${chapter.id}__${lesson.id}`) ? (

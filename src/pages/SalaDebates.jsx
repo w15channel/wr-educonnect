@@ -7,24 +7,22 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PostCard from '@/components/shared/PostCard';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { resolveAvatarEmoji } from '@/lib/avatarUtils';
 
-const DEBATE_TOPICS = [
-  'Pensamentos automáticos', 'Distorções cognitivas', 'Reestruturação cognitiva', 'Registro de pensamentos',
-  'Crenças centrais', 'Resolução de problemas', 'Ativação comportamental', 'Exposição gradual',
-  'Prevenção de recaídas', 'Outro (criado por alunos)'
-];
+import { DEBATE_TOPIC_GROUPS, FREE_TOPIC, topicModuleNumber } from '@/lib/apostila/debateTopics';
+
+const DEFAULT_TOPIC = DEBATE_TOPIC_GROUPS[0]?.topics?.[0] || FREE_TOPIC;
 
 export default function SalaDebates() {
   const { user: session } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const [newPost, setNewPost] = useState('');
-  const [topic, setTopic] = useState('Pensamentos automáticos');
-  const [filterTopic, setFilterTopic] = useState('Todos');
+  const [topic, setTopic] = useState(DEFAULT_TOPIC);
+  const [filterModule, setFilterModule] = useState('Todos');
   const [expandedPost, setExpandedPost] = useState(null);
   const [replyTexts, setReplyTexts] = useState({});
   const [editingReply, setEditingReply] = useState(null);
@@ -123,7 +121,9 @@ export default function SalaDebates() {
 
   const myAv = getUserAvatar(session?.email, session?.role);
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '?';
-  const filteredPosts = filterTopic === 'Todos' ? sortBySequence(posts) : sortBySequence(posts).filter(p => p.topic === filterTopic);
+  const filteredPosts = filterModule === 'Todos'
+    ? sortBySequence(posts)
+    : sortBySequence(posts).filter(p => topicModuleNumber(p.topic) === Number(filterModule));
 
   return (
     <div className="app-page max-w-4xl mx-auto animate-fade-in-up">
@@ -144,10 +144,21 @@ export default function SalaDebates() {
           <div className="flex-1">
             <form onSubmit={e => { e.preventDefault(); if (newPost.trim()) createPostMutation.mutate({ content: newPost, topic }); }} className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-muted-foreground block mb-1">Tema do debate</label>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Tema do debate (módulos da apostila)</label>
                 <Select value={topic} onValueChange={setTopic}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>{DEBATE_TOPICS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                  <SelectContent className="max-h-80">
+                    {DEBATE_TOPIC_GROUPS.map(group => (
+                      <SelectGroup key={group.moduleNumber}>
+                        <SelectLabel>{group.label}</SelectLabel>
+                        {group.topics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectGroup>
+                    ))}
+                    <SelectGroup>
+                      <SelectLabel>Outros</SelectLabel>
+                      <SelectItem value={FREE_TOPIC}>{FREE_TOPIC}</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
                 </Select>
               </div>
               <Textarea placeholder="Abra um tópico para debate com a turma..." value={newPost} onChange={e => setNewPost(e.target.value)} className="resize-none text-sm" rows={2} />
@@ -161,10 +172,10 @@ export default function SalaDebates() {
 
       {/* Topic filter */}
       <div className="flex gap-2 flex-wrap mb-4">
-        {['Todos', ...DEBATE_TOPICS.slice(0, 6)].map(t => (
-          <button key={t} onClick={() => setFilterTopic(t)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${filterTopic === t ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-secondary text-muted-foreground hover:bg-secondary/70 hover:text-foreground'}`}>
-            {t}
+        {['Todos', ...DEBATE_TOPIC_GROUPS.map(g => String(g.moduleNumber))].map(value => (
+          <button key={value} onClick={() => setFilterModule(value)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${filterModule === value ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-secondary text-muted-foreground hover:bg-secondary/70 hover:text-foreground'}`}>
+            {value === 'Todos' ? 'Todos' : `Módulo ${value}`}
           </button>
         ))}
       </div>

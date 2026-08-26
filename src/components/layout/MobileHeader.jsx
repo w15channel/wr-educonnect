@@ -29,7 +29,7 @@ const routeLabels = {
   '/chat': 'Mural de Superação',
   '/apostila': 'Apostila',
   '/tasks': 'Tarefas e Provas',
-  '/forum': 'Fórum de Dúvidas',
+  '/forum': 'Suporte ao Aluno',
   '/students': 'Gestão de Alunos',
   '/announcements': 'Avisos',
   '/profile': 'Meu Perfil',
