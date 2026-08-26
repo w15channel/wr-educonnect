@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { generateCode } from '@/lib/customAuth';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Trash2, Layers } from 'lucide-react';
+import { Users, Search, Eye, CheckCircle, XCircle, RefreshCw, SlidersHorizontal, Zap, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -73,21 +73,6 @@ export default function Students() {
     queryFn: () => base44.entities.Tuition.list('-month_ref', 500),
   });
 
-  const { data: moduleClosures = [] } = useQuery({
-    queryKey: ['module-closures', activeCourse],
-    queryFn: () => base44.entities.ModuleClosure.filter({ course: activeCourse }, '-module_number', 100),
-  });
-
-  const currentModule = (moduleClosures.reduce((max, c) => Math.max(max, Number(c.module_number) || 0), 0)) + 1;
-
-  const [selectedPeriodId, setSelectedPeriodId] = useState('current');
-  const selectedClosure = selectedPeriodId !== 'current' ? moduleClosures.find(c => c.id === selectedPeriodId) : null;
-  const periodOptions = [
-    { value: 'current', label: `Módulo Atual (${currentModule})` },
-    ...moduleClosures.map(c => ({ value: c.id, label: c.module_label || `Módulo ${c.module_number}` })),
-  ];
-  const periodLabel = periodOptions.find(p => p.value === selectedPeriodId)?.label || 'Período';
-
   const updateCodeMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.AccessCode.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['access-codes'] }),
@@ -148,11 +133,6 @@ export default function Students() {
 
   const getStudentStats = (code) => {
     const subs = allSubmissions.filter(s => s.student_email === code.student_email);
-    if (selectedClosure) {
-      const snap = (selectedClosure.snapshot || []).find(s => s.student_email === code.student_email);
-      const moduleScore = roundScore(snap?.points ?? 0);
-      return { moduleScore, moduleScoreDisplay: formatScore(moduleScore), submissions: subs.length };
-    }
     const profile = studentProfiles.find(p => p.student_email === code.student_email && (p.dashboard_course === activeCourse || (!p.dashboard_course && activeCourse === 'tcc')));
     const moduleScore = roundScore(code.pontuacao_total ?? profile?.pontuacao_total ?? profile?.points ?? 0);
     return { moduleScore, moduleScoreDisplay: formatScore(moduleScore), submissions: subs.length };
@@ -238,9 +218,6 @@ export default function Students() {
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Gestão de Alunos — {courseLabel}</h2>
           <p className="text-muted-foreground text-sm mt-0.5">Gerencie alunos e códigos de acesso da turma ativa</p>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
-          <Layers size={15} /> Módulo Atual: {currentModule}
-        </span>
       </div>
 
       {/* Dialog para matricular em outro curso */}
@@ -278,19 +255,6 @@ export default function Students() {
             <div className="relative w-full sm:w-72">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Buscar aluno..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto lg:hidden">
-              <Layers size={14} className="text-muted-foreground" />
-              <Select value={selectedPeriodId} onValueChange={setSelectedPeriodId}>
-                <SelectTrigger className="h-10 text-xs w-full sm:w-56">
-                  <SelectValue placeholder="Período..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {periodOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <SlidersHorizontal size={14} className="text-muted-foreground" />
@@ -382,7 +346,7 @@ export default function Students() {
                           <p className="font-semibold text-foreground">{stats.submissions}</p>
                         </div>
                         <div className="rounded-xl border border-border px-2.5 py-2 bg-secondary/30">
-                          <p className="text-muted-foreground truncate">Pontuação ({periodLabel})</p>
+                          <p className="text-muted-foreground truncate">Pontuação total</p>
                           <p className="font-semibold text-foreground">{stats.moduleScoreDisplay}</p>
                         </div>
                       </div>
@@ -428,18 +392,7 @@ export default function Students() {
                         <th className="p-4">Aluno</th>
                         <th className="p-4">Código</th>
                         <th className="p-4">Entregas</th>
-                        <th className="p-4">
-                          <Select value={selectedPeriodId} onValueChange={setSelectedPeriodId}>
-                            <SelectTrigger className="h-8 text-xs w-44 normal-case font-bold bg-background">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {periodOptions.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </th>
+                        <th className="p-4">Pontuação total</th>
                         <th className="p-4">Mensalidade</th>
                         <th className="p-4">Categoria</th>
                         <th className="p-4">Status</th>

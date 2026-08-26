@@ -2,11 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, HandHeart, Archive, CheckCircle } from 'lucide-react';
+import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, HandHeart, CheckCircle } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { capScore, formatScore, rankingScoreValue, roundScore, sumRoundedScores, parseUtcDate } from '@/lib/scoreUtils';
+import { capScore, formatScore, rankingScoreValue, roundScore, sumRoundedScores } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import ModuleHistoryPanel from '@/components/scores/ModuleHistoryPanel';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -31,7 +30,7 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTotal, periodCutoff, onClose }) {
+function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTotal, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
@@ -45,11 +44,6 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
       if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
       // Only include items that belong to the student's course
       if (courseItemRefIds && courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) continue;
-      // Após o encerramento de período, só contam atividades registradas depois do corte
-      if (periodCutoff) {
-        const created = parseUtcDate(s.created_date);
-        if (!created || created <= periodCutoff) continue;
-      }
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
@@ -57,7 +51,7 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, publishedTota
       if (!prevWins) seen.set(key, s);
     }
     return [...seen.values()];
-  }, [scoreItems, email, courseItemRefIds, periodCutoff]);
+  }, [scoreItems, email, courseItemRefIds]);
 
   // Soma transparente dos itens verificados exibidos no modal.
   // Se houver total publicado maior que a soma dos itens, mostramos o ajuste para fechar a conta.
@@ -248,24 +242,8 @@ export default function RankingGeral() {
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourseForQuery }, '-created_date', 5000),
   });
 
-  // Encerramentos de período — quando existe um, o ranking atual só conta
-  // atividade registrada DEPOIS do corte, igualando alunos novos e antigos.
-  const { data: moduleClosures = [] } = useQuery({
-    queryKey: ['ranking-module-closures', activeCourseForQuery],
-    queryFn: () => base44.entities.ModuleClosure.filter({ course: activeCourseForQuery }, '-module_number', 100),
-  });
-  const periodCutoff = useMemo(() => {
-    return moduleClosures.reduce((latest, c) => {
-      if (!c.closed_at) return latest;
-      const d = new Date(c.closed_at);
-      return !latest || d > latest ? d : latest;
-    }, null);
-  }, [moduleClosures]);
-  const isAfterCutoff = (record) => {
-    if (!periodCutoff) return true;
-    const created = parseUtcDate(record?.created_date);
-    return !created || created > periodCutoff;
-  };
+  // Os módulos são atemporais: todo progresso válido do curso participa do ranking.
+  const isCourseProgress = () => true;
 
   // Build the set of all ref_ids valid for this course
   // This must mirror every ref_id pattern used in recalculateScores.
@@ -360,21 +338,21 @@ export default function RankingGeral() {
   const participationMap = useMemo(() => {
     const map = {};
     courseEmailSet.forEach(email => {
-      const lessonCount = allLessonProgress.filter(p => p.student_email === email && lessonRefIds.has(p.lesson_id) && p.watched && isAfterCutoff(p)).length;
-      const taskCount = allSubmissions.filter(s => s.student_email === email && taskRefIds.has(s.task_id) && isAfterCutoff(s)).length;
-      const postCount = courseForumPosts.filter(p => p.author_email === email && isAfterCutoff(p)).length;
+      const lessonCount = allLessonProgress.filter(p => p.student_email === email && lessonRefIds.has(p.lesson_id) && p.watched && isCourseProgress(p)).length;
+      const taskCount = allSubmissions.filter(s => s.student_email === email && taskRefIds.has(s.task_id) && isCourseProgress(s)).length;
+      const postCount = courseForumPosts.filter(p => p.author_email === email && isCourseProgress(p)).length;
       const replyCount = allForumReplies.filter(r => {
         const parentPost = forumParentById.get(r.post_id);
-        return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostRefIds.has(parentPost.id) && isAfterCutoff(r);
+        return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostRefIds.has(parentPost.id) && isCourseProgress(r);
       }).length;
-      const monitorCount = allMonitorHistory.filter(m => m.student_email === email && isAfterCutoff(m)).length;
+      const monitorCount = allMonitorHistory.filter(m => m.student_email === email && isCourseProgress(m)).length;
       const mentorshipCount = courseMentorships.filter(mentorship =>
-        (mentorship.participant_emails || []).includes(email) && isAfterCutoff(mentorship)
+        (mentorship.participant_emails || []).includes(email) && isCourseProgress(mentorship)
       ).length;
       map[email] = lessonCount + taskCount + postCount + replyCount + monitorCount + mentorshipCount;
     });
     return map;
-  }, [courseEmailSet, allLessonProgress, allSubmissions, courseForumPosts, allForumReplies, allMonitorHistory, courseMentorships, lessonRefIds, taskRefIds, forumPostRefIds, forumParentById, periodCutoff]);
+  }, [courseEmailSet, allLessonProgress, allSubmissions, courseForumPosts, allForumReplies, allMonitorHistory, courseMentorships, lessonRefIds, taskRefIds, forumPostRefIds, forumParentById]);
 
   // ── Build and sort ranking — pontuação publicada é a fonte única da verdade,
   // igual ao painel admin (evita divergência quando o período foi encerrado) ──
@@ -549,17 +527,6 @@ export default function RankingGeral() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="periods" className="bg-card border border-border rounded-2xl px-4 border-b-0">
-          <AccordionTrigger className="hover:no-underline py-3.5">
-            <div className="flex items-center gap-2.5">
-              <Archive size={16} className="text-amber-500" />
-              <span className="font-bold text-sm text-foreground">Ranking por Período</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <ModuleHistoryPanel course={activeCourse} filterEmail={session?.role === 'admin' ? null : session?.email} />
-          </AccordionContent>
-        </AccordionItem>
       </Accordion>
 
       {/* Student modal */}
@@ -569,7 +536,6 @@ export default function RankingGeral() {
           scoreItems={allScoreItems}
           courseItemRefIds={courseItemRefIds}
           publishedTotal={capScore(selected.pontuacao_total ?? publishedScoreMap[selected.student_email] ?? 0)}
-          periodCutoff={periodCutoff}
           onClose={() => setSelected(null)}
         />
       )}

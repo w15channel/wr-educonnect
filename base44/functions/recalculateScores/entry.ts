@@ -121,19 +121,6 @@ Deno.serve(async (req) => {
       fetchAllPages((sort, limit, skip) => base44.asServiceRole.entities.DailyChallengeResponse.list(sort, limit, skip), '-created_date'),
     ]);
 
-    // ── Module closures: per-course cutoff timestamp ────────────────────────
-    // After a module is closed, ranking restarts from zero: only activity created
-    // AFTER the latest closure's closed_at counts toward the new module's ranking.
-    const moduleClosures = await base44.asServiceRole.entities.ModuleClosure.list('-closed_at', 5000).catch(() => []);
-    const cutoffByCourse = new Map(); // course -> Date (latest closed_at)
-    for (const mc of moduleClosures) {
-      const c = mc.course || 'tcc';
-      const closedAt = mc.closed_at ? new Date(mc.closed_at) : null;
-      if (!closedAt || Number.isNaN(closedAt.getTime())) continue;
-      const prev = cutoffByCourse.get(c);
-      if (!prev || closedAt > prev) cutoffByCourse.set(c, closedAt);
-    }
-
     // ── Build existingScores Map: deduplicate in-memory ───────────────────
     const existingScores = new Map();
     for (const item of scoreItems) {
@@ -224,16 +211,8 @@ Deno.serve(async (req) => {
         .sort((a, b) => displayName(a).localeCompare(displayName(b), 'pt-BR'));
       const courseEmails = new Set(courseCodes.map((code) => code.student_email));
 
-      // Module cutoff: activity created before this date does NOT count for the current
-      // ranking (a module was closed). afterCutoff(record) is true when the record is
-      // in-scope for the current (open) module. Records without created_date pass through.
-      const cutoff = cutoffByCourse.get(course) || null;
-      const afterCutoff = (record) => {
-        if (!cutoff) return true;
-        const created = record?.created_date ? new Date(record.created_date) : null;
-        if (!created || Number.isNaN(created.getTime())) return true;
-        return created > cutoff;
-      };
+      // Os módulos não têm janela temporal: todo registro válido do curso conta.
+      const afterCutoff = () => true;
 
       const courseLessons   = lessons.filter((l) => sameCourse(l, course));
       const courseTasks     = tasks.filter((t) => sameCourse(t, course));

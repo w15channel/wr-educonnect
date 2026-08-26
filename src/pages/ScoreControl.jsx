@@ -6,7 +6,7 @@ import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, HandHeart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers, Filter } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, HandHeart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,8 +28,8 @@ const CATEGORY_CONFIG = {
 // ── Filtro por módulo ────────────────────────────────────────────────────────
 // Aulas e tarefas guardam o módulo em `module_number`; provas guardam em
 // `module_ref` como texto ('mod1'). Já fórum, terapeutas, ofensivas e monitoria
-// não têm módulo próprio — nesses casos usamos a janela de datas do período
-// (ModuleClosure) correspondente ao módulo escolhido.
+// sem módulo próprio permanecem no total geral e não são atribuídas artificialmente
+// a uma janela de datas.
 const MODULE_ALL = 'all';
 
 const parseModuleNumber = (value) => {
@@ -718,11 +718,6 @@ export default function ScoreControl() {
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000)
   });
 
-  const { data: moduleClosures = [] } = useQuery({
-    queryKey: ['module-closures', activeCourse],
-    queryFn: () => base44.entities.ModuleClosure.filter({ course: activeCourse }, '-module_number', 100)
-  });
-
   // Reconstitui ScoreItems e observações a partir das atividades reais ao abrir
   // o controle. Isso também cobre instalações em que a automação de entidade
   // deixou de disparar, sem exigir que o administrador clique em recalcular.
@@ -737,58 +732,17 @@ export default function ScoreControl() {
       });
   }, [automaticSyncComplete, queryClient]);
 
-  const nextModuleNumber = (moduleClosures.reduce((max, c) => Math.max(max, Number(c.module_number) || 0), 0)) + 1;
-
-  // Corte do período atual: após encerrar um período, participações e pontuações
-  // só devem contar atividades registradas DEPOIS do encerramento — assim alunos
-  // novos e antigos começam empatados no período vigente.
-  const periodCutoff = moduleClosures.reduce((latest, c) => {
-    if (!c.closed_at) return latest;
-    return !latest || new Date(c.closed_at) > latest ? new Date(c.closed_at) : latest;
-  }, null);
-  const isAfterCutoff = (record) => {
-    if (!periodCutoff) return true;
-    const created = parseUtcDate(record?.created_date);
-    return !created || created > periodCutoff;
-  };
-
-  // ── Janelas de período por módulo ─────────────────────────────────────────
-  // Cada ModuleClosure delimita um período. Quando o registro tem
-  // period_start/period_end usamos esses valores; senão, o período vai do
-  // encerramento anterior até o encerramento do próprio módulo. O módulo ainda
-  // em aberto começa no último encerramento e não tem fim.
-  const moduleWindows = useMemo(() => {
-    const map = new Map();
-    const closuresAsc = moduleClosures.
-    map((c) => ({ ...c, moduleNumber: parseModuleNumber(c.module_number) })).
-    filter((c) => c.moduleNumber).
-    sort((a, b) => a.moduleNumber - b.moduleNumber);
-
-    let previousEnd = null;
-    for (const closure of closuresAsc) {
-      const start = parseUtcDate(closure.period_start) || previousEnd;
-      const end = parseUtcDate(closure.period_end) || parseUtcDate(closure.closed_at);
-      map.set(closure.moduleNumber, { start, end, label: closure.module_label || `Módulo ${closure.moduleNumber}` });
-      previousEnd = end || previousEnd;
-    }
-    if (!map.has(nextModuleNumber)) {
-      map.set(nextModuleNumber, { start: previousEnd, end: null, label: `Módulo ${nextModuleNumber} (atual)` });
-    }
-    return map;
-  }, [moduleClosures, nextModuleNumber]);
-
   const moduleOptions = useMemo(() => {
     const numbers = new Set();
     for (const lesson of lessons) { const n = parseModuleNumber(lesson.module_number); if (n) numbers.add(n); }
     for (const task of tasks) { const n = parseModuleNumber(task.module_number); if (n) numbers.add(n); }
     for (const exam of exams) { const n = parseModuleNumber(exam.module_ref); if (n) numbers.add(n); }
-    for (const n of moduleWindows.keys()) numbers.add(n);
     return [...numbers].sort((a, b) => a - b);
-  }, [lessons, tasks, exams, moduleWindows]);
+  }, [lessons, tasks, exams]);
 
   const activeModule = selectedModule === MODULE_ALL ? null : Number(selectedModule);
-  const activeModuleWindow = activeModule ? moduleWindows.get(activeModule) || { start: null, end: null } : null;
-  const activeModuleLabel = activeModule ? activeModuleWindow?.label || `Módulo ${activeModule}` : 'Todos os módulos';
+  const activeModuleWindow = activeModule ? { start: null, end: null } : null;
+  const activeModuleLabel = activeModule ? `Módulo ${activeModule}` : 'Todos os módulos';
   const moduleFilter = activeModule ?
   { module: activeModule, start: activeModuleWindow?.start || null, end: activeModuleWindow?.end || null, label: activeModuleLabel } :
   null;
@@ -937,11 +891,11 @@ export default function ScoreControl() {
   const getParticipationStats = (email) => {
     // Com um módulo selecionado, o recorte é o próprio módulo (aula/tarefa) ou a
     // janela de datas do período (fórum e monitoria). Sem módulo, vale o corte do
-    // período vigente, como antes.
+    // total geral atemporal.
     const start = activeModuleWindow?.start || null;
     const end = activeModuleWindow?.end || null;
     const inScope = (record, moduleNumber) => {
-      if (!activeModule) return isAfterCutoff(record);
+      if (!activeModule) return true;
       if (moduleNumber !== undefined) return moduleNumber === activeModule;
       return withinWindow(record?.created_date, start, end);
     };
@@ -957,7 +911,7 @@ export default function ScoreControl() {
     }).length;
     const monitorCount = monitorHistory.filter((m) => {
       if (m.student_email !== email) return false;
-      if (!activeModule) return isAfterCutoff(m);
+      if (!activeModule) return true;
       return withinWindow(m.period_start || m.created_date, start, end);
     }).length;
     const count = lessonCount + taskCount + postCount + replyCount + monitorCount;
@@ -1206,15 +1160,6 @@ export default function ScoreControl() {
             </button>
           )}
         </div>
-        {activeModule &&
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
-            <Filter size={14} className="text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800 leading-relaxed">
-              Exibindo apenas o <strong>{activeModuleLabel}</strong>: aulas, tarefas, provas e demais atividades desse conteúdo. Qualquer aluno pode participar e pontuar neste módulo a qualquer momento, independente de quando entrou no curso.
-              {isTeacher && ' Ajustes manuais ficam desativados nesse modo, e publicar o ranking enviará a pontuação deste módulo.'}
-            </p>
-          </div>
-        }
       </div>
 
       <Accordion type="multiple" defaultValue={['current']} className="space-y-3">
