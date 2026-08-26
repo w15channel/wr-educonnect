@@ -6,6 +6,7 @@ import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X } from 'lucid
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
+import LobbyTutorialChoice from '@/components/onboarding/LobbyTutorialChoice';
 import { toast } from 'sonner';
 
 const G = '#d4b96a';
@@ -244,6 +245,18 @@ export default function CourseLobby() {
   const [leadInput, setLeadInput] = useState('');
   const [leadLoading, setLeadLoading] = useState(false);
 
+  // Primeiro acesso ao lobby: oferece o tutorial escrito ou em vídeo.
+  const tutorialKey = `wr_lobby_tutorial_${session?.code || session?.email || 'aluno'}`;
+  const [showTutorialChoice, setShowTutorialChoice] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !localStorage.getItem(tutorialKey);
+  });
+
+  const finishTutorialChoice = () => {
+    localStorage.setItem(tutorialKey, 'done');
+    setShowTutorialChoice(false);
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(LOBBY_MUSIC_KEY, 'off');
@@ -383,6 +396,10 @@ export default function CourseLobby() {
       </div>
 
       <Header />
+
+      {showTutorialChoice && (
+        <LobbyTutorialChoice studentName={session?.name} onFinish={finishTutorialChoice} />
+      )}
 
       <div className="internal-page-shell">
         {/* Title */}
