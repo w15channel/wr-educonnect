@@ -41,7 +41,7 @@ function initializeRumble(publisherId) {
  * da dashboard. O script oficial recebe o ID público e resolve internamente o
  * vídeo correto, sem depender de oEmbed (bloqueado por CORS em alguns browsers).
  */
-export default function RumbleEmbed({ videoId, publisherId = DEFAULT_PUBLISHER_ID, title = 'Vídeo do Rumble' }) {
+export default function RumbleEmbed({ videoId, publisherId = DEFAULT_PUBLISHER_ID, title = 'Vídeo do Rumble', showFullscreenButton = true }) {
   const reactId = useId();
   const containerId = `rumble_${videoId}_${reactId.replace(/:/g, '')}`;
   const requestedRef = useRef(false);
@@ -87,9 +87,9 @@ export default function RumbleEmbed({ videoId, publisherId = DEFAULT_PUBLISHER_I
         role="region"
         aria-label={title}
       />
-      <button type="button" onClick={toggleFullscreen} className="absolute bottom-3 right-3 z-10 inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/30 bg-black/75 px-3 text-xs font-bold text-white shadow-lg transition hover:bg-black focus:outline-none focus:ring-2 focus:ring-white" title={fullscreen ? 'Sair da tela cheia' : 'Girar tela (tela cheia)'} aria-label={fullscreen ? 'Sair da tela cheia' : 'Girar tela e abrir em tela cheia'}>
+      {showFullscreenButton && <button type="button" onClick={toggleFullscreen} className="absolute bottom-3 right-3 z-10 inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/30 bg-black/75 px-3 text-xs font-bold text-white shadow-lg transition hover:bg-black focus:outline-none focus:ring-2 focus:ring-white" title={fullscreen ? 'Sair da tela cheia' : 'Girar tela (tela cheia)'} aria-label={fullscreen ? 'Sair da tela cheia' : 'Girar tela e abrir em tela cheia'}>
         {fullscreen ? <Minimize2 size={16}/> : <RotateCw size={16}/>}<span>{fullscreen ? 'Sair' : 'Girar tela'}</span>
-      </button>
+      </button>}
     </div>
   );
 }

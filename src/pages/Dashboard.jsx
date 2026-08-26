@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import RumbleEmbed from '@/components/video/RumbleEmbed';
+import TutorialPlayerCard from '@/components/dashboard/TutorialPlayerCard';
+import { isAnnouncementVisible } from '@/lib/announcementVisibility';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, PlayCircle, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2 } from 'lucide-react';
+import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2 } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -194,6 +195,22 @@ export default function Dashboard() {
         certificate_monitor_id: monitorRecord.id,
       });
     }
+    // Conquista pública única: revela os nomes dos monitores e concentra
+    // curtidas, reações e respostas nos alunos mencionados.
+    const monitorNames = emailsArr.map((email) => {
+      const code = accessCodes.find((c) => c.student_email === email);
+      return code?.profile_name || code?.student_name || email;
+    });
+    await adminApi.create('Achievement', {
+      dedupe_key: `monitor-batch:${userCourse || 'tcc'}:${periodStart}`,
+      student_email: emailsArr[0],
+      mentioned_emails: emailsArr,
+      course: userCourse || 'tcc',
+      kind: 'monitor',
+      title: 'Monitores da Semana',
+      message: `🏅 Monitores da Semana: ${monitorNames.join(', ')}. Parabéns pela dedicação — celebre com a turma!`,
+      occurred_at: new Date().toISOString(),
+    });
     await queryClient.invalidateQueries();
     toast.success('✅ Monitores salvos com sucesso!');
     setMonitorSelectMode(false);
@@ -355,10 +372,12 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, [accessCodes, isTeacher, session?.email]);
 
-  const { data: announcements = [] } = useQuery({
+  const { data: allAnnouncements = [] } = useQuery({
     queryKey: ['announcements'],
-    queryFn: () => base44.entities.Announcement.list('-created_date', 5)
+    queryFn: () => base44.entities.Announcement.list('-created_date', 20)
   });
+  // Avisos com destinatário definido são pessoais: não aparecem para a turma.
+  const announcements = allAnnouncements.filter((item) => isAnnouncementVisible(item, session?.email, isTeacher));
 
   const { data: exams = [] } = useQuery({
     queryKey: ['exams-dashboard', userCourse || 'all'],
@@ -533,6 +552,8 @@ export default function Dashboard() {
       feedType: 'achievement',
       studentEmail: record.student_email,
       studentName: getStudentName(record.student_email),
+      mentionedEmails: record.mentioned_emails || [],
+      isCollective: record.kind === 'monitor',
       content: record.message,
       occurredAt: record.occurred_at || record.created_date,
     }));
@@ -585,7 +606,7 @@ export default function Dashboard() {
     const recentLimit = now - 45 * 24 * 60 * 60 * 1000;
     const institutional = wallInstitutionalRecords ? [
       ...wallInstitutionalRecords.shared.map((item) => ({ ...item, feedType: 'institutional', icon: 'share', occurredAt: item.published_at || item.created_date })),
-      ...wallInstitutionalRecords.notices.filter((item) => item.type !== 'unlock_rule' && new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `notice-${item.id}`, feedType: 'institutional', icon: 'notice', title: item.title || 'Recado importante', content: item.content, occurredAt: item.created_date })),
+      ...wallInstitutionalRecords.notices.filter((item) => item.type !== 'unlock_rule' && isAnnouncementVisible(item, session?.email, isTeacher) && new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `notice-${item.id}`, feedType: 'institutional', icon: 'notice', title: item.title || 'Recado importante', content: item.content, occurredAt: item.created_date })),
       ...lessons.filter((item) => new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `lesson-${item.id}`, feedType: 'institutional', icon: 'content', title: 'Novo conteúdo disponível', content: item.title, occurredAt: item.created_date })),
       ...tasks.filter((item) => new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `task-${item.id}`, feedType: 'institutional', icon: 'content', title: 'Nova atividade disponível', content: item.title, occurredAt: item.created_date })),
       ...wallInstitutionalRecords.liveSessions.filter((item) => { const date = new Date(item.scheduled_at).getTime(); return date >= now && date <= upcomingLimit; }).map((item) => ({ id: `live-${item.id}`, feedType: 'institutional', icon: 'event', title: 'Próximo evento', content: `${item.title} • ${new Date(item.scheduled_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, occurredAt: item.created_date || item.scheduled_at })),
@@ -653,7 +674,9 @@ export default function Dashboard() {
     finally { setSyncingAchievements(false); }
   };
 
-  const reactionButtons = (item, targetType, ownerEmail) => {
+  const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => {
+    // Em publicações coletivas, quem é homenageado não interage com a própria conquista.
+    const isOwnContent = ownerEmail === session?.email || mentionedEmails.includes(session?.email);
     const options = [
       { key: 'love', label: 'Amar', Icon: Heart, active: 'text-rose-600 bg-rose-50' },
       { key: 'celebrate', label: 'Celebrar', Icon: PartyPopper, active: 'text-amber-700 bg-amber-50' },
@@ -663,9 +686,9 @@ export default function Dashboard() {
       {options.map(({ key, label, Icon, active }) => {
         const count = wallReactions.filter((r) => r.target_id === item.id && r.reaction === key).length;
         const reacted = wallReactions.some((r) => r.target_id === item.id && r.reaction === key && r.actor_email === session?.email);
-        return <button key={key} type="button" disabled={ownerEmail === session?.email || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={ownerEmail === session?.email ? 'Você não pode reagir ao próprio conteúdo' : label} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-background/70 text-muted-foreground hover:bg-secondary'}`}><Icon size={12} fill={key === 'love' && reacted ? 'currentColor' : 'none'} />{label}{count > 0 && <span>{count}</span>}</button>;
+        return <button key={key} type="button" disabled={isOwnContent || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={isOwnContent ? 'Você não pode reagir ao próprio conteúdo' : label} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-background/70 text-muted-foreground hover:bg-secondary'}`}><Icon size={12} fill={key === 'love' && reacted ? 'currentColor' : 'none'} />{label}{count > 0 && <span>{count}</span>}</button>;
       })}
-      <button type="button" disabled={ownerEmail === session?.email} onClick={() => { setReplyTarget({ id: item.id, targetType, ownerEmail }); setReplyText(''); }} title={ownerEmail === session?.email ? 'Você não pode responder ao próprio conteúdo' : 'Responder em privado'} className="inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-45"><MessageCircle size={12} />Responder</button>
+      <button type="button" disabled={isOwnContent} onClick={() => { setReplyTarget({ id: item.id, targetType, ownerEmail }); setReplyText(''); }} title={isOwnContent ? 'Você não pode responder ao próprio conteúdo' : 'Responder em privado'} className="inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-45"><MessageCircle size={12} />Responder</button>
     </div>;
   };
 
@@ -714,27 +737,7 @@ export default function Dashboard() {
       {!isTeacher &&
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Tutorial player */}
-          <div className="bg-card rounded-2xl border border-border p-5 text-left">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
-                <PlayCircle size={16} className="text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-foreground">Tutorial da Plataforma</h3>
-                <p className="text-xs text-muted-foreground">Assista quando quiser para aprender a usar o site</p>
-              </div>
-            </div>
-            <div className="rounded-xl overflow-hidden border border-border">
-              <RumbleEmbed
-                videoId="v7cfewe"
-                publisherId="u4qbnem"
-                title="Tutorial da Plataforma"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Este vídeo é o tutorial de como usar o site adequadamente. Você pode assisti-lo sempre que precisar — tudo o que você precisa para começar a usar a plataforma está nele.
-            </p>
-          </div>
+          <TutorialPlayerCard />
 
           {/* Ranking */}
           <div className="order-first lg:col-span-2 bg-card rounded-2xl border border-border p-5 text-left flex flex-col">
@@ -845,9 +848,12 @@ export default function Dashboard() {
                     <div key={msg.id} className="rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed dark:border-white dark:bg-white dark:text-black">
                       <div className="flex gap-2">
                       <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
-                      <p><span className="font-bold text-amber-800 dark:text-black">Conquista desbloqueada!</span> <span className="font-semibold text-foreground dark:text-[#b8860b]">{msg.studentName}</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
+                      {msg.isCollective
+                        ? <p><span className="font-bold text-amber-800 dark:text-black">Conquista da turma!</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span></p>
+                        : <p><span className="font-bold text-amber-800 dark:text-black">Conquista desbloqueada!</span> <span className="font-semibold text-foreground dark:text-[#b8860b]">{msg.studentName}</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
+                      }
                       </div>
-                      {reactionButtons(msg, 'achievement', msg.studentEmail)}
+                      {reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails)}
                       {privateReplyForm(msg)}
                     </div>
                   );

@@ -63,9 +63,10 @@ export default function useApostilaModuleUnlocks(course, session) {
     const lessonsDone = moduleLessons.length === 0 || moduleLessons.every((l) => watchedLessonIds.has(l.id));
     const moduleTasks = visibleTasks.filter((t) => Number(t.module_number) === i + 1);
     const tasksDone = moduleTasks.length === 0 || moduleTasks.every((t) => submittedTaskIds.has(t.id));
-    // A prova do módulo é o critério final: sem prova realizada o módulo seguinte não abre.
+    // A prova do módulo é o critério final: enquanto ela não existir/não for feita,
+    // o módulo continua em andamento e o próximo permanece bloqueado.
     const moduleExams = visibleExams.filter((e) => parseModuleNumber(e.module_ref) === i + 1);
-    const examDone = moduleExams.length === 0 || moduleExams.every((e) => submittedExamIds.has(e.id));
+    const examDone = moduleExams.length > 0 && moduleExams.every((e) => submittedExamIds.has(e.id));
     moduleExamDone.push(examDone);
     moduleComplete.push(lessonsDone && tasksDone && examDone);
   }

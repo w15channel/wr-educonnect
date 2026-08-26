@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Bell, AlertCircle, Info, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { isAnnouncementVisible } from '@/lib/announcementVisibility';
 
 const READ_KEY = 'wреdu_read_announcements';
 
@@ -27,15 +28,16 @@ const typeColors = {
   urgent: 'bg-destructive/5 border-destructive/20 text-destructive',
 };
 
-export default function AnnouncementsBell({ limit = 3 }) {
+export default function AnnouncementsBell({ limit = 3, viewerEmail = '', isTeacher = false }) {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [readIds, setReadIds] = useState(getReadIds);
 
-  const { data: announcements = [] } = useQuery({
+  const { data: allAnnouncements = [] } = useQuery({
     queryKey: ['announcements'],
     queryFn: () => base44.entities.Announcement.list('-created_date', 20),
   });
+  const announcements = allAnnouncements.filter((a) => isAnnouncementVisible(a, viewerEmail, isTeacher));
 
   const unread = announcements.filter(a => !readIds.has(a.id));
   const displayed = expanded ? announcements : announcements.slice(0, limit);

@@ -89,15 +89,21 @@ Deno.serve(async (req) => {
       }
       const owner = norm(targetType === 'achievement' ? target?.student_email : target?.author_email);
       const actor = norm(user.email);
-      if (!target || !owner || owner !== norm(payload.target_owner_email)) return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
-      if (owner === actor) return Response.json({ error: 'Você não pode interagir com o próprio conteúdo.' }, { status: 400 });
+      // Publicações coletivas (ex.: monitores da semana) homenageiam vários alunos:
+      // a reação vale para qualquer pessoa mencionada e todas são avisadas.
+      const mentioned = (target?.mentioned_emails || []).map(norm).filter(Boolean);
+      const recipients = mentioned.length ? mentioned : [owner];
+      if (!target || !owner || !recipients.includes(norm(payload.target_owner_email))) return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
+      if (recipients.includes(actor)) return Response.json({ error: 'Você não pode interagir com o próprio conteúdo.' }, { status: 400 });
       const dedupeKey = `${targetType}:${payload.target_id}:${actor}:${reaction}`;
       const prior = await base44.asServiceRole.entities.AchievementReaction.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
       if (prior.length) return Response.json({ success: true, duplicate: true });
       const actorName = user.full_name || user.name || 'Uma pessoa da turma';
       await base44.asServiceRole.entities.AchievementReaction.create({ dedupe_key: dedupeKey, target_id: payload.target_id, target_type: targetType, target_owner_email: owner, actor_email: actor, actor_name: actorName, reaction });
       const verbs = { love: 'Amou', celebrate: 'Celebrou', applaud: 'Aplaudiu' };
-      await base44.asServiceRole.entities.Notification.create({ recipient_email: owner, sender_email: actor, sender_name: actorName, message: `${actorName} ${verbs[reaction]} sua ${targetType === 'achievement' ? 'Conquista' : 'Publicação'}`, type: 'wall_reaction', target_id: payload.target_id, reaction, is_read: false });
+      for (const recipient of recipients) {
+        await base44.asServiceRole.entities.Notification.create({ recipient_email: recipient, sender_email: actor, sender_name: actorName, message: `${actorName} ${verbs[reaction]} sua ${targetType === 'achievement' ? 'Conquista' : 'Publicação'}`, type: 'wall_reaction', target_id: payload.target_id, reaction, is_read: false });
+      }
       return Response.json({ success: true });
     }
     if (payload.action === 'reply') {
@@ -115,21 +121,25 @@ Deno.serve(async (req) => {
       }
       const owner = norm(targetType === 'achievement' ? target?.student_email : target?.author_email);
       const actor = norm(user.email);
-      if (!target || !owner || owner !== norm(payload.target_owner_email)) {
+      const mentioned = (target?.mentioned_emails || []).map(norm).filter(Boolean);
+      const recipients = mentioned.length ? mentioned : [owner];
+      if (!target || !owner || !recipients.includes(norm(payload.target_owner_email))) {
         return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
       }
-      if (owner === actor) return Response.json({ error: 'Você não pode responder à própria publicação.' }, { status: 400 });
+      if (recipients.includes(actor)) return Response.json({ error: 'Você não pode responder à própria publicação.' }, { status: 400 });
       const actorName = user.full_name || user.name || 'Uma pessoa da turma';
-      await base44.asServiceRole.entities.Notification.create({
-        recipient_email: owner,
-        sender_email: actor,
-        sender_name: actorName,
-        message: `${actorName} respondeu à sua ${targetType === 'achievement' ? 'Conquista' : 'Publicação'}`,
-        type: 'wall_reply',
-        target_id: payload.target_id,
-        reply_text: replyText,
-        is_read: false,
-      });
+      for (const recipient of recipients) {
+        await base44.asServiceRole.entities.Notification.create({
+          recipient_email: recipient,
+          sender_email: actor,
+          sender_name: actorName,
+          message: `${actorName} respondeu à sua ${targetType === 'achievement' ? 'Conquista' : 'Publicação'}`,
+          type: 'wall_reply',
+          target_id: payload.target_id,
+          reply_text: replyText,
+          is_read: false,
+        });
+      }
       return Response.json({ success: true });
     }
     return Response.json({ error: 'Ação inválida.' }, { status: 400 });
