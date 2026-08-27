@@ -29,6 +29,7 @@
  */
 
 import { ACTIVITY_MINUTES, parseDurationToMinutes } from '@/lib/durationUtils';
+import { resolveActivityModule, parseModuleNumber } from '@/lib/academicModules';
 
 // A carga horária é contada em MINUTOS e exibida como tempo (HH:MM:SS).
 export const MINUTES_MAP = ACTIVITY_MINUTES;
@@ -72,7 +73,10 @@ export function buildStudentAcademicData({
   forumPosts = [],
   forumReplies = [],
   mentorships = [],
+  challenges = [],
+  moduleClosures = [],
 }) {
+  const challengeById = new Map(challenges.map((c) => [c.id, c]));
   const email = normEmail(studentEmail);
 
   // ScoreItems do aluno — usados apenas para enriquecer (nota/observação do
@@ -173,6 +177,7 @@ export function buildStudentAcademicData({
         status: 'Avaliado',
         notes: si?.notes || '',
         module: null,
+        date: p.created_date,
       });
     });
 
@@ -196,6 +201,7 @@ export function buildStudentAcademicData({
         status: 'Avaliado',
         notes: si?.notes || '',
         module: null,
+        date: r.created_date,
       });
     });
 
@@ -220,6 +226,7 @@ export function buildStudentAcademicData({
         status: 'Avaliado',
         notes: si?.notes || '',
         module: Number(p.module_number) || null,
+        date: p.pairing_date || p.created_date,
       });
     });
   });
@@ -240,6 +247,7 @@ export function buildStudentAcademicData({
         status: 'Avaliado',
         notes: si?.notes || '',
         module: Number(m.module_number) || null,
+        date: m.date || m.created_date,
       });
     });
 
@@ -249,19 +257,38 @@ export function buildStudentAcademicData({
     .forEach((r) => {
       const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
       const si = findScore('forum', refId) || findScore('ofensiva', refId);
+      // A ofensiva herda o módulo registrado na geração do desafio.
+      const challenge = challengeById.get(r.challenge_id);
+      const challengeModule =
+        parseModuleNumber(challenge?.module_number) ||
+        parseModuleNumber(challenge?.lesson_id) ||
+        parseModuleNumber(challenge?.lesson_ref);
       rows.push({
         key: `forum_${refId}`,
         category: 'Ofensiva Diária',
-        title: `Ofensiva Diária (${r.date || 'data'})`,
+        title: `Ofensiva Diária (${r.date || 'data'})${challengeModule ? ` — Módulo ${challengeModule}` : ''}`,
         score: roundScore(si?.score ?? r.points_earned),
         max: 1,
         minutes: ACTIVITY_MINUTES.ofensiva,
         hours: toHours(ACTIVITY_MINUTES.ofensiva),
         status: 'Avaliado',
         notes: si?.notes || '',
-        module: null,
+        module: challengeModule || null,
+        date: r.date || r.created_date,
       });
     });
+
+  // ── Módulo definitivo de cada atividade ──
+  // Nenhuma atividade fica sem módulo: quando não há módulo gravado, ele é
+  // deduzido pela data (períodos dos encerramentos de módulo). Assim cada
+  // atividade aparece em um único módulo do histórico, sem duplicidade.
+  rows.forEach((row) => {
+    row.module = resolveActivityModule({
+      explicitModule: row.module,
+      dateValue: row.date,
+      moduleClosures,
+    });
+  });
 
   // ── Totals (only evaluated rows) ──
   const evaluatedRows = rows.filter((r) => r.status === 'Avaliado');

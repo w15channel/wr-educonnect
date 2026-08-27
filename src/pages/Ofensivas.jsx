@@ -721,7 +721,8 @@ export default function Ofensivas() {
                 {allChallenges.map(c => (
                   <div key={c.id} className={`flex items-center justify-between p-2 rounded-xl text-xs ${c.date === today ? 'bg-orange-500/10 border border-orange-400/20' : 'bg-secondary/30'}`}>
                     <span className="font-semibold">{c.date}</span>
-                    <span className="text-muted-foreground truncate max-w-[160px]">{c.lesson_ref || '—'}</span>
+                    <span className="font-bold text-primary shrink-0">Módulo {c.module_number || (String(c.lesson_id || '').match(/\d+/)?.[0] ?? '—')}</span>
+                    <span className="text-muted-foreground truncate max-w-[140px]">{c.lesson_ref || '—'}</span>
                     <span className="text-muted-foreground shrink-0">{(c.questions || []).length}q</span>
                   </div>
                 ))}

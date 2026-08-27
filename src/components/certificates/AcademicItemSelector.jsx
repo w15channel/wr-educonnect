@@ -41,7 +41,7 @@ function ItemRow({ row, checked, onToggle }) {
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold text-foreground leading-tight">{row.title}</p>
         <p className={`text-[10px] mt-0.5 ${row.status === 'Avaliado' ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-          {row.status} · {hoursLabel} · {scoreLabel}
+          Módulo {row.module} · {row.status} · {hoursLabel} · {scoreLabel}
         </p>
         {row.notes && (
           <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{row.notes}</p>
@@ -66,8 +66,10 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
       base44.entities.Task.filter({ course }, '-created_date', 200),
       base44.entities.TherapistPairing.list('-pairing_date', 200),
       base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail }, '-date', 500),
+      base44.entities.DailyChallenge.list('-date', 2000),
+      base44.entities.ModuleClosure.list('-closed_at', 100),
     ])
-      .then(([scoreItems, lessons, tasks, pairings, challengeResponses]) => {
+      .then(([scoreItems, lessons, tasks, pairings, challengeResponses, challenges, moduleClosures]) => {
         const { rows: allRows } = buildStudentAcademicData({
           studentEmail,
           scoreItems,
@@ -75,6 +77,8 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
           tasks,
           pairings,
           challengeResponses,
+          challenges,
+          moduleClosures,
         });
         setRows(allRows);
         // Auto-select all evaluated items by default

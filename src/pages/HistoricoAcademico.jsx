@@ -16,6 +16,7 @@ import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE }
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 import { formatDuration } from '@/lib/durationUtils';
+import { resolveActivityModule } from '@/lib/academicModules';
 
 const HISTORY_MODULES = Array.from({ length: 10 }, (_, index) => index + 1);
 const HISTORY_CATEGORY = {
@@ -308,6 +309,9 @@ export default function HistoricoAcademico() {
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 5000) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500) });
   const { data: challengeResponses = [] } = useQuery({ queryKey: ['challenge-responses-all'], queryFn: () => base44.entities.DailyChallengeResponse.list('-date', 5000) });
+  // Ofensivas geradas — trazem a data e o módulo de cada desafio
+  const { data: challenges = [] } = useQuery({ queryKey: ['daily-challenges-all'], queryFn: () => base44.entities.DailyChallenge.list('-date', 2000) });
+  const { data: moduleClosures = [] } = useQuery({ queryKey: ['module-closures-all'], queryFn: () => base44.entities.ModuleClosure.list('-closed_at', 100) });
   // Registros brutos de entrega — a fonte da verdade do histórico (não depende de automações)
   const { data: lessonProgress = [] } = useQuery({ queryKey: ['lesson-progress-all'], queryFn: () => base44.entities.LessonProgress.list('-created_date', 5000) });
   const { data: taskSubmissions = [] } = useQuery({ queryKey: ['task-submissions-all'], queryFn: () => base44.entities.TaskSubmission.list('-created_date', 5000) });
@@ -353,6 +357,8 @@ export default function HistoricoAcademico() {
       forumPosts: coursePosts,
       forumReplies,
       mentorships,
+      challenges,
+      moduleClosures,
     });
     
     const mappedRows = rows.map(r => ({
@@ -375,7 +381,11 @@ export default function HistoricoAcademico() {
         hours: 0,
         status: 'Avaliado',
         notes: item.notes || '',
-        module: Number(item.module_number) || null,
+        module: resolveActivityModule({
+          explicitModule: item.module_number,
+          dateValue: item.created_date,
+          moduleClosures,
+        }),
       }));
 
     return {
@@ -404,9 +414,8 @@ export default function HistoricoAcademico() {
 
   const { rows: allRows, availableRows } = selectedStudent ? buildAllRows(selectedStudent) : { rows: [], availableRows: [] };
 
-  // Atividades sem módulo definido (fórum, ofensivas etc.) aparecem sempre que
-  // ao menos um módulo estiver selecionado — antes elas ficavam invisíveis.
-  const byModule = (r) => (r.module ? selectedModules.has(r.module) : selectedModules.size > 0);
+  // Toda atividade pertence a exatamente um módulo — sem duplicidade na contagem.
+  const byModule = (r) => selectedModules.has(r.module);
   const moduleRows = allRows.filter(byModule);
   const availableModuleRows = availableRows.filter(byModule);
   const selectedRows = moduleRows.filter(r => selectedItems.has(r.key));
@@ -527,7 +536,7 @@ export default function HistoricoAcademico() {
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {items.map(r => (
-                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${formatDuration(r.minutes)} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />
+                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`Módulo ${r.module} · ${r.status} · ${formatDuration(r.minutes)} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />
               ))}
             </div>
           </div>
@@ -576,7 +585,7 @@ export default function HistoricoAcademico() {
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${formatDuration(r.minutes)} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />)}
+              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`Módulo ${r.module} · ${r.status} · ${formatDuration(r.minutes)} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />)}
             </div>
           </div>
         ))}

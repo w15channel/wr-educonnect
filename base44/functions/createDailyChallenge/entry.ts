@@ -22,6 +22,17 @@ function addDays(dateStr: string, offset: number) {
   return ymd(date);
 }
 
+// Todas as ofensivas guardam o módulo (1-10) a que pertencem, para que o
+// histórico acadêmico do aluno não conte a mesma atividade em dois módulos.
+function moduleNumberFrom(...values: unknown[]) {
+  for (const value of values) {
+    const match = String(value ?? '').match(/(\d{1,2})/);
+    const parsed = match ? Number(match[1]) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 10) return parsed;
+  }
+  return 1;
+}
+
 function clampDuration(value: unknown) {
   const duration = Number(value || 1);
   if (![1, 3, 5, 7].includes(duration)) return 1;
@@ -58,6 +69,7 @@ Deno.serve(async (req) => {
           course,
           lesson_ref: lesson_ref || null,
           lesson_id: lesson_id || null,
+          module_number: moduleNumberFrom(payload?.module_number, payload?.module_id, lesson_id, lesson_ref),
           questions: questions.slice(0, 8),
         });
         return Response.json({ success: true, id: record.id });
@@ -105,6 +117,7 @@ Deno.serve(async (req) => {
         course,
         lesson_ref: `${selected.moduleTitle} - ${selected.title}`,
         lesson_id: selected.id,
+        module_number: moduleNumberFrom(selected.id, selected.moduleTitle),
         questions: formattedQuestions,
       });
       created.push({ course, id: record.id });
@@ -150,6 +163,7 @@ async function generateChallengeForCourse(
       course,
       lesson_ref: lessonRef,
       lesson_id: selectedLessonId,
+      module_number: moduleNumberFrom(moduleId, selectedLessonId, lessonRef),
       questions,
       created_by_admin: 'ofensiva-generator-v2',
     };
