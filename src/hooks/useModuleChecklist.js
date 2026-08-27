@@ -31,14 +31,18 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     queryFn: () => base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 1000),
     enabled: !!email,
   });
-  const { data: debatePosts = [], isLoading: l5 } = useQuery({
+  // Debates antigos foram gravados sem o campo "space" — buscamos tudo do curso
+  // e filtramos aqui para reconhecer também as participações já existentes.
+  const { data: allPosts = [], isLoading: l5 } = useQuery({
     queryKey: ['checklist-debates', course],
-    queryFn: () => base44.entities.ForumPost.filter({ course, space: 'debates' }, '-created_date', 1000),
+    queryFn: () => base44.entities.ForumPost.filter({ course }, '-created_date', 1000),
   });
-  const { data: debateReplies = [], isLoading: l6 } = useQuery({
-    queryKey: ['checklist-debate-replies', course],
-    queryFn: () => base44.entities.ForumReply.filter({ space: 'debates' }, '-created_date', 2000),
+  const { data: allReplies = [], isLoading: l6 } = useQuery({
+    queryKey: ['checklist-debate-replies'],
+    queryFn: () => base44.entities.ForumReply.list('-created_date', 2000),
   });
+  const debatePosts = useMemo(() => allPosts.filter((p) => p.space !== 'forum'), [allPosts]);
+  const debateReplies = useMemo(() => allReplies.filter((r) => r.space !== 'forum'), [allReplies]);
   const { data: pairings = [], isLoading: l7 } = useQuery({
     queryKey: ['checklist-pairings', email],
     queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 1000),

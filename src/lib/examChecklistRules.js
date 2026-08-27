@@ -44,13 +44,16 @@ export function buildModuleChecklist({
   const watchedByLessonId = new Map(progresses.map((p) => [p.lesson_id, p]));
 
   // 1 — Videoaulas do módulo assistidas e respondidas (resumo ou comentário).
-  const moduleLessons = [...lessons]
-    .sort((a, b) => (a.order || 0) - (b.order || 0))
-    .slice((moduleNumber - 1) * CHECKLIST_RULES.lessonsPerModule, moduleNumber * CHECKLIST_RULES.lessonsPerModule);
-  const lessonsAnswered = moduleLessons.filter((lesson) => {
-    const progress = watchedByLessonId.get(lesson.id);
-    return progress?.watched && (progress.summary?.trim() || progress.comment?.trim());
-  }).length;
+  // As aulas do módulo vêm do próprio cadastro (module_number da apostila);
+  // só caímos na divisão por ordem quando o módulo não foi informado.
+  const tagged = lessons.filter((lesson) => Number(lesson.module_number) === moduleNumber);
+  const moduleLessons = tagged.length > 0
+    ? tagged
+    : lessons
+        .filter((lesson) => !lesson.module_type || lesson.module_type === 'apostila')
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .slice((moduleNumber - 1) * CHECKLIST_RULES.lessonsPerModule, moduleNumber * CHECKLIST_RULES.lessonsPerModule);
+  const lessonsAnswered = moduleLessons.filter((lesson) => watchedByLessonId.get(lesson.id)?.watched).length;
 
   // 2 — Capítulos da apostila do módulo marcados como lidos.
   const apostilaPrefix = `apostila:mod${moduleNumber}:`;
@@ -62,9 +65,10 @@ export function buildModuleChecklist({
 
   // 3 — Tarefas do módulo entregues com no mínimo 500 caracteres de resposta.
   const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber);
+  // Qualquer entrega já registrada no histórico conta (texto ou arquivo).
   const tasksDone = moduleTasks.filter((task) => {
     const submission = submissions.find((s) => s.task_id === task.id);
-    return submission && submissionTextLength(submission) >= CHECKLIST_RULES.taskMinChars;
+    return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
   }).length;
 
   // 4 — Sala de debates: abrir um tema e comentar no tema de um colega.
@@ -86,8 +90,8 @@ export function buildModuleChecklist({
   const items = [
     {
       key: 'lessons',
-      label: 'Assistir e responder todas as videoaulas do módulo',
-      hint: 'Marque como assistida e envie o resumo ou comentário de cada aula.',
+      label: 'Assistir todas as videoaulas do módulo',
+      hint: 'Aulas já marcadas como assistidas no seu histórico contam automaticamente.',
       current: lessonsAnswered,
       target: moduleLessons.length || CHECKLIST_RULES.lessonsPerModule,
       to: '/lessons',
@@ -102,8 +106,8 @@ export function buildModuleChecklist({
     },
     {
       key: 'tasks',
-      label: 'Entregar as tarefas do módulo com 500+ caracteres',
-      hint: 'Cada resposta precisa de no mínimo 500 caracteres de texto.',
+      label: 'Entregar as tarefas do módulo',
+      hint: 'Entregas já registradas no seu histórico contam automaticamente.',
       current: tasksDone,
       target: moduleTasks.length || CHECKLIST_RULES.tasksPerModule,
       to: '/tasks',
