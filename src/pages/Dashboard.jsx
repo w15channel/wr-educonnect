@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { capScore, formatScore } from '@/lib/scoreUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
-import { isLegacyMsnAction, isSinceOvercomingWallCutoff } from '@/lib/overcomingWall';
+import useOvercomingWall from '@/hooks/useOvercomingWall';
 import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
@@ -273,72 +273,9 @@ export default function Dashboard() {
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000)
   });
-  const chatSessionId = `class_chat_${userCourse || 'tcc'}`;
-  const { data: miniChatMessages = [] } = useQuery({
-    queryKey: ['dashboard-mini-chat', chatSessionId],
-    queryFn: async () => {
-      const res = await base44.functions.invoke('saveStudentRecord', {
-        action: 'listChatMessages',
-        session_id: chatSessionId,
-      });
-      return res.data?.records || [];
-    },
-    enabled: !isTeacher && !!session?.email,
-    refetchInterval: 3000,
-  });
-
-  const { data: publicAchievementRecords } = useQuery({
-    queryKey: ['dashboard-public-achievements', userCourse || 'all'],
-    queryFn: async () => {
-      const [lessonProgresses, taskSubmissions, examSubmissions, challengeResponses] = await Promise.all([
-        base44.entities.LessonProgress.list('-created_date', 10000),
-        base44.entities.TaskSubmission.list('-created_date', 10000),
-        base44.entities.ExamSubmission.list('-submitted_at', 10000),
-        base44.entities.DailyChallengeResponse.list('-created_date', 10000),
-      ]);
-      return { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses };
-    },
-    enabled: !isTeacher && !!session?.email,
-    staleTime: 30000,
-  });
-
-  const { data: savedAchievements = [] } = useQuery({
-    queryKey: ['overcoming-wall-achievements', userCourse || 'all'],
-    queryFn: () => base44.entities.Achievement.filter({ course: userCourse || 'tcc' }, '-occurred_at', 500),
-    enabled: !isTeacher && !!session?.email,
-    refetchInterval: 30000,
-  });
-
-  const { data: wallInstitutionalRecords } = useQuery({
-    queryKey: ['overcoming-wall-institutional', userCourse || 'tcc'],
-    queryFn: async () => {
-      const course = userCourse || 'tcc';
-      const [shared, notices, liveSessions, calendarEvents] = await Promise.all([
-        base44.entities.WallPublication.filter({ course }, '-published_at', 100),
-        base44.entities.Announcement.filter({ course }, '-created_date', 100),
-        base44.entities.LiveSession.filter({ course }, '-scheduled_at', 100),
-        base44.entities.CalendarEvent.list('-date', 300),
-      ]);
-      return { shared, notices, liveSessions, calendarEvents };
-    },
-    enabled: !isTeacher && !!session?.email,
-    refetchInterval: 30000,
-  });
-
-  const { data: wallReactions = [] } = useQuery({
-    queryKey: ['overcoming-wall-reactions', userCourse || 'all'],
-    queryFn: () => base44.entities.AchievementReaction.list('-created_date', 2000),
-    enabled: !isTeacher && !!session?.email,
-  });
-
-  const { data: myWallNotifications = [] } = useQuery({
-    queryKey: ['overcoming-wall-notifications', session?.email],
-    queryFn: async () => {
-      const notifications = await base44.entities.Notification.filter({ recipient_email: session.email }, '-created_date', 100);
-      return notifications.filter((item) => item.type === 'wall_reaction' || item.type === 'wall_reply');
-    },
-    enabled: !isTeacher && !!session?.email,
-  });
+  // Mural de Superação — base única compartilhada com o chat da turma.
+  const wall = useOvercomingWall({ course: userCourse || 'tcc', session, enabled: !isTeacher && !!session?.email });
+  const wallReactions = wall.reactions;
 
   const { data: unlockRules = [] } = useQuery({
     queryKey: ['unlock-rules-lessons', userCourse || 'all'],
@@ -522,139 +459,19 @@ export default function Dashboard() {
     .filter((c) => !userCourse || c.course === userCourse || userCourse === 'tcc' && !c.course)
     .filter(isStudentOnline)
     .sort((a, b) => (a.profile_name || a.student_name || a.student_email || '').localeCompare(b.profile_name || b.student_name || b.student_email || '', 'pt-BR'));
-  const encouragementPosts = React.useMemo(() => miniChatMessages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({
-    ...message,
-    feedType: 'encouragement',
-    occurredAt: message.created_date || message.created_at || message.updated_date,
-  })), [miniChatMessages]);
-
-  const achievementPosts = React.useMemo(() => {
-    if (!publicAchievementRecords) return [];
-    const courseStudents = new Set(courseCodes.map((student) => student.student_email));
-    const lessonById = Object.fromEntries(lessons.map((lesson) => [lesson.id, lesson]));
-    const taskById = Object.fromEntries(tasks.map((task) => [task.id, task]));
-    const examById = Object.fromEntries(exams.map((exam) => [exam.id, exam]));
-    const getStudentName = (email) => {
-      const student = accessCodes.find((code) => code.student_email === email);
-      return student?.profile_name || student?.student_name || 'Um aluno da turma';
-    };
-    const makePost = (record, kind, text, occurredAt) => ({
-      id: `achievement-${kind}-${record.id}`,
-      feedType: 'achievement',
-      studentEmail: record.student_email,
-      studentName: getStudentName(record.student_email),
-      content: text,
-      occurredAt,
-    });
-
-    const recovered = savedAchievements.map((record) => ({
-      id: record.id,
-      feedType: 'achievement',
-      studentEmail: record.student_email,
-      studentName: getStudentName(record.student_email),
-      mentionedEmails: record.mentioned_emails || [],
-      isCollective: record.kind === 'monitor',
-      content: record.message,
-      occurredAt: record.occurred_at || record.created_date,
-    }));
-    return [
-      ...recovered,
-      ...publicAchievementRecords.lessonProgresses
-        .filter((record) => record.watched && courseStudents.has(record.student_email) && lessonById[record.lesson_id])
-        .map((record) => makePost(record, 'lesson', `concluiu a aula “${lessonById[record.lesson_id]?.title || 'Nova aula'}”.`, record.updated_date || record.created_date)),
-      ...publicAchievementRecords.taskSubmissions
-        .filter((record) => courseStudents.has(record.student_email) && taskById[record.task_id])
-        .map((record) => makePost(record, 'task', `respondeu a tarefa “${taskById[record.task_id]?.title || 'Nova tarefa'}”.`, record.submitted_at || record.created_date)),
-      ...publicAchievementRecords.examSubmissions
-        .filter((record) => courseStudents.has(record.student_email) && examById[record.exam_id])
-        .map((record) => makePost(record, 'exam', `concluiu “${examById[record.exam_id]?.title || 'uma avaliação'}”.`, record.submitted_at || record.created_date)),
-      ...publicAchievementRecords.challengeResponses
-        .filter((record) => courseStudents.has(record.student_email))
-        .map((record) => makePost(record, 'challenge', 'venceu mais uma etapa da ofensiva diária.', record.updated_date || record.created_date || record.date)),
-    ].filter((post, index, posts) => isSinceOvercomingWallCutoff(post.occurredAt) && posts.findIndex((candidate) => candidate.studentEmail === post.studentEmail && candidate.content === post.content) === index)
-      .sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt));
-  }, [publicAchievementRecords, savedAchievements, courseCodes, lessons, tasks, exams, accessCodes]);
-
-  const overcomingWallFeed = React.useMemo(() => {
-    const encouragements = [...encouragementPosts].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)).slice(0, 8);
-    const achievements = achievementPosts.slice(0, 8);
-    const feed = [];
-    let encouragementIndex = 0;
-    let achievementIndex = 0;
-    let nextType = new Date(encouragements[0]?.occurredAt || 0) >= new Date(achievements[0]?.occurredAt || 0)
-      ? 'encouragement'
-      : 'achievement';
-    while (feed.length < 12 && (encouragementIndex < encouragements.length || achievementIndex < achievements.length)) {
-      if (nextType === 'encouragement' && encouragementIndex < encouragements.length) {
-        feed.push(encouragements[encouragementIndex++]);
-        nextType = 'achievement';
-      } else if (achievementIndex < achievements.length) {
-        feed.push(achievements[achievementIndex++]);
-        nextType = 'encouragement';
-      } else {
-        feed.push(encouragements[encouragementIndex++]);
-      }
-    }
-    const privateNotifications = myWallNotifications.slice(0, 6).map((notification) => ({
-      ...notification,
-      id: `notification-${notification.id}`,
-      feedType: 'notification',
-      occurredAt: notification.created_date,
-    }));
-    const now = Date.now();
-    const upcomingLimit = now + 45 * 24 * 60 * 60 * 1000;
-    const recentLimit = now - 45 * 24 * 60 * 60 * 1000;
-    const institutional = wallInstitutionalRecords ? [
-      ...wallInstitutionalRecords.shared.map((item) => ({ ...item, feedType: 'institutional', icon: 'share', occurredAt: item.published_at || item.created_date })),
-      ...wallInstitutionalRecords.notices.filter((item) => item.type !== 'unlock_rule' && isAnnouncementVisible(item, session?.email, isTeacher) && new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `notice-${item.id}`, feedType: 'institutional', icon: 'notice', title: item.title || 'Recado importante', content: item.content, occurredAt: item.created_date })),
-      ...lessons.filter((item) => new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `lesson-${item.id}`, feedType: 'institutional', icon: 'content', title: 'Novo conteúdo disponível', content: item.title, occurredAt: item.created_date })),
-      ...tasks.filter((item) => new Date(item.created_date).getTime() >= recentLimit).map((item) => ({ id: `task-${item.id}`, feedType: 'institutional', icon: 'content', title: 'Nova atividade disponível', content: item.title, occurredAt: item.created_date })),
-      ...wallInstitutionalRecords.liveSessions.filter((item) => { const date = new Date(item.scheduled_at).getTime(); return date >= now && date <= upcomingLimit; }).map((item) => ({ id: `live-${item.id}`, feedType: 'institutional', icon: 'event', title: 'Próximo evento', content: `${item.title} • ${new Date(item.scheduled_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, occurredAt: item.created_date || item.scheduled_at })),
-      ...wallInstitutionalRecords.calendarEvents.filter((item) => { const rawDate = item.date || item.event_date; const date = rawDate ? new Date(`${rawDate}T${item.time || item.event_time || '12:00'}`).getTime() : 0; return date >= now && date <= upcomingLimit && (!item.student_email || item.student_email === session?.email); }).map((item) => ({ id: `calendar-${item.id}`, feedType: 'institutional', icon: 'event', title: 'Compromisso próximo', content: `${item.title} • ${new Date(`${item.date || item.event_date}T${item.time || item.event_time || '12:00'}`).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, occurredAt: item.created_date || item.date || item.event_date })),
-    ].filter((item, index, items) => item.content && items.findIndex((candidate) => candidate.id === item.id) === index) : [];
-    return [...privateNotifications, ...institutional, ...feed].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)).slice(0, 20);
-  }, [encouragementPosts, achievementPosts, myWallNotifications, wallInstitutionalRecords, lessons, tasks, session?.email]);
+  const overcomingWallFeed = wall.feed.slice(0, 20);
 
   const sendMiniChatMutation = useMutation({
-    mutationFn: async (content) => {
-      await base44.functions.invoke('saveStudentRecord', {
-        action: 'create',
-        entity: 'ChatMessage',
-        data: {
-          session_id: chatSessionId,
-          author_name: session?.name || 'Aluno',
-          author_email: session?.email || session?.code || '',
-          content,
-          is_hand_raised: false,
-        },
-      });
-    },
-    onSuccess: async () => {
+    mutationFn: (content) => wall.sendMessageMutation.mutateAsync(content),
+    onSuccess: () => {
       setMiniChatText('');
       setShowMiniChatEmojiPicker(false);
-      await queryClient.invalidateQueries({ queryKey: ['dashboard-mini-chat', chatSessionId] });
       toast.success('Sua palavra de superação foi publicada!');
     },
   });
 
-  const reactMutation = useMutation({
-    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'react', actor_email: session?.email, access_code: session?.code, ...payload }),
-    onSuccess: async (response) => {
-      await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-reactions'] });
-      toast.success(response?.data?.duplicate ? 'Você já registrou esta reação.' : 'Sua reação foi enviada!');
-    },
-    onError: (error) => toast.error(error?.message || 'Não foi possível enviar sua reação.'),
-  });
-
-  const replyMutation = useMutation({
-    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'reply', actor_email: session?.email, access_code: session?.code, ...payload }),
-    onSuccess: () => {
-      setReplyTarget(null);
-      setReplyText('');
-      toast.success('Resposta enviada somente para a pessoa escolhida.');
-    },
-    onError: (error) => toast.error(error?.message || 'Não foi possível enviar a resposta.'),
-  });
+  const reactMutation = wall.reactMutation;
+  const replyMutation = wall.replyMutation;
 
   const recoverAchievements = async () => {
     setSyncingAchievements(true);
@@ -693,7 +510,7 @@ export default function Dashboard() {
   };
 
   const privateReplyForm = (item) => replyTarget?.id === item.id && (
-    <form className="mt-2 flex items-center gap-1.5 border-t border-current/10 pt-2" onSubmit={(event) => { event.preventDefault(); const content = replyText.trim(); if (!content || replyMutation.isPending) return; replyMutation.mutate({ target_id: replyTarget.id, target_type: replyTarget.targetType, target_owner_email: replyTarget.ownerEmail, reply_text: content }); }}>
+    <form className="mt-2 flex items-center gap-1.5 border-t border-current/10 pt-2" onSubmit={(event) => { event.preventDefault(); const content = replyText.trim(); if (!content || replyMutation.isPending) return; replyMutation.mutate({ target_id: replyTarget.id, target_type: replyTarget.targetType, target_owner_email: replyTarget.ownerEmail, reply_text: content }, { onSuccess: () => { setReplyTarget(null); setReplyText(''); } }); }}>
       <input autoFocus maxLength={500} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder="Resposta privada..." aria-label="Resposta privada" className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
       <button type="submit" disabled={!replyText.trim() || replyMutation.isPending} className="h-8 rounded-lg bg-primary px-2.5 text-[10px] font-bold text-primary-foreground disabled:opacity-50">{replyMutation.isPending ? 'Enviando...' : 'Enviar'}</button>
       <button type="button" onClick={() => { setReplyTarget(null); setReplyText(''); }} className="h-8 rounded-lg px-2 text-[10px] font-bold text-muted-foreground hover:bg-secondary">Cancelar</button>

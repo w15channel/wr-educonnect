@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
-import { isLegacyMsnAction, isSinceOvercomingWallCutoff } from '@/lib/overcomingWall';
+import useOvercomingWall from '@/hooks/useOvercomingWall';
 
 const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
@@ -61,6 +61,8 @@ export default function ClassChat() {
   const [editingMessage, setEditingMessage] = useState(null);
   const [editText, setEditText] = useState('');
   const [sharingMessageId, setSharingMessageId] = useState(null);
+  const [replyTarget, setReplyTarget] = useState(null);
+  const [replyText, setReplyText] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
   const bottomRef = useRef(null);
   const lastAttentionRef = useRef(null);
@@ -69,83 +71,14 @@ export default function ClassChat() {
   const userCourse = routeCourse || session?.course || 'tcc';
   const CHAT_SESSION = `class_chat_${userCourse}`;
 
-  const { data: messages = [] } = useQuery({
-    queryKey: ['class-chat', userCourse],
-    queryFn: async () => {
-      const res = await base44.functions.invoke('saveStudentRecord', {
-        action: 'listChatMessages',
-        session_id: CHAT_SESSION,
-      });
-      return res.data?.records || [];
-    },
-    refetchInterval: 3000,
-  });
-
-  const { data: codes = [] } = useQuery({
-    queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
-    refetchInterval: 15000,
-  });
-
-  const { data: recentAchievements = [] } = useQuery({
-    queryKey: ['class-chat-achievements', userCourse],
-    queryFn: async () => {
-      const [progresses, submissions, examSubmissions, challenges, forumPosts, pairings, lessons, tasks, exams] = await Promise.all([
-        base44.entities.LessonProgress.list('-created_date', 10000),
-        base44.entities.TaskSubmission.list('-created_date', 10000),
-        base44.entities.ExamSubmission.list('-submitted_at', 10000),
-        base44.entities.DailyChallengeResponse.list('-created_date', 10000),
-        base44.entities.ForumPost.list('-created_date', 10000),
-        base44.entities.TherapistPairing.list('-updated_date', 10000),
-        base44.entities.RecordedLesson.list('-created_date', 500),
-        base44.entities.Task.list('-created_date', 500),
-        base44.entities.Exam.list('-created_date', 500),
-      ]);
-      const lessonById = Object.fromEntries(lessons.map((item) => [item.id, item]));
-      const taskById = Object.fromEntries(tasks.map((item) => [item.id, item]));
-      const examById = Object.fromEntries(exams.map((item) => [item.id, item]));
-      const makeAchievement = (record, kind, content, occurredAt) => ({ id: `achievement-${kind}-${record.id}`, student_email: record.student_email, content, occurredAt });
-      return [
-        ...progresses.filter((record) => record.watched && lessonById[record.lesson_id]).map((record) => makeAchievement(record, 'lesson', `concluiu a aula “${lessonById[record.lesson_id].title}”.`, record.updated_date || record.created_date)),
-        ...submissions.filter((record) => taskById[record.task_id]).map((record) => makeAchievement(record, 'task', `respondeu a tarefa “${taskById[record.task_id].title}”.`, record.submitted_at || record.created_date)),
-        ...examSubmissions.filter((record) => examById[record.exam_id]).map((record) => makeAchievement(record, 'exam', `concluiu “${examById[record.exam_id].title}”.`, record.submitted_at || record.created_date)),
-        ...challenges.map((record) => makeAchievement(record, 'challenge', 'venceu mais uma etapa da ofensiva diária.', record.updated_date || record.created_date || record.date)),
-        ...forumPosts.filter((record) => record.author_role !== 'teacher').map((record) => makeAchievement({ ...record, student_email: record.author_email }, record.space === 'debates' ? 'debate' : 'forum', record.space === 'debates' ? 'participou da sala de debates.' : 'compartilhou conhecimento no fórum.', record.created_date)),
-        ...pairings.flatMap((record) => [
-          record.therapist_submitted && makeAchievement({ ...record, id: `${record.id}-therapist`, student_email: record.therapist_email }, 'report', 'concluiu seu relato como terapeuta da semana.', record.updated_date || record.created_date),
-          record.patient_submitted && makeAchievement({ ...record, id: `${record.id}-patient`, student_email: record.patient_email }, 'report', 'concluiu seu relato como paciente da semana.', record.updated_date || record.created_date),
-        ].filter(Boolean)),
-      ].filter((achievement) => isSinceOvercomingWallCutoff(achievement.occurredAt));
-    },
-    staleTime: 30000,
-  });
-
-  const { data: savedAchievements = [] } = useQuery({
-    queryKey: ['class-chat-saved-achievements', userCourse],
-    queryFn: () => base44.entities.Achievement.filter({ course: userCourse }, '-occurred_at', 500),
-    refetchInterval: 5000,
-  });
-
-  const { data: wallReactions = [] } = useQuery({
-    queryKey: ['overcoming-wall-reactions', userCourse],
-    queryFn: () => base44.entities.AchievementReaction.list('-created_date', 2000),
-    refetchInterval: 5000,
-  });
-
-  const { data: sharedPublications = [] } = useQuery({
-    queryKey: ['wall-publications', userCourse],
-    queryFn: () => base44.entities.WallPublication.filter({ course: userCourse }, '-published_at', 500),
-    refetchInterval: 5000,
-  });
-
-  const reactMutation = useMutation({
-    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'react', actor_email: session?.email, access_code: session?.code, ...payload }),
-    onSuccess: async (response) => {
-      await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-reactions'] });
-      toast.success(response?.data?.duplicate ? 'Você já registrou esta reação.' : 'Sua reação foi enviada!');
-    },
-    onError: (error) => toast.error(error?.message || 'Não foi possível enviar sua reação.'),
-  });
+  // Mesma base do Mural de Superação exibido na dashboard do aluno.
+  const wall = useOvercomingWall({ course: userCourse, session });
+  const messages = wall.messages;
+  const codes = wall.accessCodes;
+  const wallReactions = wall.reactions;
+  const sharedPublications = wall.sharedPublications;
+  const reactMutation = wall.reactMutation;
+  const replyMutation = wall.replyMutation;
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, activeTab]);
 
@@ -187,7 +120,7 @@ export default function ClassChat() {
 
   useEffect(() => {
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
-      if (event.data?.session_id === CHAT_SESSION) queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
+      if (event.data?.session_id === CHAT_SESSION) wall.refreshMessages();
     });
     return unsub;
   }, [queryClient, CHAT_SESSION, userCourse]);
@@ -211,16 +144,7 @@ export default function ClassChat() {
     if (!content.trim()) return;
     setText('');
     setShowPicker(false);
-    await base44.functions.invoke('saveStudentRecord', {
-      action: 'create', entity: 'ChatMessage', data: {
-        session_id: CHAT_SESSION,
-        author_name: session?.name || 'Aluno',
-        author_email: session?.email || session?.code || '',
-        content,
-        is_hand_raised: isSticker,
-      },
-    });
-    queryClient.invalidateQueries({ queryKey: ['class-chat'] });
+    await wall.sendMessageMutation.mutateAsync(content);
   };
 
   const startEditing = (message) => {
@@ -236,13 +160,13 @@ export default function ClassChat() {
     await base44.entities.ChatMessage.update(editingMessage.id, { content });
     setEditingMessage(null);
     setEditText('');
-    await queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
+    await wall.refreshMessages();
   };
 
   const deleteMessage = async (message) => {
     if (!isAdmin || !message?.id || !window.confirm('Excluir esta mensagem permanentemente? Esta ação não pode ser desfeita.')) return;
     await adminApi.delete('ChatMessage', message.id);
-    await queryClient.invalidateQueries({ queryKey: ['class-chat', userCourse] });
+    await wall.refreshMessages();
   };
 
   const shareToWall = async (item, sourceType = 'chat') => {
@@ -253,18 +177,17 @@ export default function ClassChat() {
     }
     setSharingMessageId(item.id);
     try {
-      const profile = sourceType === 'achievement' ? getProfile(item.student_email) : null;
       await adminApi.create('WallPublication', {
         course: userCourse,
         source_type: sourceType,
         source_id: item.id,
         title: sourceType === 'achievement' ? 'Conquista da turma' : 'Destaque da comunidade',
         content: sourceType === 'achievement' ? item.content : (item.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim(),
-        author_name: sourceType === 'achievement' ? (profile?.name || 'Aluno da turma') : (item.author_name || 'Comunidade EDU'),
+        author_name: sourceType === 'achievement' ? (item.studentName || 'Aluno da turma') : (item.author_name || 'Comunidade EDU'),
         published_by: session?.email,
         published_at: new Date().toISOString(),
       });
-      await queryClient.invalidateQueries({ queryKey: ['wall-publications', userCourse] });
+      await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-institutional', userCourse] });
       toast.success(`${sourceType === 'achievement' ? 'Conquista' : 'Publicação'} encaminhada ao mural da dashboard dos alunos!`);
     } catch (error) {
       toast.error(error?.message || 'Não foi possível compartilhar a publicação.');
@@ -296,25 +219,31 @@ export default function ClassChat() {
     .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
   const onlineStudents = otherStudents.filter(isStudentOnline);
   const awayStudents = otherStudents.filter(c => !isStudentOnline(c));
-  const courseStudentEmails = new Set(codes.filter((code) => !userCourse || code.course === userCourse || (userCourse === 'tcc' && !code.course)).map((code) => code.student_email));
-  const persistedAchievements = savedAchievements.map((achievement) => ({ ...achievement, content: achievement.message, occurredAt: achievement.occurred_at || achievement.created_date }));
-  const wallFeed = [
-    ...messages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({ ...message, feedType: 'message', occurredAt: message.created_date || message.updated_date })),
-    ...recentAchievements.filter((achievement) => courseStudentEmails.has(achievement.student_email)).map((achievement) => ({ ...achievement, feedType: 'achievement' })),
-    ...persistedAchievements.filter((achievement) => courseStudentEmails.has(achievement.student_email)).map((achievement) => ({ ...achievement, feedType: 'achievement' })),
-  ].filter((item, index, items) => items.findIndex((candidate) => candidate.feedType === item.feedType && candidate.student_email === item.student_email && candidate.content === item.content) === index).sort((a, b) => new Date(a.occurredAt || 0) - new Date(b.occurredAt || 0));
+  // Feed idêntico ao da dashboard, apenas em ordem de conversa (mais antigo primeiro).
+  const wallFeed = [...wall.feed].reverse();
 
-  const reactionButtons = (item, targetType, ownerEmail) => <div className="mt-2 flex flex-wrap gap-1 border-t border-amber-200 pt-2" aria-label="Reações à publicação">
-    {[
-      ['love', 'Amar', Heart, 'text-rose-700 bg-rose-100'],
-      ['celebrate', 'Celebrar', PartyPopper, 'text-amber-800 bg-amber-100'],
-      ['applaud', 'Aplaudir', Hand, 'text-sky-800 bg-sky-100'],
-    ].map(([key, label, Icon, active]) => {
-      const count = wallReactions.filter((reaction) => reaction.target_id === item.id && reaction.reaction === key).length;
-      const reacted = wallReactions.some((reaction) => reaction.target_id === item.id && reaction.reaction === key && reaction.actor_email === session?.email);
-      return <button key={key} type="button" disabled={ownerEmail === session?.email || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={ownerEmail === session?.email ? 'Você não pode reagir à própria publicação' : label} className={`inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-white text-slate-600 hover:bg-slate-100'}`}><Icon size={12}/>{label}{count > 0 && <span>{count}</span>}</button>;
-    })}
-  </div>;
+  const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => {
+    const isOwnContent = ownerEmail === session?.email || (mentionedEmails || []).includes(session?.email);
+    return <>
+      <div className="mt-2 flex flex-wrap gap-1 border-t border-amber-200 pt-2" aria-label="Reações à publicação">
+        {[
+          ['love', 'Amar', Heart, 'text-rose-700 bg-rose-100'],
+          ['celebrate', 'Celebrar', PartyPopper, 'text-amber-800 bg-amber-100'],
+          ['applaud', 'Aplaudir', Hand, 'text-sky-800 bg-sky-100'],
+        ].map(([key, label, Icon, active]) => {
+          const count = wallReactions.filter((reaction) => reaction.target_id === item.id && reaction.reaction === key).length;
+          const reacted = wallReactions.some((reaction) => reaction.target_id === item.id && reaction.reaction === key && reaction.actor_email === session?.email);
+          return <button key={key} type="button" disabled={isOwnContent || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={isOwnContent ? 'Você não pode reagir à própria publicação' : label} className={`inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-white text-slate-600 hover:bg-slate-100'}`}><Icon size={12}/>{label}{count > 0 && <span>{count}</span>}</button>;
+        })}
+        <button type="button" disabled={isOwnContent} onClick={() => { setReplyTarget({ id: item.id, targetType, ownerEmail }); setReplyText(''); }} title={isOwnContent ? 'Você não pode responder ao próprio conteúdo' : 'Responder em privado'} className="inline-flex min-h-8 items-center gap-1 rounded-full bg-white px-2 text-[10px] font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-45"><Send size={11}/>Responder</button>
+      </div>
+      {replyTarget?.id === item.id && <form className="mt-1.5 flex items-center gap-1.5" onSubmit={(event) => { event.preventDefault(); const content = replyText.trim(); if (!content || replyMutation.isPending) return; replyMutation.mutate({ target_id: replyTarget.id, target_type: replyTarget.targetType, target_owner_email: replyTarget.ownerEmail, reply_text: content }, { onSuccess: () => { setReplyTarget(null); setReplyText(''); } }); }}>
+        <input autoFocus maxLength={500} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder="Resposta privada..." aria-label="Resposta privada" className="h-8 min-w-0 flex-1 rounded-lg border border-rose-200 bg-white px-2 text-[11px] focus:outline-none" />
+        <button type="submit" disabled={!replyText.trim() || replyMutation.isPending} className="h-8 rounded-lg bg-rose-600 px-2.5 text-[10px] font-bold text-white disabled:opacity-50">{replyMutation.isPending ? 'Enviando...' : 'Enviar'}</button>
+        <button type="button" onClick={() => { setReplyTarget(null); setReplyText(''); }} className="h-8 rounded-lg px-2 text-[10px] font-bold text-slate-500">Cancelar</button>
+      </form>}
+    </>;
+  };
 
   const enableNotifications = async () => {
     if (typeof Notification === 'undefined') return alert('Este aparelho não suporta notificações do navegador.');
@@ -351,10 +280,15 @@ export default function ClassChat() {
               <div className="px-3 py-2 text-[11px] bg-gradient-to-r from-rose-50 to-amber-50 border-b border-rose-100 text-[#815568]"><strong>Inspire a turma.</strong> Compartilhe uma conquista, uma palavra de força ou um passo importante da sua jornada.</div>
               <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-gradient-to-b from-[#fffafb] to-white">
                 {wallFeed.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : wallFeed.map((msg) => {
+                  if (msg.feedType === 'notification') {
+                    return <div key={msg.id} className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-relaxed text-violet-950" role="status"><span className="font-bold">{msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista'}</span><p>{msg.message}</p>{msg.reply_text && <p className="mt-1 rounded-md bg-white/70 px-2 py-1">“{msg.reply_text}”</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>;
+                  }
+                  if (msg.feedType === 'institutional') {
+                    return <div key={msg.id} className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] leading-relaxed text-slate-900"><p className="font-bold">{msg.title || 'Destaque para a turma'}</p><p className="whitespace-pre-wrap break-words text-slate-700">{msg.content}</p>{msg.author_name && <span className="text-[10px] text-slate-500">Compartilhado por {msg.author_name}</span>}</div>;
+                  }
                   if (msg.feedType === 'achievement') {
-                    const profile = getProfile(msg.student_email);
                     const shared = sharedPublications.some((post) => post.source_type === 'achievement' && post.source_id === msg.id);
-                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black"><div className="flex items-start gap-2"><p className="min-w-0 flex-1"><span aria-hidden="true">🏆 </span><strong className="text-black">{profile.name || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></p>{isAdmin && <button type="button" onClick={() => shareToWall(msg, 'achievement')} disabled={sharingMessageId === msg.id || shared} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-bold text-amber-800 transition hover:bg-amber-100 disabled:cursor-default disabled:opacity-60" title="Compartilhar conquista na dashboard dos alunos"><Share2 size={12}/>{shared ? 'No mural' : sharingMessageId === msg.id ? 'Enviando...' : 'Compartilhar'}</button>}</div>{reactionButtons(msg, 'achievement', msg.student_email)}</div>;
+                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black"><div className="flex items-start gap-2"><p className="min-w-0 flex-1"><span aria-hidden="true">🏆 </span><strong className="text-black">{msg.isCollective ? 'Conquista da turma!' : msg.studentName || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></p>{isAdmin && <button type="button" onClick={() => shareToWall(msg, 'achievement')} disabled={sharingMessageId === msg.id || shared} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-bold text-amber-800 transition hover:bg-amber-100 disabled:cursor-default disabled:opacity-60" title="Compartilhar conquista na dashboard dos alunos"><Share2 size={12}/>{shared ? 'No mural' : sharingMessageId === msg.id ? 'Enviando...' : 'Compartilhar'}</button>}</div>{reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails)}</div>;
                   }
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);
