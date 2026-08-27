@@ -1,0 +1,38 @@
+{
+  "name": "Ofensiva \u2014 Creditar Pontos Imediatamente",
+  "description": "Toda vez que um aluno responde ou atualiza sua ofensiva di\u00e1ria, credita imediatamente os pontos no ScoreItem, AccessCode e StudentProfile \u2014 sem esperar o recalculateScores manual.",
+  "trigger": {
+    "condition": "${ (.trigger.data.points_earned > 0) }",
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create",
+        "update"
+      ],
+      "entity_name": "DailyChallengeResponse"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "ofensiva_creditar_pontos_imediatamente",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncOfensivaScore",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "syncOfensivaScore"
+  }
+}
