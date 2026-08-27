@@ -154,7 +154,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', background: '#f8fafc', border: '1px solid #dde4ec', borderRadius: 8, padding: '14px 18px', marginBottom: 24, fontSize: 11 }}>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aluno(a)</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{student.name}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aproveitamento</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{approvalRate}%</p></div>
-          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Pontuação de Estudos</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} / {formatScore(totalMaxScore)}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Atividades Realizadas</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{activitiesCount}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Carga Horária</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours}h</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Data de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionDate}</p></div>
@@ -169,48 +168,35 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
             <tr style={{ background: '#1e3a5f' }}>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', letterSpacing: 0.5 }}>Atividade</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold' }}>Categoria</th>
-              <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>Pontos</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>CH</th>
               <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold' }}>Situação</th>
-              {isAdmin && <th style={{ color: '#fff', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold' }}>Origem / Notas</th>}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={isAdmin ? 6 : 5} style={{ padding: '16px 8px', textAlign: 'center', color: '#aaa', fontSize: 10 }}>Nenhuma atividade selecionada para este histórico.</td></tr>
+              <tr><td colSpan={4} style={{ padding: '16px 8px', textAlign: 'center', color: '#aaa', fontSize: 10 }}>Nenhuma atividade selecionada para este histórico.</td></tr>
             ) : rows.map((r, i) => (
               <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <td style={{ padding: '5px 8px', color: '#1e3a5f', maxWidth: 200 }}>{r.title}</td>
                 <td style={{ padding: '5px 8px', color: '#555' }}>{r.category}</td>
-                <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 'bold', color: (r.score !== null && r.score !== '—') ? '#1e3a5f' : '#aaa' }}>
-                  {(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)}` : '—'}
-                </td>
                 <td style={{ padding: '5px 8px', textAlign: 'center', color: '#555' }}>{r.hours > 0 ? `${r.hours}h` : '—'}</td>
                 <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                   <span style={{ fontSize: 9, fontWeight: 'bold', padding: '2px 8px', borderRadius: 20, background: r.status === 'Avaliado' ? '#dcfce7' : '#fef9c3', color: r.status === 'Avaliado' ? '#166534' : '#854d0e' }}>
                     {r.status}
                   </span>
                 </td>
-                {isAdmin && (
-                  <td style={{ padding: '5px 8px', color: '#777', fontSize: 9, maxWidth: 240 }}>
-                    {r.notes || '—'}
-                  </td>
-                )}
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Totals */}
-        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 32, fontSize: 11 }}>
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Total Carga Horária</span>
-            <p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours} horas/aula</p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Pontuação de Estudos</span>
-            <p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} pts</p>
-          </div>
+        {/* Pontuação — bloco central com o total de pontos das atividades entregues */}
+        <div style={{ marginTop: 20, border: '1px solid #dde4ec', background: '#f8fafc', borderRadius: 8, padding: '14px 18px', textAlign: 'center' }}>
+          <p style={{ fontSize: 10, letterSpacing: 4, color: '#7a6a3a', textTransform: 'uppercase', margin: 0, fontWeight: 'bold' }}>Pontuação</p>
+          <p style={{ margin: '6px 0 0', fontSize: 24, fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} pts</p>
+          <p style={{ margin: '4px 0 0', fontSize: 9, color: '#888', letterSpacing: 1, textTransform: 'uppercase' }}>
+            Total somado das atividades entregues · {totalHours} horas/aula
+          </p>
         </div>
 
         {/* Signature */}
@@ -430,14 +416,13 @@ export default function HistoricoAcademico() {
   const totalMaxScore = 100;
   const totalHours = selectedRows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + r.hours, 0);
 
-  // Aproveitamento: pontos adquiridos nas atividades realizadas ÷ total de pontos
-  // disponíveis ao aluno nos módulos selecionados (aulas, tarefas, provas e complementares).
-  const earnedScore = moduleRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0);
-  const availableMaxScore = availableModuleRows.reduce((sum, r) => roundScore(sum + roundScore(r.max)), 0);
-  const approvalRate = availableMaxScore > 0 ? formatScore(Math.min((earnedScore / availableMaxScore) * 100, 100)) : 0;
-
-  // Número de atividades realizadas pelo aluno nos módulos selecionados.
+  // Aproveitamento: quantas atividades o aluno concluiu em relação ao total de
+  // atividades disponíveis nos módulos selecionados. Ex.: 1 de 10 = 10%.
   const activitiesCount = moduleRows.length;
+  const availableActivitiesCount = availableModuleRows.length;
+  const approvalRate = availableActivitiesCount > 0
+    ? Math.min(Math.round((activitiesCount / availableActivitiesCount) * 100), 100)
+    : 0;
 
   const toggleItem = (key) => {
     setSelectedItems(prev => {
@@ -631,9 +616,15 @@ export default function HistoricoAcademico() {
           const email = code.student_email || '';
           const name = code.profile_name || code.student_name || 'Sem nome';
           const studentScores = scoreItems.filter(s => s.student_email === email && s.verified);
-          const total = roundScore(code.pontuacao_estudos ?? studentScores.filter((item) => ['lesson', 'task', 'quiz', 'exam'].includes(item.category) && !String(item.ref_id || '').startsWith('therapist_pairing:')).reduce((sum, item) => roundScore(sum + roundScore(item.score)), 0));
-          const max = studentScores.reduce((sum, item) => roundScore(sum + roundScore(item.max_score || 10)), 0);
-          const rate = max > 0 ? Math.round((total / max) * 100) : 0;
+          const total = capScore(roundScore(code.pontuacao_estudos ?? studentScores.filter((item) => ['lesson', 'task', 'quiz', 'exam'].includes(item.category) && !String(item.ref_id || '').startsWith('therapist_pairing:')).reduce((sum, item) => roundScore(sum + roundScore(item.score)), 0)));
+          // Aproveitamento = atividades concluídas ÷ atividades disponíveis no curso.
+          const availableCount = visibleLessons.length + visibleTasks.length + visibleExams.length;
+          const doneRefs = new Set(
+            studentScores
+              .filter((item) => ['lesson', 'task', 'quiz', 'exam'].includes(item.category))
+              .map((item) => String(item.ref_id || '').replace(/^exam:/, ''))
+          );
+          const rate = availableCount > 0 ? Math.min(Math.round((doneRefs.size / availableCount) * 100), 100) : 0;
           return (
             <div key={code.id} onClick={() => openSelector({ name, email, code })} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
