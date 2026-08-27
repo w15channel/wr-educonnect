@@ -6,7 +6,7 @@ import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart,
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, rankingScoreValue, sumRoundedScores } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { groupUnlocksByEmail, resolveItemModule } from '@/lib/moduleAttribution';
+import { groupUnlocksByEmail } from '@/lib/moduleAttribution';
 import { buildStudentScoreSummary } from '@/lib/buildStudentAcademicData';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -33,61 +33,40 @@ const COURSE_VALID = {
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-// courseItems: already-filtered ScoreItems for this student's course (passed from parent)
-// publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter = 1, studentUnlocks = [], onClose }) {
+const SCORE_CATEGORY_BY_ACTIVITY = {
+  'Aula Gravada': 'lesson',
+  Tarefa: 'task',
+  Prova: 'exam',
+  Fórum: 'forum',
+  Mentoria: 'mentorship',
+  'Terapeuta da Semana': 'therapist',
+  'Ofensiva Diária': 'ofensiva',
+  'Atividade Complementar': 'other',
+};
+
+function StudentProfileModal({ code, activities = [], moduleFilter = 1, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
   const avatarColor = code.profile_avatar_color || '#5b5ef4';
 
-  // All verified items for this student, deduplicated by (category|ref_id).
-  // No courseItemRefIds filter here — we show everything so the sum is transparent.
-  const myItems = useMemo(() => {
-    const seen = new Map();
-    for (const s of scoreItems) {
-      if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
-      // Mesma regra de inclusão do Controle de Pontuação
-      if (belongsToCourse && !belongsToCourse(s)) continue;
-      // Filtro de módulo: mostra somente as atividades pontuadas naquele módulo
-      if (resolveItemModule(s, studentUnlocks) !== Number(moduleFilter)) continue;
-      const key = `${s.category}|${s.ref_id}`;
-      const prev = seen.get(key);
-      if (!prev) { seen.set(key, s); continue; }
-      const prevWins = (Number(prev.score) || 0) >= (Number(s.score) || 0);
-      if (!prevWins) seen.set(key, s);
-    }
-    return [...seen.values()].sort((a, b) => {
-      const aTime = new Date(a.created_date || 0).getTime();
-      const bTime = new Date(b.created_date || 0).getTime();
-      return aTime - bTime;
-    });
-  }, [scoreItems, email, belongsToCourse, moduleFilter, studentUnlocks]);
+  // Use the same rebuilt activity timeline that calculates the card count and
+  // total. Source records (progress, submissions, forum, mentorships, etc.) are
+  // intentionally included even when an old ScoreItem was never generated.
+  const myItems = activities;
 
   // Soma transparente: apenas os itens verificados exibidos no modal contam.
   // Nunca criamos "ajustes" artificiais para fechar com o total publicado/cache.
   const liveTotal = sumRoundedScores(myItems.map(rankingScoreValue));
 
-  // Build exam bucket: prefer teacher-graded 'exam' items (ref_id = 'exam:{id}') over
-  // auto-graded 'quiz' items for the same underlying exam. If a teacher-graded entry
-  // exists for an exam, the quiz entry for that same exam is suppressed.
-  const teacherGradedExamIds = new Set(
-    myItems
-      .filter(i => i.category === 'exam' && String(i.ref_id).startsWith('exam:'))
-      .map(i => String(i.ref_id).replace('exam:', ''))
-  );
-
   const byCategory = {};
   myItems.forEach(item => {
-    // Suppress the generic 'quiz' entry if a teacher-graded 'exam' entry already covers this exam
-    if (item.category === 'quiz' && teacherGradedExamIds.has(item.ref_id)) return;
-    // Ofensivas e Terapeuta da Semana legados foram gravados em outras categorias.
-    const normalized = isOfensivaScoreItem(item) ? 'ofensiva' : isTherapistScoreItem(item) ? 'therapist' : item.category;
+    const normalized = item.scoreCategory || SCORE_CATEGORY_BY_ACTIVITY[item.category] || 'other';
     const category = CATEGORY_CONFIG[normalized] ? normalized : 'other';
     if (!byCategory[category]) byCategory[category] = [];
     byCategory[category].push(item);
   });
-  const sequenceById = new Map(myItems.map((item, index) => [item.id, index + 1]));
+  const sequenceById = new Map(myItems.map((item, index) => [item.key, index + 1]));
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
@@ -139,11 +118,11 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter =
                 </div>
                 <div className="space-y-1.5">
                   {items.map(item => (
-                    <div key={item.id} className="flex items-center gap-2 bg-secondary/40 rounded-xl px-3 py-2">
+                    <div key={item.key} className="flex items-center gap-2 bg-secondary/40 rounded-xl px-3 py-2">
                       <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1 text-[10px] font-black text-primary shrink-0">
-                        {sequenceById.get(item.id)}
+                        {sequenceById.get(item.key)}
                       </span>
-                      <span className="text-xs text-foreground flex-1 truncate">{item.ref_title}</span>
+                      <span className="text-xs text-foreground flex-1 truncate">{item.title}</span>
                       <span className="text-xs font-bold text-foreground shrink-0">{formatScore(item.score)} pts</span>
                     </div>
                   ))}
@@ -434,7 +413,7 @@ export default function RankingGeral() {
         studentUnlocks: unlocksByEmail.get(email) || [],
         moduleNumber: selectedModule,
       });
-      map[email] = { points: summary.totalScore, count: summary.activityCount };
+      map[email] = { points: summary.totalScore, count: summary.activityCount, activities: summary.scopedRows };
     });
     return map;
   }, [deduplicatedScoreItems, courseEmailSet, belongsToCourse, selectedModule, unlocksByEmail,
@@ -641,10 +620,8 @@ export default function RankingGeral() {
       {selected && (
         <StudentProfileModal
           code={selected}
-          scoreItems={allScoreItems}
-          belongsToCourse={belongsToCourse}
+          activities={moduleTotals[selected.student_email]?.activities || []}
           moduleFilter={selectedModule}
-          studentUnlocks={unlocksByEmail.get(selected.student_email) || []}
           onClose={() => setSelected(null)}
         />
       )}
