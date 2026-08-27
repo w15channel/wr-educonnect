@@ -626,16 +626,14 @@ export default function HistoricoAcademico() {
         {filtered.map(code => {
           const email = code.student_email || '';
           const name = code.profile_name || code.student_name || 'Sem nome';
-          const studentScores = scoreItems.filter(s => s.student_email === email && s.verified);
-          const total = capScore(roundScore(code.pontuacao_estudos ?? studentScores.filter((item) => ['lesson', 'task', 'quiz', 'exam'].includes(item.category) && !String(item.ref_id || '').startsWith('therapist_pairing:')).reduce((sum, item) => roundScore(sum + roundScore(item.score)), 0)));
-          // Aproveitamento = atividades concluídas ÷ atividades disponíveis no curso.
-          const availableCount = visibleLessons.length + visibleTasks.length + visibleExams.length;
-          const doneRefs = new Set(
-            studentScores
-              .filter((item) => ['lesson', 'task', 'quiz', 'exam'].includes(item.category))
-              .map((item) => String(item.ref_id || '').replace(/^exam:/, ''))
-          );
-          const rate = availableCount > 0 ? Math.min(Math.round((doneRefs.size / availableCount) * 100), 100) : 0;
+          // Atividades realizadas hoje pelo aluno (aulas, tarefas, provas, fórum,
+          // mentorias, Terapeuta da Semana e ofensivas) — contadas a partir das
+          // entregas atuais, sem módulos removidos ou históricos apagados.
+          const { rows: studentRows, availableRows: studentAvailableRows } = buildAllRows({ name, email, code });
+          const doneCount = studentRows.length;
+          const rate = studentAvailableRows.length > 0
+            ? Math.min(Math.round((doneCount / studentAvailableRows.length) * 100), 100)
+            : 0;
           return (
             <div key={code.id} onClick={() => openSelector({ name, email, code })} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
@@ -651,8 +649,8 @@ export default function HistoricoAcademico() {
                   <p className={`text-sm font-black ${Number(rate) >= 60 ? 'text-green-600' : 'text-orange-500'}`}>{rate}%</p>
                 </div>
                 <div className="bg-primary/10 px-3 py-1.5 rounded-xl">
-                  <p className="text-xs text-muted-foreground">Estudos</p>
-                  <p className="text-sm font-black text-primary">{total}</p>
+                  <p className="text-xs text-muted-foreground">Atividades</p>
+                  <p className="text-sm font-black text-primary">{doneCount}</p>
                 </div>
                 <Settings2 size={15} className="text-muted-foreground" />
               </div>
