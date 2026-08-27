@@ -1,18 +1,30 @@
 /**
  * buildStudentAcademicData
  * ─────────────────────────
- * Computes a student's academic summary from raw entity data.
+ * Computes a student's academic summary DIRECTLY from raw delivery records
+ * (LessonProgress, TaskSubmission, ExamSubmission, ForumPost/Reply,
+ * TherapistPairing, Mentorship, DailyChallengeResponse).
+ *
+ * ScoreItems are used only as ENRICHMENT (custom score/notes set by the
+ * teacher) — never as a gatekeeper. This removes the dependency on
+ * background automations to populate the academic record.
+ *
  * Used by HistoricoAcademico, CertificateGenerator, and AcademicItemSelector.
  *
  * @param {object} params
  * @param {string}   params.studentEmail
- * @param {Array}    params.scoreItems         - all ScoreItems (filtered internally)
- * @param {Array}    params.lessons            - RecordedLesson list for the course
- * @param {Array}    params.tasks              - Task list for the course
- * @param {Array}    params.exams              - Exam list for the course
- * @param {Array}    params.examSubs           - ExamSubmission list for the student
- * @param {Array}    params.pairings           - TherapistPairing list (all)
+ * @param {Array}    params.scoreItems           - all ScoreItems (filtered internally)
+ * @param {Array}    params.lessons              - RecordedLesson list for the course
+ * @param {Array}    params.tasks                - Task list for the course
+ * @param {Array}    [params.exams]              - Exam list for the course
+ * @param {Array}    [params.examSubs]           - ExamSubmission list for the student
+ * @param {Array}    [params.pairings]           - TherapistPairing list (all)
  * @param {Array}    [params.challengeResponses] - DailyChallengeResponse list (all)
+ * @param {Array}    [params.lessonProgress]     - LessonProgress list (all)
+ * @param {Array}    [params.taskSubmissions]    - TaskSubmission list (all)
+ * @param {Array}    [params.forumPosts]         - ForumPost list (all)
+ * @param {Array}    [params.forumReplies]       - ForumReply list (all)
+ * @param {Array}    [params.mentorships]        - Mentorship list (all)
  * @returns {object} { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes }
  */
 
@@ -21,8 +33,9 @@ export const HOURS_MAP = {
   task: 0.5,   // 30 minutos por entrega
   quiz: 1.5,
   exam: 2,     // 2 horas por prova
-  forum: 0.5,
+  forum: 0,
   therapist: 1,
+  mentorship: 1,
   ofensiva: 0, // pontos apenas, sem CH
 };
 
@@ -31,6 +44,9 @@ export const STUDY_SCORE_RULES = {
   task: 5,
   quiz: 50,
   exam: 50,
+  therapist: 10,
+  mentorship: 10,
+  forum: 0.1,
 };
 
 function roundScore(v) {
@@ -39,33 +55,50 @@ function roundScore(v) {
   return Math.round((n + Number.EPSILON) * 1000) / 1000;
 }
 
+const normEmail = (v = '') => String(v || '').trim().toLowerCase();
+
 export function buildStudentAcademicData({
   studentEmail,
-  scoreItems,
-  lessons,
-  tasks,
+  scoreItems = [],
+  lessons = [],
+  tasks = [],
   exams = [],
   examSubs = [],
-  pairings,
+  pairings = [],
   challengeResponses = [],
+  lessonProgress = [],
+  taskSubmissions = [],
+  forumPosts = [],
+  forumReplies = [],
+  mentorships = [],
 }) {
-  const verifiedScores = scoreItems.filter(
-    (s) => s.student_email === studentEmail && s.verified
-  );
+  const email = normEmail(studentEmail);
+
+  // ScoreItems do aluno — usados apenas para enriquecer (nota/observação do
+  // professor). Preferimos itens verificados quando existem duplicatas.
+  const studentScores = scoreItems.filter((s) => normEmail(s.student_email) === email);
+  const findScore = (category, refId) => {
+    const matches = studentScores.filter((s) => s.category === category && s.ref_id === refId);
+    return matches.find((s) => s.verified) || matches[0] || null;
+  };
 
   const rows = [];
 
-  // ── Aulas gravadas ──
+  // ── Aulas gravadas — "assistida" vem direto do LessonProgress ──
+  const watchedLessonIds = new Set(
+    lessonProgress.filter((p) => p.watched && normEmail(p.student_email) === email).map((p) => p.lesson_id)
+  );
   lessons.forEach((l) => {
-    const si = verifiedScores.find((s) => s.category === 'lesson' && s.ref_id === l.id);
+    const si = findScore('lesson', l.id);
+    const done = !!si || watchedLessonIds.has(l.id);
     rows.push({
       key: `lesson_${l.id}`,
       category: 'Aula Gravada',
       title: l.title,
-      score: si?.score ?? null,
+      score: done ? roundScore(si?.score ?? STUDY_SCORE_RULES.lesson) : null,
       max: STUDY_SCORE_RULES.lesson,
       hours: HOURS_MAP.lesson,
-      status: si ? 'Avaliado' : 'Pendente',
+      status: done ? 'Avaliado' : 'Pendente',
       notes: si?.notes || '',
       module: Number(l.module_number) || null,
     });
@@ -73,44 +106,151 @@ export function buildStudentAcademicData({
 
   // Lives não entram na pontuação de estudos/histórico/certificado.
 
-  // ── Tarefas / Provas (Task entity) ──
+  // ── Tarefas / Provas (Task entity) — "entregue" vem do TaskSubmission ──
+  const submittedTaskIds = new Set(
+    taskSubmissions.filter((s) => normEmail(s.student_email) === email).map((s) => s.task_id)
+  );
   tasks.forEach((t) => {
     const cat = t.type === 'quiz' ? 'quiz' : 'task';
-    const si = verifiedScores.find((s) => s.category === cat && s.ref_id === t.id);
+    const si = findScore(cat, t.id);
+    const done = !!si || submittedTaskIds.has(t.id);
+    const maxPts = t.type === 'quiz' ? STUDY_SCORE_RULES.quiz : STUDY_SCORE_RULES.task;
     rows.push({
       key: `${cat}_${t.id}`,
       category: t.type === 'quiz' ? 'Prova' : 'Tarefa',
       title: t.title,
-      score: si?.score ?? null,
-      max: t.type === 'quiz' ? STUDY_SCORE_RULES.quiz : STUDY_SCORE_RULES.task,
+      score: done ? roundScore(si?.score ?? maxPts) : null,
+      max: maxPts,
       hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task,
-      status: si ? 'Avaliado' : 'Pendente',
+      status: done ? 'Avaliado' : 'Pendente',
       notes: si?.notes || '',
       module: Number(t.module_number) || null,
     });
   });
 
   // ── Provas (Exam entity via ExamSubmission) ──
-  if (exams && exams.length > 0 && examSubs && examSubs.length > 0) {
-    examSubs.forEach((sub) => {
-      const exam = exams.find((e) => e.id === sub.exam_id);
-      if (!exam || sub.status !== 'graded') return;
-      const si = verifiedScores.find((s) => s.category === 'exam' && (s.ref_id === exam.id || s.ref_id === `exam:${exam.id}`));
+  examSubs.forEach((sub) => {
+    if (sub.status !== 'graded' || normEmail(sub.student_email) !== email) return;
+    const exam = exams.find((e) => e.id === sub.exam_id);
+    if (!exam) return;
+    const si = findScore('exam', `exam:${exam.id}`) || findScore('exam', exam.id);
+    const grade = roundScore(Math.min(Number(si?.score ?? sub.grade ?? STUDY_SCORE_RULES.exam) || 0, STUDY_SCORE_RULES.exam));
+    rows.push({
+      key: `exam_${exam.id}`,
+      category: 'Prova',
+      title: exam.title,
+      score: grade,
+      max: STUDY_SCORE_RULES.exam,
+      hours: HOURS_MAP.exam,
+      status: 'Avaliado',
+      notes: sub.feedback || si?.notes || '',
+      module: Number(String(exam.module_ref || '').match(/\d+/)?.[0]) || null,
+    });
+  });
+
+  // ── Atividades complementares ─────────────────────────────────────────────
+
+  // Fórum e Sala de Debates — publicações do aluno
+  forumPosts
+    .filter((p) => normEmail(p.author_email) === email)
+    .forEach((p) => {
+      const si = findScore('forum', p.id);
+      const space = p.space === 'debates' ? 'Sala de Debates' : 'Fórum';
       rows.push({
-        key: `exam_${exam.id}`,
-        category: 'Prova',
-        title: exam.title,
-        score: si?.score ?? STUDY_SCORE_RULES.exam,
-        max: STUDY_SCORE_RULES.exam,
-        hours: HOURS_MAP.exam,
+        key: `forum_${p.id}`,
+        category: 'Fórum',
+        title: `Publicação — ${space}`,
+        score: roundScore(si?.score ?? STUDY_SCORE_RULES.forum),
+        max: 0.4,
+        hours: HOURS_MAP.forum,
         status: 'Avaliado',
-        notes: sub.feedback || si?.notes || '',
-        module: Number(String(exam.module_ref || '').match(/\d+/)?.[0]) || null,
+        notes: si?.notes || '',
+        module: null,
       });
     });
-  }
 
-  // Somente aulas assistidas, trabalhos entregues e provas compõem a pontuação de estudos.
+  // Respostas a colegas no fórum/debates
+  const postById = new Map(forumPosts.map((p) => [p.id, p]));
+  forumReplies
+    .filter((r) => normEmail(r.author_email) === email)
+    .forEach((r) => {
+      const parent = postById.get(r.post_id);
+      if (!parent || normEmail(parent.author_email) === email) return;
+      const si = findScore('forum', r.id);
+      const space = r.space === 'debates' ? 'Sala de Debates' : 'Fórum';
+      rows.push({
+        key: `forum_${r.id}`,
+        category: 'Fórum',
+        title: `Resposta a colega — ${space}`,
+        score: roundScore(si?.score ?? STUDY_SCORE_RULES.forum),
+        max: 0.4,
+        hours: HOURS_MAP.forum,
+        status: 'Avaliado',
+        notes: si?.notes || '',
+        module: null,
+      });
+    });
+
+  // Terapeuta da Semana — relatos enviados (como terapeuta e como paciente)
+  pairings.forEach((p) => {
+    const roles = [
+      { role: 'therapist', ok: normEmail(p.therapist_email) === email && p.therapist_submitted, label: 'Relato Terapeuta da Semana' },
+      { role: 'patient', ok: normEmail(p.patient_email) === email && p.patient_submitted, label: 'Relato Terapeuta da Semana — Paciente' },
+    ];
+    roles.forEach(({ role, ok, label }) => {
+      if (!ok) return;
+      const refId = `therapist_pairing:${p.id}:${role}`;
+      const si = findScore('task', refId) || findScore('therapist', refId);
+      rows.push({
+        key: `task_${refId}`,
+        category: 'Terapeuta da Semana',
+        title: `${label} (${p.pairing_date || 'data não informada'})`,
+        score: roundScore(si?.score ?? STUDY_SCORE_RULES.therapist),
+        max: STUDY_SCORE_RULES.therapist,
+        hours: HOURS_MAP.therapist,
+        status: 'Avaliado',
+        notes: si?.notes || '',
+        module: Number(p.module_number) || null,
+      });
+    });
+  });
+
+  // Mentorias — participações registradas pelo admin
+  mentorships
+    .filter((m) => m.status !== 'cancelada' && (m.participant_emails || []).map(normEmail).includes(email))
+    .forEach((m) => {
+      const si = findScore('mentorship', m.id);
+      rows.push({
+        key: `mentorship_${m.id}`,
+        category: 'Mentoria',
+        title: `Mentoria: ${m.theme || 'Encontro'} (${m.date || 'data não informada'})`,
+        score: roundScore(si?.score ?? STUDY_SCORE_RULES.mentorship),
+        max: STUDY_SCORE_RULES.mentorship,
+        hours: roundScore((Number(m.duration_minutes) || 60) / 60),
+        status: 'Avaliado',
+        notes: si?.notes || '',
+        module: Number(m.module_number) || null,
+      });
+    });
+
+  // Ofensivas Diárias — respostas com pontos ganhos
+  challengeResponses
+    .filter((r) => normEmail(r.student_email) === email && roundScore(r.points_earned) > 0)
+    .forEach((r) => {
+      const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
+      const si = findScore('forum', refId) || findScore('ofensiva', refId);
+      rows.push({
+        key: `forum_${refId}`,
+        category: 'Ofensiva Diária',
+        title: `Ofensiva Diária (${r.date || 'data'})`,
+        score: roundScore(si?.score ?? r.points_earned),
+        max: 1,
+        hours: HOURS_MAP.ofensiva,
+        status: 'Avaliado',
+        notes: si?.notes || '',
+        module: null,
+      });
+    });
 
   // ── Totals (only evaluated rows) ──
   const evaluatedRows = rows.filter((r) => r.status === 'Avaliado');
@@ -119,7 +259,7 @@ export function buildStudentAcademicData({
     0
   );
   const totalMaxScore = evaluatedRows.reduce((sum, r) => roundScore(sum + roundScore(r.max)), 0);
-  const totalHours = evaluatedRows.reduce((sum, r) => sum + r.hours, 0);
+  const totalHours = evaluatedRows.reduce((sum, r) => roundScore(sum + r.hours), 0);
   const approvalRate =
     totalMaxScore > 0
       ? String(Math.round((totalScore / totalMaxScore) * 1000) / 10)
@@ -132,11 +272,16 @@ export function buildStudentAcademicData({
   // Aulas Gravadas: listadas individualmente
   // Tarefas:        uma linha única "Trabalhos Entregues" com somatória
   // Provas:         uma linha única "Provas" com somatória
+  // Complementares: uma linha única "Atividades Complementares" com somatória
 
-  const GROUPED_CATEGORIES = new Set(['Tarefa', 'Prova']);
+  const GROUPED_CATEGORIES = new Set(['Tarefa', 'Prova', 'Fórum', 'Terapeuta da Semana', 'Mentoria', 'Ofensiva Diária']);
   const GROUP_LABELS = {
     'Tarefa': 'Trabalhos Entregues',
     'Prova': 'Provas',
+    'Fórum': 'Atividades Complementares',
+    'Terapeuta da Semana': 'Atividades Complementares',
+    'Mentoria': 'Atividades Complementares',
+    'Ofensiva Diária': 'Atividades Complementares',
   };
 
   const classesMap = {}; // key -> { title, hours, scoreSum, maxSum }
@@ -154,7 +299,7 @@ export function buildStudentAcademicData({
         id: String(uid),
       };
     } else if (GROUPED_CATEGORIES.has(r.category)) {
-      const groupKey = `group_${r.category}`;
+      const groupKey = `group_${GROUP_LABELS[r.category] || r.category}`;
       if (!classesMap[groupKey]) {
         uid++;
         classesMap[groupKey] = {
@@ -165,7 +310,7 @@ export function buildStudentAcademicData({
           id: String(uid),
         };
       }
-      classesMap[groupKey].hours += r.hours;
+      classesMap[groupKey].hours = roundScore(classesMap[groupKey].hours + r.hours);
       classesMap[groupKey].scoreSum += r.score !== null ? r.score : 0;
       classesMap[groupKey].maxSum += r.max;
     }

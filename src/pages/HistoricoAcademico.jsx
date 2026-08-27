@@ -317,9 +317,18 @@ export default function HistoricoAcademico() {
     queryKey: ['exam-submissions-all'],
     queryFn: () => base44.entities.ExamSubmission.list('-submitted_at', 2000),
   });
-  const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000) });
-  const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
-  const { data: challengeResponses = [] } = useQuery({ queryKey: ['challenge-responses-all'], queryFn: () => base44.entities.DailyChallengeResponse.list('-date', 2000) });
+  const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 5000) });
+  const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500) });
+  const { data: challengeResponses = [] } = useQuery({ queryKey: ['challenge-responses-all'], queryFn: () => base44.entities.DailyChallengeResponse.list('-date', 5000) });
+  // Registros brutos de entrega — a fonte da verdade do histórico (não depende de automações)
+  const { data: lessonProgress = [] } = useQuery({ queryKey: ['lesson-progress-all'], queryFn: () => base44.entities.LessonProgress.list('-created_date', 5000) });
+  const { data: taskSubmissions = [] } = useQuery({ queryKey: ['task-submissions-all'], queryFn: () => base44.entities.TaskSubmission.list('-created_date', 5000) });
+  const { data: forumPosts = [] } = useQuery({ queryKey: ['forum-posts-all'], queryFn: () => base44.entities.ForumPost.list('-created_date', 3000) });
+  const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies-all'], queryFn: () => base44.entities.ForumReply.list('-created_date', 3000) });
+  const { data: mentorships = [] } = useQuery({
+    queryKey: ['mentorships-historico', studentCourse],
+    queryFn: () => base44.entities.Mentorship.filter({ course: studentCourse }, '-date', 500),
+  });
   const visibleLessons = isTeacher ? lessons : lessons.filter((lesson) => !lesson.is_hidden);
   const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
   const visibleExams = isTeacher ? exams : exams.filter((exam) => !exam.is_hidden);
@@ -341,6 +350,7 @@ export default function HistoricoAcademico() {
     const examsForCourse = visibleExams.filter(e => e.course === studentCourse);
     const examSubsForStudent = examSubmissions.filter(s => s.student_email === student.email && s.status === 'graded');
     
+    const coursePosts = forumPosts.filter((p) => p.course === studentCourse || (studentCourse === 'tcc' && !p.course));
     const { rows } = buildStudentAcademicData({
       studentEmail: student.email,
       scoreItems,
@@ -350,6 +360,11 @@ export default function HistoricoAcademico() {
       examSubs: examSubsForStudent,
       pairings,
       challengeResponses,
+      lessonProgress,
+      taskSubmissions,
+      forumPosts: coursePosts,
+      forumReplies,
+      mentorships,
     });
     
     const academicRows = rows.filter((r) => r.status === 'Avaliado').map(r => ({
@@ -395,7 +410,9 @@ export default function HistoricoAcademico() {
 
   const allRows = selectedStudent ? buildAllRows(selectedStudent) : [];
 
-  const moduleRows = allRows.filter((r) => selectedModules.has(r.module));
+  // Atividades sem módulo definido (fórum, ofensivas etc.) aparecem sempre que
+  // ao menos um módulo estiver selecionado — antes elas ficavam invisíveis.
+  const moduleRows = allRows.filter((r) => (r.module ? selectedModules.has(r.module) : selectedModules.size > 0));
   const selectedRows = moduleRows.filter(r => selectedItems.has(r.key));
   const selectedScoreRows = selectedRows.filter(r => r.status === 'Avaliado');
   const totalScore = selectedScoreRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0);
