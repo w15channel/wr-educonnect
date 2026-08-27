@@ -220,9 +220,9 @@ export default function RankingGeral() {
     queryKey: ['ranking-submissions'],
     queryFn: () => base44.entities.TaskSubmission.list('-created_date', 2000),
   });
-  const { data: allMonitorHistory = [] } = useQuery({
-    queryKey: ['ranking-monitor-history', activeCourseForQuery],
-    queryFn: () => base44.entities.MonitorHistory.filter({ course: activeCourseForQuery }, '-period_start', 500),
+  const { data: allExamSubmissions = [] } = useQuery({
+    queryKey: ['ranking-exam-subs', activeCourseForQuery],
+    queryFn: () => base44.entities.ExamSubmission.filter({ course: activeCourseForQuery }, '-submitted_at', 3000),
   });
 
   // Terapeuta da Semana & Ofensivas — for courseItemRefIds
@@ -328,6 +328,10 @@ export default function RankingGeral() {
   const forumPostRefIds = useMemo(() => new Set(courseForumPosts.map(p => p.id)), [courseForumPosts]);
   const forumParentById = useMemo(() => new Map(courseForumPosts.map(p => [p.id, p])), [courseForumPosts]);
 
+  const examRefIds = useMemo(() => new Set(courseExams.map(e => e.id)), [courseExams]);
+
+  // Atividades = entregas atuais do aluno (aulas, tarefas, provas, fórum,
+  // mentorias, Terapeuta da Semana e ofensivas).
   const participationMap = useMemo(() => {
     const map = {};
     courseEmailSet.forEach(email => {
@@ -338,14 +342,18 @@ export default function RankingGeral() {
         const parentPost = forumParentById.get(r.post_id);
         return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostRefIds.has(parentPost.id) && isCourseProgress(r);
       }).length;
-      const monitorCount = allMonitorHistory.filter(m => m.student_email === email && isCourseProgress(m)).length;
+      const examCount = allExamSubmissions.filter(s => s.student_email === email && examRefIds.has(s.exam_id)).length;
       const mentorshipCount = courseMentorships.filter(mentorship =>
         (mentorship.participant_emails || []).includes(email) && isCourseProgress(mentorship)
       ).length;
-      map[email] = lessonCount + taskCount + postCount + replyCount + monitorCount + mentorshipCount;
+      const therapistCount = allPairings.filter(p =>
+        (p.therapist_email === email && p.therapist_submitted) || (p.patient_email === email && p.patient_submitted)
+      ).length;
+      const ofensivaCount = allChallengeResponses.filter(r => r.student_email === email).length;
+      map[email] = lessonCount + taskCount + examCount + postCount + replyCount + mentorshipCount + therapistCount + ofensivaCount;
     });
     return map;
-  }, [courseEmailSet, allLessonProgress, allSubmissions, courseForumPosts, allForumReplies, allMonitorHistory, courseMentorships, lessonRefIds, taskRefIds, forumPostRefIds, forumParentById]);
+  }, [courseEmailSet, allLessonProgress, allSubmissions, allExamSubmissions, courseForumPosts, allForumReplies, courseMentorships, allPairings, allChallengeResponses, lessonRefIds, taskRefIds, examRefIds, forumPostRefIds, forumParentById]);
 
   // ── Build and sort ranking — pontuação publicada é a fonte única da verdade,
   // igual ao painel admin (evita divergência quando o período foi encerrado) ──

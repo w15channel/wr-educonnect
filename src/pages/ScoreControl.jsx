@@ -718,6 +718,16 @@ export default function ScoreControl() {
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000)
   });
 
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['exam-subs-score-overview', activeCourse],
+    queryFn: () => base44.entities.ExamSubmission.filter({ course: activeCourse }, '-submitted_at', 3000)
+  });
+
+  const { data: challengeResponses = [] } = useQuery({
+    queryKey: ['ofensiva-responses-score-overview', activeCourse],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourse }, '-date', 5000)
+  });
+
   // Reconstitui ScoreItems e observações a partir das atividades reais ao abrir
   // o controle. Isso também cobre instalações em que a automação de entidade
   // deixou de disparar, sem exigir que o administrador clique em recalcular.
@@ -841,6 +851,7 @@ export default function ScoreControl() {
 
   const lessonIds = new Set(lessons.map((l) => l.id));
   const taskIds = new Set(tasks.map((t) => t.id));
+  const examIds = new Set(exams.map((e) => e.id));
   const forumPostIds = new Set(forumPosts.map((p) => p.id));
   const allowedEmails = new Set(filtered.map((c) => c.student_email).filter(Boolean));
   const courseSubmissions = submissions.filter((s) => allowedEmails.has(s.student_email) && taskIds.has(s.task_id));
@@ -891,6 +902,9 @@ export default function ScoreControl() {
     reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0);
   };
 
+  // Atividades = entregas atuais do aluno (aulas assistidas, tarefas, provas,
+  // fórum, mentorias, Terapeuta da Semana e ofensivas). Módulos removidos e
+  // históricos apagados não entram, pois contamos só os registros existentes.
   const getParticipationStats = (email) => {
     // Com um módulo selecionado, o recorte é o próprio módulo (aula/tarefa) ou a
     // janela de datas do período (fórum e monitoria). Sem módulo, vale o corte do
@@ -912,12 +926,20 @@ export default function ScoreControl() {
       const parentPost = forumParentById.get(r.post_id);
       return r.author_email === email && parentPost && parentPost.author_email !== email && forumPostIds.has(parentPost.id) && inScope(r);
     }).length;
-    const monitorCount = monitorHistory.filter((m) => {
-      if (m.student_email !== email) return false;
-      if (!activeModule) return true;
-      return withinWindow(m.period_start || m.created_date, start, end);
+    const examCount = examSubmissions.filter((s) => s.student_email === email && examIds.has(s.exam_id) && inScope(s, activeModule ? examModuleById.get(s.exam_id) : undefined)).length;
+    const mentorshipCount = mentorships.filter((m) =>
+      (m.participant_emails || []).includes(email) &&
+      inScope(m, activeModule ? mentorshipModuleById.get(m.id) : undefined)
+    ).length;
+    const therapistCount = therapistPairings.filter((p) => {
+      const isTherapist = p.therapist_email === email && p.therapist_submitted;
+      const isPatient = p.patient_email === email && p.patient_submitted;
+      if (!isTherapist && !isPatient) return false;
+      if (!coursePairingIds.has(p.id)) return false;
+      return inScope(p, activeModule ? pairingModuleById.get(p.id) : undefined);
     }).length;
-    const count = lessonCount + taskCount + postCount + replyCount + monitorCount;
+    const ofensivaCount = challengeResponses.filter((r) => r.student_email === email && inScope(r)).length;
+    const count = lessonCount + taskCount + examCount + postCount + replyCount + mentorshipCount + therapistCount + ofensivaCount;
     return { count };
   };
 
@@ -1030,9 +1052,9 @@ export default function ScoreControl() {
       setEditingParticipations(null);
       queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-      toast.success('Participações atualizadas!');
+      toast.success('Atividades atualizadas!');
     },
-    onError: (error) => toast.error('Erro ao salvar participações: ' + (error?.message || 'tente novamente'))
+    onError: (error) => toast.error('Erro ao salvar atividades: ' + (error?.message || 'tente novamente'))
   });
 
   const sendRankingToDashboardMutation = useMutation({
@@ -1100,7 +1122,7 @@ export default function ScoreControl() {
   };
 
   const sortOptions = isTeacher ?
-  [['alpha', 'A–Z'], ['points', 'Classificação'], ['participations', 'Participações'], ['pending', 'Pendências']] :
+  [['alpha', 'A–Z'], ['points', 'Classificação'], ['participations', 'Atividades'], ['pending', 'Pendências']] :
   [['alpha', 'A–Z'], ['points', 'Classificação']];
 
   return (
@@ -1130,7 +1152,7 @@ export default function ScoreControl() {
         </div>
         <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-auto overflow-x-auto pb-1">
           <ArrowUpDown size={13} className="text-muted-foreground" />
-          {[['alpha', 'A–Z'], ['points', 'Classificação'], ['participations', 'Participações'], ['pending', 'Pendências']].map(([val, label]) =>
+          {[['alpha', 'A–Z'], ['points', 'Classificação'], ['participations', 'Atividades'], ['pending', 'Pendências']].map(([val, label]) =>
 
           <button key={val} onClick={() => setSortBy(val)}
           className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${sortBy === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
@@ -1241,7 +1263,7 @@ export default function ScoreControl() {
                         <Button
                     size="sm"
                     className="h-8 px-2"
-                    title="Salvar participações"
+                    title="Salvar atividades"
                     disabled={saveManualParticipationsMutation.isPending}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1274,7 +1296,7 @@ export default function ScoreControl() {
                 <button
                   type="button"
                   disabled={!canEditManual}
-                  title={activeModule ? `Participações no ${activeModuleLabel}` : manualParticipationsActive ? 'Participações definidas manualmente — clique para editar' : 'Aulas assistidas + entregas + fórum + monitoria — clique para editar'}
+                  title={activeModule ? `Atividades no ${activeModuleLabel}` : manualParticipationsActive ? 'Atividades definidas manualmente — clique para editar' : 'Aulas, tarefas, provas, fórum, mentorias, Terapeuta da Semana e ofensivas entregues — clique para editar'}
                   onClick={(e) => { e.stopPropagation(); if (!canEditManual) return; setEditingParticipations({ email: code.student_email, value: String(participations) }); }}
                   className={`flex items-center gap-1 bg-blue-50 border px-2.5 py-1.5 rounded-xl transition-colors ${canEditManual ? 'hover:border-blue-400' : 'cursor-default'} ${manualParticipationsActive ? 'border-blue-500 border-dashed' : 'border-blue-200'}`}>
                         <Activity size={11} className="text-blue-500" />
