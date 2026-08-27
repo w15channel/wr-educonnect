@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check, PartyPopper, Hand, Share2 } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import useProfessorAutoReactions from '@/hooks/useProfessorAutoReactions';
 import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
@@ -79,6 +80,9 @@ export default function ClassChat() {
   const sharedPublications = wall.sharedPublications;
   const reactMutation = wall.reactMutation;
   const replyMutation = wall.replyMutation;
+
+  // Reações espontâneas do professor às publicações que chegam ao mural.
+  useProfessorAutoReactions({ enabled: isAdmin, session, feed: wall.feed, reactions: wallReactions });
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, activeTab]);
 
