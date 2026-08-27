@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES, parseUtcDate } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
+import { groupUnlocksByEmail, resolveItemModule } from '@/lib/moduleAttribution';
 
 const CATEGORY_CONFIG = {
   lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
@@ -31,8 +32,6 @@ const CATEGORY_CONFIG = {
 // `module_ref` como texto ('mod1'). Já fórum, terapeutas, ofensivas e monitoria
 // sem módulo próprio permanecem no total geral e não são atribuídas artificialmente
 // a uma janela de datas.
-const MODULE_ALL = 'all';
-
 const parseModuleNumber = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const digits = String(value).match(/\d+/);
@@ -649,7 +648,9 @@ export default function ScoreControl() {
   const [customOrder, setCustomOrder] = useState([]);
   const [editingScore, setEditingScore] = useState(null);
   const [editingParticipations, setEditingParticipations] = useState(null);
-  const [selectedModule, setSelectedModule] = useState(MODULE_ALL);
+  // Não existe ranking "Todos": a pontuação sempre pertence ao módulo em que
+  // cada aluno estava liberado quando a atividade foi registrada.
+  const [selectedModule, setSelectedModule] = useState('1');
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
   const isTeacher = session?.role === 'admin';
@@ -663,6 +664,12 @@ export default function ScoreControl() {
     queryKey: ['score-items-all'],
     queryFn: () => base44.entities.ScoreItem.list('-created_date', 10000)
   });
+
+  const { data: moduleUnlocks = [] } = useQuery({
+    queryKey: ['ranking-module-unlocks'],
+    queryFn: () => base44.entities.StudentModuleUnlock.list('-unlocked_at', 2000)
+  });
+  const unlocksByEmail = useMemo(() => groupUnlocksByEmail(moduleUnlocks), [moduleUnlocks]);
 
   const { data: submissions = [] } = useQuery({
     queryKey: ['all-submissions'],
@@ -756,64 +763,19 @@ export default function ScoreControl() {
     return [...numbers].sort((a, b) => a - b);
   }, [lessons, tasks, exams]);
 
-  const activeModule = selectedModule === MODULE_ALL ? null : Number(selectedModule);
-  const activeModuleWindow = activeModule ? { start: null, end: null } : null;
-  const activeModuleLabel = activeModule ? `Módulo ${activeModule}` : 'Todos os módulos';
-  const moduleFilter = activeModule ?
-  { module: activeModule, start: activeModuleWindow?.start || null, end: activeModuleWindow?.end || null, label: activeModuleLabel } :
-  null;
-
-  const lessonModuleById = useMemo(() => new Map(lessons.map((l) => [l.id, parseModuleNumber(l.module_number)])), [lessons]);
-  const taskModuleById = useMemo(() => new Map(tasks.map((t) => [t.id, parseModuleNumber(t.module_number)])), [tasks]);
-  const examModuleById = useMemo(() => new Map(exams.map((e) => [e.id, parseModuleNumber(e.module_ref)])), [exams]);
-  const forumDateById = useMemo(() => {
-    const map = new Map();
-    for (const post of forumPosts) map.set(post.id, post.created_date);
-    for (const reply of forumReplies) map.set(reply.id, reply.created_date);
-    return map;
-  }, [forumPosts, forumReplies]);
-  const pairingDateById = useMemo(
-    () => new Map(therapistPairings.map((p) => [p.id, p.pairing_date || p.created_date])),
-    [therapistPairings]
-  );
-  const pairingModuleById = useMemo(
-    () => new Map(therapistPairings.map((p) => [p.id, parseModuleNumber(p.module_number)])),
-    [therapistPairings]
-  );
-  const mentorshipDateById = useMemo(
-    () => new Map(mentorships.map((mentorship) => [mentorship.id, mentorship.date || mentorship.created_date])),
-    [mentorships]
-  );
-  const mentorshipModuleById = useMemo(
-    () => new Map(mentorships.map((mentorship) => [mentorship.id, parseModuleNumber(mentorship.module_number)])),
-    [mentorships]
-  );
+  const activeModule = Number(selectedModule) || 1;
+  const activeModuleWindow = { start: null, end: null };
+  const activeModuleLabel = `Módulo ${activeModule}`;
+  const moduleFilter = { module: activeModule, start: null, end: null, label: activeModuleLabel };
 
   // Um ScoreItem pertence ao módulo selecionado quando a atividade de origem é
   // daquele módulo (aula/tarefa/prova) ou, para atividades sem módulo, quando
   // aconteceu dentro da janela de datas do período.
   const scoreItemInSelectedModule = (item) => {
-    if (!activeModule) return true;
-    if (Number(item.module_number)) return Number(item.module_number) === activeModule;
-    const refId = String(item.ref_id || '');
-    const start = activeModuleWindow?.start || null;
-    const end = activeModuleWindow?.end || null;
-
-    if (item.category === 'therapist' || isTherapistScoreItem(item)) {
-      const pairingId = item.category === 'therapist' ? refId : refId.split(':')[1];
-      if (pairingModuleById.get(pairingId)) return pairingModuleById.get(pairingId) === activeModule;
-      return withinWindow(pairingDateById.get(pairingId) || item.created_date, start, end);
-    }
-    if (isOfensivaScoreItem(item)) return withinWindow(item.created_date, start, end);
-    if (item.category === 'mentorship') {
-      if (mentorshipModuleById.get(refId)) return mentorshipModuleById.get(refId) === activeModule;
-      return withinWindow(mentorshipDateById.get(refId) || item.created_date, start, end);
-    }
-    if (item.category === 'lesson') return lessonModuleById.get(refId) === activeModule;
-    if (item.category === 'task' || item.category === 'quiz') return taskModuleById.get(refId) === activeModule;
-    if (item.category === 'exam') return examModuleById.get(refId.replace(/^exam:/, '')) === activeModule;
-    if (item.category === 'forum') return withinWindow(forumDateById.get(refId) || item.created_date, start, end);
-    return withinWindow(item.created_date, start, end);
+    // Registros antigos, inclusive conteúdos cadastrados como Módulo 2+, são
+    // Módulo 1 até existir uma liberação individual. A data de ingresso não
+    // interfere nessa atribuição.
+    return resolveItemModule(item, unlocksByEmail.get(item.student_email) || []) === activeModule;
   };
 
   useEffect(() => {
@@ -960,7 +922,7 @@ export default function ScoreControl() {
       totals.set(studentEmail, capScore(getCourseScoreTotal(studentEmail)));
     }
     return totals;
-  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, exams, therapistPairings, mentorships, activeCourse, selectedModule]);
+  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, exams, therapistPairings, mentorships, activeCourse, selectedModule, moduleUnlocks]);
 
   const sortedRows = filtered.
   map((code) => {
@@ -1207,11 +1169,6 @@ export default function ScoreControl() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           <Layers size={13} className="text-muted-foreground shrink-0" />
           <span className="text-[11px] font-semibold text-muted-foreground shrink-0 mr-1">Módulo:</span>
-          <button
-            onClick={() => changeSelectedModule(MODULE_ALL)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${selectedModule === MODULE_ALL ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-            Todos
-          </button>
           {moduleOptions.map((moduleNumber) =>
           <button
             key={moduleNumber}

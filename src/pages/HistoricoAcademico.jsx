@@ -16,7 +16,7 @@ import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE }
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 import { formatDuration } from '@/lib/durationUtils';
-import { resolveActivityModule } from '@/lib/academicModules';
+import { resolveItemModule } from '@/lib/moduleAttribution';
 
 const HISTORY_MODULES = Array.from({ length: 10 }, (_, index) => index + 1);
 const HISTORY_CATEGORY = {
@@ -307,6 +307,10 @@ export default function HistoricoAcademico() {
     queryFn: () => base44.entities.ExamSubmission.list('-submitted_at', 2000),
   });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 5000) });
+  const { data: moduleUnlocks = [] } = useQuery({
+    queryKey: ['ranking-module-unlocks'],
+    queryFn: () => base44.entities.StudentModuleUnlock.list('-unlocked_at', 2000),
+  });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500) });
   const { data: challengeResponses = [] } = useQuery({ queryKey: ['challenge-responses-all'], queryFn: () => base44.entities.DailyChallengeResponse.list('-date', 5000) });
   // Ofensivas geradas — trazem a data e o módulo de cada desafio
@@ -361,11 +365,23 @@ export default function HistoricoAcademico() {
       moduleClosures,
     });
     
-    const mappedRows = rows.map(r => ({
-      ...r,
-      category: HISTORY_CATEGORY[r.category] || 'ATIVIDADES COMPLEMENTARES',
-      score: r.score,
-    }));
+    const studentUnlocks = moduleUnlocks.filter((unlock) => unlock.student_email === student.email);
+    const studentScoreByKey = new Map(
+      scoreItems
+        .filter((item) => item.student_email === student.email)
+        .map((item) => [`${item.category}_${String(item.ref_id || '').replace(/^exam:/, '')}`, item])
+    );
+    const mappedRows = rows.map(r => {
+      const scoreItem = studentScoreByKey.get(r.key);
+      return {
+        ...r,
+        category: HISTORY_CATEGORY[r.category] || 'ATIVIDADES COMPLEMENTARES',
+        score: r.score,
+        // Histórico e ranking compartilham a mesma linha do tempo individual:
+        // antes da primeira liberação, qualquer nota pertence ao Módulo 1.
+        module: resolveItemModule(scoreItem || { created_date: r.date }, studentUnlocks),
+      };
+    });
     const academicRows = mappedRows.filter((r) => r.status === 'Avaliado');
 
     const representedKeys = new Set(academicRows.map((row) => row.key));
@@ -381,11 +397,7 @@ export default function HistoricoAcademico() {
         hours: 0,
         status: 'Avaliado',
         notes: item.notes || '',
-        module: resolveActivityModule({
-          explicitModule: item.module_number,
-          dateValue: item.created_date,
-          moduleClosures,
-        }),
+        module: resolveItemModule(item, studentUnlocks),
       }));
 
     return {
