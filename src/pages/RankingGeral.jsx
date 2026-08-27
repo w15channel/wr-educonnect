@@ -7,6 +7,7 @@ import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, rankingScoreValue, sumRoundedScores } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { groupUnlocksByEmail, resolveItemModule } from '@/lib/moduleAttribution';
+import { buildStudentScoreSummary } from '@/lib/buildStudentAcademicData';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -258,6 +259,14 @@ export default function RankingGeral() {
     queryKey: ['ranking-challenge-responses', activeCourseForQuery],
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourseForQuery }, '-created_date', 5000),
   });
+  const { data: allChallenges = [] } = useQuery({
+    queryKey: ['ranking-challenges', activeCourseForQuery],
+    queryFn: () => base44.entities.DailyChallenge.filter({ course: activeCourseForQuery }, '-date', 2000),
+  });
+  const { data: moduleClosures = [] } = useQuery({
+    queryKey: ['ranking-module-closures'],
+    queryFn: () => base44.entities.ModuleClosure.list('-closed_at', 100),
+  });
 
   // Os módulos são atemporais: todo progresso válido do curso participa do ranking.
   const isCourseProgress = () => true;
@@ -404,16 +413,34 @@ export default function RankingGeral() {
   // Somatória por módulo: usada quando o aluno escolhe um módulo específico.
   const moduleTotals = useMemo(() => {
     const map = {};
-    deduplicatedScoreItems.forEach((s) => {
-      if (!s.verified || !courseEmailSet.has(s.student_email)) return;
-      if (resolveItemModule(s, unlocksByEmail.get(s.student_email) || []) !== Number(selectedModule)) return;
-      if (!belongsToCourse(s)) return;
-      if (!map[s.student_email]) map[s.student_email] = { points: 0, count: 0 };
-      map[s.student_email].points += rankingScoreValue(s);
-      map[s.student_email].count += 1;
+    courseEmailSet.forEach((email) => {
+      const summary = buildStudentScoreSummary({
+        studentEmail: email,
+        scoreItems: deduplicatedScoreItems.filter((item) => item.student_email === email && belongsToCourse(item)),
+        lessons: courseLessons,
+        tasks: courseTasks,
+        exams: courseExams,
+        examSubs: allExamSubmissions,
+        pairings: allPairings,
+        challengeResponses: allChallengeResponses,
+        lessonProgress: allLessonProgress,
+        taskSubmissions: allSubmissions,
+        forumPosts: courseForumPosts,
+        forumReplies: allForumReplies,
+        mentorships: courseMentorships,
+        challenges: allChallenges,
+        moduleClosures,
+      }, {
+        studentUnlocks: unlocksByEmail.get(email) || [],
+        moduleNumber: selectedModule,
+      });
+      map[email] = { points: summary.totalScore, count: summary.activityCount };
     });
     return map;
-  }, [deduplicatedScoreItems, courseEmailSet, belongsToCourse, selectedModule, unlocksByEmail]);
+  }, [deduplicatedScoreItems, courseEmailSet, belongsToCourse, selectedModule, unlocksByEmail,
+    courseLessons, courseTasks, courseExams, allExamSubmissions, allPairings, allChallengeResponses,
+    allLessonProgress, allSubmissions, courseForumPosts, allForumReplies, courseMentorships,
+    allChallenges, moduleClosures]);
 
   // ── Build and sort ranking — pontuação publicada é a fonte única da verdade,
   // igual ao painel admin (evita divergência quando o período foi encerrado) ──

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, rankingScoreValue, roundScore, SCORE_RULES, parseUtcDate } from '@/lib/scoreUtils';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import { groupUnlocksByEmail, resolveItemModule } from '@/lib/moduleAttribution';
+import { buildStudentScoreSummary } from '@/lib/buildStudentAcademicData';
 
 const CATEGORY_CONFIG = {
   lesson: { label: 'Aula Gravada', icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
@@ -735,6 +736,14 @@ export default function ScoreControl() {
     queryKey: ['ofensiva-responses-score-overview', activeCourse],
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourse }, '-date', 5000)
   });
+  const { data: dailyChallenges = [] } = useQuery({
+    queryKey: ['daily-challenges-score-overview', activeCourse],
+    queryFn: () => base44.entities.DailyChallenge.filter({ course: activeCourse }, '-date', 2000)
+  });
+  const { data: moduleClosures = [] } = useQuery({
+    queryKey: ['module-closures-score-overview'],
+    queryFn: () => base44.entities.ModuleClosure.list('-closed_at', 100)
+  });
 
   // Reconstitui ScoreItems e observações a partir das atividades reais ao abrir
   // o controle. Isso também cobre instalações em que a automação de entidade
@@ -868,13 +877,43 @@ export default function ScoreControl() {
     );
   };
 
-  const getCourseScoreTotal = (email) =>
-    getCourseScoreItems(email).reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0);
+  const academicSummaryByEmail = useMemo(() => {
+    const summaries = new Map();
+    for (const code of codes) {
+      const email = code.student_email;
+      if (!email || summaries.has(email)) continue;
+      summaries.set(email, buildStudentScoreSummary({
+        studentEmail: email,
+        scoreItems: getCourseScoreItems(email, { applyModuleFilter: false }),
+        lessons,
+        tasks,
+        exams,
+        examSubs: examSubmissions,
+        pairings: therapistPairings,
+        challengeResponses,
+        lessonProgress: lessonProgresses,
+        taskSubmissions: submissions,
+        forumPosts,
+        forumReplies,
+        mentorships,
+        challenges: dailyChallenges,
+        moduleClosures,
+      }, {
+        studentUnlocks: unlocksByEmail.get(email) || [],
+        moduleNumber: activeModule,
+      }));
+    }
+    return summaries;
+  }, [codes, scoreItems, lessons, tasks, exams, examSubmissions, therapistPairings, challengeResponses,
+    lessonProgresses, submissions, forumPosts, forumReplies, mentorships, dailyChallenges, moduleClosures,
+    moduleUnlocks, activeModule, activeCourse]);
 
   // Atividades = entregas atuais do aluno (aulas assistidas, tarefas, provas,
   // fórum, mentorias, Terapeuta da Semana e ofensivas). Módulos removidos e
   // históricos apagados não entram, pois contamos só os registros existentes.
   const getParticipationStats = (email) => {
+    const centralized = academicSummaryByEmail.get(email);
+    if (centralized) return { count: centralized.activityCount };
     // Com um módulo selecionado, o recorte é o próprio módulo (aula/tarefa) ou a
     // janela de datas do período (fórum e monitoria). Sem módulo, vale o corte do
     // total geral atemporal.
@@ -919,10 +958,10 @@ export default function ScoreControl() {
     for (const code of codes) {
       const studentEmail = code.student_email;
       if (!studentEmail || totals.has(studentEmail)) continue;
-      totals.set(studentEmail, capScore(getCourseScoreTotal(studentEmail)));
+      totals.set(studentEmail, capScore(academicSummaryByEmail.get(studentEmail)?.totalScore || 0));
     }
     return totals;
-  }, [codes, scoreItems, forumPosts, forumReplies, lessons, tasks, exams, therapistPairings, mentorships, activeCourse, selectedModule, moduleUnlocks]);
+  }, [codes, academicSummaryByEmail]);
 
   const sortedRows = filtered.
   map((code) => {
