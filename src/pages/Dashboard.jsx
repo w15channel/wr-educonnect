@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import TutorialPlayerCard from '@/components/dashboard/TutorialPlayerCard';
+import ChecklistDashboardCard from '@/components/checklist/ChecklistDashboardCard';
 import { isAnnouncementVisible } from '@/lib/announcementVisibility';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -553,8 +553,8 @@ export default function Dashboard() {
       {/* Student: progress + ranking */}
       {!isTeacher &&
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Tutorial player */}
-          <TutorialPlayerCard />
+          {/* Checklist do módulo — ferramenta que ocupa o espaço do antigo tutorial */}
+          <ChecklistDashboardCard session={session} course={userCourse} />
 
           {/* Ranking */}
           <div className="order-first lg:col-span-2 bg-card rounded-2xl border border-border p-5 text-left flex flex-col">

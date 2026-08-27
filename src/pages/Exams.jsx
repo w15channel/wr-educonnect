@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatScore } from '@/lib/scoreUtils';
+import useModuleChecklist from '@/hooks/useModuleChecklist';
+import { parseModuleNumber } from '@/lib/examChecklistRules';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ExamEditor from '../components/exams/ExamEditor';
 import ExamSubmissionGrader from '../components/exams/ExamSubmissionGrader';
@@ -71,6 +73,8 @@ export default function Exams() {
   const [editingExam, setEditingExam] = useState(null);
   const [gradingSubmission, setGradingSubmission] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState('all');
+  // Sequência de liberação: a prova do módulo só abre com o checklist cumprido.
+  const { isModuleUnlockedForExam } = useModuleChecklist({ course: userCourse, session });
 
   // Load all exams for this course
   const { data: exams = [], isLoading } = useQuery({
@@ -328,15 +332,36 @@ export default function Exams() {
                   ) : (
                     <SubmittedView submission={submission} />
                   )
-                ) : (
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
-                    onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
-                  >
-                    <Play size={13} /> Iniciar Prova
-                  </Button>
-                )}
+                ) : (() => {
+                  const examModule = parseModuleNumber(exam.module_ref);
+                  const checklistLocked = !isTeacher && !!examModule && !isModuleUnlockedForExam(examModule);
+                  if (checklistLocked) {
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3">
+                          <AlertCircle size={15} /> Prova bloqueada: conclua o checklist do Módulo {examModule} para liberar.
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 font-bold"
+                          onClick={() => navigate(`${prefix}/checklist?module=${examModule}`)}
+                        >
+                          Ver checklist do Módulo {examModule}
+                        </Button>
+                      </div>
+                    );
+                  }
+                  return (
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
+                      onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
+                    >
+                      <Play size={13} /> Iniciar Prova
+                    </Button>
+                  );
+                })()}
                 </div>
                 )}
               </div>

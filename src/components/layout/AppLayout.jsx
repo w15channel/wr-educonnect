@@ -8,6 +8,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import TutorialModal from '../onboarding/TutorialModal';
 import MobileSplash from './MobileSplash';
+import ChecklistReturnBar from '../checklist/ChecklistReturnBar';
 
 const TUTORIAL_KEY = 'wr_tutorial_done';
 
@@ -149,6 +150,7 @@ export default function AppLayout() {
           </AnimatePresence>
         </div>
 
+        <ChecklistReturnBar />
         <BottomNav onMenuOpen={() => setSidebarOpen(true)} />
       </main>
     </div>

@@ -346,10 +346,12 @@ export default function RankingGeral() {
     if (isOfensivaScoreItem(item)) return true;
     if (isTherapistScoreItem(item) || item.category === 'therapist') return true;
     if (item.category === 'exam') return true;
-    if (item.category === 'lesson') return lessonRefIds.has(refId);
-    if (item.category === 'task' || item.category === 'quiz') return taskRefIds.has(refId);
-    if (item.category === 'forum') return forumRefIds.has(refId);
-    if (item.category === 'mentorship') return mentorshipRefIds.has(refId);
+    // Quando a lista de origem não pôde ser carregada (permissão/consulta vazia),
+    // preferimos mostrar a atividade a esconder pontuação já lançada.
+    if (item.category === 'lesson') return lessonRefIds.size === 0 || lessonRefIds.has(refId);
+    if (item.category === 'task' || item.category === 'quiz') return taskRefIds.size === 0 || taskRefIds.has(refId);
+    if (item.category === 'forum') return forumRefIds.size === 0 || forumRefIds.has(refId);
+    if (item.category === 'mentorship') return mentorshipRefIds.size === 0 || mentorshipRefIds.has(refId);
     return true;
   }, [lessonRefIds, taskRefIds, forumRefIds, mentorshipRefIds]);
 
