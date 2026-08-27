@@ -553,12 +553,9 @@ export default function Dashboard() {
       {/* Student: progress + ranking */}
       {!isTeacher &&
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Checklist do módulo — agora no lugar de destaque que era do ranking */}
-          <ChecklistDashboardCard session={session} course={userCourse} className="order-first lg:col-span-2" />
-
-          {/* Mural + Ranking */}
-          <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-5 text-left flex flex-col">
-            <div className="order-2 mt-5 pt-5 border-t border-border">
+          {/* Ranking Geral — card próprio, abaixo do mural + checklist */}
+          <div className="lg:col-span-2 order-2 bg-card rounded-2xl border border-border p-5 text-left">
+            <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
@@ -615,8 +612,11 @@ export default function Dashboard() {
               </div>
           }
             </div>
+          </div>
 
-            <div className="order-1 space-y-3">
+          {/* Mural de Superação + Checklist agrupados */}
+          <div className="lg:col-span-2 order-1 bg-card rounded-2xl border border-border p-5 text-left flex flex-col">
+            <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Heart size={14} className="text-rose-500 fill-rose-100" />
@@ -737,6 +737,8 @@ export default function Dashboard() {
                 </button>
               </form>
             </div>
+
+            <ChecklistDashboardCard session={session} course={userCourse} className="mt-5" />
           </div>
         </div>
       }

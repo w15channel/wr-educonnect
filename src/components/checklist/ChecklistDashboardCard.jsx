@@ -30,7 +30,10 @@ export default function ChecklistDashboardCard({ session, course, className = ''
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-black text-base text-foreground">Checklist do Módulo {currentModule}</h3>
+            <h3 className="font-black text-base text-foreground">Meu Checklist de Estudos</h3>
+            <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200">
+              Etapa atual · Módulo {currentModule}
+            </span>
             <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${current?.complete ? 'border-green-200 bg-green-50 text-green-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
               {current?.complete ? <Unlock size={10} /> : <Lock size={10} />}
               {current?.complete ? 'Prova liberada' : 'Prova bloqueada'}
