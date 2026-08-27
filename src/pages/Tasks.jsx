@@ -143,6 +143,8 @@ export default function Tasks({ mode = 'tasks' }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
+  // Módulo aberto na sanfona (null = nenhum; undefined = usar o padrão calculado)
+  const [openModule, setOpenModule] = useState(undefined);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', userCourse],
@@ -215,6 +217,12 @@ export default function Tasks({ mode = 'tasks' }) {
       locked: !isTeacher && Number(m) > 0 && !moduleUnlocked[Number(m) - 1],
     }))
     .sort((a, b) => a.module - b.module);
+
+  // Por padrão, abre o primeiro módulo liberado que ainda tem trabalho pendente.
+  const defaultOpenModule =
+    moduleGroups.find(g => !g.locked && g.tasks.some(t => !submissionByTaskId[t.id]))?.module ??
+    moduleGroups.find(g => !g.locked)?.module ?? null;
+  const activeModule = openModule === undefined ? defaultOpenModule : openModule;
 
   const submitCommentMutation = useMutation({
     mutationFn: async ({ taskId, comment }) => {
@@ -348,7 +356,9 @@ export default function Tasks({ mode = 'tasks' }) {
         </div>
       ) : (
         <div className="space-y-6">
-          {moduleGroups.map(({ module, tasks: moduleTasks, locked: moduleLocked }) => (
+          {moduleGroups.map(({ module, tasks: moduleTasks, locked: moduleLocked }) => {
+            const isModuleOpen = module === 0 ? true : !moduleLocked && activeModule === module;
+            return (
             <div key={module} className="space-y-3">
               {module > 0 && (
                 <TaskModuleHeader
@@ -356,9 +366,11 @@ export default function Tasks({ mode = 'tasks' }) {
                   total={moduleTasks.length}
                   done={moduleTasks.filter(t => submissionByTaskId[t.id]).length}
                   locked={moduleLocked}
+                  expanded={isModuleOpen}
+                  onToggle={moduleLocked ? undefined : () => setOpenModule(activeModule === module ? null : module)}
                 />
               )}
-              {!moduleLocked && moduleTasks.map((task, idx) => {
+              {!moduleLocked && isModuleOpen && moduleTasks.map((task, idx) => {
             const submission = submissionByTaskId[task.id];
             const isDone = !!submission;
             const isExpanded = expandedId === task.id;
@@ -458,7 +470,8 @@ export default function Tasks({ mode = 'tasks' }) {
             );
               })}
             </div>
-          ))}
+            );
+          })}
 
           {!isTeacher && totalSubmitted >= sortedTasks.length && sortedTasks.length > 0 && (
             <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 text-center">

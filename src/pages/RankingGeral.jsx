@@ -15,7 +15,7 @@ const CATEGORY_CONFIG = {
   task:       { label: 'Tarefa',                icon: FileText,       color: 'bg-orange-100 text-orange-700' },
   quiz:       { label: 'Prova',                 icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
   exam:       { label: 'Prova do Módulo',       icon: GraduationCap,  color: 'bg-indigo-100 text-indigo-700' },
-  forum:      { label: 'Fórum',                 icon: MessageSquare,  color: 'bg-green-100 text-green-700' },
+  forum:      { label: 'Debate (Sala de Debates)', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
   mentorship: { label: 'Mentoria',              icon: HandHeart,      color: 'bg-rose-100 text-rose-700' },
   therapist:  { label: 'Terapeuta da Semana',   icon: Heart,          color: 'bg-pink-100 text-pink-700' },
   ofensiva:   { label: 'Ofensiva Diária',       icon: Flame,          color: 'bg-orange-100 text-red-600' },
@@ -33,7 +33,7 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, belongsToCourse, onClose }) {
+function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter = 'all', onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
@@ -47,6 +47,8 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, onClose }) {
       if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
       // Mesma regra de inclusão do Controle de Pontuação
       if (belongsToCourse && !belongsToCourse(s)) continue;
+      // Filtro de módulo: mostra somente as atividades pontuadas naquele módulo
+      if (moduleFilter !== 'all' && Number(s.module_number) !== Number(moduleFilter)) continue;
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
@@ -54,7 +56,7 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, onClose }) {
       if (!prevWins) seen.set(key, s);
     }
     return [...seen.values()];
-  }, [scoreItems, email, belongsToCourse]);
+  }, [scoreItems, email, belongsToCourse, moduleFilter]);
 
   // Soma transparente: apenas os itens verificados exibidos no modal contam.
   // Nunca criamos "ajustes" artificiais para fechar com o total publicado/cache.
@@ -80,7 +82,7 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, onClose }) {
     byCategory[category].push(item);
   });
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
         className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col animate-fade-in-up"
         onClick={e => e.stopPropagation()}
@@ -100,6 +102,9 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, onClose }) {
             <div className="flex items-center gap-1.5 mt-1.5">
               <Star size={14} className="text-yellow-400 fill-yellow-400" />
               <span className="text-base font-black text-yellow-600">{formatScore(liveTotal)} pts</span>
+              <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                {moduleFilter === 'all' ? 'Todos os módulos' : `Módulo ${moduleFilter}`}
+              </span>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-secondary transition-colors shrink-0">
@@ -157,6 +162,8 @@ const COURSE_LABELS = {
 export default function RankingGeral() {
   const { user: session } = useOutletContext();
   const [selected, setSelected] = useState(null);
+  // 'all' = pontuação geral publicada · 1–10 = somatória só daquele módulo
+  const [selectedModule, setSelectedModule] = useState('all');
   // Admin without a course in session gets a course picker
   const [adminCourseFilter, setAdminCourseFilter] = useState('tcc');
 
@@ -380,18 +387,38 @@ export default function RankingGeral() {
     return map;
   }, [courseEmailSet, allLessonProgress, allSubmissions, allExamSubmissions, courseForumPosts, allForumReplies, courseMentorships, allPairings, allChallengeResponses, lessonRefIds, taskRefIds, examRefIds, forumPostRefIds, forumParentById]);
 
+  // Somatória por módulo: usada quando o aluno escolhe um módulo específico.
+  const moduleTotals = useMemo(() => {
+    const map = {};
+    if (selectedModule === 'all') return map;
+    deduplicatedScoreItems.forEach((s) => {
+      if (!s.verified || !courseEmailSet.has(s.student_email)) return;
+      if (Number(s.module_number) !== Number(selectedModule)) return;
+      if (!belongsToCourse(s)) return;
+      if (!map[s.student_email]) map[s.student_email] = { points: 0, count: 0 };
+      map[s.student_email].points += rankingScoreValue(s);
+      map[s.student_email].count += 1;
+    });
+    return map;
+  }, [deduplicatedScoreItems, courseEmailSet, belongsToCourse, selectedModule]);
+
   // ── Build and sort ranking — pontuação publicada é a fonte única da verdade,
   // igual ao painel admin (evita divergência quando o período foi encerrado) ──
   const ranking = useMemo(() => {
     return courseCodes
       .map(c => {
-        const total = capScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0);
-        const publishedRank = publishedRankMap[c.student_email] ?? Number.MAX_SAFE_INTEGER;
+        const byModule = moduleTotals[c.student_email];
+        const total = selectedModule === 'all'
+          ? capScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0)
+          : capScore(byModule?.points || 0);
+        const publishedRank = selectedModule === 'all'
+          ? (publishedRankMap[c.student_email] ?? Number.MAX_SAFE_INTEGER)
+          : Number.MAX_SAFE_INTEGER;
         return {
           email: c.student_email,
           total,
           publishedRank,
-          count: participationMap[c.student_email] || 0,
+          count: selectedModule === 'all' ? (participationMap[c.student_email] || 0) : (byModule?.count || 0),
           enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
           name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
           code: c,
@@ -409,7 +436,7 @@ export default function RankingGeral() {
         if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
         return a.name.localeCompare(b.name);
       });
-  }, [courseCodes, publishedScoreMap, publishedRankMap, participationMap]);
+  }, [courseCodes, publishedScoreMap, publishedRankMap, participationMap, moduleTotals, selectedModule]);
 
   const myPos = ranking.findIndex(r => r.email === session?.email) + 1;
   const isLoading = loadingScores || loadingCodes || loadingProfiles;
@@ -467,6 +494,33 @@ export default function RankingGeral() {
           ))}
         </div>
       )}
+
+      {/* Filtro por módulo */}
+      <div className="mb-5 rounded-2xl border border-border bg-card p-3">
+        <p className="mb-2 text-xs font-bold text-foreground">Ver pontuação por módulo</p>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedModule('all')}
+            className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${selectedModule === 'all' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/40'}`}
+          >
+            Geral
+          </button>
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              onClick={() => setSelectedModule(n)}
+              className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${selectedModule === n ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/40'}`}
+            >
+              Módulo {n}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {selectedModule === 'all'
+            ? 'Exibindo a pontuação geral publicada. Clique em um aluno para ver o detalhamento das notas.'
+            : `Exibindo somente o total do Módulo ${selectedModule} — aulas, tarefas, provas, debates, mentorias, Terapeuta da Semana e ofensivas. Clique em um aluno para ver o detalhamento.`}
+        </p>
+      </div>
 
       {/* Body */}
       <Accordion type="multiple" defaultValue={['current']} className="space-y-3">
@@ -561,6 +615,7 @@ export default function RankingGeral() {
           code={selected}
           scoreItems={allScoreItems}
           belongsToCourse={belongsToCourse}
+          moduleFilter={selectedModule}
           onClose={() => setSelected(null)}
         />
       )}

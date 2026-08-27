@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { MessageCircle, Phone, X } from 'lucide-react';
@@ -19,13 +20,16 @@ export function ClickableStudent({ email, children, className = '' }) {
   if (!email) return <span className={className}>{children}</span>;
   return (
     <>
-      <button
-        type="button"
+      {/* span com role=button: evita <button> aninhado em listas clicáveis (ranking) */}
+      <span
+        role="button"
+        tabIndex={0}
         onClick={(e) => { e.stopPropagation(); setShow(true); }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); setShow(true); } }}
         className={`hover:underline cursor-pointer transition-opacity hover:opacity-80 ${className}`}
       >
         {children}
-      </button>
+      </span>
       {show && <StudentProfileCard email={email} onClose={() => setShow(false)} />}
     </>
   );
@@ -61,9 +65,10 @@ export default function StudentProfileCard({ email, onClose }) {
   const lastSeenText = isOnline ? 'Online agora' : lastSeen ? `Visto por último em ${lastSeen.toLocaleDateString('pt-BR')} às ${lastSeen.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Visto por último indisponível';
   const initials = getInitials(name);
 
-  return (
+  // Portal no body: garante que o cartão fique acima de listas com blur/overflow.
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       onClick={onClose}
     >
       {/* Backdrop */}
@@ -145,6 +150,7 @@ export default function StudentProfileCard({ email, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
