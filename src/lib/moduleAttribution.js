@@ -35,9 +35,7 @@ export function resolveCurrentStudentModule(unlocks = []) {
   return resolveStudentModuleAt(unlocks, new Date().toISOString());
 }
 
-/** Módulo de um ScoreItem: o marcado manualmente pelo admin ou, na falta dele, o módulo em que o aluno estava quando pontuou. */
+/** Módulo de um ScoreItem: o módulo liberado ao aluno quando ele pontuou. */
 export function resolveItemModule(item, unlocks = []) {
-  const stamped = Number(item?.module_number);
-  if (Number.isFinite(stamped) && stamped >= 1) return stamped;
   return resolveStudentModuleAt(unlocks, item?.created_date);
 }

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, HandHeart, CheckCircle, FileText, GraduationCap, Flame } from 'lucide-react';
+import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, HandHeart, FileText, GraduationCap, Flame } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, rankingScoreValue, sumRoundedScores } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
@@ -34,7 +34,7 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter = 'all', studentUnlocks = [], onClose }) {
+function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter = 1, studentUnlocks = [], onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
@@ -49,14 +49,18 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter =
       // Mesma regra de inclusão do Controle de Pontuação
       if (belongsToCourse && !belongsToCourse(s)) continue;
       // Filtro de módulo: mostra somente as atividades pontuadas naquele módulo
-      if (moduleFilter !== 'all' && resolveItemModule(s, studentUnlocks) !== Number(moduleFilter)) continue;
+      if (resolveItemModule(s, studentUnlocks) !== Number(moduleFilter)) continue;
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
       const prevWins = (Number(prev.score) || 0) >= (Number(s.score) || 0);
       if (!prevWins) seen.set(key, s);
     }
-    return [...seen.values()];
+    return [...seen.values()].sort((a, b) => {
+      const aTime = new Date(a.created_date || 0).getTime();
+      const bTime = new Date(b.created_date || 0).getTime();
+      return aTime - bTime;
+    });
   }, [scoreItems, email, belongsToCourse, moduleFilter, studentUnlocks]);
 
   // Soma transparente: apenas os itens verificados exibidos no modal contam.
@@ -82,6 +86,7 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter =
     if (!byCategory[category]) byCategory[category] = [];
     byCategory[category].push(item);
   });
+  const sequenceById = new Map(myItems.map((item, index) => [item.id, index + 1]));
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
@@ -104,7 +109,7 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter =
               <Star size={14} className="text-yellow-400 fill-yellow-400" />
               <span className="text-base font-black text-yellow-600">{formatScore(liveTotal)} pts</span>
               <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                {moduleFilter === 'all' ? 'Todos os módulos' : `Módulo ${moduleFilter}`}
+                Módulo {moduleFilter}
               </span>
             </div>
           </div>
@@ -134,7 +139,9 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter =
                 <div className="space-y-1.5">
                   {items.map(item => (
                     <div key={item.id} className="flex items-center gap-2 bg-secondary/40 rounded-xl px-3 py-2">
-                      <CheckCircle size={12} className="text-green-500 shrink-0" />
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1 text-[10px] font-black text-primary shrink-0">
+                        {sequenceById.get(item.id)}
+                      </span>
                       <span className="text-xs text-foreground flex-1 truncate">{item.ref_title}</span>
                       <span className="text-xs font-bold text-foreground shrink-0">{formatScore(item.score)} pts</span>
                     </div>
@@ -163,8 +170,7 @@ const COURSE_LABELS = {
 export default function RankingGeral() {
   const { user: session } = useOutletContext();
   const [selected, setSelected] = useState(null);
-  // 'all' = pontuação geral publicada · 1–10 = somatória só daquele módulo
-  const [selectedModule, setSelectedModule] = useState('all');
+  const [selectedModule, setSelectedModule] = useState(1);
   // Admin without a course in session gets a course picker
   const [adminCourseFilter, setAdminCourseFilter] = useState('tcc');
 
@@ -398,7 +404,6 @@ export default function RankingGeral() {
   // Somatória por módulo: usada quando o aluno escolhe um módulo específico.
   const moduleTotals = useMemo(() => {
     const map = {};
-    if (selectedModule === 'all') return map;
     deduplicatedScoreItems.forEach((s) => {
       if (!s.verified || !courseEmailSet.has(s.student_email)) return;
       if (resolveItemModule(s, unlocksByEmail.get(s.student_email) || []) !== Number(selectedModule)) return;
@@ -416,17 +421,13 @@ export default function RankingGeral() {
     return courseCodes
       .map(c => {
         const byModule = moduleTotals[c.student_email];
-        const total = selectedModule === 'all'
-          ? capScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0)
-          : capScore(byModule?.points || 0);
-        const publishedRank = selectedModule === 'all'
-          ? (publishedRankMap[c.student_email] ?? Number.MAX_SAFE_INTEGER)
-          : Number.MAX_SAFE_INTEGER;
+        const total = capScore(byModule?.points || 0);
+        const publishedRank = Number.MAX_SAFE_INTEGER;
         return {
           email: c.student_email,
           total,
           publishedRank,
-          count: selectedModule === 'all' ? (participationMap[c.student_email] || 0) : (byModule?.count || 0),
+          count: byModule?.count || 0,
           enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
           name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
           code: c,
@@ -507,12 +508,6 @@ export default function RankingGeral() {
       <div className="mb-5 rounded-2xl border border-border bg-card p-3">
         <p className="mb-2 text-xs font-bold text-foreground">Ver pontuação por módulo</p>
         <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() => setSelectedModule('all')}
-            className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors ${selectedModule === 'all' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/40'}`}
-          >
-            Geral
-          </button>
           {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
@@ -524,9 +519,7 @@ export default function RankingGeral() {
           ))}
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          {selectedModule === 'all'
-            ? 'Exibindo a pontuação geral publicada. Clique em um aluno para ver o detalhamento das notas.'
-            : `Exibindo somente o total do Módulo ${selectedModule} — aulas, tarefas, provas, debates, mentorias, Terapeuta da Semana e ofensivas. Clique em um aluno para ver o detalhamento.`}
+          {`Exibindo somente o total do Módulo ${selectedModule} — em sequência, com todas as atividades pontuadas. Clique em um aluno para ver o detalhamento.`}
         </p>
       </div>
 
