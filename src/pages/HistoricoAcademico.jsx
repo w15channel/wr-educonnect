@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { formatScore, roundScore, capScore } from '@/lib/scoreUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
@@ -24,7 +24,7 @@ const HISTORY_CATEGORY = {
 };
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
-function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, onClose, isAdmin = false }) {
+function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, activitiesCount = 0, onClose, isAdmin = false }) {
   const certRef = useRef(null);
   const emissionDate = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const emissionTime = format(new Date(), "HH:mm:ss");
@@ -155,6 +155,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aluno(a)</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{student.name}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aproveitamento</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{approvalRate}%</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Pontuação de Estudos</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} / {formatScore(totalMaxScore)}</p></div>
+          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Atividades Realizadas</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{activitiesCount}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Carga Horária</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours}h</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Data de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionDate}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Horário de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionTime}</p></div>
@@ -367,11 +368,12 @@ export default function HistoricoAcademico() {
       mentorships,
     });
     
-    const academicRows = rows.filter((r) => r.status === 'Avaliado').map(r => ({
+    const mappedRows = rows.map(r => ({
       ...r,
       category: HISTORY_CATEGORY[r.category] || 'ATIVIDADES COMPLEMENTARES',
       score: r.score,
     }));
+    const academicRows = mappedRows.filter((r) => r.status === 'Avaliado');
 
     const representedKeys = new Set(academicRows.map((row) => row.key));
     const complementaryRows = scoreItems
@@ -389,7 +391,12 @@ export default function HistoricoAcademico() {
         module: Number(item.module_number) || null,
       }));
 
-    return [...academicRows, ...complementaryRows];
+    return {
+      // Atividades realizadas pelo aluno (entram no histórico)
+      rows: [...academicRows, ...complementaryRows],
+      // Todas as atividades pontuáveis disponíveis (inclui pendentes) — denominador do aproveitamento
+      availableRows: [...mappedRows, ...complementaryRows],
+    };
   }
 
   function openSelector(student) {
@@ -408,17 +415,29 @@ export default function HistoricoAcademico() {
     setShowDocument(false);
   }
 
-  const allRows = selectedStudent ? buildAllRows(selectedStudent) : [];
+  const { rows: allRows, availableRows } = selectedStudent ? buildAllRows(selectedStudent) : { rows: [], availableRows: [] };
 
   // Atividades sem módulo definido (fórum, ofensivas etc.) aparecem sempre que
   // ao menos um módulo estiver selecionado — antes elas ficavam invisíveis.
-  const moduleRows = allRows.filter((r) => (r.module ? selectedModules.has(r.module) : selectedModules.size > 0));
+  const byModule = (r) => (r.module ? selectedModules.has(r.module) : selectedModules.size > 0);
+  const moduleRows = allRows.filter(byModule);
+  const availableModuleRows = availableRows.filter(byModule);
   const selectedRows = moduleRows.filter(r => selectedItems.has(r.key));
   const selectedScoreRows = selectedRows.filter(r => r.status === 'Avaliado');
-  const totalScore = selectedScoreRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0);
-  const totalMaxScore = selectedScoreRows.reduce((sum, r) => roundScore(sum + roundScore(r.max)), 0);
+
+  // Nota de estudos das atividades selecionadas — limitada a 100 pontos.
+  const totalScore = capScore(selectedScoreRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0));
+  const totalMaxScore = 100;
   const totalHours = selectedRows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + r.hours, 0);
-  const approvalRate = totalMaxScore > 0 ? formatScore((totalScore / totalMaxScore) * 100) : 0;
+
+  // Aproveitamento: pontos adquiridos nas atividades realizadas ÷ total de pontos
+  // disponíveis ao aluno nos módulos selecionados (aulas, tarefas, provas e complementares).
+  const earnedScore = moduleRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0);
+  const availableMaxScore = availableModuleRows.reduce((sum, r) => roundScore(sum + roundScore(r.max)), 0);
+  const approvalRate = availableMaxScore > 0 ? formatScore(Math.min((earnedScore / availableMaxScore) * 100, 100)) : 0;
+
+  // Número de atividades realizadas pelo aluno nos módulos selecionados.
+  const activitiesCount = moduleRows.length;
 
   const toggleItem = (key) => {
     setSelectedItems(prev => {
@@ -467,6 +486,7 @@ export default function HistoricoAcademico() {
             totalMaxScore={totalMaxScore}
             totalHours={totalHours}
             approvalRate={approvalRate}
+            activitiesCount={activitiesCount}
           />
         </div>
       );
@@ -485,10 +505,11 @@ export default function HistoricoAcademico() {
         </div>
 
         {/* Summary bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
             { label: 'Itens selecionados', value: selectedItems.size },
-            { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` },
+            { label: 'Atividades realizadas', value: activitiesCount },
+            { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` },
             { label: 'Aproveitamento', value: `${approvalRate}%` },
             { label: 'Carga Horária', value: `${totalHours}h` },
           ].map(item => (
@@ -534,7 +555,7 @@ export default function HistoricoAcademico() {
     return (
       <div className="app-page max-w-4xl mx-auto">
         <button onClick={() => setShowDocument(false)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">← Voltar para Seleção</button>
-        <AcademicRecord student={selectedStudent} rows={selectedRows} totalScore={totalScore} totalMaxScore={totalMaxScore} totalHours={totalHours} approvalRate={approvalRate} isAdmin={isTeacher} onClose={() => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); }} />
+        <AcademicRecord student={selectedStudent} rows={selectedRows} totalScore={totalScore} totalMaxScore={totalMaxScore} totalHours={totalHours} approvalRate={approvalRate} activitiesCount={activitiesCount} isAdmin={isTeacher} onClose={() => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); }} />
       </div>
     );
   }
@@ -550,8 +571,8 @@ export default function HistoricoAcademico() {
             <p className="text-sm text-muted-foreground">Aluno: <span className="font-semibold text-foreground">{selectedStudent.name}</span></p>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/${formatScore(totalMaxScore)}` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: `${totalHours}h` }].map(item => (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Atividades realizadas', value: activitiesCount }, { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: `${totalHours}h` }].map(item => (
             <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground">{item.label}</p>
               <p className="text-base font-black text-primary">{item.value}</p>
