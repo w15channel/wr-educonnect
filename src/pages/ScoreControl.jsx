@@ -746,7 +746,9 @@ export default function ScoreControl() {
   }, [automaticSyncComplete, isTeacher, queryClient]);
 
   const moduleOptions = useMemo(() => {
-    const numbers = new Set();
+    // Os 10 módulos ficam sempre disponíveis: o admin pode atribuir a pontuação
+    // a qualquer módulo, mesmo antes de existirem aulas cadastradas nele.
+    const numbers = new Set(Array.from({ length: 10 }, (_, i) => i + 1));
     for (const lesson of lessons) { const n = parseModuleNumber(lesson.module_number); if (n) numbers.add(n); }
     for (const task of tasks) { const n = parseModuleNumber(task.module_number); if (n) numbers.add(n); }
     for (const exam of exams) { const n = parseModuleNumber(exam.module_ref); if (n) numbers.add(n); }
@@ -870,7 +872,9 @@ export default function ScoreControl() {
     });
   });
 
-  const getCourseScoreTotal = (email) => {
+  // Itens de pontuação do aluno que pertencem ao curso ativo. Com
+  // applyModuleFilter=false devolve todos (usado para atribuir um módulo).
+  const getCourseScoreItems = (email, { applyModuleFilter = true } = {}) => {
     const studentSpecificForumPosts = forumPosts.filter(
       (p) => p.author_email === email && p.course === activeCourse
     );
@@ -889,7 +893,7 @@ export default function ScoreControl() {
     const studentMentorshipIds = courseMentorshipIdsByEmail.get(email) || new Set();
 
     return scoreItems.
-    filter((s) => s.student_email === email && s.verified && scoreItemInSelectedModule(s) && (
+    filter((s) => s.student_email === email && s.verified && (!applyModuleFilter || scoreItemInSelectedModule(s)) && (
     s.category === 'lesson' && lessonIds.has(s.ref_id) ||
     (s.category === 'task' || s.category === 'quiz') && taskIds.has(s.ref_id) ||
     s.category === 'exam' ||
@@ -898,9 +902,11 @@ export default function ScoreControl() {
     s.category === 'mentorship' && studentMentorshipIds.has(s.ref_id) ||
     s.category === 'therapist' && coursePairingIds.has(s.ref_id) ||
     isTherapistScoreItem(s) && coursePairingIds.has(String(s.ref_id || '').split(':')[1]))
-    ).
-    reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0);
+    );
   };
+
+  const getCourseScoreTotal = (email) =>
+    getCourseScoreItems(email).reduce((sum, s) => roundScore(sum + rankingScoreValue(s)), 0);
 
   // Atividades = entregas atuais do aluno (aulas assistidas, tarefas, provas,
   // fórum, mentorias, Terapeuta da Semana e ofensivas). Módulos removidos e
@@ -1086,6 +1092,28 @@ export default function ScoreControl() {
 
   const saveOrderMutation = useMutation({
     mutationFn: async () => {
+      // Com um módulo selecionado, salvar a sequência também registra que aquela
+      // pontuação pertence ao módulo escolhido — é isso que torna os pontos
+      // visíveis no ranking por módulo do aluno.
+      if (activeModule) {
+        const idsToStamp = [];
+        for (const item of customOrder.map(resolveRow)) {
+          const studentEmail = item.code?.student_email;
+          if (!studentEmail) continue;
+          for (const scoreItem of getCourseScoreItems(studentEmail, { applyModuleFilter: false })) {
+            const current = Number(scoreItem.module_number);
+            if (!current || current === activeModule) idsToStamp.push(scoreItem.id);
+          }
+        }
+        if (idsToStamp.length > 0) {
+          await base44.functions.invoke('stampScoreModule', {
+            admin_email: session?.email,
+            module_number: activeModule,
+            score_item_ids: idsToStamp
+          });
+        }
+      }
+
       for (const [index, item] of customOrder.map(resolveRow).entries()) {
         const code = item.code;
         const existing = studentProfiles.find((p) => p.student_email === code.student_email && p.dashboard_course === activeCourse);
@@ -1109,7 +1137,11 @@ export default function ScoreControl() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
-      toast.success('Sequência salva com sucesso!');
+      await queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
+      await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      toast.success(activeModule
+        ? `Sequência salva e pontos vinculados ao ${activeModuleLabel} — já visíveis para os alunos.`
+        : 'Sequência salva com sucesso!');
     }
   });
 
@@ -1160,9 +1192,10 @@ export default function ScoreControl() {
             </button>
           )}
           {isTeacher &&
-          <Button size="sm" variant="outline" className="text-xs" onClick={() => saveOrderMutation.mutate()} disabled={saveOrderMutation.isPending || customOrder.length === 0}>
-              {saveOrderMutation.isPending ? 'Salvando...' : 'Salvar sequência'}
-            </Button>
+          <Button size="sm" variant="outline" className="text-xs" onClick={() => saveOrderMutation.mutate()} disabled={saveOrderMutation.isPending || customOrder.length === 0}
+            title={activeModule ? `Salva a sequência e registra estes pontos no ${activeModuleLabel}` : 'Salva a sequência do total geral'}>
+            {saveOrderMutation.isPending ? 'Salvando...' : activeModule ? `Salvar sequência no ${activeModuleLabel}` : 'Salvar sequência'}
+          </Button>
           }
         </div>
       </div>
