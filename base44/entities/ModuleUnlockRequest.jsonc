@@ -1,0 +1,64 @@
+{
+  "name": "ModuleUnlockRequest",
+  "type": "object",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno solicitante"
+    },
+    "student_name": {
+      "type": "string",
+      "description": "Nome do aluno"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "default": "tcc"
+    },
+    "module_number": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "M\u00f3dulo solicitado (o pr\u00f3ximo do aluno)"
+    },
+    "from_module": {
+      "type": "number",
+      "description": "M\u00f3dulo conclu\u00eddo que originou o pedido"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "Email do admin que respondeu"
+    }
+  },
+  "required": [
+    "student_email",
+    "module_number"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}

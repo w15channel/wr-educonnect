@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
+import ModuleUnlockPanel from '@/components/scores/ModuleUnlockPanel';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, HandHeart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -1176,6 +1177,8 @@ export default function ScoreControl() {
           </div>
         }
       </div>
+
+      {isTeacher && <ModuleUnlockPanel course={activeCourse} adminEmail={session?.email || ''} />}
 
       <div className="mb-4 flex flex-wrap gap-2 items-center">
         <div className="relative w-full sm:w-64">

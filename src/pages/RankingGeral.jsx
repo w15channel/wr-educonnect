@@ -6,6 +6,7 @@ import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart,
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, rankingScoreValue, sumRoundedScores } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { groupUnlocksByEmail, resolveItemModule } from '@/lib/moduleAttribution';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter = 'all', onClose }) {
+function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter = 'all', studentUnlocks = [], onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
@@ -48,7 +49,7 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter =
       // Mesma regra de inclusão do Controle de Pontuação
       if (belongsToCourse && !belongsToCourse(s)) continue;
       // Filtro de módulo: mostra somente as atividades pontuadas naquele módulo
-      if (moduleFilter !== 'all' && Number(s.module_number) !== Number(moduleFilter)) continue;
+      if (moduleFilter !== 'all' && resolveItemModule(s, studentUnlocks) !== Number(moduleFilter)) continue;
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
@@ -56,7 +57,7 @@ function StudentProfileModal({ code, scoreItems, belongsToCourse, moduleFilter =
       if (!prevWins) seen.set(key, s);
     }
     return [...seen.values()];
-  }, [scoreItems, email, belongsToCourse, moduleFilter]);
+  }, [scoreItems, email, belongsToCourse, moduleFilter, studentUnlocks]);
 
   // Soma transparente: apenas os itens verificados exibidos no modal contam.
   // Nunca criamos "ajustes" artificiais para fechar com o total publicado/cache.
@@ -240,6 +241,13 @@ export default function RankingGeral() {
     queryKey: ['ranking-pairings'],
     queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 2000),
   });
+  // Liberações de módulo: definem em que módulo cada aluno estava quando pontuou.
+  const { data: moduleUnlocks = [] } = useQuery({
+    queryKey: ['ranking-module-unlocks'],
+    queryFn: () => base44.entities.StudentModuleUnlock.list('-unlocked_at', 2000),
+  });
+  const unlocksByEmail = useMemo(() => groupUnlocksByEmail(moduleUnlocks), [moduleUnlocks]);
+
   const { data: allChallengeResponses = [] } = useQuery({
     queryKey: ['ranking-challenge-responses', activeCourseForQuery],
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourseForQuery }, '-created_date', 5000),
@@ -393,14 +401,14 @@ export default function RankingGeral() {
     if (selectedModule === 'all') return map;
     deduplicatedScoreItems.forEach((s) => {
       if (!s.verified || !courseEmailSet.has(s.student_email)) return;
-      if (Number(s.module_number) !== Number(selectedModule)) return;
+      if (resolveItemModule(s, unlocksByEmail.get(s.student_email) || []) !== Number(selectedModule)) return;
       if (!belongsToCourse(s)) return;
       if (!map[s.student_email]) map[s.student_email] = { points: 0, count: 0 };
       map[s.student_email].points += rankingScoreValue(s);
       map[s.student_email].count += 1;
     });
     return map;
-  }, [deduplicatedScoreItems, courseEmailSet, belongsToCourse, selectedModule]);
+  }, [deduplicatedScoreItems, courseEmailSet, belongsToCourse, selectedModule, unlocksByEmail]);
 
   // ── Build and sort ranking — pontuação publicada é a fonte única da verdade,
   // igual ao painel admin (evita divergência quando o período foi encerrado) ──
@@ -616,6 +624,7 @@ export default function RankingGeral() {
           scoreItems={allScoreItems}
           belongsToCourse={belongsToCourse}
           moduleFilter={selectedModule}
+          studentUnlocks={unlocksByEmail.get(selected.student_email) || []}
           onClose={() => setSelected(null)}
         />
       )}

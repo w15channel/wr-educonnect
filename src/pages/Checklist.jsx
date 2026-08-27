@@ -3,6 +3,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { ClipboardCheck, Lock, Unlock, GraduationCap, ArrowRight } from 'lucide-react';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
 import ChecklistItemRow from '@/components/checklist/ChecklistItemRow';
+import ModuleUnlockRequestCard from '@/components/checklist/ModuleUnlockRequestCard';
 
 export default function Checklist() {
   const { user: session } = useOutletContext();
@@ -91,6 +92,8 @@ export default function Checklist() {
             {module.complete ? `Fazer a prova do Módulo ${module.moduleNumber}` : 'Prova bloqueada até concluir o checklist'}
             {module.complete && <ArrowRight size={14} />}
           </button>
+
+          <ModuleUnlockRequestCard session={session} course={course} module={module} />
         </>
       )}
     </div>
