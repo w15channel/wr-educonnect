@@ -8,7 +8,7 @@ import {
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, Brain, Sparkles,
   ChevronRight, ChevronDown, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Flame, GraduationCap,
-  ScrollText, ClipboardList, Medal, Star, HandHeart
+  ScrollText, ClipboardList, Medal, HandHeart
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -125,7 +125,6 @@ const studentGroups = [
       { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
       { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-rose-400' },
       { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
-      { icon: Star,          label: 'Ranking Geral',          path: '/ranking',           color: 'text-yellow-300' },
       { icon: Users,         label: 'Classe',                 path: '/classe',            color: 'text-sky-400' },
     ],
   },

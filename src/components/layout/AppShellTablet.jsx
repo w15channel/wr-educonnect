@@ -35,7 +35,7 @@ const routeLabels = {
   '/students': 'Alunos', '/announcements': 'Avisos', '/profile': 'Perfil',
   '/calendar': 'Calendário', '/tuitions': 'Mensalidades', '/tutor': 'Tutor EDU',
   '/scorecontrol': 'Pontuação', '/certificadora': 'Certificação', '/gerar-certificado': 'Gerar Certificado',
-  '/ranking': 'Ranking', '/monitores': 'Monitores', '/terapeuta': 'Terapeuta',
+  '/monitores': 'Monitores', '/terapeuta': 'Terapeuta',
   '/bestseller': 'Best Seller', '/historico': 'Histórico', '/classe': 'Classe',
   '/debates': 'Debates', '/tests': 'Provas', '/keys': 'Acessos',
 };

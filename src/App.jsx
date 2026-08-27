@@ -32,7 +32,6 @@ import Tuitions from './pages/Tuitions';
 import TutorDigital from './pages/TutorDigital';
 import ScoreControl from './pages/ScoreControl';
 import Certificadora from './pages/Certificadora';
-import RankingGeral from './pages/RankingGeral';
 import Monitores from './pages/Monitores';
 import TerapeutaDaSemana from './pages/TerapeutaDaSemana';
 import Ofensivas from './pages/Ofensivas';
@@ -102,7 +101,6 @@ function AppRoutesTree() {
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="meu-certificado" element={<MeuCertificado />} />
         <Route path="gerar-certificado" element={<AdminOnly><AdminCertificateGenerator /></AdminOnly>} />
-        <Route path="ranking" element={<RankingGeral />} />
         <Route path="monitores" element={<Monitores />} />
         <Route path="monitor-certificate/:id" element={<MonitorCertificate />} />
         <Route path="terapeuta" element={<TerapeutaDaSemana />} />
@@ -206,7 +204,6 @@ const AuthenticatedApp = () => {
       <Route path="/scorecontrol" element={<Navigate to={`${base}/scorecontrol`} replace />} />
       <Route path="/certificadora" element={<Navigate to={`${base}/certificadora`} replace />} />
       <Route path="/gerar-certificado" element={<Navigate to={`${base}/gerar-certificado`} replace />} />
-      <Route path="/ranking" element={<Navigate to={`${base}/ranking`} replace />} />
       <Route path="/monitores" element={<Navigate to={`${base}/monitores`} replace />} />
       <Route path="/terapeuta" element={<Navigate to={`${base}/terapeuta`} replace />} />
       <Route path="/bestseller" element={<Navigate to={`${base}/bestseller`} replace />} />
