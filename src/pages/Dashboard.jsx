@@ -553,11 +553,11 @@ export default function Dashboard() {
       {/* Student: progress + ranking */}
       {!isTeacher &&
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Checklist do módulo — ferramenta que ocupa o espaço do antigo tutorial */}
-          <ChecklistDashboardCard session={session} course={userCourse} />
+          {/* Checklist do módulo — agora no lugar de destaque que era do ranking */}
+          <ChecklistDashboardCard session={session} course={userCourse} className="order-first lg:col-span-2" />
 
-          {/* Ranking */}
-          <div className="order-first lg:col-span-2 bg-card rounded-2xl border border-border p-5 text-left flex flex-col">
+          {/* Mural + Ranking */}
+          <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-5 text-left flex flex-col">
             <div className="order-2 mt-5 pt-5 border-t border-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
