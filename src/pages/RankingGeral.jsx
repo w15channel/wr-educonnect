@@ -1,22 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, HandHeart, CheckCircle } from 'lucide-react';
+import { Trophy, Star, BookOpen, MessageSquare, X, RefreshCw, CircleHelp, Heart, HandHeart, CheckCircle, FileText, GraduationCap, Flame } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { capScore, formatScore, rankingScoreValue, sumRoundedScores } from '@/lib/scoreUtils';
+import { capScore, formatScore, isOfensivaScoreItem, isTherapistScoreItem, rankingScoreValue, sumRoundedScores } from '@/lib/scoreUtils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
+// Mesma divisão do Controle de Pontuação (ScoreControl) — este painel é um reflexo dele.
 const CATEGORY_CONFIG = {
-  lesson:          { label: 'Aula Gravada',              icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
-  task:            { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
-  exam:            { label: 'Prova / Avaliação',          icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
-  forum:           { label: 'Fórum / Debates / Ofensiva', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
-  mentorship:      { label: 'Mentoria',                    icon: HandHeart,     color: 'bg-rose-100 text-rose-700' },
-  therapist:       { label: 'Atividade Complementar',    icon: Heart,          color: 'bg-pink-100 text-pink-700' },
-  other:           { label: 'Outras Pontuações',          icon: CircleHelp,    color: 'bg-slate-100 text-slate-700' },
+  lesson:     { label: 'Aula Gravada',          icon: BookOpen,       color: 'bg-purple-100 text-purple-700' },
+  task:       { label: 'Tarefa',                icon: FileText,       color: 'bg-orange-100 text-orange-700' },
+  quiz:       { label: 'Prova',                 icon: Trophy,         color: 'bg-blue-100 text-blue-700' },
+  exam:       { label: 'Prova do Módulo',       icon: GraduationCap,  color: 'bg-indigo-100 text-indigo-700' },
+  forum:      { label: 'Fórum',                 icon: MessageSquare,  color: 'bg-green-100 text-green-700' },
+  mentorship: { label: 'Mentoria',              icon: HandHeart,      color: 'bg-rose-100 text-rose-700' },
+  therapist:  { label: 'Terapeuta da Semana',   icon: Heart,          color: 'bg-pink-100 text-pink-700' },
+  ofensiva:   { label: 'Ofensiva Diária',       icon: Flame,          color: 'bg-orange-100 text-red-600' },
+  other:      { label: 'Outras Pontuações',     icon: CircleHelp,     color: 'bg-slate-100 text-slate-700' },
 };
 
 // For each AccessCode, which course field values map to it
@@ -30,7 +33,7 @@ const COURSE_VALID = {
 
 // courseItems: already-filtered ScoreItems for this student's course (passed from parent)
 // publishedTotal: the pontuacao_total from AccessCode — single source of truth, same as outer list
-function StudentProfileModal({ code, scoreItems, courseItemRefIds, onClose }) {
+function StudentProfileModal({ code, scoreItems, belongsToCourse, onClose }) {
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || email;
   const photoUrl = code.profile_photo_url || '';
@@ -42,8 +45,8 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, onClose }) {
     const seen = new Map();
     for (const s of scoreItems) {
       if (s.student_email !== email || !s.verified || !s.category || !s.ref_id) continue;
-      // Only include items that belong to the student's course
-      if (courseItemRefIds && courseItemRefIds.size > 0 && !courseItemRefIds.has(s.ref_id)) continue;
+      // Mesma regra de inclusão do Controle de Pontuação
+      if (belongsToCourse && !belongsToCourse(s)) continue;
       const key = `${s.category}|${s.ref_id}`;
       const prev = seen.get(key);
       if (!prev) { seen.set(key, s); continue; }
@@ -51,7 +54,7 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, onClose }) {
       if (!prevWins) seen.set(key, s);
     }
     return [...seen.values()];
-  }, [scoreItems, email, courseItemRefIds]);
+  }, [scoreItems, email, belongsToCourse]);
 
   // Soma transparente: apenas os itens verificados exibidos no modal contam.
   // Nunca criamos "ajustes" artificiais para fechar com o total publicado/cache.
@@ -70,8 +73,8 @@ function StudentProfileModal({ code, scoreItems, courseItemRefIds, onClose }) {
   myItems.forEach(item => {
     // Suppress the generic 'quiz' entry if a teacher-graded 'exam' entry already covers this exam
     if (item.category === 'quiz' && teacherGradedExamIds.has(item.ref_id)) return;
-    // Merge remaining 'quiz' into 'exam' bucket for display
-    const normalized = item.category === 'quiz' ? 'exam' : item.category;
+    // Ofensivas e Terapeuta da Semana legados foram gravados em outras categorias.
+    const normalized = isOfensivaScoreItem(item) ? 'ofensiva' : isTherapistScoreItem(item) ? 'therapist' : item.category;
     const category = CATEGORY_CONFIG[normalized] ? normalized : 'other';
     if (!byCategory[category]) byCategory[category] = [];
     byCategory[category].push(item);
@@ -329,6 +332,26 @@ export default function RankingGeral() {
   const forumParentById = useMemo(() => new Map(courseForumPosts.map(p => [p.id, p])), [courseForumPosts]);
 
   const examRefIds = useMemo(() => new Set(courseExams.map(e => e.id)), [courseExams]);
+  const forumRefIds = useMemo(
+    () => new Set([...courseForumPosts.map(p => p.id), ...allForumReplies.map(r => r.id)]),
+    [courseForumPosts, allForumReplies]
+  );
+  const mentorshipRefIds = useMemo(() => new Set(courseMentorships.map(m => m.id)), [courseMentorships]);
+
+  // Regra de inclusão espelhada do Controle de Pontuação: provas, ofensivas e
+  // Terapeuta da Semana entram sempre; as demais atividades entram quando a
+  // atividade de origem pertence ao curso ativo.
+  const belongsToCourse = useCallback((item) => {
+    const refId = String(item.ref_id || '');
+    if (isOfensivaScoreItem(item)) return true;
+    if (isTherapistScoreItem(item) || item.category === 'therapist') return true;
+    if (item.category === 'exam') return true;
+    if (item.category === 'lesson') return lessonRefIds.has(refId);
+    if (item.category === 'task' || item.category === 'quiz') return taskRefIds.has(refId);
+    if (item.category === 'forum') return forumRefIds.has(refId);
+    if (item.category === 'mentorship') return mentorshipRefIds.has(refId);
+    return true;
+  }, [lessonRefIds, taskRefIds, forumRefIds, mentorshipRefIds]);
 
   // Atividades = entregas atuais do aluno (aulas, tarefas, provas, fórum,
   // mentorias, Terapeuta da Semana e ofensivas).
@@ -535,7 +558,7 @@ export default function RankingGeral() {
         <StudentProfileModal
           code={selected}
           scoreItems={allScoreItems}
-          courseItemRefIds={courseItemRefIds}
+          belongsToCourse={belongsToCourse}
           onClose={() => setSelected(null)}
         />
       )}
