@@ -721,16 +721,19 @@ export default function ScoreControl() {
   // Reconstitui ScoreItems e observações a partir das atividades reais ao abrir
   // o controle. Isso também cobre instalações em que a automação de entidade
   // deixou de disparar, sem exigir que o administrador clique em recalcular.
+  // A sincronização automática só é permitida para administradores — alunos e
+  // professores visualizam os dados já calculados, sem disparar o recálculo.
   useEffect(() => {
-    if (automaticSyncComplete) return;
+    if (automaticSyncComplete || !isTeacher) return;
     setAutomaticSyncComplete(true);
     base44.functions.invoke('recalculateScores', {})
       .then(() => queryClient.invalidateQueries())
       .catch((error) => {
+        // Falha eventual (concorrência/limite de requisições): os dados exibidos
+        // continuam válidos; o admin pode usar "Recalcular Pontuações" se quiser.
         console.error('Falha ao sincronizar automaticamente as pontuações:', error);
-        toast.error('Não foi possível sincronizar as pontuações automaticamente. Use “Recalcular Pontuações”.');
       });
-  }, [automaticSyncComplete, queryClient]);
+  }, [automaticSyncComplete, isTeacher, queryClient]);
 
   const moduleOptions = useMemo(() => {
     const numbers = new Set();
