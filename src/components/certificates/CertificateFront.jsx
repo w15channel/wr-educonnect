@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { CERT_W, CERT_H, makeVerifUrl } from '@/pages/AdminCertificateGenerator';
+import { formatDuration } from '@/lib/durationUtils';
 
 const CERT_BG_HQ = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/c2484fbeb_certificado-concluso_OFICIAL.png';
 
@@ -208,7 +209,7 @@ export default function CertificateFront({ cert, certRef, editMode = false, posi
             opacity: 0.8,
             letterSpacing: 0.3,
           }}>
-            Carga horária: {cert.totalHours}h &nbsp;·&nbsp; Média final: {cert.averageGrade} &nbsp;·&nbsp; {cert.issueDate}
+            Carga horária: {formatDuration(cert.totalMinutes ?? (Number(cert.totalHours) || 0) * 60)} &nbsp;·&nbsp; Média final: {cert.averageGrade} &nbsp;·&nbsp; {cert.issueDate}
           </div>
         </div>
       </DraggableElement>

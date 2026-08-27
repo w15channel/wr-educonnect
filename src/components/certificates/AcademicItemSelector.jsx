@@ -11,6 +11,7 @@ import { CheckSquare, Square, Loader2, BookOpen, ClipboardList, TestTube, Heart,
 import { base44 } from '@/api/base44Client';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 import { formatScore } from '@/lib/scoreUtils';
+import { formatDuration } from '@/lib/durationUtils';
 
 const CATEGORY_ICONS = {
   'Aula Gravada':      <BookOpen size={11} />,
@@ -24,7 +25,7 @@ function ItemRow({ row, checked, onToggle }) {
   const scoreLabel = row.score !== null
     ? `${formatScore(row.score)} / ${formatScore(row.max)} pts`
     : 'Sem nota ainda';
-  const hoursLabel = row.hours > 0 ? `${row.hours}h` : '—';
+  const hoursLabel = formatDuration(row.minutes);
   return (
     <div
       onClick={onToggle}
@@ -105,7 +106,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
   // Totals for selected rows only
   const selectedRows = rows.filter(r => selectedItems.has(r.key));
   const evalSelected = selectedRows.filter(r => r.status === 'Avaliado');
-  const totalHours   = evalSelected.reduce((s, r) => s + r.hours, 0);
+  const totalMinutes = evalSelected.reduce((s, r) => s + (Number(r.minutes) || 0), 0);
   const totalScore   = evalSelected.reduce((s, r) => s + (r.score !== null ? r.score : 0), 0);
   const totalMax     = evalSelected.reduce((s, r) => s + r.max, 0);
   const approvalRate = totalMax > 0 ? Math.round((totalScore / totalMax) * 1000) / 10 : 0;
@@ -144,7 +145,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
           { label: 'Selecionados', value: selectedItems.size },
           { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/${formatScore(totalMax)}` },
           { label: 'Aproveitamento', value: `${approvalRate}%` },
-          { label: 'Carga (h)', value: `${totalHours}h` },
+          { label: 'Carga Horária', value: formatDuration(totalMinutes) },
         ].map(item => (
           <div key={item.label} className="bg-secondary/50 border border-border rounded-lg p-1.5 text-center">
             <p className="text-[9px] text-muted-foreground leading-tight">{item.label}</p>

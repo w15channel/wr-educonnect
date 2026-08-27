@@ -20,6 +20,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import CertificateFront from '@/components/certificates/CertificateFront';
 import CertificateBack from '@/components/certificates/CertificateBack';
 import AcademicItemSelector from '@/components/certificates/AcademicItemSelector';
+import { formatDuration, parseDurationToMinutes } from '@/lib/durationUtils';
 
 const POSITIONS_KEY = 'wr_cert_front_positions_v2';
 const CLIPBOARD_KEY = 'wr_cert_clipboard';
@@ -215,6 +216,7 @@ function createEmptyCert(courseName = '') {
     gratificationText: 'E com imensa satisfacao que certificamos que',
     bodyText: 'concluiu com exito o curso de formacao profissional, cumprindo todos os requisitos pedagogicos, avaliacoes e carga horaria estabelecidos pela instituicao.',
     totalHours: 120,
+    totalMinutes: 120 * 60,
     averageGrade: '10,0',
     issueDate: todayPtBr(),
     verificationCode: makeVerifCode(),
@@ -242,6 +244,7 @@ function pickClipboardPayload(cert) {
     gratificationText: cert.gratificationText,
     bodyText: cert.bodyText,
     totalHours: cert.totalHours,
+    totalMinutes: cert.totalMinutes,
     averageGrade: cert.averageGrade,
     issueDate: cert.issueDate,
     classes: Array.isArray(cert.classes) ? cert.classes : [],
@@ -255,6 +258,7 @@ function normalizeSavedClasses(classes) {
     .map((item) => ({
       id: item.id || uid(),
       title: cleanText(item.title),
+      minutes: toNumber(item.minutes, toNumber(item.hours, 0) * 60),
       hours: toNumber(item.hours, 0),
       grade: cleanText(item.grade || item.score || '0,0'),
     }));
@@ -358,7 +362,8 @@ export default function AdminCertificateGenerator() {
 
   const handleAcademicSelection = useCallback(({ selectedRows = [] } = {}) => {
     const evalRows = selectedRows.filter((row) => row?.status === 'Avaliado');
-    const totalHours = evalRows.reduce((sum, row) => sum + toNumber(row.hours, 0), 0);
+    // Carga horária somada em minutos (exibida como tempo HH:MM:SS).
+    const totalMinutes = evalRows.reduce((sum, row) => sum + toNumber(row.minutes, 0), 0);
     const totalScore = evalRows.reduce((sum, row) => sum + toNumber(row.score, 0), 0);
     const averageGrade = formatPtNumber(totalScore, 1);
 
@@ -367,7 +372,7 @@ export default function AdminCertificateGenerator() {
 
     evalRows.forEach((row) => {
       const category = cleanText(row.category);
-      const hours = toNumber(row.hours, 0);
+      const minutes = toNumber(row.minutes, 0);
       const score = toNumber(row.score, 0);
 
       if (category === 'Aula Gravada') {
@@ -375,7 +380,7 @@ export default function AdminCertificateGenerator() {
         classesMap[`individual_${itemId}`] = {
           id: String(itemId),
           title: cleanText(row.title) || 'Aula Gravada',
-          hours,
+          minutes,
           scoreSum: score,
         };
         return;
@@ -388,11 +393,11 @@ export default function AdminCertificateGenerator() {
           classesMap[groupKey] = {
             id: String(itemId),
             title: GROUP_LABELS[category] || category,
-            hours: 0,
+            minutes: 0,
             scoreSum: 0,
           };
         }
-        classesMap[groupKey].hours += hours;
+        classesMap[groupKey].minutes += minutes;
         classesMap[groupKey].scoreSum += score;
       }
     });
@@ -400,13 +405,15 @@ export default function AdminCertificateGenerator() {
     const classes = Object.values(classesMap).map((item) => ({
       id: item.id,
       title: item.title,
-      hours: item.hours,
+      minutes: item.minutes,
+      hours: Math.round((item.minutes / 60) * 100) / 100,
       grade: formatPtNumber(item.scoreSum, 1),
     }));
 
     setCert((previous) => ({
       ...previous,
-      totalHours,
+      totalMinutes,
+      totalHours: Math.round((totalMinutes / 60) * 100) / 100,
       averageGrade,
       classes: classes.length ? classes : previous.classes,
     }));
@@ -444,7 +451,7 @@ export default function AdminCertificateGenerator() {
     if (!cleanText(cert.studentName)) return 'Informe o nome do aluno.';
     if (!cleanText(cert.courseName)) return 'Informe o nome do curso.';
     if (!normalizeCode(cert.verificationCode)) return 'Informe o codigo de autenticidade.';
-    if (toNumber(cert.totalHours, 0) <= 0) return 'Informe uma carga horaria valida.';
+    if (toNumber(cert.totalMinutes, 0) <= 0) return 'Informe uma carga horaria valida.';
     return '';
   };
 
@@ -473,6 +480,7 @@ export default function AdminCertificateGenerator() {
         honor_description: cleanText(cert.honorDescription),
         issue_date: cleanText(cert.issueDate),
         total_hours: toNumber(cert.totalHours, 0),
+        total_minutes: toNumber(cert.totalMinutes, 0),
         average_grade: cleanText(cert.averageGrade),
         classes: normalizeSavedClasses(cert.classes),
         verification_url: makeVerifUrl(verificationCode),
@@ -526,6 +534,7 @@ export default function AdminCertificateGenerator() {
         courseName: record.course_name || '',
         bodyText: record.description || createEmptyCert().bodyText,
         totalHours: toNumber(record.total_hours, 120),
+        totalMinutes: toNumber(record.total_minutes, toNumber(record.total_hours, 120) * 60),
         averageGrade: record.average_grade || '10,0',
         issueDate: record.issue_date || todayPtBr(),
         verificationCode: record.verification_code || makeVerifCode(),
@@ -963,8 +972,15 @@ export default function AdminCertificateGenerator() {
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Carga (h)</label>
-                <input className={INPUT} type="number" min="0" value={cert.totalHours} onChange={(event) => upd('totalHours', event.target.value)} />
+                <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Carga (HH:MM:SS)</label>
+                <input
+                  className={`${INPUT} font-mono`}
+                  value={formatDuration(cert.totalMinutes ?? (toNumber(cert.totalHours, 0) * 60))}
+                  onChange={(event) => {
+                    const minutes = parseDurationToMinutes(event.target.value);
+                    setCert((previous) => ({ ...previous, totalMinutes: minutes, totalHours: Math.round((minutes / 60) * 100) / 100 }));
+                  }}
+                />
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Nota Total</label>

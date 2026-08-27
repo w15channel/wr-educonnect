@@ -25,19 +25,20 @@
  * @param {Array}    [params.forumPosts]         - ForumPost list (all)
  * @param {Array}    [params.forumReplies]       - ForumReply list (all)
  * @param {Array}    [params.mentorships]        - Mentorship list (all)
- * @returns {object} { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes }
+ * @returns {object} { rows, totalMinutes, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes }
  */
 
-export const HOURS_MAP = {
-  lesson: 2,
-  task: 0.5,   // 30 minutos por entrega
-  quiz: 1.5,
-  exam: 2,     // 2 horas por prova
-  forum: 0,
-  therapist: 1,
-  mentorship: 1,
-  ofensiva: 0, // pontos apenas, sem CH
-};
+import { ACTIVITY_MINUTES, parseDurationToMinutes } from '@/lib/durationUtils';
+
+// A carga horária é contada em MINUTOS e exibida como tempo (HH:MM:SS).
+export const MINUTES_MAP = ACTIVITY_MINUTES;
+
+// Compatibilidade: mapa antigo em horas decimais.
+export const HOURS_MAP = Object.fromEntries(
+  Object.entries(ACTIVITY_MINUTES).map(([k, v]) => [k, v / 60])
+);
+
+const toHours = (minutes) => Math.round(((Number(minutes) || 0) / 60) * 1000) / 1000;
 
 export const STUDY_SCORE_RULES = {
   lesson: 2,
@@ -91,13 +92,16 @@ export function buildStudentAcademicData({
   lessons.forEach((l) => {
     const si = findScore('lesson', l.id);
     const done = !!si || watchedLessonIds.has(l.id);
+    // A carga da aula é a duração do vídeo cadastrada pelo professor.
+    const lessonMinutes = parseDurationToMinutes(l.duration);
     rows.push({
       key: `lesson_${l.id}`,
       category: 'Aula Gravada',
       title: l.title,
       score: done ? roundScore(si?.score ?? STUDY_SCORE_RULES.lesson) : null,
       max: STUDY_SCORE_RULES.lesson,
-      hours: HOURS_MAP.lesson,
+      minutes: lessonMinutes,
+      hours: toHours(lessonMinutes),
       status: done ? 'Avaliado' : 'Pendente',
       notes: si?.notes || '',
       module: Number(l.module_number) || null,
@@ -121,7 +125,8 @@ export function buildStudentAcademicData({
       title: t.title,
       score: done ? roundScore(si?.score ?? maxPts) : null,
       max: maxPts,
-      hours: t.type === 'quiz' ? HOURS_MAP.quiz : HOURS_MAP.task,
+      minutes: t.type === 'quiz' ? ACTIVITY_MINUTES.quiz : ACTIVITY_MINUTES.task,
+      hours: toHours(t.type === 'quiz' ? ACTIVITY_MINUTES.quiz : ACTIVITY_MINUTES.task),
       status: done ? 'Avaliado' : 'Pendente',
       notes: si?.notes || '',
       module: Number(t.module_number) || null,
@@ -141,7 +146,8 @@ export function buildStudentAcademicData({
       title: exam.title,
       score: grade,
       max: STUDY_SCORE_RULES.exam,
-      hours: HOURS_MAP.exam,
+      minutes: ACTIVITY_MINUTES.exam,
+      hours: toHours(ACTIVITY_MINUTES.exam),
       status: 'Avaliado',
       notes: sub.feedback || si?.notes || '',
       module: Number(String(exam.module_ref || '').match(/\d+/)?.[0]) || null,
@@ -162,7 +168,8 @@ export function buildStudentAcademicData({
         title: `Publicação — ${space}`,
         score: roundScore(si?.score ?? STUDY_SCORE_RULES.forum),
         max: 0.4,
-        hours: HOURS_MAP.forum,
+        minutes: ACTIVITY_MINUTES.forum,
+        hours: toHours(ACTIVITY_MINUTES.forum),
         status: 'Avaliado',
         notes: si?.notes || '',
         module: null,
@@ -184,7 +191,8 @@ export function buildStudentAcademicData({
         title: `Resposta a colega — ${space}`,
         score: roundScore(si?.score ?? STUDY_SCORE_RULES.forum),
         max: 0.4,
-        hours: HOURS_MAP.forum,
+        minutes: ACTIVITY_MINUTES.forum,
+        hours: toHours(ACTIVITY_MINUTES.forum),
         status: 'Avaliado',
         notes: si?.notes || '',
         module: null,
@@ -207,7 +215,8 @@ export function buildStudentAcademicData({
         title: `${label} (${p.pairing_date || 'data não informada'})`,
         score: roundScore(si?.score ?? STUDY_SCORE_RULES.therapist),
         max: STUDY_SCORE_RULES.therapist,
-        hours: HOURS_MAP.therapist,
+        minutes: ACTIVITY_MINUTES.therapist,
+        hours: toHours(ACTIVITY_MINUTES.therapist),
         status: 'Avaliado',
         notes: si?.notes || '',
         module: Number(p.module_number) || null,
@@ -226,7 +235,8 @@ export function buildStudentAcademicData({
         title: `Mentoria: ${m.theme || 'Encontro'} (${m.date || 'data não informada'})`,
         score: roundScore(si?.score ?? STUDY_SCORE_RULES.mentorship),
         max: STUDY_SCORE_RULES.mentorship,
-        hours: roundScore((Number(m.duration_minutes) || 60) / 60),
+        minutes: Number(m.duration_minutes) || ACTIVITY_MINUTES.mentorship,
+        hours: toHours(Number(m.duration_minutes) || ACTIVITY_MINUTES.mentorship),
         status: 'Avaliado',
         notes: si?.notes || '',
         module: Number(m.module_number) || null,
@@ -245,7 +255,8 @@ export function buildStudentAcademicData({
         title: `Ofensiva Diária (${r.date || 'data'})`,
         score: roundScore(si?.score ?? r.points_earned),
         max: 1,
-        hours: HOURS_MAP.ofensiva,
+        minutes: ACTIVITY_MINUTES.ofensiva,
+        hours: toHours(ACTIVITY_MINUTES.ofensiva),
         status: 'Avaliado',
         notes: si?.notes || '',
         module: null,
@@ -259,7 +270,8 @@ export function buildStudentAcademicData({
     0
   );
   const totalMaxScore = evaluatedRows.reduce((sum, r) => roundScore(sum + roundScore(r.max)), 0);
-  const totalHours = evaluatedRows.reduce((sum, r) => roundScore(sum + r.hours), 0);
+  const totalMinutes = evaluatedRows.reduce((sum, r) => sum + (Number(r.minutes) || 0), 0);
+  const totalHours = toHours(totalMinutes);
   const approvalRate =
     totalMaxScore > 0
       ? String(Math.round((totalScore / totalMaxScore) * 1000) / 10)
@@ -293,6 +305,7 @@ export function buildStudentAcademicData({
       uid++;
       classesMap[`individual_${uid}`] = {
         title: r.title,
+        minutes: Number(r.minutes) || 0,
         hours: r.hours,
         scoreSum: r.score !== null ? r.score : 0,
         maxSum: r.max,
@@ -304,13 +317,15 @@ export function buildStudentAcademicData({
         uid++;
         classesMap[groupKey] = {
           title: GROUP_LABELS[r.category] || r.category,
+          minutes: 0,
           hours: 0,
           scoreSum: 0,
           maxSum: 0,
           id: String(uid),
         };
       }
-      classesMap[groupKey].hours = roundScore(classesMap[groupKey].hours + r.hours);
+      classesMap[groupKey].minutes += Number(r.minutes) || 0;
+      classesMap[groupKey].hours = toHours(classesMap[groupKey].minutes);
       classesMap[groupKey].scoreSum += r.score !== null ? r.score : 0;
       classesMap[groupKey].maxSum += r.max;
     }
@@ -319,10 +334,11 @@ export function buildStudentAcademicData({
   const classes = Object.values(classesMap).map((c) => ({
     id: c.id,
     title: c.title,
+    minutes: c.minutes,
     hours: c.hours,
     // Nota total = soma dos pontos (não média)
     grade: String(Math.round(c.scoreSum * 10) / 10).replace('.', ','),
   }));
 
-  return { rows, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes };
+  return { rows, totalMinutes, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes };
 }

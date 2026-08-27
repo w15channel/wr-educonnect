@@ -1,12 +1,15 @@
 import React from 'react';
 import { CERT_W, CERT_H } from '@/pages/AdminCertificateGenerator';
+import { formatDuration } from '@/lib/durationUtils';
 
 const NAVY = '#1a2d5a';
 const GOLD = '#c9a227';
 const WHITE = '#ffffff';
 
 export default function CertificateBack({ cert, certRef }) {
-  const totalClassHours = cert.classes?.reduce((s, c) => s + (Number(c.hours) || 0), 0) || 0;
+  // Carga horária em minutos, exibida como tempo (HH:MM:SS).
+  const classMinutes = (cls) => Number(cls.minutes) || (Number(cls.hours) || 0) * 60;
+  const totalClassMinutes = cert.classes?.reduce((s, c) => s + classMinutes(c), 0) || 0;
 
   return (
     <div
@@ -59,7 +62,7 @@ export default function CertificateBack({ cert, certRef }) {
 
           {/* Table header */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px', gap: 6, borderBottom: `1px solid ${GOLD}`, paddingBottom: 5, marginBottom: 4 }}>
-            {['Aula / Módulo', 'Horas', 'Pontos'].map(h => (
+            {['Aula / Módulo', 'Carga (h)', 'Pontos'].map(h => (
               <span key={h} style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, fontWeight: 900, color: NAVY, letterSpacing: 1, textTransform: 'uppercase' }}>{h}</span>
             ))}
           </div>
@@ -73,7 +76,7 @@ export default function CertificateBack({ cert, certRef }) {
                 background: i % 2 === 0 ? '#fafafa' : WHITE,
               }}>
                 <span style={{ fontSize: 9.5, fontWeight: 600, color: NAVY, fontFamily: 'Arial, sans-serif' }}>{cls.title}</span>
-                <span style={{ fontSize: 9.5, fontWeight: 700, color: NAVY, textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>{cls.hours}h</span>
+                <span style={{ fontSize: 8.5, fontWeight: 700, color: NAVY, textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>{formatDuration(classMinutes(cls))}</span>
                 <span style={{ fontSize: 9.5, fontWeight: 700, color: NAVY, textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>{cls.grade}</span>
               </div>
             ))}
@@ -83,7 +86,7 @@ export default function CertificateBack({ cert, certRef }) {
           <div style={{ display: 'flex', gap: 10, marginTop: 10, paddingTop: 8, borderTop: `2px solid ${GOLD}` }}>
             <div style={{ flex: 1, textAlign: 'center', background: NAVY, borderRadius: 6, padding: '6px 4px' }}>
               <div style={{ fontSize: 7.5, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>Carga Total</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: WHITE, fontFamily: 'Arial, sans-serif' }}>{totalClassHours}h</div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: WHITE, fontFamily: 'Arial, sans-serif' }}>{formatDuration(totalClassMinutes)}</div>
             </div>
             <div style={{ flex: 1, textAlign: 'center', background: NAVY, borderRadius: 6, padding: '6px 4px' }}>
               <div style={{ fontSize: 7.5, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>Nota Total</div>

@@ -15,6 +15,7 @@ import { formatScore, roundScore, capScore } from '@/lib/scoreUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
+import { formatDuration } from '@/lib/durationUtils';
 
 const HISTORY_MODULES = Array.from({ length: 10 }, (_, index) => index + 1);
 const HISTORY_CATEGORY = {
@@ -24,7 +25,7 @@ const HISTORY_CATEGORY = {
 };
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
-function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, approvalRate, activitiesCount = 0, onClose, isAdmin = false }) {
+function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes = 0, approvalRate, activitiesCount = 0, onClose, isAdmin = false }) {
   const certRef = useRef(null);
   const emissionDate = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const emissionTime = format(new Date(), "HH:mm:ss");
@@ -155,7 +156,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aluno(a)</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{student.name}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aproveitamento</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{approvalRate}%</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Atividades Realizadas</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{activitiesCount}</p></div>
-          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Carga Horária</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{totalHours}h</p></div>
+          <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Carga Horária</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{formatDuration(totalMinutes)}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Data de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionDate}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Horário de Emissão</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{emissionTime}</p></div>
           <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Situação</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{Number(approvalRate) >= 60 ? 'Aprovado(a)' : 'Em andamento'}</p></div>
@@ -179,7 +180,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
               <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <td style={{ padding: '5px 8px', color: '#1e3a5f', maxWidth: 200 }}>{r.title}</td>
                 <td style={{ padding: '5px 8px', color: '#555' }}>{r.category}</td>
-                <td style={{ padding: '5px 8px', textAlign: 'center', color: '#555' }}>{r.hours > 0 ? `${r.hours}h` : '—'}</td>
+                <td style={{ padding: '5px 8px', textAlign: 'center', color: '#555', fontFamily: 'monospace' }}>{formatDuration(r.minutes)}</td>
                 <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                   <span style={{ fontSize: 9, fontWeight: 'bold', padding: '2px 8px', borderRadius: 20, background: r.status === 'Avaliado' ? '#dcfce7' : '#fef9c3', color: r.status === 'Avaliado' ? '#166534' : '#854d0e' }}>
                     {r.status}
@@ -195,7 +196,7 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalHours, 
           <p style={{ fontSize: 10, letterSpacing: 4, color: '#7a6a3a', textTransform: 'uppercase', margin: 0, fontWeight: 'bold' }}>Pontuação</p>
           <p style={{ margin: '6px 0 0', fontSize: 24, fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} pts</p>
           <p style={{ margin: '4px 0 0', fontSize: 9, color: '#888', letterSpacing: 1, textTransform: 'uppercase' }}>
-            Total somado das atividades entregues · {totalHours} horas/aula
+            Total somado das atividades entregues · Carga horária {formatDuration(totalMinutes)}
           </p>
         </div>
 
@@ -414,7 +415,8 @@ export default function HistoricoAcademico() {
   // Nota de estudos das atividades selecionadas — limitada a 100 pontos.
   const totalScore = capScore(selectedScoreRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0));
   const totalMaxScore = 100;
-  const totalHours = selectedRows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + r.hours, 0);
+  // Carga horária somada em minutos — exibida sempre como tempo (HH:MM:SS).
+  const totalMinutes = selectedRows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + (Number(r.minutes) || 0), 0);
 
   // Aproveitamento: quantas atividades o aluno concluiu em relação ao total de
   // atividades disponíveis nos módulos selecionados. Ex.: 1 de 10 = 10%.
@@ -469,7 +471,7 @@ export default function HistoricoAcademico() {
             rows={selectedRows}
             totalScore={totalScore}
             totalMaxScore={totalMaxScore}
-            totalHours={totalHours}
+            totalMinutes={totalMinutes}
             approvalRate={approvalRate}
             activitiesCount={activitiesCount}
           />
@@ -496,7 +498,7 @@ export default function HistoricoAcademico() {
             { label: 'Atividades realizadas', value: activitiesCount },
             { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` },
             { label: 'Aproveitamento', value: `${approvalRate}%` },
-            { label: 'Carga Horária', value: `${totalHours}h` },
+            { label: 'Carga Horária', value: formatDuration(totalMinutes) },
           ].map(item => (
             <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -525,7 +527,7 @@ export default function HistoricoAcademico() {
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {items.map(r => (
-                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status}${r.hours > 0 ? ` · ${r.hours}h` : ''} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />
+                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${formatDuration(r.minutes)} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />
               ))}
             </div>
           </div>
@@ -540,7 +542,7 @@ export default function HistoricoAcademico() {
     return (
       <div className="app-page max-w-4xl mx-auto">
         <button onClick={() => setShowDocument(false)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">← Voltar para Seleção</button>
-        <AcademicRecord student={selectedStudent} rows={selectedRows} totalScore={totalScore} totalMaxScore={totalMaxScore} totalHours={totalHours} approvalRate={approvalRate} activitiesCount={activitiesCount} isAdmin={isTeacher} onClose={() => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); }} />
+        <AcademicRecord student={selectedStudent} rows={selectedRows} totalScore={totalScore} totalMaxScore={totalMaxScore} totalMinutes={totalMinutes} approvalRate={approvalRate} activitiesCount={activitiesCount} isAdmin={isTeacher} onClose={() => { setShowDocument(false); setShowSelector(false); setSelectedStudent(null); }} />
       </div>
     );
   }
@@ -557,7 +559,7 @@ export default function HistoricoAcademico() {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Atividades realizadas', value: activitiesCount }, { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: `${totalHours}h` }].map(item => (
+          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Atividades realizadas', value: activitiesCount }, { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: formatDuration(totalMinutes) }].map(item => (
             <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground">{item.label}</p>
               <p className="text-base font-black text-primary">{item.value}</p>
@@ -574,7 +576,7 @@ export default function HistoricoAcademico() {
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status}${r.hours > 0 ? ` · ${r.hours}h` : ''} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />)}
+              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`${r.status} · ${formatDuration(r.minutes)} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />)}
             </div>
           </div>
         ))}
