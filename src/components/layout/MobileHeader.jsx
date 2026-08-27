@@ -39,7 +39,6 @@ const routeLabels = {
   '/scorecontrol': 'Controle de Pontuação',
   '/certificadora': 'Certificação',
   '/gerar-certificado': 'Gerar Certificado',
-  '/ranking': 'Ranking Geral',
   '/monitores': 'Monitores',
   '/terapeuta': 'Terapeuta da Semana',
   '/bestseller': 'Meu Best Seller',

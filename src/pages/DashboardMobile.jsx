@@ -275,7 +275,7 @@ export default function DashboardMobile() {
             icon: Trophy,
             color: 'bg-yellow-500/15',
             iconColor: 'text-yellow-400',
-            path: '/ranking',
+            path: '/dashboard',
             hideAdmin: true,
           },
         ].filter(c => !(isTeacher && c.hideAdmin)).map((card, i) => (
