@@ -30,6 +30,7 @@
 
 import { ACTIVITY_MINUTES, parseDurationToMinutes } from '@/lib/durationUtils';
 import { resolveActivityModule, parseModuleNumber } from '@/lib/academicModules';
+import { resolveItemModule } from '@/lib/moduleAttribution';
 
 // A carga horária é contada em MINUTOS e exibida como tempo (HH:MM:SS).
 export const MINUTES_MAP = ACTIVITY_MINUTES;
@@ -368,4 +369,70 @@ export function buildStudentAcademicData({
   }));
 
   return { rows, totalMinutes, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes };
+}
+
+/**
+ * Single source of truth used by the academic history, score control and
+ * ranking.  In addition to rebuilding activities from their source entities,
+ * it keeps verified, manually-created ScoreItems that have no source record.
+ */
+export function buildStudentScoreSummary(params, { studentUnlocks = [], moduleNumber = null } = {}) {
+  const academic = buildStudentAcademicData(params);
+  const email = normEmail(params.studentEmail);
+  const evaluatedRows = academic.rows.filter((row) => row.status === 'Avaliado');
+  const representedKeys = new Set();
+
+  evaluatedRows.forEach((row) => {
+    representedKeys.add(row.key);
+    // New ofensivas use category `ofensiva`, while legacy records used `forum`.
+    if (row.key.startsWith('forum_ofensiva:')) representedKeys.add(row.key.replace(/^forum_/, 'ofensiva_'));
+    // Therapist records also changed category during the data migration.
+    if (row.key.startsWith('task_therapist_pairing:')) representedKeys.add(row.key.replace(/^task_/, 'therapist_'));
+  });
+
+  const complementaryRows = (params.scoreItems || [])
+    .filter((item) => normEmail(item.student_email) === email && item.verified)
+    .filter((item) => !representedKeys.has(`${item.category}_${String(item.ref_id || '').replace(/^exam:/, '')}`))
+    .map((item) => ({
+      key: `complementary_${item.id || `${item.category}_${item.ref_id}`}`,
+      category: 'Atividade Complementar',
+      title: item.ref_title || 'Atividade complementar',
+      score: roundScore(item.score),
+      max: roundScore(item.max_score || item.score),
+      minutes: 0,
+      hours: 0,
+      status: 'Avaliado',
+      notes: item.notes || '',
+      module: resolveActivityModule({
+        explicitModule: item.module_number,
+        dateValue: item.created_date,
+        moduleClosures: params.moduleClosures || [],
+      }),
+    }));
+
+  // Keep the same individual module timeline used by the history for legacy
+  // ScoreItems whose module was inferred from unlock dates.
+  const scoreByKey = new Map(
+    (params.scoreItems || [])
+      .filter((item) => normEmail(item.student_email) === email)
+      .map((item) => [`${item.category}_${String(item.ref_id || '').replace(/^exam:/, '')}`, item])
+  );
+  const rows = [...evaluatedRows, ...complementaryRows].map((row) => {
+    const scoreItem = scoreByKey.get(row.key)
+      || (row.key.startsWith('forum_ofensiva:') ? scoreByKey.get(row.key.replace(/^forum_/, 'ofensiva_')) : null)
+      || (row.key.startsWith('task_therapist_pairing:') ? scoreByKey.get(row.key.replace(/^task_/, 'therapist_')) : null);
+    return {
+      ...row,
+      module: resolveItemModule(scoreItem || { module_number: row.module, created_date: row.date }, studentUnlocks),
+    };
+  });
+  const scopedRows = moduleNumber ? rows.filter((row) => row.module === Number(moduleNumber)) : rows;
+
+  return {
+    ...academic,
+    rows,
+    scopedRows,
+    activityCount: scopedRows.length,
+    totalScore: scopedRows.reduce((sum, row) => roundScore(sum + roundScore(row.score)), 0),
+  };
 }
