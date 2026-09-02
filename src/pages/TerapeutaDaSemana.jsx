@@ -20,6 +20,8 @@ import { sortBySequence } from '@/lib/sequenceUtils';
 import { resolveAvatarEmoji } from '@/lib/avatarUtils';
 import RelatosMural from '@/components/therapist/RelatosMural';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
+import StudentWallCard from '@/components/shared/StudentWallCard';
+import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -93,10 +95,44 @@ export default function TerapeutaDaSemana() {
   });
 
   const publishPairingsMutation = useMutation({
-    mutationFn: (pairingIds) =>
-      Promise.all(pairingIds.map(id => base44.entities.TherapistPairing.update(id, { is_published: true }))),
+    mutationFn: async (pairingsToPublish) => {
+      const updated = await Promise.all(
+        pairingsToPublish.map(p => base44.entities.TherapistPairing.update(p.id, { is_published: true }))
+      );
+      // Mural individual: sempre que uma publicação é feita em nome do aluno,
+      // ele recebe uma menção em seu próprio mural com a informação da dupla.
+      await publishToStudentWallBatch(
+        pairingsToPublish.flatMap((p) => {
+          const therapistName = p.therapist_name || getStudentInfo(p.therapist_email).name;
+          const patientName = p.patient_name || getStudentInfo(p.patient_email).name;
+          const sourceId = p.id;
+          return [
+            {
+              studentEmail: p.therapist_email,
+              title: 'Sua dupla desta semana',
+              message: `${therapistName}, você é o(a) terapeuta de ${patientName} nesta rodada do Terapeuta da Semana.`,
+              sourceType: 'therapist_pairing',
+              sourceId,
+              relatedEmail: p.patient_email,
+              relatedName: patientName,
+            },
+            {
+              studentEmail: p.patient_email,
+              title: 'Sua dupla desta semana',
+              message: `${patientName}, seu(sua) terapeuta nesta rodada do Terapeuta da Semana é ${therapistName}.`,
+              sourceType: 'therapist_pairing',
+              sourceId,
+              relatedEmail: p.therapist_email,
+              relatedName: therapistName,
+            },
+          ];
+        })
+      );
+      return updated;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] });
+      queryClient.invalidateQueries({ queryKey: ['student-wall-posts'] });
       toast.success('✅ Lista publicada! Os alunos já podem ver os pareamentos.');
     },
   });
@@ -317,7 +353,7 @@ export default function TerapeutaDaSemana() {
               <Button
                 variant="default"
                 className="gap-2 bg-green-600 hover:bg-green-700"
-                onClick={() => publishPairingsMutation.mutate(currentPairings.filter(p => !p.is_published).map(p => p.id))}
+                onClick={() => publishPairingsMutation.mutate(currentPairings.filter(p => !p.is_published))}
                 disabled={publishPairingsMutation.isPending}
               >
                 <Send size={15} /> Publicar Lista para Alunos
@@ -392,6 +428,9 @@ export default function TerapeutaDaSemana() {
           </div>
         </div>
       )}
+
+      {/* Mural individual: publicações feitas em nome do aluno (ex.: dupla desta semana) */}
+      {!isTeacher && <StudentWallCard studentEmail={session?.email} />}
 
       {/* Meus pareamentos */}
       {!isTeacher && (

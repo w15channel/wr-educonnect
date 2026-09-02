@@ -1,0 +1,67 @@
+{
+  "name": "StudentWallPost",
+  "type": "object",
+  "description": "Mural individual do aluno: publicações feitas em nome do aluno (ex.: pareamento de terapeuta da semana, avisos direcionados) aparecem aqui e o mencionam.",
+  "properties": {
+    "student_email": {
+      "type": "string",
+      "description": "Email do aluno dono do mural (quem recebe/é mencionado na publicação)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Título curto da publicação (ex.: 'Sua dupla desta semana')"
+    },
+    "message": {
+      "type": "string",
+      "description": "Texto da publicação exibido no mural individual, mencionando o aluno"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "therapist_pairing",
+        "announcement",
+        "task",
+        "other"
+      ],
+      "default": "other",
+      "description": "Origem da publicação — identifica qual funcionalidade gerou a mensagem"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "ID do registro de origem (ex.: id do TherapistPairing), evita duplicidade"
+    },
+    "related_email": {
+      "type": "string",
+      "description": "Email de outra pessoa mencionada na publicação (ex.: email da dupla)"
+    },
+    "related_name": {
+      "type": "string",
+      "description": "Nome de outra pessoa mencionada na publicação (ex.: nome da dupla)"
+    },
+    "published_by": {
+      "type": "string",
+      "description": "Quem publicou (email do admin/sistema) em nome do aluno"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da publicação no mural individual"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o aluno já visualizou a publicação em seu mural"
+    }
+  },
+  "required": [
+    "student_email",
+    "message",
+    "published_at"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}
