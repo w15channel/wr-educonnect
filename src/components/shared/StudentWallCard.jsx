@@ -5,6 +5,7 @@ import { Bell, MessageSquareHeart } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
+import { normalizeStudentEmail } from '@/lib/therapistPairings';
 
 /**
  * Mural individual do aluno.
@@ -16,16 +17,25 @@ import { ClickableStudent } from '@/components/shared/StudentProfileCard';
  */
 export default function StudentWallCard({ studentEmail, className = '' }) {
   const queryClient = useQueryClient();
+  const normalizedStudentEmail = normalizeStudentEmail(studentEmail);
 
   const { data: posts = [] } = useQuery({
-    queryKey: ['student-wall-posts', studentEmail],
-    queryFn: () => base44.entities.StudentWallPost.filter({ student_email: studentEmail }, '-published_at', 30),
-    enabled: !!studentEmail,
+    queryKey: ['student-wall-posts', normalizedStudentEmail],
+    queryFn: async () => {
+      const requestedEmails = [...new Set([studentEmail, normalizedStudentEmail].filter(Boolean))];
+      const results = await Promise.all(requestedEmails.map((email) =>
+        base44.entities.StudentWallPost.filter({ student_email: email }, '-published_at', 30)
+      ));
+      return [...new Map(results.flat().map((post) => [post.id, post])).values()]
+        .sort((a, b) => String(b.published_at || '').localeCompare(String(a.published_at || '')))
+        .slice(0, 30);
+    },
+    enabled: !!normalizedStudentEmail,
   });
 
   const markReadMutation = useMutation({
     mutationFn: (id) => base44.entities.StudentWallPost.update(id, { is_read: true }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['student-wall-posts', studentEmail] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['student-wall-posts', normalizedStudentEmail] }),
   });
 
   if (!studentEmail || posts.length === 0) return null;

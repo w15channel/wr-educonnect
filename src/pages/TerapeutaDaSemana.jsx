@@ -22,6 +22,7 @@ import RelatosMural from '@/components/therapist/RelatosMural';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import StudentWallCard from '@/components/shared/StudentWallCard';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
+import { findStudentPairings, getLatestPairingDate, getLatestPublishedPairings, normalizeStudentEmail } from '@/lib/therapistPairings';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -122,6 +123,7 @@ export default function TerapeutaDaSemana() {
               sourceId,
               relatedEmail: p.patient_email,
               relatedName: patientName,
+              publishedBy: session?.email,
             },
             {
               studentEmail: p.patient_email,
@@ -131,6 +133,7 @@ export default function TerapeutaDaSemana() {
               sourceId,
               relatedEmail: p.therapist_email,
               relatedName: therapistName,
+              publishedBy: session?.email,
             },
           ];
         })
@@ -175,11 +178,11 @@ export default function TerapeutaDaSemana() {
 
   const getStudentTotalScore = (email, items = accessCodes) => roundScore(items.find((code) => code.student_email === email)?.pontuacao_total || 0);
 
-  const courseEmailSet = courseEmails || new Set(
-    accessCodes
+  const courseEmailSet = new Set([...(courseEmails || accessCodes
       .filter(isCodeInActiveDomain)
-      .map(c => c.student_email)
-  );
+      .map(c => c.student_email))]
+    .map(normalizeStudentEmail)
+    .filter(Boolean));
 
   // Todos os alunos ativos do domínio participam
   const activeDomainStudents = accessCodes.filter(isCodeInActiveDomain);
@@ -189,23 +192,28 @@ export default function TerapeutaDaSemana() {
   // Pareamento é completamente manual: o administrador gera novas rodadas quando desejar.
   // O lote "atual" é sempre o mais recente gerado; os demais ficam no histórico.
   const domainPairingsAll = pairings.filter(p =>
-    !courseEmailSet || (courseEmailSet.has(p.therapist_email) && courseEmailSet.has(p.patient_email))
+    courseEmailSet.size === 0 || (
+      courseEmailSet.has(normalizeStudentEmail(p.therapist_email)) &&
+      courseEmailSet.has(normalizeStudentEmail(p.patient_email))
+    )
   );
-  const latestPairingDate = domainPairingsAll.reduce(
-    (max, p) => (!max || p.pairing_date > max ? p.pairing_date : max),
-    null
-  );
+  const latestPairingDate = getLatestPairingDate(domainPairingsAll);
 
   const currentPairings = sortBySequence(domainPairingsAll.filter(p => p.pairing_date === latestPairingDate));
-  const publishedCurrentPairings = currentPairings.filter(p => p.is_published === true);
+  // A rodada atual do administrador pode ser um rascunho mais novo. Para o
+  // aluno, a rodada atual é sempre a publicação mais recente, não o rascunho.
+  const publishedCurrentPairings = sortBySequence(getLatestPublishedPairings(domainPairingsAll));
   const pastPairings = sortBySequence(domainPairingsAll.filter(p => p.pairing_date !== latestPairingDate));
 
   // Pairings do aluno logado (apenas publicados)
-  const myTherapistPairing = publishedCurrentPairings.find(p => p.therapist_email === session?.email);
-  const myPatientPairing = publishedCurrentPairings.find(p => p.patient_email === session?.email);
+  const { asTherapist: myTherapistPairing, asPatient: myPatientPairing } = findStudentPairings(
+    publishedCurrentPairings,
+    session?.email
+  );
 
   const getStudentInfo = (email) => {
-    const code = accessCodes.find(c => c.student_email === email);
+    const normalizedEmail = normalizeStudentEmail(email);
+    const code = accessCodes.find(c => normalizeStudentEmail(c.student_email) === normalizedEmail);
     return {
       name: code?.profile_name || code?.student_name || email,
       photo: code?.profile_photo_url || '',
@@ -215,7 +223,8 @@ export default function TerapeutaDaSemana() {
   };
 
   const getStudentContact = (email) => {
-    const profile = studentProfiles.find(p => p.student_email === email);
+    const normalizedEmail = normalizeStudentEmail(email);
+    const profile = studentProfiles.find(p => normalizeStudentEmail(p.student_email) === normalizedEmail);
     const whatsapp = profile?.whatsapp || '';
     const contactEmail = profile?.email || email || '';
     return {
@@ -232,7 +241,7 @@ export default function TerapeutaDaSemana() {
       const patientName = p.patient_name || getStudentInfo(p.patient_email).name;
       const therapistContact = getStudentContact(p.therapist_email);
       const patientContact = getStudentContact(p.patient_email);
-      if (p.therapist_email === session.email) {
+      if (normalizeStudentEmail(p.therapist_email) === normalizeStudentEmail(session.email)) {
         return [{
           studentEmail: p.therapist_email,
           title: 'Sua dupla desta semana',
@@ -241,9 +250,10 @@ export default function TerapeutaDaSemana() {
           sourceId: p.id,
           relatedEmail: p.patient_email,
           relatedName: patientName,
+          publishedBy: 'system-reconciliation',
         }];
       }
-      if (p.patient_email === session.email) {
+      if (normalizeStudentEmail(p.patient_email) === normalizeStudentEmail(session.email)) {
         return [{
           studentEmail: p.patient_email,
           title: 'Sua dupla desta semana',
@@ -252,6 +262,7 @@ export default function TerapeutaDaSemana() {
           sourceId: p.id,
           relatedEmail: p.therapist_email,
           relatedName: therapistName,
+          publishedBy: 'system-reconciliation',
         }];
       }
       return [];
