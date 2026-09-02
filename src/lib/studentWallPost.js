@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { normalizeStudentEmail } from '@/lib/therapistPairings';
 
 /**
  * Mural individual do aluno (StudentWallPost).
@@ -27,7 +28,7 @@ const buildPayload = ({
   relatedName,
   publishedBy,
 }) => ({
-  student_email: studentEmail,
+  student_email: normalizeStudentEmail(studentEmail),
   title: title || '',
   message,
   source_type: sourceType,
@@ -46,10 +47,11 @@ const buildPayload = ({
 export async function publishToStudentWall(params) {
   const { studentEmail, message, sourceType, sourceId } = params;
   if (!studentEmail || !message) return null;
+  const normalizedStudentEmail = normalizeStudentEmail(studentEmail);
 
   if (sourceType && sourceId) {
     const existing = await base44.entities.StudentWallPost.filter(
-      { student_email: studentEmail, source_type: sourceType, source_id: sourceId },
+      { student_email: normalizedStudentEmail, source_type: sourceType, source_id: sourceId },
       '-published_at',
       1
     );
