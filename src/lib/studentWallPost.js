@@ -53,7 +53,24 @@ export async function publishToStudentWall(params) {
       '-published_at',
       1
     );
-    if (existing?.[0]) return existing[0];
+    if (existing?.[0]) {
+      const next = buildPayload(params);
+      const existingPost = existing[0];
+      const hasChanges =
+        (existingPost.title || '') !== next.title ||
+        (existingPost.message || '') !== next.message ||
+        (existingPost.related_email || '') !== next.related_email ||
+        (existingPost.related_name || '') !== next.related_name ||
+        (existingPost.published_by || '') !== next.published_by;
+      if (!hasChanges) return existingPost;
+      return base44.entities.StudentWallPost.update(existing[0].id, {
+        title: next.title,
+        message: next.message,
+        related_email: next.related_email,
+        related_name: next.related_name,
+        published_by: next.published_by,
+      });
+    }
   }
 
   return base44.entities.StudentWallPost.create(buildPayload(params));

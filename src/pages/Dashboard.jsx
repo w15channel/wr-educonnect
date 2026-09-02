@@ -17,6 +17,7 @@ import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
 import StudentWallCard from '@/components/shared/StudentWallCard';
+import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 
 
 const extractSequenceNumber = (item = {}) => {
@@ -367,6 +368,52 @@ export default function Dashboard() {
   const myGrades = submissions.filter((s) => s.grade !== undefined && s.grade !== null);
   const currentAccessCode = accessCodes.find((code) => code.student_email === session?.email);
   const totalPoints = capScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
+  const getTherapistContact = (email) => {
+    const profile = publishedScores.find((p) => p.student_email === email);
+    return profile?.whatsapp || profile?.email || email || 'contato não informado';
+  };
+
+  React.useEffect(() => {
+    if (isTeacher || !session?.email || therapistPairings.length === 0) return;
+    const latestPairingDate = therapistPairings
+      .filter((p) => p.is_published === true)
+      .reduce((max, p) => (!max || p.pairing_date > max ? p.pairing_date : max), null);
+    if (!latestPairingDate) return;
+    const entries = therapistPairings
+      .filter((p) => p.is_published === true && p.pairing_date === latestPairingDate)
+      .flatMap((p) => {
+        const therapistName = p.therapist_name || p.therapist_email;
+        const patientName = p.patient_name || p.patient_email;
+        if (p.therapist_email === session.email) {
+          return [{
+            studentEmail: p.therapist_email,
+            title: 'Sua dupla desta semana',
+            message: `${therapistName}, você é o(a) terapeuta de ${patientName} nesta rodada do Terapeuta da Semana. Contato do paciente: ${getTherapistContact(p.patient_email)}.`,
+            sourceType: 'therapist_pairing',
+            sourceId: p.id,
+            relatedEmail: p.patient_email,
+            relatedName: patientName,
+          }];
+        }
+        if (p.patient_email === session.email) {
+          return [{
+            studentEmail: p.patient_email,
+            title: 'Sua dupla desta semana',
+            message: `${patientName}, seu(sua) terapeuta nesta rodada do Terapeuta da Semana é ${therapistName}. Contato do terapeuta: ${getTherapistContact(p.therapist_email)}.`,
+            sourceType: 'therapist_pairing',
+            sourceId: p.id,
+            relatedEmail: p.therapist_email,
+            relatedName: therapistName,
+          }];
+        }
+        return [];
+      });
+    if (entries.length > 0) {
+      publishToStudentWallBatch(entries).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['student-wall-posts'] });
+      });
+    }
+  }, [isTeacher, session?.email, therapistPairings.map(p => `${p.id}:${p.is_published}`).join('|'), publishedScores.length]);
 
   const lessonIds = new Set(visibleLessons.map((l) => l.id));
   const watchedCount = progresses.filter((p) => p.watched && lessonIds.has(p.lesson_id)).length;
@@ -764,6 +811,7 @@ export default function Dashboard() {
         const visiblePendingTasks = getNextPendingBySequence(pendingTasksList);
         const pendingExams = visibleExams.filter((e) => !examSubmissions.find((s) => s.exam_id === e.id));
         const therapistPending = therapistPairings.filter((p) => {
+          if (p.is_published !== true) return false;
           const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
           if (!inPeriod) return false;
           if (p.therapist_email === session?.email) return !p.therapist_submitted;

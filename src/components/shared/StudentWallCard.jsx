@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Bell, MessageSquareHeart } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 
 /**
  * Mural individual do aluno.
@@ -59,6 +60,14 @@ export default function StudentWallCard({ studentEmail, className = '' }) {
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">{post.message}</p>
+            {post.related_email && (
+              <p className="mt-2 text-[11px] font-semibold text-violet-600">
+                Contato da dupla:{' '}
+                <ClickableStudent email={post.related_email} className="text-violet-700">
+                  {post.related_name || post.related_email}
+                </ClickableStudent>
+              </p>
+            )}
           </div>
         ))}
       </div>

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2, ArrowLeftRight, Send } from 'lucide-react';
+import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2, ArrowLeftRight, Send, Phone, Mail } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +45,11 @@ export default function TerapeutaDaSemana() {
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 10000),
+  });
+
+  const { data: studentProfiles = [] } = useQuery({
+    queryKey: ['student-profiles-contacts'],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000),
   });
 
   const { data: weekSettingsList = [] } = useQuery({
@@ -105,12 +110,14 @@ export default function TerapeutaDaSemana() {
         pairingsToPublish.flatMap((p) => {
           const therapistName = p.therapist_name || getStudentInfo(p.therapist_email).name;
           const patientName = p.patient_name || getStudentInfo(p.patient_email).name;
+          const therapistContact = getStudentContact(p.therapist_email);
+          const patientContact = getStudentContact(p.patient_email);
           const sourceId = p.id;
           return [
             {
               studentEmail: p.therapist_email,
               title: 'Sua dupla desta semana',
-              message: `${therapistName}, você é o(a) terapeuta de ${patientName} nesta rodada do Terapeuta da Semana.`,
+              message: `${therapistName}, você é o(a) terapeuta de ${patientName} nesta rodada do Terapeuta da Semana. Contato do paciente: ${patientContact.label}.`,
               sourceType: 'therapist_pairing',
               sourceId,
               relatedEmail: p.patient_email,
@@ -119,7 +126,7 @@ export default function TerapeutaDaSemana() {
             {
               studentEmail: p.patient_email,
               title: 'Sua dupla desta semana',
-              message: `${patientName}, seu(sua) terapeuta nesta rodada do Terapeuta da Semana é ${therapistName}.`,
+              message: `${patientName}, seu(sua) terapeuta nesta rodada do Terapeuta da Semana é ${therapistName}. Contato do terapeuta: ${therapistContact.label}.`,
               sourceType: 'therapist_pairing',
               sourceId,
               relatedEmail: p.therapist_email,
@@ -206,6 +213,55 @@ export default function TerapeutaDaSemana() {
       avatarEmoji: resolveAvatarEmoji(code?.profile_avatar_emoji),
     };
   };
+
+  const getStudentContact = (email) => {
+    const profile = studentProfiles.find(p => p.student_email === email);
+    const whatsapp = profile?.whatsapp || '';
+    const contactEmail = profile?.email || email || '';
+    return {
+      whatsapp,
+      email: contactEmail,
+      label: whatsapp || contactEmail || 'contato não informado',
+    };
+  };
+
+  useEffect(() => {
+    if (isTeacher || !session?.email || publishedCurrentPairings.length === 0) return;
+    const entries = publishedCurrentPairings.flatMap((p) => {
+      const therapistName = p.therapist_name || getStudentInfo(p.therapist_email).name;
+      const patientName = p.patient_name || getStudentInfo(p.patient_email).name;
+      const therapistContact = getStudentContact(p.therapist_email);
+      const patientContact = getStudentContact(p.patient_email);
+      if (p.therapist_email === session.email) {
+        return [{
+          studentEmail: p.therapist_email,
+          title: 'Sua dupla desta semana',
+          message: `${therapistName}, você é o(a) terapeuta de ${patientName} nesta rodada do Terapeuta da Semana. Contato do paciente: ${patientContact.label}.`,
+          sourceType: 'therapist_pairing',
+          sourceId: p.id,
+          relatedEmail: p.patient_email,
+          relatedName: patientName,
+        }];
+      }
+      if (p.patient_email === session.email) {
+        return [{
+          studentEmail: p.patient_email,
+          title: 'Sua dupla desta semana',
+          message: `${patientName}, seu(sua) terapeuta nesta rodada do Terapeuta da Semana é ${therapistName}. Contato do terapeuta: ${therapistContact.label}.`,
+          sourceType: 'therapist_pairing',
+          sourceId: p.id,
+          relatedEmail: p.therapist_email,
+          relatedName: therapistName,
+        }];
+      }
+      return [];
+    });
+    if (entries.length > 0) {
+      publishToStudentWallBatch(entries).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['student-wall-posts'] });
+      });
+    }
+  }, [isTeacher, session?.email, publishedCurrentPairings.map(p => `${p.id}:${p.is_published}`).join('|'), studentProfiles.length, accessCodes.length]);
 
   const handleGeneratePairings = async () => {
     await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
@@ -453,6 +509,7 @@ export default function TerapeutaDaSemana() {
                   <div>
                     <ClickableStudent email={myTherapistPairing.patient_email} className="font-bold text-sm">{getStudentInfo(myTherapistPairing.patient_email).name}</ClickableStudent>
                     <p className="text-xs text-muted-foreground">Paciente</p>
+                    <ContactLine contact={getStudentContact(myTherapistPairing.patient_email)} roleLabel="Contato do paciente" />
                   </div>
                 </div>
                 {myTherapistPairing.therapist_submitted ? (
@@ -486,6 +543,7 @@ export default function TerapeutaDaSemana() {
                   <div>
                     <ClickableStudent email={myPatientPairing.therapist_email} className="font-bold text-sm">{getStudentInfo(myPatientPairing.therapist_email).name}</ClickableStudent>
                     <p className="text-xs text-muted-foreground">Terapeuta</p>
+                    <ContactLine contact={getStudentContact(myPatientPairing.therapist_email)} roleLabel="Contato do terapeuta" />
                   </div>
                 </div>
                 {myPatientPairing.patient_submitted ? (
@@ -634,6 +692,29 @@ export default function TerapeutaDaSemana() {
       </Dialog>
     </div>
   );
+}
+
+function ContactLine({ contact, roleLabel }) {
+  if (contact?.whatsapp) {
+    return (
+      <a
+        href={`https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-green-600 hover:underline"
+      >
+        <Phone size={11} /> {roleLabel}: {contact.whatsapp}
+      </a>
+    );
+  }
+  if (contact?.email) {
+    return (
+      <span className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+        <Mail size={11} /> {roleLabel}: {contact.email}
+      </span>
+    );
+  }
+  return <span className="mt-1 block text-[11px] text-muted-foreground">{roleLabel}: contato não informado</span>;
 }
 
 function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, swapSelectedId, onSwap, onModuleChange }) {
