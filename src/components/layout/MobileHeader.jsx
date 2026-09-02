@@ -37,6 +37,7 @@ const routeLabels = {
   '/tuitions': 'Mensalidades',
   '/tutor': 'Tutor Digital EDU',
   '/scorecontrol': 'Controle de Pontuação',
+  '/pontuacao-geral': 'Pontuação Geral',
   '/certificadora': 'Certificação',
   '/gerar-certificado': 'Gerar Certificado',
   '/monitores': 'Monitores',

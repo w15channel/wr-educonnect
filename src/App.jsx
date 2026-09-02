@@ -99,6 +99,7 @@ function AppRoutesTree() {
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="tutor" element={<TutorDigital />} />
         <Route path="scorecontrol" element={<ScoreControl />} />
+        <Route path="pontuacao-geral" element={<ScoreControl />} />
         <Route path="scores" element={<Navigate to="../scorecontrol" replace />} />
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="meu-certificado" element={<MeuCertificado />} />
@@ -204,6 +205,7 @@ const AuthenticatedApp = () => {
       <Route path="/tutor" element={<Navigate to={`${base}/tutor`} replace />} />
       <Route path="/scores" element={<Navigate to={`${base}/scorecontrol`} replace />} />
       <Route path="/scorecontrol" element={<Navigate to={`${base}/scorecontrol`} replace />} />
+      <Route path="/pontuacao-geral" element={<Navigate to={`${base}/pontuacao-geral`} replace />} />
       <Route path="/certificadora" element={<Navigate to={`${base}/certificadora`} replace />} />
       <Route path="/gerar-certificado" element={<Navigate to={`${base}/gerar-certificado`} replace />} />
       <Route path="/monitores" element={<Navigate to={`${base}/monitores`} replace />} />

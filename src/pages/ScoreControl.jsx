@@ -655,6 +655,7 @@ export default function ScoreControl() {
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
   const isTeacher = session?.role === 'admin';
+  const isPontuacaoGeralRoute = location.pathname.includes('/pontuacao-geral');
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -1167,7 +1168,7 @@ export default function ScoreControl() {
             <Trophy size={20} className="text-white" />
           </div>
           <div>
-            <h2 className="text-xl lg:text-2xl font-bold text-foreground">Controle de Pontuação</h2>
+            <h2 className="text-xl lg:text-2xl font-bold text-foreground">{isPontuacaoGeralRoute ? 'Pontuação Geral' : 'Controle de Pontuação'}</h2>
             <p className="text-muted-foreground text-sm mt-0.5">{isTeacher ? 'Verifique e pontue as atividades de cada aluno' : 'Classificação dos alunos por posição'}</p>
           </div>
         </div>

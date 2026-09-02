@@ -69,6 +69,7 @@ const studentGroups = [
     { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
   ]},
   { label: 'Comunidade', items: [
+    { icon: Trophy, label: 'Pontuação Geral', path: '/pontuacao-geral', color: 'text-yellow-400' },
     { icon: Hash, label: 'Mural de Superação', path: '/chat', color: 'text-blue-400' },
     { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-green-400' },
     { icon: Hash, label: 'Debates', path: '/debates', color: 'text-fuchsia-400' },
