@@ -20,7 +20,6 @@ import { sortBySequence } from '@/lib/sequenceUtils';
 import { resolveAvatarEmoji } from '@/lib/avatarUtils';
 import RelatosMural from '@/components/therapist/RelatosMural';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
-import StudentWallCard from '@/components/shared/StudentWallCard';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 import { buildScoreBalancedPairings, findStudentPairings, getLatestPairingDate, getLatestPublishedPairings, isActiveStudent, normalizeStudentEmail } from '@/lib/therapistPairings';
 
@@ -485,9 +484,6 @@ export default function TerapeutaDaSemana() {
         </div>
       )}
 
-      {/* Mural individual: publicações feitas em nome do aluno (ex.: dupla desta semana) */}
-      {!isTeacher && <StudentWallCard studentEmail={session?.email} />}
-
       {/* Meus pareamentos */}
       {!isTeacher && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -620,26 +616,6 @@ export default function TerapeutaDaSemana() {
             ))}
           </TabsContent>
         </Tabs>
-      )}
-
-      {/* Lista atual para alunos */}
-      {!isTeacher && publishedCurrentPairings.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border p-5">
-          <h3 className="font-bold text-sm text-foreground mb-4">Todos os Pareamentos desta Rodada</h3>
-          <div className="space-y-2">
-            {publishedCurrentPairings.map(p => (
-              <div key={p.id} className="flex items-center gap-3 p-3 bg-secondary/40 rounded-xl">
-                <StudentAvatar email={p.therapist_email} size="sm" />
-                <span className="text-xs font-semibold text-foreground truncate flex-1">{getStudentInfo(p.therapist_email).name}</span>
-                <span className="text-[10px] text-muted-foreground bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">terapeuta</span>
-                <span className="text-xs text-muted-foreground">→</span>
-                <span className="text-[10px] text-muted-foreground bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">paciente</span>
-                <span className="text-xs font-semibold text-foreground truncate flex-1 text-right">{getStudentInfo(p.patient_email).name}</span>
-                <StudentAvatar email={p.patient_email} size="sm" />
-              </div>
-            ))}
-          </div>
-        </div>
       )}
 
       {/* Mural permanente de relatos — histórico por datas */}
