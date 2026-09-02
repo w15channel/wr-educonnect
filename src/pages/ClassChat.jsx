@@ -3,13 +3,14 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check, PartyPopper, Hand, Share2 } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import useProfessorAutoReactions from '@/hooks/useProfessorAutoReactions';
 import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
+import StudentWallCard from '@/components/shared/StudentWallCard';
 
 const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
@@ -283,6 +284,7 @@ export default function ClassChat() {
             <div className="w-full lg:w-[68%] h-[65%] lg:h-full border-b lg:border-b-0 lg:border-r border-[#abc0ea] flex flex-col bg-white min-h-0">
               <div className="px-3 py-2 text-[11px] bg-gradient-to-r from-rose-50 to-amber-50 border-b border-rose-100 text-[#815568]"><strong>Inspire a turma.</strong> Compartilhe uma conquista, uma palavra de força ou um passo importante da sua jornada.</div>
               <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-gradient-to-b from-[#fffafb] to-white">
+                {!isAdmin && <StudentWallCard studentEmail={session?.email} className="border-violet-200 bg-violet-50/70" />}
                 {wallFeed.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : wallFeed.map((msg) => {
                   if (msg.feedType === 'notification') {
                     return <div key={msg.id} className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-relaxed text-violet-950" role="status"><span className="font-bold">{msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista'}</span><p>{msg.message}</p>{msg.reply_text && <p className="mt-1 rounded-md bg-white/70 px-2 py-1">“{msg.reply_text}”</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>;
