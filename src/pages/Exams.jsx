@@ -15,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import { formatScore } from '@/lib/scoreUtils';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
 import { parseModuleNumber } from '@/lib/examChecklistRules';
+import { buildExamReleaseIndex } from '@/lib/adminModuleProgress';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ExamEditor from '../components/exams/ExamEditor';
 import ExamSubmissionGrader from '../components/exams/ExamSubmissionGrader';
@@ -98,6 +99,21 @@ export default function Exams() {
     },
     enabled: exams.length > 0,
   });
+
+  // Liberação manual do admin (ferramenta "Liberação de Provas"): abre a prova
+  // do módulo mesmo que o checklist ainda não esteja marcado como concluído.
+  const { data: examReleases = [] } = useQuery({
+    queryKey: ['exam-releases-student', studentEmails.join('|')],
+    queryFn: async () => {
+      const results = await Promise.all(
+        studentEmails.map((mail) => base44.entities.ExamRelease.filter({ student_email: mail }, '-released_at', 50))
+      );
+      return results.flat();
+    },
+    enabled: !isTeacher && studentEmails.length > 0,
+  });
+  const releaseIndex = useMemo(() => buildExamReleaseIndex(examReleases), [examReleases]);
+  const isReleasedByAdmin = (moduleNumber) => studentEmails.some((mail) => releaseIndex.has(`${mail}|${moduleNumber}`));
 
   // Get unique students for filter
   const uniqueStudents = useMemo(() => {
@@ -334,7 +350,7 @@ export default function Exams() {
                   )
                 ) : (() => {
                   const examModule = parseModuleNumber(exam.module_ref);
-                  const checklistLocked = !isTeacher && !!examModule && !isModuleUnlockedForExam(examModule);
+                  const checklistLocked = !isTeacher && !!examModule && !isModuleUnlockedForExam(examModule) && !isReleasedByAdmin(examModule);
                   if (checklistLocked) {
                     return (
                       <div className="space-y-2">

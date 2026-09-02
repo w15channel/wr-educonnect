@@ -38,6 +38,7 @@ import Ofensivas from './pages/Ofensivas';
 import Apostila from './pages/Apostila';
 import Exams from './pages/Exams';
 import Checklist from './pages/Checklist';
+import ExamReleaseControl from './pages/ExamReleaseControl';
 import ExamQuizView from './pages/ExamQuizView';
 
 import MeuBestSeller from './pages/MeuBestSeller';
@@ -80,6 +81,7 @@ function AppRoutesTree() {
         <Route path="tests" element={<Tests />} />
         <Route path="exams" element={<Exams />} />
         <Route path="checklist" element={<Checklist />} />
+        <Route path="exam-release" element={<AdminOnly><ExamReleaseControl /></AdminOnly>} />
         <Route path="exams/quiz/:id" element={<ExamQuizView />} />
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
         <Route path="tasks/builder/:id" element={<TaskExamBuilder />} />

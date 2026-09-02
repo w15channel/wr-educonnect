@@ -152,3 +152,50 @@ export function buildModuleChecklist({
     doneCount: items.filter((item) => item.done).length,
   };
 }
+
+/**
+ * Percentual mínimo do checklist exigido para liberar as provas do módulo.
+ * Enquanto o aluno não chega nele, a liberação fica bloqueada (no app e no servidor).
+ */
+export const EXAM_RELEASE_MIN_PERCENT = 100;
+
+/**
+ * Resumo do checklist de um módulo para o painel do admin.
+ * Aceita tanto o objeto do checklist ({ items }) quanto a lista de itens.
+ * Dados ausentes ou inválidos resultam em progresso zerado e não elegível —
+ * nunca em uma liberação indevida.
+ */
+export function summarizeChecklistProgress(checklistOrItems) {
+  const items = Array.isArray(checklistOrItems)
+    ? checklistOrItems
+    : (Array.isArray(checklistOrItems?.items) ? checklistOrItems.items : []);
+  const total = items.length;
+  const completed = items.filter((item) => item?.done).length;
+  const missingItems = items.filter((item) => !item?.done);
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return {
+    total,
+    completed,
+    missing: total - completed,
+    missingItems,
+    percent,
+    hasData: total > 0,
+    eligible: total > 0 && percent >= EXAM_RELEASE_MIN_PERCENT,
+  };
+}
+
+/**
+ * Guarda de liberação: devolve o motivo do bloqueio (ou null quando pode liberar).
+ * Usada tanto pelo botão do admin quanto pela validação do backend.
+ */
+export function examReleaseBlockReason(summary) {
+  if (!summary || !summary.hasData) return 'Checklist do módulo indisponível para este aluno.';
+  if (!summary.eligible) {
+    return `Aluno com ${summary.percent}% do checklist — mínimo exigido é ${EXAM_RELEASE_MIN_PERCENT}% (faltam ${summary.missing} atividade(s)).`;
+  }
+  return null;
+}
+
+export function canReleaseExams(summary) {
+  return examReleaseBlockReason(summary) === null;
+}
