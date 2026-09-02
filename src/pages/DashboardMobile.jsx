@@ -213,6 +213,7 @@ export default function DashboardMobile() {
   const pendingTasksList = sortBySeq(visibleTasks.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
   const pendingQuizzes = visibleTasks.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
   const therapistPending = therapistPairings.filter(p => {
+    if (p.is_published !== true) return false;
     if (p.pairing_date < periodStart || p.pairing_date > todayYmd) return false;
     if (p.therapist_email === session?.email) return !p.therapist_submitted;
     if (p.patient_email === session?.email) return !p.patient_submitted;
