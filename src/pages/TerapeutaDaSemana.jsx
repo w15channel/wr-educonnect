@@ -22,7 +22,7 @@ import RelatosMural from '@/components/therapist/RelatosMural';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import StudentWallCard from '@/components/shared/StudentWallCard';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
-import { findStudentPairings, getLatestPairingDate, getLatestPublishedPairings, normalizeStudentEmail } from '@/lib/therapistPairings';
+import { buildScoreBalancedPairings, findStudentPairings, getLatestPairingDate, getLatestPublishedPairings, isActiveStudent, normalizeStudentEmail } from '@/lib/therapistPairings';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -118,7 +118,7 @@ export default function TerapeutaDaSemana() {
             {
               studentEmail: p.therapist_email,
               title: 'Sua dupla desta semana',
-              message: `${therapistName}, você é o(a) terapeuta de ${patientName} nesta rodada do Terapeuta da Semana. Contato do paciente: ${patientContact.label}.`,
+              message: `${therapistName}, sua dupla na atividade Terapeuta da Semana é ${patientName}, que terá a função de paciente. Contato: ${patientContact.label}.`,
               sourceType: 'therapist_pairing',
               sourceId,
               relatedEmail: p.patient_email,
@@ -128,7 +128,7 @@ export default function TerapeutaDaSemana() {
             {
               studentEmail: p.patient_email,
               title: 'Sua dupla desta semana',
-              message: `${patientName}, seu(sua) terapeuta nesta rodada do Terapeuta da Semana é ${therapistName}. Contato do terapeuta: ${therapistContact.label}.`,
+              message: `${patientName}, sua dupla na atividade Terapeuta da Semana é ${therapistName}, que terá a função de terapeuta. Contato: ${therapistContact.label}.`,
               sourceType: 'therapist_pairing',
               sourceId,
               relatedEmail: p.therapist_email,
@@ -171,7 +171,7 @@ export default function TerapeutaDaSemana() {
   // Filtro por curso: /sex/ exibe apenas alunos SEX-
   const isCodeInActiveDomain = (code) => {
     const email = code.student_email || '';
-    if (!code.is_active || !email) return false;
+    if (!isActiveStudent(code) || !email) return false;
     if (courseEmails && courseEmails.size > 0) return courseEmails.has(email);
     return code.course === activeCourse && (!codePrefix || (code.code || '').startsWith(codePrefix));
   };
@@ -245,7 +245,7 @@ export default function TerapeutaDaSemana() {
         return [{
           studentEmail: p.therapist_email,
           title: 'Sua dupla desta semana',
-          message: `${therapistName}, você é o(a) terapeuta de ${patientName} nesta rodada do Terapeuta da Semana. Contato do paciente: ${patientContact.label}.`,
+          message: `${therapistName}, sua dupla na atividade Terapeuta da Semana é ${patientName}, que terá a função de paciente. Contato: ${patientContact.label}.`,
           sourceType: 'therapist_pairing',
           sourceId: p.id,
           relatedEmail: p.patient_email,
@@ -257,7 +257,7 @@ export default function TerapeutaDaSemana() {
         return [{
           studentEmail: p.patient_email,
           title: 'Sua dupla desta semana',
-          message: `${patientName}, seu(sua) terapeuta nesta rodada do Terapeuta da Semana é ${therapistName}. Contato do terapeuta: ${therapistContact.label}.`,
+          message: `${patientName}, sua dupla na atividade Terapeuta da Semana é ${therapistName}, que terá a função de terapeuta. Contato: ${therapistContact.label}.`,
           sourceType: 'therapist_pairing',
           sourceId: p.id,
           relatedEmail: p.therapist_email,
@@ -283,23 +283,8 @@ export default function TerapeutaDaSemana() {
       return;
     }
 
-    const sorted = [...activeStudents].sort((a, b) => roundScore(b.pontuacao_total || 0) - roundScore(a.pontuacao_total || 0));
-    const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
-    const randomPoolSize = Math.min(10, Math.max(0, sorted.length - 2));
-    const activeGroupSize = sorted.length - randomPoolSize;
-    const activePairCount = Math.floor(activeGroupSize / 2) * 2;
-    const mostActiveGroup = sorted.slice(0, activePairCount);
-    const randomPool = shuffle(sorted.slice(activePairCount));
-    const allOrdered = [...mostActiveGroup, ...randomPool];
-
     const date = todayStr;
-    const pairs = [];
-    for (let i = 0; i < allOrdered.length - 1; i += 2) {
-      pairs.push({ therapist: allOrdered[i], patient: allOrdered[i + 1] });
-    }
-    if (allOrdered.length % 2 !== 0) {
-      pairs.push({ therapist: allOrdered[allOrdered.length - 1], patient: allOrdered[0] });
-    }
+    const { pairs, unpaired } = buildScoreBalancedPairings(activeStudents);
     for (const { therapist, patient } of pairs) {
       await createPairingMutation.mutateAsync({
         therapist_email: therapist.student_email,
@@ -311,7 +296,11 @@ export default function TerapeutaDaSemana() {
         is_published: false,
       });
     }
-    toast.success(`✅ ${pairs.length} pareamento(s) rascunho gerado(s) com ${activeStudents.length} aluno(s). Reposicione os pares e publique quando estiver pronto.`);
+    if (unpaired.length > 0) {
+      toast.warning(`${pairs.length} dupla(s) gerada(s). ${unpaired.length} aluno(s) ficaram sem combinação compatível por sobrenome ou quantidade ímpar.`);
+    } else {
+      toast.success(`✅ ${pairs.length} dupla(s) equilibrada(s) gerada(s). Revise e compartilhe quando estiver pronto.`);
+    }
   };
 
   // Alunos já em dupla na rodada atual (para o pareamento manual)
@@ -409,7 +398,7 @@ export default function TerapeutaDaSemana() {
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             <Heart size={22} className="text-pink-500" /> Terapeuta da Semana
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Pareamento manual, definido pelo administrador</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Maior pontuação com a menor pontuação compatível, sem sobrenomes similares</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2 flex-wrap">
@@ -423,7 +412,7 @@ export default function TerapeutaDaSemana() {
                 onClick={() => publishPairingsMutation.mutate(currentPairings.filter(p => !p.is_published))}
                 disabled={publishPairingsMutation.isPending}
               >
-                <Send size={15} /> Publicar Lista para Alunos
+                <Send size={15} /> Compartilhar Duplas
               </Button>
             )}
           </div>
