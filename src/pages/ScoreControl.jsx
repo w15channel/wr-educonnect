@@ -7,7 +7,7 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
 import ModuleUnlockPanel from '@/components/scores/ModuleUnlockPanel';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, HandHeart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, HandHeart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers, RefreshCw, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -644,6 +644,7 @@ export default function ScoreControl() {
   const [sortBy, setSortBy] = useState('points');
   const autoStudentEmail = new URLSearchParams(location.search).get('student') || null;
   const [retroLoading, setRetroLoading] = useState(false);
+  const [forumBotLoading, setForumBotLoading] = useState(false);
   const [automaticSyncComplete, setAutomaticSyncComplete] = useState(false);
   const [draggedEmail, setDraggedEmail] = useState(null);
   const [customOrder, setCustomOrder] = useState([]);
@@ -801,6 +802,9 @@ export default function ScoreControl() {
     if (firstPending) setSelectedCode(firstPending);
   }, [codes, submissions, scoreItems, location.search]);
 
+  // Fallback manual do agente de pontuação: caso a automação disparada por
+  // entidade (TaskSubmission/ExamSubmission) falhe ou atrase, o admin pode
+  // forçar o recálculo/atribuição de notas por aqui, sem depender do agendador.
   const handleRetro = async () => {
     setRetroLoading(true);
     try {
@@ -811,6 +815,22 @@ export default function ScoreControl() {
       toast.error('Erro: ' + (e?.message || 'tente novamente'));
     } finally {
       setRetroLoading(false);
+    }
+  };
+
+  // Fallback manual do agente de respostas do fórum: caso a automação
+  // agendada do forumBot falhe ou não esteja ativa, o admin pode disparar as
+  // respostas automáticas pendentes por aqui.
+  const handleRunForumBot = async () => {
+    setForumBotLoading(true);
+    try {
+      const res = await base44.functions.invoke('forumBot', {});
+      await queryClient.invalidateQueries();
+      toast.success(`Respostas do fórum processadas! ${res.data?.processed || 0} de ${res.data?.eligible || 0} publicação(ões) pendente(s).`);
+    } catch (e) {
+      toast.error('Erro: ' + (e?.message || 'tente novamente'));
+    } finally {
+      setForumBotLoading(false);
     }
   };
 
@@ -1173,9 +1193,25 @@ export default function ScoreControl() {
           </div>
         </div>
         {isTeacher && (courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0) > 0 &&
-        <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-center gap-2">
+        <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-3 flex flex-wrap items-center gap-2">
             <Clock size={14} className="text-orange-500 shrink-0" />
             <p className="text-xs text-orange-800 font-semibold">{courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0} atividade(s) aguardando verificação e pontuação</p>
+            <Button size="sm" variant="outline" className="text-xs h-7 ml-auto" onClick={handleRetro} disabled={retroLoading}
+            title="Força o agente de pontuação a rodar agora, caso a automação automática tenha falhado">
+              {retroLoading ? <Loader2 size={13} className="animate-spin mr-1" /> : <RefreshCw size={13} className="mr-1" />}
+              {retroLoading ? 'Recalculando...' : 'Recalcular pontuações agora'}
+            </Button>
+          </div>
+        }
+        {isTeacher &&
+        <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-wrap items-center gap-2">
+            <MessageSquare size={14} className="text-blue-500 shrink-0" />
+            <p className="text-xs text-blue-800 font-semibold">Agente de respostas do fórum (auto-reply) pode ser executado manualmente</p>
+            <Button size="sm" variant="outline" className="text-xs h-7 ml-auto" onClick={handleRunForumBot} disabled={forumBotLoading}
+            title="Força o agente de respostas do fórum a responder publicações pendentes agora, caso a automação agendada tenha falhado">
+              {forumBotLoading ? <Loader2 size={13} className="animate-spin mr-1" /> : <RefreshCw size={13} className="mr-1" />}
+              {forumBotLoading ? 'Respondendo...' : 'Responder fórum agora'}
+            </Button>
           </div>
         }
       </div>
