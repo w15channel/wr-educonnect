@@ -16,7 +16,6 @@ import useOvercomingWall from '@/hooks/useOvercomingWall';
 import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
-import StudentWallCard from '@/components/shared/StudentWallCard';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 
 
@@ -602,9 +601,6 @@ export default function Dashboard() {
         }
       </div>
 
-      {/* Mural individual: publicações feitas em nome do aluno (ex.: dupla do Terapeuta da Semana) */}
-      {!isTeacher && <StudentWallCard studentEmail={session?.email} />}
-
       {/* Student: progress + ranking */}
       {!isTeacher &&
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -702,6 +698,12 @@ export default function Dashboard() {
                 {overcomingWallFeed.length === 0 ?
                 <p className="text-xs text-muted-foreground text-center py-8">Seja a primeira pessoa a deixar uma palavra de força para a turma.</p> :
                 overcomingWallFeed.map((msg) => {
+                  if (msg.feedType === 'personal') return (
+                    <div key={msg.id} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
+                      <Bell size={14} className="mt-0.5 shrink-0 text-violet-600" />
+                      <div className="min-w-0"><p className="font-bold">{msg.title || 'Aviso para você'}</p><p className="whitespace-pre-wrap break-words">{msg.message}</p>{msg.related_email && <p className="mt-1 font-semibold text-violet-700">Contato: {msg.related_name || msg.related_email} ({msg.related_email})</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>
+                    </div>
+                  );
                   if (msg.feedType === 'notification') return (
                     <div key={msg.id} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
                       <Bell size={14} className="mt-0.5 shrink-0 text-violet-600" />

@@ -90,6 +90,17 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     enabled: on && !!session?.email,
   });
 
+  const { data: personalPosts = [] } = useQuery({
+    queryKey: ['student-wall-posts', session?.email],
+    queryFn: () => base44.entities.StudentWallPost.filter(
+      { student_email: session.email.trim().toLowerCase() },
+      '-published_at',
+      30
+    ),
+    refetchInterval: 15000,
+    enabled: on && session?.role !== 'admin' && !!session?.email,
+  });
+
   const courseEmails = useMemo(
     () => new Set(accessCodes.filter((code) => code.student_email && (code.course === activeCourse || (activeCourse === 'tcc' && !code.course))).map((code) => code.student_email)),
     [accessCodes, activeCourse]
@@ -177,10 +188,11 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
   // Feed único (mais recente primeiro) — a mesma lista nas duas telas.
   const feed = useMemo(() => [
     ...notifications.map((item) => ({ ...item, id: `notification-${item.id}`, feedType: 'notification', occurredAt: item.created_date })),
+    ...personalPosts.map((item) => ({ ...item, id: `personal-${item.id}`, feedType: 'personal', occurredAt: item.published_at || item.created_date })),
     ...institutionalPosts,
     ...achievementPosts,
     ...messages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({ ...message, feedType: 'encouragement', occurredAt: message.created_date || message.updated_date })),
-  ].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)), [notifications, institutionalPosts, achievementPosts, messages]);
+  ].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)), [notifications, personalPosts, institutionalPosts, achievementPosts, messages]);
 
   const sharedPublications = institutionalRecords?.shared || [];
 

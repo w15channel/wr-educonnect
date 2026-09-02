@@ -24,7 +24,6 @@ import { capScore, formatScore } from '@/lib/scoreUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { toast } from 'sonner';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
-import StudentWallCard from '@/components/shared/StudentWallCard';
 
 function getScopedPrefix(pathname) {
   const parts = pathname.split('/').filter(Boolean);
@@ -243,9 +242,6 @@ export default function DashboardMobile() {
           <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
         </button>
       </div>
-
-      {/* Publicações direcionadas ao aluno, inclusive a dupla da semana. */}
-      {!isTeacher && <StudentWallCard studentEmail={session?.email} />}
 
       {/* Stat Cards — 2 colunas */}
       <div className="grid grid-cols-2 gap-2.5">
