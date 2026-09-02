@@ -16,6 +16,7 @@ import useOvercomingWall from '@/hooks/useOvercomingWall';
 import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
+import StudentWallCard from '@/components/shared/StudentWallCard';
 
 
 const extractSequenceNumber = (item = {}) => {
@@ -553,6 +554,9 @@ export default function Dashboard() {
           </Button>
         }
       </div>
+
+      {/* Mural individual: publicações feitas em nome do aluno (ex.: dupla do Terapeuta da Semana) */}
+      {!isTeacher && <StudentWallCard studentEmail={session?.email} />}
 
       {/* Student: progress + ranking */}
       {!isTeacher &&

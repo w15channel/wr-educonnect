@@ -59,6 +59,11 @@
       "type": "boolean",
       "default": false,
       "description": "Paciente já enviou avaliação"
+    },
+    "is_published": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o pareamento já foi publicado e está visível para os alunos"
     }
   },
   "required": [
