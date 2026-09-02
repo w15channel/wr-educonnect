@@ -121,6 +121,7 @@ const studentGroups = [
   {
     label: 'Comunidade',
     items: [
+      { icon: Trophy,        label: 'Pontuação Geral',        path: '/pontuacao-geral',   color: 'text-yellow-400' },
       { icon: UsersRound,    label: 'Mural de Superação',      path: '/chat',              color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Suporte ao Aluno',       path: '/forum',             color: 'text-green-400' },
       { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },

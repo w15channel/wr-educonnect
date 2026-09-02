@@ -450,12 +450,21 @@ Deno.serve(async (req) => {
       // ── Flush batched ScoreItem operations ──────────────────────────────
       await flushScoreBatches();
 
-      // ── Final ranking + persist ──────────────────────────────────────────
+      // ── Sync study points only (pontuacao_estudos) ──────────────────────
+      // IMPORTANT: this function no longer publishes `pontuacao_total`,
+      // `points` or `dashboard_rank`. Esses campos são a fonte lida pelo
+      // Ranking Geral do aluno e pelo Ranking Geral Manual do admin, e a
+      // sequência exibida/salva no módulo ativo do Controle de Pontuação
+      // (ScoreControl → "Salvar sequência") é a única ação que deve publicá-
+      // los — sobrescrevê-los aqui (com um total cumulativo, sem recorte de
+      // módulo) desfazia silenciosamente a publicação manual do admin toda
+      // vez que a página era aberta ou a sincronização automática rodava,
+      // fazendo o ranking exibido aos alunos divergir do que o admin via no
+      // módulo selecionado.
       const finalRanking = courseCodes
-        .map((c) => ({ code: c, total: capRankingScore(calculatedTotals.get(c.student_email) || 0), name: displayName(c).toLowerCase() }))
-        .sort((a, b) => b.total !== a.total ? b.total - a.total : a.name.localeCompare(b.name, 'pt-BR'));
+        .map((c) => ({ code: c, name: displayName(c).toLowerCase() }));
 
-      for (const [idx, item] of finalRanking.entries()) {
+      for (const item of finalRanking) {
         const matchingProfiles = studentProfiles.filter(
           (p) => p.student_email === item.code.student_email && (p.dashboard_course === course || (!p.dashboard_course && course === 'tcc'))
         );
@@ -464,33 +473,29 @@ Deno.serve(async (req) => {
         for (const dup of matchingProfiles.filter((p) => existingProfile && p.id !== existingProfile.id)) {
           await base44.asServiceRole.entities.StudentProfile.delete(dup.id).catch(() => null);
         }
-        const profilePayload = {
-          student_email: item.code.student_email,
-          full_name: displayName(item.code),
-          points: capRankingScore(item.total),
-          pontuacao_total: capRankingScore(item.total),
-          pontuacao_estudos: studyTotal,
-          dashboard_rank: idx + 1,
-          dashboard_course: course,
-        };
-        if (existingProfile) await base44.asServiceRole.entities.StudentProfile.update(existingProfile.id, profilePayload);
-        else await base44.asServiceRole.entities.StudentProfile.create(profilePayload);
-        profilesUpdated++;
-
-        if (roundScore(item.code.pontuacao_total) !== capRankingScore(item.total) || roundScore(item.code.pontuacao_estudos) !== studyTotal) {
-          await base44.asServiceRole.entities.AccessCode.update(item.code.id, {
-            pontuacao_total: capRankingScore(item.total),
+        if (existingProfile) {
+          if (roundScore(existingProfile.pontuacao_estudos) !== studyTotal) {
+            await base44.asServiceRole.entities.StudentProfile.update(existingProfile.id, { pontuacao_estudos: studyTotal });
+            profilesUpdated++;
+          }
+        } else {
+          await base44.asServiceRole.entities.StudentProfile.create({
+            student_email: item.code.student_email,
+            full_name: displayName(item.code),
             pontuacao_estudos: studyTotal,
+            dashboard_course: course,
           });
+          profilesUpdated++;
+        }
+
+        if (roundScore(item.code.pontuacao_estudos) !== studyTotal) {
+          await base44.asServiceRole.entities.AccessCode.update(item.code.id, { pontuacao_estudos: studyTotal });
           scoreCachesUpdated++;
         }
 
         for (const cachedUser of users.filter((u) => u.email === item.code.student_email)) {
-          if (roundScore(cachedUser.pontuacao_total) !== capRankingScore(item.total) || roundScore(cachedUser.pontuacao_estudos) !== studyTotal) {
-            await base44.asServiceRole.entities.User.update(cachedUser.id, {
-              pontuacao_total: capRankingScore(item.total),
-              pontuacao_estudos: studyTotal,
-            });
+          if (roundScore(cachedUser.pontuacao_estudos) !== studyTotal) {
+            await base44.asServiceRole.entities.User.update(cachedUser.id, { pontuacao_estudos: studyTotal });
             scoreCachesUpdated++;
           }
         }

@@ -410,10 +410,15 @@ export default function Dashboard() {
     if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
     return a.name.localeCompare(b.name);
   });
-  const ranking = rankingFull.slice(0, 10);
-  const studentPublishedRanking = rankingFull
+  // A sequência publicada pelo ScoreControl (dashboard_rank) é a única fonte
+  // de verdade da classificação — tanto o Ranking Geral do aluno quanto o
+  // Ranking Geral Manual do admin precisam exibir exatamente essa mesma
+  // ordem/pontuação, senão o que o admin salva no módulo ativo do Controle
+  // de Pontuação diverge do que aparece nesses dois lugares.
+  const publishedRanking = rankingFull
     .filter((item) => Number.isFinite(item.publishedRank) && item.publishedRank !== Number.MAX_SAFE_INTEGER)
     .sort((a, b) => a.publishedRank - b.publishedRank);
+  const ranking = publishedRanking.length > 0 ? publishedRanking : rankingFull;
   React.useEffect(() => {
     setCustomRanking(ranking);
     setScoreDrafts((prev) => {
@@ -450,9 +455,8 @@ export default function Dashboard() {
     },
   });
 
-  const studentRankingSource = studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull;
-  const visibleStudentRanking = studentRankingSource;
-  const myRank = studentRankingSource.findIndex((r) => r.email === session?.email) + 1;
+  const visibleStudentRanking = ranking;
+  const myRank = ranking.findIndex((r) => r.email === session?.email) + 1;
   const isStudentOnline = (student) => student.is_online && student.last_seen_at && Date.now() - new Date(student.last_seen_at).getTime() < 90000;
   const onlineClassmates = accessCodes
     .filter((c) => c.student_email && c.student_email !== session?.email && c.is_active !== false)
