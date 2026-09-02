@@ -554,7 +554,7 @@ export default function Dashboard() {
       {options.map(({ key, label, Icon, active }) => {
         const count = wallReactions.filter((r) => r.target_id === item.id && r.reaction === key).length;
         const reacted = wallReactions.some((r) => r.target_id === item.id && r.reaction === key && r.actor_email === session?.email);
-        return <button key={key} type="button" disabled={isOwnContent || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={isOwnContent ? 'Você não pode reagir ao próprio conteúdo' : label} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-background/70 text-muted-foreground hover:bg-secondary'}`}><Icon size={12} fill={key === 'love' && reacted ? 'currentColor' : 'none'} />{label}{count > 0 && <span>{count}</span>}</button>;
+        return <button key={key} type="button" disabled={isOwnContent || reactMutation.isPending} onClick={() => { reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key }); if (!isTeacher) navigate(scoped('/chat')); }} aria-pressed={reacted} title={isOwnContent ? 'Você não pode reagir ao próprio conteúdo' : label} className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-background/70 text-muted-foreground hover:bg-secondary'}`}><Icon size={12} fill={key === 'love' && reacted ? 'currentColor' : 'none'} />{label}{count > 0 && <span>{count}</span>}</button>;
       })}
       <button type="button" disabled={isOwnContent} onClick={() => { setReplyTarget({ id: item.id, targetType, ownerEmail }); setReplyText(''); }} title={isOwnContent ? 'Você não pode responder ao próprio conteúdo' : 'Responder em privado'} className="inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-1 text-[10px] font-bold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-45"><MessageCircle size={12} />Responder</button>
     </div>;
@@ -667,12 +667,7 @@ export default function Dashboard() {
 
           {/* Mural de Superação + Checklist agrupados */}
           <div
-            className={`lg:col-span-2 order-1 bg-card rounded-2xl border border-border p-5 text-left flex flex-col ${!isTeacher ? 'cursor-pointer transition hover:border-primary/40 hover:shadow-md' : ''}`}
-            onClickCapture={() => { if (!isTeacher) navigate(scoped('/chat')); }}
-            onKeyDown={(event) => { if (!isTeacher && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate(scoped('/chat')); } }}
-            role={!isTeacher ? 'link' : undefined}
-            tabIndex={!isTeacher ? 0 : undefined}
-            aria-label={!isTeacher ? 'Abrir o Mural de Superação completo' : undefined}
+            className="lg:col-span-2 order-1 bg-card rounded-2xl border border-border p-5 text-left flex flex-col"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
