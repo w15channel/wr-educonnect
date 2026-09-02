@@ -426,9 +426,11 @@ export default function HistoricoAcademico() {
 
   const { rows: allRows, availableRows } = selectedStudent ? buildAllRows(selectedStudent) : { rows: [], availableRows: [] };
 
+  // A lista de marcação do histórico só pode conter atividades já cumpridas.
+  const completedRows = allRows.filter((r) => r.status === 'Avaliado');
   // Toda atividade pertence a exatamente um módulo — sem duplicidade na contagem.
   const byModule = (r) => selectedModules.has(r.module);
-  const moduleRows = allRows.filter(byModule);
+  const moduleRows = completedRows.filter(byModule);
   const availableModuleRows = availableRows.filter(byModule);
   const selectedRows = moduleRows.filter(r => selectedItems.has(r.key));
   const selectedScoreRows = selectedRows.filter(r => r.status === 'Avaliado');
@@ -459,6 +461,11 @@ export default function HistoricoAcademico() {
   const clearAll = () => setSelectedItems(new Set());
 
   const toggleModule = (moduleNumber) => {
+    if (selectedModules.has(moduleNumber)) {
+      setSelectedItems((previous) => new Set(
+        [...previous].filter((key) => !allRows.some((row) => row.module === moduleNumber && row.key === key))
+      ));
+    }
     setSelectedModules((previous) => {
       const next = new Set(previous);
       if (next.has(moduleNumber)) next.delete(moduleNumber); else next.add(moduleNumber);
@@ -515,7 +522,7 @@ export default function HistoricoAcademico() {
         {/* Summary bar */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label: 'Itens selecionados', value: selectedItems.size },
+            { label: 'Itens selecionados', value: selectedRows.length },
             { label: 'Atividades realizadas', value: activitiesCount },
             { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` },
             { label: 'Aproveitamento', value: `${approvalRate}%` },
@@ -536,8 +543,8 @@ export default function HistoricoAcademico() {
           <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5">
             <Square size={13} /> Limpar
           </Button>
-          <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedItems.size === 0} onClick={() => setShowDocument(true)}>
-            <Download size={13} /> Gerar Histórico ({selectedItems.size})
+          <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedRows.length === 0} onClick={() => setShowDocument(true)}>
+            <Download size={13} /> Gerar Histórico ({selectedRows.length})
           </Button>
         </div>
 
@@ -580,7 +587,7 @@ export default function HistoricoAcademico() {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[{ label: 'Itens selecionados', value: selectedItems.size }, { label: 'Atividades realizadas', value: activitiesCount }, { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: formatDuration(totalMinutes) }].map(item => (
+          {[{ label: 'Itens selecionados', value: selectedRows.length }, { label: 'Atividades realizadas', value: activitiesCount }, { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: formatDuration(totalMinutes) }].map(item => (
             <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground">{item.label}</p>
               <p className="text-base font-black text-primary">{item.value}</p>
@@ -590,7 +597,7 @@ export default function HistoricoAcademico() {
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={selectAll} className="h-8 text-xs gap-1.5"><CheckSquare size={13} /> Selecionar Tudo</Button>
           <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5"><Square size={13} /> Limpar</Button>
-          <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedItems.size === 0} onClick={() => setShowDocument(true)}><Download size={13} /> Gerar Histórico ({selectedItems.size})</Button>
+          <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedRows.length === 0} onClick={() => setShowDocument(true)}><Download size={13} /> Gerar Histórico ({selectedRows.length})</Button>
         </div>
         <ModuleSelector selectedModules={selectedModules} onToggle={toggleModule} />
         {Object.entries(groupedRows).map(([cat, items]) => (
