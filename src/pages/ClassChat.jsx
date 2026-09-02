@@ -65,7 +65,6 @@ export default function ClassChat() {
   const [replyTarget, setReplyTarget] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
-  const bottomRef = useRef(null);
   const lastAttentionRef = useRef(null);
 
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
@@ -83,8 +82,6 @@ export default function ClassChat() {
 
   // Reações espontâneas do professor às publicações que chegam ao mural.
   useProfessorAutoReactions({ enabled: isAdmin, session, feed: wall.feed, reactions: wallReactions });
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, activeTab]);
 
   const courseLabel = userCourse === 'tcc' ? 'TC' : userCourse.toUpperCase();
 
@@ -223,8 +220,8 @@ export default function ClassChat() {
     .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
   const onlineStudents = otherStudents.filter(isStudentOnline);
   const awayStudents = otherStudents.filter(c => !isStudentOnline(c));
-  // Feed idêntico ao da dashboard, apenas em ordem de conversa (mais antigo primeiro).
-  const wallFeed = [...wall.feed].reverse();
+  // A leitura começa pelas novidades, sem deslocar o aluno para o fim da lista.
+  const wallFeed = wall.feed;
 
   const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => {
     const isOwnContent = ownerEmail === session?.email || (mentionedEmails || []).includes(session?.email);
@@ -301,7 +298,6 @@ export default function ClassChat() {
                   const profile = getProfile(msg.author_email);
                   return <MessageItem key={msg.id} msg={msg} isMe={isMe} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} onShare={shareToWall} sharing={sharingMessageId === msg.id} shared={sharedPublications.some((post) => post.source_type === 'chat' && post.source_id === msg.id)} reactions={reactionButtons(msg, 'publication', msg.author_email)} />;
                 })}
-                <div ref={bottomRef} />
               </div>
 
               {showPicker && <div className="border-t border-[#dae5fa] bg-[#f8fbff]">

@@ -666,7 +666,14 @@ export default function Dashboard() {
           </div>
 
           {/* Mural de Superação + Checklist agrupados */}
-          <div className="lg:col-span-2 order-1 bg-card rounded-2xl border border-border p-5 text-left flex flex-col">
+          <div
+            className={`lg:col-span-2 order-1 bg-card rounded-2xl border border-border p-5 text-left flex flex-col ${!isTeacher ? 'cursor-pointer transition hover:border-primary/40 hover:shadow-md' : ''}`}
+            onClickCapture={() => { if (!isTeacher) navigate(scoped('/chat')); }}
+            onKeyDown={(event) => { if (!isTeacher && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate(scoped('/chat')); } }}
+            role={!isTeacher ? 'link' : undefined}
+            tabIndex={!isTeacher ? 0 : undefined}
+            aria-label={!isTeacher ? 'Abrir o Mural de Superação completo' : undefined}
+          >
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
