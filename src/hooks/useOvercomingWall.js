@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { isLegacyMsnAction, isSinceOvercomingWallCutoff } from '@/lib/overcomingWall';
+import { personalizeWallNotice } from '@/lib/wallPersonalization';
 
 /**
  * Base única do Mural de Superação.
@@ -170,7 +171,8 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     return [
       ...institutionalRecords.shared.map((item) => ({ ...item, feedType: 'institutional', icon: 'share', occurredAt: item.published_at || item.created_date })),
       ...institutionalRecords.notices
-        .filter((item) => item.type !== 'unlock_rule' && new Date(item.created_date).getTime() >= recentLimit && (!item.student_email || item.student_email === session?.email))
+        .filter((item) => item.type !== 'unlock_rule' && new Date(item.created_date).getTime() >= recentLimit)
+        .map((item) => personalizeWallNotice(item, session?.email, getStudentName))
         .map((item) => ({ id: `notice-${item.id}`, feedType: 'institutional', icon: 'notice', title: item.title || 'Recado importante', content: item.content, occurredAt: item.created_date })),
       ...institutionalRecords.liveSessions
         .filter((item) => { const date = new Date(item.scheduled_at).getTime(); return date >= now && date <= upcomingLimit; })
@@ -183,7 +185,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
         })
         .map((item) => ({ id: `calendar-${item.id}`, feedType: 'institutional', icon: 'event', title: 'Compromisso próximo', content: `${item.title} • ${new Date(`${item.date || item.event_date}T${item.time || item.event_time || '12:00'}`).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, occurredAt: item.created_date || item.date || item.event_date })),
     ].filter((item, index, items) => item.content && items.findIndex((c) => c.id === item.id) === index);
-  }, [institutionalRecords, session?.email]);
+  }, [institutionalRecords, session?.email, accessCodes]);
 
   // Feed único (mais recente primeiro) — a mesma lista nas duas telas.
   const feed = useMemo(() => [
