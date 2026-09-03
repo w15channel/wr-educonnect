@@ -3,7 +3,9 @@
  * Usa a mesma base de IA do portal (base44.integrations.Core.InvokeLLM, também
  * utilizada no gerador de provas e no Tutor EDU) para reescrever o conteúdo de
  * uma aula seguindo a estrutura padronizada: cabeçalho, 6 tópicos numerados e
- * 6 parágrafos uniformes (~60–65 palavras) por tópico.
+ * 6 parágrafos uniformes (~60–65 palavras) por tópico. Cada tópico é
+ * dimensionado para ocupar exatamente uma página do PDF impresso: começa no
+ * topo da página e termina antes da quebra — inclusive o último tópico.
  */
 import React, { useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
@@ -40,6 +42,11 @@ ${DIVIDER_LINE}
 4. Cada parágrafo deve ter aproximadamente 65 palavras, com no mínimo 60 e no máximo 65 palavras. Conte as palavras de cada parágrafo antes de finalizar.
 5. Parágrafos são blocos contínuos de texto, SEM quebras de linha internas.
 6. Separe cada parágrafo (e cada título de tópico) com UMA linha em branco.
+
+REGRA DE PAGINAÇÃO DO PDF IMPRESSO (obrigatória):
+- A versão impressa da apostila é gerada em PDF A4 retrato com UM tópico por página: cada tópico começa no topo de uma página e deve terminar antes da quebra de página, inclusive o último tópico.
+- Para isso, cada tópico deve ter o tamanho exato de uma página: título + 6 parágrafos somando entre 360 e 390 palavras por tópico, sem exceder esse total.
+- NENHUM tópico pode ser mais longo ou mais curto que os demais; a variação máxima entre tópicos é de 30 palavras.
 
 REGRAS DE CONSTÂNCIA (obrigatórias):
 - Todos os 36 parágrafos devem ter extensão uniforme, do primeiro ao último.
@@ -134,7 +141,7 @@ export default function ChapterRewriteModal({ chapters, onClose, onSave, saving 
             </div>
             <div>
               <h2 className="text-base font-bold text-foreground">Reescrever capítulo com IA</h2>
-              <p className="text-xs text-muted-foreground">6 tópicos em maiúsculas · 6 parágrafos uniformes por tópico (60–65 palavras)</p>
+              <p className="text-xs text-muted-foreground">6 tópicos em maiúsculas · 6 parágrafos uniformes (60–65 palavras) · 1 tópico por página no PDF</p>
             </div>
           </div>
           <Button size="sm" variant="ghost" onClick={onClose} aria-label="Fechar">
@@ -175,7 +182,9 @@ export default function ChapterRewriteModal({ chapters, onClose, onSave, saving 
             A IA reescreve o conteúdo atual da aula preservando o tema e aplicando a estrutura padrão: cabeçalho com
             título em maiúsculas, nome do professor e linha divisória; 6 tópicos numerados com títulos em maiúsculas;
             36 parágrafos contínuos e uniformes (60–65 palavras cada), separados por linha em branco, com linguagem
-            técnico-profissional e fechamento conclusivo em cada tópico.
+            técnico-profissional e fechamento conclusivo em cada tópico. Cada tópico é dimensionado para ocupar
+            exatamente uma página do PDF impresso: inicia no topo da página e termina antes da quebra — o próximo
+            tópico começa na página seguinte e o último tópico também encerra antes da quebra de página.
           </div>
 
           <Button onClick={handleGenerate} disabled={generating || !lesson} className="gap-2">

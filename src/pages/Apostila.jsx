@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
 import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import ReactQuill from 'react-quill';
@@ -687,7 +687,7 @@ export default function Apostila() {
                                     onClick={() => setPrintLesson({ lesson, chapterTitle: chapter.title })}
                                     className="gap-1.5"
                                   >
-                                    <Printer size={13} /> Imprimir / PDF
+                                    <FileText size={13} /> Baixar PDF
                                   </Button>
                                   {isAdmin && (
                                     <Button size="sm" variant="outline" onClick={() => handleEditLesson(chapter.id, lesson.id, lesson.content)}>
