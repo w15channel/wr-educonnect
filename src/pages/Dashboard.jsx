@@ -5,7 +5,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, ClipboardList, GraduationCap, Circle, Crown, Heart, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2 } from 'lucide-react';
+import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, Crown, Heart, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2 } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -19,39 +19,8 @@ import { ptBR } from 'date-fns/locale';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 
 
-const extractSequenceNumber = (item = {}) => {
-  const direct = Number(item.order ?? item.sequence ?? item.lesson_number ?? item.task_number);
-  if (Number.isFinite(direct) && direct > 0) return direct;
-  const title = item.title || item.name || '';
-  const match = title.match(/(?:aula|tarefa|prova)\s*(\d{1,2})\b|\b(\d{1,2})\b/i);
-  const parsed = Number(match?.[1] || match?.[2]);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-};
-
-const sortByNumericSequence = (items = []) => [...items].sort((a, b) => {
-  const aNumber = extractSequenceNumber(a);
-  const bNumber = extractSequenceNumber(b);
-  if (aNumber !== null && bNumber !== null && aNumber !== bNumber) return aNumber - bNumber;
-  if (aNumber !== null && bNumber === null) return -1;
-  if (aNumber === null && bNumber !== null) return 1;
-  return (a.created_date || '').localeCompare(b.created_date || '');
-});
-
-const getNextPendingBySequence = (items = []) => sortByNumericSequence(items).slice(0, 1);
-
-const getUnlockedLessonCount = (rules = []) => {
-  const lessonUnlockRule = rules.find((r) => r.scope === 'lessons');
-  return Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
-};
-
 const isTaskAvailable = (task, moduleUnlocked = []) =>
   !task.module_number || moduleUnlocked[Number(task.module_number) - 1];
-
-// Aulas assistidas e tarefas pendentes só fazem sentido depois que a plataforma
-// tiver histórico real de uso. Como os alunos estão ingressando agora pela
-// primeira vez, essas duas categorias ficam desativadas nas Pendências.
-// Reative (true) quando houver um novo reset da plataforma com alunos já em andamento.
-const SHOW_LESSON_TASK_PENDING_ALERTS = true;
 const MINI_CHAT_EMOJIS = ['😀', '😁', '😂', '😊', '😍', '😘', '🤗', '🤩', '😎', '🥳', '🤝', '👏', '🙌', '💪', '🫶', '❤️', '🔥', '✨', '🎉', '🌟', '💡', '📚', '🧠', '🚀', '☕', '🌈', '🙏', '🤔', '😅', '😮', '😢', '👍', '👌', '🙋', '✅', '🎯', '💬', '📝', '🎓', '🌻', '🦋', '🌙'];
 
 function useScopedPrefix() {
@@ -278,13 +247,6 @@ export default function Dashboard() {
   const wall = useOvercomingWall({ course: userCourse || 'tcc', session, enabled: !isTeacher && !!session?.email });
   const wallReactions = wall.reactions;
 
-  const { data: unlockRules = [] } = useQuery({
-    queryKey: ['unlock-rules-lessons', userCourse || 'all'],
-    queryFn: () => userCourse
-      ? base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20)
-      : base44.entities.Announcement.filter({ type: 'unlock_rule' }, '-updated_date', 20),
-  });
-
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', userCourse || 'all'],
     queryFn: () => userCourse ?
@@ -317,23 +279,8 @@ export default function Dashboard() {
   // Avisos com destinatário definido são pessoais: não aparecem para a turma.
   const announcements = allAnnouncements.filter((item) => isAnnouncementVisible(item, session?.email, isTeacher));
 
-  const { data: exams = [] } = useQuery({
-    queryKey: ['exams-dashboard', userCourse || 'all'],
-    queryFn: () => userCourse ?
-    base44.entities.Exam.filter({ course: userCourse, is_published: true }, '-created_date', 300) :
-    base44.entities.Exam.list('-created_date', 300),
-    enabled: !isTeacher
-  });
-
-  const { data: examSubmissions = [] } = useQuery({
-    queryKey: ['exam-submissions-dashboard', session?.email],
-    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: session?.email || '' }, '-submitted_at', 300),
-    enabled: !isTeacher && !!session?.email
-  });
-
   const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
   const visibleLessons = isTeacher ? lessons : lessons.filter((lesson) => !lesson.is_hidden);
-  const visibleExams = isTeacher ? exams : exams.filter((exam) => !exam.is_hidden);
 
   const pendingTasks = isTeacher ?
   submissions.filter((s) =>
@@ -801,123 +748,6 @@ export default function Dashboard() {
           </div>
         </div>
       }
-
-      {/* Pendências do Aluno */}
-      {!isTeacher && (() => {
-        const today = new Date();
-        const todayYmd = format(today, 'yyyy-MM-dd');
-        const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
-        const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
-        const availableLessons = sortByNumericSequence(visibleLessons).slice(0, unlockedLessonCount);
-        const unwatchedLessons = sortByNumericSequence(availableLessons.filter((l) => !progresses.find((p) => p.lesson_id === l.id && p.watched)));
-        const pendingTasksList = sortByNumericSequence(visibleTasks.filter((t) => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)));
-        const visiblePendingLessons = getNextPendingBySequence(unwatchedLessons);
-        const visiblePendingTasks = getNextPendingBySequence(pendingTasksList);
-        const pendingExams = visibleExams.filter((e) => !examSubmissions.find((s) => s.exam_id === e.id));
-        const therapistPending = therapistPairings.filter((p) => {
-          if (p.is_published !== true) return false;
-          const inPeriod = p.pairing_date >= periodStart && p.pairing_date <= todayYmd;
-          if (!inPeriod) return false;
-          if (p.therapist_email === session?.email) return !p.therapist_submitted;
-          if (p.patient_email === session?.email) return !p.patient_submitted;
-          return false;
-        });
-        const totalPending = therapistPending.length +
-          (SHOW_LESSON_TASK_PENDING_ALERTS ? Math.min(unwatchedLessons.length, 1) + Math.min(pendingTasksList.length, 1) : 0) +
-          pendingExams.length;
-
-        if (totalPending === 0) return null;
-
-        return (
-          <div className="bg-card rounded-2xl border border-orange-200 p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
-                <ClipboardList size={16} className="text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-foreground">Minhas Pendências</h3>
-                <p className="text-xs text-muted-foreground">{totalPending} {totalPending === 1 ? 'item pendente' : 'itens pendentes'}</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {therapistPending.slice(0, 3).map((pairing) => {
-                const isTherapist = pairing.therapist_email === session?.email;
-                const otherName = isTherapist ? pairing.patient_name : pairing.therapist_name;
-                return (
-              <button key={pairing.id} onClick={() => navigate(scoped('/terapeuta'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-pink-50 border border-pink-100 hover:bg-pink-100 transition-colors text-left">
-                  <Heart size={13} className="text-pink-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-pink-700 truncate">{isTherapist ? 'Atender' : 'Ser atendido(a) por'}: {otherName || 'Pareamento da semana'}</p>
-                    <p className="text-[10px] text-pink-500">Terapeuta da semana pendente</p>
-                  </div>
-                  <ArrowRight size={12} className="text-pink-400 shrink-0" />
-                </button>
-                );
-              })}
-              {therapistPending.length > 3 &&
-              <button onClick={() => navigate(scoped('/terapeuta'))} className="w-full text-xs text-pink-600 font-semibold py-1 hover:underline">
-                  +{therapistPending.length - 3} pendências de terapeuta → Ver todas
-                </button>
-              }
-              {SHOW_LESSON_TASK_PENDING_ALERTS && visiblePendingLessons.map((l) =>
-              <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
-                  <Circle size={13} className="text-purple-400 shrink-0" />
-                  <BookOpen size={13} className="text-purple-600 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-purple-700 truncate">{extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}</p>
-                    <p className="text-[10px] text-purple-500">Aula não assistida · próximas pendências em ordem numérica</p>
-                  </div>
-                  <ArrowRight size={12} className="text-purple-400 shrink-0" />
-                </button>
-              )}
-              {SHOW_LESSON_TASK_PENDING_ALERTS && unwatchedLessons.length > visiblePendingLessons.length &&
-              <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
-                  +{unwatchedLessons.length - visiblePendingLessons.length} aulas no aguardo → Ver todas
-                </button>
-              }
-              {SHOW_LESSON_TASK_PENDING_ALERTS && visiblePendingTasks.map((t) =>
-              <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
-                  <ClipboardList size={13} className="text-orange-500 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-orange-700 truncate">{extractSequenceNumber(t) ? `Tarefa ${extractSequenceNumber(t)} · ` : ''}{t.title}</p>
-                    <p className="text-[10px] text-orange-500">
-                      Tarefa pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
-                    </p>
-                  </div>
-                  <ArrowRight size={12} className="text-orange-400 shrink-0" />
-                </button>
-              )}
-              {SHOW_LESSON_TASK_PENDING_ALERTS && pendingTasksList.length > visiblePendingTasks.length &&
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
-                  +{pendingTasksList.length - visiblePendingTasks.length} tarefas no aguardo → Ver todas
-                </button>
-              }
-              {pendingExams.slice(0, 3).map((e) =>
-              <button key={e.id} onClick={() => navigate(scoped('/exams'))}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
-                  <GraduationCap size={13} className="text-violet-500 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-violet-700 truncate">{e.title}</p>
-                    <p className="text-[10px] text-violet-500">
-                      Prova pendente{e.deadline ? ` · Entrega: ${format(new Date(e.deadline), 'dd/MM HH:mm')}` : ''}
-                    </p>
-                  </div>
-                  <ArrowRight size={12} className="text-violet-400 shrink-0" />
-                </button>
-              )}
-              {pendingExams.length > 3 &&
-              <button onClick={() => navigate(scoped('/exams'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
-                  +{pendingExams.length - 3} provas pendentes → Ver todas
-                </button>
-              }
-            </div>
-          </div>);
-
-      })()}
-
 
       {/* Admin ranking */}
       {isTeacher &&
