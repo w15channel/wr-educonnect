@@ -6,7 +6,6 @@
  * - Cards em grid 2 colunas, sem scroll horizontal
  * - Live banner com tap de tela cheia
  * - Ranking compacto em lista
- * - Pendências em acordeão (evita scroll excessivo)
  * - Não tem painel de ranking administrativo (usa ScoreControl)
  */
 import React, { useState } from 'react';
@@ -14,11 +13,9 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  FileText, Users, Trophy, Star, Bell, BookOpen,
-  ArrowRight, ClipboardList, GraduationCap,
-  Heart, ChevronDown, ChevronUp, TrendingUp, RefreshCw
+  FileText, Users, Trophy, Star, Bell, BookOpen, TrendingUp, RefreshCw
 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { capScore, formatScore } from '@/lib/scoreUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
@@ -30,25 +27,6 @@ function getScopedPrefix(pathname) {
   if ((parts[0] === 'student' || parts[0] === 'adm') && parts[1]) return `/${parts[0]}/${parts[1]}`;
   return '';
 }
-
-const extractSeq = (item = {}) => {
-  const n = Number(item.order ?? item.sequence ?? item.lesson_number);
-  if (Number.isFinite(n) && n > 0) return n;
-  const m = (item.title || '').match(/(?:aula|tarefa)\s*(\d+)/i);
-  return m ? Number(m[1]) : null;
-};
-const sortBySeq = (arr = []) => [...arr].sort((a, b) => {
-  const an = extractSeq(a), bn = extractSeq(b);
-  if (an !== null && bn !== null) return an - bn;
-  if (an !== null) return -1;
-  if (bn !== null) return 1;
-  return 0;
-});
-
-const getUnlockedLessonCount = (rules = []) => {
-  const lessonUnlockRule = rules.find((r) => r.scope === 'lessons');
-  return Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
-};
 
 const isTaskAvailable = (task, moduleUnlocked = []) =>
   !task.module_number || moduleUnlocked[Number(task.module_number) - 1];
@@ -62,7 +40,6 @@ export default function DashboardMobile() {
   const scoped = (p) => prefix + p;
   const isTeacher = session?.role === 'admin';
   const userCourse = session?.course;
-  const [pendingOpen, setPendingOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const firstName = (session?.name || 'Usuário').split(' ')[0];
@@ -101,13 +78,6 @@ export default function DashboardMobile() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
   });
 
-  const { data: unlockRules = [] } = useQuery({
-    queryKey: ['unlock-rules-lessons', userCourse],
-    queryFn: () => userCourse
-      ? base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20)
-      : base44.entities.Announcement.filter({ type: 'unlock_rule' }, '-updated_date', 20),
-  });
-
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', userCourse],
     queryFn: () => userCourse
@@ -126,12 +96,6 @@ export default function DashboardMobile() {
   const { data: announcements = [] } = useQuery({
     queryKey: ['announcements'],
     queryFn: () => base44.entities.Announcement.list('-created_date', 5),
-  });
-
-  const { data: therapistPairings = [] } = useQuery({
-    queryKey: ['therapist-pairings-dashboard'],
-    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 300),
-    enabled: !isTeacher,
   });
 
   const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
@@ -202,24 +166,6 @@ export default function DashboardMobile() {
   const visibleRanking = studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull;
   const myRank = visibleRanking.findIndex(r => r.email === session?.email) + 1;
   const myGrades = submissions.filter(s => s.grade !== undefined && s.grade !== null);
-
-  // Pendências
-  const today = new Date();
-  const todayYmd = format(today, 'yyyy-MM-dd');
-  const periodStart = format(addDays(today, -4), 'yyyy-MM-dd');
-  const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
-  const availableLessons = sortBySeq(visibleLessons).slice(0, unlockedLessonCount);
-  const unwatchedLessons = sortBySeq(availableLessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
-  const pendingTasksList = sortBySeq(visibleTasks.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
-  const pendingQuizzes = visibleTasks.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
-  const therapistPending = therapistPairings.filter(p => {
-    if (p.is_published !== true) return false;
-    if (p.pairing_date < periodStart || p.pairing_date > todayYmd) return false;
-    if (p.therapist_email === session?.email) return !p.therapist_submitted;
-    if (p.patient_email === session?.email) return !p.patient_submitted;
-    return false;
-  });
-  const totalPending = therapistPending.length + Math.min(unwatchedLessons.length, 1) + Math.min(pendingTasksList.length, 1) + Math.min(pendingQuizzes.length, 1);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -405,68 +351,6 @@ export default function DashboardMobile() {
               <span className="text-sm font-light text-[#d4b96a]">{lessons.length}</span>
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Pendências — acordeão mobile */}
-      {!isTeacher && totalPending > 0 && (
-        <div className="bg-[#0d1120] border border-orange-500/20 rounded-2xl overflow-hidden">
-          <button
-            onClick={() => setPendingOpen(v => !v)}
-            className="w-full flex items-center gap-2.5 p-4 active:bg-white/4 transition-colors"
-          >
-            <div className="w-8 h-8 rounded-xl bg-orange-500/15 flex items-center justify-center shrink-0">
-              <ClipboardList size={15} className="text-orange-400" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="text-[12px] font-light text-[#e8dfc8]/80">Minhas Pendências</p>
-              <p className="text-[10px] text-orange-400/70">{totalPending} {totalPending === 1 ? 'item' : 'itens'} aguardando</p>
-            </div>
-            {pendingOpen ? <ChevronUp size={16} className="text-[#c8bfa8]/30 shrink-0" /> : <ChevronDown size={16} className="text-[#c8bfa8]/30 shrink-0" />}
-          </button>
-
-          {pendingOpen && (
-            <div className="px-4 pb-4 space-y-2 border-t border-[#1e2540]">
-              {therapistPending.slice(0, 2).map(p => {
-                const isTherapist = p.therapist_email === session?.email;
-                return (
-                  <button key={p.id} onClick={() => navigate(scoped('/terapeuta'))}
-                    className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-pink-500/8 border border-pink-500/15 active:scale-[0.98] text-left transition-all">
-                    <Heart size={13} className="text-pink-400 shrink-0" />
-                    <span className="text-[11px] text-pink-300/80 flex-1 truncate">{isTherapist ? 'Atender' : 'Ser atendido por'}: {p.patient_name || p.therapist_name}</span>
-                    <ArrowRight size={12} className="text-pink-400/40 shrink-0" />
-                  </button>
-                );
-              })}
-              {unwatchedLessons.slice(0, 1).map(l => (
-                <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
-                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-purple-500/8 border border-purple-500/15 active:scale-[0.98] text-left transition-all">
-                  <BookOpen size={13} className="text-purple-400 shrink-0" />
-                  <span className="text-[11px] text-purple-300/80 flex-1 truncate">{extractSeq(l) ? `Aula ${extractSeq(l)} · ` : ''}{l.title}</span>
-                  <ArrowRight size={12} className="text-purple-400/40 shrink-0" />
-                </button>
-              ))}
-              {pendingTasksList.slice(0, 1).map(t => (
-                <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-orange-500/8 border border-orange-500/15 active:scale-[0.98] text-left transition-all">
-                  <ClipboardList size={13} className="text-orange-400 shrink-0" />
-                  <span className="text-[11px] text-orange-300/80 flex-1 truncate">{extractSeq(t) ? `Tarefa ${extractSeq(t)} · ` : ''}{t.title}</span>
-                  <ArrowRight size={12} className="text-orange-400/40 shrink-0" />
-                </button>
-              ))}
-              {pendingQuizzes.slice(0, 1).map(t => (
-                <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-violet-500/8 border border-violet-500/15 active:scale-[0.98] text-left transition-all">
-                  <GraduationCap size={13} className="text-violet-400 shrink-0" />
-                  <span className="text-[11px] text-violet-300/80 flex-1 truncate">{t.title}</span>
-                  <ArrowRight size={12} className="text-violet-400/40 shrink-0" />
-                </button>
-              ))}
-              {totalPending > 5 && (
-                <p className="text-[10px] text-[#c8bfa8]/30 text-center pt-1">+{totalPending - 5} pendências a mais</p>
-              )}
-            </div>
-          )}
         </div>
       )}
 
