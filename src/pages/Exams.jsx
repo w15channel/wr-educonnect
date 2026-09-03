@@ -19,6 +19,7 @@ import { buildExamReleaseIndex } from '@/lib/adminModuleProgress';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ExamEditor from '../components/exams/ExamEditor';
 import ExamSubmissionGrader from '../components/exams/ExamSubmissionGrader';
+import AnnualExamGenerator from '../components/exams/AnnualExamGenerator';
 
 function useScopedPrefix() {
   const location = useLocation();
@@ -73,6 +74,7 @@ export default function Exams() {
   const [showEditor, setShowEditor] = useState(false);
   const [editingExam, setEditingExam] = useState(null);
   const [gradingSubmission, setGradingSubmission] = useState(null);
+  const [showAnnualGenerator, setShowAnnualGenerator] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState('all');
   // Sequência de liberação: a prova do módulo só abre com o checklist cumprido.
   const { isModuleUnlockedForExam } = useModuleChecklist({ course: userCourse, session });
@@ -155,6 +157,17 @@ export default function Exams() {
   if (showAIGenerator) {
     return <AIExamGenerator onBack={() => setShowAIGenerator(false)} course={userCourse} />;
   }
+  if (showAnnualGenerator) {
+    const templateExam = exams.find((exam) => parseModuleNumber(exam.module_ref) === 1);
+    return (
+      <AnnualExamGenerator
+        onBack={() => setShowAnnualGenerator(false)}
+        course={userCourse}
+        exams={exams}
+        templateExam={templateExam}
+      />
+    );
+  }
 
   if (showEditor || editingExam) {
     return <ExamEditor exam={editingExam} onBack={() => { setShowEditor(false); setEditingExam(null); }} course={userCourse} />;
@@ -201,6 +214,12 @@ export default function Exams() {
               className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white font-bold"
             >
               <Pencil size={14} /> Criar Manual
+            </Button>
+            <Button
+              onClick={() => setShowAnnualGenerator(true)}
+              className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold"
+            >
+              <GraduationCap size={14} /> Provas 2–10
             </Button>
             <Button
               onClick={() => setShowAIGenerator(true)}
