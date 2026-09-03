@@ -10,6 +10,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { lessonReferenceTitle, parseLessonReference } from '../../shared/lessonReference.ts';
 import { lessonScoreNote } from '../../shared/scoreMessages.ts';
 
 const MAX_RANKING_POINTS = 100;
@@ -49,9 +50,25 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, skipped: true, reason: 'Aula ainda não marcada como assistida.' });
     }
 
+    const lessonReference = parseLessonReference(lessonId);
+    if (!lessonReference) {
+      return Response.json({ error: `Referência de aula inválida: ${lessonId}` }, { status: 400 });
+    }
+
     // ── Load only what we need ───────────────────────────────────────────────
+    // Apostila progress stores a composite business key, not a Base44 entity
+    // id. Sending that value to RecordedLesson.filter({ id }) makes the SDK
+    // reject it before the function can handle a missing lesson.
+    const lessonQuery = lessonReference.kind === 'apostila'
+      ? base44.asServiceRole.entities.BookChapter.filter({
+          book_id: 'apostila-tcc',
+          chapter_id: lessonReference.chapterId,
+          lesson_id: lessonReference.apostilaLessonId,
+        })
+      : base44.asServiceRole.entities.RecordedLesson.filter({ id: lessonReference.lessonId });
+
     const [lessons, codes, existingScores] = await Promise.all([
-      base44.asServiceRole.entities.RecordedLesson.filter({ id: lessonId }),
+      lessonQuery,
       base44.asServiceRole.entities.AccessCode.filter({ student_email: studentEmail }),
       base44.asServiceRole.entities.ScoreItem.filter({
         student_email: studentEmail,
@@ -72,7 +89,7 @@ Deno.serve(async (req) => {
       student_email: studentEmail,
       category: 'lesson',
       ref_id: lessonId,
-      ref_title: lesson.title || 'Aula assistida',
+      ref_title: lessonReferenceTitle(lessonReference, lesson),
       score: 2,
       max_score: 2,
       verified: true,
