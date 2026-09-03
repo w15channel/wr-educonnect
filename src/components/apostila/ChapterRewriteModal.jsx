@@ -14,16 +14,18 @@ import { toast } from 'sonner';
 const PROFESSOR_LINE = 'Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano';
 const DIVIDER_LINE = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
 
-const stripHtml = (value = '') => value
-  .replace(/<br\s*\/?>/gi, '\n')
-  .replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, '\n\n')
-  .replace(/<[^>]*>/g, '')
-  .replace(/&nbsp;/g, ' ')
-  .replace(/&amp;/g, '&')
-  .replace(/&lt;/g, '<')
-  .replace(/&gt;/g, '>')
-  .replace(/\n{3,}/g, '\n\n')
-  .trim();
+const stripHtml = (value = '') => {
+  if (!/<[^>]+>/.test(value)) return value.trim();
+  if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
+    const doc = new DOMParser().parseFromString(value, 'text/html');
+    const blocks = Array.from(doc.body.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'));
+    const parts = (blocks.length ? blocks : [doc.body])
+      .map((node) => node.textContent?.replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    return parts.join('\n\n');
+  }
+  return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+};
 
 const buildRewritePrompt = (lessonTitle, sourceText) => `Você é professor especialista em terapia comportamental e redator didático do Instituto WR-EDU®.
 Reescreva integralmente o conteúdo da aula abaixo, preservando o tema central e os conceitos, mas seguindo RIGOROSAMENTE a estrutura exigida.
