@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2, Lock, Flame } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, Printer, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
 import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import ReactQuill from 'react-quill';
@@ -12,6 +12,7 @@ import ParticipationCelebration from '@/components/shared/ParticipationCelebrati
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
+import ChapterRewriteModal from '@/components/apostila/ChapterRewriteModal';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
 import { MOD3 } from '@/lib/apostila/mod3';
@@ -133,6 +134,7 @@ export default function Apostila() {
   const [editingLesson, setEditingLesson] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [printLesson, setPrintLesson] = useState(null);
+  const [rewriteOpen, setRewriteOpen] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState('');
   const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, rate: 1, isPlaying: false });
@@ -411,6 +413,12 @@ export default function Apostila() {
     saveMutation.mutate({ chapterId, lessonId, content: editContent });
   };
 
+  const handleRewriteSave = ({ chapterId, lessonId, content }) => {
+    saveMutation.mutate({ chapterId, lessonId, content }, {
+      onSuccess: () => setRewriteOpen(false),
+    });
+  };
+
   const totalLessons = chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
   const totalRead = readLessons.size;
 
@@ -422,6 +430,15 @@ export default function Apostila() {
           lesson={printLesson.lesson}
           chapterTitle={printLesson.chapterTitle}
           onClose={() => setPrintLesson(null)}
+        />
+      )}
+
+      {rewriteOpen && isAdmin && (
+        <ChapterRewriteModal
+          chapters={chapters}
+          onClose={() => setRewriteOpen(false)}
+          onSave={handleRewriteSave}
+          saving={saveMutation.isPending}
         />
       )}
 
@@ -459,6 +476,13 @@ export default function Apostila() {
                 </div>
               )}
             </div>
+            {isAdmin && (
+              <div className="mt-3">
+                <Button size="sm" onClick={() => setRewriteOpen(true)} className="gap-1.5 bg-gradient-to-r from-violet-500 to-purple-700 text-white hover:opacity-90">
+                  <Wand2 size={13} /> Reescrever capítulo
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
