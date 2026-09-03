@@ -99,7 +99,9 @@ function AppRoutesTree() {
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="tutor" element={<TutorDigital />} />
         <Route path="scorecontrol" element={<ScoreControl />} />
+        <Route path="scorecontrol/detail" element={<ScoreControl />} />
         <Route path="pontuacao-geral" element={<ScoreControl />} />
+        <Route path="pontuacao-geral/detail" element={<ScoreControl />} />
         <Route path="scores" element={<Navigate to="../scorecontrol" replace />} />
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="meu-certificado" element={<MeuCertificado />} />

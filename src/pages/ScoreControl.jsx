@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation, useOutletContext } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
@@ -22,7 +22,7 @@ const CATEGORY_CONFIG = {
   task: { label: 'Tarefa', icon: FileText, color: 'bg-orange-100 text-orange-700' },
   quiz: { label: 'Prova', icon: Trophy, color: 'bg-blue-100 text-blue-700' },
   exam: { label: 'Prova do Módulo', icon: GraduationCap, color: 'bg-indigo-100 text-indigo-700' },
-  forum: { label: 'Fórum', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
+  forum: { label: 'Debates', icon: MessageSquare, color: 'bg-green-100 text-green-700' },
   mentorship: { label: 'Mentoria', icon: HandHeart, color: 'bg-rose-100 text-rose-700' },
   therapist: { label: 'Terapeuta da Semana', icon: Heart, color: 'bg-pink-100 text-pink-700' },
   ofensiva: { label: 'Ofensiva Diária', icon: Flame, color: 'bg-orange-100 text-red-600' }
@@ -254,7 +254,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   { key: 'lessons', label: 'Aulas', icon: BookOpen },
   { key: 'tasks', label: 'Tarefas', icon: FileText },
   { key: 'exams', label: 'Provas', icon: GraduationCap },
-  { key: 'forum', label: 'Fórum', icon: MessageSquare },
+  { key: 'forum', label: 'Debates', icon: MessageSquare },
   { key: 'mentorship', label: 'Mentoria', icon: HandHeart },
   { key: 'therapist', label: 'Terapeutas', icon: Heart },
   { key: 'ofensivas', label: 'Ofensivas', icon: Flame }];
@@ -303,7 +303,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
         </button>
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-bold text-foreground truncate">{displayName}</h2>
-          <p className="text-xs text-muted-foreground">{email}</p>
+          <p className="text-xs text-muted-foreground">Detalhes das participações, pontuações e observações · {email}</p>
         </div>
         {selectedModule &&
         <Badge variant="outline" className="shrink-0 border-primary/40 bg-primary/10 text-[10px] font-bold text-primary">
@@ -476,7 +476,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
         {activeSection === 'forum' &&
         <>
             {studentForumPosts.length === 0 && scorableForumReplies.length === 0 &&
-          <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação no fórum.</p>
+          <p className="text-sm text-muted-foreground text-center py-8">Nenhuma participação em debates.</p>
           }
             {sequencedForumPosts.map((post) =>
           <ScoreRow
@@ -484,7 +484,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
             category="forum"
             icon={CATEGORY_CONFIG.forum.icon}
             refId={post.id}
-            refTitle={`Pergunta no Fórum: ${post.content?.slice(0, 60)}...`}
+            refTitle={`Publicação em Debates: ${post.content?.slice(0, 60)}...`}
             maxScore={0.1}
             item={getScoreItem('forum', post.id)}
             onSave={(data) => updateScoreMutation.mutate(data)}
@@ -637,6 +637,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
 
 export default function ScoreControl() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user: session } = useOutletContext() || {};
   const queryClient = useQueryClient();
   const [selectedCode, setSelectedCode] = useState(null);
@@ -644,7 +645,6 @@ export default function ScoreControl() {
   const [sortBy, setSortBy] = useState('points');
   const autoStudentEmail = new URLSearchParams(location.search).get('student') || null;
   const [retroLoading, setRetroLoading] = useState(false);
-  const [forumBotLoading, setForumBotLoading] = useState(false);
   const [automaticSyncComplete, setAutomaticSyncComplete] = useState(false);
   const [draggedEmail, setDraggedEmail] = useState(null);
   const [customOrder, setCustomOrder] = useState([]);
@@ -652,7 +652,7 @@ export default function ScoreControl() {
   const [editingParticipations, setEditingParticipations] = useState(null);
   // Não existe ranking "Todos": a pontuação sempre pertence ao módulo em que
   // cada aluno estava liberado quando a atividade foi registrada.
-  const [selectedModule, setSelectedModule] = useState('1');
+  const [selectedModule, setSelectedModule] = useState(() => new URLSearchParams(location.search).get('module') || '1');
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
   const isTeacher = session?.role === 'admin';
@@ -815,22 +815,6 @@ export default function ScoreControl() {
       toast.error('Erro: ' + (e?.message || 'tente novamente'));
     } finally {
       setRetroLoading(false);
-    }
-  };
-
-  // Fallback manual do agente de respostas do fórum: caso a automação
-  // agendada do forumBot falhe ou não esteja ativa, o admin pode disparar as
-  // respostas automáticas pendentes por aqui.
-  const handleRunForumBot = async () => {
-    setForumBotLoading(true);
-    try {
-      const res = await base44.functions.invoke('forumBot', {});
-      await queryClient.invalidateQueries();
-      toast.success(`Respostas do fórum processadas! ${res.data?.processed || 0} de ${res.data?.eligible || 0} publicação(ões) pendente(s).`);
-    } catch (e) {
-      toast.error('Erro: ' + (e?.message || 'tente novamente'));
-    } finally {
-      setForumBotLoading(false);
     }
   };
 
@@ -1034,6 +1018,12 @@ export default function ScoreControl() {
     if (match) setSelectedCode(match);
   }, [autoStudentEmail, codes.length]);
 
+  // Mantém o estado interno sincronizado com a nova entidade de rota, inclusive
+  // quando o usuário retorna pelo botão nativo do navegador.
+  useEffect(() => {
+    if (isTeacher && !location.pathname.includes('/detail') && selectedCode) setSelectedCode(null);
+  }, [isTeacher, location.pathname, selectedCode]);
+
   // Na rota do aluno, a informação mais valiosa é a devolutiva da própria
   // entrega. Abrimos o detalhe automaticamente, sem obrigá-lo a se procurar no ranking.
   useEffect(() => {
@@ -1176,7 +1166,10 @@ export default function ScoreControl() {
     }
   });
 
-  if (selectedCode && (isTeacher || selectedCode.student_email === session?.email)) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} moduleFilter={moduleFilter} reviewerEmail={session?.email} onBack={() => setSelectedCode(null)} />;
+  if (selectedCode && (isTeacher || selectedCode.student_email === session?.email)) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} moduleFilter={moduleFilter} reviewerEmail={session?.email} onBack={() => {
+    setSelectedCode(null);
+    navigate(location.pathname.includes('/detail') ? location.pathname.replace(/\/detail\/?$/, '') : location.pathname);
+  }} />;
 
   const changeSelectedModule = (value) => {
     setSelectedModule(value);
@@ -1208,17 +1201,6 @@ export default function ScoreControl() {
             title="Força o agente de pontuação a rodar agora, caso a automação automática tenha falhado">
               {retroLoading ? <Loader2 size={13} className="animate-spin mr-1" /> : <RefreshCw size={13} className="mr-1" />}
               {retroLoading ? 'Recalculando...' : 'Recalcular pontuações agora'}
-            </Button>
-          </div>
-        }
-        {isTeacher &&
-        <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-wrap items-center gap-2">
-            <MessageSquare size={14} className="text-blue-500 shrink-0" />
-            <p className="text-xs text-blue-800 font-semibold">Agente de respostas do fórum (auto-reply) pode ser executado manualmente</p>
-            <Button size="sm" variant="outline" className="text-xs h-7 ml-auto" onClick={handleRunForumBot} disabled={forumBotLoading}
-            title="Força o agente de respostas do fórum a responder publicações pendentes agora, caso a automação agendada tenha falhado">
-              {forumBotLoading ? <Loader2 size={13} className="animate-spin mr-1" /> : <RefreshCw size={13} className="mr-1" />}
-              {forumBotLoading ? 'Respondendo...' : 'Responder fórum agora'}
             </Button>
           </div>
         }
@@ -1306,7 +1288,7 @@ export default function ScoreControl() {
                 next.splice(to, 0, moved);
                 setCustomOrder(next);
               }}
-              onClick={() => (isTeacher || code.student_email === session?.email) && setSelectedCode(code)}
+              onClick={() => (isTeacher || code.student_email === session?.email) && navigate(`detail?student=${encodeURIComponent(code.student_email)}&module=${activeModule}`)}
               className={`bg-card rounded-2xl border p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${isTeacher || code.student_email === session?.email ? 'cursor-pointer hover:shadow-md' : 'cursor-default'} transition-all ${hasPending ? 'border-red-300 hover:border-red-400' : 'border-border hover:border-primary/30'}`}>
               
                   <div className="w-7 text-center shrink-0">
