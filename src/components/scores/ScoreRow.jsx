@@ -42,10 +42,10 @@ export default function ScoreRow({ category, icon: Icon, refId, refTitle, maxSco
       </div>
       {readOnly ? (
         <div className="flex items-center gap-2 flex-wrap mt-2 bg-secondary/50 rounded-xl px-3 py-2">
-          <span className="text-xs font-semibold text-muted-foreground">Pontuação atribuída:</span>
+          <span className="text-xs font-semibold text-muted-foreground">Nota revisada:</span>
           <span className="text-sm font-black text-primary">{item?.verified ? formatScore(item.score) : '—'}</span>
           <span className="text-xs text-muted-foreground">/ {formatScore(maxScore)}</span>
-          {item?.notes && <span className="text-xs text-muted-foreground">• {item.notes}</span>}
+          {item?.notes && <span className="w-full rounded-lg border border-blue-100 bg-blue-50/70 px-2.5 py-2 text-xs text-blue-900"><strong>Comentário do professor:</strong> {item.notes}{item.reviewed_by ? <span className="mt-1 block text-[10px] text-blue-700">Correção: {item.reviewed_by}</span> : null}</span>}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 mt-2">

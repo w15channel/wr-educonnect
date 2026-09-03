@@ -53,6 +53,10 @@
     "notes": {
       "type": "string",
       "description": "Observações do professor"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "E-mail do professor responsável pela última correção"
     }
   },
   "required": [

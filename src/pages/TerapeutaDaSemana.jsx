@@ -22,6 +22,7 @@ import RelatosMural from '@/components/therapist/RelatosMural';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 import { buildScoreBalancedPairings, findStudentPairings, getLatestPairingDate, getLatestPublishedPairings, isActiveStudent, normalizeStudentEmail } from '@/lib/therapistPairings';
+import { visiblePairingsForReportWall } from '@/lib/therapistReports';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -38,8 +39,16 @@ export default function TerapeutaDaSemana() {
   const [selectedModule, setSelectedModule] = useState('1');
 
   const { data: pairings = [] } = useQuery({
-    queryKey: ['therapist-pairings'],
-    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 1000),
+    queryKey: ['therapist-pairings', isTeacher ? 'admin' : normalizeStudentEmail(session?.email)],
+    queryFn: async () => {
+      if (isTeacher) return base44.entities.TherapistPairing.list('-pairing_date', 1000);
+      if (!session?.email) return [];
+      const [asTherapist, asPatient] = await Promise.all([
+        base44.entities.TherapistPairing.filter({ therapist_email: session.email }, '-pairing_date', 500),
+        base44.entities.TherapistPairing.filter({ patient_email: session.email }, '-pairing_date', 500),
+      ]);
+      return [...new Map([...asTherapist, ...asPatient].map((pairing) => [pairing.id, pairing])).values()];
+    },
   });
 
   const { data: accessCodes = [] } = useQuery({
@@ -352,8 +361,16 @@ export default function TerapeutaDaSemana() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] }); toast.success('Relato excluído.'); },
   });
 
+  const editReport = (report) => {
+    const pairing = pairings.find((item) => item.id === report.pairingId);
+    if (!pairing) return;
+    setEvalDialog({ pairing, role: report.field });
+    setComment(report.comment || '');
+    setScore([Number(report.score) || 0]);
+  };
+
   // Todos os pareamentos do domínio (atuais + anteriores) com pelo menos um relato
-  const allDomainPairings = domainPairingsAll;
+  const allDomainPairings = visiblePairingsForReportWall(domainPairingsAll, session?.email, isTeacher);
 
   const handleSubmitEval = () => {
     if (!evalDialog) return;
@@ -623,6 +640,9 @@ export default function TerapeutaDaSemana() {
         pairings={allDomainPairings}
         getStudentInfo={getStudentInfo}
         isTeacher={isTeacher}
+        session={session}
+        activeCourse={activeCourse}
+        onEditReport={editReport}
         onDeleteReport={(r) => deleteReportMutation.mutate({ pairingId: r.pairingId, field: r.field })}
       />
 
@@ -633,12 +653,12 @@ export default function TerapeutaDaSemana() {
             <DialogTitle className="flex items-center gap-2">
               <Lock size={16} className="text-muted-foreground" />
               {evalDialog?.role === 'therapist' ? 'Avaliação do Paciente' : 'Avaliação do Terapeuta'}
-              <span className="text-xs font-normal text-muted-foreground">(privada)</span>
+              <span className="text-xs font-normal text-muted-foreground">(somente sua dupla e professor)</span>
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-5 mt-2">
             <div className="bg-secondary/50 rounded-xl p-3 text-xs text-muted-foreground flex items-center gap-2">
-              <Lock size={12} /> Esta avaliação é <strong>visível apenas para o professor</strong>.
+              <Lock size={12} /> Este relato fica <strong>visível somente para você, sua dupla e o professor</strong>.
             </div>
             <div>
               <label className="text-sm font-semibold text-foreground block mb-2">Relato do caso</label>
@@ -661,7 +681,7 @@ export default function TerapeutaDaSemana() {
               disabled={!comment.trim() || updatePairingMutation.isPending}
               onClick={handleSubmitEval}
             >
-              Enviar Avaliação
+              {evalDialog && (evalDialog.role === 'therapist' ? evalDialog.pairing.therapist_submitted : evalDialog.pairing.patient_submitted) ? 'Salvar alterações' : 'Enviar Avaliação'}
             </Button>
           </div>
         </DialogContent>

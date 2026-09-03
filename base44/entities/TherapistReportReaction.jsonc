@@ -1,0 +1,14 @@
+{
+  "name": "TherapistReportReaction",
+  "type": "object",
+  "description": "Reação privada de um integrante da dupla ao relato do colega.",
+  "properties": {
+    "report_key": { "type": "string", "description": "Pareamento e papel autor do relato" },
+    "pairing_id": { "type": "string" },
+    "report_author_email": { "type": "string" },
+    "actor_email": { "type": "string" },
+    "reaction": { "type": "string", "enum": ["love", "celebrate", "applaud"] }
+  },
+  "required": ["report_key", "pairing_id", "report_author_email", "actor_email", "reaction"],
+  "rls": { "create": true, "read": true, "update": false, "delete": true }
+}

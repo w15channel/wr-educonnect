@@ -50,7 +50,7 @@ const withinWindow = (dateLike, start, end) => {
   return true;
 };
 
-function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeacher, moduleFilter }) {
+function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeacher, moduleFilter, reviewerEmail }) {
   const queryClient = useQueryClient();
   const email = code.student_email || '';
   const displayName = code.profile_name || code.student_name || 'Sem nome';
@@ -112,7 +112,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       });
       const normalizedScore = roundScore(String(score).replace(',', '.'));
       const scoreRefId = category === 'exam' ? `exam:${ref_id}` : ref_id;
-      const data = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score: roundScore(max_score), verified: true, notes: itemNotes || '', ...(selectedModule ? { module_number: selectedModule } : {}) };
+      const data = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score: roundScore(max_score), verified: true, notes: itemNotes || '', reviewed_by: reviewerEmail || '', ...(selectedModule ? { module_number: selectedModule } : {}) };
       const result = existing ? await adminApi.update('ScoreItem', existing.id, data) : await adminApi.create('ScoreItem', data);
 
       if (category === 'exam') {
@@ -140,7 +140,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
         });
         const normalizedScore = roundScore(String(score).replace(',', '.'));
         const scoreRefId = category === 'exam' ? `exam:${ref_id}` : ref_id;
-        const updated = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score, verified: true, notes: itemNotes || '', ...(selectedModule ? { module_number: selectedModule } : {}), id: existing?.id || `optimistic_${ref_id}` };
+        const updated = { student_email: email, category, ref_id: scoreRefId, ref_title, score: normalizedScore, max_score, verified: true, notes: itemNotes || '', reviewed_by: reviewerEmail || '', ...(selectedModule ? { module_number: selectedModule } : {}), id: existing?.id || `optimistic_${ref_id}` };
         if (existing) return old.map((s) => s.id === existing.id ? updated : s);
         return [...old, updated];
       });
@@ -1034,6 +1034,14 @@ export default function ScoreControl() {
     if (match) setSelectedCode(match);
   }, [autoStudentEmail, codes.length]);
 
+  // Na rota do aluno, a informação mais valiosa é a devolutiva da própria
+  // entrega. Abrimos o detalhe automaticamente, sem obrigá-lo a se procurar no ranking.
+  useEffect(() => {
+    if (isTeacher || !isPontuacaoGeralRoute || selectedCode || !session?.email || codes.length === 0) return;
+    const ownCode = codes.find((code) => code.student_email === session.email);
+    if (ownCode) setSelectedCode(ownCode);
+  }, [isTeacher, isPontuacaoGeralRoute, selectedCode, session?.email, codes]);
+
   const upsertProfileData = async (code, data) => {
     const existing = studentProfiles.find((p) => p.student_email === code.student_email && p.dashboard_course === activeCourse);
     const payload = {
@@ -1168,7 +1176,7 @@ export default function ScoreControl() {
     }
   });
 
-  if (selectedCode && (isTeacher || selectedCode.student_email === session?.email)) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} moduleFilter={moduleFilter} onBack={() => setSelectedCode(null)} />;
+  if (selectedCode && (isTeacher || selectedCode.student_email === session?.email)) return <StudentScoreDetail code={selectedCode} activeCourse={activeCourse} courseEmails={courseEmails} isTeacher={isTeacher} moduleFilter={moduleFilter} reviewerEmail={session?.email} onBack={() => setSelectedCode(null)} />;
 
   const changeSelectedModule = (value) => {
     setSelectedModule(value);
