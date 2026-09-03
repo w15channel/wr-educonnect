@@ -7,20 +7,11 @@ async function authenticatedUser(base44, payload) {
   const claimedEmail = norm(payload.actor_email);
   const code = String(payload.access_code || '').trim();
   const codeId = String(payload.access_code_id || '').trim();
-  if (!code && !codeId) throw new Error('Acesso não autorizado.');
-
-  // O id do código é a credencial mais estável da sessão. Há matrículas legadas
-  // sem e-mail (ou cujo e-mail foi corrigido depois do login); exigir o e-mail
-  // enviado pelo navegador fazia toda interação do mural terminar em 401.
+  if (!email || !code) throw new Error('Acesso não autorizado.');
   const matches = codeId
     ? [await base44.asServiceRole.entities.AccessCode.get(codeId).catch(() => null)].filter(Boolean)
-    : await base44.asServiceRole.entities.AccessCode.filter({ code }, '-created_date', 10);
-  const access = matches.find((item) => {
-    const credentialMatches = code
-      ? item.code === code
-      : claimedEmail && norm(item.student_email) === claimedEmail;
-    return credentialMatches && item.is_active !== false;
-  });
+    : await base44.asServiceRole.entities.AccessCode.filter({ student_email: email }, '-created_date', 10);
+  const access = matches.find((item) => norm(item.student_email) === email && item.code === code && item.is_active !== false);
   if (!access) throw new Error('Acesso não autorizado.');
   // Registros sem e-mail continuam identificados de modo privado e determinístico
   // pelo id da matrícula, em vez de compartilhar uma identidade vazia.
