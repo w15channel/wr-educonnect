@@ -1,4 +1,4 @@
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+export const WEEKLY_HIGHLIGHT_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const MONITOR_MEDALS = {
   1: { emoji: '🥇', label: '1º lugar', tone: 'gold' },
@@ -17,7 +17,7 @@ export function isWeeklyHighlight(item, readKeys = new Set(), now = Date.now()) 
   return (isTherapist || isMonitor)
     && Number.isFinite(occurredAt)
     && now - occurredAt >= 0
-    && now - occurredAt < WEEK_MS
+    && now - occurredAt < WEEKLY_HIGHLIGHT_DURATION_MS
     && !readKeys.has(highlightKey(item));
 }
 
