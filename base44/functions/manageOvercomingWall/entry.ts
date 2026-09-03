@@ -4,7 +4,7 @@ const norm = (value) => String(value || '').trim().toLowerCase();
 const dateOf = (record) => record.updated_date || record.submitted_at || record.created_date || record.date || new Date().toISOString();
 
 async function authenticatedUser(base44, payload) {
-  const email = norm(payload.actor_email);
+  const claimedEmail = norm(payload.actor_email);
   const code = String(payload.access_code || '').trim();
   const codeId = String(payload.access_code_id || '').trim();
   if (!email || !code) throw new Error('Acesso não autorizado.');
@@ -13,6 +13,9 @@ async function authenticatedUser(base44, payload) {
     : await base44.asServiceRole.entities.AccessCode.filter({ student_email: email }, '-created_date', 10);
   const access = matches.find((item) => norm(item.student_email) === email && item.code === code && item.is_active !== false);
   if (!access) throw new Error('Acesso não autorizado.');
+  // Registros sem e-mail continuam identificados de modo privado e determinístico
+  // pelo id da matrícula, em vez de compartilhar uma identidade vazia.
+  const email = norm(access.student_email) || `access-code:${access.id}`;
   return { email, name: access.profile_name || access.student_name, full_name: access.profile_name || access.student_name, course: access.course };
 }
 
@@ -107,8 +110,8 @@ Deno.serve(async (req) => {
       // Publicações coletivas (ex.: monitores da semana) homenageiam vários alunos:
       // a reação vale para qualquer pessoa mencionada e todas são avisadas.
       const mentioned = (target?.mentioned_emails || []).map(norm).filter(Boolean);
-      const recipients = mentioned.length ? mentioned : [owner];
-      if (!target || !owner || !recipients.includes(norm(payload.target_owner_email))) return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
+      const recipients = (mentioned.length ? mentioned : [owner]).filter(Boolean);
+      if (!target || !recipients.length || !recipients.includes(norm(payload.target_owner_email))) return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
       if (recipients.includes(actor)) return Response.json({ error: 'Você não pode interagir com o próprio conteúdo.' }, { status: 400 });
       const dedupeKey = `${targetType}:${payload.target_id}:${actor}:${reaction}`;
       const prior = await base44.asServiceRole.entities.AchievementReaction.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
