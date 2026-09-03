@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { ClipboardList, ChevronDown, ChevronUp, Trash2, Star, Calendar } from 'lucide-react';
+import { ClipboardList, ChevronDown, ChevronUp, Calendar, ShieldCheck } from 'lucide-react';
 import ReportItem from './ReportItem';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatScore } from '@/lib/scoreUtils';
+import { normalizeStudentEmail } from '@/lib/therapistPairings';
 
 function formatDateLabel(dateStr) {
   if (!dateStr) return 'Sem data';
@@ -52,7 +52,7 @@ function buildReports(pairings, getStudentInfo) {
   return reports;
 }
 
-export default function RelatosMural({ pairings, getStudentInfo, isTeacher, onDeleteReport }) {
+export default function RelatosMural({ pairings, getStudentInfo, isTeacher, session, activeCourse, onEditReport, onDeleteReport }) {
   const [expanded, setExpanded] = useState(false);
 
   const reports = buildReports(pairings, getStudentInfo);
@@ -77,8 +77,8 @@ export default function RelatosMural({ pairings, getStudentInfo, isTeacher, onDe
             <ClipboardList size={18} className="text-primary" />
           </div>
           <div>
-            <h3 className="font-bold text-sm text-foreground">Mural de Relatos</h3>
-            <p className="text-xs text-muted-foreground">Histórico permanente de todos os relatos enviados · {reports.length} relato(s)</p>
+            <h3 className="font-bold text-sm text-foreground">Mural privado da dupla</h3>
+            <p className="text-xs text-muted-foreground">Somente relatos das suas duplas · {reports.length} relato(s)</p>
           </div>
         </div>
         {expanded ? <ChevronUp size={18} className="text-muted-foreground shrink-0" /> : <ChevronDown size={18} className="text-muted-foreground shrink-0" />}
@@ -86,6 +86,12 @@ export default function RelatosMural({ pairings, getStudentInfo, isTeacher, onDe
 
       {expanded && (
         <div className="border-t border-border p-5 space-y-5 animate-fade-in">
+          {!isTeacher && (
+            <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-800">
+              <ShieldCheck size={15} className="mt-0.5 shrink-0" />
+              <span>Espaço confidencial: apenas você, sua dupla em cada atendimento e o professor podem ver estes relatos.</span>
+            </div>
+          )}
           {reports.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <ClipboardList size={36} className="mx-auto mb-3 opacity-20" />
@@ -100,7 +106,16 @@ export default function RelatosMural({ pairings, getStudentInfo, isTeacher, onDe
                 </div>
                 <div className="space-y-2">
                   {groups[dateKey].map(r => (
-                    <ReportItem key={r.id} report={r} isTeacher={isTeacher} onDelete={onDeleteReport} />
+                    <ReportItem
+                      key={r.id}
+                      report={r}
+                      isTeacher={isTeacher}
+                      isOwn={isTeacher || normalizeStudentEmail(r.authorEmail) === normalizeStudentEmail(session?.email)}
+                      session={session}
+                      activeCourse={activeCourse}
+                      onEdit={onEditReport}
+                      onDelete={onDeleteReport}
+                    />
                   ))}
                 </div>
               </div>
