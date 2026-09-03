@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipBack, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
 import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import ReactQuill from 'react-quill';
@@ -122,6 +122,42 @@ const extractLessonParagraphs = (html = '') => {
 
 const READER_RATES = [1, 1.5, 2];
 
+const getWordParts = (text = '') => text.match(/\S+|\s+/g) || [];
+
+function ReadingViewport({ paragraphs, activeParagraph, activeWord, isPlaying, viewportRef }) {
+  return (
+    <div
+      ref={viewportRef}
+      className="apostila-reading-viewport apostila-content text-sm text-foreground/90 leading-relaxed font-sans"
+      tabIndex={0}
+      aria-label="Conteúdo da aula. Use a rolagem para continuar a leitura."
+    >
+      {paragraphs.map((paragraph, paragraphIndex) => {
+        let wordIndex = -1;
+        return (
+          <p key={`${paragraphIndex}-${paragraph.slice(0, 18)}`} data-reader-paragraph={paragraphIndex}>
+            {getWordParts(paragraph).map((part, partIndex) => {
+              if (/^\s+$/.test(part)) return <React.Fragment key={partIndex}>{part}</React.Fragment>;
+              wordIndex += 1;
+              const isCurrentWord = paragraphIndex === activeParagraph && wordIndex === activeWord;
+              return (
+                <span
+                  key={partIndex}
+                  data-reader-word={isCurrentWord ? 'active' : undefined}
+                  className={isCurrentWord ? `apostila-karaoke-word${isPlaying ? ' is-speaking' : ''}` : undefined}
+                  aria-current={isCurrentWord ? 'true' : undefined}
+                >
+                  {part}
+                </span>
+              );
+            })}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 
 export default function Apostila() {
   const { session } = useCustomAuth();
@@ -137,15 +173,23 @@ export default function Apostila() {
   const [rewriteOpen, setRewriteOpen] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState('');
-  const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, rate: 1, isPlaying: false });
+  const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, wordIndex: 0, rate: 1, isPlaying: false });
   const utteranceRef = useRef(null);
   const readerRef = useRef(reader);
   const readerSessionRef = useRef(0);
   const intentionalStopRef = useRef(false);
+  const readerViewportRefs = useRef(new Map());
 
   useEffect(() => {
     readerRef.current = reader;
   }, [reader]);
+
+  useEffect(() => {
+    if (!reader.isPlaying || !reader.lessonKey) return;
+    const viewport = readerViewportRefs.current.get(reader.lessonKey);
+    const activeWord = viewport?.querySelector('[data-reader-word="active"]');
+    activeWord?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+  }, [reader.isPlaying, reader.lessonKey, reader.paragraphIndex, reader.wordIndex]);
 
   useEffect(() => () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -273,6 +317,7 @@ export default function Apostila() {
       ...current,
       lessonKey: lessonKey || current.lessonKey,
       paragraphIndex: 0,
+      wordIndex: 0,
       isPlaying: false,
     }));
   };
@@ -288,7 +333,7 @@ export default function Apostila() {
     if (!text) {
       intentionalStopRef.current = true;
       window.speechSynthesis.cancel();
-      setReader((current) => ({ ...current, lessonKey, paragraphIndex: 0, isPlaying: false }));
+      setReader((current) => ({ ...current, lessonKey, paragraphIndex: 0, wordIndex: 0, isPlaying: false }));
       return;
     }
 
@@ -302,12 +347,19 @@ export default function Apostila() {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'pt-BR';
     utterance.rate = rate;
+    const wordStarts = [...text.matchAll(/\S+/g)].map((match) => match.index || 0);
+    utterance.onboundary = (event) => {
+      if (event.name && event.name !== 'word') return;
+      if (readerSessionRef.current !== sessionId) return;
+      const nextWordIndex = Math.max(0, wordStarts.findLastIndex((start) => start <= event.charIndex));
+      setReader((state) => ({ ...state, lessonKey, paragraphIndex, wordIndex: nextWordIndex }));
+    };
     utterance.onend = () => {
       const current = readerRef.current;
       if (readerSessionRef.current !== sessionId || current.lessonKey !== lessonKey || !current.isPlaying) return;
       const nextIndex = paragraphIndex + 1;
       if (nextIndex < paragraphs.length) {
-        setReader((state) => ({ ...state, lessonKey, paragraphIndex: nextIndex, isPlaying: true }));
+        setReader((state) => ({ ...state, lessonKey, paragraphIndex: nextIndex, wordIndex: 0, isPlaying: true }));
         window.setTimeout(() => {
           const latest = readerRef.current;
           if (readerSessionRef.current === sessionId && latest.lessonKey === lessonKey && latest.isPlaying) {
@@ -315,7 +367,7 @@ export default function Apostila() {
           }
         }, 80);
       } else {
-        setReader((state) => ({ ...state, lessonKey, paragraphIndex: 0, isPlaying: false }));
+        setReader((state) => ({ ...state, lessonKey, paragraphIndex: 0, wordIndex: 0, isPlaying: false }));
       }
     };
     utterance.onerror = () => {
@@ -325,7 +377,7 @@ export default function Apostila() {
     };
 
     utteranceRef.current = utterance;
-    setReader((current) => ({ ...current, lessonKey, paragraphIndex, rate, isPlaying: true }));
+    setReader((current) => ({ ...current, lessonKey, paragraphIndex, wordIndex: 0, rate, isPlaying: true }));
     window.speechSynthesis.speak(utterance);
   };
 
@@ -357,6 +409,14 @@ export default function Apostila() {
     const currentIndex = reader.lessonKey === lessonKey ? reader.paragraphIndex : 0;
     const nextIndex = currentIndex + 1 >= paragraphs.length ? 0 : currentIndex + 1;
     speakParagraph(lessonKey, nextIndex, reader.rate);
+  };
+
+  const previousReaderParagraph = (lessonKey) => {
+    const paragraphs = paragraphsByLesson[lessonKey] || [];
+    if (!paragraphs.length) return;
+    const currentIndex = reader.lessonKey === lessonKey ? reader.paragraphIndex : 0;
+    const previousIndex = Math.max(0, currentIndex - 1);
+    speakParagraph(lessonKey, previousIndex, reader.rate);
   };
 
   const changeReaderRate = (lessonKey, rate) => {
@@ -652,6 +712,15 @@ export default function Apostila() {
                                       <Button
                                         size="sm"
                                         variant="outline"
+                                        onClick={() => previousReaderParagraph(key)}
+                                        disabled={!lessonParagraphs.length || !isReaderActive || reader.paragraphIndex === 0}
+                                        className="gap-1.5"
+                                      >
+                                        <SkipBack size={13} /> Voltar parágrafo
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
                                         onClick={() => skipReaderParagraph(key)}
                                         disabled={!lessonParagraphs.length}
                                         className="gap-1.5"
@@ -675,9 +744,15 @@ export default function Apostila() {
                                   </div>
                                 </div>
                                 <div className={`rounded-xl border ${bgLight} border-opacity-30 p-4`} style={{ borderColor: 'transparent', background: 'rgba(0,0,0,0.15)' }}>
-                                  <div
-                                    className="apostila-content text-sm text-foreground/90 leading-relaxed font-sans"
-                                    dangerouslySetInnerHTML={{ __html: lesson.content ? getLessonHtml(lesson.content) : 'Conteúdo ainda não adicionado.' }}
+                                  <ReadingViewport
+                                    paragraphs={lessonParagraphs.length ? lessonParagraphs : ['Conteúdo ainda não adicionado.']}
+                                    activeParagraph={isReaderActive ? reader.paragraphIndex : -1}
+                                    activeWord={isReaderActive ? reader.wordIndex : -1}
+                                    isPlaying={isReaderActive && reader.isPlaying}
+                                    viewportRef={(node) => {
+                                      if (node) readerViewportRefs.current.set(key, node);
+                                      else readerViewportRefs.current.delete(key);
+                                    }}
                                   />
                                 </div>
                                 <div className="flex gap-2 flex-wrap items-center">
@@ -702,7 +777,7 @@ export default function Apostila() {
                                     ) : (
                                       <button
                                         onClick={() => markRead(chapter.id, lesson.id)}
-                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-all active:scale-95"
+                                        className="apostila-mark-read-button inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-all active:scale-95"
                                       >
                                         <BookMarked size={13} /> Marcar como lida
                                       </button>
