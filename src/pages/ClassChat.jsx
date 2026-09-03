@@ -250,7 +250,10 @@ export default function ClassChat() {
   };
 
   const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => {
-    const isOwnContent = ownerEmail === session?.email || (mentionedEmails || []).includes(session?.email);
+    const normalizedSessionEmail = String(session?.email || '').trim().toLowerCase();
+    const normalizedMentions = (mentionedEmails || []).map((email) => String(email || '').trim().toLowerCase());
+    const interactionOwner = normalizedMentions[0] || ownerEmail;
+    const isOwnContent = String(ownerEmail || '').trim().toLowerCase() === normalizedSessionEmail || normalizedMentions.includes(normalizedSessionEmail);
     return <>
       <div className="mt-2 flex flex-wrap gap-1 border-t border-amber-200 pt-2" aria-label="Reações à publicação">
         {[
@@ -260,9 +263,9 @@ export default function ClassChat() {
         ].map(([key, label, Icon, active]) => {
           const count = wallReactions.filter((reaction) => reaction.target_id === item.id && reaction.reaction === key).length;
           const reacted = wallReactions.some((reaction) => reaction.target_id === item.id && reaction.reaction === key && reaction.actor_email === session?.email);
-          return <button key={key} type="button" disabled={isOwnContent || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: ownerEmail, reaction: key })} aria-pressed={reacted} title={isOwnContent ? 'Você não pode reagir à própria publicação' : label} className={`inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-white text-slate-600 hover:bg-slate-100'}`}><Icon size={12}/>{label}{count > 0 && <span>{count}</span>}</button>;
+          return <button key={key} type="button" disabled={isOwnContent || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: interactionOwner, reaction: key })} aria-pressed={reacted} title={isOwnContent ? 'Você não pode reagir à própria publicação' : label} className={`inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-white text-slate-600 hover:bg-slate-100'}`}><Icon size={12}/>{label}{count > 0 && <span>{count}</span>}</button>;
         })}
-        <button type="button" disabled={isOwnContent} onClick={() => { setReplyTarget({ id: item.id, targetType, ownerEmail }); setReplyText(''); }} title={isOwnContent ? 'Você não pode responder ao próprio conteúdo' : 'Responder em privado'} className="inline-flex min-h-8 items-center gap-1 rounded-full bg-white px-2 text-[10px] font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-45"><Send size={11}/>Responder</button>
+        <button type="button" disabled={isOwnContent} onClick={() => { setReplyTarget({ id: item.id, targetType, ownerEmail: interactionOwner }); setReplyText(''); }} title={isOwnContent ? 'Você não pode responder ao próprio conteúdo' : 'Responder em privado'} className="inline-flex min-h-8 items-center gap-1 rounded-full bg-white px-2 text-[10px] font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-45"><Send size={11}/>Responder</button>
       </div>
       {replyTarget?.id === item.id && <form className="mt-1.5 flex items-center gap-1.5" onSubmit={(event) => { event.preventDefault(); const content = replyText.trim(); if (!content || replyMutation.isPending) return; replyMutation.mutate({ target_id: replyTarget.id, target_type: replyTarget.targetType, target_owner_email: replyTarget.ownerEmail, reply_text: content }, { onSuccess: () => { setReplyTarget(null); setReplyText(''); } }); }}>
         <input autoFocus maxLength={500} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder="Resposta privada..." aria-label="Resposta privada" className="h-8 min-w-0 flex-1 rounded-lg border border-rose-200 bg-white px-2 text-[11px] focus:outline-none" />
