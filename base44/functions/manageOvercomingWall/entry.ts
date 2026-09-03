@@ -7,11 +7,11 @@ async function authenticatedUser(base44, payload) {
   const claimedEmail = norm(payload.actor_email);
   const code = String(payload.access_code || '').trim();
   const codeId = String(payload.access_code_id || '').trim();
-  if (!email || !code) throw new Error('Acesso não autorizado.');
+  if (!claimedEmail || !code) throw new Error('Acesso não autorizado.');
   const matches = codeId
     ? [await base44.asServiceRole.entities.AccessCode.get(codeId).catch(() => null)].filter(Boolean)
-    : await base44.asServiceRole.entities.AccessCode.filter({ student_email: email }, '-created_date', 10);
-  const access = matches.find((item) => norm(item.student_email) === email && item.code === code && item.is_active !== false);
+    : await base44.asServiceRole.entities.AccessCode.filter({ student_email: claimedEmail }, '-created_date', 10);
+  const access = matches.find((item) => norm(item.student_email) === claimedEmail && item.code === code && item.is_active !== false);
   if (!access) throw new Error('Acesso não autorizado.');
   // Registros sem e-mail continuam identificados de modo privado e determinístico
   // pelo id da matrícula, em vez de compartilhar uma identidade vazia.
