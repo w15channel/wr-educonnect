@@ -1,35 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { X, Printer, Loader2, ChevronLeft, ChevronRight, Image, Move, RotateCcw, Save, FileText } from 'lucide-react';
+/**
+ * ApostilaPrintModal — exportação da versão impressa da apostila em PDF A4.
+ * O modelo PNG foi removido: a impressão acontece exclusivamente via PDF, com
+ * visual profissional (moldura, cabeçalho institucional, rodapé numerado) e a
+ * regra de um tópico por página: cada tópico começa no topo de uma página e o
+ * corpo é ajustado automaticamente para terminar antes da quebra de página —
+ * inclusive o último tópico.
+ */
+import React, { useEffect, useMemo, useState } from 'react';
+import { X, Loader2, FileText, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
-
-const APOSTILA_BG = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/b553e29d9_Fundo_Apostila.png';
-
-const IMG_W = 2250;
-const IMG_H = 1591;
-
-const SQUARE_W = 2168;
-const SQUARE_H = 1178;
-const SQUARE_LEFT = 41;
-const SQUARE_TOP = 207;
-
-const HEADER_ZONE_H = 72;
-const LINE_SHIFT = Math.round(18 * 1.85);
-const CONTENT_TOP = SQUARE_TOP + HEADER_ZONE_H - LINE_SHIFT;
-const CONTENT_H = SQUARE_H - HEADER_ZONE_H + LINE_SHIFT;
-
-const INNER_MARGIN = 31;
-const USABLE_W = SQUARE_W - INNER_MARGIN * 2;
-const CENTER_GAP = Math.round(USABLE_W * 0.10);
-const COL_W = Math.round((USABLE_W - CENTER_GAP) / 2);
-const COL_LEFT_X = SQUARE_LEFT + INNER_MARGIN;
-const COL_RIGHT_X = COL_LEFT_X + COL_W + CENTER_GAP;
-
-const FONT_SIZE = 18;
-const LINE_HEIGHT = 1.85;
-const TOPIC_TARGET_CHARS = 2500;
 
 const PDF_PAGE_WIDTH_PT = 595.28;
 const PDF_PAGE_HEIGHT_PT = 841.89;
@@ -38,25 +19,18 @@ const PDF_MARGIN_LEFT = PDF_PAGE_MARGIN;
 const PDF_MARGIN_RIGHT = PDF_PAGE_MARGIN;
 const PDF_FRAME_MARGIN = 22;
 const PDF_BODY_FONT_SIZE = 10.8;
-const PDF_BODY_LINE_HEIGHT = PDF_BODY_FONT_SIZE * 1.45;
+const PDF_BODY_MIN_FONT_SIZE = 8.2;
+const PDF_BODY_FONT_STEP = 0.2;
+const PDF_BODY_LINE_RATIO = 1.45;
+const PDF_BODY_MIN_LINE_RATIO = 1.28;
 const PDF_PARAGRAPH_GAP = 8;
-const PDF_HEADING_FONT_SIZE = 12.8;
+const PDF_HEADING_FONT_SIZE = 13.2;
 const PDF_HEADING_LINE_HEIGHT = PDF_HEADING_FONT_SIZE * 1.35;
-const PDF_HEADING_BEFORE_GAP = 16;
-const PDF_HEADING_AFTER_GAP = 5;
-const PDF_HEADING_KEEP_WITH_BODY_LINES = 3;
+const PDF_HEADING_AFTER_GAP = 14;
+const PDF_HEADING_RULE_GAP = 6;
 const PDF_FOOTER_FONT_SIZE = 7.6;
-const PDF_MIN_LINES_TO_START_LONG_BLOCK = 2;
 const PDF_DENSE_PARAGRAPH_MIN_CHARS = 850;
 const PDF_DENSE_PARAGRAPH_TARGET_SENTENCES = 4;
-
-const HIGHLIGHT_TERMS = [
-  'padrão comportamental',
-  'comportamento',
-  'ambiente',
-  'reforço',
-  'função',
-];
 
 const stripUnsafePrintCharacters = (value = '') => String(value)
   .replace(/^[^\p{L}\p{N}<#*]+(?=\s*(?:=====\s*Page|\d+[.)]|[A-ZÁÉÍÓÚÂÊÔÃÕÇ]))/gmu, '')
@@ -204,149 +178,7 @@ const joinArtificialLineBreaks = (value = '') => normalizeExtractedApostilaText(
   })
   .join('\n\n');
 
-const POSITIONS_KEY = 'wr_apostila_print_layout_positions_v2';
-const LEGACY_TEXT_POSITION_KEY = 'wr_apostila_print_text_position_v1';
-const DEFAULT_LAYER_POSITION = { x: 0, y: 0 };
-const DEFAULT_POSITIONS = {
-  title: { ...DEFAULT_LAYER_POSITION },
-  text: { ...DEFAULT_LAYER_POSITION },
-};
-
-function normalizePosition(value) {
-  return {
-    x: Number.isFinite(value?.x) ? value.x : 0,
-    y: Number.isFinite(value?.y) ? value.y : 0,
-  };
-}
-
-function loadPrintPositions() {
-  try {
-    const raw = localStorage.getItem(POSITIONS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return {
-        title: normalizePosition(parsed.title),
-        text: normalizePosition(parsed.text),
-      };
-    }
-
-    const legacyTextPosition = localStorage.getItem(LEGACY_TEXT_POSITION_KEY);
-    if (legacyTextPosition) {
-      return {
-        ...DEFAULT_POSITIONS,
-        text: normalizePosition(JSON.parse(legacyTextPosition)),
-      };
-    }
-  } catch {}
-  return {
-    title: { ...DEFAULT_LAYER_POSITION },
-    text: { ...DEFAULT_LAYER_POSITION },
-  };
-}
-
-function savePrintPositions(positions) {
-  localStorage.setItem(POSITIONS_KEY, JSON.stringify({
-    title: normalizePosition(positions.title),
-    text: normalizePosition(positions.text),
-  }));
-}
-
-function DraggableTextLayer({ position, editMode, onMove, zIndex = 2, children }) {
-  const layerRef = useRef(null);
-  const dragging = useRef(false);
-  const startMouse = useRef({ x: 0, y: 0 });
-  const startPosition = useRef(position);
-
-  const onMouseDown = useCallback((e) => {
-    if (!editMode) return;
-    e.preventDefault();
-    e.stopPropagation();
-    dragging.current = true;
-    startMouse.current = { x: e.clientX, y: e.clientY };
-    startPosition.current = position;
-
-    const onMouseMove = (me) => {
-      if (!dragging.current) return;
-      const rect = layerRef.current?.parentElement?.getBoundingClientRect();
-      if (!rect) return;
-      const scaleX = IMG_W / rect.width;
-      const scaleY = IMG_H / rect.height;
-      onMove({
-        x: Math.round(startPosition.current.x + (me.clientX - startMouse.current.x) * scaleX),
-        y: Math.round(startPosition.current.y + (me.clientY - startMouse.current.y) * scaleY),
-      });
-    };
-    const onMouseUp = () => {
-      dragging.current = false;
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-  }, [editMode, onMove, position]);
-
-  return (
-    <div
-      ref={layerRef}
-      onMouseDown={onMouseDown}
-      style={{
-        position: 'absolute',
-        inset: 0,
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        zIndex,
-        cursor: editMode ? 'grab' : 'default',
-        outline: editMode ? '3px dashed rgba(16, 185, 129, 0.85)' : 'none',
-        outlineOffset: -CONTENT_TOP,
-        userSelect: editMode ? 'none' : 'auto',
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 const isHtmlContent = (value = '') => /<[^>]+>/.test(value);
-
-const plainTextToHtml = (value = '') => value
-  .split(/\n{2,}/)
-  .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-  .join('');
-
-const getVisibleText = (value = '') => value
-  .replace(/<[^>]*>/g, ' ')
-  .replace(/&nbsp;/g, ' ')
-  .replace(/&amp;/g, '&')
-  .replace(/&quot;/g, '"')
-  .replace(/&#39;/g, "'")
-  .replace(/\s+/g, ' ')
-  .trim();
-
-const visibleCharCount = (value = '') => getVisibleText(value).length;
-const normalizeTopicContent = (topic) => topic?.trim() || '';
-
-const escapeHtml = (value = '') => String(value)
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
-
-const applyInlineHighlights = (html = '') => HIGHLIGHT_TERMS.reduce((current, term) => {
-  const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return current.replace(new RegExp(`\\b(${escapedTerm})\\b`, 'giu'), '<strong>$1</strong>');
-}, html);
-
-const formatPlainTopic = (value = '') => normalizeExtractedApostilaText(value)
-  .split(/\n{2,}/)
-  .map((paragraph) => paragraph.trim())
-  .filter(Boolean)
-  .map((paragraph, index) => {
-    const escaped = applyInlineHighlights(escapeHtml(paragraph).replace(/\n/g, '<br>'));
-    const isNumberedHeading = /^\d+[.)]\s+/.test(paragraph);
-    const tag = index === 0 && isNumberedHeading ? 'h2' : 'p';
-    return `<${tag}>${escaped}</${tag}>`;
-  })
-  .join('');
 
 function decodeHtmlEntities(value = '') {
   if (typeof document === 'undefined') {
@@ -403,9 +235,9 @@ function resetPdfTextSpacing(pdf) {
   if (typeof pdf.setCharSpace === 'function') pdf.setCharSpace(0);
 }
 
-function setBodyFont(pdf) {
+function setBodyFont(pdf, fontSize = PDF_BODY_FONT_SIZE) {
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(PDF_BODY_FONT_SIZE);
+  pdf.setFontSize(fontSize);
   resetPdfTextSpacing(pdf);
 }
 
@@ -482,27 +314,6 @@ function wrapText(pdf, text, maxWidth, context = 'texto') {
   return safeLines;
 }
 
-function getBlockHeight(lines, lineHeight) {
-  return lines.length * lineHeight;
-}
-
-function ensureFits(pdf, cursor, layout, height, onPageBreak, options = {}) {
-  if (cursor.y + height <= layout.contentBottom) return cursor;
-
-  const fullPageCapacity = layout.contentBottom - layout.contentTop;
-  const remaining = layout.contentBottom - cursor.y;
-  const minLinesToStart = options.minLinesToStart ?? PDF_MIN_LINES_TO_START_LONG_BLOCK;
-  const minStartHeight = layout.lineHeight * minLinesToStart;
-
-  if (height > fullPageCapacity && (remaining >= minStartHeight || cursor.y <= layout.contentTop + 0.25)) {
-    return cursor;
-  }
-
-  pdf.addPage('a4', 'portrait');
-  const nextLayout = onPageBreak?.() || layout;
-  return { y: nextLayout.contentTop };
-}
-
 function getSingleLineFittingText(pdf, text, maxWidth, context) {
   const source = normalizeExtractedApostilaText(text).replace(/[ \t]+/g, ' ').trim();
   if (!source || pdf.getTextWidth(source) <= maxWidth) {
@@ -531,12 +342,9 @@ function createApostilaPdfLayout(pageWidth, pageHeight, pageNumber = 1) {
     contentWidth: pageWidth - PDF_MARGIN_LEFT - PDF_MARGIN_RIGHT,
     pageTop: PDF_FRAME_MARGIN,
     headerHeight,
-    footerHeight: pageHeight - footerY,
     contentTop: PDF_FRAME_MARGIN + headerHeight + (isFirstPage ? 4 : 8),
     contentBottom: footerY - 32,
     footerY,
-    lineHeight: PDF_BODY_LINE_HEIGHT,
-    paragraphGap: PDF_PARAGRAPH_GAP,
   };
 }
 
@@ -638,484 +446,168 @@ function isApostilaPdfTopicHeading(paragraph) {
   return /^\d+[.)]\s+/.test(cleanParagraph) || /^[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9 ,:;—–-]{18,}$/.test(cleanParagraph);
 }
 
-function getParagraphPdfMetrics({ pdf, paragraph, layout, isHeading = isApostilaPdfTopicHeading(paragraph) }) {
-  const cleanParagraph = normalizeExtractedApostilaText(paragraph).replace(/[ \t]+/g, ' ').trim();
-  if (!cleanParagraph) return { lines: [], height: 0, lineHeight: layout.lineHeight, beforeGap: 0, afterGap: 0 };
-  if (isHeading) setTitleFont(pdf); else setBodyFont(pdf);
-  pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
-  const lineHeight = isHeading ? PDF_HEADING_LINE_HEIGHT : layout.lineHeight;
-  const lines = wrapText(pdf, cleanParagraph, layout.contentWidth, isHeading ? 'título de tópico' : 'corpo');
-  const beforeGap = isHeading ? PDF_HEADING_BEFORE_GAP : 0;
-  const afterGap = isHeading ? PDF_HEADING_AFTER_GAP : layout.paragraphGap;
-  return { lines, height: beforeGap + getBlockHeight(lines, lineHeight) + afterGap, lineHeight, beforeGap, afterGap };
-}
-
-function getParagraphPdfHeight(args) {
-  return getParagraphPdfMetrics(args).height;
-}
-
-function getBodyPreviewPdfHeight({ pdf, paragraph, layout, lineCount = PDF_HEADING_KEEP_WITH_BODY_LINES }) {
-  const metrics = getParagraphPdfMetrics({ pdf, paragraph, layout, isHeading: false });
-  return Math.min(metrics.lines.length, lineCount) * metrics.lineHeight;
-}
-
-function addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak, forcePageBreak = false }) {
-  const cleanParagraph = normalizeExtractedApostilaText(paragraph).replace(/[ \t]+/g, ' ').trim();
-  if (!cleanParagraph) return cursor;
-
-  const isHeading = isApostilaPdfTopicHeading(cleanParagraph);
-  const metrics = getParagraphPdfMetrics({ pdf, paragraph: cleanParagraph, layout, isHeading });
-  let activeCursor = forcePageBreak
-    ? ensureFits(pdf, { y: layout.contentBottom + 1 }, layout, metrics.height, onPageBreak)
-    : ensureFits(pdf, cursor, layout, metrics.height, onPageBreak, {
-        minLinesToStart: isHeading ? PDF_HEADING_KEEP_WITH_BODY_LINES : PDF_MIN_LINES_TO_START_LONG_BLOCK,
-      });
-  let y = activeCursor.y + metrics.beforeGap;
-
-  if (isHeading) setTitleFont(pdf); else setBodyFont(pdf);
-  pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
-
-  for (let lineIndex = 0; lineIndex < metrics.lines.length; lineIndex += 1) {
-    const line = metrics.lines[lineIndex];
-    if (y + metrics.lineHeight > layout.contentBottom) {
-      activeCursor = ensureFits(pdf, { y: layout.contentBottom + 1 }, layout, metrics.lineHeight, onPageBreak);
-      y = activeCursor.y;
-      if (isHeading) setTitleFont(pdf); else setBodyFont(pdf);
-      pdf.setTextColor(isHeading ? 30 : 38, isHeading ? 58 : 52, isHeading ? 95 : 64);
-    }
-    assertNoOverflow(pdf, line, layout.contentWidth, isHeading ? 'título de tópico' : 'corpo');
-    pdf.text(line, layout.marginLeft, y, { baseline: 'alphabetic' });
-    y += metrics.lineHeight;
-  }
-
-  return { y: y + metrics.afterGap };
-}
-
-function splitPlainContentByNumberedTopics(content) {
-  const source = normalizeExtractedApostilaText(content);
-  if (!source || isHtmlContent(source)) return null;
-
-  const matches = [...source.matchAll(/^\s*([1-6])[.)]\s+.+$/gm)];
-  const sequentialMatches = matches
-    .filter((match, index) => Number(match[1]) === index + 1)
-    .slice(0, 6);
-
-  if (sequentialMatches.length < 6) return null;
-
-  return sequentialMatches.map((match, index) => {
-    const start = match.index;
-    const end = sequentialMatches[index + 1]?.index ?? source.length;
-    return formatPlainTopic(source.slice(start, end).trim());
-  });
-}
-
-function splitHtmlContentByNumberedTopics(paragraphs) {
-  const topicStarts = paragraphs
-    .map((paragraph, index) => ({ index, match: getVisibleText(paragraph).match(/^([1-6])[.)]\s+/) }))
-    .filter(({ match }) => Boolean(match))
-    .filter(({ match }, index) => Number(match[1]) === index + 1)
-    .slice(0, 6);
-
-  if (topicStarts.length < 6) return null;
-
-  return topicStarts.map(({ index: start }, topicIndex) => {
-    const end = topicStarts[topicIndex + 1]?.index ?? paragraphs.length;
-    return paragraphs.slice(start, end).join('');
-  });
-}
-
-function splitIntoTopics(content, targetChars = TOPIC_TARGET_CHARS) {
-  if (!content || !content.trim()) {
-    return Array.from({ length: 6 }, () => '');
-  }
-
-  const numberedTopics = splitPlainContentByNumberedTopics(content);
-  if (numberedTopics) return numberedTopics.map((topic) => normalizeTopicContent(topic));
-
-  const htmlContent = isHtmlContent(content) ? content : plainTextToHtml(content);
-  const paragraphs = htmlContent
-    .split(/(?=<\/?(?:p|h[1-6]|ul|ol|blockquote)\b)/i)
-    .map(p => p.trim())
-    .filter(Boolean);
-
-  const htmlNumberedTopics = splitHtmlContentByNumberedTopics(paragraphs);
-  if (htmlNumberedTopics) return htmlNumberedTopics.map((topic) => normalizeTopicContent(topic));
-
-  const totalChars = visibleCharCount(htmlContent);
-  const chunkSize = Math.max(targetChars, Math.ceil(totalChars / 6));
-
+/**
+ * Agrupa os parágrafos em tópicos: cada título numerado abre um novo tópico e
+ * carrega consigo os parágrafos seguintes até o próximo título. Conteúdo antes
+ * do primeiro título vira um tópico sem cabeçalho.
+ */
+function groupParagraphsIntoTopics(paragraphs = []) {
   const topics = [];
-  let current = '';
+  let current = null;
 
-  for (const para of paragraphs) {
-    const candidate = current ? current + para : para;
-    if (current.length >= chunkSize && topics.length < 5) {
-      topics.push(current.trim());
-      current = para;
+  for (const paragraph of paragraphs) {
+    if (isApostilaPdfTopicHeading(paragraph)) {
+      if (current && (current.heading || current.paragraphs.length)) topics.push(current);
+      current = { heading: paragraph, paragraphs: [] };
     } else {
-      current = candidate;
+      if (!current) current = { heading: null, paragraphs: [] };
+      current.paragraphs.push(paragraph);
     }
   }
-  if (current.trim()) topics.push(current.trim());
-
-  while (topics.length < 6) topics.push('');
-  if (topics.length > 6) {
-    const extra = topics.splice(6);
-    topics[5] = topics[5] + extra.join('');
-  }
-
-  return topics.map((topic) => normalizeTopicContent(topic));
+  if (current && (current.heading || current.paragraphs.length)) topics.push(current);
+  return topics;
 }
 
-const ApostilaPage = React.forwardRef(function ApostilaPage(
-  { lesson, chapterTitle, topicLeft, topicRight, pageNum, totalPages, positions = DEFAULT_POSITIONS, editMode = false, onPositionChange },
-  ref
-) {
-  return (
-    <div
-      ref={ref}
-      style={{
-        position: 'relative',
-        width: IMG_W,
-        height: IMG_H,
-        overflow: 'hidden',
-        background: '#fff',
-        boxSizing: 'border-box',
-        flexShrink: 0,
-      }}
-    >
-      <img
-        src={APOSTILA_BG}
-        alt=""
-        crossOrigin="anonymous"
-        draggable={false}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: IMG_W,
-          height: IMG_H,
-          objectFit: 'fill',
-          pointerEvents: 'none',
-          zIndex: 0,
-          display: 'block',
-        }}
-      />
+function getTopicHeadingBlockHeight(pdf, topic, contentWidth) {
+  if (!topic.heading) return 0;
+  setTitleFont(pdf);
+  const headingLines = wrapText(pdf, topic.heading, contentWidth, 'título de tópico');
+  return headingLines.length * PDF_HEADING_LINE_HEIGHT + PDF_HEADING_RULE_GAP + PDF_HEADING_AFTER_GAP;
+}
 
-      <style>{`
-        .apostila-print-column h2 {
-          margin: 0 0 18px;
-          font-family: Arial, Verdana, sans-serif;
-          font-size: 26px;
-          line-height: 1.35;
-          font-weight: 800;
-          color: #1a2d5a;
-          text-align: left;
-          letter-spacing: 0;
-          hyphens: none;
-          overflow-wrap: normal;
-          word-break: normal;
-        }
-        .apostila-print-column p {
-          margin: 0 0 16px;
-          font-family: Arial, Verdana, sans-serif;
-          font-size: ${FONT_SIZE}px;
-          line-height: ${LINE_HEIGHT};
-          letter-spacing: 0;
-          text-align: left;
-          hyphens: none;
-          overflow-wrap: normal;
-          word-break: normal;
-        }
-        .apostila-print-column strong {
-          font-weight: 800;
-          color: #102348;
-        }
-      `}</style>
+function measureTopicBodyHeight(pdf, topic, contentWidth, bodyFontSize, lineRatio) {
+  setBodyFont(pdf, bodyFontSize);
+  const lineHeight = bodyFontSize * lineRatio;
+  return topic.paragraphs.reduce((height, paragraph, index) => {
+    const lines = wrapText(pdf, paragraph, contentWidth, 'corpo');
+    return height + lines.length * lineHeight + (index < topic.paragraphs.length - 1 ? PDF_PARAGRAPH_GAP : 0);
+  }, 0);
+}
 
-      <DraggableTextLayer
-        position={positions.title}
-        editMode={editMode}
-        onMove={(nextPosition) => onPositionChange?.('title', nextPosition)}
-        zIndex={4}
-      >
-        <div style={{
-          position: 'absolute',
-          top: SQUARE_TOP + 4,
-          left: SQUARE_LEFT,
-          width: SQUARE_W,
-          height: HEADER_ZONE_H - 4,
-          zIndex: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          paddingBottom: 6,
-          pointerEvents: 'none',
-        }}>
-          <div style={{
-            fontFamily: "'Cinzel', Georgia, serif",
-            fontSize: 19,
-            fontWeight: 700,
-            color: '#1a2d5a',
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            lineHeight: 1.2,
-          }}>
-            {lesson.title}
-            {pageNum > 1 && (
-              <span style={{ fontSize: 12, fontWeight: 400, color: '#7a6a3a', marginLeft: 12 }}>
-                · Parte {pageNum}
-              </span>
-            )}
-          </div>
-          <div style={{
-            fontFamily: 'Georgia, serif',
-            fontSize: 11,
-            color: '#7a6a3a',
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            marginTop: 2,
-          }}>
-            {chapterTitle}
-          </div>
-          <div style={{ width: 80, height: 2, background: '#c9a84c', marginTop: 5 }} />
-        </div>
-      </DraggableTextLayer>
+/**
+ * Encontra o maior tamanho de fonte (e, em último caso, a menor entrelinha)
+ * que faz o tópico inteiro caber na área útil de uma única página, garantindo
+ * que ele termine antes da quebra de página.
+ */
+function fitTopicToPage(pdf, topic, layout) {
+  const capacity = layout.contentBottom - layout.contentTop;
+  const bodyCapacity = capacity - getTopicHeadingBlockHeight(pdf, topic, layout.contentWidth);
 
-      <DraggableTextLayer
-        position={positions.text}
-        editMode={editMode}
-        onMove={(nextPosition) => onPositionChange?.('text', nextPosition)}
-        zIndex={2}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: CONTENT_TOP,
-            left: COL_LEFT_X,
-            width: COL_W,
-            height: CONTENT_H,
-            overflow: 'hidden',
-            fontFamily: 'Arial, Verdana, sans-serif',
-            fontSize: FONT_SIZE,
-            lineHeight: LINE_HEIGHT,
-            color: '#1a2d5a',
-            textAlign: 'left',
-            letterSpacing: 0,
-            hyphens: 'none',
-            wordBreak: 'normal',
-            overflowWrap: 'normal',
-          }}
-          className="apostila-print-column"
-          dangerouslySetInnerHTML={{ __html: topicLeft || '' }}
-        />
+  for (let fontSize = PDF_BODY_FONT_SIZE; fontSize >= PDF_BODY_MIN_FONT_SIZE - 0.001; fontSize -= PDF_BODY_FONT_STEP) {
+    const roundedSize = Math.round(fontSize * 10) / 10;
+    if (measureTopicBodyHeight(pdf, topic, layout.contentWidth, roundedSize, PDF_BODY_LINE_RATIO) <= bodyCapacity) {
+      return { fontSize: roundedSize, lineRatio: PDF_BODY_LINE_RATIO, fits: true };
+    }
+  }
 
-        <div
-          style={{
-            position: 'absolute',
-            top: CONTENT_TOP,
-            left: COL_RIGHT_X,
-            width: COL_W,
-            height: CONTENT_H,
-            overflow: 'hidden',
-            fontFamily: 'Arial, Verdana, sans-serif',
-            fontSize: FONT_SIZE,
-            lineHeight: LINE_HEIGHT,
-            color: '#1a2d5a',
-            textAlign: 'left',
-            letterSpacing: 0,
-            hyphens: 'none',
-            wordBreak: 'normal',
-            overflowWrap: 'normal',
-          }}
-          className="apostila-print-column"
-          dangerouslySetInnerHTML={{ __html: topicRight || '' }}
-        />
-      </DraggableTextLayer>
+  for (let ratio = PDF_BODY_LINE_RATIO - 0.03; ratio >= PDF_BODY_MIN_LINE_RATIO - 0.001; ratio -= 0.03) {
+    const roundedRatio = Math.round(ratio * 100) / 100;
+    if (measureTopicBodyHeight(pdf, topic, layout.contentWidth, PDF_BODY_MIN_FONT_SIZE, roundedRatio) <= bodyCapacity) {
+      return { fontSize: PDF_BODY_MIN_FONT_SIZE, lineRatio: roundedRatio, fits: true };
+    }
+  }
 
-      <div style={{
-        position: 'absolute',
-        bottom: 38,
-        right: SQUARE_LEFT + 28,
-        zIndex: 3,
-        fontFamily: 'Georgia, serif',
-        fontSize: 12,
-        color: '#7a6a3a',
-        letterSpacing: 0,
-      }}>
-        Página {pageNum} de {totalPages}
-      </div>
-    </div>
-  );
-});
+  return { fontSize: PDF_BODY_MIN_FONT_SIZE, lineRatio: PDF_BODY_MIN_LINE_RATIO, fits: false };
+}
+
+function renderTopicOnPage({ pdf, topic, layout, fit, onOverflowPage }) {
+  const navy = [30, 58, 95];
+  const gold = [201, 168, 76];
+  let y = layout.contentTop;
+  let activeLayout = layout;
+
+  if (topic.heading) {
+    setTitleFont(pdf);
+    pdf.setTextColor(...navy);
+    const headingLines = wrapText(pdf, topic.heading, activeLayout.contentWidth, 'título de tópico');
+    for (const line of headingLines) {
+      y += PDF_HEADING_LINE_HEIGHT;
+      pdf.text(line, activeLayout.marginLeft, y - PDF_HEADING_LINE_HEIGHT * 0.28, { baseline: 'alphabetic' });
+    }
+    pdf.setDrawColor(...gold);
+    pdf.setLineWidth(0.8);
+    pdf.line(activeLayout.marginLeft, y + PDF_HEADING_RULE_GAP - 3, activeLayout.marginLeft + 64, y + PDF_HEADING_RULE_GAP - 3);
+    y += PDF_HEADING_RULE_GAP + PDF_HEADING_AFTER_GAP;
+  }
+
+  const lineHeight = fit.fontSize * fit.lineRatio;
+  setBodyFont(pdf, fit.fontSize);
+  pdf.setTextColor(38, 52, 64);
+
+  for (let index = 0; index < topic.paragraphs.length; index += 1) {
+    const lines = wrapText(pdf, topic.paragraphs[index], activeLayout.contentWidth, 'corpo');
+    for (const line of lines) {
+      if (y + lineHeight > activeLayout.contentBottom) {
+        // Salvaguarda: se mesmo no ajuste mínimo o tópico não coube, continua
+        // em nova página em vez de cortar conteúdo.
+        activeLayout = onOverflowPage();
+        y = activeLayout.contentTop;
+        setBodyFont(pdf, fit.fontSize);
+        pdf.setTextColor(38, 52, 64);
+      }
+      pdf.text(line, activeLayout.marginLeft, y + lineHeight * 0.72, { baseline: 'alphabetic' });
+      y += lineHeight;
+    }
+    if (index < topic.paragraphs.length - 1) y += PDF_PARAGRAPH_GAP;
+  }
+}
+
+const getTopicPreviewTitle = (topic, index) => {
+  if (topic.heading) return normalizeExtractedApostilaText(topic.heading).replace(/\s+/g, ' ').trim();
+  return `Introdução do capítulo (tópico ${index + 1})`;
+};
 
 export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
-  const [topics, setTopics] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [positions, setPositions] = useState(loadPrintPositions);
-
-  const pageRefs = useRef([React.createRef(), React.createRef(), React.createRef()]);
+  const [topics, setTopics] = useState([]);
 
   useEffect(() => {
-    setTopics(splitIntoTopics(lesson.content));
-    setCurrentPage(0);
+    const printableText = htmlToPrintableText(lesson.content || '');
+    setTopics(groupParagraphsIntoTopics(getPrintableParagraphs(printableText)));
   }, [lesson.content]);
 
-  const pages = [
-    [topics[0] || '', topics[1] || ''],
-    [topics[2] || '', topics[3] || ''],
-    [topics[4] || '', topics[5] || ''],
-  ];
-  const totalPages = 3;
-
-  const handlePositionChange = (layer, nextPosition) => {
-    setPositions((current) => ({
-      ...current,
-      [layer]: normalizePosition(nextPosition),
-    }));
-  };
-
-  const handleSavePositions = () => {
-    savePrintPositions(positions);
-    toast.success('Posições salvas para este modelo.');
-  };
-
-  const handleApplyPositionsToAll = () => {
-    savePrintPositions(positions);
-    toast.success('Posições aplicadas e salvas para todos os modelos.');
-  };
-
-  const handleResetPositions = () => {
-    setPositions(DEFAULT_POSITIONS);
-    savePrintPositions(DEFAULT_POSITIONS);
-    toast.success('Posições redefinidas.');
-  };
-
-  const SCALE = Math.min(0.40, (typeof window !== 'undefined' ? window.innerWidth * 0.86 : 900) / IMG_W);
-
-  const waitImages = (node) => {
-    const imgs = Array.from(node.querySelectorAll('img'));
-    return Promise.all(imgs.map(img =>
-      img.complete && img.naturalWidth > 0
-        ? Promise.resolve()
-        : new Promise(res => { img.onload = res; img.onerror = res; })
-    ));
-  };
-
-  const captureNode = async (node) => {
-    await waitImages(node);
-    const hiRes = await html2canvas(node, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      width: IMG_W,
-      height: IMG_H,
-      windowWidth: IMG_W,
-      windowHeight: IMG_H,
-      scrollX: 0,
-      scrollY: 0,
-      x: 0,
-      y: 0,
-      backgroundColor: '#fff',
-      logging: false,
-      imageTimeout: 15000,
-    });
-    const out = document.createElement('canvas');
-    out.width = IMG_W;
-    out.height = IMG_H;
-    const ctx = out.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(hiRes, 0, 0, IMG_W, IMG_H);
-    return out;
-  };
-
-  const safeName = (lesson.title || 'aula')
+  const safeName = useMemo(() => (lesson.title || 'aula')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
+    .replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase(), [lesson.title]);
 
-  const handleExportPng = async () => {
-    setLoading(true);
-    try {
-      const node = pageRefs.current[currentPage]?.current;
-      if (!node) {
-        toast.error('Página não encontrada.');
-        return;
-      }
-      const canvas = await captureNode(node);
-      canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `apostila-${safeName}-p${currentPage + 1}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast.success('PNG exportado!');
-      }, 'image/png');
-    } catch (e) {
-      toast.error('Erro ao exportar PNG: ' + (e.message || ''));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExportTextPdf = async () => {
+  const handleExportPdf = async () => {
     setLoading(true);
     try {
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PDF_PAGE_WIDTH_PT, PDF_PAGE_HEIGHT_PT], putOnlyUsedFonts: true });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const logoDataUrl = await imageUrlToDataUrl(WR_CERTIFICATE_LOGO);
-      let layout = createApostilaPdfLayout(pageWidth, pageHeight, 1);
-
-      const printableText = htmlToPrintableText(lesson.content);
-      const paragraphs = getPrintableParagraphs(printableText);
 
       pdf.setProperties({
         title: `${lesson.title || 'Aula da apostila'} — ${chapterTitle || 'Apostila'}`,
-        subject: 'Apostila de estudos em PDF A4 retrato',
+        subject: 'Apostila de estudos em PDF A4 retrato — um tópico por página',
         creator: 'WR EduConnect',
       });
 
-      drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle, pageNumber: 1 });
-      setBodyFont(pdf);
-      pdf.setTextColor(38, 52, 64);
-
       let activePageNumber = 1;
-      let cursor = { y: layout.contentTop };
-      const prepareTextPage = () => {
-        activePageNumber += 1;
-        layout = createApostilaPdfLayout(pageWidth, pageHeight, activePageNumber);
+      const drawFrame = () => {
         drawApostilaPdfPageFrame({ pdf, pageWidth, pageHeight, logoDataUrl, lessonTitle: lesson.title, chapterTitle, pageNumber: activePageNumber });
-        setBodyFont(pdf);
-        pdf.setTextColor(38, 52, 64);
-        return layout;
+        return createApostilaPdfLayout(pageWidth, pageHeight, activePageNumber);
+      };
+      const addContinuationPage = () => {
+        pdf.addPage('a4', 'portrait');
+        activePageNumber += 1;
+        return drawFrame();
       };
 
-      if (paragraphs.length === 0) {
+      let layout = drawFrame();
+
+      if (!topics.length) {
         setBodyFont(pdf);
-        const emptyLines = wrapText(pdf, 'Esta aula ainda não possui conteúdo para exportar.', layout.contentWidth, 'mensagem vazia');
-        emptyLines.forEach((line, lineIndex) => pdf.text(line, layout.marginLeft, cursor.y + lineIndex * layout.lineHeight));
+        pdf.setTextColor(38, 52, 64);
+        wrapText(pdf, 'Esta aula ainda não possui conteúdo para exportar.', layout.contentWidth, 'mensagem vazia')
+          .forEach((line, lineIndex) => pdf.text(line, layout.marginLeft, layout.contentTop + lineIndex * PDF_BODY_LINE_RATIO * PDF_BODY_FONT_SIZE));
       } else {
-        for (let index = 0; index < paragraphs.length; index += 1) {
-          const paragraph = paragraphs[index];
-          const isHeading = isApostilaPdfTopicHeading(paragraph);
-          let forcePageBreak = false;
-
-          if (isHeading) {
-            const nextParagraph = paragraphs.slice(index + 1).find((candidate) => !isApostilaPdfTopicHeading(candidate));
-            const headingAndBodyPreviewHeight = getParagraphPdfHeight({ pdf, paragraph, layout, isHeading: true })
-              + (nextParagraph ? getBodyPreviewPdfHeight({ pdf, paragraph: nextParagraph, layout }) : 0);
-            const isAtPageStart = cursor.y <= layout.contentTop + 0.25;
-            forcePageBreak = !isAtPageStart && cursor.y + headingAndBodyPreviewHeight > layout.contentBottom;
-          }
-
-          cursor = addWrappedParagraphToPdf({ pdf, paragraph, cursor, layout, onPageBreak: prepareTextPage, forcePageBreak });
+        for (let index = 0; index < topics.length; index += 1) {
+          if (index > 0) layout = addContinuationPage();
+          const topic = topics[index];
+          const fit = fitTopicToPage(pdf, topic, layout);
+          renderTopicOnPage({ pdf, topic, layout, fit, onOverflowPage: addContinuationPage });
         }
       }
 
@@ -1126,7 +618,7 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
       }
 
       pdf.save(`apostila-${safeName}-a4-retrato.pdf`);
-      toast.success('PDF A4 retrato exportado com layout corrigido!');
+      toast.success('PDF exportado: um tópico por página, sem quebras no meio do tópico.');
     } catch (e) {
       toast.error('Erro ao exportar PDF: ' + (e.message || ''));
     } finally {
@@ -1134,164 +626,71 @@ export default function ApostilaPrintModal({ lesson, chapterTitle, onClose }) {
     }
   };
 
-  const handleExportAllPng = async () => {
-    setLoading(true);
-    try {
-      for (let i = 0; i < totalPages; i++) {
-        const node = pageRefs.current[i]?.current;
-        if (!node) continue;
-        const canvas = await captureNode(node);
-        await new Promise((resolve) => {
-          canvas.toBlob((blob) => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `apostila-${safeName}-p${i + 1}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            setTimeout(resolve, 400);
-          }, 'image/png');
-        });
-      }
-      toast.success('Todas as 3 páginas exportadas como PNG!');
-    } catch (e) {
-      toast.error('Erro: ' + (e.message || ''));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/82 backdrop-blur-sm p-3">
-      <div
-        className="flex flex-wrap items-center gap-2 mb-3 w-full justify-center"
-        style={{ maxWidth: IMG_W * SCALE + 40 }}
-      >
-        <button onClick={onClose} className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors shrink-0">
-          <X size={15} /> Fechar
-        </button>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-            disabled={currentPage === 0}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 transition"
-          >
-            <ChevronLeft size={15} className="text-white" />
-          </button>
-          <span className="text-white/70 text-sm min-w-[80px] text-center">
-            Pág. {currentPage + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-            disabled={currentPage >= totalPages - 1}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 transition"
-          >
-            <ChevronRight size={15} className="text-white" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/82 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-xl max-h-[88vh] overflow-y-auto rounded-2xl border border-emerald-500/30 bg-card shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700">
+              <FileText size={18} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground">Versão impressa em PDF</h2>
+              <p className="text-xs text-muted-foreground">A4 retrato · layout profissional · um tópico por página</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="Fechar">
+            <X size={16} />
           </button>
         </div>
 
-        <button
-          onClick={() => setEditMode((value) => !value)}
-          className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-bold transition-colors ${editMode ? 'border-emerald-400 bg-emerald-500/20 text-emerald-100' : 'border-white/20 bg-white/10 text-white hover:bg-white/20'}`}
-        >
-          <Move size={14} /> {editMode ? 'Movendo itens' : 'Mover itens'}
-        </button>
-        {editMode && (
-          <>
-            <button
-              onClick={handleSavePositions}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors"
-            >
-              <Save size={14} /> Salvar posições
-            </button>
-            <button
-              onClick={handleApplyPositionsToAll}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors"
-            >
-              <Save size={14} /> Reposicionar para todos
-            </button>
-            <button
-              onClick={handleResetPositions}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold text-white hover:bg-white/20 transition-colors"
-            >
-              <RotateCcw size={14} /> Resetar
-            </button>
-            <span className="text-xs text-white/60">Título X: {positions.title.x}px · Y: {positions.title.y}px | Texto X: {positions.text.x}px · Y: {positions.text.y}px</span>
-          </>
-        )}
+        <div className="space-y-4 p-5">
+          <div className="rounded-xl border border-border bg-secondary/20 p-4">
+            <p className="text-sm font-bold text-foreground leading-tight">{lesson.title || 'Aula da apostila'}</p>
+            <p className="text-xs text-muted-foreground mt-1">{chapterTitle || 'Apostila'}</p>
+          </div>
 
-        <button
-          onClick={handleExportPng}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-bold text-white hover:bg-white/20 disabled:opacity-50 transition-colors"
-        >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <Image size={14} />}
-          PNG (esta pág.)
-        </button>
-        <button
-          onClick={handleExportTextPdf}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
-        >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
-          PDF A4 retrato
-        </button>
-        <button
-          onClick={handleExportAllPng}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors"
-        >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
-          PNG (3 páginas)
-        </button>
-      </div>
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs leading-relaxed text-muted-foreground">
+            Cada tópico do capítulo ocupa exatamente uma página do PDF: começa no topo da página e o texto é
+            ajustado automaticamente para terminar antes da quebra — inclusive o último tópico. A exportação em
+            PNG foi descontinuada; a impressão acontece somente pelo PDF.
+          </div>
 
-      <div
-        className="rounded-xl overflow-hidden border border-white/10 shadow-2xl"
-        style={{ width: IMG_W * SCALE, height: IMG_H * SCALE, flexShrink: 0 }}
-      >
-        <div style={{ width: IMG_W, height: IMG_H, transform: `scale(${SCALE})`, transformOrigin: 'top left', pointerEvents: editMode ? 'auto' : 'none' }}>
-          <ApostilaPage
-            lesson={lesson}
-            chapterTitle={chapterTitle}
-            topicLeft={pages[currentPage][0]}
-            topicRight={pages[currentPage][1]}
-            pageNum={currentPage + 1}
-            totalPages={totalPages}
-            positions={positions}
-            editMode={editMode}
-            onPositionChange={handlePositionChange}
-          />
+          {topics.length > 0 ? (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Páginas do PDF</p>
+              <ul className="space-y-1">
+                {topics.map((topic, index) => (
+                  <li key={index} className="flex items-center gap-2 rounded-lg border border-border bg-secondary/10 px-3 py-2 text-xs text-foreground/90">
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 font-bold text-emerald-500">{index + 1}</span>
+                    <span className="truncate">{getTopicPreviewTitle(topic, index)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-400">
+              <BookOpen size={14} /> Esta aula ainda não possui conteúdo para exportar.
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleExportPdf}
+              disabled={loading || !topics.length}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {loading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+              Baixar PDF (A4 retrato)
+            </button>
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-secondary/30 px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-secondary"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
-      </div>
-
-      <div
-        style={{
-          position: 'fixed',
-          left: -9999,
-          top: 0,
-          width: IMG_W,
-          pointerEvents: 'none',
-          zIndex: -10,
-          opacity: 0,
-        }}
-      >
-        {pages.map((pair, i) => (
-          <ApostilaPage
-            key={i}
-            lesson={lesson}
-            chapterTitle={chapterTitle}
-            topicLeft={pair[0]}
-            topicRight={pair[1]}
-            pageNum={i + 1}
-            totalPages={totalPages}
-            ref={pageRefs.current[i]}
-            positions={positions}
-          />
-        ))}
       </div>
     </div>
   );
