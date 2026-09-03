@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
@@ -7,7 +7,6 @@ import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { Play, Plus, BookOpen, Video, FileText, Globe, GripVertical } from 'lucide-react';
-import LessonProgressPanel from '@/components/lessons/LessonProgressPanel';
 import ModuleBlock from '@/components/lessons/ModuleBlock';
 import ModuleCompletionCelebration from '@/components/lessons/ModuleCompletionCelebration';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -75,13 +74,13 @@ export default function Lessons() {
   const { user: session } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [expandedLesson, setExpandedLesson] = useState(null);
-  const [viewProgressLesson, setViewProgressLesson] = useState(null);
   const [summaryDraft, setSummaryDraft] = useState({});
   const [uploadStatus, setUploadStatus] = useState({});
   const [uploadFile, setUploadFile] = useState({});
@@ -137,6 +136,11 @@ export default function Lessons() {
       return isTeacher ? records : records.filter(p => studentIdentifiers.includes(normalizeStudentId(p.student_email)));
     },
     enabled: isTeacher || studentIdentifiers.length > 0,
+  });
+  const { data: lessonScores = [] } = useQuery({
+    queryKey: ['lesson-score-feedback', studentIdentifiers.join('|')],
+    queryFn: () => base44.entities.ScoreItem.filter({ student_email: session?.email || session?.code || '' }, '-updated_date', 500),
+    enabled: !isTeacher && studentIdentifiers.length > 0,
   });
 
   const createMutation = useMutation({
@@ -372,10 +376,6 @@ export default function Lessons() {
   const progressPct = visibleLessons.length > 0 ? Math.round((watchedCount / visibleLessons.length) * 100) : 0;
   const isSaveButtonDisabled = !form.title || createMutation.isPending || updateMutation.isPending;
 
-  if (viewProgressLesson) {
-    return <LessonProgressPanel lesson={viewProgressLesson} onBack={() => setViewProgressLesson(null)} />;
-  }
-
   return (
     <div className="app-page app-page--wide animate-fade-in-up">
       {/* Celebration overlay */}
@@ -577,7 +577,8 @@ export default function Lessons() {
               onEdit={openEdit}
               onDelete={deleteMutation.mutate}
               onToggleVisibility={(lesson) => toggleVisibilityMutation.mutate({ id: lesson.id, isHidden: !lesson.is_hidden })}
-              onViewProgress={setViewProgressLesson}
+              onViewProgress={(lesson) => navigate(`/adm/lessons/answer?lesson=${encodeURIComponent(lesson.id)}`)}
+              lessonScores={lessonScores}
               moduleCompletions={moduleCompletions}
               onCompleteModule={handleCompleteModule}
               moduleLocked={!isTeacher && moduleUnlocked[moduleEntry.moduleIndex] === false}

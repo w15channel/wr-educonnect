@@ -7,12 +7,9 @@
 import React, { useState } from 'react';
 import {
   CheckCircle, Circle, ChevronDown, ChevronUp, Play, FileText, Globe,
-  MessageSquare, Pencil, Trash2, BookOpen, FileDown, Link, Clock, Trophy, Eye, EyeOff
+  MessageSquare, Pencil, Trash2, FileDown, Link, Clock, Trophy, Eye, EyeOff
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { MODULE_THEMES } from './ModuleCompletionCelebration';
-import MinLengthHint from '@/components/shared/MinLengthHint';
 import { isTextLongEnough } from '@/lib/minTextLength';
 import LessonShortcuts from './LessonShortcuts';
 import LessonSummaryField from './LessonSummaryField';
@@ -42,6 +39,7 @@ export default function ModuleBlock({
   onDelete,
   onToggleVisibility,
   onViewProgress,
+  lessonScores = [],
   moduleCompletions,    // Set of completed module indices
   onCompleteModule,     // (moduleIndex) => void
   moduleLocked = false, // módulo bloqueado até o anterior ser concluído + prova feita
@@ -304,6 +302,19 @@ export default function ModuleBlock({
                           onSave={onSaveSummary}
                         />
                         <LessonShortcuts lesson={lesson} />
+                        {(() => {
+                          const evaluation = lessonScores.find((item) => item.category === 'lesson' && item.ref_id === lesson.id && item.verified);
+                          if (!evaluation) return null;
+                          return (
+                            <div className="rounded-xl border border-purple-200 bg-purple-50 p-3" role="status">
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <p className="text-[10px] font-black tracking-wide text-purple-700">AVALIAÇÃO DO PROFESSOR</p>
+                                <span className="text-xs font-black text-purple-700">Nota: {Number(evaluation.score || 0).toFixed(1).replace('.', ',')}/{Number(evaluation.max_score || 2).toFixed(1).replace('.', ',')}</span>
+                              </div>
+                              {evaluation.notes && <p className="text-sm leading-relaxed text-purple-950">{evaluation.notes}</p>}
+                            </div>
+                          );
+                        })()}
                         {(() => {
                           const canWatch = isTextLongEnough(summaryDraft[lesson.id] ?? prog?.summary ?? '');
                           if (isWatched) return null;
