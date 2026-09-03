@@ -7,11 +7,11 @@ async function authenticatedUser(base44, payload) {
   const email = norm(payload.actor_email);
   const code = String(payload.access_code || '').trim();
   const codeId = String(payload.access_code_id || '').trim();
-  if (!email || (!code && !codeId)) throw new Error('Acesso não autorizado.');
+  if (!email || !code) throw new Error('Acesso não autorizado.');
   const matches = codeId
     ? [await base44.asServiceRole.entities.AccessCode.get(codeId).catch(() => null)].filter(Boolean)
     : await base44.asServiceRole.entities.AccessCode.filter({ student_email: email }, '-created_date', 10);
-  const access = matches.find((item) => norm(item.student_email) === email && (!code || item.code === code) && item.is_active !== false);
+  const access = matches.find((item) => norm(item.student_email) === email && item.code === code && item.is_active !== false);
   if (!access) throw new Error('Acesso não autorizado.');
   return { email, name: access.profile_name || access.student_name, full_name: access.profile_name || access.student_name, course: access.course };
 }
