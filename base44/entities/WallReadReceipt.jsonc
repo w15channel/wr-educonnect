@@ -1,0 +1,13 @@
+{
+  "name": "WallReadReceipt",
+  "type": "object",
+  "description": "Confirmação individual de leitura de um destaque temporário do Mural de Superação.",
+  "properties": {
+    "dedupe_key": { "type": "string" },
+    "reader_email": { "type": "string" },
+    "highlight_key": { "type": "string" },
+    "read_at": { "type": "string", "format": "date-time" }
+  },
+  "required": ["dedupe_key", "reader_email", "highlight_key", "read_at"],
+  "rls": { "create": false, "read": false, "update": false, "delete": false }
+}

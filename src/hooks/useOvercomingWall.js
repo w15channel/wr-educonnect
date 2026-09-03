@@ -102,6 +102,23 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     enabled: on && session?.role !== 'admin' && !!session?.email,
   });
 
+  const { data: readReceipts = [] } = useQuery({
+    queryKey: ['overcoming-wall-reads', session?.email],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('manageOvercomingWall', {
+        action: 'listReads', actor_email: session?.email, access_code: session?.code, access_code_id: session?.codeId,
+      });
+      return response.data?.records || [];
+    },
+    enabled: on && session?.role !== 'admin' && !!session?.email && !!(session?.code || session?.codeId),
+  });
+
+  const { data: monitorHistory = [] } = useQuery({
+    queryKey: ['overcoming-wall-monitors', activeCourse],
+    queryFn: () => base44.entities.MonitorHistory.filter({ course: activeCourse }, '-period_start', 100),
+    enabled: on,
+  });
+
   const courseEmails = useMemo(
     () => new Set(accessCodes.filter((code) => code.student_email && (code.course === activeCourse || (activeCourse === 'tcc' && !code.course))).map((code) => code.student_email)),
     [accessCodes, activeCourse]
@@ -134,6 +151,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       studentName: getStudentName(record.student_email),
       mentionedEmails: record.mentioned_emails || [],
       isCollective: record.kind === 'monitor',
+      kind: record.kind,
       content: record.message,
       occurredAt: record.occurred_at || record.created_date,
     }));
@@ -199,7 +217,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
   const sharedPublications = institutionalRecords?.shared || [];
 
   const reactMutation = useMutation({
-    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'react', actor_email: session?.email, access_code: session?.code, ...payload }),
+    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'react', actor_email: session?.email, access_code: session?.code, access_code_id: session?.codeId, ...payload }),
     onSuccess: async (response) => {
       await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-reactions'] });
       toast.success(response?.data?.duplicate ? 'Você já registrou esta reação.' : 'Sua reação foi enviada!');
@@ -208,7 +226,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
   });
 
   const replyMutation = useMutation({
-    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'reply', actor_email: session?.email, access_code: session?.code, ...payload }),
+    mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'reply', actor_email: session?.email, access_code: session?.code, access_code_id: session?.codeId, ...payload }),
     onSuccess: () => toast.success('Resposta enviada somente para a pessoa escolhida.'),
     onError: (error) => toast.error(error?.message || 'Não foi possível enviar a resposta.'),
   });
@@ -230,6 +248,14 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
 
   const refreshMessages = () => queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
 
+  const markHighlightReadMutation = useMutation({
+    mutationFn: (highlight_key) => base44.functions.invoke('manageOvercomingWall', {
+      action: 'markRead', actor_email: session?.email, access_code: session?.code, access_code_id: session?.codeId, highlight_key,
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['overcoming-wall-reads', session?.email] }),
+    onError: (error) => toast.error(error?.message || 'Não foi possível marcar o lembrete como lido.'),
+  });
+
   return {
     chatSessionId,
     accessCodes,
@@ -238,6 +264,9 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     reactions,
     sharedPublications,
     achievementPosts,
+    readReceipts,
+    monitorHistory,
+    markHighlightReadMutation,
     reactMutation,
     replyMutation,
     sendMessageMutation,

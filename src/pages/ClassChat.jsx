@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check, PartyPopper, Hand, Share2 } from 'lucide-react';
+import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check, PartyPopper, Hand, Share2, Pin, CheckCheck } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useQueryClient } from '@tanstack/react-query';
 import useProfessorAutoReactions from '@/hooks/useProfessorAutoReactions';
@@ -10,6 +10,7 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
+import { highlightKey, MONITOR_MEDALS, splitWeeklyHighlights } from '@/lib/chatHighlights';
 
 const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
@@ -79,6 +80,7 @@ export default function ClassChat() {
   const sharedPublications = wall.sharedPublications;
   const reactMutation = wall.reactMutation;
   const replyMutation = wall.replyMutation;
+  const readKeys = new Set(wall.readReceipts.map((receipt) => receipt.highlight_key));
 
   // Reações espontâneas do professor às publicações que chegam ao mural.
   useProfessorAutoReactions({ enabled: isAdmin, session, feed: wall.feed, reactions: wallReactions });
@@ -221,7 +223,31 @@ export default function ClassChat() {
   const onlineStudents = otherStudents.filter(isStudentOnline);
   const awayStudents = otherStudents.filter(c => !isStudentOnline(c));
   // A leitura começa pelas novidades, sem deslocar o aluno para o fim da lista.
-  const wallFeed = wall.feed;
+  const { pinned: pinnedHighlights, regular: regularFeed } = splitWeeklyHighlights(wall.feed, readKeys);
+  const wallFeed = [...pinnedHighlights, ...regularFeed];
+
+  const getMonitor = (email, occurredAt) => {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const date = String(occurredAt || '').slice(0, 10);
+    return wall.monitorHistory.find((monitor) => String(monitor.student_email || '').trim().toLowerCase() === normalizedEmail
+      && (!monitor.period_start || date >= monitor.period_start)
+      && (!monitor.period_end || date <= monitor.period_end));
+  };
+
+  const monitorMention = (email, occurredAt) => {
+    const monitor = getMonitor(email, occurredAt);
+    const medal = MONITOR_MEDALS[monitor?.rank_position];
+    const profile = getProfile(email);
+    const code = codes.find((item) => String(item.student_email || '').trim().toLowerCase() === String(email || '').trim().toLowerCase());
+    if (!medal) return null;
+    return <ClickableStudent key={email} email={email} className={`monitor-mention monitor-mention--${medal.tone}`}>
+      <span className={`monitor-avatar-ring monitor-avatar-ring--${medal.tone}`}>
+        {code?.profile_photo_url ? <img src={code.profile_photo_url} alt="" className="h-full w-full rounded-full object-cover" /> : <span aria-hidden="true">{profile.emoji}</span>}
+      </span>
+      <span className="min-w-0"><span className="block truncate font-bold">{profile.name || monitor.student_name || email}</span><span className="block text-[9px] font-semibold opacity-75">Monitor(a) da semana • {medal.label}</span></span>
+      <span className="text-base" aria-label={`Medalha de ${medal.label}`}>{medal.emoji}</span>
+    </ClickableStudent>;
+  };
 
   const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => {
     const isOwnContent = ownerEmail === session?.email || (mentionedEmails || []).includes(session?.email);
@@ -280,9 +306,12 @@ export default function ClassChat() {
             <div className="w-full lg:w-[68%] h-[65%] lg:h-full border-b lg:border-b-0 lg:border-r border-[#abc0ea] flex flex-col bg-white min-h-0">
               <div className="px-3 py-2 text-[11px] bg-gradient-to-r from-rose-50 to-amber-50 border-b border-rose-100 text-[#815568]"><strong>Inspire a turma.</strong> Compartilhe uma conquista, uma palavra de força ou um passo importante da sua jornada.</div>
               <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-gradient-to-b from-[#fffafb] to-white">
+                {pinnedHighlights.length > 0 && <div className="sticky top-0 z-10 -mx-1 mb-2 flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/95 px-2.5 py-1.5 text-[10px] font-semibold text-indigo-800 shadow-sm backdrop-blur"><Pin size={11} aria-hidden="true"/> Lembretes importantes • fixados por até 7 dias</div>}
                 {wallFeed.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : wallFeed.map((msg) => {
+                  const isPinned = pinnedHighlights.includes(msg);
+                  const readButton = isPinned && session?.role !== 'admin' ? <button type="button" onClick={() => wall.markHighlightReadMutation.mutate(highlightKey(msg))} disabled={wall.markHighlightReadMutation.isPending} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-violet-300 bg-white/90 px-2 py-1 text-[10px] font-bold text-violet-800 transition hover:bg-violet-100 disabled:opacity-50" aria-label="Marcar lembrete como lido e desafixar"><CheckCheck size={12}/>Marcar como lido</button> : null;
                   if (msg.feedType === 'personal') {
-                    return <div key={msg.id} className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-relaxed text-violet-950" role="status"><span className="font-bold">{msg.title || 'Aviso para você'}</span><p className="whitespace-pre-wrap break-words">{msg.message}</p>{msg.related_email && <p className="mt-1 font-semibold text-violet-700">Contato: <ClickableStudent email={msg.related_email} className="text-violet-700">{msg.related_name || msg.related_email}</ClickableStudent></p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>;
+                    return <div key={msg.id} className={`rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-relaxed text-violet-950 ${isPinned ? 'ring-2 ring-violet-200 shadow-md' : ''}`} role="status"><div className="flex items-start gap-2"><div className="min-w-0 flex-1"><span className="font-bold">{isPinned && <Pin size={11} className="mr-1 inline" aria-hidden="true"/>}{msg.title || 'Aviso para você'}</span><p className="whitespace-pre-wrap break-words">{msg.message}</p>{msg.related_email && <p className="mt-1 font-semibold text-violet-700">Contato: <ClickableStudent email={msg.related_email} className="text-violet-700">{msg.related_name || msg.related_email}</ClickableStudent></p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>{readButton}</div></div>;
                   }
                   if (msg.feedType === 'notification') {
                     return <div key={msg.id} className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-relaxed text-violet-950" role="status"><span className="font-bold">{msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista'}</span><p>{msg.message}</p>{msg.reply_text && <p className="mt-1 rounded-md bg-white/70 px-2 py-1">“{msg.reply_text}”</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>;
@@ -292,7 +321,7 @@ export default function ClassChat() {
                   }
                   if (msg.feedType === 'achievement') {
                     const shared = sharedPublications.some((post) => post.source_type === 'achievement' && post.source_id === msg.id);
-                    return <div key={msg.id} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black"><div className="flex items-start gap-2"><p className="min-w-0 flex-1"><span aria-hidden="true">🏆 </span><strong className="text-black">{msg.isCollective ? 'Conquista da turma!' : msg.studentName || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></p>{isAdmin && <button type="button" onClick={() => shareToWall(msg, 'achievement')} disabled={sharingMessageId === msg.id || shared} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-bold text-amber-800 transition hover:bg-amber-100 disabled:cursor-default disabled:opacity-60" title="Compartilhar conquista na dashboard dos alunos"><Share2 size={12}/>{shared ? 'No mural' : sharingMessageId === msg.id ? 'Enviando...' : 'Compartilhar'}</button>}</div>{reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails)}</div>;
+                    return <div key={msg.id} className={`rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 dark:border-white dark:bg-white dark:text-black ${msg.isCollective ? 'monitor-celebration' : ''} ${isPinned ? 'ring-2 ring-amber-300 shadow-md' : ''}`}><div className="relative flex items-start gap-2"><div className="min-w-0 flex-1"><p><span aria-hidden="true">🏆 </span><strong className="text-black">{msg.isCollective ? 'Monitores da semana!' : msg.studentName || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></p>{msg.isCollective && <div className="mt-2 grid gap-1.5 sm:grid-cols-3">{(msg.mentionedEmails || []).map((email) => monitorMention(email, msg.occurredAt))}</div>}</div>{readButton}{isAdmin && <button type="button" onClick={() => shareToWall(msg, 'achievement')} disabled={sharingMessageId === msg.id || shared} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-bold text-amber-800 transition hover:bg-amber-100 disabled:cursor-default disabled:opacity-60" title="Compartilhar conquista na dashboard dos alunos"><Share2 size={12}/>{shared ? 'No mural' : sharingMessageId === msg.id ? 'Enviando...' : 'Compartilhar'}</button>}</div>{reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails)}</div>;
                   }
                   const isMe = msg.author_email === session?.email;
                   const profile = getProfile(msg.author_email);

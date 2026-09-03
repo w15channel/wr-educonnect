@@ -6,9 +6,12 @@ const dateOf = (record) => record.updated_date || record.submitted_at || record.
 async function authenticatedUser(base44, payload) {
   const email = norm(payload.actor_email);
   const code = String(payload.access_code || '').trim();
-  if (!email || !code) throw new Error('Acesso não autorizado.');
-  const matches = await base44.asServiceRole.entities.AccessCode.filter({ student_email: email }, '-created_date', 10);
-  const access = matches.find((item) => item.code === code && item.is_active !== false);
+  const codeId = String(payload.access_code_id || '').trim();
+  if (!email || (!code && !codeId)) throw new Error('Acesso não autorizado.');
+  const matches = codeId
+    ? [await base44.asServiceRole.entities.AccessCode.get(codeId).catch(() => null)].filter(Boolean)
+    : await base44.asServiceRole.entities.AccessCode.filter({ student_email: email }, '-created_date', 10);
+  const access = matches.find((item) => norm(item.student_email) === email && (!code || item.code === code) && item.is_active !== false);
   if (!access) throw new Error('Acesso não autorizado.');
   return { email, name: access.profile_name || access.student_name, full_name: access.profile_name || access.student_name, course: access.course };
 }
@@ -60,6 +63,18 @@ async function syncAchievements(base44, user, requestedCourse) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({})); const user = await authenticatedUser(base44, payload);
+    if (payload.action === 'listReads') {
+      const records = await base44.asServiceRole.entities.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);
+      return Response.json({ success: true, records });
+    }
+    if (payload.action === 'markRead') {
+      const highlightKey = String(payload.highlight_key || '').trim().slice(0, 400);
+      if (!/^(personal|achievement):/.test(highlightKey)) return Response.json({ error: 'Destaque inválido.' }, { status: 400 });
+      const dedupeKey = `${user.email}:${highlightKey}`;
+      const prior = await base44.asServiceRole.entities.WallReadReceipt.filter({ dedupe_key: dedupeKey }, '-read_at', 1);
+      if (!prior.length) await base44.asServiceRole.entities.WallReadReceipt.create({ dedupe_key: dedupeKey, reader_email: user.email, highlight_key: highlightKey, read_at: new Date().toISOString() });
+      return Response.json({ success: true, duplicate: prior.length > 0 });
+    }
     if (payload.action === 'sync') return Response.json({ success: true, ...(await syncAchievements(base44, user, payload.course)) });
     if (payload.action === 'publish') {
       const kind = String(payload.kind || 'achievement').trim().slice(0, 40);

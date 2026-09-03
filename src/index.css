@@ -892,6 +892,27 @@
     padding-block: clamp(1.1rem, 1.5vw, 2rem);
   }
 }
+
+@keyframes monitor-glow {
+  0%, 100% { box-shadow: 0 0 0 2px var(--monitor-ring), 0 0 7px var(--monitor-glow); }
+  50% { box-shadow: 0 0 0 3px var(--monitor-ring), 0 0 15px var(--monitor-glow); }
+}
+
+@keyframes monitor-background {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.monitor-celebration { background: linear-gradient(110deg, #fff8dc, #fff, #f8f1e7, #fff8dc); background-size: 250% 250%; animation: monitor-background 8s ease-in-out infinite; }
+.monitor-mention { display: flex; min-width: 0; align-items: center; gap: .45rem; border: 1px solid var(--monitor-ring); border-radius: .7rem; padding: .4rem .5rem; color: #292524; background: linear-gradient(110deg, var(--monitor-soft), #fff, var(--monitor-soft)); background-size: 220% 220%; animation: monitor-background 7s ease-in-out infinite; }
+.monitor-mention--gold, .monitor-avatar-ring--gold { --monitor-ring: #d6a514; --monitor-glow: rgba(234, 179, 8, .46); --monitor-soft: #fff4bd; }
+.monitor-mention--silver, .monitor-avatar-ring--silver { --monitor-ring: #9ca3af; --monitor-glow: rgba(148, 163, 184, .48); --monitor-soft: #edf0f4; }
+.monitor-mention--bronze, .monitor-avatar-ring--bronze { --monitor-ring: #b76e3c; --monitor-glow: rgba(180, 83, 9, .38); --monitor-soft: #f7dfce; }
+.monitor-avatar-ring { display: grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; overflow: hidden; border-radius: 9999px; background: white; animation: monitor-glow 2.8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .monitor-celebration, .monitor-mention, .monitor-avatar-ring { animation: none; }
+}
 /* Rich text editor used by the Apostila admin screen. */
 .apostila-rich-editor .ql-toolbar {
   border: 0;
