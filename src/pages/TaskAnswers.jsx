@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, MessageSquare, Search, Shuffle, Sparkles, WandSparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronDown, ClipboardCheck, ExternalLink, MessageSquare, Search, Shuffle, Sparkles, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
@@ -51,33 +51,41 @@ function SubmissionCard({ submission, task, scoreItem, reviewerEmail }) {
   const graded = submission.status === 'graded';
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-bold text-foreground truncate">{submission.student_name || submission.student_email || 'Aluno sem identificação'}</p>
-          <p className="text-xs text-muted-foreground mt-1">{task.title} · {submission.student_email}</p>
-        </div>
-        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold ${graded ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
-          {graded ? <><CheckCircle2 size={11} /> Corrigido · {formatScore(submission.grade ?? SCORE_RULES.task)} pts</> : 'Aguardando correção'}
-        </span>
-      </div>
+    <article className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+      <details className="group">
+        <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3 p-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset sm:p-5 [&::-webkit-details-marker]:hidden">
+          <div className="min-w-0">
+            <p className="font-bold text-foreground truncate">{submission.student_name || submission.student_email || 'Aluno sem identificação'}</p>
+            <p className="text-xs text-muted-foreground mt-1">{task.title} · {submission.student_email}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold ${graded ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+              {graded ? <><CheckCircle2 size={11} /> Corrigido · {formatScore(submission.grade ?? SCORE_RULES.task)} pts</> : 'Aguardando correção'}
+            </span>
+            <ChevronDown size={18} aria-hidden="true" className="text-muted-foreground transition-transform group-open:rotate-180" />
+            <span className="sr-only">Expandir resposta do aluno</span>
+          </div>
+        </summary>
 
-      <div className="mt-4 rounded-xl bg-blue-500/5 border border-blue-500/15 p-3">
-        <p className="text-[10px] font-black tracking-wide text-blue-600 mb-1 flex items-center gap-1"><MessageSquare size={11} /> RESPOSTA DO ALUNO</p>
-        <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/80">{submission.comment && !/^Aluno:/.test(submission.comment) ? submission.comment : 'Entrega enviada por arquivo.'}</p>
-        {submission.file_url && <a href={submission.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline"><ExternalLink size={12} /> Abrir arquivo entregue</a>}
-      </div>
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
+          <div className="mt-4 rounded-xl bg-blue-500/5 border border-blue-500/15 p-3">
+            <p className="text-[10px] font-black tracking-wide text-blue-600 mb-1 flex items-center gap-1"><MessageSquare size={11} /> RESPOSTA DO ALUNO</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/80">{submission.comment && !/^Aluno:/.test(submission.comment) ? submission.comment : 'Entrega enviada por arquivo.'}</p>
+            {submission.file_url && <a href={submission.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline"><ExternalLink size={12} /> Abrir arquivo entregue</a>}
+          </div>
 
-      <div className="mt-4 pt-4 border-t border-border">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-          <label className="text-xs font-semibold text-muted-foreground" htmlFor={`feedback-${submission.id}`}>Resposta de parabenização · {formatScore(task.type === 'quiz' ? SCORE_RULES.quiz : SCORE_RULES.task)} pontos</label>
-          <button type="button" onClick={() => setFeedback(randomLessonFeedback())} className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"><Shuffle size={11} /> Sortear outra resposta</button>
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <label className="text-xs font-semibold text-muted-foreground" htmlFor={`feedback-${submission.id}`}>Resposta de parabenização · {formatScore(task.type === 'quiz' ? SCORE_RULES.quiz : SCORE_RULES.task)} pontos</label>
+              <button type="button" onClick={() => setFeedback(randomLessonFeedback())} className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"><Shuffle size={11} /> Sortear outra resposta</button>
+            </div>
+            <Textarea id={`feedback-${submission.id}`} value={feedback} onChange={(event) => setFeedback(event.target.value)} rows={3} className="text-sm" />
+            <Button onClick={() => mutation.mutate()} disabled={!feedback.trim() || mutation.isPending} size="sm" className="w-full mt-2 gap-1.5">
+              <Sparkles size={13} /> {mutation.isPending ? 'Publicando...' : graded ? 'Atualizar resposta e pontuação' : 'Responder e pontuar'}
+            </Button>
+          </div>
         </div>
-        <Textarea id={`feedback-${submission.id}`} value={feedback} onChange={(event) => setFeedback(event.target.value)} rows={3} className="text-sm" />
-        <Button onClick={() => mutation.mutate()} disabled={!feedback.trim() || mutation.isPending} size="sm" className="w-full mt-2 gap-1.5">
-          <Sparkles size={13} /> {mutation.isPending ? 'Publicando...' : graded ? 'Atualizar resposta e pontuação' : 'Responder e pontuar'}
-        </Button>
-      </div>
+      </details>
     </article>
   );
 }
@@ -88,7 +96,7 @@ export default function TaskAnswers() {
   const course = session?.course || 'tcc';
   const initialTask = new URLSearchParams(window.location.search).get('task') || 'all';
   const [taskFilter, setTaskFilter] = useState(initialTask);
-  const [statusFilter, setStatusFilter] = useState('pending');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
 
   const { data = {}, isLoading } = useQuery({
@@ -118,11 +126,9 @@ export default function TaskAnswers() {
     if (statusFilter === 'graded' && item.status !== 'graded') return false;
     return `${item.student_name || ''} ${item.student_email || ''} ${task.title} ${item.comment || ''}`.toLowerCase().includes(search.trim().toLowerCase());
   });
-  const pendingVisible = visible.filter((item) => item.status !== 'graded');
-
   const bulkMutation = useMutation({
     mutationFn: async () => {
-      const results = await Promise.allSettled(pendingVisible.map((submission, index) => {
+      const results = await Promise.allSettled(visible.map((submission, index) => {
         const task = taskById.get(submission.task_id);
         return publishReview({ submission, task, feedback: feedbackFor(index), reviewerEmail: session?.email, scoreItem: scoreBySubmission.get(`${submission.student_email}::${submission.task_id}`) });
       }));
@@ -149,12 +155,16 @@ export default function TaskAnswers() {
             <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0"><ClipboardCheck size={20} /></div>
             <div><p className="text-xs uppercase tracking-[0.18em] font-black text-blue-600">Central de correções</p><h1 className="text-2xl font-black text-foreground mt-1">Entregas dos trabalhos</h1><p className="text-sm text-muted-foreground mt-1">Revise, parabenize e pontue todas as entregas sem sair desta tela.</p></div>
           </div>
-          <Button onClick={() => bulkMutation.mutate()} disabled={!pendingVisible.length || bulkMutation.isPending} className="gap-2 sm:min-w-52 shadow-lg shadow-primary/15"><WandSparkles size={16} /> {bulkMutation.isPending ? 'Avaliando entregas...' : `Responder e pontuar ${pendingVisible.length || 'todos'}`}</Button>
+          <div className="sm:text-right">
+            <Button onClick={() => bulkMutation.mutate()} disabled={!visible.length || bulkMutation.isPending} className="gap-2 sm:min-w-52 shadow-lg shadow-primary/15"><WandSparkles size={16} /> {bulkMutation.isPending ? 'Avaliando entregas...' : `Responder e pontuar todos (${visible.length})`}</Button>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">Inclui entregas já corrigidas exibidas no filtro.</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-5 text-xs font-bold"><span className="rounded-full bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5">{pendingCount} para corrigir</span><span className="rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5">{gradedCount} corrigidos</span><span className="rounded-full bg-card border border-border px-3 py-1.5">{LESSON_FEEDBACK_OPTIONS.length} respostas aleatórias</span></div>
       </section>
 
       <div className="flex gap-2 mb-4" role="tablist" aria-label="Status das entregas">
+        <Button variant={statusFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('all')}>Todas ({submissions.length})</Button>
         <Button variant={statusFilter === 'pending' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('pending')}>A corrigir ({pendingCount})</Button>
         <Button variant={statusFilter === 'graded' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('graded')}>Já corrigidos ({gradedCount})</Button>
       </div>
