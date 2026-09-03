@@ -20,6 +20,7 @@ import DiplomaDashboard from './pages/DiplomaDashboard';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
 import LessonAnswers from './pages/LessonAnswers';
+import TaskAnswers from './pages/TaskAnswers';
 import Tasks from './pages/Tasks';
 import Tests from './pages/Tests';
 import Support from './pages/Support';
@@ -80,6 +81,7 @@ function AppRoutesTree() {
         <Route path="lessons/answer" element={<AdminOnly><LessonAnswers /></AdminOnly>} />
         <Route path="live" element={<Navigate to="../apostila" replace />} />
         <Route path="tasks" element={<Tasks mode="tasks" />} />
+        <Route path="tasks/answer" element={<AdminOnly><TaskAnswers /></AdminOnly>} />
         <Route path="tests" element={<Tests />} />
         <Route path="exams" element={<Exams />} />
         <Route path="checklist" element={<Checklist />} />
