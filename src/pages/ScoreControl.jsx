@@ -127,6 +127,17 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
         }
       }
 
+      if (category === 'task' || category === 'quiz') {
+        const submission = submissions.find((sub) => sub.task_id === ref_id);
+        if (submission?.id) {
+          await adminApi.update('TaskSubmission', submission.id, {
+            grade: normalizedScore,
+            feedback: itemNotes || submission.feedback || '',
+            status: 'graded'
+          });
+        }
+      }
+
       return result;
     },
     onMutate: async ({ category, ref_id, ref_title, score, max_score, notes: itemNotes }) => {
@@ -154,6 +165,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       await base44.functions.invoke('populateScoreCache', { student_email: email });
       queryClient.invalidateQueries({ queryKey: ['score-items', email] });
       queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
+      queryClient.invalidateQueries({ queryKey: ['submissions-student', email] });
       queryClient.invalidateQueries({ queryKey: ['exam-subs-student', email] });
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
@@ -374,6 +386,18 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
             {sequencedTasks.filter(t => t.type !== 'quiz').length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma tarefa criada.</p>}
             {sequencedTasks.filter(t => t.type !== 'quiz').map((task) => {
             const sub = submissions.find((s) => s.task_id === task.id);
+            const savedItem = getScoreItem(task.type === 'quiz' ? 'quiz' : 'task', task.id);
+            // TaskSubmission is the source of truth for a correction.  Keep the
+            // detail useful even if ScoreItem creation is delayed or an older
+            // installation never ran the scoring automation.
+            const taskItem = (savedItem || sub?.status === 'graded') ? {
+              ...(savedItem || {}),
+              id: savedItem?.id || `submission:${sub.id}`,
+              score: savedItem?.score ?? sub?.grade,
+              notes: savedItem?.notes || sub?.feedback || '',
+              reviewed_by: savedItem?.reviewed_by,
+              verified: savedItem?.verified ?? sub?.status === 'graded'
+            } : null;
             return (
               <ScoreRow
                 key={task.id}
@@ -382,7 +406,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
                 refId={task.id}
                 refTitle={task.title}
                 maxScore={task.type === 'quiz' ? SCORE_RULES.quiz : SCORE_RULES.task}
-                item={getScoreItem(task.type === 'quiz' ? 'quiz' : 'task', task.id)}
+                item={taskItem}
                 needsCorrection={uncorrectedTaskIds.has(task.id)}
                 onSave={(data) => updateScoreMutation.mutate(data)}
                 saving={updateScoreMutation.isPending}
@@ -432,7 +456,15 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
             {exams.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Nenhuma prova do módulo criada.</p>}
             {exams.map((exam) => {
             const sub = examSubs.find((s) => s.exam_id === exam.id);
-            const scoreItem = getScoreItem('exam', exam.id);
+            const savedItem = getScoreItem('exam', exam.id);
+            const scoreItem = (savedItem || sub?.status === 'graded') ? {
+              ...(savedItem || {}),
+              id: savedItem?.id || `submission:${sub.id}`,
+              score: savedItem?.score ?? sub?.grade,
+              notes: savedItem?.notes || sub?.feedback || '',
+              reviewed_by: savedItem?.reviewed_by,
+              verified: savedItem?.verified ?? sub?.status === 'graded'
+            } : null;
             return (
               <ScoreRow
                 key={exam.id}
