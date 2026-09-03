@@ -6,7 +6,7 @@
  * submission periods.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
-import { taskScoreNote } from '../../shared/scoreMessages.ts';
+import { preserveOrGenerateFeedback, taskScoreNote } from '../../shared/scoreMessages.ts';
 
 const TASK_POINTS = 5;
 const QUIZ_POINTS = 50;
@@ -54,7 +54,14 @@ Deno.serve(async (req) => {
     const isQuiz = task.type === 'quiz';
     const points = isQuiz ? QUIZ_POINTS : TASK_POINTS;
     const category = isQuiz ? 'quiz' : 'task';
-    const feedback = taskScoreNote(task.id, points, isQuiz);
+    const existing = existingScores?.find((item: any) => item.category === category) || existingScores?.[0];
+    // Generate friendly feedback only when neither the submission nor its
+    // ScoreItem already contains a professor-authored observation.
+    const feedback = preserveOrGenerateFeedback(
+      submission.feedback,
+      existing?.notes,
+      taskScoreNote(task.id, points, isQuiz)
+    );
     const submissionUpdate = { grade: points, feedback, status: 'graded' };
     const scorePayload = {
       student_email: studentEmail,
@@ -67,8 +74,6 @@ Deno.serve(async (req) => {
       notes: feedback,
       ...(Number(task.module_number) ? { module_number: Number(task.module_number) } : {}),
     };
-    const existing = existingScores?.find((item: any) => item.category === category) || existingScores?.[0];
-
     if (hasChanged(submission, submissionUpdate)) {
       await base44.asServiceRole.entities.TaskSubmission.update(submission.id, submissionUpdate);
     }

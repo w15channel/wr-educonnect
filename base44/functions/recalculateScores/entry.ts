@@ -6,6 +6,7 @@ import {
   forumScoreNote,
   ofensivaScoreNote,
   therapistScoreNote,
+  preserveOrGenerateFeedback,
   LIVE_ATTENDANCE_NOTE,
 } from '../../shared/scoreMessages.ts';
 
@@ -366,7 +367,14 @@ Deno.serve(async (req) => {
         const baseScore = task.type === 'quiz' ? STUDY_POINTS.quiz : STUDY_POINTS.task;
         const score = baseScore;
         const category = task.type === 'quiz' ? 'quiz' : 'task';
-        const feedback = taskScoreNote(task.id, roundScore(baseScore), task.type === 'quiz');
+        const existingScore = existingScores.get(scoreKey(s.student_email, category, task.id));
+        // Never replace a professor's evaluation with the automatic message.
+        // Existing feedback is also used to repair a missing/stale ScoreItem.
+        const feedback = preserveOrGenerateFeedback(
+          s.feedback,
+          existingScore?.notes,
+          taskScoreNote(task.id, roundScore(baseScore), task.type === 'quiz')
+        );
         queueScore({ studentEmail: s.student_email, category, refId: task.id, refTitle: task.title, score, maxScore: score, notes: feedback });
         if (afterCutoff(s)) addBothCalc(s.student_email, baseScore);
         if (s.status !== 'graded' || roundScore(s.grade) !== roundScore(score) || s.feedback !== feedback) {

@@ -17,6 +17,15 @@ function pick(list: string[], seed: string): string {
 
 const fmt = (value: number) => String(Math.round((Number(value) + Number.EPSILON) * 1000) / 1000).replace('.', ',');
 
+/** Keeps human-authored feedback and only falls back to automation when blank. */
+export function preserveOrGenerateFeedback(
+  submissionFeedback: unknown,
+  scoreNotes: unknown,
+  automaticFeedback: string,
+): string {
+  return String(submissionFeedback || scoreNotes || '').trim() || automaticFeedback;
+}
+
 const LESSON = [
   'Aula concluída com dedicação! Cada aula assistida te deixa mais perto do terapeuta que você quer ser. +2 pontos 💚',
   'Muito bem! Você está transformando conhecimento em prática. Aula creditada com +2 pontos ✨',
