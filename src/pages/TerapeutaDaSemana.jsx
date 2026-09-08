@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2, ArrowLeftRight, Send, Phone, Mail } from 'lucide-react';
+import { Heart, Shuffle, UserCheck, ClipboardList, Star, Lock, CheckCircle2, Trash2, ArrowLeftRight, Send, Phone, Mail, Archive } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +21,7 @@ import { resolveAvatarEmoji } from '@/lib/avatarUtils';
 import RelatosMural from '@/components/therapist/RelatosMural';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
-import { buildScoreBalancedPairings, findStudentPairings, getLatestPairingDate, getLatestPublishedPairings, isActiveStudent, normalizeStudentEmail } from '@/lib/therapistPairings';
+import { buildScoreBalancedPairings, findStudentPairings, getLatestPairingDate, isActiveStudent, normalizeStudentEmail } from '@/lib/therapistPairings';
 import { visiblePairingsForReportWall } from '@/lib/therapistReports';
 
 export default function TerapeutaDaSemana() {
@@ -76,6 +76,14 @@ export default function TerapeutaDaSemana() {
   const deletePairingMutation = useMutation({
     mutationFn: (id) => base44.entities.TherapistPairing.delete(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] }); toast.success('Pareamento removido.'); },
+  });
+
+  const archivePairingMutation = useMutation({
+    mutationFn: ({ id, archived }) => base44.entities.TherapistPairing.update(id, { is_archived: archived }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] });
+      toast.success(variables.archived ? 'Pareamento arquivado.' : 'Pareamento reativado.');
+    },
   });
 
   const updatePairingMutation = useMutation({
@@ -197,8 +205,9 @@ export default function TerapeutaDaSemana() {
   const rankedDomainStudents = [...activeDomainStudents].sort((a, b) => getStudentTotalScore(b.student_email) - getStudentTotalScore(a.student_email));
 
 
-  // Pareamento é completamente manual: o administrador gera novas rodadas quando desejar.
-  // O lote "atual" é sempre o mais recente gerado; os demais ficam no histórico.
+  // Todos os pareamentos começam como "atuais". Só passam para "anteriores"
+  // quando ambos os alunos enviam seus depoimentos OU quando o admin arquiva
+  // manualmente.
   const domainPairingsAll = pairings.filter(p =>
     courseEmailSet.size === 0 || (
       courseEmailSet.has(normalizeStudentEmail(p.therapist_email)) &&
@@ -207,15 +216,19 @@ export default function TerapeutaDaSemana() {
   );
   const latestPairingDate = getLatestPairingDate(domainPairingsAll);
 
-  const currentPairings = sortBySequence(domainPairingsAll.filter(p => p.pairing_date === latestPairingDate));
-  // A rodada atual do administrador pode ser um rascunho mais novo. Para o
-  // aluno, a rodada atual é sempre a publicação mais recente, não o rascunho.
-  const publishedCurrentPairings = sortBySequence(getLatestPublishedPairings(domainPairingsAll));
-  const pastPairings = sortBySequence(domainPairingsAll.filter(p => p.pairing_date !== latestPairingDate));
+  const isPairingCompleted = (p) => Boolean(p.therapist_submitted && p.patient_submitted);
+  const isPairingPast = (p) => Boolean(p.is_archived) || isPairingCompleted(p);
 
-  // Pairings do aluno logado (apenas publicados)
+  const currentPairings = sortBySequence(domainPairingsAll.filter(p => !isPairingPast(p)));
+  const pastPairings = sortBySequence(domainPairingsAll.filter(p => isPairingPast(p)));
+
+  // Alunos veem seu pareamento publicado mais recente que ainda não foi
+  // arquivado, independentemente de qual rodada (data) ele pertence.
+  const publishedActivePairings = domainPairingsAll.filter(p => p.is_published && !p.is_archived);
+
+  // Pairings do aluno logado (apenas publicados e não arquivados)
   const { asTherapist: myTherapistPairing, asPatient: myPatientPairing } = findStudentPairings(
-    publishedCurrentPairings,
+    publishedActivePairings,
     session?.email
   );
 
@@ -243,8 +256,8 @@ export default function TerapeutaDaSemana() {
   };
 
   useEffect(() => {
-    if (isTeacher || !session?.email || publishedCurrentPairings.length === 0) return;
-    const entries = publishedCurrentPairings.flatMap((p) => {
+    if (isTeacher || !session?.email || publishedActivePairings.length === 0) return;
+    const entries = publishedActivePairings.flatMap((p) => {
       const therapistName = p.therapist_name || getStudentInfo(p.therapist_email).name;
       const patientName = p.patient_name || getStudentInfo(p.patient_email).name;
       const therapistContact = getStudentContact(p.therapist_email);
@@ -280,7 +293,7 @@ export default function TerapeutaDaSemana() {
         queryClient.invalidateQueries({ queryKey: ['student-wall-posts'] });
       });
     }
-  }, [isTeacher, session?.email, publishedCurrentPairings.map(p => `${p.id}:${p.is_published}`).join('|'), studentProfiles.length, accessCodes.length]);
+  }, [isTeacher, session?.email, publishedActivePairings.map(p => `${p.id}:${p.is_published}`).join('|'), studentProfiles.length, accessCodes.length]);
 
   const handleGeneratePairings = async () => {
     await queryClient.invalidateQueries({ queryKey: ['access-codes'] });
@@ -605,6 +618,7 @@ export default function TerapeutaDaSemana() {
                 getStudentInfo={getStudentInfo}
                 showScores={isTeacher}
                 onDelete={() => deletePairingMutation.mutate(p.id)}
+                onArchive={() => archivePairingMutation.mutate({ id: p.id, archived: true })}
                 onModuleChange={(moduleNumber) => updatePairingModule(p, moduleNumber)}
                 isDraft={!p.is_published}
                 swapSelectedId={swapSelection}
@@ -629,7 +643,7 @@ export default function TerapeutaDaSemana() {
           <TabsContent value="past" className="mt-4 space-y-3">
             {pastPairings.length === 0 && <p className="text-muted-foreground text-sm text-center py-8">Nenhum pareamento anterior.</p>}
             {pastPairings.map(p => (
-              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} onDelete={() => deletePairingMutation.mutate(p.id)} onModuleChange={(moduleNumber) => updatePairingModule(p, moduleNumber)} />
+              <PairingCard key={p.id} pairing={p} getStudentInfo={getStudentInfo} showScores={isTeacher} onDelete={() => deletePairingMutation.mutate(p.id)} onArchive={p.is_archived ? () => archivePairingMutation.mutate({ id: p.id, archived: false }) : undefined} onModuleChange={(moduleNumber) => updatePairingModule(p, moduleNumber)} />
             ))}
           </TabsContent>
         </Tabs>
@@ -713,7 +727,7 @@ function ContactLine({ contact, roleLabel }) {
   return <span className="mt-1 block text-[11px] text-muted-foreground">{roleLabel}: contato não informado</span>;
 }
 
-function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, swapSelectedId, onSwap, onModuleChange }) {
+function PairingCard({ pairing, getStudentInfo, showScores, onDelete, onArchive, isDraft, swapSelectedId, onSwap, onModuleChange }) {
   const therapist = getStudentInfo(pairing.therapist_email);
   const patient = getStudentInfo(pairing.patient_email);
   const isSwapSelected = swapSelectedId === pairing.id;
@@ -755,6 +769,11 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete, isDraft, s
           )}
           {pairing.therapist_submitted ? <CheckCircle2 size={13} className="text-green-500" /> : <div className="w-3 h-3 rounded-full bg-orange-300" />}
           {pairing.patient_submitted ? <CheckCircle2 size={13} className="text-green-500" /> : <div className="w-3 h-3 rounded-full bg-orange-300" />}
+          {onArchive && (
+            <button onClick={onArchive} className="ml-1 p-1.5 text-muted-foreground hover:text-amber-600 rounded-lg transition-colors" title={pairing.is_archived ? 'Desarquivar' : 'Arquivar'}>
+              <Archive size={13} />
+            </button>
+          )}
           {onDelete && (
             <button onClick={onDelete} className="ml-1 p-1.5 text-muted-foreground hover:text-destructive rounded-lg transition-colors" title="Excluir pareamento">
               <Trash2 size={13} />

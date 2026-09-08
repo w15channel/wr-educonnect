@@ -27,7 +27,7 @@
       "type": "number",
       "minimum": 1,
       "maximum": 10,
-      "description": "Módulo que recebe a pontuação desta rodada"
+      "description": "M\u00f3dulo que recebe a pontua\u00e7\u00e3o desta rodada"
     },
     "period_end": {
       "type": "string",
@@ -53,17 +53,22 @@
     "therapist_submitted": {
       "type": "boolean",
       "default": false,
-      "description": "Terapeuta já enviou avaliação"
+      "description": "Terapeuta j\u00e1 enviou avalia\u00e7\u00e3o"
     },
     "patient_submitted": {
       "type": "boolean",
       "default": false,
-      "description": "Paciente já enviou avaliação"
+      "description": "Paciente j\u00e1 enviou avalia\u00e7\u00e3o"
     },
     "is_published": {
       "type": "boolean",
       "default": false,
-      "description": "Se o pareamento já foi publicado e está visível para os alunos"
+      "description": "Se o pareamento j\u00e1 foi publicado e est\u00e1 vis\u00edvel para os alunos"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Quando verdadeiro, o admin arquivou manualmente o pareamento e ele aparece em 'Anteriores'"
     }
   },
   "required": [
