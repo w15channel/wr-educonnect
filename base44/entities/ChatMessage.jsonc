@@ -29,9 +29,9 @@
     "content"
   ],
   "rls": {
-    "create": null,
-    "read": null,
-    "update": null,
-    "delete": null
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
   }
 }
