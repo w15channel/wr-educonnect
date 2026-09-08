@@ -30,7 +30,6 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'X-App-Id': appParams.appId
         },
-        token: appParams.token, // Include token if available
         interceptResponses: true
       });
       
@@ -48,7 +47,10 @@ export const AuthProvider = ({ children }) => {
         }
         setIsLoadingPublicSettings(false);
       } catch (appError) {
-        console.error('App state check failed:', appError);
+        // 401 não é critical: este app usa autenticação própria (códigos de acesso).
+        if (appError?.status !== 401) {
+          console.error('App state check failed:', appError);
+        }
         
         // Handle app-level errors
         if (appError.status === 403 && appError.data?.extra_data?.reason) {
@@ -99,18 +101,14 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
       setAuthChecked(true);
     } catch (error) {
-      console.error('User auth check failed:', error);
+      // 401 é esperado: este app usa autenticação própria (códigos de acesso),
+      // não a autenticação de plataforma Base44. Não loga nem propaga esse erro.
+      if (error?.status !== 401) {
+        console.error('User auth check failed:', error);
+      }
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
-      
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
-      }
     }
   };
 
