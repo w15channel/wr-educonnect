@@ -82,9 +82,19 @@ export async function publishToStudentWall(params) {
  * Publica a mesma origem (source_type/source_id) para vários alunos, cada um
  * com sua própria mensagem — útil quando uma publicação envolve mais de uma
  * pessoa (ex.: os dois lados de uma dupla).
+ *
+ * Processado sequencialmente (com uma pequena pausa entre cada publicação) em
+ * vez de Promise.all: disparar todas as chamadas de uma vez excede o limite
+ * de requisições da plataforma quando há muitos alunos (ex.: publicar todas
+ * as duplas do Terapeuta da Semana de uma rodada).
  */
 export async function publishToStudentWallBatch(entries = []) {
-  return Promise.all(entries.map((entry) => publishToStudentWall(entry)));
+  const results = [];
+  for (const entry of entries) {
+    results.push(await publishToStudentWall(entry));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  return results;
 }
 
 export default publishToStudentWall;
