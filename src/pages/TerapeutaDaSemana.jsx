@@ -43,11 +43,17 @@ export default function TerapeutaDaSemana() {
     queryFn: async () => {
       if (isTeacher) return base44.entities.TherapistPairing.list('-pairing_date', 1000);
       if (!session?.email) return [];
-      const [asTherapist, asPatient] = await Promise.all([
-        base44.entities.TherapistPairing.filter({ therapist_email: session.email }, '-pairing_date', 500),
-        base44.entities.TherapistPairing.filter({ patient_email: session.email }, '-pairing_date', 500),
-      ]);
-      return [...new Map([...asTherapist, ...asPatient].map((pairing) => [pairing.id, pairing])).values()];
+      // Buscamos todos os pareamentos e filtramos no cliente por email
+      // normalizado (lowercase + trim). O filtro do banco faz match exato,
+      // então diferenças de maiúsculas ou espaços no email impediriam o
+      // aluno de ver sua dupla — essa abordagem resolve o problema para
+      // qualquer aluno que enfrente essa situação.
+      const all = await base44.entities.TherapistPairing.list('-pairing_date', 1000);
+      const normalized = normalizeStudentEmail(session.email);
+      return all.filter(p =>
+        normalizeStudentEmail(p.therapist_email) === normalized ||
+        normalizeStudentEmail(p.patient_email) === normalized
+      );
     },
   });
 
@@ -208,12 +214,18 @@ export default function TerapeutaDaSemana() {
   // Todos os pareamentos começam como "atuais". Só passam para "anteriores"
   // quando ambos os alunos enviam seus depoimentos OU quando o admin arquiva
   // manualmente.
-  const domainPairingsAll = pairings.filter(p =>
-    courseEmailSet.size === 0 || (
-      courseEmailSet.has(normalizeStudentEmail(p.therapist_email)) &&
-      courseEmailSet.has(normalizeStudentEmail(p.patient_email))
-    )
-  );
+  // Para alunos, a query já traz apenas seus próprios pareamentos — não
+  // aplicamos o filtro de curso, que poderia excluí-los por divergência de
+  // email ou curso entre o AccessCode e o pareamento. Para professores,
+  // mantemos o filtro por domínio do curso.
+  const domainPairingsAll = isTeacher
+    ? pairings.filter(p =>
+        courseEmailSet.size === 0 || (
+          courseEmailSet.has(normalizeStudentEmail(p.therapist_email)) &&
+          courseEmailSet.has(normalizeStudentEmail(p.patient_email))
+        )
+      )
+    : pairings;
   const latestPairingDate = getLatestPairingDate(domainPairingsAll);
 
   const isPairingCompleted = (p) => Boolean(p.therapist_submitted && p.patient_submitted);
