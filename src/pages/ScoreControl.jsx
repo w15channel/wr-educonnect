@@ -864,6 +864,14 @@ export default function ScoreControl() {
   const taskIds = new Set(tasks.map((t) => t.id));
   const examIds = new Set(exams.map((e) => e.id));
   const forumPostIds = new Set(forumPosts.map((p) => p.id));
+  const lessonModuleById = new Map(lessons.map((l) => [l.id, l.module_number]));
+  const taskModuleById = new Map(tasks.map((t) => [t.id, t.module_number]));
+  const examModuleById = new Map(exams.map((e) => {
+    const match = String(e.module_ref || '').match(/mod(\d+)/i);
+    return [e.id, match ? Number(match[1]) : undefined];
+  }));
+  const mentorshipModuleById = new Map(mentorships.map((m) => [m.id, m.module_number]));
+  const pairingModuleById = new Map(therapistPairings.map((p) => [p.id, p.module_number]));
   const allowedEmails = new Set(filtered.map((c) => c.student_email).filter(Boolean));
   const courseSubmissions = submissions.filter((s) => allowedEmails.has(s.student_email) && taskIds.has(s.task_id));
   const pendingCount = courseSubmissions.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length;
