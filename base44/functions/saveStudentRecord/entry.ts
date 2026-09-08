@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 const ALLOWED_ENTITIES = new Set(['ForumPost', 'ForumReply', 'ChatMessage', 'TaskSubmission', 'LiveAttendance']);
 const CERTIFICATE_LIST_LIMIT = 5000;
