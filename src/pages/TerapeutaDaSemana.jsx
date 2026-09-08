@@ -360,6 +360,10 @@ export default function TerapeutaDaSemana() {
       return;
     }
     const hasDraftBatch = currentPairings.some(p => !p.is_published);
+    // Um pareamento manual avulso (fora de uma geração em lote) é publicado
+    // imediatamente: se ficasse como rascunho dependendo do botão "Compartilhar
+    // Duplas", um admin poderia esquecer de publicá-lo depois — como aconteceu
+    // com a dupla da Maria Aglair, que ficou invisível para os alunos.
     createPairingMutation.mutate({
       therapist_email: therapistCode.student_email,
       therapist_name: therapistCode.profile_name || therapistCode.student_name,
@@ -367,11 +371,16 @@ export default function TerapeutaDaSemana() {
       patient_name: student.profile_name || student.student_name,
       pairing_date: hasDraftBatch ? latestPairingDate : todayStr,
       module_number: Number(selectedModule),
-      is_published: false,
+      is_published: !hasDraftBatch,
     }, {
-      onSuccess: () => {
+      onSuccess: (created) => {
         setManualTherapist(null);
-        toast.success('Dupla criada como rascunho. Publique a lista quando estiver pronta.');
+        if (hasDraftBatch) {
+          toast.success('Dupla criada como rascunho. Publique a lista quando estiver pronta.');
+        } else {
+          publishPairingsMutation.mutate([created]);
+          toast.success('Dupla criada e publicada — os alunos já podem ver.');
+        }
       },
     });
   };
