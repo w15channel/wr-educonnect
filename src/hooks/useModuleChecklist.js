@@ -1,9 +1,12 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
 
 const MODULE_COUNT = 10;
+// Evita criar o mesmo marco de início de módulo duas vezes quando o hook é
+// usado em mais de um lugar ao mesmo tempo (dashboard + página do checklist).
+const startedModules = new Set();
 
 /**
  * Checklist individual do aluno: calcula os requisitos de cada módulo (1–10)
@@ -12,6 +15,7 @@ const MODULE_COUNT = 10;
  */
 export default function useModuleChecklist({ course = 'tcc', session } = {}) {
   const email = session?.email || session?.code || '';
+  const queryClient = useQueryClient();
 
   const { data: lessons = [], isLoading: l1 } = useQuery({
     queryKey: ['checklist-lessons', course],
@@ -116,6 +120,26 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     .filter((u) => (u.course || 'tcc') === course)
     .reduce((max, u) => Math.max(max, Number(u.module_number) || 0), 0);
   const currentModule = Math.min(MODULE_COUNT, Math.max(examBasedModule, manualModule));
+
+  // Marco de início do módulo: quando o aluno ingressa em um módulo novo e ainda
+  // não existe registro dessa data, gravamos agora. A partir daí o checklist do
+  // módulo conta somente as atividades feitas depois deste instante.
+  useEffect(() => {
+    if (isLoading || !email || currentModule <= 1) return;
+    if (unlockDateByModule.has(currentModule)) return;
+    const guard = `${email}|${course}|${currentModule}`;
+    if (startedModules.has(guard)) return;
+    startedModules.add(guard);
+    base44.entities.StudentModuleUnlock.create({
+      student_email: email,
+      course,
+      module_number: currentModule,
+      unlocked_at: new Date().toISOString(),
+      unlocked_by: 'sistema:inicio-modulo',
+    })
+      .then(() => queryClient.invalidateQueries({ queryKey: ['checklist-module-unlocks', email] }))
+      .catch(() => startedModules.delete(guard));
+  }, [isLoading, email, course, currentModule, unlockDateByModule, queryClient]);
 
   const isModuleUnlockedForExam = (moduleNumber) => {
     const found = modules.find((m) => m.moduleNumber === Number(moduleNumber));

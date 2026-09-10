@@ -53,7 +53,11 @@ export function buildModuleChecklist({
   challengeResponses = [],
   moduleWindow = null,
 }) {
-  const watchedByLessonId = new Map(progresses.map((p) => [p.lesson_id, p]));
+  // Cada módulo conta apenas o que foi feito dentro da sua própria janela de
+  // tempo: ao ingressar em um módulo novo, todas as marcações começam zeradas.
+  const progressInWindow = progresses.filter((p) => isWithinModuleWindow(p.updated_date || p.created_date, moduleWindow));
+  const submissionsInWindow = submissions.filter((s) => isWithinModuleWindow(s.updated_date || s.created_date, moduleWindow));
+  const watchedByLessonId = new Map(progressInWindow.map((p) => [p.lesson_id, p]));
 
   // 1 — Videoaulas do módulo assistidas e respondidas (resumo ou comentário).
   // As aulas do módulo vêm do próprio cadastro (module_number da apostila);
@@ -70,7 +74,7 @@ export function buildModuleChecklist({
   // 2 — Capítulos da apostila do módulo marcados como lidos.
   const apostilaPrefix = `apostila:mod${moduleNumber}:`;
   const apostilaRead = new Set(
-    progresses
+    progressInWindow
       .filter((p) => p.watched && String(p.lesson_id || '').startsWith(apostilaPrefix))
       .map((p) => p.lesson_id)
   ).size;
@@ -79,7 +83,7 @@ export function buildModuleChecklist({
   const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber);
   // Qualquer entrega já registrada no histórico conta (texto ou arquivo).
   const tasksDone = moduleTasks.filter((task) => {
-    const submission = submissions.find((s) => s.task_id === task.id);
+    const submission = submissionsInWindow.find((s) => s.task_id === task.id);
     return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
   }).length;
 
