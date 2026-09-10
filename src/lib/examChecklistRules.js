@@ -29,6 +29,17 @@ export const submissionTextLength = (submission) => {
  * Monta os 6 requisitos do módulo para um aluno específico.
  * Cada item traz o progresso atual, a meta e o caminho de ida (com volta ao checklist).
  */
+// Verifica se uma data cai dentro da janela de tempo em que o aluno esteve
+// naquele módulo (entre a liberação do módulo e a liberação do próximo).
+const isWithinModuleWindow = (dateValue, window) => {
+  if (!window) return true;
+  const time = new Date(dateValue).getTime();
+  if (!Number.isFinite(time)) return false;
+  if (window.start && time < new Date(window.start).getTime()) return false;
+  if (window.end && time >= new Date(window.end).getTime()) return false;
+  return true;
+};
+
 export function buildModuleChecklist({
   moduleNumber,
   email,
@@ -40,6 +51,7 @@ export function buildModuleChecklist({
   debateReplies = [],
   pairings = [],
   challengeResponses = [],
+  moduleWindow = null,
 }) {
   const watchedByLessonId = new Map(progresses.map((p) => [p.lesson_id, p]));
 
@@ -72,19 +84,20 @@ export function buildModuleChecklist({
   }).length;
 
   // 4 — Sala de debates: abrir um tema e comentar no tema de um colega.
-  const myDebateTopics = debatePosts.filter((post) => post.author_email === email).length;
+  // Restrito à janela de tempo do módulo, para não herdar participações de módulos anteriores.
+  const myDebateTopics = debatePosts.filter((post) => post.author_email === email && isWithinModuleWindow(post.created_date, moduleWindow)).length;
   const postById = new Map(debatePosts.map((post) => [post.id, post]));
   const myDebateComments = debateReplies.filter((reply) => {
     const parent = postById.get(reply.post_id);
-    return reply.author_email === email && parent && parent.author_email !== email;
+    return reply.author_email === email && parent && parent.author_email !== email && isWithinModuleWindow(reply.created_date, moduleWindow);
   }).length;
 
-  // 5 — Atendimento realizado como Terapeuta da Semana.
-  const therapistSessions = pairings.filter((p) => p.therapist_email === email && p.therapist_submitted).length;
+  // 5 — Atendimento realizado como Terapeuta da Semana, dentro da janela do módulo.
+  const therapistSessions = pairings.filter((p) => p.therapist_email === email && p.therapist_submitted && isWithinModuleWindow(p.updated_date || p.pairing_date, moduleWindow)).length;
 
-  // 6 — Pelo menos 3 dias de ofensiva (não precisam ser consecutivos).
+  // 6 — Pelo menos 3 dias de ofensiva (não precisam ser consecutivos), dentro da janela do módulo.
   const ofensivaDays = new Set(
-    challengeResponses.filter((r) => r.student_email === email).map((r) => r.date)
+    challengeResponses.filter((r) => r.student_email === email && isWithinModuleWindow(r.date, moduleWindow)).map((r) => r.date)
   ).size;
 
   const items = [
@@ -94,7 +107,7 @@ export function buildModuleChecklist({
       hint: 'Aulas já marcadas como assistidas no seu histórico contam automaticamente.',
       current: lessonsAnswered,
       target: moduleLessons.length || CHECKLIST_RULES.lessonsPerModule,
-      to: '/lessons',
+      to: `/lessons?module=${moduleNumber}`,
     },
     {
       key: 'apostila',
@@ -102,7 +115,7 @@ export function buildModuleChecklist({
       hint: 'Abra cada capítulo do módulo e use "Marcar como lida".',
       current: apostilaRead,
       target: CHECKLIST_RULES.apostilaChapters,
-      to: '/apostila',
+      to: `/apostila?module=${moduleNumber}`,
     },
     {
       key: 'tasks',

@@ -43,6 +43,7 @@ export default function ModuleBlock({
   moduleCompletions,    // Set of completed module indices
   onCompleteModule,     // (moduleIndex) => void
   moduleLocked = false, // módulo bloqueado até o anterior ser concluído + prova feita
+  defaultOpen = false,  // abrir este módulo automaticamente (ex: vindo do checklist)
 }) {
   const theme = MODULE_THEMES[moduleIndex % MODULE_THEMES.length];
 
@@ -55,7 +56,7 @@ export default function ModuleBlock({
   const isModuleCompleted = moduleCompletions?.has(moduleIndex);
   const canCompleteModule = allWatched && !isModuleCompleted && !isTeacher;
 
-  const [moduleOpen, setModuleOpen] = useState(false);
+  const [moduleOpen, setModuleOpen] = useState(defaultOpen);
 
   return (
     <div className={`rounded-2xl border overflow-hidden transition-all ${isModuleCompleted ? 'border-emerald-400/40 shadow-emerald-500/10 shadow-lg' : 'border-border'} bg-card`}>

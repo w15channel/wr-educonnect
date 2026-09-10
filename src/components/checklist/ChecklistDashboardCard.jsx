@@ -82,7 +82,7 @@ export default function ChecklistDashboardCard({ session, course, className = ''
                 {!item.done && (
                   <button
                     type="button"
-                    onClick={() => navigate(`${prefix}${item.to}?checklist=${currentModule}`)}
+                    onClick={() => navigate(`${prefix}${item.to}${item.to.includes('?') ? '&' : '?'}checklist=${currentModule}`)}
                     className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground hover:opacity-90 transition-opacity"
                   >
                     Cumprir <ArrowRight size={10} />

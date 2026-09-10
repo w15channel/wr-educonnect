@@ -24,8 +24,8 @@ export default function Checklist() {
   // O aluno só vê os módulos até o que está cursando — cada um no seu tempo.
   const visibleModules = modules.filter((m) => m.moduleNumber <= currentModule);
 
-  // Ida: sai do checklist com ?checklist=<módulo>; a barra de retorno traz de volta.
-  const goToRequirement = (item) => navigate(`${prefix}${item.to}?checklist=${module.moduleNumber}`);
+  // Ida: sai do checklist com checklist=<módulo>; a barra de retorno traz de volta.
+  const goToRequirement = (item) => navigate(`${prefix}${item.to}${item.to.includes('?') ? '&' : '?'}checklist=${module.moduleNumber}`);
 
   return (
     <div className="app-page max-w-3xl mx-auto animate-fade-in-up space-y-5">

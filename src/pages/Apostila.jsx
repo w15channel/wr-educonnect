@@ -165,7 +165,9 @@ export default function Apostila() {
   const queryClient = useQueryClient();
   const { moduleUnlocked, isLoading: loadingUnlocks } = useApostilaModuleUnlocks(session?.course || 'tcc', session);
 
-  const [openChapter, setOpenChapter] = useState(null);
+  // Vindo do checklist com ?module=N, abre direto o módulo indicado.
+  const targetModuleNumber = Number(new URLSearchParams(window.location.search).get('module')) || null;
+  const [openChapter, setOpenChapter] = useState(() => (targetModuleNumber ? DEFAULT_CHAPTERS[targetModuleNumber - 1]?.id ?? null : null));
   const [openLesson, setOpenLesson] = useState(null);
   const [editingLesson, setEditingLesson] = useState(null);
   const [editContent, setEditContent] = useState('');

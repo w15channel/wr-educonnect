@@ -73,10 +73,22 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
 
   const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11;
 
+  // Data em que cada módulo foi liberado para o aluno — usada para que
+  // debates, terapeuta da semana e ofensiva contem apenas o que foi feito
+  // dentro da janela de tempo daquele módulo, sem herdar participações antigas.
+  const unlockDateByModule = useMemo(() => {
+    const map = new Map();
+    moduleUnlocks.filter((u) => (u.course || 'tcc') === course).forEach((u) => {
+      map.set(Number(u.module_number), u.unlocked_at);
+    });
+    return map;
+  }, [moduleUnlocks, course]);
+
   const modules = useMemo(() => {
     const submittedExamIds = new Set(examSubmissions.map((s) => s.exam_id));
     return Array.from({ length: MODULE_COUNT }, (_, index) => {
       const moduleNumber = index + 1;
+      const moduleWindow = { start: unlockDateByModule.get(moduleNumber) || null, end: unlockDateByModule.get(moduleNumber + 1) || null };
       const checklist = buildModuleChecklist({
         moduleNumber,
         email,
@@ -88,12 +100,13 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
         debateReplies,
         pairings,
         challengeResponses,
+        moduleWindow,
       });
       const moduleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === moduleNumber);
       const examDone = moduleExams.length > 0 && moduleExams.every((exam) => submittedExamIds.has(exam.id));
       return { moduleNumber, ...checklist, examDone, exams: moduleExams };
     });
-  }, [email, lessons, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions]);
+  }, [email, lessons, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule]);
 
   // Módulo atual do aluno: o primeiro cuja prova ainda não foi entregue —
   // ou o módulo para o qual o admin liberou manualmente o avanço, se for maior

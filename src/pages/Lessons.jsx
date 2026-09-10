@@ -75,6 +75,8 @@ export default function Lessons() {
   const isTeacher = session?.role === 'admin';
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // Vindo do checklist com ?module=N, abre direto o módulo indicado.
+  const targetModuleNumber = Number(new URLSearchParams(window.location.search).get('module')) || null;
 
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
@@ -582,6 +584,7 @@ export default function Lessons() {
               moduleCompletions={moduleCompletions}
               onCompleteModule={handleCompleteModule}
               moduleLocked={!isTeacher && moduleUnlocked[moduleEntry.moduleIndex] === false}
+              defaultOpen={targetModuleNumber === moduleEntry.moduleNumber}
             />
           ))}
         </div>
