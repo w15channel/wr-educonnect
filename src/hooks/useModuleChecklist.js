@@ -62,8 +62,16 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
     enabled: !!email,
   });
+  // Liberações manuais de módulo feitas pelo admin (StudentModuleUnlock) —
+  // sem isso, um aluno avançado manualmente continua vendo o checklist do
+  // módulo antigo, pois ele nunca teve uma prova registrada naquele módulo.
+  const { data: moduleUnlocks = [], isLoading: l11 } = useQuery({
+    queryKey: ['checklist-module-unlocks', email],
+    queryFn: () => base44.entities.StudentModuleUnlock.filter({ student_email: email }, '-unlocked_at', 50),
+    enabled: !!email,
+  });
 
-  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10;
+  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11;
 
   const modules = useMemo(() => {
     const submittedExamIds = new Set(examSubmissions.map((s) => s.exam_id));
@@ -87,8 +95,14 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     });
   }, [email, lessons, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions]);
 
-  // Módulo atual do aluno: o primeiro cuja prova ainda não foi entregue.
-  const currentModule = modules.find((m) => !m.examDone)?.moduleNumber || MODULE_COUNT;
+  // Módulo atual do aluno: o primeiro cuja prova ainda não foi entregue —
+  // ou o módulo para o qual o admin liberou manualmente o avanço, se for maior
+  // (os módulos anteriores mantêm todos os seus dados e progresso intactos).
+  const examBasedModule = modules.find((m) => !m.examDone)?.moduleNumber || MODULE_COUNT;
+  const manualModule = moduleUnlocks
+    .filter((u) => (u.course || 'tcc') === course)
+    .reduce((max, u) => Math.max(max, Number(u.module_number) || 0), 0);
+  const currentModule = Math.min(MODULE_COUNT, Math.max(examBasedModule, manualModule));
 
   const isModuleUnlockedForExam = (moduleNumber) => {
     const found = modules.find((m) => m.moduleNumber === Number(moduleNumber));

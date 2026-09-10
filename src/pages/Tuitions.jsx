@@ -22,7 +22,7 @@ export default function Tuitions() {
   const { user: session } = useOutletContext();
   const isAdmin = session?.role === 'admin';
   const queryClient = useQueryClient();
-  const { emails: courseEmails, codePrefix } = useCourseFilteredEmails();
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const [showForm, setShowForm] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [form, setForm] = useState({ student_email: '', student_name: '', month_ref: '', amount: '', due_date: '', status: 'pending', notes: '' });
@@ -102,9 +102,11 @@ export default function Tuitions() {
       const dedupeKey = `tuition:${t.id}`;
       const existing = await base44.entities.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
       if (!existing.length) {
+        const studentCourse = codes.find((c) => c.student_email === t.student_email)?.course || routeCourse || 'tcc';
         await base44.entities.Achievement.create({
           dedupe_key: dedupeKey,
           student_email: t.student_email,
+          course: studentCourse,
           kind: 'tuition',
           title: 'Contribuição Voluntária',
           message: `${t.student_name || t.student_email} contribuiu voluntariamente com sua mensalidade! 🎉`,
