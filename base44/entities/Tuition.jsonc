@@ -12,7 +12,7 @@
     },
     "month_ref": {
       "type": "string",
-      "description": "Referência do mês (ex: 2025-01)"
+      "description": "Refer\u00eancia do m\u00eas (ex: 2025-01)"
     },
     "amount": {
       "type": "number",
@@ -28,6 +28,10 @@
       "format": "date",
       "description": "Data de pagamento"
     },
+    "paid_amount": {
+      "type": "number",
+      "description": "Valor efetivamente contribu\u00eddo pelo aluno \u2014 pode ser menor que o valor lan\u00e7ado e ainda assim quita a mensalidade"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -40,7 +44,16 @@
     },
     "notes": {
       "type": "string",
-      "description": "Observações"
+      "description": "Observa\u00e7\u00f5es"
+    },
+    "receipt_code": {
+      "type": "string",
+      "description": "C\u00f3digo de registro do recibo de contribui\u00e7\u00e3o volunt\u00e1ria, gerado na emiss\u00e3o"
+    },
+    "wall_shared": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a contribui\u00e7\u00e3o j\u00e1 foi publicada no mural de supera\u00e7\u00e3o"
     }
   },
   "required": [

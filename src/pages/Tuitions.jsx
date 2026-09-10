@@ -3,13 +3,14 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { DollarSign, Plus, CheckCircle, XCircle, AlertCircle, Trash2, CreditCard, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, Plus, CheckCircle, XCircle, AlertCircle, Trash2, CreditCard, Users, ChevronDown, ChevronUp, Share2, FileDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { generateReceiptCode, generateTuitionReceiptPdf } from '@/lib/generateTuitionReceipt';
 
 const STATUS_CONFIG = {
   paid: { label: 'Pago', icon: CheckCircle, card: 'border-green-500/20 bg-green-500/10', badge: 'text-green-500 bg-green-500/10 border-green-500/20', text: 'text-green-500', iconBg: 'bg-green-500/15' },
@@ -28,6 +29,8 @@ export default function Tuitions() {
   const [bulk, setBulk] = useState({ month_ref: '', amount: '', due_date: '', status: 'pending', notes: '', mode: 'all', selectedEmails: [] });
   const [selectedStudent, setSelectedStudent] = useState('all');
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [payDialogTuition, setPayDialogTuition] = useState(null);
+  const [payAmountInput, setPayAmountInput] = useState('');
 
   const { data: tuitions = [], isLoading } = useQuery({
     queryKey: ['tuitions'],
@@ -77,6 +80,59 @@ export default function Tuitions() {
     mutationFn: (id) => base44.entities.Tuition.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tuitions'] }),
   });
+
+  const confirmPayment = () => {
+    if (!payDialogTuition) return;
+    updateMutation.mutate({
+      id: payDialogTuition.id,
+      data: {
+        status: 'paid',
+        paid_date: new Date().toISOString().split('T')[0],
+        paid_amount: Number(payAmountInput) || 0,
+      },
+    });
+    setPayDialogTuition(null);
+    setPayAmountInput('');
+  };
+
+  // Publica no mural individual e no mural coletivo de superação que o aluno
+  // contribuiu voluntariamente — nunca exibindo o valor da contribuição.
+  const shareMutation = useMutation({
+    mutationFn: async (t) => {
+      const dedupeKey = `tuition:${t.id}`;
+      const existing = await base44.entities.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
+      if (!existing.length) {
+        await base44.entities.Achievement.create({
+          dedupe_key: dedupeKey,
+          student_email: t.student_email,
+          kind: 'tuition',
+          title: 'Contribuição Voluntária',
+          message: `${t.student_name || t.student_email} contribuiu voluntariamente com sua mensalidade! 🎉`,
+          mentioned_emails: [t.student_email],
+          source_id: t.id,
+          occurred_at: new Date().toISOString(),
+        });
+      }
+      return base44.entities.Tuition.update(t.id, { wall_shared: true });
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tuitions'] }); toast.success('Publicado no mural!'); },
+  });
+
+  const handleIssueReceipt = async (t) => {
+    let code = t.receipt_code;
+    if (!code) {
+      code = generateReceiptCode();
+      await base44.entities.Tuition.update(t.id, { receipt_code: code });
+      queryClient.invalidateQueries({ queryKey: ['tuitions'] });
+    }
+    generateTuitionReceiptPdf({
+      studentName: t.student_name || t.student_email,
+      receiptCode: code,
+      amount: `R$ ${Number(t.paid_amount ?? t.amount ?? 0).toFixed(2)}`,
+      referenceLabel: t.month_ref,
+      paidDate: t.paid_date ? format(new Date(t.paid_date + 'T12:00:00'), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
+    });
+  };
 
   const handleBulkLaunch = async () => {
     if (!bulk.month_ref) { toast.error('Informe o mês de referência'); return; }
@@ -286,7 +342,10 @@ export default function Tuitions() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {isAdmin ? (
-                    <Select value={t.status} onValueChange={v => updateMutation.mutate({ id: t.id, data: { status: v, paid_date: v === 'paid' ? new Date().toISOString().split('T')[0] : t.paid_date } })}>
+                    <Select value={t.status} onValueChange={v => {
+                      if (v === 'paid') { setPayDialogTuition(t); setPayAmountInput(String(t.paid_amount ?? t.amount ?? '')); return; }
+                      updateMutation.mutate({ id: t.id, data: { status: v } });
+                    }}>
                       <SelectTrigger className={`w-36 h-8 text-xs border rounded-xl ${cfg.badge}`}>
                         <SelectValue />
                       </SelectTrigger>
@@ -301,17 +360,50 @@ export default function Tuitions() {
                       <StatusIcon size={12} /> {cfg.label}
                     </span>
                   )}
+                  {t.status === 'paid' && (
+                    <button onClick={() => handleIssueReceipt(t)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors" title="Emitir recibo em PDF">
+                      <FileDown size={14} />
+                    </button>
+                  )}
+                  {isAdmin && t.status === 'paid' && (
+                    t.wall_shared ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-600 px-2">
+                        <Check size={12} /> No mural
+                      </span>
+                    ) : (
+                      <button onClick={() => shareMutation.mutate(t)} disabled={shareMutation.isPending} className="p-1.5 text-muted-foreground hover:text-primary transition-colors" title="Compartilhar no mural">
+                        <Share2 size={14} />
+                      </button>
+                    )
+                  )}
                   {isAdmin && (
                     <button onClick={() => deleteMutation.mutate(t.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1.5">
                       <Trash2 size={14} />
                     </button>
                   )}
                 </div>
+                {t.status === 'paid' && t.paid_amount != null && Number(t.paid_amount) !== Number(t.amount || 0) && (
+                  <p className="w-full text-xs font-semibold text-green-600">Valor contribuído: R$ {Number(t.paid_amount).toFixed(2)}</p>
+                )}
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Confirmação de pagamento com valor contribuído */}
+      <Dialog open={!!payDialogTuition} onOpenChange={(open) => { if (!open) { setPayDialogTuition(null); setPayAmountInput(''); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirmar Pagamento</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              Informe o valor que o aluno efetivamente contribuiu. A mensalidade será quitada mesmo que o valor seja menor que o lançado.
+            </p>
+            <Input type="number" placeholder="Valor contribuído (R$)" value={payAmountInput} onChange={e => setPayAmountInput(e.target.value)} />
+            <Button onClick={confirmPayment} className="w-full">Confirmar Quitação</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
