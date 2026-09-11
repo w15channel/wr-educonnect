@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PostCard from '@/components/shared/PostCard';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { resolveAvatarEmoji } from '@/lib/avatarUtils';
 
 import { DEBATE_TOPIC_GROUPS, FREE_TOPIC, topicModuleNumber } from '@/lib/apostila/debateTopics';
@@ -161,7 +162,10 @@ export default function SalaDebates() {
                   </SelectContent>
                 </Select>
               </div>
-              <Textarea placeholder="Abra um tópico para debate com a turma..." value={newPost} onChange={e => setNewPost(e.target.value)} className="resize-none text-sm w-full max-w-full break-words" rows={2} />
+              <div className="flex items-start gap-2">
+                <Textarea placeholder="Abra um tópico para debate com a turma..." value={newPost} onChange={e => setNewPost(e.target.value)} className="resize-none text-sm w-full max-w-full break-words" rows={2} />
+                <VoiceDictationButton value={newPost} onChange={setNewPost} className="mt-1" />
+              </div>
               <div className="flex justify-end">
                 <Button type="submit" disabled={!newPost.trim()} className="gap-2 h-9 text-sm"><Send size={14} /> Publicar</Button>
               </div>

@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, ArrowLeft, PartyPopper } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 
 export default function QuizView({ task, user, onBack }) {
   const [answers, setAnswers] = useState({});
@@ -168,12 +169,15 @@ export default function QuizView({ task, user, onBack }) {
                 </span>
               </p>
               {q.answer_type === 'text' ? (
-                <Textarea
-                  placeholder="Digite sua resposta aqui..."
-                  value={answers[qIndex]?.text || ''}
-                  onChange={e => handleText(qIndex, e.target.value)}
-                  rows={4}
-                />
+                <div className="flex items-start gap-2">
+                  <Textarea
+                    placeholder="Digite sua resposta aqui..."
+                    value={answers[qIndex]?.text || ''}
+                    onChange={e => handleText(qIndex, e.target.value)}
+                    rows={4}
+                  />
+                  <VoiceDictationButton value={answers[qIndex]?.text || ''} onChange={(text) => handleText(qIndex, text)} className="mt-1" />
+                </div>
               ) : (
                 <div className="space-y-2">
                   {(q.options || []).map((opt, optIndex) => (

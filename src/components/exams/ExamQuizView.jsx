@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, ArrowLeft, PartyPopper, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 
 const EXAM_DURATION_SECONDS = 60 * 60;
 
@@ -156,12 +157,15 @@ export default function ExamQuizView({ exam, user, onBack }) {
                 </span>
               </p>
               {q.answer_type === 'text' ? (
-                <Textarea
-                  placeholder="Digite sua resposta..."
-                  value={answers[qi]?.text || ''}
-                  onChange={e => setAnswers(prev => ({ ...prev, [qi]: { text: e.target.value } }))}
-                  rows={4}
-                />
+                <div className="flex items-start gap-2">
+                  <Textarea
+                    placeholder="Digite sua resposta..."
+                    value={answers[qi]?.text || ''}
+                    onChange={e => setAnswers(prev => ({ ...prev, [qi]: { text: e.target.value } }))}
+                    rows={4}
+                  />
+                  <VoiceDictationButton value={answers[qi]?.text || ''} onChange={(text) => setAnswers(prev => ({ ...prev, [qi]: { text } }))} className="mt-1" />
+                </div>
               ) : (
                 <div className="space-y-2">
                   {(q.options || []).map((opt, oi) => (

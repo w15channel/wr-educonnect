@@ -11,6 +11,7 @@ import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
 import { highlightKey, MONITOR_MEDALS, splitWeeklyHighlights } from '@/lib/chatHighlights';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 
 const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
@@ -269,6 +270,7 @@ export default function ClassChat() {
       </div>
       {replyTarget?.id === item.id && <form className="mt-1.5 flex items-center gap-1.5" onSubmit={(event) => { event.preventDefault(); const content = replyText.trim(); if (!content || replyMutation.isPending) return; replyMutation.mutate({ target_id: replyTarget.id, target_type: replyTarget.targetType, target_owner_email: replyTarget.ownerEmail, reply_text: content }, { onSuccess: () => { setReplyTarget(null); setReplyText(''); } }); }}>
         <input autoFocus maxLength={500} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder="Resposta privada..." aria-label="Resposta privada" className="h-8 min-w-0 flex-1 rounded-lg border border-rose-200 bg-white px-2 text-[11px] focus:outline-none" />
+        <VoiceDictationButton value={replyText} onChange={setReplyText} />
         <button type="submit" disabled={!replyText.trim() || replyMutation.isPending} className="h-8 rounded-lg bg-rose-600 px-2.5 text-[10px] font-bold text-white disabled:opacity-50">{replyMutation.isPending ? 'Enviando...' : 'Enviar'}</button>
         <button type="button" onClick={() => { setReplyTarget(null); setReplyText(''); }} className="h-8 rounded-lg px-2 text-[10px] font-bold text-slate-500">Cancelar</button>
       </form>}
@@ -343,6 +345,7 @@ export default function ClassChat() {
               <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) sendMessage(text); }} className="border-t border-rose-100 bg-rose-50/70 p-2 flex items-center gap-2">
                 <button type="button" onClick={() => setShowPicker(v => !v)} className="p-2 border border-[#abc0ea] bg-white rounded hover:bg-[#f2f7ff]"><Smile size={16} className="text-[#3f62ba]"/></button>
                 <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Compartilhe uma mensagem de superação..." className="flex-1 h-9 px-3 text-sm border border-rose-200 rounded bg-white focus:outline-none focus:border-rose-400" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }} />
+                <VoiceDictationButton value={text} onChange={setText} />
                 <button type="submit" className="h-9 px-4 rounded bg-rose-600 text-white text-sm font-semibold disabled:opacity-50" disabled={!text.trim()}><Send size={14} className="inline mr-1"/>Publicar</button>
               </form>
             </div>

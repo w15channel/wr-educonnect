@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -180,6 +181,7 @@ export default function PostCard({
               onChange={e => setReplyText(e.target.value)}
               className="flex-1 h-9 text-sm"
             />
+            <VoiceDictationButton value={replyText} onChange={setReplyText} />
             <Button type="submit" size="sm" className="h-9 w-9 p-0 shrink-0" disabled={!replyText.trim()}>
               <Send size={13} />
             </Button>

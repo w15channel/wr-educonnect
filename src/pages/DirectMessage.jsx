@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Send, ArrowLeft, Smile, Minus, Square, X } from 'lucide-react';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import StudentProfileCard from '@/components/shared/StudentProfileCard';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 
 const DM_PREFIX = 'dm_';
 const MSN_LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/10fc0b060_pngegg.png';
@@ -206,6 +207,7 @@ export default function DirectMessage() {
                 onChange={e => setText(e.target.value)}
                 onKeyDown={handleKey}
               />
+              <VoiceDictationButton value={text} onChange={setText} />
               <button
                 onClick={sendMessage}
                 disabled={!text.trim()}

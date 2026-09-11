@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LifeBuoy } from 'lucide-react';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 
 export const SUPPORT_CATEGORIES = [
   'Acesso e login',
@@ -48,13 +49,16 @@ export default function SupportTicketForm({ onSubmit, isSubmitting }) {
         </Select>
       </div>
       <Input placeholder="Assunto (ex: não consigo abrir a prova do módulo 2)" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <Textarea
-        placeholder="Descreva o que está dando errado: em qual tela aconteceu, o que você tentou fazer e qual mensagem apareceu."
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        rows={5}
-        className="text-sm resize-none"
-      />
+      <div className="flex items-start gap-2">
+        <Textarea
+          placeholder="Descreva o que está dando errado: em qual tela aconteceu, o que você tentou fazer e qual mensagem apareceu."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={5}
+          className="text-sm resize-none"
+        />
+        <VoiceDictationButton value={description} onChange={setDescription} className="mt-1" />
+      </div>
       <div className="flex items-center justify-between gap-3">
         <p className="text-[11px] text-muted-foreground">Seu chamado fica salvo aqui e a equipe de suporte entrará em contato com você.</p>
         <Button type="submit" disabled={!canSubmit} className="h-9 text-sm shrink-0">
