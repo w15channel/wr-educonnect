@@ -18,9 +18,10 @@ export default function LunaLauncher() {
         onClick={() => setOpen(true)}
         title="Falar com a Luna"
         aria-label="Falar com a Luna, assistente do site"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-400/70 bg-amber-400/15 text-base transition-transform hover:scale-105"
+        className="luna-orb"
       >
-        <span className="ofensiva-owl leading-none" role="img" aria-hidden="true">🦉</span>
+        <span className="luna-orb__halo" aria-hidden="true" />
+        <span className="luna-orb__face" role="img" aria-hidden="true">🦉</span>
       </button>
 
       {open && (

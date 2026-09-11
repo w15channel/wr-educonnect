@@ -87,6 +87,52 @@
   .theme-lamp__eyebrow { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.55; }
   .theme-lamp__label { margin-top: 0.15rem; font-size: 0.75rem; font-weight: 650; }
 
+  /* Atalho da Luna: mesma aura pulsante da lâmpada de tema. */
+  .luna-orb {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    transition: transform 180ms ease, filter 250ms ease;
+  }
+  .luna-orb__halo {
+    position: absolute;
+    inset: 0.18rem;
+    z-index: -1;
+    border-radius: inherit;
+    border: 1px solid rgb(217 164 43 / 55%);
+    background: rgb(226 189 104 / 14%);
+    box-shadow: 0 0 0 0 rgb(226 189 104 / 34%), 0 4px 14px rgb(120 84 12 / 18%);
+    animation: theme-lamp-pulse 3.2s ease-out infinite;
+  }
+  .luna-orb__face {
+    display: grid;
+    width: 2.1rem;
+    height: 2.1rem;
+    place-items: center;
+    border-radius: 9999px;
+    background: linear-gradient(145deg, #fdf6e3, #f0dcae);
+    box-shadow: inset 0 1px 1px rgb(255 255 255 / 70%);
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+  .dark .luna-orb__face {
+    background: linear-gradient(145deg, #2a2417, #100d06);
+    box-shadow: inset 0 1px 1px rgb(255 255 255 / 14%), 0 0 12px rgb(226 189 104 / 26%);
+  }
+  .luna-orb:hover { transform: translateY(-1px) scale(1.05); filter: brightness(1.06); }
+  .luna-orb:active { transform: scale(0.94); }
+  .luna-orb:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .luna-orb, .luna-orb__halo { animation: none; transition: none; }
+  }
+
   @keyframes theme-lamp-pulse {
     0%, 52%, 100% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
     68% { transform: scale(1.06); box-shadow: 0 0 0 0.48rem transparent; }

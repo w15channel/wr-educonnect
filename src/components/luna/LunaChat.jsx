@@ -33,9 +33,22 @@ export default function LunaChat({ session }) {
       const history = next.map((m) => `${m.role === 'user' ? 'Aluno' : 'Luna'}: ${m.content}`).join('\n');
       const answer = await base44.integrations.Core.InvokeLLM({
         prompt: `${LUNA_SYSTEM_PROMPT}\n\nNome do aluno: ${session?.name || 'Aluno'}\n\nConversa:\n${history}\n\nLuna:`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            answer: { type: 'string' },
+            links: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: { key: { type: 'string' }, label: { type: 'string' } },
+              },
+            },
+          },
+        },
       });
-      const reply = typeof answer === 'string' ? answer : 'Desculpe, não consegui responder agora. Tente novamente.';
-      setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      const reply = answer?.answer || 'Desculpe, não consegui responder agora. Poderia tentar novamente, por favor?';
+      setMessages((prev) => [...prev, { role: 'assistant', content: reply, links: answer?.links || [] }]);
       voice.speak(reply);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Tive um problema para responder agora. Verifique sua internet e tente de novo, por favor.' }]);
@@ -70,7 +83,12 @@ export default function LunaChat({ session }) {
 
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
         {messages.map((message, index) => (
-          <LunaBubble key={index} role={message.role}>{message.content}</LunaBubble>
+          <div key={index} className="space-y-2">
+            <LunaBubble role={message.role}>{message.content}</LunaBubble>
+            {message.role === 'assistant' && (
+              <LunaShortcuts links={message.links} onNavigate={() => { voice.stop(); onNavigated?.(); }} />
+            )}
+          </div>
         ))}
         {loading && (
           <LunaBubble role="assistant">
