@@ -80,7 +80,6 @@ export default function Dashboard() {
   const [showMiniChatEmojiPicker, setShowMiniChatEmojiPicker] = React.useState(false);
   const [replyTarget, setReplyTarget] = React.useState(null);
   const [replyText, setReplyText] = React.useState('');
-  const [syncingAchievements, setSyncingAchievements] = React.useState(false);
 
 
   useEffect(() => {
@@ -471,24 +470,6 @@ export default function Dashboard() {
   const reactMutation = wall.reactMutation;
   const replyMutation = wall.replyMutation;
 
-  const recoverAchievements = async () => {
-    setSyncingAchievements(true);
-    try {
-      // Migra também as marcações antigas que existiam somente neste navegador.
-      const storageKey = `wr_apostila_read_${userCourse || 'tcc'}_${session?.email || session?.code || 'guest'}`;
-      const localReads = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      for (const readKey of localReads) {
-        const [chapterId, lessonId] = String(readKey).split('__');
-        if (!chapterId || !lessonId) continue;
-        await base44.functions.invoke('saveStudentRecord', { action: 'lessonProgressUpsert', lesson_id: `apostila:${chapterId}:${lessonId}`, student_email: session?.email, student_identifiers: [session?.email, session?.code].filter(Boolean), patch: { watched: true } });
-      }
-      const response = await base44.functions.invoke('manageOvercomingWall', { action: 'sync', course: userCourse || 'tcc', actor_email: session?.email, access_code: session?.code });
-      await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
-      toast.success(response?.data?.created ? `${response.data.created} conquista(s) resgatada(s)!` : 'Mural conferido: todas as conquistas já estão registradas.');
-    } catch (error) { toast.error(error?.message || 'Não foi possível resgatar as conquistas.'); }
-    finally { setSyncingAchievements(false); }
-  };
-
   const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => {
     // Em publicações coletivas, quem é homenageado não interage com a própria conquista.
     const isOwnContent = ownerEmail === session?.email || mentionedEmails.includes(session?.email);
@@ -623,7 +604,6 @@ export default function Dashboard() {
                   <p className="text-xs font-bold text-foreground">Mural de superação</p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button type="button" onClick={recoverAchievements} disabled={syncingAchievements} className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60" title="Busca conclusões antigas e publica as que estiverem faltando"><RefreshCw size={11} className={syncingAchievements ? 'animate-spin' : ''} />{syncingAchievements ? 'Buscando...' : 'Resgatar conquistas'}</button>
                   <span className="hidden sm:inline text-[10px] font-bold uppercase tracking-wide text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-full">Inspire a turma</span>
                 </div>
               </div>

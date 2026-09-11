@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -118,6 +118,14 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     queryFn: () => base44.entities.MonitorHistory.filter({ course: activeCourse }, '-period_start', 100),
     enabled: on,
   });
+
+  // Tempo real: cada publicação nova no chat da turma entra no mural na hora.
+  useEffect(() => {
+    if (!on) return;
+    return base44.entities.ChatMessage.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
+    });
+  }, [on, chatSessionId, queryClient]);
 
   const courseEmails = useMemo(
     () => new Set(accessCodes.filter((code) => code.student_email && (code.course === activeCourse || (activeCourse === 'tcc' && !code.course))).map((code) => code.student_email)),
