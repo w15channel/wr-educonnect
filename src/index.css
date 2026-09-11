@@ -848,12 +848,13 @@
   .scrollbar-invisible { scrollbar-width: none; -ms-overflow-style: none; }
   .scrollbar-invisible::-webkit-scrollbar { display: none; }
 
+  /* Mesma medida da tela de Aulas (app-page--wide) em todas as páginas internas. */
   .internal-page-shell {
     width: 100%;
-    max-width: min(100%, 1220px);
+    max-width: 100%;
     margin-inline: auto;
-    padding-inline: clamp(0.9rem, 2.6vw, 1.75rem);
-    padding-block: clamp(1rem, 2.2vw, 1.5rem);
+    padding-inline: 0.75rem;
+    padding-block: 0.75rem;
   }
 
   .app-page {
@@ -877,17 +878,15 @@
 }
 
 @media (min-width: 768px) {
-  .app-page {
+  .app-page, .internal-page-shell {
     padding-inline: clamp(1rem, 2.4vw, 2rem);
     padding-block: clamp(1rem, 1.8vw, 1.75rem);
   }
-  .app-page--wide    { max-width: min(100%, 70rem); }
-  .app-page--narrow  { max-width: min(100%, 56rem); }
-  .app-page--compact { max-width: min(100%, 64rem); }
+  .app-page--wide, .app-page--narrow, .app-page--compact, .internal-page-shell { max-width: min(100%, 70rem); }
 }
 
 @media (min-width: 1024px) {
-  .app-page {
+  .app-page, .internal-page-shell {
     padding-inline: clamp(1.25rem, 2vw, 2.5rem);
     padding-block: clamp(1.1rem, 1.5vw, 2rem);
   }

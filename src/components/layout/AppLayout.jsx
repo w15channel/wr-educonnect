@@ -145,7 +145,10 @@ export default function AppLayout() {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role !== 'admin' }} />
+              {/* Largura padrão de todas as páginas internas — a mesma da tela de Aulas. */}
+              <div className="w-full max-w-[70rem] mx-auto flex-1 flex flex-col min-h-0">
+                <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role !== 'admin' }} />
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>
