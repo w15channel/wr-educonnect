@@ -55,8 +55,13 @@ export default function NotificationsBell({ session }) {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-14 sm:top-11 z-50 sm:w-80 max-w-[calc(100vw-1rem)] bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setOpen(false)} />
+          {/* Fundo totalmente opaco: o vidro translúcido do app deixava o texto
+              se misturar com o conteúdo por baixo. */}
+          <div
+            className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-14 sm:top-11 z-50 sm:w-80 max-w-[calc(100vw-1rem)] border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in"
+            style={{ backgroundColor: 'hsl(var(--popover))' }}
+          >
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <Bell size={15} className="text-orange-500" />
