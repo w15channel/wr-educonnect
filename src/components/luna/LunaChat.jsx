@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import useOwlVoice from '@/hooks/useOwlVoice';
 import LunaBubble from '@/components/luna/LunaBubble';
+import LunaShortcuts from '@/components/luna/LunaShortcuts';
 import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting } from '@/lib/lunaPersona';
 
 /**
  * Conversa com a Luna em balões — usada na página dela e na sobreposição
  * aberta pelo botão ao lado da lâmpada de tema.
  */
-export default function LunaChat({ session }) {
+export default function LunaChat({ session, onNavigated }) {
   const voice = useOwlVoice();
   const greeting = lunaGreeting(session?.name);
   const [messages, setMessages] = useState([{ role: 'assistant', content: greeting }]);

@@ -33,7 +33,7 @@ export default function LunaLauncher() {
               </button>
             </div>
             <div className="min-h-0 flex-1">
-              <LunaChat session={session} />
+              <LunaChat session={session} onNavigated={() => setOpen(false)} />
             </div>
           </div>
         </div>
