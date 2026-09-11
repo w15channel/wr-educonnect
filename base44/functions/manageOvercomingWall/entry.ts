@@ -7,12 +7,17 @@ async function authenticatedUser(base44, payload) {
   const claimedEmail = norm(payload.actor_email);
   const code = String(payload.access_code || '').trim();
   const codeId = String(payload.access_code_id || '').trim();
-  if (!claimedEmail || !code) throw new Error('Acesso não autorizado.');
-  const matches = codeId
-    ? [await base44.asServiceRole.entities.AccessCode.get(codeId).catch(() => null)].filter(Boolean)
-    : await base44.asServiceRole.entities.AccessCode.filter({ student_email: claimedEmail }, '-created_date', 10);
-  const access = matches.find((item) => norm(item.student_email) === claimedEmail && item.code === code && item.is_active !== false);
-  if (!access) throw new Error('Acesso não autorizado.');
+  if (!code && !codeId) throw new Error('Acesso não autorizado.');
+  // Localiza a matrícula pelo id ou pelo próprio código (único) — nunca pelo e-mail,
+  // que pode estar vazio ou com maiúsculas diferentes no cadastro.
+  let access = codeId ? await base44.asServiceRole.entities.AccessCode.get(codeId).catch(() => null) : null;
+  if (!access && code) {
+    const byCode = await base44.asServiceRole.entities.AccessCode.filter({ code }, '-created_date', 5);
+    access = byCode.find((item) => item.code === code) || null;
+  }
+  if (!access || (code && access.code !== code) || access.is_active === false) throw new Error('Acesso não autorizado.');
+  const storedEmail = norm(access.student_email);
+  if (claimedEmail && storedEmail && storedEmail !== claimedEmail) throw new Error('Acesso não autorizado.');
   // Registros sem e-mail continuam identificados de modo privado e determinístico
   // pelo id da matrícula, em vez de compartilhar uma identidade vazia.
   const email = norm(access.student_email) || `access-code:${access.id}`;

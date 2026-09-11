@@ -135,23 +135,23 @@ export default function SalaDebates() {
       </div>
 
       {/* New Post */}
-      <div className="bg-card rounded-2xl border border-border p-5 mb-5">
-        <div className="flex items-start gap-3">
+      <div className="bg-card rounded-2xl border border-border p-4 sm:p-5 mb-5 w-full max-w-full overflow-hidden">
+        <div className="flex items-start gap-3 min-w-0">
           {myAv.photoUrl
             ? <img src={myAv.photoUrl} alt={session?.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
             : <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0" style={{ backgroundColor: myAv.avatarColor }}>{myAv.avatarEmoji || initials(session?.name)}</div>
           }
-          <div className="flex-1">
-            <form onSubmit={e => { e.preventDefault(); if (newPost.trim()) createPostMutation.mutate({ content: newPost, topic }); }} className="space-y-3">
-              <div>
+          <div className="flex-1 min-w-0">
+            <form onSubmit={e => { e.preventDefault(); if (newPost.trim()) createPostMutation.mutate({ content: newPost, topic }); }} className="space-y-3 min-w-0">
+              <div className="min-w-0">
                 <label className="text-xs font-semibold text-muted-foreground block mb-1">Tema do debate (módulos da apostila)</label>
                 <Select value={topic} onValueChange={setTopic}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent className="max-h-80">
+                  <SelectTrigger className="h-9 text-sm w-full max-w-full [&>span]:truncate [&>span]:text-left"><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-80 w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
                     {DEBATE_TOPIC_GROUPS.map(group => (
                       <SelectGroup key={group.moduleNumber}>
                         <SelectLabel>{group.label}</SelectLabel>
-                        {group.topics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {group.topics.map(t => <SelectItem key={t} value={t} className="whitespace-normal break-words">{t}</SelectItem>)}
                       </SelectGroup>
                     ))}
                     <SelectGroup>
@@ -161,7 +161,7 @@ export default function SalaDebates() {
                   </SelectContent>
                 </Select>
               </div>
-              <Textarea placeholder="Abra um tópico para debate com a turma..." value={newPost} onChange={e => setNewPost(e.target.value)} className="resize-none text-sm" rows={2} />
+              <Textarea placeholder="Abra um tópico para debate com a turma..." value={newPost} onChange={e => setNewPost(e.target.value)} className="resize-none text-sm w-full max-w-full break-words" rows={2} />
               <div className="flex justify-end">
                 <Button type="submit" disabled={!newPost.trim()} className="gap-2 h-9 text-sm"><Send size={14} /> Publicar</Button>
               </div>
