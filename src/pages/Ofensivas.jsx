@@ -10,6 +10,7 @@ import GameModal from '@/components/ofensivas/GameModal';
 import OwlGuide from '@/components/ofensivas/OwlGuide';
 import TreasureChest from '@/components/ofensivas/TreasureChest';
 import NextStepLink from '@/components/shared/NextStepLink';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -223,14 +224,17 @@ function QuestionModal({ question, idx, isChest, points, answered, savedAnswer, 
             </div>
           ) : (
             <>
-              <Textarea
-                placeholder="Escreva sua reflexão aqui... Não precisa ser perfeita!"
-                value={answer}
-                onChange={e => setAnswer(e.target.value)}
-                rows={4}
-                className="text-sm"
-                autoFocus
-              />
+              <div className="flex items-start gap-2">
+                <Textarea
+                  placeholder="Escreva sua reflexão aqui... Não precisa ser perfeita!"
+                  value={answer}
+                  onChange={e => setAnswer(e.target.value)}
+                  rows={4}
+                  className="text-sm"
+                  autoFocus
+                />
+                <VoiceDictationButton value={answer} onChange={setAnswer} className="mt-1" />
+              </div>
               <Button className="w-full gap-2" disabled={!answer.trim() || isPending} onClick={() => onSubmit(answer)}>
                 {isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 Registrar · +{points} pts

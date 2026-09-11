@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import useOwlVoice from '@/hooks/useOwlVoice';
 import LunaBubble from '@/components/luna/LunaBubble';
 import LunaShortcuts from '@/components/luna/LunaShortcuts';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting } from '@/lib/lunaPersona';
 
 /**
@@ -130,6 +131,7 @@ export default function LunaChat({ session, onNavigated }) {
           className="h-11 flex-1"
           disabled={loading}
         />
+        <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
         <Button type="submit" className="h-11 w-11 shrink-0 p-0" disabled={!input.trim() || loading}>
           <Send size={16} />
         </Button>

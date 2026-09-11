@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ClipboardCheck, ArrowRight, Lock, Unlock, CheckCircle2, Circle, GraduationCap, Sparkles } from 'lucide-react';
+import { ClipboardCheck, Lock, Unlock, CheckCircle2, Circle, GraduationCap, Sparkles } from 'lucide-react';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
 
 // Mini Checklist da dashboard — espelho funcional da ferramenta completa:
@@ -84,15 +84,6 @@ export default function ChecklistDashboardCard({ session, course, className = ''
                 <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-black text-muted-foreground">
                   {item.current}/{item.target}
                 </span>
-                {!item.done && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); navigate(`${prefix}${item.to}${item.to.includes('?') ? '&' : '?'}checklist=${currentModule}`); }}
-                    className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground hover:opacity-90 transition-opacity"
-                  >
-                    Cumprir <ArrowRight size={10} />
-                  </button>
-                )}
               </div>
             ))}
       </div>

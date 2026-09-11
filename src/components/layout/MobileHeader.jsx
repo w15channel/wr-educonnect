@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import NotificationsBell from '@/components/dashboard/NotificationsBell';
 import { BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 
@@ -86,11 +85,6 @@ export default function MobileHeader() {
       <h1 className="text-sm font-bold text-sidebar-foreground tracking-tight">{label}</h1>
       <div className="ml-auto flex items-center gap-2">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        {session?.role === 'admin' && (
-          <div className="[&_button]:text-white/70 [&_button:hover]:bg-white/10">
-            <NotificationsBell session={session} />
-          </div>
-        )}
         <span className="hidden sm:inline text-[9px] font-bold text-white/30 uppercase tracking-widest">{BRAND_LEGAL_NAME}</span>
       </div>
     </header>

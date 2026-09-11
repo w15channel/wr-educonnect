@@ -3,6 +3,7 @@ import { BookOpen, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import MinLengthHint from '@/components/shared/MinLengthHint';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { isTextLongEnough } from '@/lib/minTextLength';
 
 /**
@@ -41,13 +42,16 @@ export default function LessonSummaryField({ lessonId, savedSummary = '', draft,
       <label className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
         <BookOpen size={12} className="text-primary" /> Meu Resumo
       </label>
-      <Textarea
-        placeholder="Anote os principais pontos e aprendizados (mínimo de 1000 caracteres)..."
-        value={value}
-        onChange={e => onDraftChange(e.target.value)}
-        rows={4}
-        className="text-sm"
-      />
+      <div className="flex items-start gap-2">
+        <Textarea
+          placeholder="Anote os principais pontos e aprendizados (mínimo de 1000 caracteres)..."
+          value={value}
+          onChange={e => onDraftChange(e.target.value)}
+          rows={4}
+          className="text-sm"
+        />
+        <VoiceDictationButton value={value} onChange={onDraftChange} className="mt-1" />
+      </div>
       <MinLengthHint value={value} />
       <div className="flex gap-2 mt-2">
         <Button

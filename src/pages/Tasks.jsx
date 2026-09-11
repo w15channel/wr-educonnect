@@ -22,6 +22,7 @@ import TaskModuleHeader from '@/components/tasks/TaskModuleHeader';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import MinLengthHint from '@/components/shared/MinLengthHint';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { isTextLongEnough, insufficientTextMessage } from '@/lib/minTextLength';
 
 const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 6, quiz_questions: [], module_number: '' };
@@ -82,7 +83,10 @@ function SubmittedView({ submission, onSaveEdit, isSaving }) {
       {open && editing && (
         <div className="bg-secondary/40 border border-border rounded-xl p-3 space-y-2">
           <p className="text-xs font-bold text-foreground">Editar minha resposta</p>
-          <Textarea value={draft} onChange={e => setDraft(e.target.value)} rows={6} className="text-xs" />
+          <div className="flex items-start gap-2">
+            <Textarea value={draft} onChange={e => setDraft(e.target.value)} rows={6} className="text-xs" />
+            <VoiceDictationButton value={draft} onChange={setDraft} className="mt-1" />
+          </div>
           <MinLengthHint value={draft} />
           <div className="flex gap-2">
             <Button
@@ -457,7 +461,10 @@ export default function Tasks({ mode = 'tasks' }) {
                     ) : (
                       <div>
                         <p className="text-xs font-bold text-foreground mb-2">💬 Sua Resposta</p>
-                        <Textarea placeholder="Escreva sua resposta aqui (mínimo de 1000 caracteres)..." value={commentInputs[task.id] || ''} onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))} rows={5} className="text-xs" />
+                        <div className="flex items-start gap-2">
+                          <Textarea placeholder="Escreva sua resposta aqui (mínimo de 1000 caracteres)..." value={commentInputs[task.id] || ''} onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))} rows={5} className="text-xs" />
+                          <VoiceDictationButton value={commentInputs[task.id] || ''} onChange={(text) => setCommentInputs(prev => ({ ...prev, [task.id]: text }))} className="mt-1" />
+                        </div>
                         <MinLengthHint value={commentInputs[task.id] || ''} />
                         <Button size="sm" className="w-full gap-1.5 mt-2" disabled={!isTextLongEnough(commentInputs[task.id]) || submitCommentMutation.isPending} onClick={() => { if (!isTextLongEnough(commentInputs[task.id])) { toast.error(insufficientTextMessage(commentInputs[task.id])); return; } submitCommentMutation.mutate({ taskId: task.id, comment: commentInputs[task.id] }); }}>
                           <Send size={13} /> Enviar Resposta
