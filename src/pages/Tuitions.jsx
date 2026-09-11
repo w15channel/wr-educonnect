@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { generateReceiptCode, generateTuitionReceiptPdf } from '@/lib/generateTuitionReceipt';
+import { generateReceiptCode, generateReceiptImage, downloadReceiptImage } from '@/lib/generateReceiptImage';
+import ReceiptImageDialog from '@/components/tuitions/ReceiptImageDialog';
 
 const STATUS_CONFIG = {
   paid: { label: 'Pago', icon: CheckCircle, card: 'border-green-500/20 bg-green-500/10', badge: 'text-green-500 bg-green-500/10 border-green-500/20', text: 'text-green-500', iconBg: 'bg-green-500/15' },
@@ -32,6 +33,7 @@ export default function Tuitions() {
   const [payDialogTuition, setPayDialogTuition] = useState(null);
   const [payAmountInput, setPayAmountInput] = useState('');
   const [issuingReceiptId, setIssuingReceiptId] = useState(null);
+  const [receipt, setReceipt] = useState(null);
 
   const { data: tuitions = [], isLoading } = useQuery({
     queryKey: ['tuitions'],
@@ -121,28 +123,34 @@ export default function Tuitions() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tuitions'] }); toast.success('Publicado no mural!'); },
   });
 
+  const runReceiptGeneration = async (data) => {
+    setReceipt({ ...data, imageUrl: null, isGenerating: true });
+    try {
+      const imageUrl = await generateReceiptImage(data);
+      setReceipt({ ...data, imageUrl, isGenerating: false });
+    } catch (error) {
+      setReceipt(null);
+      toast.error(error?.message || 'Não foi possível gerar o recibo.');
+    }
+  };
+
   const handleIssueReceipt = async (t) => {
     setIssuingReceiptId(t.id);
-    try {
-      let code = t.receipt_code;
-      if (!code) {
-        code = generateReceiptCode();
-        await base44.entities.Tuition.update(t.id, { receipt_code: code });
-        queryClient.invalidateQueries({ queryKey: ['tuitions'] });
-      }
-      const result = await generateTuitionReceiptPdf({
-        studentName: t.student_name || t.student_email,
-        receiptCode: code,
-        amount: `R$ ${Number(t.paid_amount ?? t.amount ?? 0).toFixed(2)}`,
-        referenceLabel: t.month_ref,
-        paidDate: t.paid_date ? format(new Date(t.paid_date + 'T12:00:00'), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
-      });
-      toast.success(result.artworkGenerated ? 'Arte institucional criada e recibo baixado!' : 'Recibo artístico baixado!');
-    } catch (error) {
-      toast.error(error?.message || 'Não foi possível gerar o recibo.');
-    } finally {
-      setIssuingReceiptId(null);
+    let code = t.receipt_code;
+    if (!code) {
+      code = generateReceiptCode();
+      await base44.entities.Tuition.update(t.id, { receipt_code: code });
+      queryClient.invalidateQueries({ queryKey: ['tuitions'] });
     }
+    setIssuingReceiptId(null);
+    await runReceiptGeneration({
+      studentName: t.student_name || t.student_email,
+      receiptCode: code,
+      amount: `R$ ${Number(t.paid_amount ?? t.amount ?? 0).toFixed(2)}`,
+      referenceLabel: t.month_ref || '-',
+      paidDate: t.paid_date ? format(new Date(t.paid_date + 'T12:00:00'), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
+      coordinatorName: 'William Ribeiro',
+    });
   };
 
   const handleBulkLaunch = async () => {
@@ -372,7 +380,7 @@ export default function Tuitions() {
                     </span>
                   )}
                   {t.status === 'paid' && (
-                    <button onClick={() => handleIssueReceipt(t)} disabled={issuingReceiptId === t.id} className="p-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" title="Emitir recibo artístico em PDF">
+                    <button onClick={() => handleIssueReceipt(t)} disabled={issuingReceiptId === t.id} className="p-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" title="Gerar recibo artístico em PNG">
                       {issuingReceiptId === t.id ? <span className="block w-3.5 h-3.5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" /> : <FileDown size={14} />}
                     </button>
                   )}
@@ -401,6 +409,15 @@ export default function Tuitions() {
           })}
         </div>
       )}
+
+      <ReceiptImageDialog
+        open={!!receipt}
+        onOpenChange={(open) => { if (!open) setReceipt(null); }}
+        imageUrl={receipt?.imageUrl}
+        isGenerating={!!receipt?.isGenerating}
+        onRegenerate={() => receipt && runReceiptGeneration(receipt)}
+        onDownload={() => receipt?.imageUrl && downloadReceiptImage(receipt.imageUrl, receipt.receiptCode)}
+      />
 
       {/* Confirmação de pagamento com valor contribuído */}
       <Dialog open={!!payDialogTuition} onOpenChange={(open) => { if (!open) { setPayDialogTuition(null); setPayAmountInput(''); } }}>
