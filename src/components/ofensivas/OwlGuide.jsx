@@ -23,7 +23,7 @@ export default function OwlGuide({ name = 'aluno', status }) {
         {greeting}
         <span className="absolute left-1/2 -bottom-1.5 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-border bg-card" />
       </div>
-      <div className="ofensiva-owl mt-3 text-5xl" role="img" aria-label="Corujinha guia">🦉</div>
+      <div className="ofensiva-owl mt-3 text-5xl" role="img" aria-label="Luna, assistente do site">🦉</div>
       {status && (
         <div className="ofensiva-status mt-2 max-w-[220px] rounded-xl border border-border bg-card px-3 py-1.5 text-center text-xs font-semibold text-foreground shadow">
           {status}

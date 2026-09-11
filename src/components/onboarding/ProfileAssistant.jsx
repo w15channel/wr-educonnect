@@ -8,7 +8,7 @@ import useOwlVoice from '@/hooks/useOwlVoice';
 import ProfileAssistantField from '@/components/onboarding/ProfileAssistantField';
 
 /**
- * Assistente Corujinha do cadastro: no primeiro acesso à área do curso, pede
+ * Assistente Luna do cadastro: no primeiro acesso à área do curso, pede
  * item por item os dados obrigatórios do perfil (todos, menos a foto), com
  * explicação falada em voz alta. Só libera a plataforma ao concluir.
  */
@@ -25,7 +25,7 @@ export default function ProfileAssistant({ session, profile, steps, initialValue
   const script = useMemo(() => {
     if (!step) return '';
     const intro = index === 0
-      ? `Olá ${firstName}! Eu sou a Corujinha e vou te ajudar a completar o seu cadastro. São ${steps.length} perguntas, uma por vez.`
+      ? `Olá ${firstName}! Eu sou a Luna e vou te ajudar a completar o seu cadastro. São ${steps.length} perguntas, uma por vez.`
       : 'Muito bem! Vamos para a próxima.';
     return `${intro} ${step.question} ${step.help}`;
   }, [step, index, steps.length, firstName]);
@@ -109,10 +109,10 @@ export default function ProfileAssistant({ session, profile, steps, initialValue
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-3 backdrop-blur-sm">
       <div className="max-h-[94dvh] w-full max-w-md overflow-y-auto rounded-3xl border-2 border-amber-300/70 bg-background p-5 shadow-2xl">
         <div className="flex items-start gap-3">
-          <div className="ofensiva-owl shrink-0 text-4xl" role="img" aria-label="Corujinha assistente">🦉</div>
+          <div className="ofensiva-owl shrink-0 text-4xl" role="img" aria-label="Luna, assistente do site">🦉</div>
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-black uppercase tracking-wide text-amber-600 dark:text-amber-300">
-              Corujinha · Cadastro · {index + 1} de {steps.length}
+              Luna · Cadastro · {index + 1} de {steps.length}
             </p>
             <p className="mt-1 text-[15px] font-black leading-snug text-foreground">
               {step.emoji} {step.question}

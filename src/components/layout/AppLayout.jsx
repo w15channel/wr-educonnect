@@ -6,13 +6,10 @@ import BottomNav from './BottomNav';
 import MobileHeader from './MobileHeader';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
-import TutorialModal from '../onboarding/TutorialModal';
 import MobileSplash from './MobileSplash';
 import ChecklistReturnBar from '../checklist/ChecklistReturnBar';
 import ProfileAssistant from '../onboarding/ProfileAssistant';
 import useProfileCompletion from '@/hooks/useProfileCompletion';
-
-const TUTORIAL_KEY = 'wr_tutorial_done';
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -43,25 +40,12 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Custom auth: students are any non-admin role
   const isStudent = session?.role !== 'admin';
-  const sessionKey = session?.email || session?.code || '';
-  const [showTutorial, setShowTutorial] = useState(false);
-
-  useEffect(() => {
-    if (!isStudent || !sessionKey) return;
-    const tutKey = `${TUTORIAL_KEY}_${sessionKey}`;
-    if (!localStorage.getItem(tutKey)) setShowTutorial(true);
-  }, [isStudent, sessionKey]);
-
-  const handleTutorialFinish = () => {
-    localStorage.setItem(`${TUTORIAL_KEY}_${sessionKey}`, '1');
-    setShowTutorial(false);
-  };
-
-  // Assistente Corujinha do cadastro: ao ingressar na área do curso, pede item
+  // Assistente Luna do cadastro: ao ingressar na área do curso, pede item
   // por item os dados obrigatórios do perfil (a foto continua opcional).
+  // O tutorial da plataforma acontece somente no lobby, sem duplicidade aqui.
   const { profile, values, missing, needsCompletion } = useProfileCompletion(session);
   const [assistantDone, setAssistantDone] = useState(false);
-  const showAssistant = isStudent && !showTutorial && !assistantDone && needsCompletion;
+  const showAssistant = isStudent && !assistantDone && needsCompletion;
 
   // Pull-to-refresh
   const [pullY, setPullY] = useState(0);
@@ -102,10 +86,6 @@ export default function AppLayout() {
   return (
     <div className="app-shell-bg flex overflow-hidden md:pt-0" style={{ height: '100dvh' }}>
       <MobileSplash />
-      {showTutorial && isStudent && (
-        <TutorialModal onFinish={handleTutorialFinish} />
-      )}
-
       {showAssistant && (
         <ProfileAssistant
           session={session}

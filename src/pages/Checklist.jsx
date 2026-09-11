@@ -75,7 +75,7 @@ export default function Checklist() {
         </div>
         <div className="min-w-0">
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Trilha do Módulo</h2>
-          <p className="text-sm text-muted-foreground">A Corujinha te guia passo a passo até liberar a prova</p>
+          <p className="text-sm text-muted-foreground">A Luna te guia passo a passo até liberar a prova</p>
         </div>
       </div>
 

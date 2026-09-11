@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { BookOpen, PlayCircle, X } from 'lucide-react';
+import { PlayCircle, X } from 'lucide-react';
 import TutorialModal from '@/components/onboarding/TutorialModal';
 import TutorialPlayerCard from '@/components/dashboard/TutorialPlayerCard';
 
 /**
- * Primeiro acesso ao lobby: o aluno escolhe conhecer a plataforma pelo
- * tutorial escrito (passo a passo de todas as funções) ou pelo vídeo tutorial
- * oficial — o mesmo player usado na dashboard.
+ * Acesso ao lobby: o aluno escolhe conhecer a plataforma pelo tutorial narrado
+ * pela Luna (assistente do site) ou pelo vídeo tutorial oficial — o mesmo
+ * player usado na dashboard. Este é o único tutorial da plataforma.
  */
 export default function LobbyTutorialChoice({ studentName, onFinish }) {
   const [mode, setMode] = useState(null);
 
-  if (mode === 'written') return <TutorialModal onFinish={onFinish} />;
+  if (mode === 'written') return <TutorialModal onFinish={onFinish} studentName={studentName} />;
 
   if (mode === 'video') {
     return (
@@ -43,17 +43,17 @@ export default function LobbyTutorialChoice({ studentName, onFinish }) {
           Boas-vindas{studentName ? `, ${String(studentName).split(' ')[0]}` : ''}!
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Quer conhecer (ou rever) a plataforma? Escolha o tutorial escrito ou o vídeo tutorial oficial.
+          Quer conhecer (ou rever) a plataforma? A Luna, nossa assistente, pode te explicar em voz alta — ou você assiste ao vídeo oficial.
         </p>
         <div className="mt-5 grid grid-cols-1 gap-3">
           <button
             onClick={() => setMode('written')}
             className="flex items-center gap-3 rounded-2xl border-2 border-border p-4 text-left transition-colors hover:border-primary/50"
           >
-            <BookOpen size={20} className="text-primary shrink-0" />
+            <span className="ofensiva-owl shrink-0 text-2xl" role="img" aria-label="Luna, assistente do site">🦉</span>
             <span>
-              <span className="block text-sm font-bold text-foreground">Tutorial escrito</span>
-              <span className="block text-[12px] text-muted-foreground">Passo a passo com todas as funções e características do site.</span>
+              <span className="block text-sm font-bold text-foreground">Tutorial com a Luna (voz)</span>
+              <span className="block text-[12px] text-muted-foreground">Ela explica em voz alta, passo a passo, todas as funções do site.</span>
             </span>
           </button>
           <button

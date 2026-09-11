@@ -24,10 +24,10 @@ export default function OwlStepGuide({
   return (
     <div className="rounded-3xl border-2 border-amber-300/70 bg-gradient-to-br from-amber-50 via-card to-orange-50/70 p-4 shadow-lg dark:border-amber-400/25 dark:from-amber-950/30 dark:via-card dark:to-orange-950/20">
       <div className="flex items-start gap-3">
-        <div className="ofensiva-owl shrink-0 text-4xl" role="img" aria-label="Corujinha guia">🦉</div>
+        <div className="ofensiva-owl shrink-0 text-4xl" role="img" aria-label="Luna, assistente do site">🦉</div>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
-            Corujinha · Módulo {moduleNumber}
+            Luna · Módulo {moduleNumber}
           </p>
           {complete ? (
             <p className="mt-1 text-base font-black leading-snug text-foreground">

@@ -89,7 +89,7 @@ export function buildVoiceScript({ item, index, total, moduleNumber, firstName }
   const guide = getStepGuide(item.key);
   const falta = Math.max(0, (item.target || 0) - (item.current || 0));
   const intro = index === 0
-    ? `Olá ${firstName}! Eu sou a Corujinha e vou te guiar no módulo ${moduleNumber}.`
+    ? `Olá ${firstName}! Eu sou a Luna e vou te guiar no módulo ${moduleNumber}.`
     : `Muito bem, ${firstName}!`;
   const situacao = falta > 0
     ? `Nesta etapa ${index + 1} de ${total}, você precisa ${guide.what.toLowerCase()}. Ainda falta ${falta} de ${item.target}.`

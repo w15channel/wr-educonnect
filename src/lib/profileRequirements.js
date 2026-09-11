@@ -1,4 +1,4 @@
-// Requisitos do cadastro do aluno — a assistente Corujinha pede um item por vez.
+// Requisitos do cadastro do aluno — a assistente Luna pede um item por vez.
 // A foto é opcional: todos os demais itens são obrigatórios.
 
 export const PROFILE_STEPS = [
