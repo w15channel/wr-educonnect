@@ -24,6 +24,37 @@ async function authenticatedUser(base44, payload) {
   return { email, name: access.profile_name || access.student_name, full_name: access.profile_name || access.student_name, course: access.course };
 }
 
+/**
+ * Resolve o destinatário de uma interação social do mural.
+ * O feed mistura conquistas persistidas, publicações do chat e conquistas
+ * derivadas de atividades (aulas, tarefas, debates, relatos...), então nem todo
+ * id existe como registro. Por isso o e-mail do autor é a fonte da verdade:
+ * basta ser uma matrícula real da plataforma para a reação/resposta valer.
+ */
+async function resolveRecipients(base44, payload, targetType) {
+  const service = base44.asServiceRole.entities;
+  const targetEntity = targetType === 'achievement' ? 'Achievement' : 'ChatMessage';
+  let target = String(payload.target_id || '').startsWith('achievement-')
+    ? null
+    : await service[targetEntity].get(payload.target_id).catch(() => null);
+  const claimedOwner = norm(payload.target_owner_email);
+  if (!claimedOwner) return { recipients: [] };
+  const mentioned = (target?.mentioned_emails || []).map(norm).filter(Boolean);
+  if (mentioned.length) {
+    return { recipients: mentioned.includes(claimedOwner) ? mentioned : [] };
+  }
+  const owner = norm(target?.student_email || target?.author_email);
+  if (owner) return { recipients: owner === claimedOwner ? [owner] : [] };
+  // Conquista derivada de atividade: valida o autor pela matrícula.
+  const codes = await service.AccessCode.filter({ student_email: claimedOwner }, '-created_date', 5);
+  let known = codes.some((item) => norm(item.student_email) === claimedOwner);
+  if (!known) {
+    const all = await service.AccessCode.list('-created_date', 10000);
+    known = all.some((item) => norm(item.student_email) === claimedOwner);
+  }
+  return { recipients: known ? [claimedOwner] : [] };
+}
+
 async function syncAchievements(base44, user, requestedCourse) {
   const service = base44.asServiceRole.entities;
   const course = requestedCourse || user.course || 'tcc';
@@ -103,20 +134,12 @@ Deno.serve(async (req) => {
       const reaction = ['love', 'celebrate', 'applaud'].includes(payload.reaction) ? payload.reaction : null;
       const targetType = ['achievement', 'publication'].includes(payload.target_type) ? payload.target_type : null;
       if (!reaction || !targetType || !payload.target_id) return Response.json({ error: 'Interação inválida.' }, { status: 400 });
-      const targetEntity = targetType === 'achievement' ? 'Achievement' : 'ChatMessage';
-      let target = await base44.asServiceRole.entities[targetEntity].get(payload.target_id).catch(() => null);
-      if (!target && targetType === 'achievement' && String(payload.target_id).startsWith('achievement-')) {
-        const match = String(payload.target_id).match(/^achievement-(lesson|task|exam|challenge)-(.+)$/);
-        const sourceEntities = { lesson: 'LessonProgress', task: 'TaskSubmission', exam: 'ExamSubmission', challenge: 'DailyChallengeResponse' };
-        if (match) target = await base44.asServiceRole.entities[sourceEntities[match[1]]].get(match[2]).catch(() => null);
-      }
-      const owner = norm(targetType === 'achievement' ? target?.student_email : target?.author_email);
       const actor = norm(user.email);
       // Publicações coletivas (ex.: monitores da semana) homenageiam vários alunos:
       // a reação vale para qualquer pessoa mencionada e todas são avisadas.
-      const mentioned = (target?.mentioned_emails || []).map(norm).filter(Boolean);
-      const recipients = (mentioned.length ? mentioned : [owner]).filter(Boolean);
-      if (!target || !recipients.length || !recipients.includes(norm(payload.target_owner_email))) return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
+      const { recipients } = await resolveRecipients(base44, payload, targetType);
+      const owner = recipients[0] || '';
+      if (!recipients.length) return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
       if (recipients.includes(actor)) return Response.json({ error: 'Você não pode interagir com o próprio conteúdo.' }, { status: 400 });
       const dedupeKey = `${targetType}:${payload.target_id}:${actor}:${reaction}`;
       const prior = await base44.asServiceRole.entities.AchievementReaction.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
@@ -135,18 +158,9 @@ Deno.serve(async (req) => {
       if (!targetType || !payload.target_id || !replyText || replyText.length > 500) {
         return Response.json({ error: 'Resposta inválida. Escreva entre 1 e 500 caracteres.' }, { status: 400 });
       }
-      const targetEntity = targetType === 'achievement' ? 'Achievement' : 'ChatMessage';
-      let target = await base44.asServiceRole.entities[targetEntity].get(payload.target_id).catch(() => null);
-      if (!target && targetType === 'achievement' && String(payload.target_id).startsWith('achievement-')) {
-        const match = String(payload.target_id).match(/^achievement-(lesson|task|exam|challenge)-(.+)$/);
-        const sourceEntities = { lesson: 'LessonProgress', task: 'TaskSubmission', exam: 'ExamSubmission', challenge: 'DailyChallengeResponse' };
-        if (match) target = await base44.asServiceRole.entities[sourceEntities[match[1]]].get(match[2]).catch(() => null);
-      }
-      const owner = norm(targetType === 'achievement' ? target?.student_email : target?.author_email);
       const actor = norm(user.email);
-      const mentioned = (target?.mentioned_emails || []).map(norm).filter(Boolean);
-      const recipients = mentioned.length ? mentioned : [owner];
-      if (!target || !owner || !recipients.includes(norm(payload.target_owner_email))) {
+      const { recipients } = await resolveRecipients(base44, payload, targetType);
+      if (!recipients.length) {
         return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
       }
       if (recipients.includes(actor)) return Response.json({ error: 'Você não pode responder à própria publicação.' }, { status: 400 });
