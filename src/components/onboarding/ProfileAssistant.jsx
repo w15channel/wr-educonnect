@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ArrowRight, Volume2, VolumeX, RotateCcw, Loader2, CheckCircle2 } from 'lucide-react';
 import useOwlVoice from '@/hooks/useOwlVoice';
 import ProfileAssistantField from '@/components/onboarding/ProfileAssistantField';
+import { findStudentProfiles, profileDoneKey } from '@/hooks/useProfileCompletion';
 
 /**
  * Assistente Luna do cadastro: no primeiro acesso à área do curso, pede
@@ -66,11 +67,15 @@ export default function ProfileAssistant({ session, profile, steps, initialValue
         whatsapp: finalValues.whatsapp,
         email: finalValues.email,
       };
-      if (profile?.id) {
-        await base44.entities.StudentProfile.update(profile.id, profileData);
+      // Nunca criar um segundo cadastro: se já existe qualquer registro do aluno,
+      // ele é atualizado e recebe o vínculo do código de acesso.
+      const existing = profile?.id ? [profile] : await findStudentProfiles(current);
+      if (existing[0]?.id) {
+        await base44.entities.StudentProfile.update(existing[0].id, profileData);
       } else {
         await base44.entities.StudentProfile.create(profileData);
       }
+      if (current?.codeId) localStorage.setItem(profileDoneKey(current.codeId), '1');
       setSession({
         ...current,
         name: finalValues.full_name,
