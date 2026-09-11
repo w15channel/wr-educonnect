@@ -21,6 +21,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
     enabled: on,
+    staleTime: 5 * 60000,
   });
 
   const { data: messages = [] } = useQuery({
@@ -29,56 +30,58 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       const res = await base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: chatSessionId });
       return res.data?.records || [];
     },
-    refetchInterval: 3000,
+    refetchInterval: 15000,
+    staleTime: 10000,
     enabled: on,
   });
 
   const { data: activityRecords } = useQuery({
     queryKey: ['overcoming-wall-activity', activeCourse],
+    // Busca sequencial e enxuta: o mural mostra apenas as conquistas recentes,
+    // então pedir milhares de registros de uma vez só deixava o site lento.
     queryFn: async () => {
-      const [lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams] = await Promise.all([
-        base44.entities.LessonProgress.list('-created_date', 10000),
-        base44.entities.TaskSubmission.list('-created_date', 10000),
-        base44.entities.ExamSubmission.list('-submitted_at', 10000),
-        base44.entities.DailyChallengeResponse.list('-created_date', 10000),
-        base44.entities.ForumPost.list('-created_date', 10000),
-        base44.entities.TherapistPairing.list('-updated_date', 10000),
-        base44.entities.RecordedLesson.list('-created_date', 500),
-        base44.entities.Task.list('-created_date', 500),
-        base44.entities.Exam.list('-created_date', 500),
-      ]);
+      const lessonProgresses = await base44.entities.LessonProgress.list('-created_date', 400);
+      const taskSubmissions = await base44.entities.TaskSubmission.list('-created_date', 300);
+      const examSubmissions = await base44.entities.ExamSubmission.list('-submitted_at', 200);
+      const challengeResponses = await base44.entities.DailyChallengeResponse.list('-created_date', 300);
+      const forumPosts = await base44.entities.ForumPost.list('-created_date', 300);
+      const pairings = await base44.entities.TherapistPairing.list('-updated_date', 200);
+      const lessons = await base44.entities.RecordedLesson.list('-created_date', 500);
+      const tasks = await base44.entities.Task.list('-created_date', 300);
+      const exams = await base44.entities.Exam.list('-created_date', 300);
       return { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams };
     },
-    staleTime: 30000,
+    staleTime: 5 * 60000,
     enabled: on,
   });
 
   const { data: savedAchievements = [] } = useQuery({
     queryKey: ['overcoming-wall-achievements', activeCourse],
-    queryFn: () => base44.entities.Achievement.filter({ course: activeCourse }, '-occurred_at', 500),
-    refetchInterval: 15000,
+    queryFn: () => base44.entities.Achievement.filter({ course: activeCourse }, '-occurred_at', 200),
+    refetchInterval: 60000,
+    staleTime: 30000,
     enabled: on,
   });
 
   const { data: institutionalRecords } = useQuery({
     queryKey: ['overcoming-wall-institutional', activeCourse],
     queryFn: async () => {
-      const [shared, notices, liveSessions, calendarEvents] = await Promise.all([
-        base44.entities.WallPublication.filter({ course: activeCourse }, '-published_at', 200),
-        base44.entities.Announcement.filter({ course: activeCourse }, '-created_date', 100),
-        base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 100),
-        base44.entities.CalendarEvent.list('-date', 300),
-      ]);
+      const shared = await base44.entities.WallPublication.filter({ course: activeCourse }, '-published_at', 100);
+      const notices = await base44.entities.Announcement.filter({ course: activeCourse }, '-created_date', 100);
+      const liveSessions = await base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 100);
+      const calendarEvents = await base44.entities.CalendarEvent.list('-date', 200);
       return { shared, notices, liveSessions, calendarEvents };
     },
-    refetchInterval: 30000,
+    refetchInterval: 120000,
+    staleTime: 60000,
     enabled: on,
   });
 
   const { data: reactions = [] } = useQuery({
     queryKey: ['overcoming-wall-reactions'],
-    queryFn: () => base44.entities.AchievementReaction.list('-created_date', 5000),
-    refetchInterval: 5000,
+    queryFn: () => base44.entities.AchievementReaction.list('-created_date', 1500),
+    refetchInterval: 30000,
+    staleTime: 15000,
     enabled: on,
   });
 
@@ -98,7 +101,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       '-published_at',
       30
     ),
-    refetchInterval: 15000,
+    refetchInterval: 60000,
     enabled: on && session?.role !== 'admin' && !!session?.email,
   });
 
