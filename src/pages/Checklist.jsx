@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { ClipboardCheck, Lock, Unlock, GraduationCap, ArrowRight } from 'lucide-react';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
-import ChecklistItemRow from '@/components/checklist/ChecklistItemRow';
+import useOwlVoice from '@/hooks/useOwlVoice';
+import ChecklistTrail from '@/components/checklist/ChecklistTrail';
+import OwlStepGuide from '@/components/checklist/OwlStepGuide';
 import ModuleUnlockRequestCard from '@/components/checklist/ModuleUnlockRequestCard';
+import { buildVoiceScript, buildFinishScript } from '@/lib/checklistGuide';
 
 export default function Checklist() {
   const { user: session } = useOutletContext();
@@ -13,6 +16,7 @@ export default function Checklist() {
   const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
   const course = session?.course || 'tcc';
   const { modules, currentModule, isLoading } = useModuleChecklist({ course, session });
+  const voice = useOwlVoice();
 
   const requestedModule = Number(new URLSearchParams(location.search).get('module')) || null;
   const [selected, setSelected] = useState(requestedModule || currentModule);
@@ -24,18 +28,54 @@ export default function Checklist() {
   // O aluno só vê os módulos até o que está cursando — cada um no seu tempo.
   const visibleModules = modules.filter((m) => m.moduleNumber <= currentModule);
 
+  const items = module?.items || [];
+  const firstName = String(session?.name || session?.full_name || 'aluno').split(' ')[0];
+  const firstPending = items.findIndex((item) => !item.done);
+  const [focusIndex, setFocusIndex] = useState(0);
+
+  // A trilha sempre abre no marco em que o aluno está agora.
+  useEffect(() => {
+    if (isLoading || !items.length) return;
+    setFocusIndex(firstPending >= 0 ? firstPending : items.length - 1);
+  }, [isLoading, firstPending, items.length, module?.moduleNumber]);
+
+  const focusItem = items[focusIndex];
+  const script = useMemo(() => {
+    if (!module) return '';
+    if (module.complete) return buildFinishScript({ firstName, moduleNumber: module.moduleNumber });
+    if (!focusItem) return '';
+    return buildVoiceScript({ item: focusItem, index: focusIndex, total: items.length, moduleNumber: module.moduleNumber, firstName });
+  }, [module, focusItem, focusIndex, items.length, firstName]);
+
+  // A corujinha fala a etapa atual sempre que o aluno muda de marco.
+  useEffect(() => {
+    if (script) voice.speak(script);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [script]);
+
   // Ida: sai do checklist com checklist=<módulo>; a barra de retorno traz de volta.
-  const goToRequirement = (item) => navigate(`${prefix}${item.to}${item.to.includes('?') ? '&' : '?'}checklist=${module.moduleNumber}`);
+  const goToRequirement = (item) => {
+    voice.stop();
+    navigate(`${prefix}${item.to}${item.to.includes('?') ? '&' : '?'}checklist=${module.moduleNumber}`);
+  };
+
+  const nextPendingFrom = (from) => {
+    for (let step = 1; step <= items.length; step += 1) {
+      const candidate = (from + step) % items.length;
+      if (!items[candidate].done) return candidate;
+    }
+    return from;
+  };
 
   return (
-    <div className="app-page max-w-3xl mx-auto animate-fade-in-up space-y-5">
+    <div className="app-page max-w-2xl mx-auto animate-fade-in-up space-y-5">
       <div className="flex items-center gap-3">
         <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shrink-0">
           <ClipboardCheck size={22} className="text-white" />
         </div>
         <div className="min-w-0">
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Checklist do Módulo</h2>
-          <p className="text-sm text-muted-foreground">Cumpra a sequência para liberar a prova do seu módulo</p>
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Trilha do Módulo</h2>
+          <p className="text-sm text-muted-foreground">A Corujinha te guia passo a passo até liberar a prova</p>
         </div>
       </div>
 
@@ -43,7 +83,7 @@ export default function Checklist() {
         {visibleModules.map((m) => (
           <button
             key={m.moduleNumber}
-            onClick={() => setSelected(m.moduleNumber)}
+            onClick={() => { voice.stop(); setSelected(m.moduleNumber); }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all ${
               m.moduleNumber === selected ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground'
             }`}
@@ -65,7 +105,7 @@ export default function Checklist() {
               <p className={`text-sm font-bold ${module.complete ? 'text-green-800' : 'text-amber-800'}`}>
                 {module.complete
                   ? `Módulo ${module.moduleNumber} concluído — prova liberada!`
-                  : `Faltam ${module.items.length - module.doneCount} requisito(s) para liberar a prova do Módulo ${module.moduleNumber}`}
+                  : `Faltam ${module.items.length - module.doneCount} etapa(s) para liberar a prova do Módulo ${module.moduleNumber}`}
               </p>
             </div>
             <div className="mt-2.5 h-2 w-full rounded-full bg-white/70 overflow-hidden">
@@ -76,20 +116,29 @@ export default function Checklist() {
             </div>
           </div>
 
-          <div className="space-y-2.5">
-            {module.items.map((item, index) => (
-              <ChecklistItemRow key={item.key} item={item} index={index} onGo={goToRequirement} />
-            ))}
-          </div>
+          <OwlStepGuide
+            item={focusItem}
+            index={focusIndex}
+            total={items.length}
+            firstName={firstName}
+            moduleNumber={module.moduleNumber}
+            complete={module.complete}
+            voice={voice}
+            onGo={() => focusItem && goToRequirement(focusItem)}
+            onSkip={() => setFocusIndex((prev) => nextPendingFrom(prev))}
+            onRepeat={() => voice.speak(script, { force: true })}
+          />
+
+          <ChecklistTrail items={items} focusIndex={focusIndex} onSelect={setFocusIndex} />
 
           <button
             type="button"
             disabled={!module.complete}
-            onClick={() => navigate(`${prefix}/exams`)}
+            onClick={() => { voice.stop(); navigate(`${prefix}/exams`); }}
             className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-700 px-4 py-3.5 text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GraduationCap size={16} />
-            {module.complete ? `Fazer a prova do Módulo ${module.moduleNumber}` : 'Prova bloqueada até concluir o checklist'}
+            {module.complete ? `Fazer a prova do Módulo ${module.moduleNumber}` : 'Prova bloqueada até concluir a trilha'}
             {module.complete && <ArrowRight size={14} />}
           </button>
 

@@ -20,7 +20,12 @@ export default function ChecklistDashboardCard({ session, course, className = ''
   const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50/80 via-card to-violet-50/60 p-5 dark:border-indigo-500/25 dark:from-indigo-950/40 dark:via-card dark:to-violet-950/30 ${className}`}>
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`${prefix}/checklist`)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`${prefix}/checklist`); }}
+      className={`cursor-pointer relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50/80 via-card to-violet-50/60 p-5 dark:border-indigo-500/25 dark:from-indigo-950/40 dark:via-card dark:to-violet-950/30 ${className}`}>
       <div className="absolute -top-10 -right-8 h-32 w-32 rounded-full bg-indigo-400/15 blur-2xl" />
 
       {/* Cabeçalho + descrição da ferramenta */}
@@ -82,7 +87,7 @@ export default function ChecklistDashboardCard({ session, course, className = ''
                 {!item.done && (
                   <button
                     type="button"
-                    onClick={() => navigate(`${prefix}${item.to}${item.to.includes('?') ? '&' : '?'}checklist=${currentModule}`)}
+                    onClick={(e) => { e.stopPropagation(); navigate(`${prefix}${item.to}${item.to.includes('?') ? '&' : '?'}checklist=${currentModule}`); }}
                     className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground hover:opacity-90 transition-opacity"
                   >
                     Cumprir <ArrowRight size={10} />
@@ -96,7 +101,7 @@ export default function ChecklistDashboardCard({ session, course, className = ''
       <div className="relative mt-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => navigate(`${prefix}/checklist`)}
+          onClick={(e) => { e.stopPropagation(); navigate(`${prefix}/checklist`); }}
           className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white/70 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-white transition-colors dark:border-indigo-500/30 dark:bg-white/10 dark:text-indigo-200"
         >
           <Sparkles size={12} /> Abrir checklist completo
@@ -104,7 +109,7 @@ export default function ChecklistDashboardCard({ session, course, className = ''
         {current?.complete && (
           <button
             type="button"
-            onClick={() => navigate(`${prefix}/exams`)}
+            onClick={(e) => { e.stopPropagation(); navigate(`${prefix}/exams`); }}
             className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-700 px-3 py-2 text-xs font-bold text-white hover:opacity-90 transition-opacity"
           >
             <GraduationCap size={12} /> Fazer a prova do Módulo {currentModule}
