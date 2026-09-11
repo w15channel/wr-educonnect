@@ -9,6 +9,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import TutorialModal from '../onboarding/TutorialModal';
 import MobileSplash from './MobileSplash';
 import ChecklistReturnBar from '../checklist/ChecklistReturnBar';
+import ProfileAssistant from '../onboarding/ProfileAssistant';
+import useProfileCompletion from '@/hooks/useProfileCompletion';
 
 const TUTORIAL_KEY = 'wr_tutorial_done';
 
@@ -55,6 +57,12 @@ export default function AppLayout() {
     setShowTutorial(false);
   };
 
+  // Assistente Corujinha do cadastro: ao ingressar na área do curso, pede item
+  // por item os dados obrigatórios do perfil (a foto continua opcional).
+  const { profile, values, missing, needsCompletion } = useProfileCompletion(session);
+  const [assistantDone, setAssistantDone] = useState(false);
+  const showAssistant = isStudent && !showTutorial && !assistantDone && needsCompletion;
+
   // Pull-to-refresh
   const [pullY, setPullY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -96,6 +104,16 @@ export default function AppLayout() {
       <MobileSplash />
       {showTutorial && isStudent && (
         <TutorialModal onFinish={handleTutorialFinish} />
+      )}
+
+      {showAssistant && (
+        <ProfileAssistant
+          session={session}
+          profile={profile}
+          steps={missing}
+          initialValues={values}
+          onFinish={() => setAssistantDone(true)}
+        />
       )}
 
       {/* Desktop sidebar */}
