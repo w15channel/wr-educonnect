@@ -33,7 +33,7 @@ const routeLabels = {
   '/dashboard': 'Dashboard', '/lessons': 'Aulas', '/chat': 'Mural de Superação',
   '/apostila': 'Apostila', '/tasks': 'Tarefas', '/forum': 'Fórum',
   '/students': 'Alunos', '/announcements': 'Avisos', '/profile': 'Perfil',
-  '/calendar': 'Calendário', '/tuitions': 'Mensalidades', '/tutor': 'Tutor EDU',
+  '/calendar': 'Calendário', '/tuitions': 'Mensalidades', '/tutor': 'Luna — Assistente IA',
   '/scorecontrol': 'Pontuação', '/pontuacao-geral': 'Pontuação Geral', '/certificadora': 'Certificação', '/gerar-certificado': 'Gerar Certificado',
   '/monitores': 'Monitores', '/terapeuta': 'Terapeuta',
   '/bestseller': 'Best Seller', '/historico': 'Histórico', '/classe': 'Classe',

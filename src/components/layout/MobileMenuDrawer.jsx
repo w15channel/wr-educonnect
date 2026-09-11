@@ -53,7 +53,7 @@ const adminGroups = [
     { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
   ]},
   { label: 'Ferramentas', items: [
-    { icon: Brain, label: 'Tutor Digital', path: '/tutor', color: 'text-pink-400' },
+    { icon: Brain, label: 'Luna — Assistente IA', path: '/tutor', color: 'text-amber-400' },
     { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
     { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },
     { icon: FileText, label: 'Gerar Certificado', path: '/gerar-certificado', color: 'text-amber-400' },
@@ -84,7 +84,7 @@ const studentGroups = [
     { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
   ]},
   { label: 'Ferramentas', items: [
-    { icon: Brain, label: 'Tutor Digital', path: '/tutor', color: 'text-pink-400' },
+    { icon: Brain, label: 'Luna — Assistente IA', path: '/tutor', color: 'text-amber-400' },
     { icon: BookOpen, label: 'Best Seller', path: '/bestseller', color: 'text-emerald-400' },
     { icon: GraduationCap, label: 'Histórico', path: '/historico', color: 'text-cyan-400' },
     { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },
