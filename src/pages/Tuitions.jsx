@@ -31,6 +31,7 @@ export default function Tuitions() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [payDialogTuition, setPayDialogTuition] = useState(null);
   const [payAmountInput, setPayAmountInput] = useState('');
+  const [issuingReceiptId, setIssuingReceiptId] = useState(null);
 
   const { data: tuitions = [], isLoading } = useQuery({
     queryKey: ['tuitions'],
@@ -121,19 +122,27 @@ export default function Tuitions() {
   });
 
   const handleIssueReceipt = async (t) => {
-    let code = t.receipt_code;
-    if (!code) {
-      code = generateReceiptCode();
-      await base44.entities.Tuition.update(t.id, { receipt_code: code });
-      queryClient.invalidateQueries({ queryKey: ['tuitions'] });
+    setIssuingReceiptId(t.id);
+    try {
+      let code = t.receipt_code;
+      if (!code) {
+        code = generateReceiptCode();
+        await base44.entities.Tuition.update(t.id, { receipt_code: code });
+        queryClient.invalidateQueries({ queryKey: ['tuitions'] });
+      }
+      const result = await generateTuitionReceiptPdf({
+        studentName: t.student_name || t.student_email,
+        receiptCode: code,
+        amount: `R$ ${Number(t.paid_amount ?? t.amount ?? 0).toFixed(2)}`,
+        referenceLabel: t.month_ref,
+        paidDate: t.paid_date ? format(new Date(t.paid_date + 'T12:00:00'), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
+      });
+      toast.success(result.artworkGenerated ? 'Arte institucional criada e recibo baixado!' : 'Recibo artístico baixado!');
+    } catch (error) {
+      toast.error(error?.message || 'Não foi possível gerar o recibo.');
+    } finally {
+      setIssuingReceiptId(null);
     }
-    generateTuitionReceiptPdf({
-      studentName: t.student_name || t.student_email,
-      receiptCode: code,
-      amount: `R$ ${Number(t.paid_amount ?? t.amount ?? 0).toFixed(2)}`,
-      referenceLabel: t.month_ref,
-      paidDate: t.paid_date ? format(new Date(t.paid_date + 'T12:00:00'), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
-    });
   };
 
   const handleBulkLaunch = async () => {
@@ -363,8 +372,8 @@ export default function Tuitions() {
                     </span>
                   )}
                   {t.status === 'paid' && (
-                    <button onClick={() => handleIssueReceipt(t)} className="p-1.5 text-muted-foreground hover:text-primary transition-colors" title="Emitir recibo em PDF">
-                      <FileDown size={14} />
+                    <button onClick={() => handleIssueReceipt(t)} disabled={issuingReceiptId === t.id} className="p-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" title="Emitir recibo artístico em PDF">
+                      {issuingReceiptId === t.id ? <span className="block w-3.5 h-3.5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" /> : <FileDown size={14} />}
                     </button>
                   )}
                   {isAdmin && t.status === 'paid' && (
