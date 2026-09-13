@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { generateReceiptCode, generateReceiptImage, downloadReceiptImage } from '@/lib/generateReceiptImage';
+import { generateReceiptCode, generateReceiptImage, downloadReceiptImage, getDefaultReceiptTemplate, setDefaultReceiptTemplate } from '@/lib/generateReceiptImage';
 import ReceiptImageDialog from '@/components/tuitions/ReceiptImageDialog';
 
 const STATUS_CONFIG = {
@@ -123,15 +123,29 @@ export default function Tuitions() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tuitions'] }); toast.success('Publicado no mural!'); },
   });
 
-  const runReceiptGeneration = async (data) => {
-    setReceipt({ ...data, imageUrl: null, isGenerating: true });
+  const [defaultTemplateUrl, setDefaultTemplateUrl] = useState(null);
+  const [savingDefault, setSavingDefault] = useState(false);
+
+  const runReceiptGeneration = async (data, { useTemplate = true } = {}) => {
+    const template = useTemplate ? (await getDefaultReceiptTemplate())?.image_url || null : null;
+    setDefaultTemplateUrl(template || defaultTemplateUrl);
+    setReceipt({ ...data, imageUrl: null, isGenerating: true, usedTemplate: !!template });
     try {
-      const imageUrl = await generateReceiptImage(data);
-      setReceipt({ ...data, imageUrl, isGenerating: false });
+      const imageUrl = await generateReceiptImage(data, template);
+      setReceipt({ ...data, imageUrl, isGenerating: false, usedTemplate: !!template });
     } catch (error) {
       setReceipt(null);
       toast.error(error?.message || 'Não foi possível gerar o recibo.');
     }
+  };
+
+  const handleSetDefaultTemplate = async () => {
+    if (!receipt?.imageUrl) return;
+    setSavingDefault(true);
+    await setDefaultReceiptTemplate(receipt.imageUrl, session?.email);
+    setDefaultTemplateUrl(receipt.imageUrl);
+    setSavingDefault(false);
+    toast.success('Modelo definido como padrão para os próximos recibos.');
   };
 
   const handleIssueReceipt = async (t) => {
@@ -415,7 +429,11 @@ export default function Tuitions() {
         onOpenChange={(open) => { if (!open) setReceipt(null); }}
         imageUrl={receipt?.imageUrl}
         isGenerating={!!receipt?.isGenerating}
-        onRegenerate={() => receipt && runReceiptGeneration(receipt)}
+        usedTemplate={!!receipt?.usedTemplate}
+        isDefault={!!receipt?.imageUrl && receipt.imageUrl === defaultTemplateUrl}
+        isSavingDefault={savingDefault}
+        onNewModel={() => receipt && runReceiptGeneration(receipt, { useTemplate: false })}
+        onSetDefault={handleSetDefaultTemplate}
         onDownload={() => receipt?.imageUrl && downloadReceiptImage(receipt.imageUrl, receipt.receiptCode)}
       />
 

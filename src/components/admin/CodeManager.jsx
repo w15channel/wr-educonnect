@@ -18,6 +18,7 @@ export default function CodeManager({ course: lockedCourse }) {
   const [editingEmailId, setEditingEmailId] = useState(null);
   const [editingEmailValue, setEditingEmailValue] = useState('');
   const [editingProfileCode, setEditingProfileCode] = useState(null);
+  const [sortBy, setSortBy] = useState('created');
 
   const { data: allCodes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -26,12 +27,19 @@ export default function CodeManager({ course: lockedCourse }) {
 
   const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
   const lockedPrefix = lockedCourse ? COURSE_PREFIX[lockedCourse] : null;
-  const codes = lockedCourse
+  const filteredCodes = lockedCourse
     ? allCodes.filter(c =>
         (c.course === lockedCourse || (lockedCourse === 'tcc' && !c.course)) &&
         (!lockedPrefix || (c.code || '').startsWith(lockedPrefix))
       )
     : allCodes;
+
+  const lastAccess = (c) => new Date(c.last_seen_at || c.last_login || 0).getTime();
+  const codes = [...filteredCodes].sort((a, b) => {
+    if (sortBy === 'alpha') return (a.student_name || '').localeCompare(b.student_name || '', 'pt-BR', { sensitivity: 'base' });
+    if (sortBy === 'recent') return lastAccess(b) - lastAccess(a);
+    return new Date(b.created_date) - new Date(a.created_date);
+  });
 
   const createMutation = useMutation({
     mutationFn: () => {
@@ -176,8 +184,18 @@ export default function CodeManager({ course: lockedCourse }) {
 
       {/* Codes list */}
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-border bg-secondary/50">
+        <div className="p-4 border-b border-border bg-secondary/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h3 className="font-semibold text-foreground">{codes.length} código(s) gerado(s)</h3>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className="h-9 rounded-xl border border-border bg-background text-foreground text-xs px-3"
+            aria-label="Ordenar códigos"
+          >
+            <option value="created">Ordem de cadastro</option>
+            <option value="alpha">Ordem alfabética</option>
+            <option value="recent">Acesso mais recente</option>
+          </select>
         </div>
         {isLoading ? (
           <div className="p-6 space-y-3">{[1,2,3].map(i => <div key={i} className="h-14 bg-muted rounded-xl animate-pulse" />)}</div>

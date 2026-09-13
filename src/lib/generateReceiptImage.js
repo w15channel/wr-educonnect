@@ -31,8 +31,27 @@ Footer bar across the bottom in navy small capitals: "CONHECIMENTO • DESENVOLV
 No other words, no lorem ipsum, no placeholder text, no duplicated lines, no watermark, no QR code, no barcode.`;
 }
 
-export async function generateReceiptImage(data) {
-  const result = await base44.integrations.Core.GenerateImage({ prompt: buildPrompt(data) });
+export async function getDefaultReceiptTemplate() {
+  const [template] = await base44.entities.ReceiptTemplate.list('-created_date', 1);
+  return template || null;
+}
+
+export async function setDefaultReceiptTemplate(imageUrl, adminEmail) {
+  const existing = await base44.entities.ReceiptTemplate.list('-created_date', 5);
+  await Promise.all(existing.map((t) => base44.entities.ReceiptTemplate.delete(t.id)));
+  return base44.entities.ReceiptTemplate.create({ image_url: imageUrl, set_by: adminEmail || '' });
+}
+
+// Com um modelo padrão definido, a IA reaproveita exatamente o mesmo design
+// da imagem de referência e troca apenas os dados do aluno.
+export async function generateReceiptImage(data, templateUrl = null) {
+  const prompt = templateUrl
+    ? `Reproduce EXACTLY the same receipt design as the reference image — same layout, frame, colors, typography, seal, signature block and footer — changing ONLY the variable data to the values below. Keep every other word identical to the reference.\n\n${buildPrompt(data)}`
+    : buildPrompt(data);
+  const result = await base44.integrations.Core.GenerateImage({
+    prompt,
+    ...(templateUrl ? { existing_image_urls: [templateUrl] } : {}),
+  });
   return result.url;
 }
 
