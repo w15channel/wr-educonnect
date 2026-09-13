@@ -13,7 +13,7 @@ function ToolCallRow({ toolCall }) {
   const running = ['pending', 'running', 'in_progress'].includes(toolCall.status);
   // Enquanto o passo está em execução ele já aparece aberto — o admin acompanha
   // a linha de ação em tempo real, sem precisar clicar.
-  const [open, setOpen] = useState(running);
+  const [open, setOpen] = useState(true);
   const failed = ['failed', 'error'].includes(toolCall.status)
     || (typeof toolCall.results === 'string' && /error|failed/i.test(toolCall.results))
     || results?.success === false;
@@ -49,7 +49,7 @@ export default function OperationsMessage({ message }) {
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm ${isUser ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
         {message.content && (isUser
-          ? <p className="whitespace-pre-wrap">{message.content}</p>
+          ? <p className="whitespace-pre-wrap">{message.content.replace(/^\[Contexto administrativo\][\s\S]*?\[\/Contexto administrativo\]\s*/, '')}</p>
           : <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1">{message.content}</ReactMarkdown>)}
         {message.tool_calls?.map((toolCall, idx) => <ToolCallRow key={idx} toolCall={toolCall} />)}
       </div>
