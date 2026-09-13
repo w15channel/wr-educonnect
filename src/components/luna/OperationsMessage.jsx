@@ -9,9 +9,11 @@ function parseJson(value) {
 }
 
 function ToolCallRow({ toolCall }) {
-  const [open, setOpen] = useState(false);
   const results = parseJson(toolCall.results);
   const running = ['pending', 'running', 'in_progress'].includes(toolCall.status);
+  // Enquanto o passo está em execução ele já aparece aberto — o admin acompanha
+  // a linha de ação em tempo real, sem precisar clicar.
+  const [open, setOpen] = useState(running);
   const failed = ['failed', 'error'].includes(toolCall.status)
     || (typeof toolCall.results === 'string' && /error|failed/i.test(toolCall.results))
     || results?.success === false;
