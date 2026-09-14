@@ -59,38 +59,38 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
   const inModuleWindow = (dateLike) => !selectedModule || withinWindow(dateLike, moduleFilter?.start, moduleFilter?.end);
 
   const { data: allLessons = [] } = useQuery({
-    queryKey: ['lessons-score-detail', activeCourse],
+    queryKey: ['lessons', activeCourse],
     queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 100)
   });
   const { data: progresses = [] } = useQuery({ queryKey: ['lesson-progress', email], queryFn: () => base44.entities.LessonProgress.filter({ student_email: email }, '-created_date', 200) });
   const { data: allTasks = [] } = useQuery({
-    queryKey: ['tasks-score-detail', activeCourse],
+    queryKey: ['tasks', activeCourse],
     queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 100)
   });
-  const { data: submissions = [] } = useQuery({ queryKey: ['submissions-student', email], queryFn: () => base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 200) });
-  const { data: examSubs = [] } = useQuery({ queryKey: ['exam-subs-student', email], queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email, course: activeCourse }, '-submitted_at', 200) });
-  const { data: allExams = [] } = useQuery({ queryKey: ['exams-score-detail', activeCourse], queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 100) });
+  const { data: submissions = [] } = useQuery({ queryKey: ['task-submissions', email], queryFn: () => base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 200) });
+  const { data: examSubs = [] } = useQuery({ queryKey: ['exam-submissions', email], queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email }, '-submitted_at', 200) });
+  const { data: allExams = [] } = useQuery({ queryKey: ['exams', activeCourse], queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 100) });
   const { data: forumPosts = [] } = useQuery({
-    queryKey: ['forum-posts-score-detail', email, activeCourse],
+    queryKey: ['forum-posts', activeCourse],
     queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 500)
   });
   const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies', email], queryFn: () => base44.entities.ForumReply.filter({ author_email: email }, '-created_date', 100) });
   const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items', email], queryFn: () => base44.entities.ScoreItem.filter({ student_email: email }, '-created_date', 500) });
   const { data: mentorships = [] } = useQuery({
-    queryKey: ['mentorships-score-detail', activeCourse],
+    queryKey: ['mentorships', activeCourse],
     queryFn: () => base44.entities.Mentorship.filter({ course: activeCourse }, '-date', 500)
   });
-  const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-score', email], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
+  const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-all'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200) });
   const { data: studentProfiles = [] } = useQuery({
     queryKey: ['student-profile-score', email],
     queryFn: () => base44.entities.StudentProfile.filter({ student_email: email, dashboard_course: activeCourse }, '-updated_date', 1)
   });
   const { data: ofensivaResponses = [] } = useQuery({
-    queryKey: ['ofensiva-responses-score-detail', email, activeCourse],
+    queryKey: ['challenge-responses', email],
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: email, course: activeCourse }, '-date', 200)
   });
   const { data: dailyChallenges = [] } = useQuery({
-    queryKey: ['daily-challenges-score-detail', activeCourse],
+    queryKey: ['daily-challenges', activeCourse],
     queryFn: () => base44.entities.DailyChallenge.filter({ course: activeCourse }, '-date', 200)
   });
 
@@ -168,7 +168,7 @@ function StudentScoreDetail({ code, onBack, activeCourse, courseEmails, isTeache
       queryClient.invalidateQueries({ queryKey: ['submissions-student', email] });
       queryClient.invalidateQueries({ queryKey: ['exam-subs-student', email] });
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-      queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['student-profiles'] });
       toast.success('Pontuação salva e cache atualizado!');
     }
   });
@@ -692,7 +692,7 @@ export default function ScoreControl() {
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200)
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000)
   });
 
   const { data: scoreItems = [] } = useQuery({
@@ -701,81 +701,81 @@ export default function ScoreControl() {
   });
 
   const { data: moduleUnlocks = [] } = useQuery({
-    queryKey: ['ranking-module-unlocks'],
+    queryKey: ['module-unlocks-all'],
     queryFn: () => base44.entities.StudentModuleUnlock.list('-unlocked_at', 2000)
   });
   const unlocksByEmail = useMemo(() => groupUnlocksByEmail(moduleUnlocks), [moduleUnlocks]);
 
   const { data: submissions = [] } = useQuery({
-    queryKey: ['all-submissions'],
+    queryKey: ['task-submissions-all'],
     queryFn: () => base44.entities.TaskSubmission.list('-created_date', 1000)
   });
 
   const { data: lessons = [] } = useQuery({
-    queryKey: ['lessons-score-overview', activeCourse],
+    queryKey: ['lessons', activeCourse],
     queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 500)
   });
 
   const { data: lessonProgresses = [] } = useQuery({
-    queryKey: ['lesson-progress-score-overview'],
+    queryKey: ['lesson-progress-all'],
     queryFn: () => base44.entities.LessonProgress.list('-created_date', 3000)
   });
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks-score-overview', activeCourse],
+    queryKey: ['tasks', activeCourse],
     queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 500)
   });
 
   const { data: exams = [] } = useQuery({
-    queryKey: ['exams-score-overview', activeCourse],
+    queryKey: ['exams', activeCourse],
     queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 500)
   });
 
   const { data: forumPosts = [] } = useQuery({
-    queryKey: ['forum-posts-score-overview', activeCourse],
+    queryKey: ['forum-posts', activeCourse],
     queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 2000)
   });
 
   const { data: forumReplies = [] } = useQuery({
-    queryKey: ['forum-replies-score-overview'],
+    queryKey: ['forum-replies-all'],
     queryFn: () => base44.entities.ForumReply.list('-created_date', 3000)
   });
 
   const { data: monitorHistory = [] } = useQuery({
-    queryKey: ['monitor-history-score-overview', activeCourse],
+    queryKey: ['monitor-history', activeCourse],
     queryFn: () => base44.entities.MonitorHistory.filter({ course: activeCourse }, '-period_start', 500)
   });
 
   const { data: therapistPairings = [] } = useQuery({
-    queryKey: ['therapist-pairings-score-overview'],
+    queryKey: ['therapist-pairings-all'],
     queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500)
   });
 
   const { data: mentorships = [] } = useQuery({
-    queryKey: ['mentorships-score-overview', activeCourse],
+    queryKey: ['mentorships', activeCourse],
     queryFn: () => base44.entities.Mentorship.filter({ course: activeCourse }, '-date', 500)
   });
 
   const { data: studentProfiles = [] } = useQuery({
-    queryKey: ['student-profiles-score-overview'],
+    queryKey: ['student-profiles'],
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000)
   });
 
   const { data: examSubmissions = [] } = useQuery({
-    queryKey: ['exam-subs-score-overview', activeCourse],
+    queryKey: ['exam-submissions', activeCourse],
     queryFn: () => base44.entities.ExamSubmission.filter({ course: activeCourse }, '-submitted_at', 3000)
   });
 
   const { data: challengeResponses = [] } = useQuery({
-    queryKey: ['ofensiva-responses-score-overview', activeCourse],
+    queryKey: ['challenge-responses', activeCourse],
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourse }, '-date', 5000)
   });
   const { data: dailyChallenges = [] } = useQuery({
-    queryKey: ['daily-challenges-score-overview', activeCourse],
+    queryKey: ['daily-challenges', activeCourse],
     queryFn: () => base44.entities.DailyChallenge.filter({ course: activeCourse }, '-date', 2000)
   });
   const { data: moduleClosures = [] } = useQuery({
-    queryKey: ['module-closures-score-overview'],
+    queryKey: ['module-closures'],
     queryFn: () => base44.entities.ModuleClosure.list('-closed_at', 100)
   });
 
