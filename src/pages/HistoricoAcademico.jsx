@@ -284,7 +284,8 @@ export default function HistoricoAcademico() {
   const studentCourse = activeCourse;
 
   // ── Course-level queries (always loaded — needed for available activities) ──
-  const { data: codes = [] } = useQuery({ queryKey: ['access-codes'], queryFn: () => base44.entities.AccessCode.list('-created_date', 200) });
+  // Fase 2: query keys padronizadas para compartilhar cache entre páginas.
+  const { data: codes = [] } = useQuery({ queryKey: ['access-codes'], queryFn: () => base44.entities.AccessCode.list('-created_date', 2000) });
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', studentCourse],
     queryFn: () => base44.entities.RecordedLesson.filter({ course: studentCourse }, 'order', 200),
@@ -299,11 +300,11 @@ export default function HistoricoAcademico() {
   });
   const { data: forumPosts = [] } = useQuery({ queryKey: ['forum-posts-all'], queryFn: () => base44.entities.ForumPost.list('-created_date', 1000) });
   const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies-all'], queryFn: () => base44.entities.ForumReply.list('-created_date', 1000) });
-  const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500) });
-  const { data: challenges = [] } = useQuery({ queryKey: ['daily-challenges-all'], queryFn: () => base44.entities.DailyChallenge.list('-date', 1000) });
-  const { data: moduleClosures = [] } = useQuery({ queryKey: ['module-closures-all'], queryFn: () => base44.entities.ModuleClosure.list('-closed_at', 100) });
+  const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings-all'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500) });
+  const { data: challenges = [] } = useQuery({ queryKey: ['daily-challenges', studentCourse], queryFn: () => base44.entities.DailyChallenge.filter({ course: studentCourse }, '-date', 500) });
+  const { data: moduleClosures = [] } = useQuery({ queryKey: ['module-closures'], queryFn: () => base44.entities.ModuleClosure.list('-closed_at', 100) });
   const { data: mentorships = [] } = useQuery({
-    queryKey: ['mentorships-historico', studentCourse],
+    queryKey: ['mentorships', studentCourse],
     queryFn: () => base44.entities.Mentorship.filter({ course: studentCourse }, '-date', 500),
   });
 
