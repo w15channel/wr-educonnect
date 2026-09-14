@@ -48,9 +48,11 @@ export default function Students() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
   });
 
+  // Fase 2: query key padronizada — 'task-submissions-all' (global) não conflita
+  // com 'task-submissions', email (filtrado, usado em StudentDetail e HistoricoAcademico)
   const { data: allSubmissions = [] } = useQuery({
-    queryKey: ['all-submissions'],
-    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 500),
+    queryKey: ['task-submissions-all'],
+    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 1000),
   });
 
   const { data: studentProfiles = [] } = useQuery({
