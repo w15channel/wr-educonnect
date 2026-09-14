@@ -1,4 +1,4 @@
-import { requireAdmin, normalizeCodePath, callCodeApi, errorResponse } from '../../shared/codeFileTools.ts';
+import { requireAdmin, normalizeCodePath, callCodeApi, syncCodeToGitHub, errorResponse } from '../../shared/codeFileTools.ts';
 
 export default async function(req) {
   try {
@@ -20,7 +20,8 @@ export default async function(req) {
     }
 
     const result = await callCodeApi('write_file', { path, content: body.content, overwrite: true });
-    return Response.json({ success: true, edited_by: user.email, ...result });
+    const githubSync = await syncCodeToGitHub();
+    return Response.json({ edited_by: user.email, ...result, success: true, ...githubSync });
   } catch (error) {
     return errorResponse(error);
   }

@@ -52,6 +52,31 @@ export async function callCodeApi(endpoint, payload) {
   return data;
 }
 
+export async function syncCodeToGitHub() {
+  const appId = secrets.get('BASE44_APP_ID');
+  const apiKey = secrets.get('BASE44_PERSONAL_API_KEY');
+  if (!appId || !apiKey) {
+    return { synced_to_github: false, github_error: 'GitHub sync connection is not configured' };
+  }
+
+  try {
+    const response = await fetch(`https://app.base44.com/api/apps/${encodeURIComponent(appId)}/github/sync/manual`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', api_key: apiKey },
+    });
+    const text = await response.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+    if (!response.ok || data?.success !== true) {
+      const error = data?.error || data?.detail || data?.message || `GitHub sync failed (${response.status})`;
+      return { synced_to_github: false, github_error: typeof error === 'string' ? error : JSON.stringify(error) };
+    }
+    return { synced_to_github: true };
+  } catch (error) {
+    return { synced_to_github: false, github_error: error?.message || 'GitHub sync failed' };
+  }
+}
+
 export function errorResponse(error) {
   const status = Number(error?.status) || 500;
   return Response.json({ success: false, error: error?.message || 'Unexpected error' }, { status });
