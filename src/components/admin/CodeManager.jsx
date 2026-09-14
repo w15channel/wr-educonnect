@@ -10,6 +10,11 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import StudentProfileEditDialog from '@/components/admin/StudentProfileEditDialog';
 
+/**
+ * CodeManager — Gerenciador de códigos de acesso
+ * Correção v2: ordenação por "Acesso mais recente" agora usa
+ * safeTime() com NaN guard + Math.max(last_seen_at, last_login).
+ */
 export default function CodeManager({ course: lockedCourse }) {
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState('');
