@@ -40,9 +40,15 @@ export default function StudentDetail() {
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
   });
 
+  // Derive code early so student-specific queries can use the email
+  const code = codes.find(c => c.id === id);
+  const studentEmail = code?.student_email || null;
+
+  // ── Student-specific query (was loading 500 global submissions and filtering client-side) ──
   const { data: allSubmissions = [] } = useQuery({
-    queryKey: ['all-submissions'],
-    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 500),
+    queryKey: ['task-submissions', studentEmail],
+    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: studentEmail }, '-created_date', 200),
+    enabled: !!studentEmail,
   });
 
   const { data: studentProfiles = [] } = useQuery({
@@ -55,7 +61,6 @@ export default function StudentDetail() {
     queryFn: () => base44.entities.Tuition.list('-month_ref', 500),
   });
 
-  const code = codes.find(c => c.id === id);
   // Admin: always allow; student: restrict to own course
   const isAdmin = session?.role === 'admin';
   const canViewCode = code && (isAdmin || !codePrefix || ((code.code || '').startsWith(codePrefix) && (!courseEmails || courseEmails.has(code.student_email || ''))));
@@ -70,7 +75,7 @@ export default function StudentDetail() {
   }
 
   const profile = studentProfiles.find(p => p.student_email === code.student_email);
-  const subs = allSubmissions.filter(s => s.student_email === code.student_email);
+  const subs = allSubmissions; // already filtered by student_email in the query
   const graded = subs.filter(s => s.grade !== undefined && s.grade !== null);
   const total = graded.reduce((sum, item) => roundScore(sum + roundScore(item.grade)), 0);
   const avg = graded.length > 0 ? formatScore(total / graded.length) : '—';
