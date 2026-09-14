@@ -244,9 +244,9 @@ export default function CodeManager({ course: lockedCourse }) {
                         </button>
                       )}
                     </div>
-                    {c.last_login && (
+                    {(c.last_seen_at || c.last_login) && (
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Último acesso: {format(new Date(c.last_login), 'dd/MM/yyyy HH:mm')}
+                        Último acesso: {format(new Date(c.last_seen_at || c.last_login), 'dd/MM/yyyy HH:mm')}
                       </p>
                     )}
                   </div>
