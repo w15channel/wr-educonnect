@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Send, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import useOwlVoice from '@/hooks/useOwlVoice';
+import useLunaVoice from '@/hooks/useLunaVoice';
 import LunaBubble from '@/components/luna/LunaBubble';
 import LunaShortcuts from '@/components/luna/LunaShortcuts';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
@@ -14,7 +14,7 @@ import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting } from '@/lib/luna
  * aberta pelo botão ao lado da lâmpada de tema.
  */
 export default function LunaChat({ session, onNavigated }) {
-  const voice = useOwlVoice();
+  const voice = useLunaVoice();
   const greeting = lunaGreeting(session?.name);
   const [messages, setMessages] = useState([{ role: 'assistant', content: greeting }]);
   const [input, setInput] = useState('');
@@ -51,7 +51,7 @@ export default function LunaChat({ session, onNavigated }) {
       });
       const reply = answer?.answer || 'Desculpe, não consegui responder agora. Poderia tentar novamente, por favor?';
       setMessages((prev) => [...prev, { role: 'assistant', content: reply, links: answer?.links || [] }]);
-      voice.speak(reply);
+      await voice.speak(reply);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Tive um problema para responder agora. Verifique sua internet e tente de novo, por favor.' }]);
     } finally {
