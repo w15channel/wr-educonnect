@@ -34,11 +34,34 @@ export default function CodeManager({ course: lockedCourse }) {
       )
     : allCodes;
 
-  const lastAccess = (c) => new Date(c.last_seen_at || c.last_login || 0).getTime();
+  // ── Robust timestamp helper ──────────────────────────────────────────
+  // Handles Date objects, ISO strings, invalid dates and null values.
+  // Always returns a valid number (0 if nothing parses).
+  const safeTime = (val) => {
+    if (!val) return 0;
+    const t = new Date(val).getTime();
+    return Number.isFinite(t) ? t : 0;
+  };
+
+  // Returns the most recent activity timestamp across all date fields.
+  const lastAccess = (c) => Math.max(
+    safeTime(c.last_seen_at),
+    safeTime(c.last_login),
+    0
+  );
+
+  // Returns a Date object suitable for date-fns format(), or null.
+  const lastAccessDate = (c) => {
+    const ts = lastAccess(c);
+    return ts > 0 ? new Date(ts) : null;
+  };
+
   const codes = [...filteredCodes].sort((a, b) => {
-    if (sortBy === 'alpha') return (a.student_name || '').localeCompare(b.student_name || '', 'pt-BR', { sensitivity: 'base' });
-    if (sortBy === 'recent') return lastAccess(b) - lastAccess(a);
-    return new Date(b.created_date) - new Date(a.created_date);
+    if (sortBy === 'alpha')
+      return (a.student_name || '').localeCompare(b.student_name || '', 'pt-BR', { sensitivity: 'base' });
+    if (sortBy === 'recent')
+      return lastAccess(b) - lastAccess(a);
+    return safeTime(b.created_date) - safeTime(a.created_date);
   });
 
   const createMutation = useMutation({
@@ -205,7 +228,9 @@ export default function CodeManager({ course: lockedCourse }) {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {codes.map(c => (
+            {codes.map(c => {
+              const accessDate = lastAccessDate(c);
+              return (
               <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-secondary/30 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   <div>
@@ -244,9 +269,9 @@ export default function CodeManager({ course: lockedCourse }) {
                         </button>
                       )}
                     </div>
-                    {(c.last_seen_at || c.last_login) && (
+                    {accessDate && (
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Último acesso: {format(new Date(c.last_seen_at || c.last_login), 'dd/MM/yyyy HH:mm')}
+                        Último acesso: {format(accessDate, 'dd/MM/yyyy HH:mm')}
                       </p>
                     )}
                   </div>
@@ -276,7 +301,8 @@ export default function CodeManager({ course: lockedCourse }) {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
