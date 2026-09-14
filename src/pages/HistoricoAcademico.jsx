@@ -242,7 +242,7 @@ function ItemCheckbox({ checked, onChange, label, sublabel }) {
   );
 }
 
-function ModuleSelector({ selectedModules, onToggle }) {
+function ModuleSelector({ selectedModules, onToggle, availableModules }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-3 flex items-start gap-2">
@@ -253,7 +253,7 @@ function ModuleSelector({ selectedModules, onToggle }) {
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        {HISTORY_MODULES.map(m => (
+        {(availableModules && availableModules.length > 0 ? availableModules : HISTORY_MODULES).map(m => (
           <button
             key={m}
             onClick={() => onToggle(m)}
@@ -357,8 +357,8 @@ export default function HistoricoAcademico() {
   // ── Memoized academic data builder ──────────────────────────────────────
   // Só recomputa quando o aluno selecionado muda ou quando os dados das
   // queries mudam. Antes isto era uma função chamada a cada render.
-  const { rows: allRows, availableRows } = useMemo(() => {
-    if (!selectedStudent) return { rows: [], availableRows: [] };
+  const { rows: allRows, availableRows, availableModuleList } = useMemo(() => {
+    if (!selectedStudent) return { rows: [], availableRows: [], availableModuleList: [] };
 
     const vLessons = isTeacher ? lessons : lessons.filter((l) => !l.is_hidden);
     const vTasks = isTeacher ? tasks : tasks.filter((t) => !t.is_hidden);
@@ -419,9 +419,16 @@ export default function HistoricoAcademico() {
         module: resolveItemModule(item, studentUnlocks),
       }));
 
+    // ── Filtrar por módulos desbloqueados ──
+    // Alunos só podem concluir atividades de módulos que desbloquearam.
+    // Atividades sem módulo (null) permanecem visíveis.
+    const unlockedSet = new Set(studentUnlocks.map(u => Number(u.module_number)));
+    if (unlockedSet.size === 0) unlockedSet.add(1); // Módulo 1 sempre disponível
+
     return {
-      rows: [...academicRows, ...complementaryRows],
-      availableRows: [...mappedRows, ...complementaryRows],
+      rows: [...academicRows, ...complementaryRows].filter(r => r.module == null || unlockedSet.has(Number(r.module))),
+      availableRows: [...mappedRows, ...complementaryRows].filter(r => r.module == null || unlockedSet.has(Number(r.module))),
+      availableModuleList: [...unlockedSet].sort((a, b) => a - b),
     };
   }, [selectedStudent, scoreItems, examSubmissions, forumPosts, lessons, tasks, exams, isTeacher, studentCourse, pairings, challengeResponses, lessonProgress, taskSubmissions, forumReplies, mentorships, challenges, moduleClosures, moduleUnlocks]);
 
@@ -556,7 +563,7 @@ export default function HistoricoAcademico() {
           </Button>
         </div>
 
-        <ModuleSelector selectedModules={selectedModules} onToggle={toggleModule} />
+        <ModuleSelector selectedModules={selectedModules} onToggle={toggleModule} availableModules={availableModuleList} />
 
         {Object.entries(groupedRows).map(([cat, items]) => (
           <div key={cat}>
@@ -607,7 +614,7 @@ export default function HistoricoAcademico() {
           <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5"><Square size={13} /> Limpar</Button>
           <Button size="sm" className="h-8 text-xs gap-1.5 ml-auto" disabled={selectedRows.length === 0} onClick={() => setShowDocument(true)}><Download size={13} /> Gerar Histórico ({selectedRows.length})</Button>
         </div>
-        <ModuleSelector selectedModules={selectedModules} onToggle={toggleModule} />
+        <ModuleSelector selectedModules={selectedModules} onToggle={toggleModule} availableModules={availableModuleList} />
         {Object.entries(groupedRows).map(([cat, items]) => (
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
