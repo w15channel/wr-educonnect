@@ -8,10 +8,10 @@ import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import OperationsMessage from '@/components/luna/OperationsMessage';
 
 const QUICK = [
-  'Corrija a tarefa pendente mais recente com nota máxima',
-  'Mostre o ranking atual da turma',
+  'Vamos conversar sobre melhorias na plataforma',
+  'Ajude a planejar ajustes, sem aplicar mudanças',
+  'Que melhorias você sugere com base nesta conversa?',
   'Liste os chamados de suporte abertos',
-  'Quais pedidos de liberação de módulo estão pendentes?',
 ];
 
 /** Sala de comando da Luna — a gerente de operações executa ordens do admin. */
@@ -34,7 +34,7 @@ export default function OperationsChat({ session }) {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary"><Briefcase size={17} /></div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-foreground">Luna · Gerente de Operações</p>
-          <p className="truncate text-[11px] text-muted-foreground">Dê a ordem e ela executa na plataforma</p>
+          <p className="truncate text-[11px] text-muted-foreground">Converse, planeje e execute ações no mesmo chat</p>
         </div>
         <button onClick={newConversation} disabled={busy} title="Nova sessão" className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
           <Plus size={15} />
@@ -42,7 +42,7 @@ export default function OperationsChat({ session }) {
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
-        {conversation && messages.length === 0 && <p className="text-sm text-muted-foreground">Conexão pronta. Envie um pedido para acompanhar as consultas, ações e resultados aqui.</p>}
+        {conversation && messages.length === 0 && <p className="text-sm text-muted-foreground">Vamos conversar? Podemos debater ideias, escrever, planejar melhorias ou executar uma operação autorizada. Planejar não altera dados.</p>}
         {messages.map((message, index) => <OperationsMessage key={message.id || index} message={message} />)}
         <OperationsStatus {...operations} />
         <div ref={endRef} />
@@ -59,12 +59,12 @@ export default function OperationsChat({ session }) {
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex shrink-0 gap-2 border-t border-border bg-card p-3">
-        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ex.: corrija a tarefa do João com nota 5 e feedback..." className="h-11 flex-1" disabled={!canSend} />
+        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Converse, peça um plano ou solicite uma ação..." className="h-11 flex-1" disabled={!canSend} />
         <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
         <Button type="submit" className="h-11 w-11 shrink-0 p-0" disabled={!input.trim() || !canSend}><Send size={16} /></Button>
       </form>
       <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">
-        Ações destrutivas ou em massa pedem sua confirmação antes de executar.
+        Ações destrutivas ou em massa exigem confirmação. Edição de código ainda não conectada.
       </p>
     </div>
   );
