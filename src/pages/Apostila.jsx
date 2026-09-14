@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
 import ChapterRewriteModal from '@/components/apostila/ChapterRewriteModal';
+import { createDespinaAudio, releaseDespinaAudio } from '@/lib/despinaVoice';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
 import { MOD3 } from '@/lib/apostila/mod3';
@@ -124,7 +125,7 @@ const READER_RATES = [1, 1.5, 2];
 
 const getWordParts = (text = '') => text.match(/\S+|\s+/g) || [];
 
-function ReadingViewport({ paragraphs, activeParagraph, activeWord, isPlaying, viewportRef }) {
+function ReadingViewport({ paragraphs, activeParagraph, activeWord, isPlaying, nativeFallback, viewportRef }) {
   return (
     <div
       ref={viewportRef}
@@ -135,11 +136,16 @@ function ReadingViewport({ paragraphs, activeParagraph, activeWord, isPlaying, v
       {paragraphs.map((paragraph, paragraphIndex) => {
         let wordIndex = -1;
         return (
-          <p key={`${paragraphIndex}-${paragraph.slice(0, 18)}`} data-reader-paragraph={paragraphIndex}>
+          <p
+            key={`${paragraphIndex}-${paragraph.slice(0, 18)}`}
+            data-reader-paragraph={paragraphIndex}
+            className={paragraphIndex === activeParagraph && !nativeFallback ? 'rounded-lg bg-emerald-500/20 px-2 py-1 ring-1 ring-emerald-500/30' : undefined}
+            aria-current={paragraphIndex === activeParagraph ? 'true' : undefined}
+          >
             {getWordParts(paragraph).map((part, partIndex) => {
               if (/^\s+$/.test(part)) return <React.Fragment key={partIndex}>{part}</React.Fragment>;
               wordIndex += 1;
-              const isCurrentWord = paragraphIndex === activeParagraph && wordIndex === activeWord;
+              const isCurrentWord = nativeFallback && paragraphIndex === activeParagraph && wordIndex === activeWord;
               return (
                 <span
                   key={partIndex}
@@ -175,8 +181,9 @@ export default function Apostila() {
   const [rewriteOpen, setRewriteOpen] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState('');
-  const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, wordIndex: 0, rate: 1, isPlaying: false });
+  const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, wordIndex: 0, rate: 1, isPlaying: false, nativeFallback: false });
   const utteranceRef = useRef(null);
+  const readerAudioRef = useRef(null);
   const readerRef = useRef(reader);
   const readerSessionRef = useRef(0);
   const intentionalStopRef = useRef(false);
@@ -189,11 +196,16 @@ export default function Apostila() {
   useEffect(() => {
     if (!reader.isPlaying || !reader.lessonKey) return;
     const viewport = readerViewportRefs.current.get(reader.lessonKey);
-    const activeWord = viewport?.querySelector('[data-reader-word="active"]');
-    activeWord?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    const activePart = viewport?.querySelector('[data-reader-word="active"]')
+      || viewport?.querySelector(`[data-reader-paragraph="${reader.paragraphIndex}"]`);
+    activePart?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
   }, [reader.isPlaying, reader.lessonKey, reader.paragraphIndex, reader.wordIndex]);
 
   useEffect(() => () => {
+    if (readerAudioRef.current) {
+      readerAudioRef.current.pause();
+      releaseDespinaAudio(readerAudioRef.current);
+    }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -311,9 +323,12 @@ export default function Apostila() {
   const stopReader = (lessonKey = readerRef.current.lessonKey) => {
     intentionalStopRef.current = true;
     readerSessionRef.current += 1;
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+    if (readerAudioRef.current) {
+      readerAudioRef.current.pause();
+      releaseDespinaAudio(readerAudioRef.current);
+      readerAudioRef.current = null;
     }
+    window.speechSynthesis?.cancel();
     utteranceRef.current = null;
     setReader((current) => ({
       ...current,
@@ -321,21 +336,17 @@ export default function Apostila() {
       paragraphIndex: 0,
       wordIndex: 0,
       isPlaying: false,
+      nativeFallback: false,
     }));
   };
 
-  const speakParagraph = (lessonKey, paragraphIndex, rate = readerRef.current.rate, options = {}) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      toast.error('Leitor de texto não disponível neste dispositivo.');
-      return;
-    }
+  const speakParagraph = async (lessonKey, paragraphIndex, rate = readerRef.current.rate, options = {}) => {
+    if (typeof window === 'undefined') return;
 
     const paragraphs = paragraphsByLesson[lessonKey] || [];
     const text = paragraphs[paragraphIndex];
     if (!text) {
-      intentionalStopRef.current = true;
-      window.speechSynthesis.cancel();
-      setReader((current) => ({ ...current, lessonKey, paragraphIndex: 0, wordIndex: 0, isPlaying: false }));
+      stopReader(lessonKey);
       return;
     }
 
@@ -343,25 +354,21 @@ export default function Apostila() {
     readerSessionRef.current = sessionId;
     if (!options.skipCancel) {
       intentionalStopRef.current = true;
-      window.speechSynthesis.cancel();
+      if (readerAudioRef.current) {
+        readerAudioRef.current.pause();
+        releaseDespinaAudio(readerAudioRef.current);
+        readerAudioRef.current = null;
+      }
+      window.speechSynthesis?.cancel();
     }
     intentionalStopRef.current = false;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'pt-BR';
-    utterance.rate = rate;
-    const wordStarts = [...text.matchAll(/\S+/g)].map((match) => match.index || 0);
-    utterance.onboundary = (event) => {
-      if (event.name && event.name !== 'word') return;
-      if (readerSessionRef.current !== sessionId) return;
-      const nextWordIndex = Math.max(0, wordStarts.findLastIndex((start) => start <= event.charIndex));
-      setReader((state) => ({ ...state, lessonKey, paragraphIndex, wordIndex: nextWordIndex }));
-    };
-    utterance.onend = () => {
+
+    const advance = () => {
       const current = readerRef.current;
       if (readerSessionRef.current !== sessionId || current.lessonKey !== lessonKey || !current.isPlaying) return;
       const nextIndex = paragraphIndex + 1;
       if (nextIndex < paragraphs.length) {
-        setReader((state) => ({ ...state, lessonKey, paragraphIndex: nextIndex, wordIndex: 0, isPlaying: true }));
+        setReader((state) => ({ ...state, paragraphIndex: nextIndex, wordIndex: 0, isPlaying: true }));
         window.setTimeout(() => {
           const latest = readerRef.current;
           if (readerSessionRef.current === sessionId && latest.lessonKey === lessonKey && latest.isPlaying) {
@@ -369,18 +376,64 @@ export default function Apostila() {
           }
         }, 80);
       } else {
-        setReader((state) => ({ ...state, lessonKey, paragraphIndex: 0, wordIndex: 0, isPlaying: false }));
+        setReader((state) => ({ ...state, paragraphIndex: 0, wordIndex: 0, isPlaying: false, nativeFallback: false }));
       }
     };
-    utterance.onerror = () => {
-      if (intentionalStopRef.current || readerSessionRef.current !== sessionId) return;
-      setReader((state) => ({ ...state, isPlaying: false }));
-      toast.error('Não foi possível continuar a leitura em voz alta.');
+
+    const startNativeFallback = () => {
+      if (readerSessionRef.current !== sessionId || !window.speechSynthesis) {
+        setReader((state) => ({ ...state, isPlaying: false }));
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      utterance.rate = rate;
+      const wordStarts = [...text.matchAll(/\S+/g)].map((match) => match.index || 0);
+      utterance.onboundary = (event) => {
+        if (event.name && event.name !== 'word') return;
+        if (readerSessionRef.current !== sessionId) return;
+        const nextWordIndex = Math.max(0, wordStarts.findLastIndex((start) => start <= event.charIndex));
+        setReader((state) => ({ ...state, wordIndex: nextWordIndex }));
+      };
+      utterance.onend = advance;
+      utterance.onerror = () => {
+        if (intentionalStopRef.current || readerSessionRef.current !== sessionId) return;
+        setReader((state) => ({ ...state, isPlaying: false }));
+        toast.error('Não foi possível continuar a leitura em voz alta.');
+      };
+      utteranceRef.current = utterance;
+      setReader((current) => ({ ...current, lessonKey, paragraphIndex, wordIndex: 0, rate, isPlaying: true, nativeFallback: true }));
+      window.speechSynthesis.speak(utterance);
     };
 
-    utteranceRef.current = utterance;
-    setReader((current) => ({ ...current, lessonKey, paragraphIndex, wordIndex: 0, rate, isPlaying: true }));
-    window.speechSynthesis.speak(utterance);
+    setReader((current) => ({ ...current, lessonKey, paragraphIndex, wordIndex: 0, rate, isPlaying: true, nativeFallback: false }));
+    try {
+      const audio = await createDespinaAudio(text);
+      const latestReader = readerRef.current;
+      if (readerSessionRef.current !== sessionId || latestReader.lessonKey !== lessonKey || !latestReader.isPlaying) {
+        releaseDespinaAudio(audio);
+        return;
+      }
+      audio.playbackRate = rate;
+      readerAudioRef.current = audio;
+      let fallbackStarted = false;
+      const fallbackOnce = () => {
+        if (fallbackStarted || readerSessionRef.current !== sessionId) return;
+        fallbackStarted = true;
+        releaseDespinaAudio(audio);
+        readerAudioRef.current = null;
+        startNativeFallback();
+      };
+      audio.onended = () => {
+        releaseDespinaAudio(audio);
+        readerAudioRef.current = null;
+        advance();
+      };
+      audio.onerror = fallbackOnce;
+      await audio.play();
+    } catch {
+      if (readerSessionRef.current === sessionId) startNativeFallback();
+    }
   };
 
   const toggleReaderPlayback = (lessonKey) => {
@@ -391,11 +444,17 @@ export default function Apostila() {
     }
 
     if (reader.lessonKey === lessonKey && reader.isPlaying) {
-      window.speechSynthesis?.pause();
+      if (readerAudioRef.current) readerAudioRef.current.pause();
+      else window.speechSynthesis?.pause();
       setReader((current) => ({ ...current, isPlaying: false }));
       return;
     }
 
+    if (reader.lessonKey === lessonKey && readerAudioRef.current?.paused) {
+      readerAudioRef.current.play();
+      setReader((current) => ({ ...current, isPlaying: true }));
+      return;
+    }
     if (reader.lessonKey === lessonKey && utteranceRef.current && window.speechSynthesis?.paused) {
       window.speechSynthesis.resume();
       setReader((current) => ({ ...current, isPlaying: true }));
@@ -409,21 +468,21 @@ export default function Apostila() {
     const paragraphs = paragraphsByLesson[lessonKey] || [];
     if (!paragraphs.length) return;
     const currentIndex = reader.lessonKey === lessonKey ? reader.paragraphIndex : 0;
-    const nextIndex = currentIndex + 1 >= paragraphs.length ? 0 : currentIndex + 1;
-    speakParagraph(lessonKey, nextIndex, reader.rate);
+    speakParagraph(lessonKey, currentIndex + 1 >= paragraphs.length ? 0 : currentIndex + 1, reader.rate);
   };
 
   const previousReaderParagraph = (lessonKey) => {
     const paragraphs = paragraphsByLesson[lessonKey] || [];
     if (!paragraphs.length) return;
     const currentIndex = reader.lessonKey === lessonKey ? reader.paragraphIndex : 0;
-    const previousIndex = Math.max(0, currentIndex - 1);
-    speakParagraph(lessonKey, previousIndex, reader.rate);
+    speakParagraph(lessonKey, Math.max(0, currentIndex - 1), reader.rate);
   };
 
   const changeReaderRate = (lessonKey, rate) => {
     setReader((current) => ({ ...current, lessonKey, rate }));
-    if (reader.lessonKey === lessonKey && reader.isPlaying) {
+    if (reader.lessonKey === lessonKey && readerAudioRef.current) {
+      readerAudioRef.current.playbackRate = rate;
+    } else if (reader.lessonKey === lessonKey && reader.isPlaying) {
       speakParagraph(lessonKey, reader.paragraphIndex, rate);
     }
   };
@@ -751,6 +810,7 @@ export default function Apostila() {
                                     activeParagraph={isReaderActive ? reader.paragraphIndex : -1}
                                     activeWord={isReaderActive ? reader.wordIndex : -1}
                                     isPlaying={isReaderActive && reader.isPlaying}
+                                    nativeFallback={isReaderActive && reader.nativeFallback}
                                     viewportRef={(node) => {
                                       if (node) readerViewportRefs.current.set(key, node);
                                       else readerViewportRefs.current.delete(key);

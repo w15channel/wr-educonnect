@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import useOwlVoice from '@/hooks/useOwlVoice';
+import { createDespinaAudio, releaseDespinaAudio } from '@/lib/despinaVoice';
 
 /** Voz consistente da Luna, com narração nativa como reserva. */
 export default function useLunaVoice() {
@@ -13,8 +13,7 @@ export default function useLunaVoice() {
     requestRef.current += 1;
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
+      releaseDespinaAudio(audioRef.current);
       audioRef.current = null;
     }
     fallback.stop();
@@ -28,31 +27,30 @@ export default function useLunaVoice() {
     const requestId = requestRef.current;
     if (audioRef.current) {
       audioRef.current.pause();
+      releaseDespinaAudio(audioRef.current);
       audioRef.current = null;
     }
     fallback.stop();
     setSpeaking(true);
 
     try {
-      const result = await base44.integrations.Core.GenerateSpeech({
-        text: String(text),
-        voice: 'honey',
-        language_code: 'pt',
-      });
-      if (requestId !== requestRef.current) return;
-      if (!result?.url) throw new Error('Áudio da Luna indisponível');
-
-      const audio = new Audio(result.url);
+      const audio = await createDespinaAudio(text);
+      if (requestId !== requestRef.current) {
+        releaseDespinaAudio(audio);
+        return;
+      }
       audioRef.current = audio;
       let usedFallback = false;
       const useFallback = () => {
         if (usedFallback || requestId !== requestRef.current) return;
         usedFallback = true;
+        releaseDespinaAudio(audio);
         audioRef.current = null;
         setSpeaking(false);
         fallback.speak(text, { force });
       };
       audio.onended = () => {
+        releaseDespinaAudio(audio);
         if (requestId === requestRef.current) {
           audioRef.current = null;
           setSpeaking(false);
@@ -76,7 +74,10 @@ export default function useLunaVoice() {
 
   useEffect(() => () => {
     requestRef.current += 1;
-    audioRef.current?.pause();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      releaseDespinaAudio(audioRef.current);
+    }
   }, []);
 
   return {
