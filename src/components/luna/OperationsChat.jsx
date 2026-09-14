@@ -64,7 +64,7 @@ export default function OperationsChat({ session }) {
         <Button type="submit" className="h-11 w-11 shrink-0 p-0" disabled={!input.trim() || !canSend}><Send size={16} /></Button>
       </form>
       <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">
-        Ações destrutivas ou em massa exigem confirmação. Edição de código ainda não conectada.
+        Código conectado ao editor. Mudanças amplas, destrutivas ou estruturais exigem confirmação.
       </p>
     </div>
   );
