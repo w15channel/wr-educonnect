@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import useOwlVoice from '@/hooks/useOwlVoice';
-import { createDespinaAudio, releaseDespinaAudio } from '@/lib/despinaVoice';
+import { createBase44VoiceAudio, releaseBase44VoiceAudio } from '@/lib/base44Voice';
 
 /** Voz consistente da Luna, com narração nativa como reserva. */
 export default function useLunaVoice() {
@@ -13,7 +13,7 @@ export default function useLunaVoice() {
     requestRef.current += 1;
     if (audioRef.current) {
       audioRef.current.pause();
-      releaseDespinaAudio(audioRef.current);
+      releaseBase44VoiceAudio(audioRef.current);
       audioRef.current = null;
     }
     fallback.stop();
@@ -27,16 +27,16 @@ export default function useLunaVoice() {
     const requestId = requestRef.current;
     if (audioRef.current) {
       audioRef.current.pause();
-      releaseDespinaAudio(audioRef.current);
+      releaseBase44VoiceAudio(audioRef.current);
       audioRef.current = null;
     }
     fallback.stop();
     setSpeaking(true);
 
     try {
-      const audio = await createDespinaAudio(text);
+      const audio = await createBase44VoiceAudio(text);
       if (requestId !== requestRef.current) {
-        releaseDespinaAudio(audio);
+        releaseBase44VoiceAudio(audio);
         return;
       }
       audioRef.current = audio;
@@ -44,13 +44,13 @@ export default function useLunaVoice() {
       const useFallback = () => {
         if (usedFallback || requestId !== requestRef.current) return;
         usedFallback = true;
-        releaseDespinaAudio(audio);
+        releaseBase44VoiceAudio(audio);
         audioRef.current = null;
         setSpeaking(false);
         fallback.speak(text, { force });
       };
       audio.onended = () => {
-        releaseDespinaAudio(audio);
+        releaseBase44VoiceAudio(audio);
         if (requestId === requestRef.current) {
           audioRef.current = null;
           setSpeaking(false);
@@ -76,7 +76,7 @@ export default function useLunaVoice() {
     requestRef.current += 1;
     if (audioRef.current) {
       audioRef.current.pause();
-      releaseDespinaAudio(audioRef.current);
+      releaseBase44VoiceAudio(audioRef.current);
     }
   }, []);
 

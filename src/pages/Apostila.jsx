@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
 import ChapterRewriteModal from '@/components/apostila/ChapterRewriteModal';
-import { createDespinaAudio, releaseDespinaAudio } from '@/lib/despinaVoice';
+import { createBase44VoiceAudio, releaseBase44VoiceAudio } from '@/lib/base44Voice';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
 import { MOD3 } from '@/lib/apostila/mod3';
@@ -204,7 +204,7 @@ export default function Apostila() {
   useEffect(() => () => {
     if (readerAudioRef.current) {
       readerAudioRef.current.pause();
-      releaseDespinaAudio(readerAudioRef.current);
+      releaseBase44VoiceAudio(readerAudioRef.current);
     }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -325,7 +325,7 @@ export default function Apostila() {
     readerSessionRef.current += 1;
     if (readerAudioRef.current) {
       readerAudioRef.current.pause();
-      releaseDespinaAudio(readerAudioRef.current);
+      releaseBase44VoiceAudio(readerAudioRef.current);
       readerAudioRef.current = null;
     }
     window.speechSynthesis?.cancel();
@@ -356,7 +356,7 @@ export default function Apostila() {
       intentionalStopRef.current = true;
       if (readerAudioRef.current) {
         readerAudioRef.current.pause();
-        releaseDespinaAudio(readerAudioRef.current);
+        releaseBase44VoiceAudio(readerAudioRef.current);
         readerAudioRef.current = null;
       }
       window.speechSynthesis?.cancel();
@@ -408,10 +408,10 @@ export default function Apostila() {
 
     setReader((current) => ({ ...current, lessonKey, paragraphIndex, wordIndex: 0, rate, isPlaying: true, nativeFallback: false }));
     try {
-      const audio = await createDespinaAudio(text);
+      const audio = await createBase44VoiceAudio(text);
       const latestReader = readerRef.current;
       if (readerSessionRef.current !== sessionId || latestReader.lessonKey !== lessonKey || !latestReader.isPlaying) {
-        releaseDespinaAudio(audio);
+        releaseBase44VoiceAudio(audio);
         return;
       }
       audio.playbackRate = rate;
@@ -420,12 +420,12 @@ export default function Apostila() {
       const fallbackOnce = () => {
         if (fallbackStarted || readerSessionRef.current !== sessionId) return;
         fallbackStarted = true;
-        releaseDespinaAudio(audio);
+        releaseBase44VoiceAudio(audio);
         readerAudioRef.current = null;
         startNativeFallback();
       };
       audio.onended = () => {
-        releaseDespinaAudio(audio);
+        releaseBase44VoiceAudio(audio);
         readerAudioRef.current = null;
         advance();
       };

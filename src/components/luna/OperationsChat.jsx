@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useOperationsConversation from '@/components/luna/useOperationsConversation';
 import OperationsStatus from '@/components/luna/OperationsStatus';
-import { Send, Plus, Briefcase } from 'lucide-react';
+import { Send, Plus, Briefcase, Volume2, VolumeX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import OperationsMessage from '@/components/luna/OperationsMessage';
+import useLunaVoice from '@/hooks/useLunaVoice';
 
 const QUICK = [
   'Vamos conversar sobre melhorias na plataforma',
@@ -17,14 +18,30 @@ const QUICK = [
 /** Sala de comando da Luna — a gerente de operações executa ordens do admin. */
 export default function OperationsChat({ session }) {
   const operations = useOperationsConversation(session);
-  const { conversation, messages, busy, canSend, newConversation } = operations;
+  const { conversation, messages, phase, busy, canSend, newConversation } = operations;
+  const voice = useLunaVoice();
   const [input, setInput] = useState('');
   const endRef = useRef(null);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, operations.phase]);
+  const spokenRef = useRef({ conversationId: null, fingerprint: '' });
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, phase]);
+  useEffect(() => {
+    const assistants = messages.filter((message) => message.role === 'assistant' && message.content?.trim());
+    const latest = assistants[assistants.length - 1];
+    const fingerprint = latest ? `${latest.id || ''}:${latest.content}` : '';
+    if (spokenRef.current.conversationId !== conversation?.id) {
+      spokenRef.current = { conversationId: conversation?.id || null, fingerprint };
+      return;
+    }
+    if (phase === 'ready' && fingerprint && spokenRef.current.fingerprint !== fingerprint) {
+      spokenRef.current.fingerprint = fingerprint;
+      voice.speak(latest.content);
+    }
+  }, [conversation?.id, messages, phase, voice.speak]);
   const send = async (content = input) => {
     const text = String(content || '').trim();
     if (!text || !canSend) return;
     setInput('');
+    voice.stop();
     if (!await operations.send(text)) setInput(value => value || text);
   };
 
@@ -36,7 +53,14 @@ export default function OperationsChat({ session }) {
           <p className="text-[13px] font-black text-foreground">Luna · Gerente de Operações</p>
           <p className="truncate text-[11px] text-muted-foreground">Converse, planeje e execute ações no mesmo chat</p>
         </div>
-        <button onClick={newConversation} disabled={busy} title="Nova sessão" className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+        <button
+          onClick={voice.toggle}
+          title={voice.enabled ? 'Desligar voz da Luna' : 'Ligar voz da Luna'}
+          className={`rounded-xl p-2 transition-colors ${voice.enabled ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300' : 'text-muted-foreground hover:bg-secondary'}`}
+        >
+          {voice.enabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+        </button>
+        <button onClick={() => { voice.stop(); newConversation(); }} disabled={busy} title="Nova sessão" className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
           <Plus size={15} />
         </button>
       </div>
