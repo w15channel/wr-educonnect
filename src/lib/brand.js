@@ -18,4 +18,3 @@ export const ABED_LOGO =
 export function formatDocumentIssuer(extra = '') {
   return `Documento emitido digitalmente pela ${BRAND_DOCUMENT_LINE}${extra ? ` · ${extra}` : ''}`;
 }
-
