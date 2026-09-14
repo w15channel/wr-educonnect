@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -246,28 +246,22 @@ function ModuleSelector({ selectedModules, onToggle }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-3 flex items-start gap-2">
-        <Layers size={16} className="mt-0.5 shrink-0 text-primary" />
+        <Layers size={15} className="text-primary mt-0.5 shrink-0" />
         <div>
-          <p className="text-sm font-bold text-foreground">Módulos do histórico</p>
-          <p className="text-xs text-muted-foreground">Marque os módulos que deseja incluir. Não é necessário aguardar o encerramento de um período.</p>
+          <p className="text-xs font-bold text-foreground">Filtrar por Módulo</p>
+          <p className="text-[10px] text-muted-foreground">Selecione os módulos para exibir as atividades disponíveis.</p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        {HISTORY_MODULES.map((moduleNumber) => {
-          const checked = selectedModules.has(moduleNumber);
-          return (
-            <button
-              key={moduleNumber}
-              type="button"
-              aria-pressed={checked}
-              onClick={() => onToggle(moduleNumber)}
-              className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${checked ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}
-            >
-              {checked ? <CheckSquare size={14} /> : <Square size={14} />}
-              Módulo {moduleNumber}
-            </button>
-          );
-        })}
+      <div className="flex flex-wrap gap-2">
+        {HISTORY_MODULES.map(m => (
+          <button
+            key={m}
+            onClick={() => onToggle(m)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedModules.has(m) ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/70'}`}
+          >
+            Módulo {m}
+          </button>
+        ))}
       </div>
     </section>
   );
@@ -289,6 +283,7 @@ export default function HistoricoAcademico() {
   const activeCourse = routeCourse || session?.course || 'tcc';
   const studentCourse = activeCourse;
 
+  // ── Course-level queries (always loaded — needed for available activities) ──
   const { data: codes = [] } = useQuery({ queryKey: ['access-codes'], queryFn: () => base44.entities.AccessCode.list('-created_date', 200) });
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', studentCourse],
@@ -302,32 +297,50 @@ export default function HistoricoAcademico() {
     queryKey: ['exams', studentCourse],
     queryFn: () => base44.entities.Exam.filter({ course: studentCourse }, '-created_date', 500),
   });
-  const { data: examSubmissions = [] } = useQuery({
-    queryKey: ['exam-submissions-all'],
-    queryFn: () => base44.entities.ExamSubmission.list('-submitted_at', 2000),
-  });
-  const { data: scoreItems = [] } = useQuery({ queryKey: ['score-items-all'], queryFn: () => base44.entities.ScoreItem.list('-created_date', 5000) });
-  const { data: moduleUnlocks = [] } = useQuery({
-    queryKey: ['ranking-module-unlocks'],
-    queryFn: () => base44.entities.StudentModuleUnlock.list('-unlocked_at', 2000),
-  });
+  const { data: forumPosts = [] } = useQuery({ queryKey: ['forum-posts-all'], queryFn: () => base44.entities.ForumPost.list('-created_date', 1000) });
+  const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies-all'], queryFn: () => base44.entities.ForumReply.list('-created_date', 1000) });
   const { data: pairings = [] } = useQuery({ queryKey: ['therapist-pairings'], queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500) });
-  const { data: challengeResponses = [] } = useQuery({ queryKey: ['challenge-responses-all'], queryFn: () => base44.entities.DailyChallengeResponse.list('-date', 5000) });
-  // Ofensivas geradas — trazem a data e o módulo de cada desafio
-  const { data: challenges = [] } = useQuery({ queryKey: ['daily-challenges-all'], queryFn: () => base44.entities.DailyChallenge.list('-date', 2000) });
+  const { data: challenges = [] } = useQuery({ queryKey: ['daily-challenges-all'], queryFn: () => base44.entities.DailyChallenge.list('-date', 1000) });
   const { data: moduleClosures = [] } = useQuery({ queryKey: ['module-closures-all'], queryFn: () => base44.entities.ModuleClosure.list('-closed_at', 100) });
-  // Registros brutos de entrega — a fonte da verdade do histórico (não depende de automações)
-  const { data: lessonProgress = [] } = useQuery({ queryKey: ['lesson-progress-all'], queryFn: () => base44.entities.LessonProgress.list('-created_date', 5000) });
-  const { data: taskSubmissions = [] } = useQuery({ queryKey: ['task-submissions-all'], queryFn: () => base44.entities.TaskSubmission.list('-created_date', 5000) });
-  const { data: forumPosts = [] } = useQuery({ queryKey: ['forum-posts-all'], queryFn: () => base44.entities.ForumPost.list('-created_date', 3000) });
-  const { data: forumReplies = [] } = useQuery({ queryKey: ['forum-replies-all'], queryFn: () => base44.entities.ForumReply.list('-created_date', 3000) });
   const { data: mentorships = [] } = useQuery({
     queryKey: ['mentorships-historico', studentCourse],
     queryFn: () => base44.entities.Mentorship.filter({ course: studentCourse }, '-date', 500),
   });
-  const visibleLessons = isTeacher ? lessons : lessons.filter((lesson) => !lesson.is_hidden);
-  const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
-  const visibleExams = isTeacher ? exams : exams.filter((exam) => !exam.is_hidden);
+
+  // ── Student-specific queries (only loaded when a student is selected) ──
+  // Reduz drasticamente o volume de dados: em vez de carregar 5000+ registros
+  // de cada entidade, carrega apenas os registros do aluno selecionado.
+  const studentEmail = selectedStudent?.email;
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['exam-submissions', studentEmail],
+    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: studentEmail }, '-submitted_at', 200),
+    enabled: !!studentEmail,
+  });
+  const { data: scoreItems = [] } = useQuery({
+    queryKey: ['score-items', studentEmail],
+    queryFn: () => base44.entities.ScoreItem.filter({ student_email: studentEmail }, '-created_date', 500),
+    enabled: !!studentEmail,
+  });
+  const { data: moduleUnlocks = [] } = useQuery({
+    queryKey: ['module-unlocks', studentEmail],
+    queryFn: () => base44.entities.StudentModuleUnlock.filter({ student_email: studentEmail }, '-unlocked_at', 50),
+    enabled: !!studentEmail,
+  });
+  const { data: challengeResponses = [] } = useQuery({
+    queryKey: ['challenge-responses', studentEmail],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail }, '-date', 500),
+    enabled: !!studentEmail,
+  });
+  const { data: lessonProgress = [] } = useQuery({
+    queryKey: ['lesson-progress', studentEmail],
+    queryFn: () => base44.entities.LessonProgress.filter({ student_email: studentEmail }, '-created_date', 500),
+    enabled: !!studentEmail,
+  });
+  const { data: taskSubmissions = [] } = useQuery({
+    queryKey: ['task-submissions', studentEmail],
+    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: studentEmail }, '-created_date', 500),
+    enabled: !!studentEmail,
+  });
 
   useEffect(() => {
     if (!isTeacher && session?.email && codes.length > 0) {
@@ -335,23 +348,30 @@ export default function HistoricoAcademico() {
       const name = myCode?.profile_name || myCode?.student_name || session.email;
       const email = myCode?.student_email || session.email;
       setSelectedStudent({ name, email, code: myCode });
-      // Pre-select all available items for the student
       setShowDocument(false);
       setShowSelector(false);
     }
   }, [isTeacher, session, codes]);
 
-  // Build all possible rows for a student using buildStudentAcademicData
-  function buildAllRows(student) {
-    const examsForCourse = visibleExams.filter(e => e.course === studentCourse);
-    const examSubsForStudent = examSubmissions.filter(s => s.student_email === student.email && s.status === 'graded');
-    
+  // ── Memoized academic data builder ──────────────────────────────────────
+  // Só recomputa quando o aluno selecionado muda ou quando os dados das
+  // queries mudam. Antes isto era uma função chamada a cada render.
+  const { rows: allRows, availableRows } = useMemo(() => {
+    if (!selectedStudent) return { rows: [], availableRows: [] };
+
+    const vLessons = isTeacher ? lessons : lessons.filter((l) => !l.is_hidden);
+    const vTasks = isTeacher ? tasks : tasks.filter((t) => !t.is_hidden);
+    const vExams = isTeacher ? exams : exams.filter((e) => !e.is_hidden);
+
+    const examsForCourse = vExams.filter(e => e.course === studentCourse);
+    const examSubsForStudent = examSubmissions.filter(s => s.student_email === selectedStudent.email && s.status === 'graded');
     const coursePosts = forumPosts.filter((p) => p.course === studentCourse || (studentCourse === 'tcc' && !p.course));
+
     const { rows } = buildStudentAcademicData({
-      studentEmail: student.email,
+      studentEmail: selectedStudent.email,
       scoreItems,
-      lessons: visibleLessons,
-      tasks: visibleTasks,
+      lessons: vLessons,
+      tasks: vTasks,
       exams: examsForCourse,
       examSubs: examSubsForStudent,
       pairings,
@@ -364,11 +384,11 @@ export default function HistoricoAcademico() {
       challenges,
       moduleClosures,
     });
-    
-    const studentUnlocks = moduleUnlocks.filter((unlock) => unlock.student_email === student.email);
+
+    const studentUnlocks = moduleUnlocks.filter((unlock) => unlock.student_email === selectedStudent.email);
     const studentScoreByKey = new Map(
       scoreItems
-        .filter((item) => item.student_email === student.email)
+        .filter((item) => item.student_email === selectedStudent.email)
         .map((item) => [`${item.category}_${String(item.ref_id || '').replace(/^exam:/, '')}`, item])
     );
     const mappedRows = rows.map(r => {
@@ -377,8 +397,6 @@ export default function HistoricoAcademico() {
         ...r,
         category: HISTORY_CATEGORY[r.category] || 'ATIVIDADES COMPLEMENTARES',
         score: r.score,
-        // Histórico e ranking compartilham a mesma linha do tempo individual:
-        // antes da primeira liberação, qualquer nota pertence ao Módulo 1.
         module: resolveItemModule(scoreItem || { created_date: r.date }, studentUnlocks),
       };
     });
@@ -386,7 +404,7 @@ export default function HistoricoAcademico() {
 
     const representedKeys = new Set(academicRows.map((row) => row.key));
     const complementaryRows = scoreItems
-      .filter((item) => item.student_email === student.email && item.verified)
+      .filter((item) => item.student_email === selectedStudent.email && item.verified)
       .filter((item) => !representedKeys.has(`${item.category}_${String(item.ref_id || '').replace(/^exam:/, '')}`))
       .map((item) => ({
         key: `complementary_${item.id || `${item.category}_${item.ref_id}`}`,
@@ -401,16 +419,14 @@ export default function HistoricoAcademico() {
       }));
 
     return {
-      // Atividades realizadas pelo aluno (entram no histórico)
       rows: [...academicRows, ...complementaryRows],
-      // Todas as atividades pontuáveis disponíveis (inclui pendentes) — denominador do aproveitamento
       availableRows: [...mappedRows, ...complementaryRows],
     };
-  }
+  }, [selectedStudent, scoreItems, examSubmissions, forumPosts, lessons, tasks, exams, isTeacher, studentCourse, pairings, challengeResponses, lessonProgress, taskSubmissions, forumReplies, mentorships, challenges, moduleClosures, moduleUnlocks]);
 
   function openSelector(student) {
     setSelectedStudent(student);
-    setSelectedItems(new Set()); // start empty — teacher selects
+    setSelectedItems(new Set());
     setSelectedModules(new Set());
     setShowSelector(true);
     setShowDocument(false);
@@ -418,31 +434,24 @@ export default function HistoricoAcademico() {
 
   function openStudentDirect(student) {
     setSelectedStudent(student);
-    setSelectedItems(new Set()); // empty initially for student self-view — they see selector too
+    setSelectedItems(new Set());
     setSelectedModules(new Set());
     setShowSelector(true);
     setShowDocument(false);
   }
 
-  const { rows: allRows, availableRows } = selectedStudent ? buildAllRows(selectedStudent) : { rows: [], availableRows: [] };
-
   // A lista de marcação do histórico só pode conter atividades já cumpridas.
   const completedRows = allRows.filter((r) => r.status === 'Avaliado');
-  // Toda atividade pertence a exatamente um módulo — sem duplicidade na contagem.
   const byModule = (r) => selectedModules.has(r.module);
   const moduleRows = completedRows.filter(byModule);
   const availableModuleRows = availableRows.filter(byModule);
   const selectedRows = moduleRows.filter(r => selectedItems.has(r.key));
   const selectedScoreRows = selectedRows.filter(r => r.status === 'Avaliado');
 
-  // Nota de estudos das atividades selecionadas — limitada a 100 pontos.
   const totalScore = capScore(selectedScoreRows.reduce((sum, r) => roundScore(sum + (typeof r.score === 'number' ? roundScore(r.score) : 0)), 0));
   const totalMaxScore = 100;
-  // Carga horária somada em minutos — exibida sempre como tempo (HH:MM:SS).
   const totalMinutes = selectedRows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + (Number(r.minutes) || 0), 0);
 
-  // Aproveitamento: quantas atividades o aluno concluiu em relação ao total de
-  // atividades disponíveis nos módulos selecionados. Ex.: 1 de 10 = 10%.
   const activitiesCount = moduleRows.length;
   const availableActivitiesCount = availableModuleRows.length;
   const approvalRate = availableActivitiesCount > 0
@@ -473,7 +482,6 @@ export default function HistoricoAcademico() {
     });
   };
 
-  // Group rows by category label for the selector UI
   const groupedRows = moduleRows.reduce((acc, r) => {
     if (!acc[r.category]) acc[r.category] = [];
     acc[r.category].push(r);
@@ -538,7 +546,6 @@ export default function HistoricoAcademico() {
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={selectAll} className="h-8 text-xs gap-1.5">
             <CheckSquare size={13} /> Selecionar Tudo
-            
           </Button>
           <Button variant="outline" size="sm" onClick={clearAll} className="h-8 text-xs gap-1.5">
             <Square size={13} /> Limpar
@@ -614,6 +621,9 @@ export default function HistoricoAcademico() {
   }
 
   // ── TEACHER: student list ────────────────────────────────────────────────
+  // Lista simplificada: não chama buildAllRows por aluno (era o gargalo de
+  // performance). O aproveitamento é calculado apenas quando o professor
+  // clica em um aluno e abre o seletor.
   const filtered = codes.filter(c => {
     if (activeCourse && !(c.course === activeCourse || (activeCourse === 'tcc' && !c.course))) return false;
     if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
@@ -645,14 +655,6 @@ export default function HistoricoAcademico() {
         {filtered.map(code => {
           const email = code.student_email || '';
           const name = code.profile_name || code.student_name || 'Sem nome';
-          // Atividades realizadas hoje pelo aluno (aulas, tarefas, provas, fórum,
-          // mentorias, Terapeuta da Semana e ofensivas) — contadas a partir das
-          // entregas atuais, sem módulos removidos ou históricos apagados.
-          const { rows: studentRows, availableRows: studentAvailableRows } = buildAllRows({ name, email, code });
-          const doneCount = studentRows.length;
-          const rate = studentAvailableRows.length > 0
-            ? Math.min(Math.round((doneCount / studentAvailableRows.length) * 100), 100)
-            : 0;
           return (
             <div key={code.id} onClick={() => openSelector({ name, email, code })} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
@@ -662,17 +664,7 @@ export default function HistoricoAcademico() {
                 <p className="font-bold text-sm text-foreground truncate">{name}</p>
                 <p className="text-xs text-muted-foreground">{email}</p>
               </div>
-              <div className="flex items-center gap-3 shrink-0 text-right">
-                <div>
-                  <p className="text-xs text-muted-foreground">Aproveitamento</p>
-                  <p className={`text-sm font-black ${Number(rate) >= 60 ? 'text-green-600' : 'text-orange-500'}`}>{rate}%</p>
-                </div>
-                <div className="bg-primary/10 px-3 py-1.5 rounded-xl">
-                  <p className="text-xs text-muted-foreground">Atividades</p>
-                  <p className="text-sm font-black text-primary">{doneCount}</p>
-                </div>
-                <Settings2 size={15} className="text-muted-foreground" />
-              </div>
+              <Settings2 size={15} className="text-muted-foreground" />
             </div>
           );
         })}
