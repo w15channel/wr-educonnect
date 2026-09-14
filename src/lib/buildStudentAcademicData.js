@@ -91,13 +91,16 @@ export function buildStudentAcademicData({
   const rows = [];
 
   // ── Aulas gravadas — "assistida" vem direto do LessonProgress ──
+  // CORREÇÃO: ScoreItems não verificados (criados em massa pela sincronização
+  // de alunos) NÃO devem contar como atividade concluída. Apenas registros
+  // reais de entrega (watched) ou ScoreItems verificados pelo professor.
   const watchedLessonIds = new Set(
     lessonProgress.filter((p) => p.watched && normEmail(p.student_email) === email).map((p) => p.lesson_id)
   );
   lessons.forEach((l) => {
     const si = findScore('lesson', l.id);
-    const done = !!si || watchedLessonIds.has(l.id);
-    // A carga da aula é a duração do vídeo cadastrada pelo professor.
+    const done = watchedLessonIds.has(l.id) || si?.verified === true;
+    // A carga da aula é a duração do vídeo cadastrado pelo professor.
     const lessonMinutes = parseDurationToMinutes(l.duration);
     rows.push({
       key: `lesson_${l.id}`,
@@ -116,13 +119,15 @@ export function buildStudentAcademicData({
   // Lives não entram na pontuação de estudos/histórico/certificado.
 
   // ── Tarefas / Provas (Task entity) — "entregue" vem do TaskSubmission ──
+  // CORREÇÃO: mesmo princípio das aulas — apenas entregas reais ou ScoreItems
+  // verificados pelo professor contam como concluído.
   const submittedTaskIds = new Set(
     taskSubmissions.filter((s) => normEmail(s.student_email) === email).map((s) => s.task_id)
   );
   tasks.forEach((t) => {
     const cat = t.type === 'quiz' ? 'quiz' : 'task';
     const si = findScore(cat, t.id);
-    const done = !!si || submittedTaskIds.has(t.id);
+    const done = submittedTaskIds.has(t.id) || si?.verified === true;
     const maxPts = t.type === 'quiz' ? STUDY_SCORE_RULES.quiz : STUDY_SCORE_RULES.task;
     rows.push({
       key: `${cat}_${t.id}`,
@@ -432,7 +437,7 @@ export function buildStudentScoreSummary(params, { studentUnlocks = [], moduleNu
     ...academic,
     rows,
     scopedRows,
-    activityCount: scopedRows.length,
-    totalScore: scopedRows.reduce((sum, row) => roundScore(sum + roundScore(row.score)), 0),
+    activityCount: scopedRows.filter((r) => r.status === 'Avaliado').length,
+    availableCount: scopedRows.length,
   };
 }
