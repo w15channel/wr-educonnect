@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
+import useModuleReleaseSchedule from '@/hooks/useModuleReleaseSchedule';
 import { CalendarDays, Plus, Trash2, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ const DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 export default function Calendar() {
   const { user: session } = useOutletContext();
   const isAdmin = session?.role === 'admin';
+  const { schedule, isLoading: loadingSchedule, error: scheduleError } = useModuleReleaseSchedule();
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(new Date());
@@ -68,6 +70,15 @@ export default function Calendar() {
 
   // Combine all events
   const allEvents = [
+    ...schedule.map(release => ({
+      id: `module-release-${release.module_number}`,
+      title: `Liberação do Módulo ${release.module_number}`,
+      description: 'Liberação automática para todos os cursos, sem exigência de nota. Horário de Brasília.',
+      date: new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(release.release_at)),
+      time: '00:00 (Brasília)',
+      type: 'study',
+      source: 'platform',
+    })),
     ...myEvents.map(e => ({ ...e, source: 'personal' })),
     ...tasks.filter(t => t.deadline && (isAdmin || !t.is_hidden)).map(t => ({
       id: `task-${t.id}`,
@@ -91,7 +102,9 @@ export default function Calendar() {
       <div className="flex items-center justify-between mb-5 gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Calendário</h2>
-          <p className="text-muted-foreground text-sm mt-0.5">Seus eventos e compromissos</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Seus eventos e liberações de módulos · Módulo 1 disponível desde o início</p>
+          {loadingSchedule && <p className="text-xs text-muted-foreground">Carregando datas de liberação...</p>}
+          {scheduleError && <p role="alert" className="text-xs text-destructive">Não foi possível carregar as datas de liberação.</p>}
         </div>
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogTrigger asChild>

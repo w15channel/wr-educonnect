@@ -96,9 +96,6 @@ export function buildModuleChecklist({
     return reply.author_email === email && parent && parent.author_email !== email && isWithinModuleWindow(reply.created_date, moduleWindow);
   }).length;
 
-  // 5 — Atendimento realizado como Terapeuta da Semana, dentro da janela do módulo.
-  const therapistSessions = pairings.filter((p) => p.therapist_email === email && p.therapist_submitted && isWithinModuleWindow(p.updated_date || p.pairing_date, moduleWindow)).length;
-
   // 6 — Pelo menos 3 dias de ofensiva (não precisam ser consecutivos), dentro da janela do módulo.
   const ofensivaDays = new Set(
     challengeResponses.filter((r) => r.student_email === email && isWithinModuleWindow(r.date, moduleWindow)).map((r) => r.date)
@@ -145,14 +142,7 @@ export function buildModuleChecklist({
       target: 1,
       to: '/debates',
     },
-    {
-      key: 'therapist',
-      label: 'Realizar um atendimento como Terapeuta da Semana',
-      hint: 'Envie o relato do atendimento realizado.',
-      current: Math.min(therapistSessions, 1),
-      target: 1,
-      to: '/terapeuta',
-    },
+
     {
       key: 'ofensiva',
       label: 'Cumprir 3 dias de ofensiva (não precisam ser seguidos)',

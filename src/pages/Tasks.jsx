@@ -389,7 +389,7 @@ export default function Tasks({ mode = 'tasks' }) {
                   <div className="p-2 rounded-xl shrink-0 bg-blue-100 text-blue-600"><FileText size={15} /></div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-sm text-foreground truncate">{task.title}</h3>
-                    <p className="text-[10px] text-amber-600 font-semibold mt-0.5">⏳ Conclua o módulo anterior na apostila para liberar</p>
+                    <p className="text-[10px] text-amber-600 font-semibold mt-0.5">Liberação automática na data prevista no calendário</p>
                   </div>
                 </div>
               </div>

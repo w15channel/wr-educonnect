@@ -76,7 +76,7 @@ export default function Exams() {
   const [showAnnualGenerator, setShowAnnualGenerator] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState('all');
   // Sequência de liberação: a prova do módulo só abre com o checklist cumprido.
-  const { isModuleUnlockedForExam } = useModuleChecklist({ course: userCourse, session });
+  const { isModuleUnlockedForExam, availableModules } = useModuleChecklist({ course: userCourse, session });
 
   // Load all exams for this course
   const { data: exams = [], isLoading } = useQuery({
@@ -368,20 +368,21 @@ export default function Exams() {
                   )
                 ) : (() => {
                   const examModule = parseModuleNumber(exam.module_ref);
-                  const checklistLocked = !isTeacher && !!examModule && !isModuleUnlockedForExam(examModule) && !isReleasedByAdmin(examModule);
+                  const dateLocked = !isTeacher && !!examModule && !availableModules.includes(examModule);
+                  const checklistLocked = dateLocked || (!isTeacher && !!examModule && !isModuleUnlockedForExam(examModule) && !isReleasedByAdmin(examModule));
                   if (checklistLocked) {
                     return (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3">
-                          <AlertCircle size={15} /> Prova bloqueada: conclua o checklist do Módulo {examModule} para liberar.
+                          <AlertCircle size={15} /> {dateLocked ? `Módulo ${examModule} bloqueado até a data prevista no calendário.` : `Prova bloqueada: conclua o checklist do Módulo ${examModule} para liberar.`}
                         </div>
                         <Button
                           size="sm"
                           variant="outline"
                           className="gap-1.5 font-bold"
-                          onClick={() => navigate(`${prefix}/checklist?module=${examModule}`)}
+                          onClick={() => navigate(dateLocked ? `${prefix}/calendar` : `${prefix}/checklist?module=${examModule}`)}
                         >
-                          Ver checklist do Módulo {examModule}
+                          {dateLocked ? 'Ver calendário de liberações' : `Ver checklist do Módulo ${examModule}`}
                         </Button>
                       </div>
                     );

@@ -57,7 +57,7 @@ export interface ChecklistProgress {
   eligible: boolean;
 }
 
-/** Calcula os 7 requisitos do módulo para um aluno e resume o percentual. */
+/** Calcula os 6 requisitos do módulo para um aluno e resume o percentual. */
 export function computeChecklistProgress({
   moduleNumber,
   email,
@@ -101,8 +101,6 @@ export function computeChecklistProgress({
     return reply.author_email === email && parent && parent.author_email !== email;
   }).length;
 
-  const therapistSessions = pairings.filter((p) => p.therapist_email === email && p.therapist_submitted).length;
-
   const ofensivaDays = new Set(
     challengeResponses.filter((r) => r.student_email === email).map((r) => r.date)
   ).size;
@@ -113,7 +111,6 @@ export function computeChecklistProgress({
     { key: 'tasks', current: tasksDone, target: moduleTasks.length || CHECKLIST_RULES.tasksPerModule },
     { key: 'debate_topic', current: Math.min(myDebateTopics, 1), target: 1 },
     { key: 'debate_comment', current: Math.min(myDebateComments, 1), target: 1 },
-    { key: 'therapist', current: Math.min(therapistSessions, 1), target: 1 },
     { key: 'ofensiva', current: Math.min(ofensivaDays, CHECKLIST_RULES.ofensivaDays), target: CHECKLIST_RULES.ofensivaDays },
   ].map((item) => ({ ...item, done: item.current >= item.target }));
 

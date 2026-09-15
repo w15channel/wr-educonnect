@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
+      'npm:vitest@4.1.11': 'vitest',
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },

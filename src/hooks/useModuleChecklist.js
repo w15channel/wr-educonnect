@@ -1,12 +1,11 @@
-import { useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import useModuleAccess from '@/hooks/useModuleAccess';
 import { base44 } from '@/api/base44Client';
 import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
 
 const MODULE_COUNT = 10;
-// Evita criar o mesmo marco de início de módulo duas vezes quando o hook é
-// usado em mais de um lugar ao mesmo tempo (dashboard + página do checklist).
-const startedModules = new Set();
+// O calendário define o módulo disponível; concluir atividades não antecipa datas.
 
 /**
  * Checklist individual do aluno: calcula os requisitos de cada módulo (1–10)
@@ -15,7 +14,7 @@ const startedModules = new Set();
  */
 export default function useModuleChecklist({ course = 'tcc', session } = {}) {
   const email = session?.email || session?.code || '';
-  const queryClient = useQueryClient();
+  const access = useModuleAccess(course, session);
 
   const { data: lessons = [], isLoading: l1 } = useQuery({
     queryKey: ['checklist-lessons', course],
@@ -66,16 +65,9 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
     enabled: !!email,
   });
-  // Liberações manuais de módulo feitas pelo admin (StudentModuleUnlock) —
-  // sem isso, um aluno avançado manualmente continua vendo o checklist do
-  // módulo antigo, pois ele nunca teve uma prova registrada naquele módulo.
-  const { data: moduleUnlocks = [], isLoading: l11 } = useQuery({
-    queryKey: ['checklist-module-unlocks', email],
-    queryFn: () => base44.entities.StudentModuleUnlock.filter({ student_email: email }, '-unlocked_at', 50),
-    enabled: !!email,
-  });
+  const moduleUnlocks = access.unlocks;
 
-  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11;
+  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || access.isLoading;
 
   // Data em que cada módulo foi liberado para o aluno — usada para que
   // debates, terapeuta da semana e ofensiva contem apenas o que foi feito
@@ -112,39 +104,12 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     });
   }, [email, lessons, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule]);
 
-  // Módulo atual do aluno: o primeiro cuja prova ainda não foi entregue —
-  // ou o módulo para o qual o admin liberou manualmente o avanço, se for maior
-  // (os módulos anteriores mantêm todos os seus dados e progresso intactos).
-  const examBasedModule = modules.find((m) => !m.examDone)?.moduleNumber || MODULE_COUNT;
-  const manualModule = moduleUnlocks
-    .filter((u) => (u.course || 'tcc') === course)
-    .reduce((max, u) => Math.max(max, Number(u.module_number) || 0), 0);
-  const currentModule = Math.min(MODULE_COUNT, Math.max(examBasedModule, manualModule));
-
-  // Marco de início do módulo: quando o aluno ingressa em um módulo novo e ainda
-  // não existe registro dessa data, gravamos agora. A partir daí o checklist do
-  // módulo conta somente as atividades feitas depois deste instante.
-  useEffect(() => {
-    if (isLoading || !email || currentModule <= 1) return;
-    if (unlockDateByModule.has(currentModule)) return;
-    const guard = `${email}|${course}|${currentModule}`;
-    if (startedModules.has(guard)) return;
-    startedModules.add(guard);
-    base44.entities.StudentModuleUnlock.create({
-      student_email: email,
-      course,
-      module_number: currentModule,
-      unlocked_at: new Date().toISOString(),
-      unlocked_by: 'sistema:inicio-modulo',
-    })
-      .then(() => queryClient.invalidateQueries({ queryKey: ['checklist-module-unlocks', email] }))
-      .catch(() => startedModules.delete(guard));
-  }, [isLoading, email, course, currentModule, unlockDateByModule, queryClient]);
+  const currentModule = access.currentModule;
 
   const isModuleUnlockedForExam = (moduleNumber) => {
     const found = modules.find((m) => m.moduleNumber === Number(moduleNumber));
-    return found ? found.complete : true;
+    return access.moduleUnlocked[Number(moduleNumber) - 1] === true && !!found?.complete;
   };
 
-  return { modules, currentModule, isModuleUnlockedForExam, isLoading };
+  return { modules, currentModule, isModuleUnlockedForExam, isLoading, availableModules: access.availableModules };
 }

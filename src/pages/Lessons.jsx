@@ -414,9 +414,7 @@ export default function Lessons() {
         </div>
         {isTeacher && (
           <div className="flex gap-2">
-            <Button variant="outline" className="h-9 text-sm" onClick={() => updateUnlockMutation.mutate(unlockedLessonCount + 1)} disabled={updateUnlockMutation.isPending}>
-              Liberar próxima aula
-            </Button>
+
             <Button variant="outline" className="h-9 text-sm" onClick={openModuleEditor}>
               Organizar módulos
             </Button>
@@ -518,7 +516,7 @@ export default function Lessons() {
         )}
       </div>
 
-      {isTeacher && <p className="text-xs text-muted-foreground mb-3">Aulas liberadas para a turma: <strong>{unlockedLessonCount}</strong>.</p>}
+      {isTeacher && <p className="text-xs text-muted-foreground mb-3">Liberação automática por módulo, conforme as datas do calendário, preservando os acessos já concedidos.</p>}
 
       {/* Progress bar (student only) */}
       {!isTeacher && visibleLessons.length > 0 && (

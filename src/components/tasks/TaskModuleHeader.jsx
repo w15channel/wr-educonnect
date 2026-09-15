@@ -18,7 +18,7 @@ export default function TaskModuleHeader({ module, total, done, locked, expanded
         <p className="font-bold text-sm text-foreground">Módulo {module}</p>
         <p className="text-[11px] text-muted-foreground">
           {locked
-            ? 'Bloqueado — aprove a prova de conclusão do módulo anterior para liberar'
+            ? 'Bloqueado — aguarde a data de liberação no calendário'
             : `${done}/${total} trabalho${total !== 1 ? 's' : ''} entregue${done !== 1 ? 's' : ''}`}
         </p>
       </div>

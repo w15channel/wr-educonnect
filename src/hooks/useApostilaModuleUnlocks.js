@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import useModuleAccess from '@/hooks/useModuleAccess';
 
 const LESSONS_PER_MODULE = 5;
 const MODULE_COUNT = 10;
@@ -10,13 +11,12 @@ const parseModuleNumber = (value) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
-// Calcula, para os 10 módulos da apostila, se o aluno cumpriu todas as atividades
-// disponíveis do módulo (aulas assistidas, trabalhos entregues) E realizou a prova
-// do módulo. O módulo 1 está sempre liberado; os demais só liberam quando o módulo
-// anterior é integralmente concluído, prova inclusa.
+// O progresso continua disponível, mas não libera mais conteúdos.
+// O acesso segue exclusivamente o calendário e as liberações preservadas.
 export default function useApostilaModuleUnlocks(course, session) {
   const studentEmail = session?.email || session?.code || '';
   const isTeacher = session?.role === 'admin';
+  const access = useModuleAccess(course, session);
 
   const { data: recordedLessons = [], isLoading: loadingLessons } = useQuery({
     queryKey: ['apostila-unlock-lessons', course],
@@ -71,10 +71,7 @@ export default function useApostilaModuleUnlocks(course, session) {
     moduleComplete.push(lessonsDone && tasksDone && examDone);
   }
 
-  const moduleUnlocked = [];
-  for (let i = 0; i < MODULE_COUNT; i++) {
-    moduleUnlocked.push(i === 0 ? true : moduleUnlocked[i - 1] && moduleComplete[i - 1]);
-  }
+  const moduleUnlocked = access.moduleUnlocked;
 
-  return { moduleUnlocked, moduleComplete, moduleExamDone, isLoading };
+  return { moduleUnlocked, moduleComplete, moduleExamDone, isLoading: isLoading || access.isLoading };
 }

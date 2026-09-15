@@ -634,14 +634,14 @@ export default function Apostila() {
           const isChOpen = openChapter === chapter.id;
           const colorLight = chapter.colorLight || 'text-emerald-400';
           const bgLight = chapter.bgLight || 'bg-emerald-500/10';
-          const isLocked = !isAdmin && !loadingUnlocks && !moduleUnlocked[chIdx];
+          const isLocked = !isAdmin && (loadingUnlocks || !moduleUnlocked[chIdx]);
 
           return (
             <div key={chapter.id} className={`rounded-2xl border border-border bg-card overflow-hidden ${isLocked ? 'opacity-60' : ''}`}>
               {/* Chapter header */}
               <button
                 onClick={() => {
-                  if (isLocked) { toast.error('Conclua o módulo anterior (aulas assistidas e trabalhos entregues) para desbloquear.'); return; }
+                  if (isLocked) { toast.info(loadingUnlocks ? 'Carregando liberações...' : 'Este módulo será liberado automaticamente na data prevista no calendário.'); return; }
                   setOpenChapter(isChOpen ? null : chapter.id);
                 }}
                 className={`w-full flex items-center justify-between p-5 transition-colors text-left ${isLocked ? 'cursor-not-allowed' : 'hover:bg-secondary/40'}`}
@@ -653,7 +653,7 @@ export default function Apostila() {
                   <div className="min-w-0">
                     <p className="font-bold text-sm text-foreground leading-tight">{chapter.title}</p>
                     <p className={`text-xs mt-0.5 ${isLocked ? 'text-muted-foreground' : colorLight} font-medium`}>
-                      {isLocked ? 'Bloqueado — conclua o módulo anterior' : `${chapter.subtitle} · ${chapter.lessons.length} aulas`}
+                      {isLocked ? (loadingUnlocks ? 'Carregando liberações...' : 'Bloqueado — aguarde a data no calendário') : `${chapter.subtitle} · ${chapter.lessons.length} aulas`}
                     </p>
                   </div>
                 </div>

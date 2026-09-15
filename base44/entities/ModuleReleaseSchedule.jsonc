@@ -1,0 +1,20 @@
+{
+  "name": "ModuleReleaseSchedule",
+  "type": "object",
+  "description": "Calend\u00e1rio de libera\u00e7\u00e3o autom\u00e1tica de conte\u00fados, comum a todos os cursos. M\u00f3dulo 1 sempre dispon\u00edvel.",
+  "properties": {
+    "module_number": {
+      "type": "number",
+      "minimum": 2,
+      "maximum": 10
+    },
+    "release_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "module_number",
+    "release_at"
+  ]
+}

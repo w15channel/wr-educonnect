@@ -15,7 +15,7 @@ export default function Checklist() {
   const parts = location.pathname.split('/').filter(Boolean);
   const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
   const course = session?.course || 'tcc';
-  const { modules, currentModule, isLoading } = useModuleChecklist({ course, session });
+  const { modules, currentModule, isLoading, availableModules } = useModuleChecklist({ course, session });
   const voice = useOwlVoice();
 
   const requestedModule = Number(new URLSearchParams(location.search).get('module')) || null;
@@ -24,9 +24,8 @@ export default function Checklist() {
     if (!requestedModule) setSelected(currentModule);
   }, [currentModule, requestedModule]);
 
-  const module = modules.find((m) => m.moduleNumber === selected) || modules[0];
-  // O aluno só vê os módulos até o que está cursando — cada um no seu tempo.
-  const visibleModules = modules.filter((m) => m.moduleNumber <= currentModule);
+  const visibleModules = modules.filter((m) => availableModules.includes(m.moduleNumber));
+  const module = visibleModules.find((m) => m.moduleNumber === selected) || visibleModules.find((m) => m.moduleNumber === currentModule) || modules[0];
 
   const items = module?.items || [];
   const firstName = String(session?.name || session?.full_name || 'aluno').split(' ')[0];

@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getSession } from '@/lib/customAuth';
 import QuizView from '@/components/tasks/QuizView';
+import useModuleAccess from '@/hooks/useModuleAccess';
 
 export default function TaskQuizView() {
   const { id } = useParams();
@@ -17,6 +18,8 @@ export default function TaskQuizView() {
   });
 
   const task = tasks.find(t => t.id === id);
+  const access = useModuleAccess(task?.course || session?.course || 'tcc', session);
+  const moduleLocked = !!task?.module_number && !access.moduleUnlocked[Number(task.module_number) - 1];
   const isAdmin = session?.role === 'admin';
   const isHiddenForStudent = task?.is_hidden && !isAdmin;
 
@@ -25,7 +28,7 @@ export default function TaskQuizView() {
     navigate('/tasks');
   };
 
-  if (isLoading) {
+  if (isLoading || access.isLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -44,5 +47,6 @@ export default function TaskQuizView() {
     );
   }
 
+  if (moduleLocked) return <div className="p-6 text-center text-muted-foreground"><p>Este módulo será liberado na data prevista no calendário.</p><button onClick={handleBack} className="mt-3 text-primary underline">Voltar para Tarefas</button></div>;
   return <QuizView task={task} user={session} onBack={handleBack} />;
 }

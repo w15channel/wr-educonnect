@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useOutletContext } from 'react-router-dom';
 import ExamQuizRenderer from '@/components/exams/ExamQuizView';
+import useModuleAccess from '@/hooks/useModuleAccess';
+import { parseModuleNumber } from '@/lib/examChecklistRules';
 
 export default function ExamQuizView() {
   const { id } = useParams();
@@ -18,6 +20,8 @@ export default function ExamQuizView() {
   });
 
   const exam = exams.find(e => e.id === id);
+  const access = useModuleAccess(exam?.course || session?.course || 'tcc', session);
+  const moduleNumber = parseModuleNumber(exam?.module_ref);
   const isAdmin = session?.role === 'admin';
   const isHiddenForStudent = exam?.is_hidden && !isAdmin;
 
@@ -26,7 +30,7 @@ export default function ExamQuizView() {
     navigate(-1);
   };
 
-  if (isLoading) {
+  if (isLoading || access.isLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -45,5 +49,6 @@ export default function ExamQuizView() {
     );
   }
 
+  if (moduleNumber && !access.moduleUnlocked[moduleNumber - 1]) return <div className="p-6 text-center text-muted-foreground"><p>Este módulo será liberado na data prevista no calendário.</p><button onClick={handleBack} className="mt-3 text-primary underline">Voltar</button></div>;
   return <ExamQuizRenderer exam={exam} user={session} onBack={handleBack} />;
 }

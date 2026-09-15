@@ -81,7 +81,7 @@ export default function ModuleBlock({
             <p className={`font-bold text-sm text-foreground leading-tight`}>{theme.label}</p>
             {moduleLocked && (
               <p className="text-xs text-amber-600 font-semibold mt-0.5">
-                🔒 Conclua as atividades e a prova do módulo anterior para liberar
+                Liberação automática na data prevista no calendário
               </p>
             )}
             {!isTeacher && !moduleLocked && (
@@ -108,7 +108,7 @@ export default function ModuleBlock({
       {/* Lesson list */}
       {moduleOpen && moduleLocked && (
         <div className="border-t border-border p-4 text-center text-xs text-muted-foreground">
-          Este módulo será liberado depois que você concluir todas as atividades disponíveis do módulo anterior e finalizar a prova dele.
+          Este módulo será liberado automaticamente na data do calendário, sem exigência de nota ou conclusão do módulo anterior.
         </div>
       )}
       {moduleOpen && !moduleLocked && (
@@ -118,7 +118,7 @@ export default function ModuleBlock({
             const prog = getProgress(lesson.id);
             const isExpanded = expandedLesson === lesson.id;
             const isWatched = prog?.watched;
-            const isLocked = !isTeacher && (globalIdx + 1) > unlockedLessonCount;
+            const isLocked = !isTeacher && moduleLocked;
             const materialLinks = lesson.material_links ? lesson.material_links.split(',').map(l => l.trim()).filter(Boolean) : [];
 
             if (isLocked) return (

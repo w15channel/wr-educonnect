@@ -17,6 +17,7 @@ import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 import { formatDuration } from '@/lib/durationUtils';
 import { resolveItemModule } from '@/lib/moduleAttribution';
+import useModuleAccess from '@/hooks/useModuleAccess';
 
 const HISTORY_MODULES = Array.from({ length: 10 }, (_, index) => index + 1);
 const HISTORY_CATEGORY = {
@@ -322,11 +323,7 @@ export default function HistoricoAcademico() {
     queryFn: () => base44.entities.ScoreItem.filter({ student_email: studentEmail }, '-created_date', 500),
     enabled: !!studentEmail,
   });
-  const { data: moduleUnlocks = [] } = useQuery({
-    queryKey: ['module-unlocks', studentEmail],
-    queryFn: () => base44.entities.StudentModuleUnlock.filter({ student_email: studentEmail }, '-unlocked_at', 50),
-    enabled: !!studentEmail,
-  });
+  const { unlocks: moduleUnlocks } = useModuleAccess(studentCourse, { email: studentEmail });
   const { data: challengeResponses = [] } = useQuery({
     queryKey: ['challenge-responses', studentEmail],
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: studentEmail }, '-date', 500),
@@ -422,8 +419,7 @@ export default function HistoricoAcademico() {
     // ── Filtrar por módulos desbloqueados ──
     // Alunos só podem concluir atividades de módulos que desbloquearam.
     // Atividades sem módulo (null) permanecem visíveis.
-    const unlockedSet = new Set(studentUnlocks.map(u => Number(u.module_number)));
-    if (unlockedSet.size === 0) unlockedSet.add(1); // Módulo 1 sempre disponível
+    const unlockedSet = new Set([1, ...studentUnlocks.map(u => Number(u.module_number))]);
 
     return {
       rows: [...academicRows, ...complementaryRows].filter(r => r.module == null || unlockedSet.has(Number(r.module))),
