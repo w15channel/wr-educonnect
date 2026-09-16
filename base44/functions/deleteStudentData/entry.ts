@@ -9,12 +9,23 @@ Deno.serve(async (req) => {
     const payload = await req.json().catch(() => ({}));
     const user = await base44.auth.me().catch(() => null);
 
-    // Auth: native admin OR custom admin (AdminCredential)
+    // Auth: native admin, AdminCredential, or AccessCode with admin/management profile
     const adminEmail = payload?.admin_email || user?.email;
     let isAdmin = user?.role === 'admin';
     if (!isAdmin && adminEmail) {
       const creds = await base44.asServiceRole.entities.AdminCredential.filter({ email: adminEmail }, '-created_date', 1).catch(() => []);
       isAdmin = creds.length > 0;
+      // Fallback: verifica AccessCode com profile_category admin/management (mesmo critério do adminSave)
+      if (!isAdmin) {
+        const normAdminEmail = String(adminEmail).trim().toLowerCase();
+        const codes = await base44.asServiceRole.entities.AccessCode.filter(
+          { student_email: normAdminEmail }, '-created_date', 10
+        );
+        isAdmin = codes.some((c) =>
+          c.is_active !== false &&
+          ['admin', 'management'].includes(c.profile_category)
+        );
+      }
     }
     if (!isAdmin) {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
