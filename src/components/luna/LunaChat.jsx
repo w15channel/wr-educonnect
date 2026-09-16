@@ -123,11 +123,11 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className="flex shrink-0 items-center gap-2.5 border-b border-border bg-card px-3 py-2.5">
+    <div className="flex h-full min-h-0 flex-col bg-background dark:bg-black">
+      <div className="flex shrink-0 items-center gap-2.5 border-b border-rose-100 bg-card dark:border-white/20 dark:bg-black px-3 py-2.5">
         <div className="ofensiva-owl text-3xl" role="img" aria-label="Luna, assistente do site">🦉</div>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-black text-foreground">Luna · Assistente do site</p>
+          <p className="text-[13px] font-black text-foreground dark:text-white">Luna · Assistente do site</p>
           <p className="truncate text-[11px] text-muted-foreground">{supportMode ? 'Abertura de chamados — conte o que precisa' : 'Dúvidas da plataforma, estudos e apoio emocional'}</p>
         </div>
         <button
@@ -146,7 +146,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         </button>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-3">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3 bg-gradient-to-b from-rose-50/40 to-secondary/20 dark:from-black dark:to-black">
         {messages.map((message, index) => (
           <div key={index} className="space-y-2">
             <LunaBubble role={message.role}>{message.content}</LunaBubble>
@@ -168,7 +168,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         <div ref={endRef} />
       </div>
 
-      <div className="shrink-0 border-t border-border bg-card/60 px-3 py-2">
+      <div className="shrink-0 border-t border-rose-100 bg-rose-50/20 dark:border-white/20 dark:bg-black px-3 py-2">
         <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-invisible">
           {(supportMode
             ? ['Não consigo acessar minha conta', 'Problema com aulas ou vídeos', 'Problema com tarefa ou prova', 'Problema com mensalidade', 'Outro assunto']
@@ -178,7 +178,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
               key={action}
               onClick={() => send(action)}
               disabled={loading || ticketCreating}
-              className="shrink-0 whitespace-nowrap rounded-xl border border-border bg-secondary px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              className="shrink-0 whitespace-nowrap rounded-xl border border-rose-200 dark:border-white/20 bg-background dark:bg-black px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-rose-50 dark:hover:bg-white/10 hover:text-foreground dark:hover:text-white"
             >
               {action}
             </button>
@@ -188,17 +188,11 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
 
       <form
         onSubmit={(e) => { e.preventDefault(); send(); }}
-        className="flex shrink-0 gap-2 border-t border-border bg-card p-3"
+        className="flex shrink-0 gap-2 border-t border-rose-100 bg-card dark:border-white/20 dark:bg-black p-3"
       >
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={supportMode ? 'Descreva o que você precisa...' : 'Escreva sua dúvida para a Luna...'}
-          className="h-11 flex-1"
-          disabled={loading || ticketCreating}
-        />
+        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Converse com a Luna..." className="h-11 flex-1 border-rose-200 dark:border-white/20" disabled={loading} />
         <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
-        <Button type="submit" className="h-11 w-11 shrink-0 p-0" disabled={!input.trim() || loading || ticketCreating}>
+        <Button type="submit" className="h-11 w-11 shrink-0 p-0 bg-rose-500 hover:bg-rose-600" disabled={!input.trim() || loading || ticketCreating}>
           <Send size={16} />
         </Button>
       </form>
