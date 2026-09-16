@@ -8,20 +8,38 @@ import LunaBubble from '@/components/luna/LunaBubble';
 import LunaShortcuts from '@/components/luna/LunaShortcuts';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting } from '@/lib/lunaPersona';
+import { SUPPORT_CATEGORIES } from '@/components/support/SupportTicketForm';
+import { toast } from 'sonner';
+
+const LUNA_SUPPORT_PROMPT_SUFFIX = `
+
+MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de abertura de chamados. Nesta conversa, sua tarefa é:
+1. Perguntar o que o aluno precisa ou qual problema está enfrentando na plataforma.
+2. Após o aluno descrever, resumir o que entendeu e perguntar: "Deseja que eu abra um chamado formal para a equipe de suporte resolver isso?"
+3. Quando o aluno confirmar explicitamente que deseja abrir o chamado (respondendo sim, quero, pode abrir, etc.), preencha o campo "ticket" do JSON com:
+   - title: um resumo curto do problema (máximo 80 caracteres)
+   - description: a descrição completa do problema relatado pelo aluno, em primeira pessoa
+   - category: escolha a categoria mais adequada entre: ${SUPPORT_CATEGORIES.join(', ')}
+4. NÃO preencha o campo "ticket" se o aluno ainda não confirmou que deseja abrir o chamado.
+5. Após preencher o campo "ticket", confirme ao aluno que o chamado foi registrado e que a equipe entrará em contato.`;
 
 /**
  * Conversa com a Luna em balões — usada na página dela e na sobreposição
  * aberta pelo botão ao lado da lâmpada de tema.
  */
-export default function LunaChat({ session, onNavigated, isActive = true }) {
+export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false }) {
   const voice = useLunaVoice();
-  const greeting = lunaGreeting(session?.name);
+  const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo na plataforma. Pode me contar o que está acontecendo? Descreva o problema ou a solicitação e, se quiser, eu abro um chamado formal para a equipe de suporte resolver pra você.`;
+  const greeting = supportMode ? supportGreeting : lunaGreeting(session?.name);
   const [messages, setMessages] = useState([{ role: 'assistant', content: greeting }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ticketCreating, setTicketCreating] = useState(false);
   const endRef = useRef(null);
   const activeRef = useRef(isActive);
   activeRef.current = isActive;
+  const supportRef = useRef(supportMode);
+  supportRef.current = supportMode;
 
   useEffect(() => { if (!isActive) voice.stop(); }, [isActive]);
   useEffect(() => { if (isActive) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, isActive]);
@@ -36,8 +54,9 @@ export default function LunaChat({ session, onNavigated, isActive = true }) {
     voice.stop();
     try {
       const history = next.map((m) => `${m.role === 'user' ? 'Aluno' : 'Luna'}: ${m.content}`).join('\n');
+      const systemPrompt = supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
       const answer = await base44.integrations.Core.InvokeLLM({
-        prompt: `${LUNA_SYSTEM_PROMPT}\n\nNome do aluno: ${session?.name || 'Aluno'}\n\nConversa:\n${history}\n\nLuna:`,
+        prompt: `${systemPrompt}\n\nNome do aluno: ${session?.name || 'Aluno'}\n\nConversa:\n${history}\n\nLuna:`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -49,11 +68,52 @@ export default function LunaChat({ session, onNavigated, isActive = true }) {
                 properties: { key: { type: 'string' }, label: { type: 'string' } },
               },
             },
+            ticket: {
+              type: 'object',
+              properties: {
+                title: { type: 'string' },
+                description: { type: 'string' },
+                category: { type: 'string' },
+              },
+            },
           },
         },
       });
       const reply = answer?.answer || 'Desculpe, não consegui responder agora. Poderia tentar novamente, por favor?';
-      setMessages((prev) => [...prev, { role: 'assistant', content: reply, links: answer?.links || [] }]);
+      const updatedMessages = [...next, { role: 'assistant', content: reply, links: answer?.links || [] }];
+
+      // Se a Luna retornou um ticket, criar o SupportTicket
+      if (answer?.ticket?.title && answer?.ticket?.description) {
+        setTicketCreating(true);
+        try {
+          const userCourse = session?.course || 'tcc';
+          const ticketData = {
+            title: String(answer.ticket.title).slice(0, 200),
+            description: String(answer.ticket.description),
+            category: SUPPORT_CATEGORIES.includes(answer.ticket.category) ? answer.ticket.category : 'Outro assunto',
+            student_email: session?.email || session?.code || '',
+            student_name: session?.name || '',
+            course: userCourse,
+            status: 'open',
+          };
+          await base44.entities.SupportTicket.create(ticketData);
+          updatedMessages.push({
+            role: 'assistant',
+            content: `✅ Chamado registrado com sucesso!\n\n📋 Assunto: ${ticketData.title}\n🏷️ Categoria: ${ticketData.category}\n\nSua solicitação foi encaminhada para a equipe de suporte. Eles entrarão em contato com você em breve. Você pode acompanhar o status na página "Suporte" no menu.`,
+          });
+          toast.success('Chamado registrado com sucesso!');
+        } catch (err) {
+          updatedMessages.push({
+            role: 'assistant',
+            content: 'Tive um problema para registrar o chamado agora, mas tente novamente ou acesse a página "Suporte" no menu para abrir manualmente.',
+          });
+          toast.error('Não foi possível registrar o chamado.');
+        } finally {
+          setTicketCreating(false);
+        }
+      }
+
+      setMessages(updatedMessages);
       if (activeRef.current) await voice.speak(reply);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Tive um problema para responder agora. Verifique sua internet e tente de novo, por favor.' }]);
@@ -68,7 +128,7 @@ export default function LunaChat({ session, onNavigated, isActive = true }) {
         <div className="ofensiva-owl text-3xl" role="img" aria-label="Luna, assistente do site">🦉</div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-foreground">Luna · Assistente do site</p>
-          <p className="truncate text-[11px] text-muted-foreground">Dúvidas da plataforma, estudos e apoio emocional</p>
+          <p className="truncate text-[11px] text-muted-foreground">{supportMode ? 'Abertura de chamados — conte o que precisa' : 'Dúvidas da plataforma, estudos e apoio emocional'}</p>
         </div>
         <button
           onClick={voice.toggle}
@@ -90,18 +150,18 @@ export default function LunaChat({ session, onNavigated, isActive = true }) {
         {messages.map((message, index) => (
           <div key={index} className="space-y-2">
             <LunaBubble role={message.role}>{message.content}</LunaBubble>
-            {message.role === 'assistant' && (
+            {message.role === 'assistant' && message.links && message.links.length > 0 && (
               <LunaShortcuts links={message.links} onNavigate={() => { voice.stop(); onNavigated?.(); }} />
             )}
           </div>
         ))}
-        {loading && (
+        {(loading || ticketCreating) && (
           <LunaBubble role="assistant">
             <span className="flex items-center gap-1.5 text-muted-foreground">
               {[0, 0.15, 0.3].map((delay) => (
                 <span key={delay} className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: `${delay}s` }} />
               ))}
-              Luna está pensando...
+              {ticketCreating ? 'Registrando chamado...' : 'Luna está pensando...'}
             </span>
           </LunaBubble>
         )}
@@ -110,11 +170,14 @@ export default function LunaChat({ session, onNavigated, isActive = true }) {
 
       <div className="shrink-0 border-t border-border bg-card/60 px-3 py-2">
         <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-invisible">
-          {LUNA_QUICK_ACTIONS.map((action) => (
+          {(supportMode
+            ? ['Não consigo acessar minha conta', 'Problema com aulas ou vídeos', 'Problema com tarefa ou prova', 'Problema com mensalidade', 'Outro assunto']
+            : LUNA_QUICK_ACTIONS
+          ).map((action) => (
             <button
-              key={action}
+n              key={action}
               onClick={() => send(action)}
-              disabled={loading}
+              disabled={loading || ticketCreating}
               className="shrink-0 whitespace-nowrap rounded-xl border border-border bg-secondary px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
             >
               {action}
@@ -130,12 +193,12 @@ export default function LunaChat({ session, onNavigated, isActive = true }) {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Escreva sua dúvida para a Luna..."
+          placeholder={supportMode ? 'Descreva o que você precisa...' : 'Escreva sua dúvida para a Luna...'}
           className="h-11 flex-1"
-          disabled={loading}
+          disabled={loading || ticketCreating}
         />
         <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
-        <Button type="submit" className="h-11 w-11 shrink-0 p-0" disabled={!input.trim() || loading}>
+        <Button type="submit" className="h-11 w-11 shrink-0 p-0" disabled={!input.trim() || loading || ticketCreating}>
           <Send size={16} />
         </Button>
       </form>
