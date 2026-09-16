@@ -4,7 +4,7 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User, Trash2 } from 'lucide-react';
+import { Save, CheckCircle, Camera, User, Trash2, GraduationCap, Users, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { AVATAR_OPTIONS, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
@@ -42,8 +42,6 @@ export default function Profile() {
 
 
   useEffect(() => {
-    // CRITICAL: Only load profile if we have a unique codeId to identify this student.
-    // Never filter by empty email — that would return another student's profile.
     if (!session?.codeId) return;
 
     base44.entities.StudentProfile.filter({ code_id: session.codeId }, '-created_date', 1)
@@ -78,7 +76,6 @@ export default function Profile() {
 
   const handleSave = async () => {
     setSaving(true);
-    // Optimistic: update session immediately so UI reflects changes at once
     setSession({ ...session, name, bio, avatarColor, photoUrl, avatarEmoji: selectedAvatar, study_mode: studyMode });
     setSaved(true);
     try {
@@ -93,7 +90,6 @@ export default function Profile() {
           student_email: email,
         });
       }
-      // Filter by codeId to avoid cross-student collisions when email is empty
       const existing = await base44.entities.StudentProfile.filter({ code_id: session?.codeId }, '-created_date', 1);
       const profileData = {
         code_id: session?.codeId,
@@ -116,7 +112,6 @@ export default function Profile() {
       }
       toast.success('Perfil atualizado!');
     } catch {
-      // Rollback optimistic session update
       setSession(session);
       toast.error('Erro ao salvar perfil.');
     } finally {
@@ -149,13 +144,12 @@ export default function Profile() {
     <div className="app-page max-w-2xl mx-auto animate-fade-in-up">
       <div className="mb-6">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Perfil</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações e modalidade de estudo</p>
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         {/* Header with avatar */}
         <div className="bg-gradient-to-br from-primary/10 to-accent/10 p-6 flex flex-col items-center gap-4 border-b border-border">
-          {/* Avatar preview */}
           <div className="relative">
             {photoUrl ? (
               <img src={photoUrl} alt="Foto" className="w-24 h-24 rounded-2xl object-cover shadow-lg border-4 border-white ring-2 ring-primary/20" />
@@ -186,7 +180,6 @@ export default function Profile() {
             </span>
           </div>
 
-          {/* Color picker */}
           <div>
             <p className="text-[10px] text-muted-foreground text-center mb-2 font-semibold uppercase tracking-wider">Cor do Perfil</p>
             <div className="flex flex-wrap gap-2 justify-center">
@@ -201,7 +194,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Avatar emoji picker */}
           <div className="w-full">
             <p className="text-[10px] text-muted-foreground text-center mb-2 font-semibold uppercase tracking-wider">Avatar</p>
             <div className="flex flex-wrap gap-2 justify-center">
@@ -270,37 +262,103 @@ export default function Profile() {
           <Button onClick={handleSave} disabled={saving} className="w-full h-11 font-bold gap-2">
             {saved ? <><CheckCircle size={16} /> Perfil Salvo!</> : <><Save size={16} /> {saving ? 'Salvando...' : 'Salvar Perfil'}</>}
           </Button>
+        </div>
+      </div>
 
-          {session?.role === 'admin' && <div className="border-t border-border pt-4 mt-2">
-            <p className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">Zona de Perigo</p>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="w-full h-10 text-destructive border-destructive/40 hover:bg-destructive/5 gap-2">
-                  <Trash2 size={14} /> Excluir Minha Conta
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação é irreversível. Seu código de acesso e todos os seus dados de perfil serão permanentemente removidos da plataforma.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteAccount}
-                    disabled={deleting}
-                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                  >
-                    {deleting ? 'Excluindo...' : 'Sim, excluir minha conta'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-                </AlertDialogContent>
-                </AlertDialog>
-                </div>}
-                </div>
-                </div>
-                </div>
-                );
+      {/* Modalidade de Estudo */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden mt-4">
+        <div className="p-5 border-b border-border">
+          <div className="flex items-center gap-2">
+            <GraduationCap size={18} className="text-primary" />
+            <h3 className="font-bold text-sm text-foreground">Modalidade de Estudo</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">Escolha como prefere experienciar o curso</p>
+        </div>
+        <div className="p-5 space-y-3">
+          {/* Interativa (Completa) */}
+          <button
+            onClick={() => setStudyMode('interativa')}
+            className={`w-full text-left p-4 rounded-xl border-2 transition-all ${studyMode === 'interativa' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${studyMode === 'interativa' ? 'bg-primary/15' : 'bg-secondary'}`}>
+                <Users size={18} className={studyMode === 'interativa' ? 'text-primary' : 'text-muted-foreground'} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm text-foreground">Formação Prática (Completa)</p>
+                <p className="text-xs text-muted-foreground">Vivência completa com comunidade, debates e prática terapêutica</p>
+              </div>
+              {studyMode === 'interativa' && <CheckCircle size={18} className="text-primary shrink-0" />}
+            </div>
+            <div className="flex flex-wrap gap-1.5 pl-13">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Mural & Debates</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Ofensivas Diárias</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Terapeuta da Semana</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Ranking & Monitores</span>
+            </div>
+          </button>
+
+          {/* Diploma (Simplificada) */}
+          <button
+            onClick={() => setStudyMode('diploma')}
+            className={`w-full text-left p-4 rounded-xl border-2 transition-all ${studyMode === 'diploma' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${studyMode === 'diploma' ? 'bg-primary/15' : 'bg-secondary'}`}>
+                <GraduationCap size={18} className={studyMode === 'diploma' ? 'text-primary' : 'text-muted-foreground'} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm text-foreground">Experiência Simplificada (Diploma)</p>
+                <p className="text-xs text-muted-foreground">Foco no conteúdo essencial, no seu próprio ritmo</p>
+              </div>
+              {studyMode === 'diploma' && <CheckCircle size={18} className="text-primary shrink-0" />}
+            </div>
+            <div className="flex flex-wrap gap-1.5 pl-13">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Aulas & Apostila</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Tarefas & Provas</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Certificação</span>
+            </div>
+          </button>
+
+          <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-secondary/40 rounded-lg p-3">
+            <Sparkles size={13} className="shrink-0 mt-0.5 text-primary/60" />
+            <span>A mudança de modalidade entra em vigor na próxima vez que você entrar no curso. Seu progresso acadêmico é preservado em ambos os modos. Clique em "Salvar Perfil" para confirmar.</span>
+          </div>
+        </div>
+      </div>
+
+      {session?.role === 'admin' && <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden mt-4">
+        <div className="p-5 border-b border-border">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Zona de Perigo</p>
+        </div>
+        <div className="p-5">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="w-full h-10 text-destructive border-destructive/40 hover:bg-destructive/5 gap-2">
+                <Trash2 size={14} /> Excluir Minha Conta
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação é irreversível. Seu código de acesso e todos os seus dados de perfil serão permanentemente removidos da plataforma.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                >
+                  {deleting ? 'Excluindo...' : 'Sim, excluir minha conta'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>}
+    </div>
+  );
 }
