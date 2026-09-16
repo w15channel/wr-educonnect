@@ -133,7 +133,7 @@ export default function Announcements() {
 
   return (
     <div className="app-page app-page--narrow animate-fade-in-up">
-      <div className="flex items-center justify-between mb-6 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl lg:text-2xl font-bold text-foreground">Avisos</h2>
