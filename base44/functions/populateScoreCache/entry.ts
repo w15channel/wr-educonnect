@@ -57,7 +57,23 @@ Deno.serve(async (req) => {
 
     const targetEmail = payload?.student_email || payload?.email || null;
 
-    if (!isAutomation && currentUser?.role !== 'admin' && (!targetEmail || targetEmail !== currentUser?.email)) {
+    // Auth: native admin, automation, owner student, AdminCredential, or AccessCode with admin/management profile
+    let isAuthorized = isAutomation || currentUser?.role === 'admin' || (targetEmail && targetEmail === currentUser?.email);
+    if (!isAuthorized && payload?.admin_email) {
+      const normAdmin = String(payload.admin_email).trim().toLowerCase();
+      const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
+      isAuthorized = credentials.some((c) => String(c.email || '').trim().toLowerCase() === normAdmin);
+      if (!isAuthorized) {
+        const codes = await base44.asServiceRole.entities.AccessCode.filter(
+          { student_email: normAdmin }, '-created_date', 10
+        );
+        isAuthorized = codes.some((c) =>
+          c.is_active !== false &&
+          ['admin', 'management'].includes(c.profile_category)
+        );
+      }
+    }
+    if (!isAuthorized) {
       return Response.json({ error: 'Forbidden: only admins or the owner student can update this cache' }, { status: 403 });
     }
 
