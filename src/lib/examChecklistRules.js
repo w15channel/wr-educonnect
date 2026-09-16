@@ -68,11 +68,11 @@ export function buildModuleChecklist({
   ).size;
 
   // 3 — Tarefas do módulo entregues (cumulativo).
-  const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber);
-  const tasksDone = moduleTasks.filter((task) => {
-    const submission = submissions.find((s) => s.task_id === task.id);
-    return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
-  }).length;
+  const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber && task.type !== 'quiz' && !task.is_hidden);
+  const submittedTaskIds = new Set(submissions.filter((submission) =>
+    ['submitted', 'graded'].includes(submission.status) || submissionTextLength(submission) > 0 || !!submission.file_url
+  ).map((submission) => submission.task_id));
+  const tasksDone = moduleTasks.filter((task) => submittedTaskIds.has(task.id)).length;
 
   // 4 — Sala de debates: abrir um tema e comentar no tema de um colega.
   // Restrito à janela de tempo do módulo, para não herdar participações de módulos anteriores.

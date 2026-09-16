@@ -25,6 +25,8 @@ export default function TaskQuizView() {
 
   const handleBack = () => {
     queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
+    queryClient.invalidateQueries({ queryKey: ['student-learning-records', 'TaskSubmission'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-progress-submissions'] });
     navigate('/tasks');
   };
 

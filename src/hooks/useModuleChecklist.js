@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import useModuleAccess from '@/hooks/useModuleAccess';
+import useStudentRecords from '@/hooks/useStudentRecords';
 import { base44 } from '@/api/base44Client';
 import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
 
@@ -16,20 +17,12 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
   const email = session?.email || session?.code || '';
   const access = useModuleAccess(course, session);
 
-  const { data: progresses = [], isLoading: l2 } = useQuery({
-    queryKey: ['checklist-progress', email],
-    queryFn: () => base44.entities.LessonProgress.filter({ student_email: email }, '-created_date', 2000),
-    enabled: !!email,
-  });
+  const { data: progresses = [], isLoading: l2, error: progressError } = useStudentRecords('LessonProgress', session);
   const { data: tasks = [], isLoading: l3 } = useQuery({
     queryKey: ['checklist-tasks', course],
     queryFn: () => base44.entities.Task.filter({ course }, '-created_date', 300),
   });
-  const { data: submissions = [], isLoading: l4 } = useQuery({
-    queryKey: ['checklist-submissions', email],
-    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: email }, '-created_date', 1000),
-    enabled: !!email,
-  });
+  const { data: submissions = [], isLoading: l4, error: submissionError } = useStudentRecords('TaskSubmission', session);
   // Debates antigos foram gravados sem o campo "space" — buscamos tudo do curso
   // e filtramos aqui para reconhecer também as participações já existentes.
   const { data: allPosts = [], isLoading: l5 } = useQuery({
@@ -116,5 +109,5 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     return access.moduleUnlocked[Number(moduleNumber) - 1] === true && !!found?.complete;
   };
 
-  return { modules, currentModule, isModuleUnlockedForExam, isLoading, availableModules: access.availableModules };
+  return { modules, currentModule, isModuleUnlockedForExam, isLoading, error: progressError || submissionError || access.error, availableModules: access.availableModules };
 }

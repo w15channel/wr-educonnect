@@ -21,6 +21,7 @@ import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import TaskModuleHeader from '@/components/tasks/TaskModuleHeader';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
+import useStudentRecords from '@/hooks/useStudentRecords';
 import MinLengthHint from '@/components/shared/MinLengthHint';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { isTextLongEnough, insufficientTextMessage } from '@/lib/minTextLength';
@@ -155,17 +156,13 @@ export default function Tasks({ mode = 'tasks' }) {
     queryFn: () => base44.entities.Task.filter({ course: userCourse }, '-created_date', 300),
   });
 
-  const normalizeEmail = (v = '') => String(v || '').trim().toLowerCase();
-  const studentEmails = [user?.email, user?.code].filter(Boolean).map(normalizeEmail);
-
-  const { data: submissions = [] } = useQuery({
-    queryKey: ['submissions-mine', isTeacher ? 'all' : studentEmails.join('|')],
-    queryFn: async () => {
-      const records = await base44.entities.TaskSubmission.list('-created_date', 3000);
-      return isTeacher ? records : records.filter(s => studentEmails.includes(normalizeEmail(s.student_email)));
-    },
-    enabled: isTeacher || studentEmails.length > 0,
+  const { data: ownSubmissions = [], isLoading: loadingSubmissions, error: submissionsError, refetch: reloadSubmissions } = useStudentRecords('TaskSubmission', user, !isTeacher);
+  const { data: adminSubmissions = [] } = useQuery({
+    queryKey: ['submissions-mine', 'all'],
+    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 3000),
+    enabled: isTeacher,
   });
+  const submissions = isTeacher ? adminSubmissions : ownSubmissions;
 
   const submissionByTaskId = {};
   submissions.forEach(s => { if (!submissionByTaskId[s.task_id]) submissionByTaskId[s.task_id] = s; });
@@ -244,6 +241,8 @@ export default function Tasks({ mode = 'tasks' }) {
     },
     onSuccess: (_, { taskId }) => {
       queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
+      queryClient.invalidateQueries({ queryKey: ['student-learning-records', 'TaskSubmission'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-progress-submissions'] });
       setCommentInputs(prev => ({ ...prev, [taskId]: '' }));
       setExpandedId(null);
       toast.success('Resposta enviada!');
@@ -255,6 +254,8 @@ export default function Tasks({ mode = 'tasks' }) {
     mutationFn: ({ id, comment }) => base44.entities.TaskSubmission.update(id, { comment }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
+      queryClient.invalidateQueries({ queryKey: ['student-learning-records', 'TaskSubmission'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-progress-submissions'] });
       toast.success('Resposta atualizada!');
     },
     onError: (error) => toast.error(error?.message || 'Não foi possível atualizar sua resposta.'),
@@ -266,6 +267,8 @@ export default function Tasks({ mode = 'tasks' }) {
     setShowForm(true);
   };
 
+  if (!isTeacher && loadingSubmissions) return <div role="status" className="app-page text-muted-foreground">Recuperando suas entregas salvas...</div>;
+  if (!isTeacher && submissionsError) return <div role="alert" className="app-page text-destructive">Não foi possível carregar suas entregas. Nenhuma atividade precisa ser refeita por causa deste erro. <button onClick={() => reloadSubmissions()} className="underline">Tentar novamente</button></div>;
   if (viewSubmissions) return <SubmissionsList task={viewSubmissions} onBack={() => setViewSubmissions(null)} />;
   if (showAIGenerator && mode === 'tests') return <AIExamGenerator onBack={() => setShowAIGenerator(false)} course={userCourse} />;
 

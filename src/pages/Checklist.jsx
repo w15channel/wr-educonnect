@@ -15,7 +15,7 @@ export default function Checklist() {
   const parts = location.pathname.split('/').filter(Boolean);
   const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
   const course = session?.course || 'tcc';
-  const { modules, currentModule, isLoading, availableModules } = useModuleChecklist({ course, session });
+  const { modules, currentModule, isLoading, error, availableModules } = useModuleChecklist({ course, session });
   const voice = useLunaVoice();
 
   const requestedModule = Number(new URLSearchParams(location.search).get('module')) || null;
@@ -40,11 +40,11 @@ export default function Checklist() {
 
   const focusItem = items[focusIndex];
   const script = useMemo(() => {
-    if (isLoading || !module) return '';
+    if (isLoading || error || !module) return '';
     if (module.complete) return buildFinishScript({ firstName, moduleNumber: module.moduleNumber });
     if (!focusItem) return '';
     return buildVoiceScript({ item: focusItem, index: focusIndex, total: items.length, moduleNumber: module.moduleNumber, firstName });
-  }, [isLoading, module, focusItem, focusIndex, items.length, firstName]);
+  }, [isLoading, error, module, focusItem, focusIndex, items.length, firstName]);
 
   // A corujinha fala a etapa atual sempre que o aluno muda de marco.
   useEffect(() => {
@@ -65,6 +65,8 @@ export default function Checklist() {
     }
     return from;
   };
+
+  if (error) return <div role="alert" className="app-page text-destructive">Não foi possível carregar seu progresso. Suas atividades não foram desmarcadas. <button onClick={() => window.location.reload()} className="underline">Tentar novamente</button></div>;
 
   return (
     <div className="app-page max-w-2xl mx-auto animate-fade-in-up space-y-5">

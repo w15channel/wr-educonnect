@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useModuleAccess from '@/hooks/useModuleAccess';
+import useStudentRecords from '@/hooks/useStudentRecords';
 
 const LESSONS_PER_MODULE = 5;
 const MODULE_COUNT = 10;
@@ -22,20 +23,12 @@ export default function useApostilaModuleUnlocks(course, session) {
     queryKey: ['apostila-unlock-lessons', course],
     queryFn: () => base44.entities.RecordedLesson.filter({ course }, 'order', 200),
   });
-  const { data: progresses = [], isLoading: loadingProgress } = useQuery({
-    queryKey: ['apostila-unlock-progress', studentEmail],
-    queryFn: () => base44.entities.LessonProgress.filter({ student_email: studentEmail }, '-created_date', 1000),
-    enabled: !!studentEmail,
-  });
+  const { data: progresses = [], isLoading: loadingProgress } = useStudentRecords('LessonProgress', session);
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ['apostila-unlock-tasks', course],
     queryFn: () => base44.entities.Task.filter({ course }, '-created_date', 300),
   });
-  const { data: submissions = [], isLoading: loadingSubmissions } = useQuery({
-    queryKey: ['apostila-unlock-submissions', studentEmail],
-    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: studentEmail }, '-created_date', 1000),
-    enabled: !!studentEmail,
-  });
+  const { data: submissions = [], isLoading: loadingSubmissions } = useStudentRecords('TaskSubmission', session);
   const { data: exams = [], isLoading: loadingExams } = useQuery({
     queryKey: ['apostila-unlock-exams', course],
     queryFn: () => base44.entities.Exam.filter({ course }, '-created_date', 300),
@@ -61,7 +54,7 @@ export default function useApostilaModuleUnlocks(course, session) {
   for (let i = 0; i < MODULE_COUNT; i++) {
     const moduleLessons = orderedLessons.slice(i * LESSONS_PER_MODULE, (i + 1) * LESSONS_PER_MODULE);
     const lessonsDone = moduleLessons.length === 0 || moduleLessons.every((l) => watchedLessonIds.has(l.id));
-    const moduleTasks = visibleTasks.filter((t) => Number(t.module_number) === i + 1);
+    const moduleTasks = visibleTasks.filter((t) => Number(t.module_number) === i + 1 && t.type !== 'quiz');
     const tasksDone = moduleTasks.length === 0 || moduleTasks.every((t) => submittedTaskIds.has(t.id));
     // A prova do módulo é o critério final: enquanto ela não existir/não for feita,
     // o módulo continua em andamento e o próximo permanece bloqueado.

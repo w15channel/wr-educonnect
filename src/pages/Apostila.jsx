@@ -6,6 +6,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipBack, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
 import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
+import useStudentRecords from '@/hooks/useStudentRecords';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -29,7 +30,6 @@ const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, 
 const APOSTILA_BOOK_ID = 'apostila-tcc';
 const APOSTILA_BOOK_TITLE = 'Apostila TCC';
 
-const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email}`;
 const APOSTILA_AUTHOR_EMAIL = 'apostila@wr-edu.local';
 const INLINE_CONTENT_LIMIT = 6000;
 
@@ -208,40 +208,32 @@ export default function Apostila() {
     }
   }, []);
 
-  const [readLessons, setReadLessons] = useState(() => {
-    const key = APOSTILA_READ_KEY(session?.email || session?.code || 'guest', session?.course || 'tcc');
-    try {
-      const stored = JSON.parse(localStorage.getItem(key) || '[]');
-      const moduleOneOnly = stored.filter((lessonKey) => String(lessonKey).startsWith('mod1__'));
-      localStorage.setItem(key, JSON.stringify(moduleOneOnly));
-      return new Set(moduleOneOnly);
-    } catch {
-      localStorage.removeItem(key);
-      return new Set();
-    }
-  });
+  const { data: savedProgress = [], isLoading: loadingReadProgress, error: readProgressError, refetch: reloadReadProgress } = useStudentRecords('LessonProgress', session);
+  const readLessons = useMemo(() => new Set(savedProgress
+    .filter(progress => progress.watched && String(progress.lesson_id).startsWith('apostila:'))
+    .map(progress => String(progress.lesson_id).slice('apostila:'.length).replace(':', '__'))), [savedProgress]);
+  const [savingReadKey, setSavingReadKey] = useState(null);
 
   const markRead = async (chapterId, lessonId) => {
-    const key = APOSTILA_READ_KEY(session?.email || session?.code || 'guest', session?.course || 'tcc');
     const readKey = `${chapterId}__${lessonId}`;
-    if (readLessons.has(readKey)) return;
+    if (readLessons.has(readKey) || savingReadKey || loadingReadProgress || readProgressError) return;
+    setSavingReadKey(readKey);
     try {
       await base44.functions.invoke('saveStudentRecord', {
         action: 'lessonProgressUpsert',
         lesson_id: `apostila:${chapterId}:${lessonId}`,
-        student_email: session?.email,
+        student_email: session?.email || session?.code,
         student_identifiers: [session?.email, session?.code].filter(Boolean),
         patch: { watched: true },
       });
     } catch (error) {
       toast.error(error?.message || 'Não foi possível registrar esta conquista. Tente novamente.');
+      setSavingReadKey(null);
       return;
     }
-    const next = new Set(readLessons);
-    next.add(readKey);
-    setReadLessons(next);
-    localStorage.setItem(key, JSON.stringify([...next]));
-    queryClient.invalidateQueries({ queryKey: ['apostila-unlock-progress', session?.email] });
+    await queryClient.invalidateQueries({ queryKey: ['student-learning-records', 'LessonProgress'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-progress-lesson-progress'] });
+    setSavingReadKey(null);
     setCelebrationMsg('Aula concluída! Continue assim! 📖✨');
     setCelebrating(true);
   };
@@ -586,10 +578,12 @@ export default function Apostila() {
         </div>
       </div>
 
+      {readProgressError && <div role="alert" className="rounded-xl border border-destructive p-3 text-sm text-destructive">Não foi possível carregar suas leituras. Isso não significa que foram perdidas. <button onClick={() => reloadReadProgress()} className="underline">Tentar novamente</button></div>}
+      {loadingReadProgress && <p role="status" className="text-sm text-muted-foreground">Recuperando suas leituras salvas...</p>}
       <div className="space-y-2">
         {chapters.map((chapter, chapterIndex) => {
           const moduleNumber = chapterIndex + 1;
-          const isUnlocked = isAdmin || moduleUnlocked?.[moduleNumber] || moduleNumber === 1;
+          const isUnlocked = isAdmin || moduleUnlocked?.[moduleNumber - 1] || moduleNumber === 1;
           const isOpen = openChapter === chapter.id;
           return (
             <div key={chapter.id} className={`rounded-xl border border-border bg-card shadow-sm overflow-hidden ${!isUnlocked ? 'opacity-60' : ''}`}>
@@ -687,8 +681,8 @@ export default function Apostila() {
                                 </div>
 
                                 <div className="flex flex-wrap gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => markRead(chapter.id, lesson.id)} disabled={isRead}>
-                                    {isRead ? <><CheckCircle size={14} /> Lida</> : <><BookMarked size={14} /> Marcar como lida</>}
+                                  <Button size="sm" variant="outline" onClick={() => markRead(chapter.id, lesson.id)} disabled={isRead || !!savingReadKey || loadingReadProgress || !!readProgressError}>
+                                                                       {isRead ? <><CheckCircle size={14} /> Lida</> : loadingReadProgress ? 'Carregando...' : readProgressError ? 'Leitura indisponível' : savingReadKey === lessonKey ? 'Salvando...' : <><BookMarked size={14} /> Marcar como lida</>}
                                   </Button>
                                   <Button size="sm" variant="outline" onClick={() => setPrintLesson(lesson)}>
                                     <FileText size={14} /> Imprimir
