@@ -87,14 +87,15 @@ export default function OperationsMessage({ message }) {
   const isUser = message.role === 'user';
   const rawContent = message.content || '';
   const hasContent = rawContent.trim().length > 0;
+  const wrapStyle = { overflowWrap: 'anywhere' };
 
   return (
     <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className="relative max-w-[88%] min-w-0">
         <div className={`overflow-hidden rounded-2xl px-3 py-2 text-sm ${isUser ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
           {hasContent && (isUser
-            ? <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{rawContent.replace(/^\[Contexto administrativo\][\s\S]*?\[\/Contexto administrativo\]\s*/, '')}</p>
-            : <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 break-words [overflow-wrap:anywhere]"><ReactMarkdown>{rawContent}</ReactMarkdown></div>)}
+            ? <p className="whitespace-pre-wrap break-words" style={wrapStyle}>{rawContent.replace(/^\[Contexto administrativo\][\s\S]*?\[\/Contexto administrativo\]\s*/, '')}</p>
+            : <div className="prose prose-sm dark:prose-invert max-w-none break-words [&_p]:my-1 [&_ul]:my-1" style={wrapStyle}><ReactMarkdown>{rawContent}</ReactMarkdown></div>)}
           {message.tool_calls?.map((toolCall, idx) => <ToolCallRow key={idx} toolCall={toolCall} />)}
         </div>
         {hasContent && (
