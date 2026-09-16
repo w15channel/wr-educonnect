@@ -117,10 +117,10 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
         </div>
       </div>
 
-      <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
+      <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-2xl border border-slate-200 bg-slate-100 p-3">
         <div
           ref={certRef}
-          className="bg-white mx-auto"
+          className="mx-auto"
           style={{
             fontFamily: 'Georgia, "Times New Roman", serif',
             width: 794,
@@ -128,6 +128,9 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
             padding: '40px 48px',
             border: '2px solid #1e3a5f',
             boxShadow: 'inset 0 0 0 6px #f0f4f8, inset 0 0 0 8px #1e3a5f',
+            backgroundColor: '#fff',
+            color: '#1e3a5f',
+            colorScheme: 'light',
           }}
         >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
@@ -402,7 +405,7 @@ export default function HistoricoAcademico() {
         module: Number(item.module_number) || null,
       }));
 
-    const unlockedSet = new Set([1, ...studentUnlocks.map(u => Number(u.module_number))]);
+    const unlockedSet = new Set([1, ...studentUnlocks.map(u => Number(u.module_number))]));
 
     return {
       rows: [...academicRows, ...complementaryRows].filter(r => r.module == null || unlockedSet.has(Number(r.module))),
