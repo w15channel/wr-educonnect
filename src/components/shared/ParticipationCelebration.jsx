@@ -33,12 +33,15 @@ function burst() {
   confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 }, startVelocity: 40, scalar: 0.9 });
 }
 
-export default function ParticipationCelebration({ message = 'Parabéns! Você participou! 🎉', onClose, session, achievement }) {
+export default function ParticipationCelebration({ open = true, message = 'Parabéns! Você participou! 🎉', onClose, session, achievement }) {
   const [shareState, setShareState] = useState('idle');
   useEffect(() => {
+    if (!open) return;
     playCheer();
     burst();
-  }, []);
+  }, [open]);
+
+  if (!open) return null;
 
   const share = async () => {
     if (!session?.email || !session?.code || !achievement || shareState === 'sharing' || shareState === 'shared') return;
