@@ -60,7 +60,7 @@ export default function BottomNav({ onMenuOpen }) {
 
   return (
     <nav
-      className="shell-bar-glass shrink-0 border-t z-40 md:hidden"
+      className="shell-bar-glass shrink-0 border-t z-40 lg:hidden"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
         height: 'calc(60px + env(safe-area-inset-bottom))',
