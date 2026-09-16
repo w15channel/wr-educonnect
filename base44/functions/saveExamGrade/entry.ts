@@ -4,14 +4,30 @@ import { examScoreNote } from '../../shared/scoreMessages.ts';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-    }
+    const user = await base44.auth.me().catch(() => null);
 
     const payload = await req.json().catch(() => ({}));
-    const { exam_id, student_email, grade, feedback } = payload;
+    const { exam_id, student_email, grade, feedback, admin_email } = payload;
+
+    // Auth: native admin role, AdminCredential, or AccessCode with admin/management profile
+    let isAdmin = user?.role === 'admin';
+    if (!isAdmin && admin_email) {
+      const normAdmin = String(admin_email).trim().toLowerCase();
+      const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
+      isAdmin = credentials.some((c) => String(c.email || '').trim().toLowerCase() === normAdmin);
+      if (!isAdmin) {
+        const codes = await base44.asServiceRole.entities.AccessCode.filter(
+          { student_email: normAdmin }, '-created_date', 10
+        );
+        isAdmin = codes.some((c) =>
+          c.is_active !== false &&
+          ['admin', 'management'].includes(c.profile_category)
+        );
+      }
+    }
+    if (!isAdmin) {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
 
     if (!exam_id || !student_email || grade === undefined) {
       return Response.json({ error: 'Dados inválidos' }, { status: 400 });
