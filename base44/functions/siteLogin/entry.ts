@@ -39,16 +39,22 @@ Deno.serve(async (req) => {
 
       await base44.asServiceRole.entities.AccessCode.update(record.id, { last_login: nowBRT(), is_active: true });
 
-      // A função (profile_category) salva pelo admin concede os privilégios do papel.
       const profileCategory = record.profile_category || 'student';
-      // Professor acompanha a plataforma pela navegação do aluno (sem gestão de
-      // alunos/códigos de acesso), por isso não recebe o painel administrativo.
-      const privileged = ['admin', 'management'].includes(profileCategory);
+
+      // ── Novo modelo de permissões ──────────────────────────────────────
+      // Admin/management NÃO recebem mais role 'admin' via código de acesso.
+      // Apenas o fluxo admin_google (Google OAuth) concede role 'admin'.
+      // Teacher e support recebem role 'teacher' com permissões restritas:
+      //   • Podem navegar, ler, criar e atualizar conteúdo (aulas, avisos, tarefas)
+      //   • NÃO podem excluir, remover ou alterar dados de forma definitiva
+      //   • NÃO têm acesso à Luna (Gerente de Operações)
+      // Admin/management que tentarem entrar via código recebem role 'teacher'.
+      const role = ['student'].includes(profileCategory) ? 'student' : 'teacher';
 
       return Response.json({
         success: true,
         session: {
-          role: privileged ? 'admin' : 'student',
+          role,
           profileCategory,
           codeId: record.id,
           code,
@@ -62,6 +68,39 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── Login admin via Google OAuth (Base44 native auth) ───────────────
+    // Usa base44.auth.me() que valida o token de autenticação nativa do
+    // Base44 (Google OAuth) presente na requisição. O email autorizado é
+    // validado contra a entidade AdminCredential — nunca exposto no frontend.
+    if (mode === 'admin_google') {
+      const user = await base44.auth.me().catch(() => null);
+      if (!user || !user.email) {
+        return Response.json({ error: 'Autenticação Google necessária.' }, { status: 401 });
+      }
+
+      const email = normalizeEmail(user.email);
+      const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
+      const credential = credentials.find((item) => normalizeEmail(item.email) === email);
+
+      if (!credential) {
+        return Response.json({ error: 'Conta não autorizada como administradora.' }, { status: 403 });
+      }
+
+      return Response.json({
+        success: true,
+        session: {
+          role: 'admin',
+          profileCategory: 'admin',
+          name: 'Professor',
+          email: credential.email,
+          course: null,
+        },
+      });
+    }
+
+    // ── Modo legado: login admin com email+senha ────────────────────────
+    // Mantido como fallback de emergência, mas NÃO exposto no frontend.
+    // Removível quando a migração para Google OAuth estiver consolidada.
     if (mode === 'admin') {
       const email = normalizeEmail(payload?.email);
       const passwordHash = hashPassword(payload?.password);
