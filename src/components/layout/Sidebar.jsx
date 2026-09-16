@@ -106,17 +106,14 @@ const adminGroups = [
 ];
 
 // ── Student nav groups (consolidated: 20 items, down from 24)
-// Merged: Certificação + Meu Certificado → "Certificação"
-// Merged: Meu Perfil + Perfil de Estudos → "Meu Perfil" (modalidade dentro do perfil)
-// Merged: Monitores + Classe → "Turma"
-// Merged: Pontuação Geral + Histórico → "Pontuação & Histórico"
+// Alunos não veem o atalho de Aulas (gravação indisponível);
+// a Apostila já cobre o conteúdo de estudo.
 const studentGroups = [
   {
     label: 'Classe',
     items: [
       { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
       { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
-      { icon: Play,          label: 'Aulas',                  path: '/lessons',           color: 'text-purple-400' },
       { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
       { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
@@ -407,6 +404,11 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
   return (
     <>
+      {/* Dark mode fix: Chat sidebar (MSN style) uses hardcoded light backgrounds.
+          In dark mode, dark:text-card-foreground makes text invisible (light on light).
+          This CSS override keeps text readable in both themes. */}
+      <style>{`.dark div[class*="f2f6ff"] button{color:#334155 !important}`}</style>
+
       {isOpen && (
         <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={handleClose} />
       )}
