@@ -15,7 +15,17 @@ Deno.serve(async (req) => {
     if (!normEmail) return Response.json({ error: 'admin_email obrigatório.' }, { status: 403 });
 
     const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
-    const isValidAdmin = credentials.some((c) => String(c.email || '').trim().toLowerCase() === normEmail);
+    let isValidAdmin = credentials.some((c) => String(c.email || '').trim().toLowerCase() === normEmail);
+    // Fallback: verifica AccessCode com profile_category admin/management (mesmo critério do adminSave)
+    if (!isValidAdmin) {
+      const codes = await base44.asServiceRole.entities.AccessCode.filter(
+        { student_email: normEmail }, '-created_date', 10
+      );
+      isValidAdmin = codes.some((c) =>
+        c.is_active !== false &&
+        ['admin', 'management'].includes(c.profile_category)
+      );
+    }
     if (!isValidAdmin) return Response.json({ error: 'Acesso não autorizado.' }, { status: 403 });
 
     const moduleNumber = Number(module_number);
