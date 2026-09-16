@@ -67,6 +67,12 @@ export const adminApi = {
   delete: (entity, id) => adminSave({ action: 'delete', entity, id }),
   list: (entity, { filter, sort_by, limit } = {}) =>
     adminSave({ action: 'list', entity, filter, sort_by, limit }).then(r => (r && Array.isArray(r.records)) ? r.records : []),
+
+  // ── BookChapter helpers ──────────────────────────────────────────────
+  // Atalhos para a entidade BookChapter usados pela apostila.
+  updateBookChapter: (id, data) => adminSave({ action: 'update', entity: 'BookChapter', id, data }),
+  createBookChapter: (data) => adminSave({ action: 'create', entity: 'BookChapter', data }),
+
   /**
    * Persiste uma aula da apostila usando apenas ações CRUD públicas do adminSave.
    *
