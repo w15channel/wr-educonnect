@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { saveLunaMemory, loadLunaMemory, clearLunaMemory } from '@/lib/lunaPersona';
 
 const running = (t) => ['pending', 'running', 'in_progress'].includes(t.status);
 const errorText = (e) => e?.data?.message || e?.message || 'Não foi possível conectar à Luna.';
@@ -65,14 +66,14 @@ export default function useOperationsConversation(session) {
         const user = await base44.auth.me();
         if (user.role !== 'admin') { setPhase('denied'); return; }
         state.key = `luna-operations:${user.id}:${session?.course || 'tcc'}`;
-        const saved = sessionStorage.getItem(state.key);
+        const saved = loadLunaMemory(state.key);
         const conv = saved ? await base44.agents.getConversation(saved) : await base44.agents.createConversation({
           agent_name: 'luna_operations',
           metadata: { name: `Operações · ${new Date().toLocaleString('pt-BR')}`, description: 'Pedidos administrativos do WR-EDU' },
         });
         if (!state.mounted) return;
         state.conversation = conv; state.fingerprint = '';
-        sessionStorage.setItem(state.key, conv.id);
+        saveLunaMemory(state.key, conv.id);
         setConversation(conv); setPhase('ready'); apply(conv);
       } catch (e) { if (state.mounted) { setError(errorText(e)); setPhase('error'); } }
       finally { state.opening = null; }
@@ -127,7 +128,7 @@ export default function useOperationsConversation(session) {
   };
   const newConversation = () => {
     if (ref.current.pending) return;
-    if (ref.current.key) sessionStorage.removeItem(ref.current.key);
+    if (ref.current.key) clearLunaMemory(ref.current.key);
     ref.current.conversation = null; setConversation(null); setMessages([]); startConversation();
   };
   return { conversation, messages, phase, error, send, refresh, newConversation, retry: startConversation,
