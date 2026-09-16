@@ -51,7 +51,6 @@ async function uploadLessonContent(chapterId, lessonId, content) {
 
 async function resolveStoredLesson(record) {
   if (!record?.content_url) return record;
-
   try {
     const response = await fetch(record.content_url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -64,18 +63,9 @@ async function resolveStoredLesson(record) {
 async function buildStoredContentPayload(chapterId, lessonId, content) {
   const lessonContent = content || '';
   if (lessonContent.length <= INLINE_CONTENT_LIMIT) {
-    return {
-      content: lessonContent,
-      content_url: '',
-      content_storage: 'inline',
-    };
+    return { content: lessonContent, content_url: '', content_storage: 'inline' };
   }
-
-  return {
-    content: '',
-    content_url: await uploadLessonContent(chapterId, lessonId, lessonContent),
-    content_storage: 'file',
-  };
+  return { content: '', content_url: await uploadLessonContent(chapterId, lessonId, lessonContent), content_storage: 'file' };
 }
 
 const quillModules = {
@@ -105,18 +95,15 @@ const plainTextToHtml = (value = '') => value
 
 const getLessonHtml = (value = '') => (isHtmlContent(value) ? value : plainTextToHtml(value));
 
-
 const extractLessonParagraphs = (html = '') => {
   if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
     return html.replace(/<[^>]*>/g, ' ').split(/\n{2,}/).map((text) => text.trim()).filter(Boolean);
   }
-
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const blocks = Array.from(doc.body.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'));
   const paragraphs = (blocks.length ? blocks : Array.from(doc.body.childNodes))
     .map((node) => node.textContent?.replace(/\s+/g, ' ').trim())
     .filter(Boolean);
-
   const fallback = doc.body.textContent?.replace(/\s+/g, ' ').trim();
   return paragraphs.length ? paragraphs : (fallback ? [fallback] : []);
 };
@@ -164,14 +151,12 @@ function ReadingViewport({ paragraphs, activeParagraph, activeWord, isPlaying, n
   );
 }
 
-
 export default function Apostila() {
   const { session } = useCustomAuth();
   const isAdmin = session?.role === 'admin';
   const queryClient = useQueryClient();
   const { moduleUnlocked, isLoading: loadingUnlocks } = useApostilaModuleUnlocks(session?.course || 'tcc', session);
 
-  // Vindo do checklist com ?module=N, abre direto o módulo indicado.
   const targetModuleNumber = Number(new URLSearchParams(window.location.search).get('module')) || null;
   const [openChapter, setOpenChapter] = useState(() => (targetModuleNumber ? DEFAULT_CHAPTERS[targetModuleNumber - 1]?.id ?? null : null));
   const [openLesson, setOpenLesson] = useState(null);
@@ -189,9 +174,7 @@ export default function Apostila() {
   const intentionalStopRef = useRef(false);
   const readerViewportRefs = useRef(new Map());
 
-  useEffect(() => {
-    readerRef.current = reader;
-  }, [reader]);
+  useEffect(() => { readerRef.current = reader; }, [reader]);
 
   useEffect(() => {
     if (!reader.isPlaying || !reader.lessonKey) return;
@@ -211,7 +194,6 @@ export default function Apostila() {
     }
   }, []);
 
-  // Persisted read completions: Set of "chapterId__lessonId"
   const [readLessons, setReadLessons] = useState(() => {
     const key = APOSTILA_READ_KEY(session?.email || session?.code || 'guest', session?.course || 'tcc');
     try {
@@ -273,11 +255,9 @@ export default function Apostila() {
 
   useEffect(() => {
     if (!isAdmin || !savedLessonsFetched || !defaultServerLessons.length) return;
-
     const savedKeys = new Set((savedLessons || []).map((lesson) => `${lesson.chapter_id}__${lesson.lesson_id}`));
     const missingLessons = defaultServerLessons.filter((lesson) => !savedKeys.has(`${lesson.chapter_id}__${lesson.lesson_id}`));
     if (!missingLessons.length) return;
-
     Promise.all(missingLessons.map(async (lesson) => ({
       ...lesson,
       ...(await buildStoredContentPayload(lesson.chapter_id, lesson.lesson_id, lesson.content)),
@@ -415,15 +395,11 @@ export default function Apostila() {
     }
 
     try {
-      // createBase44VoiceAudio now uses cache and checks mute internally
       const audio = await createBase44VoiceAudio(text);
-
-      // If audio is null (muted), fall back to native speech
       if (!audio) {
         if (readerSessionRef.current === sessionId) startNativeFallback();
         return;
       }
-
       const latestReader = readerRef.current;
       if (readerSessionRef.current !== sessionId || latestReader.lessonKey !== lessonKey || !latestReader.isPlaying) {
         releaseBase44VoiceAudio(audio);
@@ -457,14 +433,12 @@ export default function Apostila() {
       toast.error('Esta aula não possui texto para leitura em voz alta.');
       return;
     }
-
     if (reader.lessonKey === lessonKey && reader.isPlaying) {
       if (readerAudioRef.current) readerAudioRef.current.pause();
       else window.speechSynthesis?.pause();
       setReader((current) => ({ ...current, isPlaying: false }));
       return;
     }
-
     if (reader.lessonKey === lessonKey && readerAudioRef.current?.paused) {
       readerAudioRef.current.play();
       setReader((current) => ({ ...current, isPlaying: true }));
@@ -475,7 +449,6 @@ export default function Apostila() {
       setReader((current) => ({ ...current, isPlaying: true }));
       return;
     }
-
     speakParagraph(lessonKey, reader.lessonKey === lessonKey ? reader.paragraphIndex : 0, reader.rate);
   };
 
@@ -510,5 +483,201 @@ export default function Apostila() {
       const defaultLesson = lessonIndex >= 0 ? chapter.lessons[lessonIndex] : null;
       const existingLesson = savedLessonByKey.get(`${chapterId}__${lessonId}`);
       const storedContent = existingLesson?.content === content && existingLesson?.content_url
-        ? {
-          content: existingLesson.content_storage === 'file' ? '' : content,
+        ? { content: existingLesson.content_storage === 'file' ? '' : content, content_url: existingLesson.content_url, content_storage: existingLesson.content_storage }
+        : await buildStoredContentPayload(chapterId, lessonId, content);
+      const payload = {
+        book_id: APOSTILA_BOOK_ID,
+        book_title: APOSTILA_BOOK_TITLE,
+        author_email: session?.email || APOSTILA_AUTHOR_EMAIL,
+        chapter_id: chapterId,
+        chapter_title: chapter?.title || '',
+        lesson_id: lessonId,
+        title: defaultLesson?.title || 'Aula da apostila',
+        ...storedContent,
+        order: (chapterIndex * 100) + (lessonIndex + 1),
+      };
+      if (existingLesson) return adminApi.updateBookChapter(existingLesson.id, payload);
+      return adminApi.createBookChapter(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
+      setEditingLesson(null);
+      toast.success('Conteúdo salvo com sucesso!');
+    },
+    onError: (error) => {
+      toast.error(`Erro ao salvar: ${error.message || 'tente novamente.'}`);
+    },
+  });
+
+  return (
+    <div className="p-4 lg:p-6 space-y-5 animate-fade-in-up">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow">
+          <BookOpen size={22} />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-foreground">Apostila do Curso</h2>
+          <p className="text-xs text-muted-foreground">Leitura interativa com narração em voz alta da Luna</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {chapters.map((chapter, chapterIndex) => {
+          const moduleNumber = chapterIndex + 1;
+          const isUnlocked = isAdmin || moduleUnlocked?.[moduleNumber] || moduleNumber === 1;
+          const isOpen = openChapter === chapter.id;
+          return (
+            <div key={chapter.id} className={`rounded-xl border border-border bg-card shadow-sm overflow-hidden ${!isUnlocked ? 'opacity-60' : ''}`}>
+              <button
+                onClick={() => { if (!isUnlocked) return; setOpenChapter(isOpen ? null : chapter.id); setOpenLesson(null); stopReader(); }}
+                disabled={!isUnlocked}
+                className="flex w-full items-center gap-3 p-4 text-left hover:bg-secondary/50 transition-colors disabled:cursor-not-allowed"
+              >
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black ${isUnlocked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                  {isUnlocked ? moduleNumber : <Lock size={14} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{chapter.title}</p>
+                  <p className="text-[11px] text-muted-foreground">{chapter.lessons.length} aula(s)</p>
+                </div>
+                {isOpen ? <ChevronDown size={16} className="text-muted-foreground" /> : <ChevronRight size={16} className="text-muted-foreground" />}
+              </button>
+
+              {isOpen && isUnlocked && (
+                <div className="border-t border-border divide-y divide-border">
+                  {chapter.lessons.map((lesson, lessonIndex) => {
+                    const lessonKey = `${chapter.id}__${lesson.id}`;
+                    const isLessonOpen = openLesson === lesson.id;
+                    const isRead = readLessons.has(lessonKey);
+                    const paragraphs = paragraphsByLesson[lessonKey] || [];
+                    const isEditing = editingLesson === lesson.id;
+                    return (
+                      <div key={lesson.id}>
+                        <button
+                          onClick={() => { setOpenLesson(isLessonOpen ? null : lesson.id); stopReader(); }}
+                          className="flex w-full items-center gap-3 p-3 text-left hover:bg-secondary/30 transition-colors"
+                        >
+                          <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${isRead ? 'bg-emerald-500/20 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+                            {isRead ? <CheckCircle size={12} /> : lessonIndex + 1}
+                          </div>
+                          <p className="flex-1 text-xs font-semibold text-foreground truncate">{lesson.title || `Aula ${lessonIndex + 1}`}</p>
+                          {isLessonOpen ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
+                        </button>
+
+                        {isLessonOpen && (
+                          <div className="p-3 space-y-3 bg-background/50">
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <ReactQuill
+                                  value={editContent}
+                                  onChange={setEditContent}
+                                  modules={quillModules}
+                                  formats={quillFormats}
+                                  theme="snow"
+                                  className="apostila-editor"
+                                />
+                                <div className="flex gap-2">
+                                  <Button size="sm" onClick={() => saveMutation.mutate({ chapterId: chapter.id, lessonId: lesson.id, content: editContent })} disabled={saveMutation.isPending}>
+                                    <Save size={14} /> Salvar
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => setEditingLesson(null)}><X size={14} /> Cancelar</Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <ReadingViewport
+n                                  paragraphs={paragraphs}
+                                  activeParagraph={reader.lessonKey === lessonKey ? reader.paragraphIndex : -1}
+                                  activeWord={reader.lessonKey === lessonKey ? reader.wordIndex : -1}
+                                  isPlaying={reader.lessonKey === lessonKey && reader.isPlaying}
+                                  nativeFallback={reader.lessonKey === lessonKey && reader.nativeFallback}
+                                  viewportRef={(el) => { if (el) readerViewportRefs.current.set(lessonKey, el); else readerViewportRefs.current.delete(lessonKey); }}
+                                />
+
+                                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
+                                  <Button size="sm" variant="ghost" onClick={() => toggleReaderPlayback(lessonKey)} className={reader.lessonKey === lessonKey && reader.isPlaying ? 'bg-emerald-500/15 text-emerald-600' : ''}>
+                                    {reader.lessonKey === lessonKey && reader.isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => previousReaderParagraph(lessonKey)} disabled={!paragraphs.length}>
+                                    <SkipBack size={14} />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => skipReaderParagraph(lessonKey)} disabled={!paragraphs.length}>
+                                    <SkipForward size={14} />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => stopReader(lessonKey)} disabled={reader.lessonKey !== lessonKey}>
+                                    <Square size={14} />
+                                  </Button>
+                                  <div className="flex items-center gap-1 ml-2">
+                                    {READER_RATES.map((r) => (
+                                      <button
+                                        key={r}
+                                        onClick={() => changeReaderRate(lessonKey, r)}
+                                        className={`rounded px-2 py-0.5 text-[10px] font-bold transition ${reader.lessonKey === lessonKey && reader.rate === r ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
+                                      >{r}x</button>
+                                    ))}
+                                  </div>
+                                  {isVoiceMuted() && (
+                                    <span className="text-[10px] text-amber-500 font-semibold ml-2">Voz da Luna desligada — usando narração do navegador</span>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => markRead(chapter.id, lesson.id)} disabled={isRead}>
+                                    {isRead ? <><CheckCircle size={14} /> Lida</> : <><BookMarked size={14} /> Marcar como lida</>}
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => setPrintLesson(lesson)}>
+                                    <FileText size={14} /> Imprimir
+                                  </Button>
+                                  {isAdmin && (
+                                    <>
+                                      <Button size="sm" variant="outline" onClick={() => { setEditingLesson(lesson.id); setEditContent(getLessonHtml(lesson.content || '')); }}>
+                                        <Edit2 size={14} /> Editar
+                                      </Button>
+                                      <Button size="sm" variant="outline" onClick={() => setRewriteOpen(true)}>
+                                        <Wand2 size={14} /> Reescrever com IA
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+
+                                <NextStepLink currentModule={`apostila:${chapter.id}:${lesson.id}`} />
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {printLesson && (
+        <ApostilaPrintModal
+          lesson={printLesson}
+          onClose={() => setPrintLesson(null)}
+        />
+      )}
+
+      {rewriteOpen && (
+        <ChapterRewriteModal
+          onClose={() => setRewriteOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
+            setRewriteOpen(false);
+            toast.success('Conteúdo reescrito com IA!');
+          }}
+        />
+      )}
+
+      <ParticipationCelebration
+        open={celebrating}
+        message={celebrationMsg}
+        onClose={() => setCelebrating(false)}
+      />
+    </div>
+  );
+}
