@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, released: false });
     }
 
-    const [lessons, progresses, tasks, submissions, allPosts, allReplies, pairings, challengeResponses] = await Promise.all([
+    const [lessons, progresses, tasks, submissions, allPosts, allReplies, pairings, challengeResponses, courseExams, studentExamSubs] = await Promise.all([
       store.RecordedLesson.filter({ course }, 'order', 300),
       store.LessonProgress.filter({ student_email: email }, '-created_date', 2000),
       store.Task.filter({ course }, '-created_date', 300),
@@ -67,7 +67,36 @@ Deno.serve(async (req) => {
       store.ForumReply.list('-created_date', 2000),
       store.TherapistPairing.list('-pairing_date', 1000),
       store.DailyChallengeResponse.filter({ student_email: email, course }, '-date', 500),
+      store.Exam.filter({ course }, '-created_date', 500),
+      store.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
     ]);
+
+    // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
+    // O aluno não pode dar sequência ao checklist do módulo seguinte sem concluir a prova do módulo anterior.
+    if (moduleNumber > 1) {
+      const previousModuleExams = courseExams.filter((exam: Record<string, unknown>) => {
+        const match = String(exam.module_ref || '').match(/(\d+)/);
+        return match && Number(match[1]) === moduleNumber - 1;
+      });
+      if (previousModuleExams.length > 0) {
+        const submittedExamIds = new Set(studentExamSubs.map((s: Record<string, unknown>) => s.exam_id));
+        const previousExamCompleted = previousModuleExams.every((exam: Record<string, unknown>) => submittedExamIds.has(exam.id));
+        if (!previousExamCompleted) {
+          return Response.json({
+            error: `Aluno não concluiu a prova do Módulo ${moduleNumber - 1} — pré-requisito para liberar as provas do Módulo ${moduleNumber}.`,
+            progress: {
+              items: [{ key: 'previous_exam', done: false, label: `Concluir a prova do Módulo ${moduleNumber - 1}` }],
+              total: 1,
+              completed: 0,
+              missing: 1,
+              percent: 0,
+              hasData: true,
+              eligible: false,
+            },
+          }, { status: 409 });
+        }
+      }
+    }
 
     const progress = computeChecklistProgress({
       moduleNumber,
