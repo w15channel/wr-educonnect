@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, Play, FileText, LayoutGrid, BookOpen } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 
-const tabs = [
+const allTabs = [
   { icon: BarChart3,    label: 'Início',   root: '/dashboard' },
   { icon: Play,         label: 'Aulas',   root: '/lessons' },
   { icon: BookOpen,     label: 'Apostila', root: '/apostila' },
@@ -35,7 +35,11 @@ export default function BottomNav({ onMenuOpen }) {
   const navigate = useNavigate();
   const { session } = useCustomAuth();
 
-  const base = session?.role === 'admin' ? '/adm' : '/student';
+  const isAdmin = session?.role === 'admin';
+  const base = isAdmin ? '/adm' : '/student';
+  // Alunos não veem o atalho de Aulas (gravação indisponível);
+  // a Apostila já cobre o conteúdo de estudo.
+  const tabs = isAdmin ? allTabs : allTabs.filter((t) => t.root !== '/lessons');
   const currentOwner = getOwnerTab(location.pathname, base);
 
   useEffect(() => {
