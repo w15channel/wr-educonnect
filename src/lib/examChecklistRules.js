@@ -25,7 +25,7 @@ export const submissionTextLength = (submission) => {
 };
 
 /**
- * Monta os 5 requisitos do módulo para um aluno específico.
+ * Monta os requisitos do módulo para um aluno específico.
  * Cada item traz o progresso atual, a meta e o caminho de ida (com volta ao checklist).
  */
 // Verifica se uma data cai dentro da janela de tempo em que o aluno esteve
@@ -51,6 +51,7 @@ export function buildModuleChecklist({
   pairings = [],
   challengeResponses = [],
   moduleWindow = null,
+  previousExamCompleted = false,
 }) {
   // Cada módulo conta apenas o que foi feito dentro da sua própria janela de
   // tempo: ao ingressar em um módulo novo, todas as marcações começam zeradas.
@@ -89,7 +90,16 @@ export function buildModuleChecklist({
   ).size;
 
   const items = [
-
+    // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
+    // O aluno não pode dar sequência ao checklist do módulo seguinte sem concluir a prova do módulo anterior.
+    ...(moduleNumber > 1 ? [{
+      key: 'previous_exam',
+      label: `Concluir a prova do Módulo ${moduleNumber - 1}`,
+      hint: 'Você precisa ter entregue a prova do módulo anterior antes de prosseguir com as atividades deste módulo.',
+      current: previousExamCompleted ? 1 : 0,
+      target: 1,
+      to: '/exams',
+    }] : []),
     {
       key: 'apostila',
       label: 'Marcar os capítulos da apostila do módulo como lidos',
