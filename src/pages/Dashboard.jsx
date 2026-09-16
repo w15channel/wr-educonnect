@@ -17,6 +17,8 @@ import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { ptBR } from 'date-fns/locale';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
+import useModuleTrophies from '@/hooks/useModuleTrophies';
+import ModuleTrophies from '@/components/achievements/ModuleTrophies';
 
 
 const isTaskAvailable = (task, moduleUnlocked = []) =>
@@ -67,6 +69,7 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const isTeacher = session?.role === 'admin';
   const userCourse = session?.course;
+  const { byEmail: moduleTrophiesByEmail } = useModuleTrophies(userCourse || 'tcc');
   const [refreshing, setRefreshing] = React.useState(false);
   const [monitorSelectMode, setMonitorSelectMode] = React.useState(false);
   const [selectedMonitorEmails, setSelectedMonitorEmails] = React.useState(new Set());
@@ -580,7 +583,7 @@ export default function Dashboard() {
                           {getInitials(displayName)}
                         </div>
                   }
-                      <span className={`flex-1 text-xs font-semibold truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>{nameWithAvatar}</span>
+                      <span className={`flex min-w-0 flex-1 items-center gap-1 text-xs font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}><span className="truncate">{nameWithAvatar}</span><ModuleTrophies completions={moduleTrophiesByEmail.get(String(r.email).toLowerCase()) || []} compact /></span>
                       <div className="flex items-center gap-1 shrink-0">
                         <Star size={11} className="text-yellow-400 fill-yellow-400" />
                         <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>

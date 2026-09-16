@@ -6,6 +6,7 @@ import useLunaVoice from '@/hooks/useLunaVoice';
 import ChecklistTrail from '@/components/checklist/ChecklistTrail';
 import OwlStepGuide from '@/components/checklist/OwlStepGuide';
 import ModuleUnlockRequestCard from '@/components/checklist/ModuleUnlockRequestCard';
+import ModuleCompletionCard from '@/components/checklist/ModuleCompletionCard';
 import { buildVoiceScript, buildFinishScript } from '@/lib/checklistGuide';
 
 export default function Checklist() {
@@ -41,6 +42,7 @@ export default function Checklist() {
   const focusItem = items[focusIndex];
   const script = useMemo(() => {
     if (isLoading || error || !module) return '';
+    if (module.complete && module.examDone) return '';
     if (module.complete) return buildFinishScript({ firstName, moduleNumber: module.moduleNumber });
     if (!focusItem) return '';
     return buildVoiceScript({ item: focusItem, index: focusIndex, total: items.length, moduleNumber: module.moduleNumber, firstName });
@@ -117,33 +119,36 @@ export default function Checklist() {
             </div>
           </div>
 
-          <OwlStepGuide
-            item={focusItem}
-            index={focusIndex}
-            total={items.length}
-            firstName={firstName}
-            moduleNumber={module.moduleNumber}
-            complete={module.complete}
-            voice={voice}
-            onGo={() => focusItem && goToRequirement(focusItem)}
-            onSkip={() => setFocusIndex((prev) => nextPendingFrom(prev))}
-            onRepeat={() => voice.speak(script, { force: true })}
-          />
-
-          <ChecklistTrail items={items} focusIndex={focusIndex} onSelect={setFocusIndex} />
-
-          <button
-            type="button"
-            disabled={!module.complete}
-            onClick={() => { voice.stop(); navigate(`${prefix}/exams`); }}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-700 px-4 py-3.5 text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <GraduationCap size={16} />
-            {module.complete ? `Fazer a prova do Módulo ${module.moduleNumber}` : 'Prova bloqueada até concluir a trilha'}
-            {module.complete && <ArrowRight size={14} />}
-          </button>
-
-          <ModuleUnlockRequestCard session={session} course={course} module={module} />
+          {module.complete && module.examDone ? (
+            <ModuleCompletionCard moduleNumber={module.moduleNumber} firstName={firstName} session={session} voice={voice} />
+          ) : (
+            <>
+              <OwlStepGuide
+                item={focusItem}
+                index={focusIndex}
+                total={items.length}
+                firstName={firstName}
+                moduleNumber={module.moduleNumber}
+                complete={module.complete}
+                voice={voice}
+                onGo={() => focusItem && goToRequirement(focusItem)}
+                onSkip={() => setFocusIndex((prev) => nextPendingFrom(prev))}
+                onRepeat={() => voice.speak(script, { force: true })}
+              />
+              <ChecklistTrail items={items} focusIndex={focusIndex} onSelect={setFocusIndex} />
+              <button
+                type="button"
+                disabled={!module.complete}
+                onClick={() => { voice.stop(); navigate(`${prefix}/exams`); }}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-700 px-4 py-3.5 text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <GraduationCap size={16} />
+                {module.complete ? `Fazer a prova do Módulo ${module.moduleNumber}` : 'Prova bloqueada até concluir a trilha'}
+                {module.complete && <ArrowRight size={14} />}
+              </button>
+              <ModuleUnlockRequestCard session={session} course={course} module={module} />
+            </>
+          )}
         </>
       )}
     </div>

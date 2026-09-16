@@ -43,7 +43,7 @@ export default function ChecklistDashboardCard({ session, course, className = ''
             </span>
             <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${current?.complete ? 'border-green-200 bg-green-50 text-green-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
               {current?.complete ? <Unlock size={10} /> : <Lock size={10} />}
-              {current?.complete ? 'Prova liberada' : 'Prova bloqueada'}
+              {current?.examDone ? 'Módulo concluído' : current?.complete ? 'Prova liberada' : 'Prova bloqueada'}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -99,7 +99,7 @@ export default function ChecklistDashboardCard({ session, course, className = ''
         >
           <Sparkles size={12} /> Abrir checklist completo
         </button>
-        {current?.complete && (
+        {current?.complete && !current?.examDone && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); navigate(`${prefix}/exams`); }}

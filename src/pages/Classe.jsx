@@ -10,6 +10,9 @@ import { startOfWeek, format } from 'date-fns';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import Monitores from './Monitores';
+import useModuleTrophies from '@/hooks/useModuleTrophies';
+import ModuleTrophies from '@/components/achievements/ModuleTrophies';
+import AchievementShowcase from '@/components/achievements/AchievementShowcase';
 
 function getBrTime() {
   // GMT-3
@@ -41,7 +44,7 @@ function StudentAvatar({ name, photoUrl, avatarColor, avatarEmoji, size = 56 }) 
   );
 }
 
-function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, session, navigate, onOpenDetails }) {
+function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, trophies, session, navigate, onOpenDetails }) {
   const name = profile?.full_name || code?.profile_name || code?.student_name || code?.student_email || 'Aluno';
   const nickname = profile?.nickname || '';
   const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
@@ -98,7 +101,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
         size={64}
       />
       <div className="w-full min-w-0">
-        <p className="font-bold text-foreground text-sm leading-tight truncate">{publicName}</p>
+        <div className="flex items-center justify-center gap-1"><p className="min-w-0 truncate font-bold text-foreground text-sm leading-tight">{publicName}</p><ModuleTrophies completions={trophies} compact /></div>
         {nickname && <p className="text-xs text-muted-foreground truncate">"{nickname}"</p>}
         {bio && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{bio}</p>}
         {points > 0 && (
@@ -152,6 +155,7 @@ export default function Classe() {
   const [activeTab, setActiveTab] = useState('turma');
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
+  const { completions: moduleCompletions, byEmail: moduleTrophiesByEmail } = useModuleTrophies(activeCourse);
 
   const { data: codes = [], isLoading: loadingCodes } = useQuery({
     queryKey: ['access-codes'],
@@ -179,6 +183,8 @@ export default function Classe() {
     m.period_start === weekStart && (m.course === activeCourse || (!m.course && activeCourse === 'tcc'))
   );
   const monitorEmails = new Set(currentMonitors.map(m => m.student_email));
+  const weekStartTime = new Date(`${weekStart}T00:00:00`).getTime();
+  const weeklyTrophies = moduleCompletions.filter((item) => new Date(item.submitted_at || item.created_date).getTime() >= weekStartTime);
 
   const courseEmailSet = courseEmails || new Set(
     codes
@@ -243,19 +249,16 @@ export default function Classe() {
 
         <TabsContent value="turma">
           {/* Destaques da semana */}
-          {(currentMonitors.length > 0 || weeklyTopEmail) && (
+          {(currentMonitors.length > 0 || weeklyTrophies.length > 0 || weeklyTopEmail) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              {currentMonitors.length > 0 && (
+              {(currentMonitors.length > 0 || weeklyTrophies.length > 0) && (
                 <div className="bg-yellow-500/5 backdrop-blur-md border border-yellow-400/20 rounded-2xl p-4 flex items-center gap-3">
-                  <Crown size={28} className="text-yellow-400 shrink-0" />
+                  <Award size={28} className="text-yellow-400 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-yellow-600 uppercase tracking-wide">Monitores da Semana</p>
+                    <p className="text-xs font-bold text-yellow-600 uppercase tracking-wide">Conquistas da Semana</p>
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      {currentMonitors.sort((a, b) => a.rank_position - b.rank_position).map(m => (
-                        <span key={m.id} className="text-xs font-semibold text-foreground bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full">
-                          {m.rank_position === 1 ? '🥇' : m.rank_position === 2 ? '🥈' : '🥉'} {m.student_name}
-                        </span>
-                      ))}
+                      {currentMonitors.sort((a, b) => a.rank_position - b.rank_position).map(m => <span key={m.id} className="text-xs font-semibold text-foreground bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full">{m.rank_position === 1 ? '🥇' : m.rank_position === 2 ? '🥈' : '🥉'} {m.student_name}</span>)}
+                      {weeklyTrophies.map((item) => { const code = codes.find((entry) => entry.student_email === item.student_email); const profile = profiles.find((entry) => entry.student_email === item.student_email); return <span key={item.id} className="inline-flex items-center gap-1 text-xs font-semibold text-foreground bg-violet-400/10 border border-violet-400/20 px-2 py-0.5 rounded-full"><ModuleTrophies completions={[item]} compact /> {profile?.full_name || code?.profile_name || code?.student_name || item.student_name || 'Aluno'} · Módulo {item.moduleNumber}</span>; })}
                     </div>
                   </div>
                 </div>
@@ -312,6 +315,7 @@ export default function Classe() {
                   isMonitor={monitorEmails.has(code.student_email)}
                   monitorRank={currentMonitors.find(m => m.student_email === code.student_email)?.rank_position}
                   isTopTask={code.student_email === weeklyTopEmail}
+                  trophies={moduleTrophiesByEmail.get(String(code.student_email).toLowerCase()) || []}
                   onOpenDetails={setSelectedStudent}
                   session={session}
                   navigate={navigate}
@@ -371,6 +375,7 @@ export default function Classe() {
                     <p className="text-xs text-white/60 mb-1">Apresentação pessoal / descrição completa</p>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{bio || 'Este colega ainda não adicionou descrição no perfil.'}</p>
                   </div>
+                  <AchievementShowcase dark trophies={moduleTrophiesByEmail.get(String(code?.student_email || '').toLowerCase()) || []} monitorAwards={monitorHistory.filter((item) => item.student_email === code?.student_email)} />
                 </div>
               );
             })()}
