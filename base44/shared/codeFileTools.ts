@@ -5,6 +5,7 @@ const protectedPaths = [
   'base44/functions/readCodeFile/',
   'base44/functions/updateCodeFile/',
   'base44/functions/listCodeFiles/',
+  'base44/functions/deploySite/',
   'base44/shared/codeFileTools.ts',
 ];
 
@@ -33,11 +34,12 @@ export function normalizeCodePath(rawPath, options = {}) {
   return path;
 }
 
-export async function callCodeApi(endpoint, payload) {
+export async function callCodeApi(endpoint, payload, options = {}) {
   const appId = secrets.get('BASE44_APP_ID');
   const apiKey = secrets.get('BASE44_PERSONAL_API_KEY');
   if (!appId || !apiKey) throw Object.assign(new Error('Code-management connection is not configured'), { status: 503 });
-  const response = await fetch(`https://app.base44.com/api/apps/${encodeURIComponent(appId)}/sandbox-bridge/${endpoint}`, {
+  const route = options.appEndpoint ? endpoint : `sandbox-bridge/${endpoint}`;
+  const response = await fetch(`https://app.base44.com/api/apps/${encodeURIComponent(appId)}/${route}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', api_key: apiKey },
     body: JSON.stringify(payload),
