@@ -251,6 +251,10 @@
         "read",
         "create"
       ]
+    },
+    {
+      "function_name": "deploySite",
+      "description": "Publica a vers\u00e3o atual do projeto. Par\u00e2metro obrigat\u00f3rio para executar: confirm=true. Sem confirma\u00e7\u00e3o, retorna confirmation_required sem iniciar a publica\u00e7\u00e3o."
     }
   ],
   "context_files": [],
