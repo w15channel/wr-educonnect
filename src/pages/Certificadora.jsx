@@ -3,6 +3,8 @@ import { Award, BookOpen, FileText, Heart, Bell, Download } from 'lucide-react';
 import { useOutletContext, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import MeuCertificado from './MeuCertificado';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const TOTAL_LESSONS = 45;
 const TOTAL_TASKS = 45;
@@ -53,6 +55,7 @@ export default function Certificadora() {
   const { user: session } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const [showReminder, setShowReminder] = useState(false);
+  const [activeTab, setActiveTab] = useState('progresso');
 
   useEffect(() => {
     if (isTeacher) return;
@@ -140,116 +143,146 @@ export default function Certificadora() {
         </div>
       </div>
 
-      {/* Certificate available banner */}
-      {hasCertificate && (
-        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-300 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center shrink-0">
-            <Award size={20} className="text-white" />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4 flex-wrap h-auto">
+          <TabsTrigger value="progresso"><BookOpen size={13} className="mr-1.5" /> Progresso</TabsTrigger>
+          <TabsTrigger value="diploma"><Award size={13} className="mr-1.5" /> Meu Diploma</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="progresso" className="space-y-5">
+          {/* Certificate available banner */}
+          {hasCertificate && (
+            <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-300 rounded-2xl p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center shrink-0">
+                <Award size={20} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-yellow-900">🎉 Seu certificado está disponível!</p>
+                <p className="text-xs text-yellow-700 mt-0.5">O professor já emitiu seu certificado. Clique para visualizar e baixar.</p>
+              </div>
+              <button
+                onClick={() => setActiveTab('diploma')}
+                className="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shrink-0"
+              >
+                <Download size={14} /> Ver certificado
+              </button>
+            </div>
+          )}
+
+          {/* Overall progress */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="font-bold text-sm text-foreground">Progresso Geral para o Certificado</p>
+                <p className="text-xs text-muted-foreground">Conclua todos os requisitos abaixo para obter sua certificação</p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-black text-primary">{totalPct}%</p>
+                <p className="text-[10px] text-muted-foreground">geral</p>
+              </div>
+            </div>
+            <div className="relative w-full bg-secondary rounded-full h-3 overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary via-accent to-green-500 transition-all duration-700"
+                style={{ width: `${totalPct}%` }}
+              />
+            </div>
+            {totalPct >= 100 && (
+              <p className="text-center text-green-600 font-bold text-sm mt-3">🎉 Parabéns! Você completou todos os requisitos!</p>
+            )}
           </div>
-          <div className="flex-1">
-            <p className="font-bold text-yellow-900">🎉 Seu certificado está disponível!</p>
-            <p className="text-xs text-yellow-700 mt-0.5">O professor já emitiu seu certificado. Clique para visualizar e baixar.</p>
+
+          {/* Reminder */}
+          {showReminder && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
+              <Bell size={16} className="text-amber-500 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-amber-800">Lembrete diário! 📚</p>
+                <p className="text-xs text-amber-700">Continue estudando e entregando atividades para avançar na certificação.</p>
+              </div>
+              <button onClick={dismissReminder} className="text-xs text-amber-600 font-semibold border border-amber-300 px-2.5 py-1 rounded-lg shrink-0">Ok!</button>
+            </div>
+          )}
+
+          {/* 3 progress bars */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ProgressBar
+              label="Aulas Assistidas"
+              icon={BookOpen}
+              colorClass="text-purple-500"
+              current={lessonsWatched}
+              total={TOTAL_LESSONS}
+              unit=" aulas"
+              description="Assista e marque cada aula como concluída"
+            />
+            <ProgressBar
+              label="Trabalhos Entregues"
+              icon={FileText}
+              colorClass="text-orange-500"
+              current={tasksSubmitted}
+              total={TOTAL_TASKS}
+              unit=" trabalhos"
+              description="Envie todos os trabalhos e atividades do curso"
+            />
+            <ProgressBar
+              label="Prática Terapêutica"
+              icon={Heart}
+              colorClass="text-pink-500"
+              current={practiceCompleted}
+              total={TOTAL_PRACTICE_H}
+              unit="h"
+              description="Sessões como terapeuta ou paciente concluídas"
+            />
           </div>
-          <Link
-            to={`${prefix}/meu-certificado`}
-            className="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shrink-0"
-          >
-            <Download size={14} /> Ver certificado
-          </Link>
-        </div>
-      )}
 
-      {/* Overall progress */}
-      <div className="bg-card border border-border rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="font-bold text-sm text-foreground">Progresso Geral para o Certificado</p>
-            <p className="text-xs text-muted-foreground">Conclua todos os requisitos abaixo para obter sua certificação</p>
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="font-bold text-sm text-foreground">Emissão de certificado</p>
+              <p className="text-xs text-muted-foreground">Disponível ao atingir 80% do progresso geral.</p>
+            </div>
+            <button
+              disabled={totalPct < 80}
+              onClick={() => alert('Solicitação enviada! O professor irá analisar e emitir seu certificado em breve.')}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Solicitar emissão
+            </button>
           </div>
-          <div className="text-right">
-            <p className="text-3xl font-black text-primary">{totalPct}%</p>
-            <p className="text-[10px] text-muted-foreground">geral</p>
+
+          {/* Info box */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+            <p className="font-bold mb-1">Como funciona a certificação?</p>
+            <ol className="space-y-1 text-xs text-blue-700 list-decimal list-inside">
+              <li>Assista às 60 aulas e marque-as como concluídas (com resumo e comentário)</li>
+              <li>Entregue os 60 trabalhos e atividades do curso</li>
+              <li>Complete 10 horas de prática terapêutica (Terapeuta da Semana)</li>
+              <li>Quando atingir 80% dos requisitos, solicite a emissão do certificado pelo botão abaixo</li>
+            </ol>
           </div>
-        </div>
-        <div className="relative w-full bg-secondary rounded-full h-3 overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary via-accent to-green-500 transition-all duration-700"
-            style={{ width: `${totalPct}%` }}
-          />
-        </div>
-        {totalPct >= 100 && (
-          <p className="text-center text-green-600 font-bold text-sm mt-3">🎉 Parabéns! Você completou todos os requisitos!</p>
-        )}
-      </div>
+        </TabsContent>
 
-      {/* Reminder */}
-      {showReminder && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
-          <Bell size={16} className="text-amber-500 shrink-0" />
-          <div className="flex-1">
-            <p className="text-xs font-bold text-amber-800">Lembrete diário! 📚</p>
-            <p className="text-xs text-amber-700">Continue estudando e entregando atividades para avançar na certificação.</p>
-          </div>
-          <button onClick={dismissReminder} className="text-xs text-amber-600 font-semibold border border-amber-300 px-2.5 py-1 rounded-lg shrink-0">Ok!</button>
-        </div>
-      )}
-
-      {/* 3 progress bars */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <ProgressBar
-          label="Aulas Assistidas"
-          icon={BookOpen}
-          colorClass="text-purple-500"
-          current={lessonsWatched}
-          total={TOTAL_LESSONS}
-          unit=" aulas"
-          description="Assista e marque cada aula como concluída"
-        />
-        <ProgressBar
-          label="Trabalhos Entregues"
-          icon={FileText}
-          colorClass="text-orange-500"
-          current={tasksSubmitted}
-          total={TOTAL_TASKS}
-          unit=" trabalhos"
-          description="Envie todos os trabalhos e atividades do curso"
-        />
-        <ProgressBar
-          label="Prática Terapêutica"
-          icon={Heart}
-          colorClass="text-pink-500"
-          current={practiceCompleted}
-          total={TOTAL_PRACTICE_H}
-          unit="h"
-          description="Sessões como terapeuta ou paciente concluídas"
-        />
-      </div>
-
-
-      <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="font-bold text-sm text-foreground">Emissão de certificado</p>
-          <p className="text-xs text-muted-foreground">Disponível ao atingir 80% do progresso geral.</p>
-        </div>
-        <button
-          disabled={totalPct < 80}
-          onClick={() => alert('Solicitação enviada! O professor irá analisar e emitir seu certificado em breve.')}
-          className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Solicitar emissão
-        </button>
-      </div>
-
-      {/* Info box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
-        <p className="font-bold mb-1">Como funciona a certificação?</p>
-        <ol className="space-y-1 text-xs text-blue-700 list-decimal list-inside">
-          <li>Assista às 60 aulas e marque-as como concluídas (com resumo e comentário)</li>
-          <li>Entregue os 60 trabalhos e atividades do curso</li>
-          <li>Complete 10 horas de prática terapêutica (Terapeuta da Semana)</li>
-          <li>Quando atingir 80% dos requisitos, solicite a emissão do certificado pelo botão abaixo</li>
-        </ol>
-      </div>
+        <TabsContent value="diploma">
+          {hasCertificate ? (
+            <MeuCertificado />
+          ) : (
+            <div className="bg-card rounded-2xl border border-border p-12 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                <Award size={28} className="text-muted-foreground" />
+              </div>
+              <p className="font-bold text-lg text-foreground">Seu diploma aparecerá aqui</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                Quando o professor emitir seu certificado, ele ficará disponível nesta aba para visualização e download.
+              </p>
+              <button
+                onClick={() => setActiveTab('progresso')}
+                className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground text-xs font-bold px-4 py-2.5 rounded-xl transition"
+              >
+                <BookOpen size={14} /> Ver meu progresso
+              </button>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
