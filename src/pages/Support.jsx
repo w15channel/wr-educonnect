@@ -55,7 +55,7 @@ export default function Support() {
         <div className="mb-5">
           <button
             type="button"
-            onClick={() => navigate('/chat?tab=luna&support=true')}
+            onClick={() => navigate('../chat?tab=luna&support=true')}
             className="group flex w-full items-center gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-left transition-colors hover:bg-primary/10"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
