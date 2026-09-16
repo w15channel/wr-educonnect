@@ -11,13 +11,15 @@ export default function ChecklistDashboardCard({ session, course, className = ''
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
   const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
-  const { modules, currentModule, isLoading } = useModuleChecklist({ course: course || 'tcc', session });
+  const { modules, currentModule, isLoading, error } = useModuleChecklist({ course: course || 'tcc', session });
 
   const current = modules.find((m) => m.moduleNumber === currentModule);
   const items = current?.items || [];
   const doneCount = current?.doneCount || 0;
   const total = items.length || 7;
   const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+
+  if (error) return <div role="alert" className={`rounded-2xl border border-border bg-card p-5 text-sm ${className}`}>Seu histórico está temporariamente indisponível; isso não significa que suas atividades estão pendentes. <button onClick={() => navigate(`${prefix}/checklist`)} className="text-primary underline">Recarregar checklist</button></div>;
 
   return (
     <div
