@@ -8,6 +8,7 @@
 // Minutos padrão de cada tipo de atividade.
 export const ACTIVITY_MINUTES = {
   lesson: 0,      // usa a duração do vídeo cadastrada pelo professor
+  apostila: 30,   // 00:30:00 por capítulo da apostila marcado como lido
   task: 30,       // 00:30:00 por tarefa entregue
   quiz: 90,       // 01:30:00 por prova entregue
   exam: 90,       // 01:30:00 por prova entregue
@@ -58,6 +59,8 @@ export function parseDurationToMinutes(value) {
   }
 
   // Apenas um número → minutos
-  const plain = Number(text.replace(',', '.'));
-  return Number.isFinite(plain) ? Math.max(0, plain) : 0;
+  const standalone = text.match(/^(\d+(?:[.,]\d+)?)$/);
+  if (standalone) return Math.max(0, Number(standalone[1].replace(',', '.')));
+
+  return 0;
 }
