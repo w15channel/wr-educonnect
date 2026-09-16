@@ -326,9 +326,9 @@ export function buildStudentAcademicData({
   });
 
   // ── Totals ──
-  // Aproveitamento = percentual de atividades concluídas sobre o total disponível.
-  // Não usa a razão pontos/máximo porque o bônus de ranking do fórum criaria
-  // uma distorção (aluno com tudo entregue apareceria com menos de 100%).
+  // Aproveitamento = percentual de atividades NÚCLEO concluídas (aulas, tarefas,
+  // provas). Atividades complementares (fórum, terapeuta, ofensivas, etc.)
+  // contabilizam carga horária mas não entram no percentual de aproveitamento.
   const evaluatedRows = rows.filter((r) => r.status === 'Avaliado');
   const totalScore = evaluatedRows.reduce(
     (sum, r) => roundScore(sum + (r.score !== null ? roundScore(r.score) : 0)),
@@ -339,9 +339,13 @@ export function buildStudentAcademicData({
   const totalHours = toHours(totalMinutes);
   const totalActivities = rows.length;
   const completedActivities = evaluatedRows.length;
+  // Aproveitamento considera apenas atividades núcleo (aulas, tarefas, provas).
+  const CORE_CATEGORIES = new Set(['Aula Gravada', 'Tarefa', 'Prova']);
+  const coreRows = rows.filter((r) => CORE_CATEGORIES.has(r.category));
+  const coreEvaluated = coreRows.filter((r) => r.status === 'Avaliado');
   const approvalRate =
-    totalActivities > 0
-      ? String(Math.round((completedActivities / totalActivities) * 1000) / 10)
+    coreRows.length > 0
+      ? String(Math.round((coreEvaluated.length / coreRows.length) * 1000) / 10)
       : '0';
 
   // averageGrade = nota total (soma dos pontos obtidos, não uma média)
