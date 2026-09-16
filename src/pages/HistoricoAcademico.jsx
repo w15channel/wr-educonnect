@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { GraduationCap, Download, Search, Settings2, CheckSquare, Square, Layers } from 'lucide-react';
+import { GraduationCap, Download, Search, Settings2, CheckSquare, Square, Layers, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
@@ -129,7 +129,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
             boxShadow: 'inset 0 0 0 6px #f0f4f8, inset 0 0 0 8px #1e3a5f',
           }}
         >
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 24 }}>
           <img src={WR_CERTIFICATE_LOGO} alt="WR Logo" style={{ width: 70, height: 70, objectFit: 'contain' }} crossOrigin="anonymous" />
           <div style={{ textAlign: 'center', flex: 1 }}>
@@ -143,7 +142,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
           <div style={{ width: 70 }} />
         </div>
 
-        {/* Title */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <p style={{ fontSize: 10, letterSpacing: 5, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 6px' }}>
             Documento Oficial
@@ -153,7 +151,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
           </h1>
         </div>
 
-        {/* Student info */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', background: '#f8fafc', border: '1px solid #dde4ec', borderRadius: 8, padding: '14px 18px', marginBottom: 24, fontSize: 11 }}>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aluno(a)</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: '#1e3a5f' }}>{student.name}</p></div>
           <div><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Aproveitamento</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{approvalRate}%</p></div>
@@ -164,7 +161,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
           <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#888', textTransform: 'uppercase', fontSize: 9, letterSpacing: 1 }}>Situação</span><p style={{ margin: '2px 0 0', fontWeight: 'bold', color: Number(approvalRate) >= 60 ? '#166534' : '#991b1b' }}>{Number(approvalRate) >= 60 ? 'Aprovado(a)' : 'Em andamento'}</p></div>
         </div>
 
-        {/* Grade table */}
         <p style={{ fontSize: 10, letterSpacing: 3, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 10px', fontWeight: 'bold' }}>Grade Curricular</p>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
           <thead>
@@ -193,7 +189,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
           </tbody>
         </table>
 
-        {/* Pontuação — bloco central com o total de pontos das atividades entregues */}
         <div style={{ marginTop: 20, border: '1px solid #dde4ec', background: '#f8fafc', borderRadius: 8, padding: '14px 18px', textAlign: 'center' }}>
           <p style={{ fontSize: 10, letterSpacing: 4, color: '#7a6a3a', textTransform: 'uppercase', margin: 0, fontWeight: 'bold' }}>Pontuação</p>
           <p style={{ margin: '6px 0 0', fontSize: 24, fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} pts</p>
@@ -202,7 +197,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
           </p>
         </div>
 
-        {/* Signature */}
         <div style={{ width: 80, height: 2, background: '#c9a84c', margin: '24px auto 20px' }} />
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center' }}>
@@ -215,7 +209,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{ borderTop: '1px solid #ccd6e0', marginTop: 20, paddingTop: 10, textAlign: 'center' }}>
           <p style={{ fontSize: 8, color: '#aaa', margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>
             Documento emitido digitalmente pela WR-EDU Instituto de Desenvolvimento Humano · CNPJ 62.213.790/0001-40 · {emissionDate} às {emissionTime}
@@ -227,7 +220,6 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
   );
 }
 
-// ─── Item selector checkbox ───────────────────────────────────────────────────
 function ItemCheckbox({ checked, onChange, label, sublabel }) {
   return (
     <div
@@ -268,14 +260,12 @@ function ModuleSelector({ selectedModules, onToggle, availableModules }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function HistoricoAcademico() {
   const { user: session } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showSelector, setShowSelector] = useState(false);
-  // selectedItems: Set of "category_refId" keys
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [selectedModules, setSelectedModules] = useState(new Set());
   const [showDocument, setShowDocument] = useState(false);
@@ -284,8 +274,6 @@ export default function HistoricoAcademico() {
   const activeCourse = routeCourse || session?.course || 'tcc';
   const studentCourse = activeCourse;
 
-  // ── Course-level queries (always loaded — needed for available activities) ──
-  // Fase 2: query keys padronizadas para compartilhar cache entre páginas.
   const { data: codes = [] } = useQuery({ queryKey: ['access-codes'], queryFn: () => base44.entities.AccessCode.list('-created_date', 2000) });
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', studentCourse],
@@ -309,9 +297,6 @@ export default function HistoricoAcademico() {
     queryFn: () => base44.entities.Mentorship.filter({ course: studentCourse }, '-date', 500),
   });
 
-  // ── Student-specific queries (only loaded when a student is selected) ──
-  // Reduz drasticamente o volume de dados: em vez de carregar 5000+ registros
-  // de cada entidade, carrega apenas os registros do aluno selecionado.
   const studentEmail = selectedStudent?.email;
   const { data: examSubmissions = [] } = useQuery({
     queryKey: ['exam-submissions', studentEmail],
@@ -351,9 +336,6 @@ export default function HistoricoAcademico() {
     }
   }, [isTeacher, session, codes]);
 
-  // ── Memoized academic data builder ──────────────────────────────────────
-  // Só recomputa quando o aluno selecionado muda ou quando os dados das
-  // queries mudam. Antes isto era uma função chamada a cada render.
   const { rows: allRows, availableRows, availableModuleList } = useMemo(() => {
     if (!selectedStudent) return { rows: [], availableRows: [], availableModuleList: [] };
 
@@ -416,9 +398,6 @@ export default function HistoricoAcademico() {
         module: resolveItemModule(item, studentUnlocks),
       }));
 
-    // ── Filtrar por módulos desbloqueados ──
-    // Alunos só podem concluir atividades de módulos que desbloquearam.
-    // Atividades sem módulo (null) permanecem visíveis.
     const unlockedSet = new Set([1, ...studentUnlocks.map(u => Number(u.module_number))]);
 
     return {
@@ -444,7 +423,6 @@ export default function HistoricoAcademico() {
     setShowDocument(false);
   }
 
-  // A lista de marcação do histórico só pode conter atividades já cumpridas.
   const completedRows = allRows.filter((r) => r.status === 'Avaliado');
   const byModule = (r) => selectedModules.has(r.module);
   const moduleRows = completedRows.filter(byModule);
@@ -492,7 +470,12 @@ export default function HistoricoAcademico() {
     return acc;
   }, {});
 
-  // ── STUDENT VIEW: direct record view with selector ───────────────────────
+  const pontuacaoPath = (() => {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const base = parts[0] === 'adm' ? '/adm' : '/student';
+    return `${base}/pontuacao-geral`;
+  })();
+
   if (!isTeacher) {
     if (!selectedStudent) {
       return (
@@ -521,17 +504,24 @@ export default function HistoricoAcademico() {
 
     return (
       <div className="app-page max-w-4xl mx-auto space-y-5 animate-fade-in-up">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <GraduationCap size={20} className="text-white" />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <GraduationCap size={20} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Pontuação & Histórico</h2>
+              <p className="text-muted-foreground text-sm mt-0.5">{selectedStudent.name}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Histórico Acadêmico</h2>
-            <p className="text-muted-foreground text-sm mt-0.5">{selectedStudent.name}</p>
-          </div>
+          <Link
+            to={pontuacaoPath}
+            className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 text-xs font-bold px-4 py-2.5 rounded-xl transition hover:bg-primary/20 shrink-0"
+          >
+            <Trophy size={14} /> Ver Pontuação Detalhada
+          </Link>
         </div>
 
-        {/* Summary bar */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
             { label: 'Itens selecionados', value: selectedRows.length },
@@ -576,7 +566,6 @@ export default function HistoricoAcademico() {
     );
   }
 
-  // ── TEACHER: document view ───────────────────────────────────────────────
   if (showDocument && selectedStudent) {
     return (
       <div className="app-page max-w-4xl mx-auto">
@@ -586,7 +575,6 @@ export default function HistoricoAcademico() {
     );
   }
 
-  // ── TEACHER: selector view ───────────────────────────────────────────────
   if (showSelector && selectedStudent) {
     return (
       <div className="app-page max-w-4xl mx-auto space-y-5 animate-fade-in-up">
@@ -624,10 +612,6 @@ export default function HistoricoAcademico() {
     );
   }
 
-  // ── TEACHER: student list ────────────────────────────────────────────────
-  // Lista simplificada: não chama buildAllRows por aluno (era o gargalo de
-  // performance). O aproveitamento é calculado apenas quando o professor
-  // clica em um aluno e abre o seletor.
   const filtered = codes.filter(c => {
     if (activeCourse && !(c.course === activeCourse || (activeCourse === 'tcc' && !c.course))) return false;
     if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
