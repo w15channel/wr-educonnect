@@ -1,5 +1,136 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
-import { computeChecklistProgress, examReleaseBlockReason } from '../../shared/examChecklistProgress.ts';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INLINE CHECKLIST LOGIC — mirrors src/lib/examChecklistRules.js
+// Aulas da apostila e tarefas são CUMULATIVAS (não filtram por data).
+// Debates e ofensivas usam janela de tempo para não herdar de módulos anteriores.
+// Mínimo de 50% do checklist para liberar provas.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const EXAM_RELEASE_MIN_PERCENT = 50;
+const APOSTILA_CHAPTERS = 5;
+const OFENSIVA_DAYS = 3;
+
+function submissionTextLength(submission: Record<string, unknown>): number {
+  if (!submission) return 0;
+  const answers = Array.isArray(submission.quiz_answers) ? submission.quiz_answers : [];
+  const answersText = answers
+    .map((answer: any) => (answer && typeof answer === 'object' ? answer.text || '' : ''))
+    .join(' ');
+  return `${submission.comment || ''} ${answersText}`.trim().length;
+}
+
+function computeChecklistProgress(params: {
+  moduleNumber: number;
+  email: string;
+  progresses: any[];
+  tasks: any[];
+  submissions: any[];
+  debatePosts: any[];
+  debateReplies: any[];
+  pairings: any[];
+  challengeResponses: any[];
+}) {
+  const { moduleNumber, email, progresses, tasks, submissions, debatePosts, debateReplies, challengeResponses } = params;
+
+  // Aulas da apostila — CUMULATIVAS (sem filtro de janela de tempo)
+  const apostilaPrefix = `apostila:mod${moduleNumber}:`;
+  const apostilaRead = new Set(
+    progresses
+      .filter((p) => p.watched && String(p.lesson_id || '').startsWith(apostilaPrefix))
+      .map((p) => p.lesson_id)
+  ).size;
+
+  // Tarefas do módulo — CUMULATIVAS (sem filtro de janela de tempo)
+  const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber);
+  const tasksDone = moduleTasks.filter((task) => {
+    const submission = submissions.find((s) => s.task_id === task.id);
+    return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
+  }).length;
+
+  // Debates — sem janela de tempo no servidor (não há moduleWindow passado)
+  const myDebateTopics = debatePosts.filter((post) => post.author_email === email).length;
+  const postById = new Map(debatePosts.map((post) => [post.id, post]));
+  const myDebateComments = debateReplies.filter((reply) => {
+    const parent = postById.get(reply.post_id);
+    return reply.author_email === email && parent && parent.author_email !== email;
+  }).length;
+
+  // Ofensivas
+  const ofensivaDays = new Set(
+    challengeResponses.filter((r) => r.student_email === email).map((r) => r.date)
+  ).size;
+
+  const items = [
+    ...(moduleNumber > 1 ? [{
+      key: 'previous_exam',
+      label: `Concluir a prova do Módulo ${moduleNumber - 1}`,
+      done: params.pairings.length >= 0, // placeholder — previous exam check is done separately above
+    }] : []),
+    {
+      key: 'apostila',
+      label: 'Marcar os capítulos da apostila do módulo como lidos',
+      current: apostilaRead,
+      target: APOSTILA_CHAPTERS,
+      done: apostilaRead >= APOSTILA_CHAPTERS,
+    },
+    {
+      key: 'tasks',
+      label: 'Entregar as tarefas do módulo',
+      current: tasksDone,
+      target: moduleTasks.length || 5,
+      done: tasksDone >= (moduleTasks.length || 5),
+    },
+    {
+      key: 'debate_topic',
+      label: 'Abrir um tema na Sala de Debates',
+      current: Math.min(myDebateTopics, 1),
+      target: 1,
+      done: myDebateTopics >= 1,
+    },
+    {
+      key: 'debate_comment',
+      label: 'Comentar em um debate já aberto por um colega',
+      current: Math.min(myDebateComments, 1),
+      target: 1,
+      done: myDebateComments >= 1,
+    },
+    {
+      key: 'ofensiva',
+      label: 'Cumprir 3 dias de ofensiva (não precisam ser seguidos)',
+      current: Math.min(ofensivaDays, OFENSIVA_DAYS),
+      target: OFENSIVA_DAYS,
+      done: ofensivaDays >= OFENSIVA_DAYS,
+    },
+  ];
+
+  // Remove previous_exam from the count since it's checked separately above
+  const checkableItems = items.filter((item) => item.key !== 'previous_exam');
+  const total = checkableItems.length;
+  const completed = checkableItems.filter((item) => item.done).length;
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const missing = total - completed;
+  const missingItems = checkableItems.filter((item) => !item.done);
+
+  return {
+    items: checkableItems,
+    total,
+    completed,
+    missing,
+    missingItems,
+    percent,
+    hasData: total > 0,
+    eligible: total > 0 && percent >= EXAM_RELEASE_MIN_PERCENT,
+  };
+}
+
+function examReleaseBlockReason(progress: any): string | null {
+  if (!progress || !progress.hasData) return 'Checklist do módulo indisponível para este aluno.';
+  if (!progress.eligible) {
+    return `Aluno com ${progress.percent}% do checklist — mínimo exigido é ${EXAM_RELEASE_MIN_PERCENT}% (faltam ${progress.missing} atividade(s)).`;
+  }
+  return null;
+}
 
 /**
  * releaseModuleExams
@@ -101,7 +232,6 @@ Deno.serve(async (req) => {
     const progress = computeChecklistProgress({
       moduleNumber,
       email,
-      lessons,
       progresses,
       tasks,
       submissions,
