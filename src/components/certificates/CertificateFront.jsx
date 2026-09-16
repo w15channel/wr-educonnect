@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { CERT_W, CERT_H, makeVerifUrl } from '@/pages/AdminCertificateGenerator';
 import { formatDuration } from '@/lib/durationUtils';
+import { getDefaultCertificateTemplate } from '@/lib/generateReceiptImage';
 
 const CERT_BG_HQ = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/c2484fbeb_certificado-concluso_OFICIAL.png';
 
@@ -102,8 +103,19 @@ function DraggableElement({ id, x, y, onMove, editMode, children, anchor = 'cent
   );
 }
 
-export default function CertificateFront({ cert, certRef, editMode = false, positions, onPositionsChange }) {
+export default function CertificateFront({ cert, certRef, editMode = false, positions, onPositionsChange, backgroundUrl }) {
   const verifUrl = makeVerifUrl(cert.verificationCode);
+
+  // Load saved AI template background if no explicit backgroundUrl is provided
+  const [resolvedBg, setResolvedBg] = useState(backgroundUrl || CERT_BG_HQ);
+  useEffect(() => {
+    if (backgroundUrl) { setResolvedBg(backgroundUrl); return; }
+    let active = true;
+    getDefaultCertificateTemplate()
+      .then((tpl) => { if (active && tpl?.image_url) setResolvedBg(tpl.image_url); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [backgroundUrl]);
 
   const handleMove = useCallback((id, nx, ny) => {
     const next = { ...positions, [id]: { x: nx, y: ny } };
@@ -123,9 +135,9 @@ export default function CertificateFront({ cert, certRef, editMode = false, posi
         background: '#f5f5f5',
       }}
     >
-      {/* Background image — full quality, no CSS scaling artifacts */}
+      {/* Background image — uses saved AI template if available, falls back to official PNG */}
       <img
-        src={CERT_BG_HQ}
+        src={resolvedBg}
         alt=""
         crossOrigin="anonymous"
         draggable={false}
