@@ -73,7 +73,6 @@ export default function ClassChat() {
   const userCourse = routeCourse || session?.course || 'tcc';
   const CHAT_SESSION = `class_chat_${userCourse}`;
 
-  // Mesma base do Mural de Superação exibido na dashboard do aluno.
   const wall = useOvercomingWall({ course: userCourse, session });
   const messages = wall.messages;
   const codes = wall.accessCodes;
@@ -83,7 +82,6 @@ export default function ClassChat() {
   const replyMutation = wall.replyMutation;
   const readKeys = new Set(wall.readReceipts.map((receipt) => receipt.highlight_key));
 
-  // Reações espontâneas do professor às publicações que chegam ao mural.
   useProfessorAutoReactions({ enabled: isAdmin, session, feed: wall.feed, reactions: wallReactions });
 
   const courseLabel = userCourse === 'tcc' ? 'TC' : userCourse.toUpperCase();
@@ -143,6 +141,8 @@ export default function ClassChat() {
       markAway();
     };
   }, [codes, session?.email]);
+
+  const dmBase = location.pathname.endsWith('/chat') ? location.pathname.slice(0, -5) : location.pathname;
 
   const sendMessage = async (content, isSticker = false) => {
     if (!content.trim()) return;
@@ -223,7 +223,6 @@ export default function ClassChat() {
     .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
   const onlineStudents = otherStudents.filter(isStudentOnline);
   const awayStudents = otherStudents.filter(c => !isStudentOnline(c));
-  // A leitura começa pelas novidades, sem deslocar o aluno para o fim da lista.
   const { pinned: pinnedHighlights, regular: regularFeed } = splitWeeklyHighlights(wall.feed, readKeys);
   const wallFeed = [...pinnedHighlights, ...regularFeed];
 
@@ -355,14 +354,14 @@ export default function ClassChat() {
                   <div className="text-[11px] font-bold text-[#2f7d32] mb-1 border-b border-green-200 pb-1">🟢 Online ({onlineStudents.length})</div>
                   {onlineStudents.slice(0, 60).map((c) => {
                     const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] dark:text-card-foreground truncate"><span className="text-green-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
+                    return <button key={c.id} onClick={() => navigate(`${dmBase}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] dark:text-card-foreground truncate"><span className="text-green-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
                   })}
                 </div>
                 <div>
                   <div className="text-[11px] font-bold text-[#b42318] mb-1 border-b border-red-200 pb-1">🔴 Ausentes ({awayStudents.length})</div>
                   {awayStudents.slice(0, 60).map((c) => {
                     const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                    return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] dark:text-card-foreground truncate"><span className="text-red-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Visto por último: {formatLastSeen(c.last_seen_at)}</span></button>;
+                    return <button key={c.id} onClick={() => navigate(`${dmBase}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] dark:text-card-foreground truncate"><span className="text-red-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Visto por último: {formatLastSeen(c.last_seen_at)}</span></button>;
                   })}
                 </div>
               </div>
@@ -376,7 +375,7 @@ export default function ClassChat() {
               {otherStudents.map((c) => {
                 const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
                 const online = isStudentOnline(c);
-                return <button key={c.id} onClick={() => navigate(`${location.pathname.replace(/\/chat$/, '')}/dm/${encodeURIComponent(c.student_email)}`)} className="border border-[#c8d7f5] rounded px-3 py-2 text-left hover:bg-[#f6f9ff] text-sm"><span className={online ? 'text-green-500' : 'text-red-500'}>●</span> 🔒 {name}<span className="block text-[10px] text-[#6f7ba8] ml-4">{online ? 'Online agora' : `Visto por último: ${formatLastSeen(c.last_seen_at)}`}</span></button>;
+                return <button key={c.id} onClick={() => navigate(`${dmBase}/dm/${encodeURIComponent(c.student_email)}`)} className="border border-[#c8d7f5] rounded px-3 py-2 text-left hover:bg-[#f6f9ff] text-sm"><span className={online ? 'text-green-500' : 'text-red-500'}>●</span> 🔒 {name}<span className="block text-[10px] text-[#6f7ba8] ml-4">{online ? 'Online agora' : `Visto por último: ${formatLastSeen(c.last_seen_at)}`}</span></button>;
               })}
             </div>
           </div>}
