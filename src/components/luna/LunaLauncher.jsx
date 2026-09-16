@@ -1,13 +1,22 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 /**
  * Atalho da Luna na sidebar (ao lado da lâmpada de tema): leva o aluno
  * direto para a ferramenta da Luna em /tutor.
+ *
+ * Restrito a role 'admin' — professor e suporte não têm acesso à Luna
+ * (Gerente de Operações).
  */
 export default function LunaLauncher() {
+  const { session } = useCustomAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Apenas admin vê e usa a Luna
+  if (session?.role !== 'admin') return null;
+
   const first = location.pathname.split('/').filter(Boolean)[0];
   const prefix = first === 'student' || first === 'adm' ? `/${first}` : '/student';
 
