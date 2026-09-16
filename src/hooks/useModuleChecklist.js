@@ -80,6 +80,15 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     const submittedExamIds = new Set(examSubmissions.map((s) => s.exam_id));
     return Array.from({ length: MODULE_COUNT }, (_, index) => {
       const moduleNumber = index + 1;
+      // Pré-requisito: verificar se a prova do módulo anterior foi entregue
+      const previousModuleNumber = moduleNumber - 1;
+      const previousModuleExams = previousModuleNumber >= 1
+        ? exams.filter((exam) => parseModuleNumber(exam.module_ref) === previousModuleNumber)
+        : [];
+      const previousExamCompleted = previousModuleExams.length === 0
+        ? true
+        : previousModuleExams.every((exam) => submittedExamIds.has(exam.id));
+
       const moduleWindow = { start: unlockDateByModule.get(moduleNumber) || null, end: unlockDateByModule.get(moduleNumber + 1) || null };
       const checklist = buildModuleChecklist({
         moduleNumber,
@@ -92,6 +101,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
         pairings,
         challengeResponses,
         moduleWindow,
+        previousExamCompleted,
       });
       const moduleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === moduleNumber);
       const examDone = moduleExams.length > 0 && moduleExams.every((exam) => submittedExamIds.has(exam.id));
