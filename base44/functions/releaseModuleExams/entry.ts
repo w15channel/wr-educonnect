@@ -6,8 +6,9 @@ import { computeChecklistProgress, examReleaseBlockReason } from '../../shared/e
  * ──────────────────
  * Libera (ou revoga) as provas do módulo em vigência de um aluno.
  *
- * Segurança: só executa para e-mails cadastrados em AdminCredential — o mesmo
- * critério usado pelo adminSave, porque o app usa autenticação customizada.
+ * Segurança: executa para e-mails cadastrados em AdminCredential ou em
+ * AccessCode com profile_category admin/management — o mesmo critério
+ * usado pelo adminSave, porque o app usa autenticação customizada.
  * O percentual do checklist é recalculado aqui no servidor; números vindos do
  * navegador não são aceitos como prova de elegibilidade.
  */
@@ -22,7 +23,17 @@ Deno.serve(async (req) => {
     }
     const normAdmin = String(admin_email).trim().toLowerCase();
     const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
-    const isValidAdmin = credentials.some((c: Record<string, unknown>) => String(c.email || '').trim().toLowerCase() === normAdmin);
+    let isValidAdmin = credentials.some((c: Record<string, unknown>) => String(c.email || '').trim().toLowerCase() === normAdmin);
+    // Fallback: verifica AccessCode com profile_category admin/management (mesmo critério do adminSave)
+    if (!isValidAdmin) {
+      const codes = await base44.asServiceRole.entities.AccessCode.filter(
+        { student_email: normAdmin }, '-created_date', 10
+      );
+      isValidAdmin = codes.some((c: Record<string, unknown>) =>
+        c.is_active !== false &&
+        ['admin', 'management'].includes(c.profile_category)
+      );
+    }
     if (!isValidAdmin) {
       return Response.json({ error: 'Acesso não autorizado.' }, { status: 403 });
     }
