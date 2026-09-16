@@ -16,7 +16,7 @@ function normalizeVerificationCode(value) {
   return String(value || '')
     .trim()
     .toUpperCase()
-    .replace(/[–—−]/g, '-')
+    .replace(/[\u2013\u2014\u2212]/g, '-')
     .replace(/\s+/g, '')
     .replace(/[^A-Z0-9-]/g, '');
 }
@@ -84,11 +84,98 @@ function cleanObject(obj = {}) {
   return out;
 }
 
+function getDMSessionId(emailA, emailB) {
+  const sorted = [emailA, emailB].sort();
+  return `dm_${sorted[0]}_${sorted[1]}`;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json().catch(() => ({}));
     const action = payload.action;
+
+    if (action === 'migrateAnnouncementsToDM') {
+      const user = await base44.auth.me().catch(() => null);
+      let isAdmin = user?.role === 'admin';
+      if (!isAdmin && payload.admin_email) {
+        const normAdmin = String(payload.admin_email).trim().toLowerCase();
+        const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
+        isAdmin = credentials.some((c) => String(c.email || '').trim().toLowerCase() === normAdmin);
+        if (!isAdmin) {
+          const codes = await base44.asServiceRole.entities.AccessCode.filter(
+            { student_email: normAdmin }, '-created_date', 10
+          );
+          isAdmin = codes.some((c) =>
+            c.is_active !== false &&
+            ['admin', 'management'].includes(c.profile_category)
+          );
+        }
+      }
+      if (!isAdmin) {
+        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      }
+
+      const adminEmail = payload.admin_email || user?.email || '';
+      const adminName = payload.admin_name || user?.name || 'Coordenação';
+      const searchText = payload.search_text || 'Eu sou a Luna';
+
+      const announcements = await base44.asServiceRole.entities.Announcement.filter(
+        { content: { $regex: searchText } },
+        '-created_date',
+        200
+      );
+
+      let migrated = 0;
+      let failed = 0;
+      const errors = [];
+
+      for (const ann of announcements) {
+        try {
+          const studentEmail = String(ann.recipient_email || '').trim();
+          if (!studentEmail) {
+            errors.push({ id: ann.id, error: 'No recipient_email' });
+            failed++;
+            continue;
+          }
+
+          const sessionId = getDMSessionId(adminEmail, studentEmail);
+          const fullContent = ann.title
+            ? `${ann.title}\n\n${ann.content}`
+            : ann.content;
+
+          await base44.asServiceRole.entities.ChatMessage.create({
+            session_id: sessionId,
+            author_name: adminName,
+            author_email: adminEmail,
+            content: fullContent,
+            is_hand_raised: false,
+          });
+
+          await base44.asServiceRole.entities.Notification.create({
+            recipient_email: studentEmail,
+            sender_email: adminEmail,
+            sender_name: adminName,
+            message: `Você recebeu uma mensagem particular da coordenação: "${ann.title || 'Recado importante'}"`,
+            type: 'wall_reply',
+          });
+
+          await base44.asServiceRole.entities.Announcement.delete(ann.id);
+          migrated++;
+        } catch (err) {
+          errors.push({ id: ann.id, error: err.message });
+          failed++;
+        }
+      }
+
+      return Response.json({
+        success: true,
+        migrated,
+        failed,
+        total: announcements.length,
+        errors: errors.length ? errors : undefined,
+      });
+    }
 
     if (action === 'lessonProgressUpsert') {
       const lessonId = payload.lesson_id;
