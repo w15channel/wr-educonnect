@@ -82,8 +82,8 @@ export default function MonitorCertificate() {
         </div>
       </div>
 
-      <div className="overflow-auto max-h-[70vh] rounded-2xl border border-border bg-secondary/20 p-3">
-        <div ref={certRef} className="bg-white text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f' }}>
+      <div className="overflow-auto max-h-[70vh] rounded-2xl border border-slate-200 bg-slate-100 p-3">
+        <div ref={certRef} className="text-center mx-auto" style={{ fontFamily: 'Georgia, "Times New Roman", serif', width: 980, minHeight: 680, padding: '64px 72px', border: '2px solid #1e3a5f', boxShadow: 'inset 0 0 0 8px #f0f4f8, inset 0 0 0 10px #1e3a5f', backgroundColor: '#fff', color: '#1e3a5f', colorScheme: 'light' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid #1e3a5f', paddingBottom: 16, marginBottom: 28 }}>
             <img src={WR_CERTIFICATE_LOGO} alt="WR" style={{ width: 68, height: 68, objectFit: 'contain' }} crossOrigin="anonymous" />
             <p style={{ fontSize: 12, letterSpacing: 4, color: '#1e3a5f', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>{BRAND_LEGAL_NAME}</p>
