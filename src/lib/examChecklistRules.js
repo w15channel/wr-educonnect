@@ -2,7 +2,6 @@
 // Tudo é calculado por aluno e por módulo — cada aluno avança no seu tempo.
 
 export const CHECKLIST_RULES = {
-  lessonsPerModule: 5,
   apostilaChapters: 5,
   tasksPerModule: 5,
   taskMinChars: 500,
@@ -26,7 +25,7 @@ export const submissionTextLength = (submission) => {
 };
 
 /**
- * Monta os 6 requisitos do módulo para um aluno específico.
+ * Monta os 5 requisitos do módulo para um aluno específico.
  * Cada item traz o progresso atual, a meta e o caminho de ida (com volta ao checklist).
  */
 // Verifica se uma data cai dentro da janela de tempo em que o aluno esteve
@@ -57,19 +56,7 @@ export function buildModuleChecklist({
   // tempo: ao ingressar em um módulo novo, todas as marcações começam zeradas.
   const progressInWindow = progresses.filter((p) => isWithinModuleWindow(p.updated_date || p.created_date, moduleWindow));
   const submissionsInWindow = submissions.filter((s) => isWithinModuleWindow(s.updated_date || s.created_date, moduleWindow));
-  const watchedByLessonId = new Map(progressInWindow.map((p) => [p.lesson_id, p]));
 
-  // 1 — Videoaulas do módulo assistidas e respondidas (resumo ou comentário).
-  // As aulas do módulo vêm do próprio cadastro (module_number da apostila);
-  // só caímos na divisão por ordem quando o módulo não foi informado.
-  const tagged = lessons.filter((lesson) => Number(lesson.module_number) === moduleNumber);
-  const moduleLessons = tagged.length > 0
-    ? tagged
-    : lessons
-        .filter((lesson) => !lesson.module_type || lesson.module_type === 'apostila')
-        .sort((a, b) => (a.order || 0) - (b.order || 0))
-        .slice((moduleNumber - 1) * CHECKLIST_RULES.lessonsPerModule, moduleNumber * CHECKLIST_RULES.lessonsPerModule);
-  const lessonsAnswered = moduleLessons.filter((lesson) => watchedByLessonId.get(lesson.id)?.watched).length;
 
   // 2 — Capítulos da apostila do módulo marcados como lidos.
   const apostilaPrefix = `apostila:mod${moduleNumber}:`;
@@ -102,14 +89,7 @@ export function buildModuleChecklist({
   ).size;
 
   const items = [
-    {
-      key: 'lessons',
-      label: 'Assistir todas as videoaulas do módulo',
-      hint: 'Aulas já marcadas como assistidas no seu histórico contam automaticamente.',
-      current: lessonsAnswered,
-      target: moduleLessons.length || CHECKLIST_RULES.lessonsPerModule,
-      to: `/lessons?module=${moduleNumber}`,
-    },
+
     {
       key: 'apostila',
       label: 'Marcar os capítulos da apostila do módulo como lidos',

@@ -82,10 +82,10 @@ describe('buildStudentExamProgressRows', () => {
       submissions: [{ student_email: 'aluno@teste.com', task_id: 't1', comment: 'entrega' }],
     });
     expect(row.moduleNumber).toBe(1);
-    expect(row.summary.total).toBe(6);
-    expect(row.summary.completed).toBe(2);
+    expect(row.summary.total).toBe(5);
+    expect(row.summary.completed).toBe(1);
     expect(row.summary.missing).toBe(4);
-    expect(row.summary.percent).toBe(33);
+    expect(row.summary.percent).toBe(20);
     expect(row.summary.eligible).toBe(false);
     expect(row.released).toBe(false);
   });

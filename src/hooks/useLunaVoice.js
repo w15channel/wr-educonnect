@@ -8,6 +8,7 @@ export default function useLunaVoice() {
   const audioRef = useRef(null);
   const requestRef = useRef(0);
   const [speaking, setSpeaking] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const stop = useCallback(() => {
     requestRef.current += 1;
@@ -17,6 +18,7 @@ export default function useLunaVoice() {
       audioRef.current = null;
     }
     fallback.stop();
+    setLoading(false);
     setSpeaking(false);
   }, [fallback.stop]);
 
@@ -31,6 +33,7 @@ export default function useLunaVoice() {
       audioRef.current = null;
     }
     fallback.stop();
+    setLoading(true);
     setSpeaking(true);
 
     try {
@@ -39,6 +42,7 @@ export default function useLunaVoice() {
         releaseBase44VoiceAudio(audio);
         return;
       }
+      setLoading(false);
       audioRef.current = audio;
       let usedFallback = false;
       const useFallback = () => {
@@ -60,6 +64,7 @@ export default function useLunaVoice() {
       await audio.play();
     } catch {
       if (requestId === requestRef.current) {
+        setLoading(false);
         audioRef.current = null;
         setSpeaking(false);
         fallback.speak(text, { force });
@@ -84,6 +89,7 @@ export default function useLunaVoice() {
     supported: typeof Audio !== 'undefined' || fallback.supported,
     enabled: fallback.enabled,
     speaking: speaking || fallback.speaking,
+    loading,
     toggle,
     speak,
     stop,

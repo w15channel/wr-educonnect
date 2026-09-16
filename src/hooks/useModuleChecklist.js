@@ -16,10 +16,6 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
   const email = session?.email || session?.code || '';
   const access = useModuleAccess(course, session);
 
-  const { data: lessons = [], isLoading: l1 } = useQuery({
-    queryKey: ['checklist-lessons', course],
-    queryFn: () => base44.entities.RecordedLesson.filter({ course }, 'order', 300),
-  });
   const { data: progresses = [], isLoading: l2 } = useQuery({
     queryKey: ['checklist-progress', email],
     queryFn: () => base44.entities.LessonProgress.filter({ student_email: email }, '-created_date', 2000),
@@ -67,7 +63,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
   });
   const moduleUnlocks = access.unlocks;
 
-  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || access.isLoading;
+  const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || access.isLoading;
 
   // Data em que cada módulo foi liberado para o aluno — usada para que
   // debates, terapeuta da semana e ofensiva contem apenas o que foi feito
@@ -88,7 +84,6 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
       const checklist = buildModuleChecklist({
         moduleNumber,
         email,
-        lessons,
         progresses,
         tasks,
         submissions,
@@ -102,7 +97,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
       const examDone = moduleExams.length > 0 && moduleExams.every((exam) => submittedExamIds.has(exam.id));
       return { moduleNumber, ...checklist, examDone, exams: moduleExams };
     });
-  }, [email, lessons, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule]);
+  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule]);
 
   const currentModule = access.currentModule;
 

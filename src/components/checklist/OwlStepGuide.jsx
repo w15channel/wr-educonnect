@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Volume2, VolumeX, RotateCcw, SkipForward, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Volume2, VolumeX, RotateCcw, SkipForward, CheckCircle2, Loader2 } from 'lucide-react';
 import { getStepGuide } from '@/lib/checklistGuide';
 
 /**
@@ -83,9 +83,11 @@ export default function OwlStepGuide({
           <button
             type="button"
             onClick={onRepeat}
+            disabled={voice.loading}
+            aria-busy={voice.loading}
             className="flex min-h-11 items-center justify-center gap-1.5 rounded-2xl border border-border bg-background px-2 text-[11.5px] font-bold text-foreground"
           >
-            <RotateCcw size={14} /> Ouvir
+            {voice.loading ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} {voice.loading ? 'Gerando voz...' : 'Ouvir'}
           </button>
           <button
             type="button"

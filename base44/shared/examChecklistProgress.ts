@@ -9,7 +9,6 @@
  */
 
 export const CHECKLIST_RULES = {
-  lessonsPerModule: 5,
   apostilaChapters: 5,
   tasksPerModule: 5,
   ofensivaDays: 3,
@@ -57,7 +56,7 @@ export interface ChecklistProgress {
   eligible: boolean;
 }
 
-/** Calcula os 6 requisitos do módulo para um aluno e resume o percentual. */
+/** Calcula os 5 requisitos do módulo para um aluno e resume o percentual. */
 export function computeChecklistProgress({
   moduleNumber,
   email,
@@ -70,16 +69,7 @@ export function computeChecklistProgress({
   pairings = [],
   challengeResponses = [],
 }: ChecklistProgressInput): ChecklistProgress {
-  const watchedByLessonId = new Map(progresses.map((p) => [p.lesson_id, p]));
 
-  const tagged = lessons.filter((lesson) => Number(lesson.module_number) === moduleNumber);
-  const moduleLessons = tagged.length > 0
-    ? tagged
-    : lessons
-      .filter((lesson) => !lesson.module_type || lesson.module_type === 'apostila')
-      .sort((a, b) => (a.order || 0) - (b.order || 0))
-      .slice((moduleNumber - 1) * CHECKLIST_RULES.lessonsPerModule, moduleNumber * CHECKLIST_RULES.lessonsPerModule);
-  const lessonsAnswered = moduleLessons.filter((lesson) => watchedByLessonId.get(lesson.id)?.watched).length;
 
   const apostilaPrefix = `apostila:mod${moduleNumber}:`;
   const apostilaRead = new Set(
@@ -106,7 +96,6 @@ export function computeChecklistProgress({
   ).size;
 
   const items = [
-    { key: 'lessons', current: lessonsAnswered, target: moduleLessons.length || CHECKLIST_RULES.lessonsPerModule },
     { key: 'apostila', current: apostilaRead, target: CHECKLIST_RULES.apostilaChapters },
     { key: 'tasks', current: tasksDone, target: moduleTasks.length || CHECKLIST_RULES.tasksPerModule },
     { key: 'debate_topic', current: Math.min(myDebateTopics, 1), target: 1 },

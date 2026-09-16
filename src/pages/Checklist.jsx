@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { ClipboardCheck, Lock, Unlock, GraduationCap, ArrowRight } from 'lucide-react';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
-import useOwlVoice from '@/hooks/useOwlVoice';
+import useLunaVoice from '@/hooks/useLunaVoice';
 import ChecklistTrail from '@/components/checklist/ChecklistTrail';
 import OwlStepGuide from '@/components/checklist/OwlStepGuide';
 import ModuleUnlockRequestCard from '@/components/checklist/ModuleUnlockRequestCard';
@@ -16,7 +16,7 @@ export default function Checklist() {
   const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
   const course = session?.course || 'tcc';
   const { modules, currentModule, isLoading, availableModules } = useModuleChecklist({ course, session });
-  const voice = useOwlVoice();
+  const voice = useLunaVoice();
 
   const requestedModule = Number(new URLSearchParams(location.search).get('module')) || null;
   const [selected, setSelected] = useState(requestedModule || currentModule);
@@ -40,17 +40,17 @@ export default function Checklist() {
 
   const focusItem = items[focusIndex];
   const script = useMemo(() => {
-    if (!module) return '';
+    if (isLoading || !module) return '';
     if (module.complete) return buildFinishScript({ firstName, moduleNumber: module.moduleNumber });
     if (!focusItem) return '';
     return buildVoiceScript({ item: focusItem, index: focusIndex, total: items.length, moduleNumber: module.moduleNumber, firstName });
-  }, [module, focusItem, focusIndex, items.length, firstName]);
+  }, [isLoading, module, focusItem, focusIndex, items.length, firstName]);
 
   // A corujinha fala a etapa atual sempre que o aluno muda de marco.
   useEffect(() => {
     if (script) voice.speak(script);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [script]);
+  }, [script, voice.enabled]);
 
   // Ida: sai do checklist com checklist=<módulo>; a barra de retorno traz de volta.
   const goToRequirement = (item) => {
