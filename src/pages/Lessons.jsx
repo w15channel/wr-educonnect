@@ -407,13 +407,13 @@ export default function Lessons() {
       </Dialog>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-5 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Aulas de Terapia Comportamental</h2>
           <p className="text-muted-foreground text-sm mt-0.5">10 módulos · 50 aulas · Estude no seu ritmo</p>
         </div>
         {isTeacher && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
 
             <Button variant="outline" className="h-9 text-sm" onClick={openModuleEditor}>
               Organizar módulos
