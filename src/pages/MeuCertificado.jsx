@@ -204,7 +204,7 @@ export default function MeuCertificado() {
           </div>
 
           {/* Preview */}
-          <div className="space-y-4 overflow-x-auto rounded-2xl border border-border bg-secondary/30 p-4">
+          <div className="space-y-4 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Frente</p>
             <CertificateFront
               cert={cert}
