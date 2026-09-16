@@ -55,7 +55,23 @@ Deno.serve(async (req) => {
     const isAutomation = ['scheduled', 'entity'].includes(payload?.automation?.type);
     const user = await base44.auth.me().catch(() => null);
 
-    if (!isAutomation && user?.role !== 'admin') {
+    // Auth: native admin, automation, AdminCredential, or AccessCode with admin/management profile
+    let isAdmin = isAutomation || user?.role === 'admin';
+    if (!isAdmin && payload?.admin_email) {
+      const normAdmin = String(payload.admin_email).trim().toLowerCase();
+      const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
+      isAdmin = credentials.some((c) => String(c.email || '').trim().toLowerCase() === normAdmin);
+      if (!isAdmin) {
+        const codes = await base44.asServiceRole.entities.AccessCode.filter(
+          { student_email: normAdmin }, '-created_date', 10
+        );
+        isAdmin = codes.some((c) =>
+          c.is_active !== false &&
+          ['admin', 'management'].includes(c.profile_category)
+        );
+      }
+    }
+    if (!isAdmin) {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
