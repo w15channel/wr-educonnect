@@ -175,7 +175,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
             : LUNA_QUICK_ACTIONS
           ).map((action) => (
             <button
-n              key={action}
+              key={action}
               onClick={() => send(action)}
               disabled={loading || ticketCreating}
               className="shrink-0 whitespace-nowrap rounded-xl border border-border bg-secondary px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground"

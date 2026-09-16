@@ -51,7 +51,7 @@ export default function OperationsChat({ session }) {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary"><Briefcase size={17} /></div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-foreground">Luna · Gerente de Operações</p>
-          <p className="truncate text-[11px] text-muted-foreground">Converse, planeje e execute ações no mesmo chat</p>
+          <p className="truncate text-[11px] text-muted-foreground">Executa continuamente até concluir o pedido</p>
         </div>
         <button
           onClick={voice.toggle}
@@ -88,7 +88,7 @@ export default function OperationsChat({ session }) {
         <Button type="submit" className="h-11 w-11 shrink-0 p-0" disabled={!input.trim() || !canSend}><Send size={16} /></Button>
       </form>
       <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">
-        Código conectado ao editor. Mudanças amplas, destrutivas ou estruturais exigem confirmação.
+        A Luna segue todas as etapas autorizadas sem pausas. Ações destrutivas ainda exigem confirmação por segurança.
       </p>
     </div>
   );

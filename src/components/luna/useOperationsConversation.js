@@ -47,14 +47,11 @@ export default function useOperationsConversation(session) {
       const data = await base44.agents.getConversation(id);
       if (state.conversation?.id !== id) return;
       apply(data);
-      if (state.pending && Date.now() - state.pending.updatedAt >= 90000) {
-        setPhase('stalled');
-        setError('Sem novos eventos há 90 segundos. A execução não foi cancelada. Consulte o andamento antes de repetir o pedido.');
-      }
-    } catch (e) {
-      if (!state.mounted || state.conversation?.id !== id) return;
-      setPhase('stalled');
-      setError(`Não foi possível consultar o andamento: ${errorText(e)} O pedido não será reenviado automaticamente.`);
+    } catch {
+      if (!state.mounted || state.conversation?.id !== id || !state.pending) return;
+      // Uma oscilação na consulta não interrompe o trabalho: o próximo ciclo
+      // continua acompanhando a mesma execução, sem duplicar o pedido.
+      setPhase('waiting');
     }
   }, [apply]);
 
@@ -93,7 +90,7 @@ export default function useOperationsConversation(session) {
       if (checking || !ref.current.pending) return;
       checking = true;
       try { await refresh(); } finally { checking = false; }
-    }, 8000);
+    }, 5000);
     return () => { unsubscribe(); clearInterval(timer); };
   }, [conversation?.id, apply, refresh]);
 
@@ -118,7 +115,11 @@ export default function useOperationsConversation(session) {
         state.pending = null; setMessages(rows); setPhase('error');
         setError(`Pedido recusado: ${errorText(e)}`);
       } else {
-        setPhase('stalled'); setError(`Envio sem confirmação: ${errorText(e)} Consulte o andamento antes de repetir o pedido.`);
+        // O servidor pode ter aceitado o pedido antes da queda da resposta.
+        // Mantemos a execução pendente e consultamos o mesmo processo até concluir.
+        setPhase('waiting');
+        window.setTimeout(() => refresh(), 1500);
+        return true;
       }
       return false;
     }
@@ -130,6 +131,6 @@ export default function useOperationsConversation(session) {
     ref.current.conversation = null; setConversation(null); setMessages([]); startConversation();
   };
   return { conversation, messages, phase, error, send, refresh, newConversation, retry: startConversation,
-    busy: ['opening', 'sending', 'waiting', 'stalled'].includes(phase),
+    busy: ['opening', 'sending', 'waiting'].includes(phase),
     canSend: !!conversation && ['ready', 'error'].includes(phase) };
 }
