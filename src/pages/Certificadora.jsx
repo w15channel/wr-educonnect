@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Award, BookOpen, FileText, Heart, Bell, Download } from 'lucide-react';
+import { Award, BookOpen, FileText, Heart, Bell, Download, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { useOutletContext, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 import MeuCertificado from './MeuCertificado';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const TOTAL_LESSONS = 45;
-const TOTAL_TASKS = 45;
-const TOTAL_PRACTICE_H = 10;
+const TOTAL_PRACTICE = 10;
 const REMINDER_KEY = 'cert_last_reminder';
+const SOLICITUD_KEY = 'cert_solicitud_enviada';
 
 const COURSE_NAMES = {
   tcc: 'Formação de Terapeuta em Terapia Comportamental',
@@ -18,7 +18,8 @@ const COURSE_NAMES = {
 };
 
 function ProgressBar({ label, icon: Icon, colorClass, current, total, unit, description }) {
-  const pct = Math.min(100, Math.round((current / total) * 100));
+  const safeTotal = Math.max(total, 1);
+  const pct = Math.min(100, Math.round((current / safeTotal) * 100));
   const done = current >= total;
   return (
     <div className="bg-card border border-border rounded-2xl p-4">
@@ -56,6 +57,8 @@ export default function Certificadora() {
   const isTeacher = session?.role === 'admin';
   const [showReminder, setShowReminder] = useState(false);
   const [activeTab, setActiveTab] = useState('progresso');
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [hasRequested, setHasRequested] = useState(false);
 
   useEffect(() => {
     if (isTeacher) return;
@@ -70,6 +73,7 @@ export default function Certificadora() {
     setShowReminder(false);
   };
 
+  // ── Queries de progresso do aluno ──────────────────────────────────
   const { data: lessonProgresses = [] } = useQuery({
     queryKey: ['lesson-progress', session?.email],
     queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email || '' }, '-created_date', 200),
@@ -88,6 +92,29 @@ export default function Certificadora() {
     enabled: !isTeacher && !!session?.email,
   });
 
+  // ── Metas dinâmicas: totais reais do curso ─────────────────────────
+  const { data: courseLessons = [] } = useQuery({
+    queryKey: ['cert-lessons-total', session?.course],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: session?.course || 'tcc' }, 'order', 500),
+    enabled: !isTeacher && !!session?.course,
+  });
+
+  const { data: courseTasks = [] } = useQuery({
+    queryKey: ['cert-tasks-total', session?.course],
+    queryFn: () => base44.entities.Task.filter({ course: session?.course || 'tcc' }, '-created_date', 500),
+    enabled: !isTeacher && !!session?.course,
+  });
+
+  // ── Verifica se já solicitou emissão ───────────────────────────────
+  useEffect(() => {
+    if (isTeacher || !session?.email) return;
+    const local = localStorage.getItem(`${SOLICITUD_KEY}_${session.email}`);
+    setHasRequested(Boolean(local));
+  }, [session?.email, isTeacher]);
+
+  const totalLessons = courseLessons.filter(l => !l.is_hidden).length;
+  const totalTasks = courseTasks.filter(t => !t.is_hidden).length;
+
   const lessonsWatched = lessonProgresses.filter(p => p.watched).length;
   const tasksSubmitted = taskSubmissions.length;
   const practiceCompleted = therapistPairings.filter(p =>
@@ -96,9 +123,9 @@ export default function Certificadora() {
   ).length;
 
   const totalPct = isTeacher ? 0 : Math.round(
-    ((Math.min(lessonsWatched, TOTAL_LESSONS) / TOTAL_LESSONS) +
-      (Math.min(tasksSubmitted, TOTAL_TASKS) / TOTAL_TASKS) +
-      (Math.min(practiceCompleted, TOTAL_PRACTICE_H) / TOTAL_PRACTICE_H)) / 3 * 100
+    ((Math.min(lessonsWatched, totalLessons) / Math.max(totalLessons, 1)) +
+      (Math.min(tasksSubmitted, totalTasks) / Math.max(totalTasks, 1)) +
+      (Math.min(practiceCompleted, TOTAL_PRACTICE) / TOTAL_PRACTICE)) / 3 * 100
   );
 
   const courseName = COURSE_NAMES[session?.course] || 'Seu Curso';
@@ -115,6 +142,36 @@ export default function Certificadora() {
     enabled: !isTeacher && !!session?.email,
   });
   const hasCertificate = myCerts.length > 0;
+
+  // ── Solicitação real de emissão ────────────────────────────────────
+  const requestEmission = async () => {
+    if (hasRequested) {
+      toast.info('Você já solicitou a emissão do seu certificado. Aguarde a análise da coordenação.');
+      return;
+    }
+
+    setIsRequesting(true);
+    try {
+      const studentName = session?.name || 'Aluno';
+      const studentEmail = session?.email || '';
+      const course = session?.course || 'tcc';
+
+      await base44.entities.Announcement.create({
+        title: `Solicitação de Certificado - ${studentName}`,
+        content: `📋 Nova solicitação de emissão de certificado\n\nAluno: ${studentName}\nE-mail: ${studentEmail}\nCurso: ${courseName}\n\nProgresso atual:\n• Aulas assistidas: ${lessonsWatched}/${totalLessons}\n• Trabalhos entregues: ${tasksSubmitted}/${totalTasks}\n• Prática terapêutica: ${practiceCompleted}/${TOTAL_PRACTICE}\n• Progresso geral: ${totalPct}%\n\nO aluno solicitou a emissão do certificado. Acesse o Gerador de Certificados para revisar e emitir.`,
+        type: 'info',
+        course,
+      });
+
+      localStorage.setItem(`${SOLICITUD_KEY}_${sessionEmail}`, new Date().toISOString());
+      setHasRequested(true);
+      toast.success('Solicitação enviada! A coordenação irá analisar e emitir seu certificado em breve.');
+    } catch (error) {
+      toast.error('Erro ao enviar solicitação: ' + (error.message || ''));
+    } finally {
+      setIsRequesting(false);
+    }
+  };
 
   if (isTeacher) {
     return (
@@ -158,7 +215,7 @@ export default function Certificadora() {
               </div>
               <div className="flex-1">
                 <p className="font-bold text-yellow-900">🎉 Seu certificado está disponível!</p>
-                <p className="text-xs text-yellow-700 mt-0.5">O professor já emitiu seu certificado. Clique para visualizar e baixar.</p>
+                <p className="text-xs text-yellow-700 mt-0.5">A coordenação já emitiu seu certificado. Clique para visualizar e baixar.</p>
               </div>
               <button
                 onClick={() => setActiveTab('diploma')}
@@ -211,7 +268,7 @@ export default function Certificadora() {
               icon={BookOpen}
               colorClass="text-purple-500"
               current={lessonsWatched}
-              total={TOTAL_LESSONS}
+              total={totalLessons}
               unit=" aulas"
               description="Assista e marque cada aula como concluída"
             />
@@ -220,7 +277,7 @@ export default function Certificadora() {
               icon={FileText}
               colorClass="text-orange-500"
               current={tasksSubmitted}
-              total={TOTAL_TASKS}
+              total={totalTasks}
               unit=" trabalhos"
               description="Envie todos os trabalhos e atividades do curso"
             />
@@ -229,34 +286,56 @@ export default function Certificadora() {
               icon={Heart}
               colorClass="text-pink-500"
               current={practiceCompleted}
-              total={TOTAL_PRACTICE_H}
+              total={TOTAL_PRACTICE}
               unit="h"
               description="Sessões como terapeuta ou paciente concluídas"
             />
           </div>
 
+          {/* Emissão de certificado */}
           <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
               <p className="font-bold text-sm text-foreground">Emissão de certificado</p>
-              <p className="text-xs text-muted-foreground">Disponível ao atingir 80% do progresso geral.</p>
+              <p className="text-xs text-muted-foreground">
+                {hasCertificate
+                  ? 'Seu certificado já foi emitido.'
+                  : hasRequested
+                    ? 'Solicitação enviada. Aguarde a análise da coordenação.'
+                    : 'Disponível ao atingir 80% do progresso geral.'}
+              </p>
             </div>
-            <button
-              disabled={totalPct < 80}
-              onClick={() => alert('Solicitação enviada! O professor irá analisar e emitir seu certificado em breve.')}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Solicitar emissão
-            </button>
+            {hasCertificate ? (
+              <button
+                onClick={() => setActiveTab('diploma')}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-yellow-500 text-white hover:bg-yellow-600 transition"
+              >
+                <Download size={14} className="inline mr-1" /> Ver diploma
+              </button>
+            ) : hasRequested ? (
+              <span className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-100 text-amber-700 flex items-center gap-1.5">
+                <Clock size={14} /> Aguardando análise
+              </span>
+            ) : (
+              <button
+                disabled={totalPct < 80}
+                onClick={requestEmission}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {isRequesting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                {isRequesting ? 'Enviando...' : 'Solicitar emissão'}
+              </button>
+            )}
           </div>
 
           {/* Info box */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
             <p className="font-bold mb-1">Como funciona a certificação?</p>
             <ol className="space-y-1 text-xs text-blue-700 list-decimal list-inside">
-              <li>Assista às 60 aulas e marque-as como concluídas (com resumo e comentário)</li>
-              <li>Entregue os 60 trabalhos e atividades do curso</li>
-              <li>Complete 10 horas de prática terapêutica (Terapeuta da Semana)</li>
-              <li>Quando atingir 80% dos requisitos, solicite a emissão do certificado pelo botão abaixo</li>
+              <li>Assista às {totalLessons || 'todas as'} aulas e marque-as como concluídas (com resumo e comentário)</li>
+              <li>Entregue os {totalTasks || 'todos os'} trabalhos e atividades do curso</li>
+              <li>Complete {TOTAL_PRACTICE} sessões de prática terapêutica (Terapeuta da Semana)</li>
+              <li>Quando atingir 80% dos requisitos, solicite a emissão do certificado pelo botão acima</li>
+              <li>A coordenação analisará seu pedido e emitirá seu certificado oficial</li>
             </ol>
           </div>
         </TabsContent>
@@ -271,7 +350,7 @@ export default function Certificadora() {
               </div>
               <p className="font-bold text-lg text-foreground">Seu diploma aparecerá aqui</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                Quando o professor emitir seu certificado, ele ficará disponível nesta aba para visualização e download.
+                Quando a coordenação emitir seu certificado, ele ficará disponível nesta aba para visualização e download.
               </p>
               <button
                 onClick={() => setActiveTab('progresso')}
