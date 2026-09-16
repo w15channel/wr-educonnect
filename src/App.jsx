@@ -61,11 +61,12 @@ import Practice from './pages/Practice';
 import CertificateVerifier from './pages/CertificateVerifier';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
-// Guard: admin-only pages redirect students to dashboard
+// Guard: admin-only pages redirect non-admins (teacher/student) to their dashboard
 function AdminOnly({ children }) {
   const { session } = useCustomAuth();
   if (session?.role !== 'admin') {
-    return <Navigate to="/adm/dashboard" replace />;
+    const base = session?.role === 'admin' ? '/adm' : '/student';
+    return <Navigate to={`${base}/dashboard`} replace />;
   }
   return children;
 }
