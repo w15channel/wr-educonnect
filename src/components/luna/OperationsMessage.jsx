@@ -95,14 +95,14 @@ export default function OperationsMessage({ message }) {
         <div className={`overflow-hidden rounded-2xl px-3 py-2 text-sm ${isUser ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
           {hasContent && (isUser
             ? <p className="whitespace-pre-wrap break-words" style={wrapStyle}>{rawContent.replace(/^\[Contexto administrativo\][\s\S]*?\[\/Contexto administrativo\]\s*/, '')}</p>
-            : <div className="prose prose-sm dark:prose-invert max-w-none break-words [&_p]:my-1 [&_ul]:my-1" style={wrapStyle}><ReactMarkdown>{rawContent}</ReactMarkdown></div>)}
+            : <div className="prose prose-sm dark:prose-invert max-w-none break-words [&_p]:my-1 [&_ul]:my-1" style={wrapStyle}><ReactMarkdown disallowedElements={['button', 'input', 'form', 'script', 'style', 'iframe']} unwrapDisallowed>{rawContent}</ReactMarkdown></div>)}
           {message.tool_calls?.map((toolCall, idx) => <ToolCallRow key={idx} toolCall={toolCall} />)}
         </div>
         {hasContent && (
           <button
             onClick={() => handleShare(rawContent)}
             title="Compartilhar"
-            className={`absolute -bottom-2.5 ${isUser ? 'right-2' : 'left-2'} inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-[10px] font-semibold text-muted-foreground shadow-sm opacity-0 transition-all hover:text-foreground hover:border-primary/40 group-hover:opacity-100 active:scale-95`}
+            className={`absolute -bottom-2.5 ${isUser ? 'right-2' : 'left-2'} inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-[10px] font-semibold text-muted-foreground shadow-sm transition-all hover:text-foreground hover:border-primary/40 hover:opacity-100 active:scale-95 opacity-60 sm:opacity-0 sm:group-hover:opacity-100`}
           >
             <Share2 size={10} />
             Compartilhar
