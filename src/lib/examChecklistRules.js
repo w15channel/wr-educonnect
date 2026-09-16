@@ -30,6 +30,8 @@ export const submissionTextLength = (submission) => {
  */
 // Verifica se uma data cai dentro da janela de tempo em que o aluno esteve
 // naquele módulo (entre a liberação do módulo e a liberação do próximo).
+// APENAS para atividades perenes (debates, ofensivas, terapeuta) — 
+// aulas e tarefas são cumulativas: uma vez feitas, sempre contam.
 const isWithinModuleWindow = (dateValue, window) => {
   if (!window) return true;
   const time = new Date(dateValue).getTime();
@@ -53,25 +55,22 @@ export function buildModuleChecklist({
   moduleWindow = null,
   previousExamCompleted = false,
 }) {
-  // Cada módulo conta apenas o que foi feito dentro da sua própria janela de
-  // tempo: ao ingressar em um módulo novo, todas as marcações começam zeradas.
-  const progressInWindow = progresses.filter((p) => isWithinModuleWindow(p.updated_date || p.created_date, moduleWindow));
-  const submissionsInWindow = submissions.filter((s) => isWithinModuleWindow(s.updated_date || s.created_date, moduleWindow));
+  // Aulas da apostila e tarefas são CUMULATIVAS — uma vez completas, sempre contam
+  // independente de quando foram feitas. Não filtramos por janela de tempo.
+  // Debates, ofensivas e terapeuta usam janela de tempo para não herdar de módulos anteriores.
 
-
-  // 2 — Capítulos da apostila do módulo marcados como lidos.
+  // 2 — Capítulos da apostila do módulo marcados como lidos (cumulativo).
   const apostilaPrefix = `apostila:mod${moduleNumber}:`;
   const apostilaRead = new Set(
-    progressInWindow
+    progresses
       .filter((p) => p.watched && String(p.lesson_id || '').startsWith(apostilaPrefix))
       .map((p) => p.lesson_id)
   ).size;
 
-  // 3 — Tarefas do módulo entregues com no mínimo 500 caracteres de resposta.
+  // 3 — Tarefas do módulo entregues (cumulativo).
   const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber);
-  // Qualquer entrega já registrada no histórico conta (texto ou arquivo).
   const tasksDone = moduleTasks.filter((task) => {
-    const submission = submissionsInWindow.find((s) => s.task_id === task.id);
+    const submission = submissions.find((s) => s.task_id === task.id);
     return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
   }).length;
 
@@ -152,9 +151,9 @@ export function buildModuleChecklist({
 
 /**
  * Percentual mínimo do checklist exigido para liberar as provas do módulo.
- * Enquanto o aluno não chega nele, a liberação fica bloqueada (no app e no servidor).
+ * Alunos com 50% ou mais do checklist completo podem ter o próximo módulo liberado.
  */
-export const EXAM_RELEASE_MIN_PERCENT = 100;
+export const EXAM_RELEASE_MIN_PERCENT = 50;
 
 /**
  * Resumo do checklist de um módulo para o painel do admin.
