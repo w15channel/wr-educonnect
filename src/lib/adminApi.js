@@ -1,42 +1,63 @@
 /**
- * adminApi — wrapper para operações CRUD que requerem role admin.
+ * adminApi — wrapper para operações CRUD que requerem autenticação.
  * Usa a função backend `adminSave` com asServiceRole para contornar o RLS
  * que exige autenticação nativa do Base44 (incompatível com o auth customizado do app).
+ *
+ * Níveis de permissão:
+ *   • admin   — controle irrestrito (criar, atualizar, excluir, listar)
+ *   • teacher — leitura + criar/atualizar conteúdo (sem excluir)
+ *   • student — sem acesso (usa entidades públicas do SDK)
  */
 import { base44 } from '@/api/base44Client';
 import { getSession } from '@/lib/customAuth';
 
+/**
+ * Retorna o email do operador autenticado (admin OU teacher).
+ * Usado para operações de criação e atualização.
+ */
+function getOperatorEmail() {
+  const session = getSession();
+  if (!session?.email || !['admin', 'teacher'].includes(session?.role)) {
+    throw new Error('Usuário não autenticado ou sem permissão.');
+  }
+  return session.email;
+}
+
+/**
+ * Retorna o email do admin autenticado.
+ * Usado para operações destrutivas (excluir) — restritas a admin.
+ */
 function getAdminEmail() {
   const session = getSession();
   if (session?.role !== 'admin' || !session?.email) {
-    throw new Error('Usuário não é admin ou não está autenticado.');
+    throw new Error('Operação restrita ao administrador.');
   }
   return session.email;
 }
 
 async function adminSave(params) {
-  const admin_email = getAdminEmail();
+  const admin_email = params.action === 'delete' ? getAdminEmail() : getOperatorEmail();
   let res;
   try {
     res = await base44.functions.invoke('adminSave', { ...params, admin_email });
   } catch (error) {
     throw new Error(error?.response?.data?.error || error?.message || 'Erro desconhecido no adminSave');
   }
-  
+
   // Validação segura da resposta
   if (!res || typeof res !== 'object') {
     throw new Error('Resposta inválida do servidor: formato não reconhecido');
   }
-  
+
   const data = res.data || res;
   if (!data || typeof data !== 'object') {
     throw new Error('Resposta inválida do servidor: dados não disponíveis');
   }
-  
+
   if (data.success === false || !data.success) {
     throw new Error(data.error || 'Erro desconhecido no adminSave');
   }
-  
+
   return data;
 }
 
