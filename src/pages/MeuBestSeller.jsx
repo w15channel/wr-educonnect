@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   BookOpen, Plus, Trash2, ChevronLeft, Download, Wand2,
-  Loader2, Image, AlignLongLeft, FileText, BookMarked, Lightbulb, ChevronDown, ChevronUp,
+  Loader2, Image, AlignLeft, FileText, BookMarked, Lightbulb, ChevronDown, ChevronUp,
   Sparkles, Award, FileEdit, TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -383,7 +383,6 @@ export default function MeuBestSeller() {
           </div>
         </div>
 
-        {/* Book header */}
         <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
           <div className="flex items-start gap-4">
             <div
@@ -445,7 +444,7 @@ export default function MeuBestSeller() {
 
         <Tabs defaultValue="chapters">
           <TabsList className="mb-4 flex-wrap h-auto">
-            <TabsTrigger value="chapters"><AlignLongLeft size={13} className="mr-1.5" /> Capítulos</TabsTrigger>
+            <TabsTrigger value="chapters"><AlignLeft size={13} className="mr-1.5" /> Capítulos</TabsTrigger>
             <TabsTrigger value="meta"><FileText size={13} className="mr-1.5" /> Dedicatória & Prefácio</TabsTrigger>
             <TabsTrigger value="references"><BookMarked size={13} className="mr-1.5" /> Referências</TabsTrigger>
             <TabsTrigger value="guide"><Lightbulb size={13} className="mr-1.5" /> Guia de Escrita</TabsTrigger>
@@ -649,33 +648,30 @@ export default function MeuBestSeller() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {books.map(book => {
-            const bookChapters = chapters.filter(ch => ch.book_id === book.id);
-            return (
-              <button
-                key={book.id}
-                onClick={() => setSelectedBook(book)}
-                className="bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all text-left group"
-              >
-                <div className="aspect-[3/2] relative overflow-hidden">
-                  {book.cover_image_url
-                    ? <img src={book.cover_image_url} alt="capa" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    : <div className="w-full h-full bg-gradient-to-br from-primary/80 to-accent/80 flex items-center justify-center">
-                        <BookOpen size={32} className="text-white opacity-60" />
-                      </div>
-                  }
+          {books.map(book => (
+            <button
+              key={book.id}
+              onClick={() => setSelectedBook(book)}
+              className="bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all text-left group"
+            >
+              <div className="aspect-[3/2] relative overflow-hidden">
+                {book.cover_image_url
+                  ? <img src={book.cover_image_url} alt="capa" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  : <div className="w-full h-full bg-gradient-to-br from-primary/80 to-accent/80 flex items-center justify-center">
+                      <BookOpen size={32} className="text-white opacity-60" />
+                    </div>
+                }
+              </div>
+              <div className="p-4">
+                <p className="font-bold text-sm text-foreground truncate">{book.title}</p>
+                {book.subtitle && <p className="text-xs text-muted-foreground truncate">{book.subtitle}</p>}
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className={`text-[10px] ${STATUS_COLORS[book.status]}`}>{STATUS_LABELS[book.status]}</Badge>
+                  <span className="text-[10px] text-muted-foreground">{book.page_format}</span>
                 </div>
-                <div className="p-4">
-                  <p className="font-bold text-sm text-foreground truncate">{book.title}</p>
-                  {book.subtitle && <p className="text-xs text-muted-foreground truncate">{book.subtitle}</p>}
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge className={`text-[10px] ${STATUS_COLORS[book.status]}`}>{STATUS_LABELS[book.status]}</Badge>
-                    <span className="text-[10px] text-muted-foreground">{book.page_format}</span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+              </div>
+            </button>
+          ))}
         </div>
       )}
 
