@@ -23,7 +23,7 @@ function MSNAvatar({ color = '#3b82f6', size = 28 }) {
       <ellipse cx="16" cy="23" rx="8" ry="6" fill={color}/>
       <ellipse cx="10" cy="20" rx="3" ry="5" fill={color} transform="rotate(-20 10 20)"/>
       <ellipse cx="22" cy="20" rx="3" ry="5" fill={color} transform="rotate(20 22 20)"/>
-      <circle cx="14" cy="8" r="1.2" fill="#fff" opacity="0.7"/>
+      <circle cx="14" cy="8" r="1.2" fill="#fff" opacity="0.7" />
     </svg>
   );
 }
@@ -143,18 +143,18 @@ export default function DirectMessage() {
 
   if (!canMessageTarget) {
     return (
-      <div className="p-6 text-center text-[#4f5f87]">
-        <button onClick={() => navigate('../chat')} className="text-[#25449c] text-sm hover:underline mb-4">← Voltar ao chat geral</button>
+      <div className="p-6 text-center text-muted-foreground">
+        <button onClick={() => navigate('../chat')} className="text-primary text-sm hover:underline mb-4">← Voltar ao chat geral</button>
         <p>Este aluno não pertence à turma atual.</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl h-[calc(100vh-80px)] md:h-[calc(100vh-32px)] p-3 bg-[#b9cdf3]">
+    <div className="mx-auto max-w-4xl h-[calc(100vh-80px)] md:h-[calc(100vh-32px)] p-3 bg-gradient-to-b from-rose-50/40 to-secondary/20">
       {showProfile && <StudentProfileCard email={target.email} onClose={() => setShowProfile(false)} />}
-      <div className="h-full rounded-md border border-[#3a5db6] shadow-[0_2px_0_#fff,inset_0_1px_0_rgba(255,255,255,.7)] bg-[#dfe9fb] overflow-hidden" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
-        <div className="h-8 px-3 bg-gradient-to-r from-[#2f58b6] via-[#4e7de0] to-[#2f58b6] text-white flex items-center">
+      <div className="h-full rounded-2xl border border-rose-100 bg-background/85 shadow-sm overflow-hidden dark:border-white/20 dark:bg-black">
+        <div className="h-8 px-3 bg-gradient-to-r from-rose-500 to-rose-600 text-white flex items-center">
           <button onClick={() => navigate('../chat')} className="mr-2 text-white/80 hover:text-white" title="Voltar ao chat geral">
             <ArrowLeft size={15} />
           </button>
@@ -163,7 +163,7 @@ export default function DirectMessage() {
           <div className="ml-auto flex items-center gap-2"><Minus size={13}/><Square size={11}/><X size={13}/></div>
         </div>
 
-        <div className="h-24 px-4 bg-gradient-to-b from-[#c9efff] to-[#edf7ff] border-b border-[#abc0ea] flex items-center gap-4">
+        <div className="h-24 px-4 bg-gradient-to-b from-rose-50/40 to-secondary/20 border-b border-rose-100 dark:border-white/20 flex items-center gap-4">
           <button type="button" onClick={() => setShowProfile(true)} className={`relative rounded-md ${target.online ? 'shadow-[0_0_0_2px_#70c843,0_2px_8px_rgba(0,0,0,.18)]' : 'shadow-[0_0_0_2px_#ef4444,0_2px_8px_rgba(0,0,0,.18)]'}`} title="Ver mini perfil">
             {target.photo ? (
               <img src={target.photo} alt={target.name} className="w-16 h-16 rounded-md object-cover border-4 border-white" />
@@ -175,20 +175,20 @@ export default function DirectMessage() {
             <span className={`absolute -right-1 -bottom-1 w-4 h-4 rounded-full border-2 border-white ${target.online ? 'bg-green-500' : 'bg-red-500'}`} />
           </button>
           <div className="min-w-0">
-            <h2 className="text-2xl text-[#24436b] leading-tight truncate">{target.name}</h2>
-            {target.nickname && <p className="text-sm text-[#2e6da4] truncate -mt-0.5">“{target.nickname}”</p>}
+            <h2 className="text-2xl text-foreground dark:text-white leading-tight truncate">{target.name}</h2>
+            {target.nickname && <p className="text-sm text-primary truncate -mt-0.5">“{target.nickname}”</p>}
             <p className={`text-xs font-bold ${target.online ? 'text-green-700' : 'text-red-600'}`}>{target.online ? '🟢 Online' : '🔴 Ausente'} · Conversa particular</p>
-            <p className="text-xs text-[#5c7399] truncate">{statusText}</p>
-            <p className="text-xs text-[#5c7399] truncate">🔒 Mensagens privadas no EDU Live Messenger</p>
+            <p className="text-xs text-muted-foreground truncate">{statusText}</p>
+            <p className="text-xs text-muted-foreground truncate">🔒 Mensagens privadas no EDU Live Messenger</p>
           </div>
         </div>
 
-        <div className="h-[calc(100%-8rem)] flex flex-col bg-white">
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 bg-white">
+        <div className="h-[calc(100%-8rem)] flex flex-col bg-background dark:bg-black">
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 bg-background dark:bg-black">
             {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full gap-2 text-center text-[#7182ac]">
+              <div className="flex flex-col items-center justify-center h-full gap-2 text-center text-muted-foreground">
                 <MSNAvatar color={target.color} size={58} />
-                <p className="font-bold text-[#25449c]">Inicie a conversa com {target.name}!</p>
+                <p className="font-bold text-foreground dark:text-white">Inicie a conversa com {target.name}!</p>
                 <p className="text-sm">Suas mensagens são privadas.</p>
               </div>
             )}
@@ -198,31 +198,31 @@ export default function DirectMessage() {
               const time = rawDate ? rawDate.toISOString().slice(11, 16) : '';
               return (
                 <div key={msg.id} className="text-[13px] leading-relaxed group">
-                  <span className="text-[11px] text-[#6f7ba8]">[{time}] </span>
-                  <span className="font-bold" style={{ color: isMe ? '#0d5d9a' : target.color }}>
+                  <span className="text-[11px] text-muted-foreground">[{time}] </span>
+                  <span className="font-bold text-foreground dark:text-white">
                     {isMe ? 'Você' : msg.author_name}
                   </span>
-                  <span className="text-[#1f2937]"> diz:</span>
-                  <span className="ml-1 text-[#0f172a]">{msg.content}</span>
-                  <button type="button" onClick={() => shareMessageExternal(msg)} className="ml-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold text-[#5471b9] opacity-0 transition group-hover:opacity-100 hover:bg-blue-50" title="Compartilhar em aplicativos externos" aria-label="Compartilhar em aplicativos externos"><Share2 size={11}/></button>
+                  <span className="text-muted-foreground"> diz:</span>
+                  <span className="ml-1 text-foreground dark:text-white">{msg.content}</span>
+                  <button type="button" onClick={() => shareMessageExternal(msg)} className="ml-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold text-primary opacity-0 transition group-hover:opacity-100 hover:bg-rose-50" title="Compartilhar em aplicativos externos" aria-label="Compartilhar em aplicativos externos"><Share2 size={11}/></button>
                 </div>
               );
             })}
             <div ref={bottomRef} />
           </div>
 
-          <div className="shrink-0 border-t border-[#abc0ea] bg-[#edf3ff] p-2">
+          <div className="shrink-0 border-t border-rose-100 bg-rose-50/20 dark:border-white/20 dark:bg-black">
             <div className="flex items-center gap-2 mb-2 px-1">
-              <Smile size={15} className="text-[#3f62ba]" />
+              <Smile size={15} className="text-primary" />
               <div className="flex gap-1 overflow-x-auto">
                 {CHAT_EMOJIS.slice(0, 10).map(e => (
-                  <button key={e} type="button" onClick={() => setText(prev => `${prev}${e}`)} className="w-7 h-7 border border-[#c8d7f5] bg-white rounded hover:bg-[#f2f7ff] text-sm">{e}</button>
+                  <button key={e} type="button" onClick={() => setText(prev => `${prev}${e}`)} className="w-7 h-7 border border-rose-200 dark:border-white/20 bg-background dark:bg-black rounded hover:bg-rose-50 dark:hover:bg-white/10 text-sm">{e}</button>
                 ))}
               </div>
             </div>
             <div className="flex gap-2 items-center">
               <input
-                className="flex-1 h-9 px-3 text-sm border border-[#abc0ea] rounded bg-white focus:outline-none"
+                className="flex-1 h-9 px-3 text-sm border border-rose-200 dark:border-white/20 rounded bg-input text-foreground dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-300"
                 placeholder={`Digite uma mensagem para ${target.name}...`}
                 value={text}
                 onChange={e => setText(e.target.value)}
@@ -232,7 +232,7 @@ export default function DirectMessage() {
               <button
                 onClick={sendMessage}
                 disabled={!text.trim()}
-                className="h-9 px-4 rounded bg-[#4f7de0] text-white text-sm font-semibold disabled:opacity-50"
+                className="h-9 px-4 rounded bg-rose-500 text-white text-sm font-semibold hover:bg-rose-600 disabled:opacity-50"
               >
                 <Send size={14} className="inline mr-1"/>Enviar
               </button>
