@@ -42,14 +42,21 @@ const routeLabels = {
   '/monitores': 'Monitores',
   '/terapeuta': 'Terapeuta da Semana',
   '/bestseller': 'Meu Best Seller',
-  '/historico': 'Histórico Acadêmico',
-  '/classe': 'Classe',
+  '/historico': 'Pontuação & Histórico',
+  '/classe': 'Turma',
   '/practice': 'Mentorias',
+  '/ofensivas': 'Ofensivas',
+  '/meu-certificado': 'Meu Certificado',
+  '/study-profile': 'Perfil de Estudos',
+  '/ring': 'Notificações',
+  '/debates': 'Sala de Debates',
+  '/keys': 'Códigos de Acesso',
+  '/exams': 'Provas',
+  '/checklist': 'Checklist',
 };
 
 function stripScopedPrefix(pathname) {
   const parts = pathname.split('/').filter(Boolean);
-  // New flat format: /student/dashboard or /adm/dashboard — strip just the role prefix
   if (parts[0] === 'student' || parts[0] === 'adm') {
     return '/' + parts.slice(1).join('/');
   }
