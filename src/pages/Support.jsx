@@ -40,6 +40,18 @@ export default function Support() {
     onSuccess: () => { invalidate(); toast.success('Situação do chamado atualizada.'); },
   });
 
+  const editMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.SupportTicket.update(id, data),
+    onSuccess: () => { invalidate(); toast.success('Chamado atualizado com sucesso.'); },
+    onError: () => toast.error('Não foi possível atualizar o chamado.'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.SupportTicket.delete(id),
+    onSuccess: () => { invalidate(); toast.success('Chamado excluído.'); },
+    onError: () => toast.error('Não foi possível excluir o chamado.'),
+  });
+
   return (
     <div className="app-page app-page--narrow animate-fade-in-up">
       <div className="mb-5">
@@ -87,6 +99,8 @@ export default function Support() {
               isTeacher={isTeacher}
               onRespond={(id, support_response) => respondMutation.mutate({ id, support_response })}
               onChangeStatus={(id, status) => statusMutation.mutate({ id, status })}
+              onEdit={(id, data) => editMutation.mutate({ id, data })}
+              onDelete={(id) => deleteMutation.mutate(id)}
             />
           ))}
         </div>
