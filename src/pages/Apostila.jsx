@@ -135,17 +135,18 @@ function ReadingViewport({ paragraphs, activeParagraph, activeWord, isPlaying, n
     >
       {paragraphs.map((paragraph, paragraphIndex) => {
         let wordIndex = -1;
+        const isParaActive = paragraphIndex === activeParagraph;
         return (
           <p
             key={`${paragraphIndex}-${paragraph.slice(0, 18)}`}
             data-reader-paragraph={paragraphIndex}
-            className={paragraphIndex === activeParagraph && !nativeFallback ? 'rounded-lg bg-emerald-500/20 px-2 py-1 ring-1 ring-emerald-500/30' : undefined}
-            aria-current={paragraphIndex === activeParagraph ? 'true' : undefined}
+            className={isParaActive ? 'rounded-lg bg-emerald-500/20 px-2 py-1 ring-1 ring-emerald-500/30 transition-all duration-300' : undefined}
+            aria-current={isParaActive ? 'true' : undefined}
           >
             {getWordParts(paragraph).map((part, partIndex) => {
               if (/^\s+$/.test(part)) return <React.Fragment key={partIndex}>{part}</React.Fragment>;
               wordIndex += 1;
-              const isCurrentWord = nativeFallback && paragraphIndex === activeParagraph && wordIndex === activeWord;
+              const isCurrentWord = nativeFallback && isParaActive && wordIndex === activeWord;
               return (
                 <span
                   key={partIndex}
@@ -432,14 +433,9 @@ export default function Apostila() {
 
     setReader((current) => ({ ...current, lessonKey, paragraphIndex, wordIndex: 0, rate, isPlaying: true, nativeFallback: false }));
 
-    // If voice is muted, skip AI generation entirely and use native fallback only
-    if (isVoiceMuted()) {
-      if (readerSessionRef.current === sessionId) startNativeFallback();
-      return;
-    }
-
+    // Always try Luna voice first (force = true bypasses mute setting)
     try {
-      const audio = await createBase44VoiceAudio(text);
+      const audio = await createBase44VoiceAudio(text, { force: true });
       if (!audio) {
         if (readerSessionRef.current === sessionId) startNativeFallback();
         return;
@@ -451,6 +447,29 @@ export default function Apostila() {
       }
       audio.playbackRate = rate;
       readerAudioRef.current = audio;
+
+      // Track which paragraph is being read based on audio progress
+      audio.ontimeupdate = () => {
+        if (readerSessionRef.current !== sessionId) return;
+        if (!audio.duration || !isFinite(audio.duration)) return;
+        const progress = audio.currentTime / audio.duration;
+        const totalChars = text.length;
+        const currentChar = Math.floor(progress * totalChars);
+
+        let relParaIndex = 0;
+        for (let i = paragraphOffsets.length - 1; i >= 0; i--) {
+          if (currentChar >= paragraphOffsets[i]) {
+            relParaIndex = i;
+            break;
+          }
+        }
+
+        const absoluteParaIndex = paragraphIndex + relParaIndex;
+        if (absoluteParaIndex !== readerRef.current.paragraphIndex) {
+          setReader((state) => ({ ...state, paragraphIndex: absoluteParaIndex }));
+        }
+      };
+
       let fallbackStarted = false;
       const fallbackOnce = () => {
         if (fallbackStarted || readerSessionRef.current !== sessionId) return;
@@ -662,8 +681,8 @@ export default function Apostila() {
                                       >{r}x</button>
                                     ))}
                                   </div>
-                                  {isVoiceMuted() && (
-                                    <span className="text-[10px] text-amber-500 font-semibold ml-2">Voz da Luna desligada — usando narração do navegador</span>
+                                  {reader.lessonKey === lessonKey && reader.nativeFallback && (
+                                    <span className="text-[10px] text-amber-500 font-semibold ml-2">Voz da Luna indisponível — usando narração do navegador</span>
                                   )}
                                 </div>
 
