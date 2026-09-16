@@ -16,7 +16,7 @@ export default function ChecklistReturnBar() {
   const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 px-3 w-full max-w-md">
+    <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 px-3 w-full max-w-md">
       <button
         type="button"
         onClick={() => navigate(`${prefix}/checklist?module=${moduleNumber}`)}
