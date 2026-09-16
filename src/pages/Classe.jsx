@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { MessageCircle, Trophy, Crown, Star, Search, Phone, X } from 'lucide-react';
+import { MessageCircle, Trophy, Crown, Star, Search, Phone, X, Users, Award } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { startOfWeek, format } from 'date-fns';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
+import Monitores from './Monitores';
 
 function getBrTime() {
   // GMT-3
@@ -68,7 +70,6 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
 
   return (
     <div role="button" tabIndex={0} onClick={() => onOpenDetails?.({ profile, code })} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenDetails?.({ profile, code }); }} className="relative w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex flex-col items-center gap-3 text-center shadow-sm hover:shadow-lg hover:border-white/20 transition-all duration-200 cursor-pointer">
-      {/* Destaques/badges */}
       <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
         {isMonitor && (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">
@@ -82,8 +83,6 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
           </span>
         )}
       </div>
-
-      {/* Posição no ranking */}
       {rank && (
         <div className="absolute top-3 left-3">
           <span className="text-[10px] font-bold text-primary/70 bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded-full">
@@ -91,8 +90,6 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
           </span>
         </div>
       )}
-
-      {/* Avatar */}
       <StudentAvatar
         name={name}
         photoUrl={photoUrl}
@@ -100,8 +97,6 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
         avatarEmoji={avatarEmoji}
         size={64}
       />
-
-      {/* Info */}
       <div className="w-full min-w-0">
         <p className="font-bold text-foreground text-sm leading-tight truncate">{publicName}</p>
         {nickname && <p className="text-xs text-muted-foreground truncate">"{nickname}"</p>}
@@ -113,8 +108,6 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
           </div>
         )}
       </div>
-
-      {/* Actions */}
       {!isMe && (
         <div className="flex gap-2 w-full mt-1">
           <button
@@ -140,8 +133,6 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, s
   );
 }
 
-
-
 function getAge(birthDate) {
   if (!birthDate) return null;
   const birth = new Date(`${birthDate}T12:00:00`);
@@ -158,6 +149,7 @@ export default function Classe() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [activeTab, setActiveTab] = useState('turma');
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
 
@@ -181,7 +173,6 @@ export default function Classe() {
     queryFn: () => base44.entities.MonitorHistory.list('-period_start', 50),
   });
 
-  // Current week monitors
   const today = new Date();
   const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
   const currentMonitors = monitorHistory.filter(m =>
@@ -189,14 +180,12 @@ export default function Classe() {
   );
   const monitorEmails = new Set(currentMonitors.map(m => m.student_email));
 
-  // Filter emails by route course (/tcc => only EDU- students)
   const courseEmailSet = courseEmails || new Set(
     codes
       .filter(c => c.course === activeCourse && c.student_email && (!codePrefix || (c.code || '').startsWith(codePrefix)))
       .map(c => c.student_email)
   );
 
-  // Ranking filtrado por curso
   const rankMap = {};
   scoreItems.filter(s => s.verified).forEach(s => {
     if (!s.student_email) return;
@@ -211,10 +200,8 @@ export default function Classe() {
   const rankPosition = {};
   rankingList.forEach(([email], idx) => { rankPosition[email] = idx + 1; });
 
-  // Maior pontuador da semana (1º lugar do ranking)
   const weeklyTopEmail = rankingList[0]?.[0];
 
-  // Active students filtered by same course as logged-in student
   const activeStudents = codes.filter(c =>
     c.is_active !== false &&
     c.student_email &&
@@ -222,20 +209,17 @@ export default function Classe() {
     (!courseEmailSet || courseEmailSet.has(c.student_email))
   );
 
-  // Merge profile data
   const students = activeStudents.map(code => {
     const profile = profiles.find(p => p.student_email === code.student_email);
     return { code, profile };
   });
 
-  // Sort alphabetically
   const sorted = [...students].sort((a, b) => {
     const nameA = (a.profile?.full_name || a.code?.profile_name || a.code?.student_name || '').toLowerCase();
     const nameB = (b.profile?.full_name || b.code?.profile_name || b.code?.student_name || '').toLowerCase();
     return nameA.localeCompare(nameB, 'pt-BR');
   });
 
-  // Filter by search
   const filtered = sorted.filter(({ code, profile }) => {
     const name = (profile?.full_name || code?.profile_name || code?.student_name || '').toLowerCase();
     const nick = (profile?.nickname || '').toLowerCase();
@@ -247,89 +231,102 @@ export default function Classe() {
     <div className="app-page max-w-6xl mx-auto animate-fade-in-up">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-xl lg:text-2xl font-bold text-foreground">Classe</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Conheça seus colegas de turma</p>
+        <h2 className="text-xl lg:text-2xl font-bold text-foreground">Turma</h2>
+        <p className="text-muted-foreground text-sm mt-0.5">Conheça seus colegas e os monitores da semana</p>
       </div>
 
-      {/* Destaques da semana */}
-      {(currentMonitors.length > 0 || weeklyTopEmail) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-          {currentMonitors.length > 0 && (
-            <div className="bg-yellow-500/5 backdrop-blur-md border border-yellow-400/20 rounded-2xl p-4 flex items-center gap-3">
-              <Crown size={28} className="text-yellow-400 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-yellow-600 uppercase tracking-wide">Monitores da Semana</p>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {currentMonitors.sort((a, b) => a.rank_position - b.rank_position).map(m => (
-                    <span key={m.id} className="text-xs font-semibold text-foreground bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full">
-                      {m.rank_position === 1 ? '🥇' : m.rank_position === 2 ? '🥈' : '🥉'} {m.student_name}
-                    </span>
-                  ))}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-5 flex-wrap h-auto">
+          <TabsTrigger value="turma"><Users size={13} className="mr-1.5" /> Colegas</TabsTrigger>
+          <TabsTrigger value="podio"><Crown size={13} className="mr-1.5" /> Pódio & Monitores</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="turma">
+          {/* Destaques da semana */}
+          {(currentMonitors.length > 0 || weeklyTopEmail) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              {currentMonitors.length > 0 && (
+                <div className="bg-yellow-500/5 backdrop-blur-md border border-yellow-400/20 rounded-2xl p-4 flex items-center gap-3">
+                  <Crown size={28} className="text-yellow-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-yellow-600 uppercase tracking-wide">Monitores da Semana</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {currentMonitors.sort((a, b) => a.rank_position - b.rank_position).map(m => (
+                        <span key={m.id} className="text-xs font-semibold text-foreground bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full">
+                          {m.rank_position === 1 ? '🥇' : m.rank_position === 2 ? '🥈' : '🥉'} {m.student_name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+              {weeklyTopEmail && (
+                <div className="bg-emerald-500/5 backdrop-blur-md border border-emerald-400/20 rounded-2xl p-4 flex items-center gap-3">
+                  <Star size={28} className="text-emerald-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Maior Pontuador da Semana</p>
+                    <p className="text-sm font-bold text-foreground mt-0.5">
+                      {(() => {
+                        const c = codes.find(c => c.student_email === weeklyTopEmail);
+                        const p = profiles.find(p => p.student_email === weeklyTopEmail);
+                        return p?.full_name || c?.profile_name || c?.student_name || weeklyTopEmail;
+                      })()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">1º lugar no ranking geral da turma</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
-          {weeklyTopEmail && (
-            <div className="bg-emerald-500/5 backdrop-blur-md border border-emerald-400/20 rounded-2xl p-4 flex items-center gap-3">
-              <Star size={28} className="text-emerald-400 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Maior Pontuador da Semana</p>
-                <p className="text-sm font-bold text-foreground mt-0.5">
-                  {(() => {
-                    const c = codes.find(c => c.student_email === weeklyTopEmail);
-                    const p = profiles.find(p => p.student_email === weeklyTopEmail);
-                    return p?.full_name || c?.profile_name || c?.student_name || weeklyTopEmail;
-                  })()}
-                </p>
-                <p className="text-xs text-muted-foreground">1º lugar no ranking geral da turma</p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Search */}
-      <div className="relative mb-5">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar colega por nome ou apelido..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-9 h-10"
-        />
-      </div>
-
-      {/* Grid */}
-      {loadingCodes ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[1,2,3,4,5,6].map(i => (
-            <div key={i} className="bg-card rounded-2xl border border-border animate-pulse h-52" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <p className="text-lg font-semibold">Nenhum aluno encontrado</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map(({ code, profile }) => (
-            <StudentCard
-              key={code.id}
-              code={code}
-              profile={profile}
-              rank={rankPosition[code.student_email]}
-              isMonitor={monitorEmails.has(code.student_email)}
-              monitorRank={currentMonitors.find(m => m.student_email === code.student_email)?.rank_position}
-              isTopTask={code.student_email === weeklyTopEmail}
-              onOpenDetails={setSelectedStudent}
-              session={session}
-              navigate={navigate}
+          {/* Search */}
+          <div className="relative mb-5">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar colega por nome ou apelido..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 h-10"
             />
-          ))}
-        </div>
-      )}
+          </div>
 
-      <p className="text-center text-xs text-muted-foreground mt-6">{filtered.length} aluno{filtered.length !== 1 ? 's' : ''} na turma</p>
+          {/* Grid */}
+          {loadingCodes ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[1,2,3,4,5,6].map(i => (
+                <div key={i} className="bg-card rounded-2xl border border-border animate-pulse h-52" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-20 text-muted-foreground">
+              <p className="text-lg font-semibold">Nenhum aluno encontrado</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filtered.map(({ code, profile }) => (
+                <StudentCard
+                  key={code.id}
+                  code={code}
+                  profile={profile}
+                  rank={rankPosition[code.student_email]}
+                  isMonitor={monitorEmails.has(code.student_email)}
+                  monitorRank={currentMonitors.find(m => m.student_email === code.student_email)?.rank_position}
+                  isTopTask={code.student_email === weeklyTopEmail}
+                  onOpenDetails={setSelectedStudent}
+                  session={session}
+                  navigate={navigate}
+                />
+              ))}
+            </div>
+          )}
+
+          <p className="text-center text-xs text-muted-foreground mt-6">{filtered.length} aluno{filtered.length !== 1 ? 's' : ''} na turma</p>
+        </TabsContent>
+
+        <TabsContent value="podio">
+          <Monitores />
+        </TabsContent>
+      </Tabs>
 
       {selectedStudent && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedStudent(null)}>
@@ -380,7 +377,6 @@ export default function Classe() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
