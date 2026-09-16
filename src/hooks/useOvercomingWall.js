@@ -200,7 +200,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     return [
       ...institutionalRecords.shared.map((item) => ({ ...item, feedType: 'institutional', icon: 'share', occurredAt: item.published_at || item.created_date })),
       ...institutionalRecords.notices
-        .filter((item) => item.type !== 'unlock_rule' && new Date(item.created_date).getTime() >= recentLimit)
+        .filter((item) => item.type !== 'unlock_rule' && !item.recipient_email && new Date(item.created_date).getTime() >= recentLimit)
         .map((item) => personalizeWallNotice(item, session?.email, getStudentName))
         .map((item) => ({ id: `notice-${item.id}`, feedType: 'institutional', icon: 'notice', title: item.title || 'Recado importante', content: item.content, occurredAt: item.created_date })),
       ...institutionalRecords.liveSessions
