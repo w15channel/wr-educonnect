@@ -273,7 +273,7 @@ export default function Tasks({ mode = 'tasks' }) {
     <div className="app-page max-w-[900px] mx-auto animate-fade-in-up">
       {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'task', message: 'respondeu uma tarefa com dedicação.' }} message="Tarefa entregue! Parabéns pela dedicação! 🎉" onClose={() => setCelebrating(false)} />}
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-5">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             <ClipboardList size={22} className="text-primary" />
@@ -288,7 +288,7 @@ export default function Tasks({ mode = 'tasks' }) {
         </div>
 
         {isTeacher && (
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             {mode === 'tests' && (
               <Button
                 variant="outline"
