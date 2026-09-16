@@ -33,6 +33,22 @@ const APOSTILA_READ_KEY = (email, course) => `wr_apostila_read_${course}_${email
 const APOSTILA_AUTHOR_EMAIL = 'apostila@wr-edu.local';
 const INLINE_CONTENT_LIMIT = 6000;
 
+const APOSTILA_HEADER_TITLE =
+  'INTRODUÇÃO À TERAPIA COMPORTAMENTAL: O OLHAR QUE TRANSFORMA VIDAS';
+const APOSTILA_HEADER_AUTHOR =
+  'Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano';
+
+/**
+ * Substitui o título da aula (tudo antes da linha "Prof. William Ribeiro")
+ * pelo título padronizado da apostila.
+ */
+function normalizeApostilaHeader(content) {
+  if (!content) return content;
+  const idx = content.indexOf(APOSTILA_HEADER_AUTHOR);
+  if (idx <= 0) return content;
+  return APOSTILA_HEADER_TITLE + '\n' + content.slice(idx);
+}
+
 function safeFilePart(value = '') {
   return String(value)
     .normalize('NFD')
@@ -249,7 +265,7 @@ export default function Apostila() {
       chapter_title: chapter.title,
       lesson_id: lesson.id,
       title: lesson.title || 'Aula da apostila',
-      content: getLessonHtml(lesson.content || ''),
+      content: getLessonHtml(normalizeApostilaHeader(lesson.content || '')),
       order: (chapterIndex * 100) + lessonIndex + 1,
     }))), [session?.email]);
 
@@ -280,9 +296,12 @@ export default function Apostila() {
     ...chapter,
     lessons: chapter.lessons.map((lesson) => {
       const savedLesson = savedLessonByKey.get(`${chapter.id}__${lesson.id}`);
-      return savedLesson
-        ? { ...lesson, title: savedLesson.title || lesson.title, content: savedLesson.content ?? lesson.content }
-        : lesson;
+      const rawContent = savedLesson?.content ?? lesson.content ?? '';
+      return {
+        ...lesson,
+        title: savedLesson?.title || lesson.title,
+        content: normalizeApostilaHeader(rawContent),
+      };
     }),
   })), [savedLessonByKey]);
 
