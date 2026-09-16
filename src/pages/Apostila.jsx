@@ -586,7 +586,7 @@ export default function Apostila() {
                             ) : (
                               <>
                                 <ReadingViewport
-n                                  paragraphs={paragraphs}
+                                  paragraphs={paragraphs}
                                   activeParagraph={reader.lessonKey === lessonKey ? reader.paragraphIndex : -1}
                                   activeWord={reader.lessonKey === lessonKey ? reader.wordIndex : -1}
                                   isPlaying={reader.lessonKey === lessonKey && reader.isPlaying}
