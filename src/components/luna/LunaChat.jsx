@@ -7,21 +7,23 @@ import useLunaVoice from '@/hooks/useLunaVoice';
 import LunaBubble from '@/components/luna/LunaBubble';
 import LunaShortcuts from '@/components/luna/LunaShortcuts';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
-import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting } from '@/lib/lunaPersona';
+import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting, searchApostila } from '@/lib/lunaPersona';
 import { SUPPORT_CATEGORIES } from '@/components/support/SupportTicketForm';
 import { toast } from 'sonner';
 
 const LUNA_SUPPORT_PROMPT_SUFFIX = `
 
-MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de abertura de chamados. Nesta conversa, sua tarefa é:
-1. Perguntar o que o aluno precisa ou qual problema está enfrentando na plataforma.
-2. Após o aluno descrever, resumir o que entendeu e perguntar: "Deseja que eu abra um chamado formal para a equipe de suporte resolver isso?"
-3. Quando o aluno confirmar explicitamente que deseja abrir o chamado (respondendo sim, quero, pode abrir, etc.), preencha o campo "ticket" do JSON com:
+MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de suporte. Nesta conversa:
+1. Pergunte o que o aluno precisa ou qual problema está enfrentando na plataforma.
+2. TENTE RESOLVER o problema primeiro — use seu conhecimento da plataforma e do conteúdo do curso para ajudar de verdade.
+3. Se você conseguiu resolver, ótimo! Pergunte se precisa de mais alguma coisa.
+4. Se você NÃO conseguiu resolver após tentar, seja honesta: "Eu tentei te ajudar com isso, mas acho que isso precisa da equipe de suporte. Quer que eu abra um chamado formal pra você?"
+5. Só preencha o campo "ticket" do JSON QUANDO o aluno confirmar explicitamente que deseja abrir o chamado (respondendo sim, quero, pode abrir, etc.):
    - title: um resumo curto do problema (máximo 80 caracteres)
    - description: a descrição completa do problema relatado pelo aluno, em primeira pessoa
    - category: escolha a categoria mais adequada entre: ${SUPPORT_CATEGORIES.join(', ')}
-4. NÃO preencha o campo "ticket" se o aluno ainda não confirmou que deseja abrir o chamado.
-5. Após preencher o campo "ticket", confirme ao aluno que o chamado foi registrado e que a equipe entrará em contato.`;
+6. NÃO preencha o campo "ticket" se o aluno ainda não confirmou que deseja abrir o chamado.
+7. Após preencher o campo "ticket", confirme ao aluno que o chamado foi registrado e que a equipe entrará em contato.`;
 
 /**
  * Conversa com a Luna em balões — usada na página dela e na sobreposição
@@ -29,7 +31,7 @@ MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de abertura 
  */
 export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false }) {
   const voice = useLunaVoice();
-  const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo na plataforma. Pode me contar o que está acontecendo? Descreva o problema ou a solicitação e, se quiser, eu abro um chamado formal para a equipe de suporte resolver pra você.`;
+  const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo. Pode me contar o que está acontecendo? Vou tentar resolver pra você aqui mesmo — e se eu não conseguir, aí a gente vê sobre abrir um chamado pra equipe de suporte.`;
   const greeting = supportMode ? supportGreeting : lunaGreeting(session?.name);
   const [messages, setMessages] = useState([{ role: 'assistant', content: greeting }]);
   const [input, setInput] = useState('');
@@ -54,7 +56,19 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
     voice.stop();
     try {
       const history = next.map((m) => `${m.role === 'user' ? 'Aluno' : 'Luna'}: ${m.content}`).join('\n');
-      const systemPrompt = supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
+
+      // Buscar conteúdo da apostila relevante à pergunta do aluno
+      const apostilaResults = searchApostila(text, 3);
+      const apostilaContext = apostilaResults.length > 0
+        ? '\n\nCONTEÚDO DA APOSTILA RELACIONADO À PERGUNTA DO ALUNO (use para responder com base no material do curso):\n' +
+          apostilaResults.map((l) =>
+            `--- ${l.moduleTitle} > ${l.lessonTitle} ---\n${l.lessonContent}`
+          ).join('\n\n')
+        : '';
+
+      const basePrompt = supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
+      const systemPrompt = basePrompt + apostilaContext;
+
       const answer = await base44.integrations.Core.InvokeLLM({
         prompt: `${systemPrompt}\n\nNome do aluno: ${session?.name || 'Aluno'}\n\nConversa:\n${history}\n\nLuna:`,
         response_json_schema: {
@@ -128,7 +142,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         <div className="ofensiva-owl text-3xl" role="img" aria-label="Luna, assistente do site">🦉</div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-foreground dark:text-white">Luna · Assistente do site</p>
-          <p className="truncate text-[11px] text-muted-foreground">{supportMode ? 'Abertura de chamados — conte o que precisa' : 'Dúvidas da plataforma, estudos e apoio emocional'}</p>
+          <p className="truncate text-[11px] text-muted-foreground">{supportMode ? 'Suporte — conte o que precisa' : 'Dúvidas do curso, plataforma e apoio emocional'}</p>
         </div>
         <button
           onClick={voice.toggle}
