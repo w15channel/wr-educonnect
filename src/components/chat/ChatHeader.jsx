@@ -2,7 +2,7 @@ import React from 'react';
 import { Bell, Heart, Lock, Sparkles, MessageSquare } from 'lucide-react';
 
 export default function ChatHeader({ courseLabel, activeTab, onTabChange, isAdmin, notificationsEnabled, onNotifications }) {
-  const tabs = [{ id: 'geral', label: 'Mural de Superação', Icon: Heart }, { id: 'particular', label: 'Particular', Icon: Lock }, ...(!isAdmin ? [{ id: 'luna', label: 'Luna', Icon: Sparkles }] : [])];
+  const tabs = [{ id: 'geral', label: 'Mural de Superação', Icon: Heart }, ...(!isAdmin ? [{ id: 'luna', label: 'Luna', Icon: Sparkles }] : []), { id: 'particular', label: 'Particular', Icon: Lock }];
   return <header className="shrink-0 border-b border-border bg-card">
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><MessageSquare size={20} /></div>
