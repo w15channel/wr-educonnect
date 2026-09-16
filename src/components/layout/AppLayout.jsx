@@ -84,7 +84,7 @@ export default function AppLayout() {
 
   const showIndicator = pullY > 8;
   return (
-    <div className="app-shell-bg flex overflow-hidden md:pt-0" style={{ height: '100dvh' }}>
+    <div className="app-shell-bg flex overflow-hidden lg:pt-0" style={{ height: '100dvh' }}>
       <MobileSplash />
       {showAssistant && (
         <ProfileAssistant
@@ -96,13 +96,13 @@ export default function AppLayout() {
         />
       )}
 
-      {/* Desktop sidebar */}
-      <div className="hidden md:block shrink-0">
+      {/* Desktop sidebar — visível apenas em telas grandes (≥1024px) */}
+      <div className="hidden lg:block shrink-0">
         <Sidebar session={session} />
       </div>
 
-      {/* Mobile sidebar drawer */}
-      <div className="md:hidden">
+      {/* Mobile/Tablet sidebar drawer — abaixo de 1024px */}
+      <div className="lg:hidden">
         <Sidebar session={session} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
       </div>
 
@@ -112,7 +112,7 @@ export default function AppLayout() {
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
           {showIndicator && (
             <div
-              className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all pointer-events-none md:hidden"
+n              className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all pointer-events-none lg:hidden"
               style={{ height: pullY, overflow: 'hidden' }}
             >
               <div
