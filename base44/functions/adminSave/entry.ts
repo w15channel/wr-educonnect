@@ -13,6 +13,13 @@ const ADMIN_ENTITIES = new Set([
   'WallPublication',
 ]);
 
+// Entidades que teacher/suporte podem criar e atualizar (sem excluir)
+// Restritas a conteúdo acadêmico: aulas, tarefas, provas, avisos, calendário
+const TEACHER_ENTITIES = new Set([
+  'RecordedLesson', 'Task', 'LiveSession', 'Announcement',
+  'Exam', 'BookChapter', 'CalendarEvent',
+]);
+
 function cleanObject(obj = {}) {
   const out = {};
   for (const [key, value] of Object.entries(obj || {})) {
@@ -27,21 +34,46 @@ Deno.serve(async (req) => {
     const payload = await req.json().catch(() => ({}));
     const { action, entity, data, id, admin_email } = payload;
 
-    // Verificação de segurança: valida o email do admin na tabela AdminCredential
     if (!admin_email) {
       return Response.json({ error: 'admin_email obrigatório.' }, { status: 403 });
     }
 
     const normEmail = String(admin_email || '').trim().toLowerCase();
-    const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
-    const isValidAdmin = credentials.some(c => String(c.email || '').trim().toLowerCase() === normEmail);
 
-    if (!isValidAdmin) {
+    // ── Validação de identidade ────────────────────────────────────────
+    // Primeiro verifica se é admin (tabela AdminCredential)
+    const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
+    const isAdmin = credentials.some(c => String(c.email || '').trim().toLowerCase() === normEmail);
+
+    // Se não for admin, verifica se é teacher/suporte (tabela AccessCode)
+    let isTeacher = false;
+    if (!isAdmin) {
+      const codes = await base44.asServiceRole.entities.AccessCode.filter(
+        { student_email: normEmail }, '-created_date', 10
+      );
+      isTeacher = codes.some(c =>
+        c.is_active !== false &&
+        ['teacher', 'support', 'admin', 'management'].includes(c.profile_category)
+      );
+    }
+
+    if (!isAdmin && !isTeacher) {
       return Response.json({ error: 'Acesso não autorizado.' }, { status: 403 });
     }
 
-    if (!entity || !ADMIN_ENTITIES.has(entity)) {
-      return Response.json({ error: `Entidade '${entity}' não permitida.` }, { status: 400 });
+    // ── Permissões por perfil ─────────────────────────────────────────
+    // Teacher/suporte NÃO podem excluir — apenas admin
+    if (action === 'delete' && !isAdmin) {
+      return Response.json({ error: 'Exclusão restrita ao administrador.' }, { status: 403 });
+    }
+
+    // Teacher/suporte só podem operar entidades de conteúdo (criar/atualizar)
+    // Listagem é permitida para todas as entidades (somente leitura)
+    const isWriteOperation = ['create', 'update', 'upsertBookChapter', 'syncBookChapters'].includes(action);
+    const allowedEntities = (isWriteOperation && !isAdmin) ? TEACHER_ENTITIES : ADMIN_ENTITIES;
+
+    if (!entity || !allowedEntities.has(entity)) {
+      return Response.json({ error: `Entidade '${entity}' não permitida para este perfil.` }, { status: 400 });
     }
 
     const entityStore = base44.asServiceRole.entities[entity];
