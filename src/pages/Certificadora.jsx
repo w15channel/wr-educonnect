@@ -6,8 +6,12 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import MeuCertificado from './MeuCertificado';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import useStudentRecords from '@/hooks/useStudentRecords';
+import { ACTIVITY_MINUTES } from '@/lib/durationUtils';
 
-const TOTAL_PRACTICE = 10;
+const TOTAL_LESSONS = 50;
+const TOTAL_TASKS = 50;
+const TOTAL_PRACTICE = 15;
 const REMINDER_KEY = 'cert_last_reminder';
 const SOLICITUD_KEY = 'cert_solicitud_enviada';
 
@@ -74,35 +78,21 @@ export default function Certificadora() {
   };
 
   // ── Queries de progresso do aluno ──────────────────────────────────
-  const { data: lessonProgresses = [] } = useQuery({
-    queryKey: ['lesson-progress', session?.email],
-    queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email || '' }, '-created_date', 200),
-    enabled: !isTeacher && !!session?.email,
-  });
+  const { data: lessonProgresses = [] } = useStudentRecords('LessonProgress', session, !isTeacher);
+  const { data: taskSubmissions = [] } = useStudentRecords('TaskSubmission', session, !isTeacher);
 
-  const { data: taskSubmissions = [] } = useQuery({
-    queryKey: ['submissions-cert', session?.email],
-    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: session?.email || '' }, '-created_date', 200),
-    enabled: !isTeacher && !!session?.email,
-  });
-
-  const { data: therapistPairings = [] } = useQuery({
-    queryKey: ['therapist-pairings-cert'],
-    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 200),
-    enabled: !isTeacher && !!session?.email,
-  });
-
-  // ── Metas dinâmicas: totais reais do curso ─────────────────────────
-  const { data: courseLessons = [] } = useQuery({
-    queryKey: ['cert-lessons-total', session?.course],
-    queryFn: () => base44.entities.RecordedLesson.filter({ course: session?.course || 'tcc' }, 'order', 500),
-    enabled: !isTeacher && !!session?.course,
-  });
-
-  const { data: courseTasks = [] } = useQuery({
-    queryKey: ['cert-tasks-total', session?.course],
-    queryFn: () => base44.entities.Task.filter({ course: session?.course || 'tcc' }, '-created_date', 500),
-    enabled: !isTeacher && !!session?.course,
+  const { data: complementary = {} } = useQuery({
+    queryKey: ['cert-complementary-hours', session?.course],
+    queryFn: async () => {
+      const course = session?.course || 'tcc';
+      const posts = await base44.entities.ForumPost.filter({ course }, '-created_date', 1000);
+      const replies = await base44.entities.ForumReply.filter({ course }, '-created_date', 2000);
+      const pairings = await base44.entities.TherapistPairing.list('-pairing_date', 1000);
+      const mentorships = await base44.entities.Mentorship.filter({ course }, '-date', 500);
+      const challenges = await base44.entities.DailyChallengeResponse.filter({ course }, '-created_date', 2000);
+      return { posts, replies, pairings, mentorships, challenges };
+    },
+    enabled: !isTeacher && !!session,
   });
 
   // ── Verifica se já solicitou emissão ───────────────────────────────
@@ -112,19 +102,23 @@ export default function Certificadora() {
     setHasRequested(Boolean(local));
   }, [session?.email, isTeacher]);
 
-  const totalLessons = courseLessons.filter(l => !l.is_hidden).length;
-  const totalTasks = courseTasks.filter(t => !t.is_hidden).length;
-
-  const lessonsWatched = lessonProgresses.filter(p => p.watched).length;
-  const tasksSubmitted = taskSubmissions.length;
-  const practiceCompleted = therapistPairings.filter(p =>
-    (p.therapist_email === session?.email && p.therapist_submitted) ||
-    (p.patient_email === session?.email && p.patient_submitted)
-  ).length;
+  const identifiers = new Set([session?.email, session?.code].filter(Boolean).map((value) => String(value).trim().toLowerCase()));
+  const belongsToStudent = (value) => identifiers.has(String(value || '').trim().toLowerCase());
+  const lessonsWatched = new Set(lessonProgresses.filter((p) => p.watched && String(p.lesson_id || '').startsWith('apostila:')).map((p) => p.lesson_id)).size;
+  const tasksSubmitted = new Set(taskSubmissions.map((submission) => submission.task_id).filter(Boolean)).size;
+  const posts = complementary.posts || [];
+  const ownPosts = posts.filter((post) => belongsToStudent(post.author_email));
+  const postById = new Map(posts.map((post) => [post.id, post]));
+  const ownReplies = (complementary.replies || []).filter((reply) => belongsToStudent(reply.author_email) && !belongsToStudent(postById.get(reply.post_id)?.author_email));
+  const pairingHours = (complementary.pairings || []).reduce((total, pairing) => total + (belongsToStudent(pairing.therapist_email) && pairing.therapist_submitted ? ACTIVITY_MINUTES.therapist : 0) + (belongsToStudent(pairing.patient_email) && pairing.patient_submitted ? ACTIVITY_MINUTES.therapist : 0), 0);
+  const mentorshipMinutes = (complementary.mentorships || []).filter((item) => item.status !== 'cancelada' && (item.participant_emails || []).some(belongsToStudent)).reduce((total, item) => total + (Number(item.duration_minutes) || ACTIVITY_MINUTES.mentorship), 0);
+  const challengeMinutes = (complementary.challenges || []).filter((item) => belongsToStudent(item.student_email) && Number(item.points_earned) > 0).length * ACTIVITY_MINUTES.ofensiva;
+  const complementaryMinutes = (ownPosts.length + ownReplies.length) * ACTIVITY_MINUTES.forum + pairingHours + mentorshipMinutes + challengeMinutes;
+  const practiceCompleted = Math.round((complementaryMinutes / 60) * 10) / 10;
 
   const totalPct = isTeacher ? 0 : Math.round(
-    ((Math.min(lessonsWatched, totalLessons) / Math.max(totalLessons, 1)) +
-      (Math.min(tasksSubmitted, totalTasks) / Math.max(totalTasks, 1)) +
+    ((Math.min(lessonsWatched, TOTAL_LESSONS) / TOTAL_LESSONS) +
+      (Math.min(tasksSubmitted, TOTAL_TASKS) / TOTAL_TASKS) +
       (Math.min(practiceCompleted, TOTAL_PRACTICE) / TOTAL_PRACTICE)) / 3 * 100
   );
 
@@ -158,7 +152,7 @@ export default function Certificadora() {
 
       await base44.entities.Announcement.create({
         title: `Solicitação de Certificado - ${studentName}`,
-        content: `📋 Nova solicitação de emissão de certificado\n\nAluno: ${studentName}\nE-mail: ${studentEmail}\nCurso: ${courseName}\n\nProgresso atual:\n• Aulas assistidas: ${lessonsWatched}/${totalLessons}\n• Trabalhos entregues: ${tasksSubmitted}/${totalTasks}\n• Prática terapêutica: ${practiceCompleted}/${TOTAL_PRACTICE}\n• Progresso geral: ${totalPct}%\n\nO aluno solicitou a emissão do certificado. Acesse o Gerador de Certificados para revisar e emitir.`,
+        content: `📋 Nova solicitação de emissão de certificado\n\nAluno: ${studentName}\nE-mail: ${studentEmail}\nCurso: ${courseName}\n\nProgresso atual:\n• Aulas completas: ${lessonsWatched}/${TOTAL_LESSONS}\n• Tarefas entregues: ${tasksSubmitted}/${TOTAL_TASKS}\n• Prática terapêutica: ${practiceCompleted}/${TOTAL_PRACTICE} horas\n• Progresso geral: ${totalPct}%\n\nO aluno solicitou a emissão do certificado. Acesse o Gerador de Certificados para revisar e emitir.`,
         type: 'info',
         course,
       });
@@ -264,22 +258,22 @@ export default function Certificadora() {
           {/* 3 progress bars */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ProgressBar
-              label="Aulas Assistidas"
+              label="Aulas Completas"
               icon={BookOpen}
               colorClass="text-purple-500"
               current={lessonsWatched}
-              total={totalLessons}
+              total={TOTAL_LESSONS}
               unit=" aulas"
-              description="Assista e marque cada aula como concluída"
+              description="Aulas da apostila marcadas como lidas"
             />
             <ProgressBar
-              label="Trabalhos Entregues"
+              label="Tarefas Entregues"
               icon={FileText}
               colorClass="text-orange-500"
               current={tasksSubmitted}
-              total={totalTasks}
-              unit=" trabalhos"
-              description="Envie todos os trabalhos e atividades do curso"
+              total={TOTAL_TASKS}
+              unit=" tarefas"
+              description="Entregue as 50 tarefas previstas no curso"
             />
             <ProgressBar
               label="Prática Terapêutica"
@@ -288,7 +282,7 @@ export default function Certificadora() {
               current={practiceCompleted}
               total={TOTAL_PRACTICE}
               unit="h"
-              description="Sessões como terapeuta ou paciente concluídas"
+              description="Somatória de horas das atividades complementares"
             />
           </div>
 
@@ -331,9 +325,9 @@ export default function Certificadora() {
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
             <p className="font-bold mb-1">Como funciona a certificação?</p>
             <ol className="space-y-1 text-xs text-blue-700 list-decimal list-inside">
-              <li>Assista às {totalLessons || 'todas as'} aulas e marque-as como concluídas (com resumo e comentário)</li>
-              <li>Entregue os {totalTasks || 'todos os'} trabalhos e atividades do curso</li>
-              <li>Complete {TOTAL_PRACTICE} sessões de prática terapêutica (Terapeuta da Semana)</li>
+              <li>Marque como lidas as {TOTAL_LESSONS} aulas da apostila</li>
+              <li>Entregue as {TOTAL_TASKS} tarefas previstas no curso</li>
+              <li>Acumule {TOTAL_PRACTICE} horas em atividades complementares para a prática terapêutica</li>
               <li>Quando atingir 80% dos requisitos, solicite a emissão do certificado pelo botão acima</li>
               <li>A coordenação analisará seu pedido e emitirá seu certificado oficial</li>
             </ol>
