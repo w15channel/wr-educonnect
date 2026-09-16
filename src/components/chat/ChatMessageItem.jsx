@@ -4,7 +4,7 @@ import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 
 export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time, onEdit, onDelete, onShare, onShareExternal, sharing, shared, reactions }) {
   const content = (msg.content || '').replace('[MSN_ATTENTION]', '').replace('[MSN_ACTION]', '').trim();
-  return <article className={`min-w-0 rounded-xl border p-3 sm:p-4 ${isMe ? 'border-rose-200 bg-rose-50/60' : 'border-rose-100/70 bg-background/85 dark:border-white/20 dark:bg-black'}`}>
+  return <article className={`min-w-0 rounded-xl border p-3 sm:p-4 ${isMe ? 'border-rose-200 bg-rose-50/60 dark:border-white/20 dark:bg-black' : 'border-border/70 bg-background/85 dark:border-white/20 dark:bg-black'}`}>
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
       <ClickableStudent email={email} className="min-w-0 break-words text-sm font-semibold text-foreground">{name}</ClickableStudent>
       <span className="text-xs text-muted-foreground">{time}</span>
