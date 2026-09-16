@@ -15,10 +15,10 @@ export default function ChatFeedNotice({ msg, isPinned, readButton, isAdmin, sha
     : privateNotice
     ? 'border-violet-200 bg-violet-50 text-violet-950'
     : achievement
-    ? 'border-amber-200 bg-amber-50/80'
+    ? 'border-amber-200 bg-amber-50/80 dark:border-white dark:bg-white dark:text-black'
     : institutional
     ? 'border-sky-200 bg-gradient-to-r from-sky-50 to-indigo-50 text-slate-900 dark:border-sky-800 dark:from-sky-950/50 dark:to-indigo-950/50 dark:text-white'
-    : 'border-border bg-card';
+    : 'border-border/70 bg-background/85 dark:border-white/20 dark:bg-black dark:text-white';
 
   const iconClass = privateNotice
     ? 'text-violet-600'
