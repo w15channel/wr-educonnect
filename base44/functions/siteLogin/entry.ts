@@ -81,8 +81,9 @@ Deno.serve(async (req) => {
       const email = normalizeEmail(user.email);
       const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
       const credential = credentials.find((item) => normalizeEmail(item.email) === email);
+      const isPlatformAdmin = user.role === 'admin';
 
-      if (!credential) {
+      if (!credential && !isPlatformAdmin) {
         return Response.json({ error: 'Conta não autorizada como administradora.' }, { status: 403 });
       }
 
@@ -91,8 +92,8 @@ Deno.serve(async (req) => {
         session: {
           role: 'admin',
           profileCategory: 'admin',
-          name: 'Professor',
-          email: credential.email,
+          name: user.full_name || 'Professor',
+          email: credential?.email || user.email,
           course: null,
         },
       });
