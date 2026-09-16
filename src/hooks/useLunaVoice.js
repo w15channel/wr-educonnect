@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import useOwlVoice from '@/hooks/useOwlVoice';
-import { createBase44VoiceAudio, releaseBase44VoiceAudio } from '@/lib/base44Voice';
+import { createBase44VoiceAudio, releaseBase44VoiceAudio, isVoiceMuted } from '@/lib/base44Voice';
 
-/** Voz consistente da Luna, com narração nativa como reserva. */
+/**
+ * Voz consistente da Luna, com narração nativa como reserva.
+ * - Respeita o mute: se desligado, NÃO gera voz por IA.
+ * - Usa cache: reaproveita áudio já gerado para o mesmo texto.
+ */
 export default function useLunaVoice() {
   const fallback = useOwlVoice();
   const audioRef = useRef(null);
@@ -37,7 +41,18 @@ export default function useLunaVoice() {
     setSpeaking(true);
 
     try {
-      const audio = await createBase44VoiceAudio(text);
+      // createBase44VoiceAudio now checks mute internally and returns null if muted
+      const audio = await createBase44VoiceAudio(text, { force });
+
+      // If voice is muted, audio will be null — skip AI playback entirely
+      if (!audio) {
+        if (requestId === requestRef.current) {
+          setLoading(false);
+          setSpeaking(false);
+        }
+        return;
+      }
+
       if (requestId !== requestRef.current) {
         releaseBase44VoiceAudio(audio);
         return;
