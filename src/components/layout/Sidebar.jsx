@@ -415,16 +415,16 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   return (
     <>
       {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={handleClose} />
+        <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={handleClose} />
       )}
 
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-50
+        fixed lg:static inset-y-0 left-0 z-50
         w-56 flex flex-col
         sidebar-glass text-sidebar-foreground
         border-r border-sidebar-border
         transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo */}
         <div className="px-4 py-4 flex items-center justify-between border-b border-sidebar-border">
@@ -440,7 +440,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
               <p className="text-[9px] text-sidebar-foreground/55 -mt-0.5 leading-tight">Instituto de Desenvolvimento Humano</p>
             </div>
           </div>
-          <button onClick={handleClose} className="md:hidden text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent p-1 rounded-lg transition-colors">
+          <button onClick={handleClose} className="lg:hidden text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent p-1 rounded-lg transition-colors">
             <X size={16} />
           </button>
         </div>
