@@ -53,8 +53,16 @@ export default function useAdminModuleProgress({ course = 'tcc' } = {}) {
     queryKey: ['exam-releases', course],
     queryFn: () => base44.entities.ExamRelease.filter({ course }, '-released_at', 2000),
   });
+  const { data: exams = [], isLoading: l12 } = useQuery({
+    queryKey: ['admin-exams', course],
+    queryFn: () => base44.entities.Exam.filter({ course }, '-created_date', 300),
+  });
+  const { data: examSubmissions = [], isLoading: l13 } = useQuery({
+    queryKey: ['admin-exam-submissions'],
+    queryFn: () => base44.entities.ExamSubmission.list('-submitted_at', 3000),
+  });
 
-  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11;
+  const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11 || l12 || l13;
 
   const students = useMemo(() => codes.filter((code) => {
     if (!code?.student_email) return false;
@@ -75,7 +83,9 @@ export default function useAdminModuleProgress({ course = 'tcc' } = {}) {
     challengeResponses,
     moduleUnlocks,
     examReleases,
-  }), [students, lessons, tasks, progresses, submissions, allPosts, allReplies, pairings, challengeResponses, moduleUnlocks, examReleases]);
+    exams,
+    examSubmissions,
+  }), [students, lessons, tasks, progresses, submissions, allPosts, allReplies, pairings, challengeResponses, moduleUnlocks, examReleases, exams, examSubmissions]);
 
   return { rows, isLoading, hasCourseData: lessons.length > 0 || tasks.length > 0 };
 }
