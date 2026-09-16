@@ -60,10 +60,11 @@ const adminGroups = [
   ]},
 ];
 
+// Alunos não veem o atalho de Aulas (gravação indisponível);
+// a Apostila já cobre o conteúdo de estudo.
 const studentGroups = [
   { label: 'Classe', items: [
     { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
-    { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
     { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
     { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
     { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
