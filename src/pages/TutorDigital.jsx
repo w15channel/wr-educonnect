@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { Navigate, useOutletContext } from 'react-router-dom';
 import LunaChat from '@/components/luna/LunaChat';
 import OperationsChat from '@/components/luna/OperationsChat';
 
@@ -8,6 +8,8 @@ export default function TutorDigital() {
   const { user: session } = useOutletContext();
   const isAdmin = session?.role === 'admin';
   const [mode, setMode] = useState(isAdmin ? 'operations' : 'assistant');
+
+  if (!isAdmin) return <Navigate to="/student/chat?tab=luna" replace />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

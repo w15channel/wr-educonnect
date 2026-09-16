@@ -145,7 +145,6 @@ const studentGroups = [
       { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
       { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
       { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-indigo-400' },
-      { icon: Brain,         label: 'Luna — Assistente IA',   path: '/tutor',             color: 'text-amber-400' },
     ],
   },
 ];
@@ -404,10 +403,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
   return (
     <>
-      {/* Dark mode fix: Chat sidebar (MSN style) uses hardcoded light backgrounds.
-          In dark mode, dark:text-card-foreground makes text invisible (light on light).
-          This CSS override keeps text readable in both themes. */}
-      <style>{`.dark div[class*="f2f6ff"] button{color:#334155 !important}`}</style>
+
 
       {isOpen && (
         <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={handleClose} />

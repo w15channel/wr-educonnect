@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
+import { useOutletContext, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Send, Smile, Lock, Heart, Search, Minus, Square, X, Bell, Pencil, Trash2, Check, PartyPopper, Hand, Share2, Pin, CheckCheck } from 'lucide-react';
+import { Pin, CheckCheck } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useQueryClient } from '@tanstack/react-query';
 import useProfessorAutoReactions from '@/hooks/useProfessorAutoReactions';
@@ -11,7 +11,13 @@ import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
 import { highlightKey, MONITOR_MEDALS, splitWeeklyHighlights } from '@/lib/chatHighlights';
-import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
+import LunaChat from '@/components/luna/LunaChat';
+import ChatHeader from '@/components/chat/ChatHeader';
+import ChatMessageItem from '@/components/chat/ChatMessageItem';
+import ChatFeedNotice from '@/components/chat/ChatFeedNotice';
+import ChatReactions from '@/components/chat/ChatReactions';
+import ChatContacts from '@/components/chat/ChatContacts';
+import ChatComposer from '@/components/chat/ChatComposer';
 
 const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
@@ -26,39 +32,22 @@ function formatBRT(dateStr) {
   return d.toISOString().slice(11, 16);
 }
 
-function MessageItem({ msg, isMe, isAdmin, name, color, email, time, onEdit, onDelete, onShare, onShareExternal, sharing, shared, reactions }) {
-  const cleanContent = (msg.content || '').replace(ATTENTION_PREFIX, '').replace('[MSN_ACTION]', '').trim();
-
-  return (
-    <div className="group rounded-xl border border-rose-100 bg-white px-3 py-2.5 text-[#3f2932] shadow-sm" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
-      <div className="flex items-start gap-2">
-        <span className="mt-0.5 text-lg" aria-hidden="true">🌟</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <ClickableStudent email={email} className="font-bold text-[12px]" style={{ color: isMe ? '#be123c' : color }}>{name}</ClickableStudent>
-            <span className="text-[10px] text-[#8b7180]">{time}</span>
-            <div className="ml-auto flex items-center gap-1">
-              <button type="button" onClick={() => onShareExternal(msg)} className="rounded p-1 text-[#5471b9] hover:bg-blue-50 hover:text-blue-700" title="Compartilhar em aplicativos externos" aria-label="Compartilhar em aplicativos externos"><Share2 size={13}/></button>
-              {isAdmin && <button type="button" onClick={() => onShare(msg)} disabled={sharing || shared} className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-default disabled:opacity-60" title="Encaminhar para o Mural de Superação da dashboard" aria-label="Compartilhar publicação no mural"><Share2 size={12}/>{shared ? 'No mural' : sharing ? 'Enviando...' : 'Compartilhar'}</button>}
-              {isMe && <button type="button" onClick={() => onEdit(msg)} className="rounded p-1 text-[#9f667a] hover:bg-rose-50 hover:text-rose-700" title="Editar minha mensagem" aria-label="Editar minha mensagem"><Pencil size={13}/></button>}
-              {isAdmin && <button type="button" onClick={() => onDelete(msg)} className="rounded p-1 text-[#9f667a] hover:bg-red-50 hover:text-red-700" title="Excluir permanentemente" aria-label="Excluir permanentemente"><Trash2 size={13}/></button>}
-            </div>
-          </div>
-          <p className="mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-inherit">{cleanContent}</p>
-          {reactions}
-          {msg.updated_date && msg.updated_date !== msg.created_date && <span className="text-[9px] italic text-[#a38a94]">editada</span>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function ClassChat() {
   const { user: session, isAdmin } = useOutletContext();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('geral');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+  const activeTab = requestedTab === 'particular' || (!isAdmin && requestedTab === 'luna') ? requestedTab : 'geral';
+  const [lunaOpened, setLunaOpened] = useState(activeTab === 'luna');
+  const setActiveTab = (tab) => {
+    if (tab === 'luna') setLunaOpened(true);
+    const next = new URLSearchParams(searchParams);
+    if (tab === 'geral') next.delete('tab');
+    else next.set('tab', tab);
+    setSearchParams(next, { replace: true });
+  };
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [dmSearch, setDmSearch] = useState('');
@@ -264,41 +253,20 @@ export default function ClassChat() {
     const profile = getProfile(email);
     const code = codes.find((item) => String(item.student_email || '').trim().toLowerCase() === String(email || '').trim().toLowerCase());
     if (!medal) return null;
-    return <ClickableStudent key={email} email={email} className={`monitor-mention monitor-mention--${medal.tone}`}>
-      <span className={`monitor-avatar-ring monitor-avatar-ring--${medal.tone}`}>
+    return <ClickableStudent key={email} email={email} className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-secondary/40 p-2 text-foreground">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
         {code?.profile_photo_url ? <img src={code.profile_photo_url} alt="" className="h-full w-full rounded-full object-cover" /> : <span aria-hidden="true">{profile.emoji}</span>}
       </span>
-      <span className="min-w-0"><span className="block truncate font-bold">{profile.name || monitor.student_name || email}</span><span className="block text-[9px] font-semibold opacity-75">Monitor(a) da semana • {medal.label}</span></span>
+      <span className="min-w-0"><span className="block truncate text-xs font-semibold">{profile.name || monitor.student_name || email}</span><span className="block text-xs text-muted-foreground">Monitor(a) · {medal.label}</span></span>
       <span className="text-base" aria-label={`Medalha de ${medal.label}`}>{medal.emoji}</span>
     </ClickableStudent>;
   };
 
-  const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => {
-    const normalizedSessionEmail = String(session?.email || '').trim().toLowerCase();
-    const normalizedMentions = (mentionedEmails || []).map((email) => String(email || '').trim().toLowerCase());
-    const interactionOwner = normalizedMentions[0] || ownerEmail;
-    const isOwnContent = String(ownerEmail || '').trim().toLowerCase() === normalizedSessionEmail || normalizedMentions.includes(normalizedSessionEmail);
-    return <>
-      <div className="mt-2 flex flex-wrap gap-1 border-t border-amber-200 pt-2" aria-label="Reações à publicação">
-        {[
-          ['love', 'Amar', Heart, 'text-rose-700 bg-rose-100'],
-          ['celebrate', 'Celebrar', PartyPopper, 'text-amber-800 bg-amber-100'],
-          ['applaud', 'Aplaudir', Hand, 'text-sky-800 bg-sky-100'],
-        ].map(([key, label, Icon, active]) => {
-          const count = wallReactions.filter((reaction) => reaction.target_id === item.id && reaction.reaction === key).length;
-          const reacted = wallReactions.some((reaction) => reaction.target_id === item.id && reaction.reaction === key && reaction.actor_email === session?.email);
-          return <button key={key} type="button" disabled={isOwnContent || reactMutation.isPending} onClick={() => reactMutation.mutate({ target_id: item.id, target_type: targetType, target_owner_email: interactionOwner, reaction: key })} aria-pressed={reacted} title={isOwnContent ? 'Você não pode reagir à própria publicação' : label} className={`inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${reacted ? active : 'bg-white text-slate-600 hover:bg-slate-100'}`}><Icon size={12}/>{label}{count > 0 && <span>{count}</span>}</button>;
-        })}
-        <button type="button" disabled={isOwnContent} onClick={() => { setReplyTarget({ id: item.id, targetType, ownerEmail: interactionOwner }); setReplyText(''); }} title={isOwnContent ? 'Você não pode responder ao próprio conteúdo' : 'Responder em privado'} className="inline-flex min-h-8 items-center gap-1 rounded-full bg-white px-2 text-[10px] font-bold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-45"><Send size={11}/>Responder</button>
-      </div>
-      {replyTarget?.id === item.id && <form className="mt-1.5 flex items-center gap-1.5" onSubmit={(event) => { event.preventDefault(); const content = replyText.trim(); if (!content || replyMutation.isPending) return; replyMutation.mutate({ target_id: replyTarget.id, target_type: replyTarget.targetType, target_owner_email: replyTarget.ownerEmail, reply_text: content }, { onSuccess: () => { setReplyTarget(null); setReplyText(''); } }); }}>
-        <input autoFocus maxLength={500} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder="Resposta privada..." aria-label="Resposta privada" className="h-8 min-w-0 flex-1 rounded-lg border border-rose-200 bg-white px-2 text-[11px] focus:outline-none" />
-        <VoiceDictationButton value={replyText} onChange={setReplyText} />
-        <button type="submit" disabled={!replyText.trim() || replyMutation.isPending} className="h-8 rounded-lg bg-rose-600 px-2.5 text-[10px] font-bold text-white disabled:opacity-50">{replyMutation.isPending ? 'Enviando...' : 'Enviar'}</button>
-        <button type="button" onClick={() => { setReplyTarget(null); setReplyText(''); }} className="h-8 rounded-lg px-2 text-[10px] font-bold text-slate-500">Cancelar</button>
-      </form>}
-    </>;
-  };
+  const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => <ChatReactions
+    item={item} targetType={targetType} ownerEmail={ownerEmail} mentionedEmails={mentionedEmails}
+    session={session} wallReactions={wallReactions} reactMutation={reactMutation} replyMutation={replyMutation}
+    replyTarget={replyTarget} setReplyTarget={setReplyTarget} replyText={replyText} setReplyText={setReplyText}
+  />;
 
   const enableNotifications = async () => {
     if (typeof Notification === 'undefined') return alert('Este aparelho não suporta notificações do navegador.');
@@ -310,100 +278,32 @@ export default function ClassChat() {
     if (enabled) new Notification('EDU Live Messenger', { body: 'Notificações ativadas neste aparelho.', icon: MSN_LOGO_URL });
   };
 
+  const contactProps = { students: otherStudents, onlineStudents, awayStudents, isOnline: isStudentOnline, formatLastSeen, onContact: (email) => navigate(`${dmBase}/dm/${encodeURIComponent(email)}`), search: dmSearch, onSearch: setDmSearch };
+
   return (
-    <div className="w-full max-w-screen-2xl mx-auto h-full min-h-0 p-2 sm:p-3 bg-[#b9cdf3] overflow-hidden">
-      <div className="h-full rounded-md border border-[#3a5db6] shadow-[0_2px_0_#fff,inset_0_1px_0_rgba(255,255,255,.7)] bg-[#dfe9fb] overflow-hidden">
-        <div className="h-8 px-3 bg-gradient-to-r from-[#2f58b6] via-[#4e7de0] to-[#2f58b6] text-white flex items-center">
-          <img src={MSN_LOGO_URL} alt="MSN" className="w-5 h-5 object-contain mr-2" />
-          <span className="font-bold text-xs tracking-wide">Mural de Superação • {courseLabel}</span>
-          <div className="ml-auto flex items-center gap-2"><Minus size={13}/><Square size={11}/><X size={13}/></div>
-        </div>
-
-        <div className="h-9 px-3 bg-[#eaf1ff] border-b border-[#abc0ea] flex items-center justify-between text-[11px]">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setActiveTab('geral')} className={`px-3 py-1 rounded ${activeTab==='geral'?'bg-white border border-[#abc0ea] text-[#be123c] font-bold':'text-[#4f5f87]'}`}><Heart size={12} className="inline mr-1 fill-rose-100"/>Mural de Superação</button>
-            <button onClick={() => setActiveTab('particular')} className={`px-3 py-1 rounded ${activeTab==='particular'?'bg-white border border-[#abc0ea] text-[#25449c] font-bold':'text-[#4f5f87]'}`}><Lock size={11} className="inline mr-1"/>Particular</button>
-          </div>
-          <button onClick={enableNotifications} className={`flex items-center gap-1 px-2 py-1 rounded border ${notificationsEnabled ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-[#abc0ea] text-[#5471b9]'}`} title="Ativar notificações neste aparelho">
-            <Bell size={11} /> {notificationsEnabled ? 'Notificações ativas' : 'Ativar notificações'}
-          </button>
-        </div>
-
-        <div className="h-[calc(100%-68px)] flex flex-col lg:flex-row overflow-hidden">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col p-2 text-foreground sm:p-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
+        <ChatHeader courseLabel={courseLabel} activeTab={activeTab} onTabChange={setActiveTab} isAdmin={isAdmin} notificationsEnabled={notificationsEnabled} onNotifications={enableNotifications}/>
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           {activeTab === 'geral' && <>
-            <div className="w-full lg:w-[68%] h-[65%] lg:h-full border-b lg:border-b-0 lg:border-r border-[#abc0ea] flex flex-col bg-white min-h-0">
-              <div className="px-3 py-2 text-[11px] bg-gradient-to-r from-rose-50 to-amber-50 border-b border-rose-100 text-[#815568]"><strong>Inspire a turma.</strong> Compartilhe uma conquista, uma palavra de força ou um passo importante da sua jornada.</div>
-              <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-gradient-to-b from-[#fffafb] to-white">
-                {pinnedHighlights.length > 0 && <div className="sticky top-0 z-10 -mx-1 mb-2 flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/95 px-2.5 py-1.5 text-[10px] font-semibold text-indigo-800 shadow-sm backdrop-blur"><Pin size={11} aria-hidden="true"/> Lembretes importantes • fixados por até 7 dias</div>}
-                {wallFeed.length === 0 ? <p className="text-sm text-center text-[#9a7180] py-8">Seja a primeira pessoa a compartilhar uma mensagem de superação. 🌟</p> : wallFeed.map((msg) => {
+            <section aria-label="Mural de Superação" className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <div className="shrink-0 border-b border-border bg-secondary/30 px-4 py-2.5 text-xs leading-relaxed text-muted-foreground"><strong className="font-semibold text-foreground">Inspire a turma.</strong> Compartilhe uma conquista, uma palavra de força ou um passo importante da sua jornada.</div>
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
+                {pinnedHighlights.length > 0 && <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-xs font-medium text-foreground"><Pin size={14} className="shrink-0 text-primary"/>Lembretes importantes · fixados por até 7 dias</div>}
+                {wallFeed.length === 0 ? <p className="px-3 py-8 text-center text-sm leading-relaxed text-muted-foreground">Seja a primeira pessoa a compartilhar uma mensagem de superação.</p> : wallFeed.map((msg) => {
                   const isPinned = pinnedHighlights.includes(msg);
-                  const readButton = isPinned && session?.role !== 'admin' ? <button type="button" onClick={() => wall.markHighlightReadMutation.mutate(highlightKey(msg))} disabled={wall.markHighlightReadMutation.isPending} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-violet-300 bg-white/90 px-2 py-1 text-[10px] font-bold text-violet-800 transition hover:bg-violet-100 disabled:opacity-50" aria-label="Marcar lembrete como lido e desafixar"><CheckCheck size={12}/>Marcar como lido</button> : null;
-                  if (msg.feedType === 'personal') {
-                    return <div key={msg.id} className={`rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-relaxed text-violet-950 ${isPinned ? 'ring-2 ring-violet-200 shadow-md' : ''}`} role="status"><div className="flex items-start gap-2"><div className="min-w-0 flex-1"><span className="font-bold">{isPinned && <Pin size={11} className="mr-1 inline" aria-hidden="true"/>}{msg.title || 'Aviso para você'}</span><p className="whitespace-pre-wrap break-words">{msg.message}</p>{msg.related_email && <p className="mt-1 font-semibold text-violet-700">Contato: <ClickableStudent email={msg.related_email} className="text-violet-700">{msg.related_name || msg.related_email}</ClickableStudent></p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>{readButton}</div></div>;
-                  }
-                  if (msg.feedType === 'notification') {
-                    return <div key={msg.id} className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-relaxed text-violet-950" role="status"><span className="font-bold">{msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista'}</span><p>{msg.message}</p>{msg.reply_text && <p className="mt-1 rounded-md bg-white/70 px-2 py-1">“{msg.reply_text}”</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>;
-                  }
-                  if (msg.feedType === 'institutional') {
-                    return <div key={msg.id} className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] leading-relaxed text-slate-900"><p className="font-bold">{msg.title || 'Destaque para a turma'}</p><p className="whitespace-pre-wrap break-words text-slate-700">{msg.content}</p>{msg.author_name && <span className="text-[10px] text-slate-500">Compartilhado por {msg.author_name}</span>}</div>;
-                  }
-                  if (msg.feedType === 'achievement') {
-                    const shared = sharedPublications.some((post) => post.source_type === 'achievement' && post.source_id === msg.id);
-                    return <div key={msg.id} className={`rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 ${msg.isCollective ? 'monitor-celebration' : ''} ${isPinned ? 'ring-2 ring-amber-300 shadow-md' : ''}`}><div className="relative flex items-start gap-2"><div className="min-w-0 flex-1"><p><span aria-hidden="true">🏆 </span><strong className="text-black">{msg.isCollective ? 'Monitores da semana!' : msg.studentName || 'Um colega da turma'}</strong> {msg.content} <span aria-hidden="true">🎉</span></p>{msg.isCollective && <div className="mt-2 grid gap-1.5 sm:grid-cols-3">{(msg.mentionedEmails || []).map((email) => monitorMention(email, msg.occurredAt))}</div>}</div>{readButton}{isAdmin && <button type="button" onClick={() => shareToWall(msg, 'achievement')} disabled={sharingMessageId === msg.id || shared} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-bold text-amber-800 transition hover:bg-amber-100 disabled:cursor-default disabled:opacity-60" title="Compartilhar conquista na dashboard dos alunos"><Share2 size={12}/>{shared ? 'No mural' : sharingMessageId === msg.id ? 'Enviando...' : 'Compartilhar'}</button>}</div>{reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails)}</div>;
-                  }
-                  const isMe = msg.author_email === session?.email;
+                  const readButton = isPinned && !isAdmin ? <button type="button" onClick={() => wall.markHighlightReadMutation.mutate(highlightKey(msg))} disabled={wall.markHighlightReadMutation.isPending} className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-medium text-foreground hover:bg-primary/20 disabled:opacity-50" aria-label="Marcar lembrete como lido e desafixar"><CheckCheck size={14}/>Marcar como lido</button> : null;
+                  if (['personal', 'notification', 'institutional', 'achievement'].includes(msg.feedType)) return <ChatFeedNotice key={msg.id} msg={msg} isPinned={isPinned} readButton={readButton} isAdmin={isAdmin} shared={sharedPublications.some((post) => post.source_type === 'achievement' && post.source_id === msg.id)} sharing={sharingMessageId === msg.id} onShare={shareToWall} monitorMention={monitorMention} reactions={msg.feedType === 'achievement' ? reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails) : null}/>;
                   const profile = getProfile(msg.author_email);
-                  return <MessageItem key={msg.id} msg={msg} isMe={isMe} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} color={profile.color} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} onShare={shareToWall} onShareExternal={shareMessageExternal} sharing={sharingMessageId === msg.id} shared={sharedPublications.some((post) => post.source_type === 'chat' && post.source_id === msg.id)} reactions={reactionButtons(msg, 'publication', msg.author_email)} />;
+                  return <ChatMessageItem key={msg.id} msg={msg} isMe={msg.author_email === session?.email} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} onShare={shareToWall} onShareExternal={shareMessageExternal} sharing={sharingMessageId === msg.id} shared={sharedPublications.some((post) => post.source_type === 'chat' && post.source_id === msg.id)} reactions={reactionButtons(msg, 'publication', msg.author_email)}/>;
                 })}
               </div>
-
-              {showPicker && <div className="border-t border-[#dae5fa] bg-[#f8fbff]">
-                <div className="px-3 py-1.5 text-[11px] font-bold text-[#25449c] border-b border-[#dae5fa]">Emojis</div>
-                <div className="p-2 grid grid-cols-8 gap-1">{WALL_EMOJIS.map((emoji) => <button type="button" key={emoji} onClick={() => setText((current) => `${current}${emoji}`)} className="h-9 border border-[#d5e2fa] rounded hover:bg-[#ecf3ff] text-lg" aria-label={`Inserir ${emoji}`}>{emoji}</button>)}</div>
-              </div>}
-
-              {editingMessage && <form onSubmit={saveEdit} className="border-t border-amber-200 bg-amber-50 p-2 flex items-center gap-2">
-                <Pencil size={14} className="text-amber-700 shrink-0"/><input autoFocus value={editText} onChange={(e) => setEditText(e.target.value)} className="flex-1 h-9 px-3 text-sm border border-amber-300 rounded bg-white focus:outline-none" aria-label="Editar mensagem"/><button type="button" onClick={() => setEditingMessage(null)} className="text-xs text-slate-600 px-2">Cancelar</button><button type="submit" disabled={!editText.trim()} className="h-9 px-3 rounded bg-amber-600 text-white text-xs font-semibold disabled:opacity-50"><Check size={14} className="inline mr-1"/>Salvar</button>
-              </form>}
-              <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) sendMessage(text); }} className="border-t border-rose-100 bg-rose-50/70 p-2 flex items-center gap-2">
-                <button type="button" onClick={() => setShowPicker(v => !v)} className="p-2 border border-[#abc0ea] bg-white rounded hover:bg-[#f2f7ff]"><Smile size={16} className="text-[#3f62ba]"/></button>
-                <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Compartilhe uma mensagem de superação..." className="flex-1 h-9 px-3 text-sm border border-rose-200 rounded bg-white focus:outline-none focus:border-rose-400" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }} />
-                <VoiceDictationButton value={text} onChange={setText} />
-                <button type="submit" className="h-9 px-4 rounded bg-rose-600 text-white text-sm font-semibold disabled:opacity-50" disabled={!text.trim()}><Send size={14} className="inline mr-1"/>Publicar</button>
-              </form>
-            </div>
-
-            <div className="w-full lg:w-[32%] h-[35%] lg:h-full bg-[#f2f6ff] p-2 min-h-0">
-              <div className="space-y-2 max-h-full overflow-y-auto">
-                <div>
-                  <div className="text-[11px] font-bold text-[#2f7d32] mb-1 border-b border-green-200 pb-1">🟢 Online ({onlineStudents.length})</div>
-                  {onlineStudents.slice(0, 60).map((c) => {
-                    const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                    return <button key={c.id} onClick={() => navigate(`${dmBase}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#334155] truncate"><span className="text-green-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#6f7ba8]">Online agora</span></button>;
-                  })}
-                </div>
-                <div>
-                  <div className="text-[11px] font-bold text-[#b42318] mb-1 border-b border-red-200 pb-1">🔴 Ausentes ({awayStudents.length})</div>
-                  {awayStudents.slice(0, 60).map((c) => {
-                    const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                    return <button key={c.id} onClick={() => navigate(`${dmBase}/dm/${encodeURIComponent(c.student_email)}`)} className="w-full text-left px-2 py-1 rounded hover:bg-white border border-transparent hover:border-[#c8d7f5] text-xs text-[#64748b] truncate"><span className="text-red-500">●</span> {name}<span className="block pl-3 text-[10px] text-[#8a6f6f]">Última visita: {formatLastSeen(c.last_seen_at)}</span></button>;
-                  })}
-                </div>
-              </div>
-            </div>
+              <ChatComposer text={text} setText={setText} showPicker={showPicker} setShowPicker={setShowPicker} emojis={WALL_EMOJIS} onSend={sendMessage} sending={wall.sendMessageMutation.isPending} editingMessage={editingMessage} editText={editText} setEditText={setEditText} onSaveEdit={saveEdit} onCancelEdit={() => setEditingMessage(null)}/>
+            </section>
+            <aside aria-label="Contatos da turma" className="hidden w-64 shrink-0 border-l border-border bg-card/50 lg:block"><ChatContacts {...contactProps} compact/></aside>
           </>}
-
-          {activeTab === 'particular' && <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-white">
-            <p className="text-sm text-[#4f5f87] mb-3">Selecione um contato para abrir chat privado.</p>
-            <div className="relative mb-3"><Search size={14} className="absolute left-2.5 top-2.5 text-gray-400"/><input value={dmSearch} onChange={e => setDmSearch(e.target.value)} className="w-full h-9 pl-8 pr-3 border border-[#abc0ea] rounded" placeholder="Buscar contato..."/></div>
-            <div className="grid md:grid-cols-2 gap-2">
-              {otherStudents.map((c) => {
-                const name = getAvatarPrefixedName(c.profile_name || c.student_name || c.student_email, c.profile_avatar_emoji);
-                const online = isStudentOnline(c);
-                return <button key={c.id} onClick={() => navigate(`${dmBase}/dm/${encodeURIComponent(c.student_email)}`)} className="border border-[#c8d7f5] rounded px-3 py-2 text-left hover:bg-[#f6f9ff] text-sm"><span className={online ? 'text-green-500' : 'text-red-500'}>●</span> 🔒 {name}<span className="block text-[10px] text-[#6f7ba8] ml-4">{online ? 'Online agora' : `Última visita: ${formatLastSeen(c.last_seen_at)}`}</span></button>;
-              })}
-            </div>
-          </div>}
+          {activeTab === 'particular' && <section aria-label="Conversas particulares" className="min-h-0 min-w-0 flex-1"><ChatContacts {...contactProps}/></section>}
+          {!isAdmin && (lunaOpened || activeTab === 'luna') && <section aria-label="Conversa com a Luna" className={activeTab === 'luna' ? 'flex min-h-0 min-w-0 flex-1 flex-col' : 'hidden'}><LunaChat session={session} isActive={activeTab === 'luna'}/></section>}
         </div>
       </div>
     </div>

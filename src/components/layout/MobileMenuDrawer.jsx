@@ -85,7 +85,6 @@ const studentGroups = [
     { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
   ]},
   { label: 'Ferramentas', items: [
-    { icon: Brain, label: 'Luna — Assistente IA', path: '/tutor', color: 'text-amber-400' },
     { icon: BookOpen, label: 'Best Seller', path: '/bestseller', color: 'text-emerald-400' },
     { icon: GraduationCap, label: 'Histórico', path: '/historico', color: 'text-cyan-400' },
     { icon: Award, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },

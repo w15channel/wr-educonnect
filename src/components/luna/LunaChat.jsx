@@ -13,15 +13,18 @@ import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting } from '@/lib/luna
  * Conversa com a Luna em balões — usada na página dela e na sobreposição
  * aberta pelo botão ao lado da lâmpada de tema.
  */
-export default function LunaChat({ session, onNavigated }) {
+export default function LunaChat({ session, onNavigated, isActive = true }) {
   const voice = useLunaVoice();
   const greeting = lunaGreeting(session?.name);
   const [messages, setMessages] = useState([{ role: 'assistant', content: greeting }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
+  const activeRef = useRef(isActive);
+  activeRef.current = isActive;
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+  useEffect(() => { if (!isActive) voice.stop(); }, [isActive]);
+  useEffect(() => { if (isActive) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, isActive]);
 
   const send = async (content = input) => {
     const text = String(content || '').trim();
@@ -51,7 +54,7 @@ export default function LunaChat({ session, onNavigated }) {
       });
       const reply = answer?.answer || 'Desculpe, não consegui responder agora. Poderia tentar novamente, por favor?';
       setMessages((prev) => [...prev, { role: 'assistant', content: reply, links: answer?.links || [] }]);
-      await voice.speak(reply);
+      if (activeRef.current) await voice.speak(reply);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Tive um problema para responder agora. Verifique sua internet e tente de novo, por favor.' }]);
     } finally {
