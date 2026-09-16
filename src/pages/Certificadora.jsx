@@ -163,7 +163,7 @@ export default function Certificadora() {
         course,
       });
 
-      localStorage.setItem(`${SOLICITUD_KEY}_${sessionEmail}`, new Date().toISOString());
+      localStorage.setItem(`${SOLICITUD_KEY}_${studentEmail}`, new Date().toISOString());
       setHasRequested(true);
       toast.success('Solicitação enviada! A coordenação irá analisar e emitir seu certificado em breve.');
     } catch (error) {
