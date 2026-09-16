@@ -949,11 +949,17 @@
 }
 
 .monitor-celebration { background: linear-gradient(110deg, #fff8dc, #fff, #f8f1e7, #fff8dc); background-size: 250% 250%; animation: monitor-background 8s ease-in-out infinite; }
+.dark .monitor-celebration { background: linear-gradient(110deg, hsl(228 32% 12%), hsl(228 36% 8%), hsl(228 32% 12%), hsl(228 36% 8%)); background-size: 250% 250%; }
 .monitor-mention { display: flex; min-width: 0; align-items: center; gap: .45rem; border: 1px solid var(--monitor-ring); border-radius: .7rem; padding: .4rem .5rem; color: #292524; background: linear-gradient(110deg, var(--monitor-soft), #fff, var(--monitor-soft)); background-size: 220% 220%; animation: monitor-background 7s ease-in-out infinite; }
+.dark .monitor-mention { color: hsl(38 42% 88%); background: linear-gradient(110deg, var(--monitor-soft-dark, hsl(228 32% 14%)), hsl(228 36% 10%), var(--monitor-soft-dark, hsl(228 32% 14%))); background-size: 220% 220%; }
+.dark .monitor-mention--gold { --monitor-soft-dark: hsl(45 35% 18%); }
+.dark .monitor-mention--silver { --monitor-soft-dark: hsl(220 20% 18%); }
+.dark .monitor-mention--bronze { --monitor-soft-dark: hsl(25 30% 16%); }
 .monitor-mention--gold, .monitor-avatar-ring--gold { --monitor-ring: #d6a514; --monitor-glow: rgba(234, 179, 8, .46); --monitor-soft: #fff4bd; }
 .monitor-mention--silver, .monitor-avatar-ring--silver { --monitor-ring: #9ca3af; --monitor-glow: rgba(148, 163, 184, .48); --monitor-soft: #edf0f4; }
 .monitor-mention--bronze, .monitor-avatar-ring--bronze { --monitor-ring: #b76e3c; --monitor-glow: rgba(180, 83, 9, .38); --monitor-soft: #f7dfce; }
 .monitor-avatar-ring { display: grid; width: 2rem; height: 2rem; flex: 0 0 auto; place-items: center; overflow: hidden; border-radius: 9999px; background: white; animation: monitor-glow 2.8s ease-in-out infinite; }
+.dark .monitor-avatar-ring { background: hsl(228 32% 12%); }
 
 @media (prefers-reduced-motion: reduce) {
   .monitor-celebration, .monitor-mention, .monitor-avatar-ring { animation: none; }
@@ -964,6 +970,10 @@
   border-bottom: 1px solid rgba(15, 23, 42, 0.12);
   background: rgba(255, 255, 255, 0.92);
 }
+.dark .apostila-rich-editor .ql-toolbar {
+  background: hsl(228 32% 12%);
+  border-bottom-color: hsl(228 28% 22%);
+}
 
 .apostila-rich-editor .ql-container {
   min-height: 580px;
@@ -972,6 +982,23 @@
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 18px;
   color: #1a2d5a;
+}
+.dark .apostila-rich-editor .ql-container {
+  color: hsl(38 42% 88%);
+}
+.dark .apostila-rich-editor .ql-toolbar .ql-stroke {
+  stroke: hsl(228 20% 68%) !important;
+}
+.dark .apostila-rich-editor .ql-toolbar .ql-fill {
+  fill: hsl(228 20% 68%) !important;
+}
+.dark .apostila-rich-editor .ql-toolbar .ql-picker-label,
+.dark .apostila-rich-editor .ql-toolbar .ql-picker-item {
+  color: hsl(228 20% 68%) !important;
+}
+.dark .apostila-rich-editor .ql-toolbar .ql-picker-options {
+  background: hsl(228 32% 12%);
+  color: hsl(38 42% 88%);
 }
 
 .apostila-rich-editor .ql-editor {
