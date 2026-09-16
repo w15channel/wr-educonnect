@@ -174,3 +174,47 @@ export const LUNA_QUICK_ACTIONS = [
 
 export const lunaGreeting = (name) =>
   `Olá, ${String(name || 'aluno(a)').split(' ')[0]}! 🦉 Eu sou a Luna, a assistente da ${BRAND_LEGAL_NAME}.\n\nPode me perguntar qualquer coisa — sobre o conteúdo do curso, conceitos, aulas, apostila, tarefas, provas, certificado — e eu respondo com todo prazer. Se quiser conversar sobre como está se sentindo, eu também escuto com carinho.\n\nComo posso te ajudar hoje?`;
+
+// ── Memória de conversa (24 horas) ──────────────────────────────────────────
+// Persiste histórico no localStorage com timestamp para expirar após 24h.
+// Usado pela Luna dos alunos e pela Luna gerente de operações.
+
+/**
+ * Salva dados no localStorage com timestamp para TTL de 24h.
+ */
+export function saveLunaMemory(key, data) {
+  try {
+    const payload = { ts: Date.now(), data };
+    localStorage.setItem(key, JSON.stringify(payload));
+  } catch {}
+}
+
+/**
+ * Carrega dados do localStorage se dentro do TTL (padrão 24h).
+ * Retorna null se não existir ou estiver expirado.
+ */
+export function loadLunaMemory(key, maxAgeHours = 24) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.ts) return null;
+    const ageMs = Date.now() - parsed.ts;
+    if (ageMs > maxAgeHours * 60 * 60 * 1000) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return parsed.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Limpa a memória de conversa.
+ */
+export function clearLunaMemory(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {}
+}
