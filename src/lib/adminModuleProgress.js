@@ -1,4 +1,4 @@
-import { buildModuleChecklist, summarizeChecklistProgress } from '@/lib/examChecklistRules';
+import { buildModuleChecklist, summarizeChecklistProgress, parseModuleNumber } from '@/lib/examChecklistRules';
 import { groupUnlocksByEmail, resolveCurrentStudentModule } from '@/lib/moduleAttribution';
 
 /**
@@ -38,6 +38,8 @@ export function buildStudentExamProgressRows({
   challengeResponses = [],
   moduleUnlocks = [],
   examReleases = [],
+  exams = [],
+  examSubmissions = [],
 } = {}) {
   const unlocksByEmail = groupUnlocksByEmail(
     (Array.isArray(moduleUnlocks) ? moduleUnlocks : []).map((unlock) => ({
@@ -49,12 +51,25 @@ export function buildStudentExamProgressRows({
   const submissionsByEmail = groupByEmail(submissions);
   const challengesByEmail = groupByEmail(challengeResponses);
   const releasesByEmail = groupByEmail(examReleases);
+  const examSubsByEmail = groupByEmail(examSubmissions);
 
   return students
     .map((student) => {
       const email = normalizeEmail(student?.student_email || student?.email);
       if (!email) return null;
       const moduleNumber = resolveCurrentStudentModule(unlocksByEmail.get(email) || []);
+
+      // Pré-requisito: verificar se a prova do módulo anterior foi entregue
+      const previousModuleNumber = moduleNumber - 1;
+      const previousModuleExams = previousModuleNumber >= 1
+        ? exams.filter((exam) => parseModuleNumber(exam.module_ref) === previousModuleNumber)
+        : [];
+      const studentExamSubs = examSubsByEmail.get(email) || [];
+      const submittedExamIds = new Set(studentExamSubs.map((s) => s.exam_id));
+      const previousExamCompleted = previousModuleExams.length === 0
+        ? true
+        : previousModuleExams.every((exam) => submittedExamIds.has(exam.id));
+
       const checklist = buildModuleChecklist({
         moduleNumber,
         email,
@@ -66,6 +81,7 @@ export function buildStudentExamProgressRows({
         debateReplies,
         pairings,
         challengeResponses: challengesByEmail.get(email) || [],
+        previousExamCompleted,
       });
       const summary = summarizeChecklistProgress(checklist);
       const release = (releasesByEmail.get(email) || [])
