@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, ArrowLeft, Smile, Minus, Square, X } from 'lucide-react';
+import { Send, ArrowLeft, Smile, Minus, Square, X, Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import StudentProfileCard from '@/components/shared/StudentProfileCard';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
@@ -103,6 +104,25 @@ export default function DirectMessage() {
   const targetCode = codes.find(c => c.student_email === decodeURIComponent(targetEmail));
   const canMessageTarget = targetCode && (!codePrefix || (targetCode.code || '').startsWith(codePrefix)) && (!courseEmails || courseEmails.has(targetCode.student_email));
 
+  const shareMessageExternal = async (msg) => {
+    const author = msg.author_name || 'Aluno';
+    const shareText = `${author}:\n\n${msg.content}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'EDU Live Messenger', text: shareText });
+      } catch (e) {
+        if (e.name !== 'AbortError') toast.error('Não foi possível compartilhar.');
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        toast.success('Mensagem copiada! Cole no app desejado.');
+      } catch {
+        toast.error('Não foi possível compartilhar.');
+      }
+    }
+  };
+
   const sendMessage = async () => {
     if (!text.trim() || !sessionId) return;
     const msg = text.trim();
@@ -123,8 +143,8 @@ export default function DirectMessage() {
 
   if (!canMessageTarget) {
     return (
-      <div className="p-6 text-center text-muted-foreground">
-        <button onClick={() => navigate('../chat')} className="text-primary text-sm hover:underline mb-4">← Voltar ao chat geral</button>
+      <div className="p-6 text-center text-[#4f5f87]">
+        <button onClick={() => navigate('../chat')} className="text-[#25449c] text-sm hover:underline mb-4">← Voltar ao chat geral</button>
         <p>Este aluno não pertence à turma atual.</p>
       </div>
     );
@@ -177,13 +197,14 @@ export default function DirectMessage() {
               const rawDate = msg.created_date ? new Date(new Date(msg.created_date).getTime() - 3 * 60 * 60 * 1000) : null;
               const time = rawDate ? rawDate.toISOString().slice(11, 16) : '';
               return (
-                <div key={msg.id} className="text-[13px] leading-relaxed">
+                <div key={msg.id} className="text-[13px] leading-relaxed group">
                   <span className="text-[11px] text-[#6f7ba8]">[{time}] </span>
                   <span className="font-bold" style={{ color: isMe ? '#0d5d9a' : target.color }}>
                     {isMe ? 'Você' : msg.author_name}
                   </span>
                   <span className="text-[#1f2937]"> diz:</span>
                   <span className="ml-1 text-[#0f172a]">{msg.content}</span>
+                  <button type="button" onClick={() => shareMessageExternal(msg)} className="ml-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold text-[#5471b9] opacity-0 transition group-hover:opacity-100 hover:bg-blue-50" title="Compartilhar em aplicativos externos" aria-label="Compartilhar em aplicativos externos"><Share2 size={11}/></button>
                 </div>
               );
             })}
