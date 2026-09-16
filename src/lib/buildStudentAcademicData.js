@@ -116,6 +116,35 @@ export function buildStudentAcademicData({
     });
   });
 
+  // ── Capítulos da apostila marcados como lidos — 30 minutos por capítulo ──
+  // Cada capítulo da apostila marcado como "lido" pelo aluno conta como
+  // atividade concluída com 30 minutos de carga horária.
+  const apostilaProgress = lessonProgress.filter(
+    (p) => p.watched && normEmail(p.student_email) === email && String(p.lesson_id || '').startsWith('apostila:mod')
+  );
+  const seenApostilaIds = new Set();
+  apostilaProgress.forEach((p) => {
+    const lessonId = p.lesson_id;
+    if (seenApostilaIds.has(lessonId)) return;
+    seenApostilaIds.add(lessonId);
+    const moduleMatch = String(lessonId).match(/mod(\d+)/);
+    const moduleNum = moduleMatch ? Number(moduleMatch[1]) : null;
+    const chapterLabel = String(lessonId).replace(/^apostila:mod\d+:/, '').replace(/_/g, ' ');
+    rows.push({
+      key: `apostila_${lessonId}`,
+      category: 'Aula Gravada',
+      title: `Apostila — Módulo ${moduleNum || '?'} — Capítulo ${chapterLabel}`,
+      score: STUDY_SCORE_RULES.lesson,
+      max: STUDY_SCORE_RULES.lesson,
+      minutes: ACTIVITY_MINUTES.apostila,
+      hours: toHours(ACTIVITY_MINUTES.apostila),
+      status: 'Avaliado',
+      notes: 'Capítulo da apostila marcado como lido',
+      module: moduleNum,
+      date: p.updated_date || p.created_date,
+    });
+  });
+
   // Lives não entram na pontuação de estudos/histórico/certificado.
 
   // ── Tarefas / Provas (Task entity) — "entregue" vem do TaskSubmission ──
@@ -296,7 +325,10 @@ export function buildStudentAcademicData({
     });
   });
 
-  // ── Totals (only evaluated rows) ──
+  // ── Totals ──
+  // Aproveitamento = percentual de atividades concluídas sobre o total disponível.
+  // Não usa a razão pontos/máximo porque o bônus de ranking do fórum criaria
+  // uma distorção (aluno com tudo entregue apareceria com menos de 100%).
   const evaluatedRows = rows.filter((r) => r.status === 'Avaliado');
   const totalScore = evaluatedRows.reduce(
     (sum, r) => roundScore(sum + (r.score !== null ? roundScore(r.score) : 0)),
@@ -305,9 +337,11 @@ export function buildStudentAcademicData({
   const totalMaxScore = evaluatedRows.reduce((sum, r) => roundScore(sum + roundScore(r.max)), 0);
   const totalMinutes = evaluatedRows.reduce((sum, r) => sum + (Number(r.minutes) || 0), 0);
   const totalHours = toHours(totalMinutes);
+  const totalActivities = rows.length;
+  const completedActivities = evaluatedRows.length;
   const approvalRate =
-    totalMaxScore > 0
-      ? String(Math.round((totalScore / totalMaxScore) * 1000) / 10)
+    totalActivities > 0
+      ? String(Math.round((completedActivities / totalActivities) * 1000) / 10)
       : '0';
 
   // averageGrade = nota total (soma dos pontos obtidos, não uma média)
