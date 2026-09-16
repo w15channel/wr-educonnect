@@ -9,11 +9,12 @@ export default function LunaBubble({ role, children }) {
         <div className="ofensiva-owl shrink-0 text-xl" role="img" aria-label="Luna">🦉</div>
       )}
       <div
-        className={`min-w-0 max-w-[80%] overflow-hidden whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
+        className={`min-w-0 max-w-[80%] overflow-hidden whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
           isUser
             ? 'rounded-br-sm bg-primary text-primary-foreground'
             : 'rounded-bl-sm border border-amber-300/60 bg-card text-foreground'
         }`
+        style={{ overflowWrap: 'anywhere' }}
       >
         {children}
       </div>
