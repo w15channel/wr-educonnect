@@ -67,7 +67,10 @@ export default function LoginScreen({ onLogin }) {
       setSession(response.data.session, { remember: rememberCode });
       onLogin();
     } catch (err) {
-      setError(err?.response?.data?.error || 'Código inválido ou desativado.');
+      const message = err?.response?.data?.error;
+      setError(message === 'not-found' || err?.response?.status === 404
+        ? 'O serviço de entrada está indisponível no momento. Isso não significa que seu código seja inválido. Tente novamente em alguns minutos.'
+        : message || 'Não foi possível entrar. Verifique sua conexão e tente novamente.');
     }
     setLoading(false);
   };

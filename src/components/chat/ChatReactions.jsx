@@ -8,7 +8,7 @@ const REACTION_STYLES = [
   ['applaud', 'Aplaudir', Hand, 'text-sky-700 bg-sky-50'],
 ];
 
-export default function ChatReactions({ item, targetType, ownerEmail, mentionedEmails = [], session, wallReactions, reactMutation, replyTarget, setReplyTarget, replyText, setReplyText }) {
+export default function ChatReactions({ item, targetType, ownerEmail, mentionedEmails = [], session, wallReactions, reactMutation, replyMutation, replyTarget, setReplyTarget, replyText, setReplyText }) {
   const normalizedSessionEmail = String(session?.email || '').trim().toLowerCase();
   const normalizedMentions = mentionedEmails.map((email) => String(email || '').trim().toLowerCase());
   const interactionOwner = normalizedMentions[0] || ownerEmail;

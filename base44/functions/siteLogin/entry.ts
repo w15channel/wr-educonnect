@@ -18,7 +18,7 @@ function nowBRT() {
   return brt.toISOString().replace('Z', '-03:00');
 }
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json().catch(() => ({}));
@@ -128,4 +128,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}
