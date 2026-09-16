@@ -38,10 +38,6 @@ const APOSTILA_HEADER_TITLE =
 const APOSTILA_HEADER_AUTHOR =
   'Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano';
 
-/**
- * Substitui o título da aula (tudo antes da linha "Prof. William Ribeiro")
- * pelo título padronizado da apostila.
- */
 function normalizeApostilaHeader(content) {
   if (!content) return content;
   const idx = content.indexOf(APOSTILA_HEADER_AUTHOR);
@@ -125,6 +121,7 @@ const extractLessonParagraphs = (html = '') => {
 };
 
 const READER_RATES = [1, 1.5, 2];
+const READER_BLOCK_SIZE = 5;
 
 const getWordParts = (text = '') => text.match(/\S+|\s+/g) || [];
 
@@ -342,10 +339,22 @@ export default function Apostila() {
     if (typeof window === 'undefined') return;
 
     const paragraphs = paragraphsByLesson[lessonKey] || [];
-    const text = paragraphs[paragraphIndex];
-    if (!text) {
+
+    // Build a block of up to READER_BLOCK_SIZE paragraphs for continuous reading
+    const blockEnd = Math.min(paragraphIndex + READER_BLOCK_SIZE, paragraphs.length);
+    const blockParagraphs = paragraphs.slice(paragraphIndex, blockEnd);
+    if (!blockParagraphs.length) {
       stopReader(lessonKey);
       return;
+    }
+    const text = blockParagraphs.join('\n\n');
+
+    // Track char offsets of each paragraph within the combined text for highlighting
+    const paragraphOffsets = [];
+    let _offset = 0;
+    for (const p of blockParagraphs) {
+      paragraphOffsets.push(_offset);
+      _offset += p.length + 2;
     }
 
     const sessionId = options.sessionId ?? readerSessionRef.current + 1;
@@ -364,13 +373,12 @@ export default function Apostila() {
     const advance = () => {
       const current = readerRef.current;
       if (readerSessionRef.current !== sessionId || current.lessonKey !== lessonKey || !current.isPlaying) return;
-      const nextIndex = paragraphIndex + 1;
-      if (nextIndex < paragraphs.length) {
-        setReader((state) => ({ ...state, paragraphIndex: nextIndex, wordIndex: 0, isPlaying: true }));
+      if (blockEnd < paragraphs.length) {
+        setReader((state) => ({ ...state, paragraphIndex: blockEnd, wordIndex: 0, isPlaying: true }));
         window.setTimeout(() => {
           const latest = readerRef.current;
           if (readerSessionRef.current === sessionId && latest.lessonKey === lessonKey && latest.isPlaying) {
-            speakParagraph(lessonKey, nextIndex, latest.rate, { skipCancel: true, sessionId });
+            speakParagraph(lessonKey, blockEnd, latest.rate, { skipCancel: true, sessionId });
           }
         }, 80);
       } else {
@@ -387,12 +395,29 @@ export default function Apostila() {
       utterance.lang = 'pt-BR';
       utterance.rate = rate;
       utterance.pitch = 1.15;
-      const wordStarts = [...text.matchAll(/\S+/g)].map((match) => match.index || 0);
+
+      // Precompute word starts for each paragraph in the block
+      const blockWordStarts = blockParagraphs.map((p) => [...p.matchAll(/\S+/g)].map((m) => m.index || 0));
+
       utterance.onboundary = (event) => {
         if (event.name && event.name !== 'word') return;
         if (readerSessionRef.current !== sessionId) return;
-        const nextWordIndex = Math.max(0, wordStarts.findLastIndex((start) => start <= event.charIndex));
-        setReader((state) => ({ ...state, wordIndex: nextWordIndex }));
+
+        // Find which paragraph in the block this charIndex belongs to
+        let relParaIndex = 0;
+        for (let i = paragraphOffsets.length - 1; i >= 0; i--) {
+          if (event.charIndex >= paragraphOffsets[i]) {
+            relParaIndex = i;
+            break;
+          }
+        }
+
+        const absoluteParaIndex = paragraphIndex + relParaIndex;
+        const relCharIndex = event.charIndex - paragraphOffsets[relParaIndex];
+        const wordStarts = blockWordStarts[relParaIndex] || [];
+        const nextWordIndex = Math.max(0, wordStarts.findLastIndex((start) => start <= relCharIndex));
+
+        setReader((state) => ({ ...state, paragraphIndex: absoluteParaIndex, wordIndex: nextWordIndex }));
       };
       utterance.onend = advance;
       utterance.onerror = () => {
@@ -475,14 +500,16 @@ export default function Apostila() {
     const paragraphs = paragraphsByLesson[lessonKey] || [];
     if (!paragraphs.length) return;
     const currentIndex = reader.lessonKey === lessonKey ? reader.paragraphIndex : 0;
-    speakParagraph(lessonKey, currentIndex + 1 >= paragraphs.length ? 0 : currentIndex + 1, reader.rate);
+    const nextIndex = currentIndex + READER_BLOCK_SIZE;
+    speakParagraph(lessonKey, nextIndex >= paragraphs.length ? 0 : nextIndex, reader.rate);
   };
 
   const previousReaderParagraph = (lessonKey) => {
     const paragraphs = paragraphsByLesson[lessonKey] || [];
     if (!paragraphs.length) return;
     const currentIndex = reader.lessonKey === lessonKey ? reader.paragraphIndex : 0;
-    speakParagraph(lessonKey, Math.max(0, currentIndex - 1), reader.rate);
+    const prevIndex = Math.max(0, currentIndex - READER_BLOCK_SIZE);
+    speakParagraph(lessonKey, prevIndex, reader.rate);
   };
 
   const changeReaderRate = (lessonKey, rate) => {
