@@ -32,14 +32,55 @@ async function loginFromAccessLink() {
   }
 }
 
+/**
+ * Verifica se o usuário retornou do fluxo de Google OAuth do Base44.
+ * Se autenticado via Google, valida o email contra AdminCredential via
+ * siteLogin (mode: 'admin_google') e cria a sessão admin.
+ *
+ * Esta função só é chamada quando NÃO há sessão existente — portanto
+ * não afeta alunos que já estão logados via código de acesso.
+ */
+async function checkGoogleAuth() {
+  try {
+    const user = await base44.auth.me();
+    if (!user || !user.email) return null;
+
+    const response = await base44.functions.invoke('siteLogin', { mode: 'admin_google' });
+    if (response?.data?.session) {
+      persistSession(response.data.session, { remember: true });
+      return response.data.session;
+    }
+  } catch {
+    // Não autenticado via Google OAuth — segue fluxo normal
+  }
+  return null;
+}
+
 export function CustomAuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
+      // 1. Verifica link de acesso direto (?acesso=EDU-XXXX)
       const fromLink = await loginFromAccessLink();
-      setSession(fromLink || getSession());
+      if (fromLink) {
+        setSession(fromLink);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Verifica sessão existente (localStorage/sessionStorage)
+      const existing = getSession();
+      if (existing) {
+        setSession(existing);
+        setLoading(false);
+        return;
+      }
+
+      // 3. Sem sessão — verifica se retornou do Google OAuth (admin)
+      const googleSession = await checkGoogleAuth();
+      setSession(googleSession);
       setLoading(false);
     })();
   }, []);
