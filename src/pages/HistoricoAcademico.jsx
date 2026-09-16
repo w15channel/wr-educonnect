@@ -25,6 +25,7 @@ const HISTORY_CATEGORY = {
   Tarefa: 'TAREFAS',
   Prova: 'PROVAS',
 };
+const CORE_CATEGORIES = new Set(['AULAS', 'TAREFAS', 'PROVAS']);
 
 // ─── AcademicRecord document ──────────────────────────────────────────────────
 function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes = 0, approvalRate, activitiesCount = 0, onClose, isAdmin = false }) {
@@ -377,7 +378,9 @@ export default function HistoricoAcademico() {
         ...r,
         category: HISTORY_CATEGORY[r.category] || 'ATIVIDADES COMPLEMENTARES',
         score: r.score,
-        module: resolveItemModule(scoreItem || { created_date: r.date }, studentUnlocks),
+        // Preserva o módulo da própria atividade (definido por resolveActivityModule
+        // em buildStudentAcademicData), sem sobrescrever pela data de liberação do aluno.
+        module: r.module,
       };
     });
     const academicRows = mappedRows.filter((r) => r.status === 'Avaliado');
@@ -395,7 +398,8 @@ export default function HistoricoAcademico() {
         hours: 0,
         status: 'Avaliado',
         notes: item.notes || '',
-        module: resolveItemModule(item, studentUnlocks),
+        // Usa o módulo carimbado no ScoreItem (stampScoreModule), se existir.
+        module: Number(item.module_number) || null,
       }));
 
     const unlockedSet = new Set([1, ...studentUnlocks.map(u => Number(u.module_number))]);
@@ -434,10 +438,14 @@ export default function HistoricoAcademico() {
   const totalMaxScore = 100;
   const totalMinutes = selectedRows.filter(r => r.status === 'Avaliado').reduce((sum, r) => sum + (Number(r.minutes) || 0), 0);
 
+  // Aproveitamento: apenas atividades núcleo (AULAS, TAREFAS, PROVAS) contam
+  // para o percentual. Atividades complementares contabilizam carga horária
+  // mas não entram no percentual de aproveitamento.
+  const coreModuleRows = moduleRows.filter(r => CORE_CATEGORIES.has(r.category));
+  const coreAvailableRows = availableModuleRows.filter(r => CORE_CATEGORIES.has(r.category));
   const activitiesCount = moduleRows.length;
-  const availableActivitiesCount = availableModuleRows.length;
-  const approvalRate = availableActivitiesCount > 0
-    ? Math.min(Math.round((activitiesCount / availableActivitiesCount) * 100), 100)
+  const approvalRate = coreAvailableRows.length > 0
+    ? Math.min(Math.round((coreModuleRows.length / coreAvailableRows.length) * 100), 100)
     : 0;
 
   const toggleItem = (key) => {
