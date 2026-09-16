@@ -182,7 +182,7 @@ export default function Exams() {
   return (
     <div className="app-page max-w-[900px] mx-auto animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-5">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             <GraduationCap size={22} className="text-primary" />
