@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useOperationsConversation from '@/components/luna/useOperationsConversation';
 import OperationsStatus from '@/components/luna/OperationsStatus';
-import { Send, Plus, Briefcase, Volume2, VolumeX, Megaphone, X, Loader2 } from 'lucide-react';
+import { Send, Plus, Briefcase, Volume2, VolumeX, MessageCircle, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,9 +21,18 @@ const QUICK = [
 
 const APP_BASE_URL = 'https://base44.app/apps/69f55577840a3c93cee191be';
 
-// ── Modal de Mensagens Rápidas ──────────────────────────────────────────────
-// Permite ao admin enviar anúncios personalizados com link de acesso direto
+const DM_PREFIX = 'dm_';
+
+function getDMSessionId(emailA, emailB) {
+  const sorted = [emailA, emailB].sort();
+  return `${DM_PREFIX}${sorted[0]}_${sorted[1]}`;
+}
+
+// ── Modal de Mensagens no Chat Particular ────────────────────────────────────
+// Permite ao admin enviar mensagens personalizadas com link de acesso direto
 // e redirect para qualquer página do site, usando o código único de cada aluno.
+// As mensagens são entregues no chat particular (DM) de cada aluno — não no
+// feed público do mural de superação — garantindo privacidade da comunicação.
 function QuickMessagesModal({ session, onClose }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,27 +91,38 @@ function QuickMessagesModal({ session, onClose }) {
     if (selectedEmails.size === 0) { toast.error('Selecione pelo menos um aluno.'); return; }
     setSending(true);
     let success = 0, failed = 0;
+    const adminEmail = session?.email || '';
+    const adminName = session?.name || 'Coordenação';
     for (const student of students) {
       if (!selectedEmails.has(student.student_email)) continue;
       try {
         const link = buildLink(student.code);
-        let fullContent = `${content}\n\n👉 Acesse agora:\n${link}`;
+        let fullContent = `${title.trim()}\n\n${content}`;
+        fullContent += `\n\n👉 Acesse agora:\n${link}`;
         if (includeProfileReminder && profileIncomplete(student)) {
           fullContent += '\n\n📋 Ah, e não esqueça: seu perfil ainda está incompleto! Quando entrar, passe na página "Perfil" no menu e adicione sua foto, bio e apelido.';
         }
-        await base44.entities.Announcement.create({
-          title: title.trim(),
+        const sessionId = getDMSessionId(adminEmail, student.student_email);
+        await base44.entities.ChatMessage.create({
+          session_id: sessionId,
+          author_name: adminName,
+          author_email: adminEmail,
           content: fullContent,
-          type: 'info',
-          course: student.course || 'tcc',
+          is_hand_raised: false,
+        });
+        await base44.entities.Notification.create({
           recipient_email: student.student_email,
+          sender_email: adminEmail,
+          sender_name: adminName,
+          message: `Você recebeu uma mensagem particular da coordenação: "${title.trim()}"`,
+          type: 'wall_reply',
         });
         success++;
       } catch { failed++; }
     }
     setSending(false);
-    if (success > 0) toast.success(`${success} anúncio(s) enviado(s) com sucesso!`);
-    if (failed > 0) toast.error(`${failed} anúncio(s) falharam.`);
+    if (success > 0) toast.success(`${success} mensagem(s) enviada(s) no chat particular!`);
+    if (failed > 0) toast.error(`${failed} mensagem(s) falharam.`);
     if (failed === 0 && success > 0) onClose();
   };
 
@@ -113,21 +133,26 @@ function QuickMessagesModal({ session, onClose }) {
       <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl bg-card border border-border shadow-xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <Megaphone size={18} className="text-rose-500" />
-            <h3 className="font-bold text-foreground">Mensagens Rápidas</h3>
+            <MessageCircle size={18} className="text-rose-500" />
+            <h3 className="font-bold text-foreground">Mensagens no Chat Particular</h3>
           </div>
           <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary"><X size={18} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 dark:border-violet-800 dark:bg-violet-950/30">
+            <MessageCircle size={14} className="shrink-0 text-violet-600" />
+            <p className="text-[11px] text-violet-700 dark:text-violet-300">As mensagens são entregues no chat particular de cada aluno — não aparecem no mural de superação.</p>
+          </div>
+
           <div>
-            <label className="text-xs font-semibold text-muted-foreground mb-1 block">Título do anúncio</label>
+            <label className="text-xs font-semibold text-muted-foreground mb-1 block">Título da mensagem</label>
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Novidade da semana!" className="h-10" />
           </div>
 
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-1 block">Mensagem</label>
-            <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Escreva a mensagem que os alunos receberão..." className="min-h-[120px]" />
+            <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Escreva a mensagem que os alunos receberão no chat particular..." className="min-h-[120px]" />
             <p className="mt-1 text-[10px] text-muted-foreground">O link de acesso com redirect será adicionado automaticamente ao final de cada mensagem.</p>
           </div>
 
@@ -175,9 +200,9 @@ function QuickMessagesModal({ session, onClose }) {
         </div>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <p className="text-[10px] text-muted-foreground">O link incluirá o código de acesso único de cada aluno + redirect automático.</p>
+          <p className="text-[10px] text-muted-foreground">As mensagens vão para o chat particular de cada aluno com link de acesso + redirect automático.</p>
           <Button onClick={handleSend} disabled={sending || !title.trim() || !content.trim() || selectedEmails.size === 0} className="gap-2">
-            {sending ? <Loader2 size={14} className="animate-spin" /> : <Megaphone size={14} />}
+            {sending ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />}
             {sending ? 'Enviando...' : `Enviar para ${selectedEmails.size} aluno(s)`}
           </Button>
         </div>
@@ -227,10 +252,10 @@ export default function OperationsChat({ session }) {
         </div>
         <button
           onClick={() => setShowQuickMessages(true)}
-          title="Mensagens rápidas"
+          title="Mensagens no chat particular"
           className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-white/10"
         >
-          <Megaphone size={15} />
+          <MessageCircle size={15} />
         </button>
         <button
           onClick={voice.toggle}
@@ -262,7 +287,7 @@ export default function OperationsChat({ session }) {
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex shrink-0 gap-2 border-t border-rose-100 bg-card dark:border-white/20 dark:bg-black p-3">
-        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Converse, peça um plano ou solicite uma ação..." className="h-11 flex-1 border-rose-200 dark:border-white/20" disabled={!canSend} />
+        <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Converse, peça um plano ou solicite uma ação..." className="h-11 flex-1 border-rose-200 dark:border-white/20" disabled={!canSend} />
         <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
         <Button type="submit" className="h-11 w-11 shrink-0 p-0 bg-rose-500 hover:bg-rose-600" disabled={!input.trim() || !canSend}><Send size={16} /></Button>
       </form>
