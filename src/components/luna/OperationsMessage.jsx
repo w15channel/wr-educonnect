@@ -64,19 +64,19 @@ function ToolCallRow({ toolCall }) {
   const color = running ? 'text-amber-500' : failed ? 'text-destructive' : 'text-emerald-600';
 
   return (
-    <div className="mt-1.5 overflow-hidden rounded-lg border border-border/70 bg-background/60 text-[11px]">
+    <div className="mt-1.5 overflow-hidden rounded-lg border border-border/70 bg-background/60 dark:border-white/20 dark:bg-black text-[11px]">
       <button type="button" onClick={() => !hidden && setOpen((v) => !v)} className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left">
         <Icon size={12} className={`${color} ${running ? 'animate-spin' : ''} shrink-0`} />
-        <span className="font-mono font-semibold text-foreground break-all">{toolCall.name}</span>
+        <span className="font-mono font-semibold text-foreground dark:text-white break-all">{toolCall.name}</span>
         <span className="text-muted-foreground shrink-0">· {label}</span>
         {!hidden && <span className="ml-auto shrink-0 text-muted-foreground">{open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span>}
       </button>
       {open && !hidden && (
-        <div className="space-y-1 overflow-hidden border-t border-border/70 px-2 py-1.5">
+        <div className="space-y-1 overflow-hidden border-t border-border/70 dark:border-white/20 px-2 py-1.5">
           <p className="font-semibold text-muted-foreground">Parâmetros</p>
-          <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all text-[10px]">{JSON.stringify(parseJson(toolCall.arguments_string), null, 2)}</pre>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all text-[10px] dark:text-white/80">{JSON.stringify(parseJson(toolCall.arguments_string), null, 2)}</pre>
           <p className="font-semibold text-muted-foreground">Resultado</p>
-          <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all text-[10px]">{typeof results === 'string' ? results : JSON.stringify(results, null, 2)}</pre>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all text-[10px] dark:text-white/80">{typeof results === 'string' ? results : JSON.stringify(results, null, 2)}</pre>
         </div>
       )}
     </div>
@@ -92,7 +92,7 @@ export default function OperationsMessage({ message }) {
   return (
     <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className="relative max-w-[88%] min-w-0">
-        <div className={`overflow-hidden rounded-2xl px-3 py-2 text-sm ${isUser ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
+        <div className={`overflow-hidden rounded-2xl px-3 py-2 text-sm ${isUser ? 'border border-rose-200 bg-rose-50/60 text-foreground dark:border-white/20 dark:bg-black dark:text-white' : 'border border-border/70 bg-background/85 text-foreground dark:border-white/20 dark:bg-black dark:text-white'}`}>
           {hasContent && (isUser
             ? <p className="whitespace-pre-wrap break-words" style={wrapStyle}>{rawContent.replace(/^\[Contexto administrativo\][\s\S]*?\[\/Contexto administrativo\]\s*/, '')}</p>
             : <div className="prose prose-sm dark:prose-invert max-w-none break-words [&_p]:my-1 [&_ul]:my-1" style={wrapStyle}><ReactMarkdown disallowedElements={['button', 'input', 'form', 'script', 'style', 'iframe']} unwrapDisallowed>{rawContent}</ReactMarkdown></div>)}
@@ -102,7 +102,7 @@ export default function OperationsMessage({ message }) {
           <button
             onClick={() => handleShare(rawContent)}
             title="Compartilhar"
-            className={`absolute -bottom-2.5 ${isUser ? 'right-2' : 'left-2'} inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-[10px] font-semibold text-muted-foreground shadow-sm transition-all hover:text-foreground hover:border-primary/40 hover:opacity-100 active:scale-95 opacity-60 sm:opacity-0 sm:group-hover:opacity-100`}
+            className={`absolute -bottom-2.5 ${isUser ? 'right-2' : 'left-2'} inline-flex items-center gap-1 rounded-full border border-rose-200 dark:border-white/20 bg-background dark:bg-black px-2 py-0.5 text-[10px] font-semibold text-muted-foreground shadow-sm transition-all hover:text-foreground hover:border-rose-400 dark:hover:border-white/40 hover:opacity-100 active:scale-95 opacity-60 sm:opacity-0 sm:group-hover:opacity-100`}
           >
             <Share2 size={10} />
             Compartilhar
