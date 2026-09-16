@@ -59,7 +59,6 @@ const countNewSince = (items = [], seenAt = 0, ownEmail = '') => (
 const capBadge = (count) => count > 99 ? '99+' : String(count);
 
 // ── Nav groups
-// Note: Chat da Turma ↔ Sala de Debates ícones trocados conforme solicitado
 const adminGroups = [
   {
     label: 'Classe',
@@ -106,6 +105,11 @@ const adminGroups = [
   },
 ];
 
+// ── Student nav groups (consolidated: 20 items, down from 24)
+// Merged: Certificação + Meu Certificado → "Certificação"
+// Merged: Meu Perfil + Perfil de Estudos → "Meu Perfil" (modalidade dentro do perfil)
+// Merged: Monitores + Classe → "Turma"
+// Merged: Pontuação Geral + Histórico → "Pontuação & Histórico"
 const studentGroups = [
   {
     label: 'Classe',
@@ -122,13 +126,19 @@ const studentGroups = [
   {
     label: 'Comunidade',
     items: [
-      { icon: Trophy,        label: 'Pontuação Geral',        path: '/pontuacao-geral',   color: 'text-yellow-400' },
       { icon: UsersRound,    label: 'Mural de Superação',      path: '/chat',              color: 'text-blue-400' },
       { icon: MessageSquare, label: 'Suporte ao Aluno',       path: '/forum',             color: 'text-green-400' },
       { icon: Hash,          label: 'Sala de Debates',        path: '/debates',           color: 'text-fuchsia-400' },
       { icon: Heart,         label: 'Terapeuta da Semana',    path: '/terapeuta',         color: 'text-rose-400' },
-      { icon: Crown,         label: 'Monitores',              path: '/monitores',         color: 'text-yellow-400' },
-      { icon: Users,         label: 'Classe',                 path: '/classe',            color: 'text-sky-400' },
+      { icon: Users,         label: 'Turma',                   path: '/classe',            color: 'text-sky-400' },
+    ],
+  },
+  {
+    label: 'Acadêmico',
+    items: [
+      { icon: Trophy,        label: 'Pontuação & Histórico',  path: '/historico',         color: 'text-yellow-400' },
+      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-amber-400' },
+      { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-emerald-400' },
     ],
   },
   {
@@ -137,18 +147,8 @@ const studentGroups = [
       { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
       { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
       { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
-      { icon: GraduationCap, label: 'Perfil de Estudos',      path: '/study-profile',     color: 'text-violet-400' },
       { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-indigo-400' },
-    ],
-  },
-  {
-    label: 'Ferramentas',
-    items: [
       { icon: Brain,         label: 'Luna — Assistente IA',   path: '/tutor',             color: 'text-amber-400' },
-      { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-emerald-400' },
-      { icon: Trophy,        label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
-      { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
-      { icon: Award,         label: 'Meu Certificado',        path: '/meu-certificado',   color: 'text-amber-400' },
     ],
   },
 ];
@@ -279,10 +279,6 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     setSeenNow(studentEmail, userCourse, current);
   }, [base, isAdmin, location.pathname, studentEmail, userCourse]);
 
-  // Na primeira carga (ou quando o "visto" nunca foi gravado — ex: cache
-  // limpo/troca de dispositivo), define a linha de base como "agora" ao invés
-  // de 0. Isso evita que publicações antigas do fórum/debates/etc. sejam
-  // contadas como "novas" indefinidamente.
   useEffect(() => {
     if (isAdmin || !studentEmail) return;
     VIEW_BADGE_PATHS.forEach((path) => {
@@ -318,13 +314,10 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     };
   }, [isAdmin, studentEmail, userCourse, lessons, lessonProgress, tasks, taskSubmissions, exams, examSubmissions, challenges, challengeResponses, chatMessages, forumPosts, forumReplies, debatePosts, debateReplies, pairings, announcements, tuitions, moduleUnlocked]);
 
-  // Collapsible group state — initially open the group that has the active route
-  // Also re-open group when location changes (e.g. user navigates to a new section)
   const [openGroups, setOpenGroups] = useState(() =>
     getInitialOpenGroups(groups, base, location.pathname)
   );
 
-  // Auto-expand the group of the active route whenever route changes
   useEffect(() => {
     const active = getInitialOpenGroups(groups, base, location.pathname);
     if (Object.keys(active).length > 0) {
