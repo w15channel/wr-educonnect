@@ -405,7 +405,7 @@ export default function HistoricoAcademico() {
         module: Number(item.module_number) || null,
       }));
 
-    const unlockedSet = new Set([1, ...studentUnlocks.map(u => Number(u.module_number))]));
+    const unlockedSet = new Set([1, ...studentUnlocks.map(u => Number(u.module_number))]);
 
     return {
       rows: [...academicRows, ...complementaryRows].filter(r => r.module == null || unlockedSet.has(Number(r.module))),
