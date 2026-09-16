@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useOperationsConversation from '@/components/luna/useOperationsConversation';
 import OperationsStatus from '@/components/luna/OperationsStatus';
-import { Send, Plus, Briefcase, Volume2, VolumeX } from 'lucide-react';
+import { Send, Plus, Briefcase, Volume2, VolumeX, Megaphone, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import OperationsMessage from '@/components/luna/OperationsMessage';
 import useLunaVoice from '@/hooks/useLunaVoice';
+import { LUNA_TOOL_PATHS } from '@/lib/lunaPersona';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
 const QUICK = [
   'Vamos conversar sobre melhorias na plataforma',
@@ -15,12 +19,180 @@ const QUICK = [
   'Liste os chamados de suporte abertos',
 ];
 
+const APP_BASE_URL = 'https://base44.app/apps/69f55577840a3c93cee191be';
+
+// ── Modal de Mensagens Rápidas ──────────────────────────────────────────────
+// Permite ao admin enviar anúncios personalizados com link de acesso direto
+// e redirect para qualquer página do site, usando o código único de cada aluno.
+function QuickMessagesModal({ session, onClose }) {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [redirectKey, setRedirectKey] = useState('checklist');
+  const [includeProfileReminder, setIncludeProfileReminder] = useState(true);
+  const [selectedEmails, setSelectedEmails] = useState(new Set());
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const codes = await base44.entities.AccessCode.filter(
+          { is_active: true }, 'student_name', 500
+        );
+        const adminEmail = (session?.email || '').toLowerCase();
+        const filtered = codes.filter(c =>
+          c.student_email &&
+          c.student_email.toLowerCase() !== adminEmail &&
+          c.student_email !== 'suporteti@edu.com'
+        );
+        setStudents(filtered);
+        setSelectedEmails(new Set(filtered.map(s => s.student_email)));
+      } catch {
+        toast.error('Não foi possível carregar a lista de alunos.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [session?.email]);
+
+  const toggleStudent = (email) => {
+    setSelectedEmails(prev => {
+      const next = new Set(prev);
+      if (next.has(email)) next.delete(email);
+      else next.add(email);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedEmails.size === students.length) setSelectedEmails(new Set());
+    else setSelectedEmails(new Set(students.map(s => s.student_email)));
+  };
+
+  const buildLink = (code) => {
+    const redirect = LUNA_TOOL_PATHS[redirectKey] || '/checklist';
+    return `${APP_BASE_URL}/?acesso=${encodeURIComponent(code)}&redirect=${redirect}`;
+  };
+
+  const profileIncomplete = (s) => !s.profile_bio && !s.profile_photo_url && !s.profile_name;
+
+  const handleSend = async () => {
+    if (!title.trim() || !content.trim()) { toast.error('Preencha o título e a mensagem.'); return; }
+    if (selectedEmails.size === 0) { toast.error('Selecione pelo menos um aluno.'); return; }
+    setSending(true);
+    let success = 0, failed = 0;
+    for (const student of students) {
+      if (!selectedEmails.has(student.student_email)) continue;
+      try {
+        const link = buildLink(student.code);
+        let fullContent = `${content}\n\n👉 Acesse agora:\n${link}`;
+        if (includeProfileReminder && profileIncomplete(student)) {
+          fullContent += '\n\n📋 Ah, e não esqueça: seu perfil ainda está incompleto! Quando entrar, passe na página "Perfil" no menu e adicione sua foto, bio e apelido.';
+        }
+        await base44.entities.Announcement.create({
+          title: title.trim(),
+          content: fullContent,
+          type: 'info',
+          course: student.course || 'tcc',
+          recipient_email: student.student_email,
+        });
+        success++;
+      } catch { failed++; }
+    }
+    setSending(false);
+    if (success > 0) toast.success(`${success} anúncio(s) enviado(s) com sucesso!`);
+    if (failed > 0) toast.error(`${failed} anúncio(s) falharam.`);
+    if (failed === 0 && success > 0) onClose();
+  };
+
+  const redirectOptions = Object.entries(LUNA_TOOL_PATHS);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl bg-card border border-border shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Megaphone size={18} className="text-rose-500" />
+            <h3 className="font-bold text-foreground">Mensagens Rápidas</h3>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary"><X size={18} /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground mb-1 block">Título do anúncio</label>
+            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Novidade da semana!" className="h-10" />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground mb-1 block">Mensagem</label>
+            <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Escreva a mensagem que os alunos receberão..." className="min-h-[120px]" />
+            <p className="mt-1 text-[10px] text-muted-foreground">O link de acesso com redirect será adicionado automaticamente ao final de cada mensagem.</p>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground mb-1 block">Página de destino do link</label>
+            <select value={redirectKey} onChange={e => setRedirectKey(e.target.value)} className="h-10 w-full rounded-xl border border-border bg-background text-foreground text-sm px-3">
+              {redirectOptions.map(([key, path]) => (
+                <option key={key} value={key}>{key} → {path}</option>
+              ))}
+            </select>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={includeProfileReminder} onChange={e => setIncludeProfileReminder(e.target.checked)} className="h-4 w-4 rounded" />
+            <span className="text-sm text-muted-foreground">Adicionar lembrete de perfil para alunos sem perfil completo</span>
+          </label>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-muted-foreground">Destinatários ({selectedEmails.size}/{students.length})</label>
+              <button onClick={toggleAll} className="text-[11px] font-semibold text-rose-500 hover:underline">
+                {selectedEmails.size === students.length ? 'Desmarcar todos' : 'Selecionar todos'}
+              </button>
+            </div>
+            {loading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4"><Loader2 size={14} className="animate-spin" /> Carregando alunos...</div>
+            ) : (
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-border divide-y divide-border">
+                {students.map(s => {
+                  const incomplete = profileIncomplete(s);
+                  return (
+                    <label key={s.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-secondary/50">
+                      <input type="checkbox" checked={selectedEmails.has(s.student_email)} onChange={() => toggleStudent(s.student_email)} className="h-4 w-4 rounded shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">{s.profile_name || s.student_name || s.student_email}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{s.student_email}</p>
+                      </div>
+                      {incomplete && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-700">Sem perfil</span>}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border px-4 py-3">
+          <p className="text-[10px] text-muted-foreground">O link incluirá o código de acesso único de cada aluno + redirect automático.</p>
+          <Button onClick={handleSend} disabled={sending || !title.trim() || !content.trim() || selectedEmails.size === 0} className="gap-2">
+            {sending ? <Loader2 size={14} className="animate-spin" /> : <Megaphone size={14} />}
+            {sending ? 'Enviando...' : `Enviar para ${selectedEmails.size} aluno(s)`}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Sala de comando da Luna — a gerente de operações executa ordens do admin. */
 export default function OperationsChat({ session }) {
   const operations = useOperationsConversation(session);
   const { conversation, messages, phase, busy, canSend, newConversation } = operations;
   const voice = useLunaVoice();
   const [input, setInput] = useState('');
+  const [showQuickMessages, setShowQuickMessages] = useState(false);
   const endRef = useRef(null);
   const spokenRef = useRef({ conversationId: null, fingerprint: '' });
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, phase]);
@@ -53,6 +225,13 @@ export default function OperationsChat({ session }) {
           <p className="text-[13px] font-black text-foreground dark:text-white">Luna · Gerente de Operações</p>
           <p className="truncate text-[11px] text-muted-foreground">Executa continuamente até concluir o pedido</p>
         </div>
+        <button
+          onClick={() => setShowQuickMessages(true)}
+          title="Mensagens rápidas"
+          className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-white/10"
+        >
+          <Megaphone size={15} />
+        </button>
         <button
           onClick={voice.toggle}
           title={voice.enabled ? 'Desligar voz da Luna' : 'Ligar voz da Luna'}
@@ -90,6 +269,8 @@ export default function OperationsChat({ session }) {
       <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">
         A Luna segue todas as etapas autorizadas sem pausas. Ações destrutivas ainda exigem confirmação por segurança.
       </p>
+
+      {showQuickMessages && <QuickMessagesModal session={session} onClose={() => setShowQuickMessages(false)} />}
     </div>
   );
 }
