@@ -7,7 +7,7 @@ import useLunaVoice from '@/hooks/useLunaVoice';
 import LunaBubble from '@/components/luna/LunaBubble';
 import LunaShortcuts from '@/components/luna/LunaShortcuts';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
-import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting, searchApostila } from '@/lib/lunaPersona';
+import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting, searchApostila, saveLunaMemory, loadLunaMemory, clearLunaMemory } from '@/lib/lunaPersona';
 import { SUPPORT_CATEGORIES } from '@/components/support/SupportTicketForm';
 import { toast } from 'sonner';
 
@@ -33,7 +33,16 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   const voice = useLunaVoice();
   const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo. Pode me contar o que está acontecendo? Vou tentar resolver pra você aqui mesmo — e se eu não conseguir, aí a gente vê sobre abrir um chamado pra equipe de suporte.`;
   const greeting = supportMode ? supportGreeting : lunaGreeting(session?.name);
-  const [messages, setMessages] = useState([{ role: 'assistant', content: greeting }]);
+
+  // ── Memória de 24h: restaura conversa anterior se existir ──
+  const memoryKey = `luna_chat_${session?.email || session?.code || 'anon'}`;
+  const savedMessages = loadLunaMemory(memoryKey);
+  const [messages, setMessages] = useState(
+    savedMessages && savedMessages.length > 0
+      ? [...savedMessages, { role: 'assistant', content: '🦉 Continuando nossa conversa de hoje. Como posso te ajudar agora?' }]
+      : [{ role: 'assistant', content: greeting }]
+  );
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [ticketCreating, setTicketCreating] = useState(false);
@@ -128,6 +137,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       }
 
       setMessages(updatedMessages);
+      saveLunaMemory(memoryKey, updatedMessages);
       if (activeRef.current) await voice.speak(reply);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Tive um problema para responder agora. Verifique sua internet e tente de novo, por favor.' }]);
@@ -152,7 +162,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
           {voice.enabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
         </button>
         <button
-          onClick={() => { voice.stop(); setMessages([{ role: 'assistant', content: greeting }]); }}
+          onClick={() => { voice.stop(); clearLunaMemory(memoryKey); setMessages([{ role: 'assistant', content: greeting }]); }}
           title="Reiniciar conversa"
           className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
