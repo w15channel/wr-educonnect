@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Award, BookOpen, FileText, Heart, Bell, Download, Loader2, CheckCircle2, Clock } from 'lucide-react';
-import { useOutletContext, useLocation, Link } from 'react-router-dom';
+import { useOutletContext, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
