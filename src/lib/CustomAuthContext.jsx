@@ -9,6 +9,10 @@ const CustomAuthContext = createContext();
  * O aluno clica no atalho enviado pela coordenação e cai direto na dashboard,
  * já com o acesso lembrado neste dispositivo (a caixinha "Lembrar acesso"
  * aparece marcada com o código dele caso saia da conta).
+ *
+ * Parâmetro opcional redirect: /?acesso=EDU-XXXX-XXXX&redirect=/checklist
+ * Quando presente, o aluno é levado direto para a página indicada após o login,
+ * em vez de passar pelo lobby.
  */
 async function loginFromAccessLink() {
   const params = new URLSearchParams(window.location.search);
@@ -16,14 +20,16 @@ async function loginFromAccessLink() {
   if (!raw) return null;
 
   const code = raw.trim().toUpperCase().replace(/\s+/g, '');
+  const redirect = params.get('redirect') || params.get('ir');
   try {
     const response = await base44.functions.invoke('siteLogin', { mode: 'student', code });
     const session = response.data.session;
     persistSession(session, { remember: true });
     localStorage.setItem('wr_remember_student_code', 'yes');
     localStorage.setItem('wr_saved_student_code', code);
-    // O aluno passa primeiro pelo lobby, onde vê os tutoriais antes de entrar.
-    window.history.replaceState({}, '', '/lobby');
+    // Redireciona para a página solicitada ou para o lobby se não houver redirect
+    const target = redirect ? `/${redirect.replace(/^\/+/, '')}` : '/lobby';
+    window.history.replaceState({}, '', target);
     return session;
   } catch {
     // Código inválido/desativado — segue para a tela de login normal.
