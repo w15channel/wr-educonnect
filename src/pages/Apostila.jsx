@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, FileText, CheckCircle, BookMarked, Play, Pause, Square, SkipBack, SkipForward, Lock, Wand2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipBack, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
 import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import useStudentRecords from '@/hooks/useStudentRecords';
@@ -566,141 +566,156 @@ export default function Apostila() {
     },
   });
 
+  const handleEditLesson = (chapterId, lessonId, content) => {
+    setEditingLesson(`${chapterId}__${lessonId}`);
+    setEditContent(getLessonHtml(content || ''));
+  };
+
+  const handleSaveLesson = (chapterId, lessonId) => {
+    saveMutation.mutate({ chapterId, lessonId, content: editContent });
+  };
+
+  const handleRewriteSave = ({ chapterId, lessonId, content }) => {
+    saveMutation.mutate({ chapterId, lessonId, content }, { onSuccess: () => setRewriteOpen(false) });
+  };
+
+  const totalLessons = chapters.reduce((total, chapter) => total + chapter.lessons.length, 0);
+  const totalRead = readLessons.size;
+
   return (
-    <div className="p-4 lg:p-6 space-y-5 animate-fade-in-up">
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow">
-          <BookOpen size={22} />
+    <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-24">
+      {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'book_lesson', message: 'concluiu uma aula na apostila.' }} message={celebrationMsg} onClose={() => setCelebrating(false)} />}
+      {printLesson && <ApostilaPrintModal lesson={printLesson.lesson} chapterTitle={printLesson.chapterTitle} onClose={() => setPrintLesson(null)} />}
+      {rewriteOpen && isAdmin && <ChapterRewriteModal chapters={chapters} onClose={() => setRewriteOpen(false)} onSave={handleRewriteSave} saving={saveMutation.isPending} />}
+
+      <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shrink-0">
+            <BookOpen size={26} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-bold text-foreground">Apostila — Formação em Terapia Comportamental</h1>
+            <p className="text-sm text-emerald-400 font-medium mt-1">Prof. William Ribeiro · Psicoterapeuta, Psicanalista e Sexólogo</p>
+            <p className="text-xs text-muted-foreground mt-1">Coordenador do Instituto de Desenvolvimento Humano WR-EDU®</p>
+            <div className="flex flex-wrap gap-3 mt-3">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full"><BookOpen size={12} className="text-emerald-400" />{totalLessons} aulas</div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full"><GraduationCap size={12} className="text-violet-400" />{chapters.length} módulos</div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full"><Award size={12} className="text-amber-400" />Formação Profissional</div>
+              {!isAdmin && <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full"><BookMarked size={12} className="text-emerald-400" />{totalRead}/{totalLessons} lidas</div>}
+            </div>
+            {isAdmin && <div className="mt-3"><Button size="sm" onClick={() => setRewriteOpen(true)} className="gap-1.5 bg-gradient-to-r from-violet-500 to-purple-700 text-white hover:opacity-90"><Wand2 size={13} /> Reescrever capítulo</Button></div>}
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-black text-foreground">Apostila do Curso</h2>
-          <p className="text-xs text-muted-foreground">Leitura interativa com narração em voz alta da Luna</p>
+        <div className="mt-5 pt-5 border-t border-emerald-500/15">
+          <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Fundamentação teórica</p>
+          <div className="flex flex-wrap gap-2">
+            {['Donald Winnicott', 'Kurt Lewin', 'Heinz Kohut', 'George Engel', 'Viktor Frankl'].map((name) => <span key={name} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-medium">{name}</span>)}
+          </div>
         </div>
+      </div>
+
+      <div className="rounded-xl bg-card border border-border p-4">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Objetivo Geral</h3>
+        <p className="text-sm text-foreground leading-relaxed">Formar terapeutas capazes de aplicar um modelo termodinâmico, vetorial e não-destrutivo da psique, aliviando dores e fornecendo ferramentas terapêuticas eficientes, integrando trade-off comportamental, algozes e modulação consciente com os principais referenciais teóricos.</p>
       </div>
 
       {readProgressError && <div role="alert" className="rounded-xl border border-destructive p-3 text-sm text-destructive">Não foi possível carregar suas leituras. Isso não significa que foram perdidas. <button onClick={() => reloadReadProgress()} className="underline">Tentar novamente</button></div>}
       {loadingReadProgress && <p role="status" className="text-sm text-muted-foreground">Recuperando suas leituras salvas...</p>}
-      <div className="space-y-2">
+
+      <div className="space-y-3">
         {chapters.map((chapter, chapterIndex) => {
-          const moduleNumber = chapterIndex + 1;
-          const isUnlocked = isAdmin || moduleUnlocked?.[moduleNumber - 1] || moduleNumber === 1;
-          const isOpen = openChapter === chapter.id;
+          const isChapterOpen = openChapter === chapter.id;
+          const color = chapter.colorLight || 'text-emerald-400';
+          const background = chapter.bgLight || 'bg-emerald-500/10';
+          const isLocked = !isAdmin && (loadingUnlocks || !moduleUnlocked[chapterIndex]);
           return (
-            <div key={chapter.id} className={`rounded-xl border border-border bg-card shadow-sm overflow-hidden ${!isUnlocked ? 'opacity-60' : ''}`}>
+            <div key={chapter.id} className={`rounded-2xl border border-border bg-card overflow-hidden ${isLocked ? 'opacity-60' : ''}`}>
               <button
-                onClick={() => { if (!isUnlocked) return; setOpenChapter(isOpen ? null : chapter.id); setOpenLesson(null); stopReader(); }}
-                disabled={!isUnlocked}
-                className="flex w-full items-center gap-3 p-4 text-left hover:bg-secondary/50 transition-colors disabled:cursor-not-allowed"
+                onClick={() => {
+                  if (isLocked) { toast.info(loadingUnlocks ? 'Carregando liberações...' : 'Este módulo será liberado automaticamente na data prevista no calendário.'); return; }
+                  if (reader.lessonKey) stopReader();
+                  setOpenChapter(isChapterOpen ? null : chapter.id);
+                }}
+                className={`w-full flex items-center justify-between p-5 transition-colors text-left ${isLocked ? 'cursor-not-allowed' : 'hover:bg-secondary/40'}`}
               >
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black ${isUnlocked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                  {isUnlocked ? moduleNumber : <Lock size={14} />}
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className={`w-10 h-10 rounded-xl ${background} flex items-center justify-center shrink-0`}>{isLocked ? <Lock size={15} className="text-muted-foreground" /> : <span className="text-sm font-bold">{chapterIndex + 1}</span>}</div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-foreground leading-tight">{chapter.title}</p>
+                    <p className={`text-xs mt-0.5 ${isLocked ? 'text-muted-foreground' : color} font-medium`}>{isLocked ? (loadingUnlocks ? 'Carregando liberações...' : 'Bloqueado — aguarde a data no calendário') : `${chapter.subtitle} · ${chapter.lessons.length} aulas`}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground truncate">{chapter.title}</p>
-                  <p className="text-[11px] text-muted-foreground">{chapter.lessons.length} aula(s)</p>
-                </div>
-                {isOpen ? <ChevronDown size={16} className="text-muted-foreground" /> : <ChevronRight size={16} className="text-muted-foreground" />}
+                {!isLocked && (isChapterOpen ? <ChevronDown size={16} className="text-muted-foreground shrink-0" /> : <ChevronRight size={16} className="text-muted-foreground shrink-0" />)}
               </button>
 
-              {isOpen && isUnlocked && (
+              {isChapterOpen && !isLocked && (
                 <div className="border-t border-border divide-y divide-border">
-                  {chapter.lessons.map((lesson, lessonIndex) => {
-                    const lessonKey = `${chapter.id}__${lesson.id}`;
-                    const isLessonOpen = openLesson === lesson.id;
-                    const isRead = readLessons.has(lessonKey);
-                    const paragraphs = paragraphsByLesson[lessonKey] || [];
-                    const isEditing = editingLesson === lesson.id;
+                  {chapter.lessons.map((lesson) => {
+                    const key = `${chapter.id}__${lesson.id}`;
+                    const isOpen = openLesson === key;
+                    const isEditing = editingLesson === key;
+                    const isRead = readLessons.has(key);
+                    const lessonParagraphs = paragraphsByLesson[key] || [];
+                    const readerActive = reader.lessonKey === key;
+                    const currentParagraph = readerActive ? reader.paragraphIndex + 1 : 1;
                     return (
                       <div key={lesson.id}>
                         <button
-                          onClick={() => { setOpenLesson(isLessonOpen ? null : lesson.id); stopReader(); }}
-                          className="flex w-full items-center gap-3 p-3 text-left hover:bg-secondary/30 transition-colors"
+                          onClick={() => { if (readerActive) stopReader(); setOpenLesson(isOpen ? null : key); }}
+                          className={`w-full flex items-center justify-between px-5 py-3.5 hover:bg-secondary/30 transition-colors text-left ${isRead ? 'bg-emerald-500/5' : ''}`}
                         >
-                          <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${isRead ? 'bg-emerald-500/20 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
-                            {isRead ? <CheckCircle size={12} /> : lessonIndex + 1}
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className={`w-6 h-6 rounded-lg ${isRead ? 'bg-emerald-500/20' : background} flex items-center justify-center shrink-0`}>{isRead ? <CheckCircle size={11} className="text-emerald-500" /> : <BookOpen size={11} className={color} />}</div>
+                            <span className={`text-sm font-medium leading-tight truncate ${isRead ? 'text-emerald-600' : 'text-foreground'}`}>{lesson.title}</span>
+                            {isRead && <span className="text-[10px] text-emerald-500 font-bold shrink-0">✓ Lida</span>}
                           </div>
-                          <p className="flex-1 text-xs font-semibold text-foreground truncate">{lesson.title || `Aula ${lessonIndex + 1}`}</p>
-                          {isLessonOpen ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
+                          {isOpen ? <ChevronDown size={14} className="text-muted-foreground shrink-0 ml-2" /> : <ChevronRight size={14} className="text-muted-foreground shrink-0 ml-2" />}
                         </button>
 
-                        {isLessonOpen && (
-                          <div className="p-3 space-y-3 bg-background/50">
+                        {isOpen && (
+                          <div className="px-5 pb-5 bg-secondary/10">
                             {isEditing ? (
-                              <div className="space-y-2">
-                                <ReactQuill
-                                  value={editContent}
-                                  onChange={setEditContent}
-                                  modules={quillModules}
-                                  formats={quillFormats}
-                                  theme="snow"
-                                  className="apostila-editor"
-                                />
+                              <div className="space-y-3">
+                                <div className="rounded-2xl border border-emerald-500/20 bg-slate-950/70 p-3 shadow-inner">
+                                  <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-300"><Edit2 size={12} /> Edição do conteúdo da apostila</span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1"><Type size={12} /> Fonte, tamanho, cor e alinhamento disponíveis</span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1"><AlignLeft size={12} /> Use a visualização para ajustar quebras e posicionamento</span>
+                                  </div>
+                                  <div className="apostila-rich-editor overflow-hidden rounded-xl border border-white/10 bg-white shadow-2xl"><ReactQuill theme="snow" value={editContent} onChange={setEditContent} modules={quillModules} formats={quillFormats} placeholder="Digite e formate o conteúdo da aula aqui..." /></div>
+                                </div>
+                                <div className="text-xs font-medium text-right text-muted-foreground">{editContent.replace(/<[^>]*>/g, '').length} caracteres de texto</div>
                                 <div className="flex gap-2">
-                                  <Button size="sm" onClick={() => saveMutation.mutate({ chapterId: chapter.id, lessonId: lesson.id, content: editContent })} disabled={saveMutation.isPending}>
-                                    <Save size={14} /> Salvar
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={() => setEditingLesson(null)}><X size={14} /> Cancelar</Button>
+                                  <Button size="sm" onClick={() => handleSaveLesson(chapter.id, lesson.id)} disabled={saveMutation.isPending}><Save size={13} /> {saveMutation.isPending ? 'Salvando...' : 'Salvar'}</Button>
+                                  <Button size="sm" variant="outline" onClick={() => setEditingLesson(null)}><X size={13} /> Cancelar</Button>
                                 </div>
                               </div>
                             ) : (
-                              <>
-                                <ReadingViewport
-                                  paragraphs={paragraphs}
-                                  activeParagraph={reader.lessonKey === lessonKey ? reader.paragraphIndex : -1}
-                                  activeWord={reader.lessonKey === lessonKey ? reader.wordIndex : -1}
-                                  isPlaying={reader.lessonKey === lessonKey && reader.isPlaying}
-                                  nativeFallback={reader.lessonKey === lessonKey && reader.nativeFallback}
-                                  viewportRef={(el) => { if (el) readerViewportRefs.current.set(lessonKey, el); else readerViewportRefs.current.delete(lessonKey); }}
-                                />
-
-                                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
-                                  <Button size="sm" variant="ghost" onClick={() => toggleReaderPlayback(lessonKey)} className={reader.lessonKey === lessonKey && reader.isPlaying ? 'bg-emerald-500/15 text-emerald-600' : ''}>
-                                    {reader.lessonKey === lessonKey && reader.isPlaying ? <Pause size={14} /> : <Play size={14} />}
-                                  </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => previousReaderParagraph(lessonKey)} disabled={!paragraphs.length}>
-                                    <SkipBack size={14} />
-                                  </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => skipReaderParagraph(lessonKey)} disabled={!paragraphs.length}>
-                                    <SkipForward size={14} />
-                                  </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => stopReader(lessonKey)} disabled={reader.lessonKey !== lessonKey}>
-                                    <Square size={14} />
-                                  </Button>
-                                  <div className="flex items-center gap-1 ml-2">
-                                    {READER_RATES.map((r) => (
-                                      <button
-                                        key={r}
-                                        onClick={() => changeReaderRate(lessonKey, r)}
-                                        className={`rounded px-2 py-0.5 text-[10px] font-bold transition ${reader.lessonKey === lessonKey && reader.rate === r ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-secondary'}`}
-                                      >{r}x</button>
-                                    ))}
+                              <div className="space-y-3">
+                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Volume2 size={16} />Leitor da apostila <span className="text-xs font-normal text-muted-foreground">Parágrafo {Math.min(currentParagraph, lessonParagraphs.length || 1)}/{lessonParagraphs.length || 1}</span></div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Button size="sm" variant="outline" onClick={() => toggleReaderPlayback(key)} disabled={!lessonParagraphs.length} className="gap-1.5">{readerActive && reader.isPlaying ? <Pause size={13} /> : <Play size={13} />}{readerActive && reader.isPlaying ? 'Pausar' : 'Play'}</Button>
+                                      <Button size="sm" variant="outline" onClick={() => stopReader(key)} disabled={!lessonParagraphs.length || !readerActive} className="gap-1.5"><Square size={13} /> Stop</Button>
+                                      <Button size="sm" variant="outline" onClick={() => previousReaderParagraph(key)} disabled={!lessonParagraphs.length || !readerActive || reader.paragraphIndex === 0} className="gap-1.5"><SkipBack size={13} /> Voltar parágrafo</Button>
+                                      <Button size="sm" variant="outline" onClick={() => skipReaderParagraph(key)} disabled={!lessonParagraphs.length} className="gap-1.5"><SkipForward size={13} /> Avançar parágrafo</Button>
+                                      <div className="flex items-center gap-1 rounded-lg border border-border bg-background/70 p-1" aria-label="Velocidade de leitura">
+                                        {READER_RATES.map((rate) => <button key={rate} type="button" onClick={() => changeReaderRate(key, rate)} className={`rounded-md px-2 py-1 text-xs font-bold transition-colors ${reader.rate === rate ? 'bg-emerald-500 text-white' : 'text-muted-foreground hover:bg-secondary'}`} aria-pressed={reader.rate === rate}>{rate.toFixed(1)}x</button>)}
+                                      </div>
+                                    </div>
                                   </div>
-                                  {reader.lessonKey === lessonKey && reader.nativeFallback && (
-                                    <span className="text-[10px] text-amber-500 font-semibold ml-2">Voz da Luna indisponível — usando narração do navegador</span>
-                                  )}
                                 </div>
-
-                                <div className="flex flex-wrap gap-2">
-                                  <Button size="sm" variant="outline" onClick={() => markRead(chapter.id, lesson.id)} disabled={isRead || !!savingReadKey || loadingReadProgress || !!readProgressError}>
-                                                                       {isRead ? <><CheckCircle size={14} /> Lida</> : loadingReadProgress ? 'Carregando...' : readProgressError ? 'Leitura indisponível' : savingReadKey === lessonKey ? 'Salvando...' : <><BookMarked size={14} /> Marcar como lida</>}
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={() => setPrintLesson(lesson)}>
-                                    <FileText size={14} /> Imprimir
-                                  </Button>
-                                  {isAdmin && (
-                                    <>
-                                      <Button size="sm" variant="outline" onClick={() => { setEditingLesson(lesson.id); setEditContent(getLessonHtml(lesson.content || '')); }}>
-                                        <Edit2 size={14} /> Editar
-                                      </Button>
-                                      <Button size="sm" variant="outline" onClick={() => setRewriteOpen(true)}>
-                                        <Wand2 size={14} /> Reescrever com IA
-                                      </Button>
-                                    </>
-                                  )}
+                                <div className={`rounded-xl border ${background} border-opacity-30 p-4`} style={{ borderColor: 'transparent', background: 'rgba(0,0,0,0.15)' }}>
+                                  <ReadingViewport paragraphs={lessonParagraphs.length ? lessonParagraphs : ['Conteúdo ainda não adicionado.']} activeParagraph={readerActive ? reader.paragraphIndex : -1} activeWord={readerActive ? reader.wordIndex : -1} isPlaying={readerActive && reader.isPlaying} nativeFallback={readerActive && reader.nativeFallback} viewportRef={(node) => { if (node) readerViewportRefs.current.set(key, node); else readerViewportRefs.current.delete(key); }} />
                                 </div>
-
-                                <NextStepLink currentModule={`apostila:${chapter.id}:${lesson.id}`} />
-                              </>
+                                <div className="flex gap-2 flex-wrap items-center">
+                                  <Button size="sm" variant="outline" onClick={() => setPrintLesson({ lesson, chapterTitle: chapter.title })} className="gap-1.5"><FileText size={13} /> Baixar PDF</Button>
+                                  {isAdmin && <Button size="sm" variant="outline" onClick={() => handleEditLesson(chapter.id, lesson.id, lesson.content)}><Edit2 size={13} /> Editar conteúdo</Button>}
+                                  {!isAdmin && (isRead ? <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl"><CheckCircle size={13} /> Leitura concluída!</span> : <button disabled={!!savingReadKey || loadingReadProgress || !!readProgressError} onClick={() => markRead(chapter.id, lesson.id)} className="apostila-mark-read-button inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-all active:scale-95 disabled:opacity-50"><BookMarked size={13} /> {savingReadKey === key ? 'Salvando...' : 'Marcar como lida'}</button>)}
+                                  {!isAdmin && <NextStepLink to="/ofensivas" icon={Flame} tone="orange" size="sm" title="Usar o conhecimento na Ofensiva" />}
+                                </div>
+                              </div>
                             )}
                           </div>
                         )}
@@ -714,29 +729,10 @@ export default function Apostila() {
         })}
       </div>
 
-      {printLesson && (
-        <ApostilaPrintModal
-          lesson={printLesson}
-          onClose={() => setPrintLesson(null)}
-        />
-      )}
-
-      {rewriteOpen && (
-        <ChapterRewriteModal
-          onClose={() => setRewriteOpen(false)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
-            setRewriteOpen(false);
-            toast.success('Conteúdo reescrito com IA!');
-          }}
-        />
-      )}
-
-      <ParticipationCelebration
-        open={celebrating}
-        message={celebrationMsg}
-        onClose={() => setCelebrating(false)}
-      />
+      <div className="rounded-xl border border-border bg-card/50 p-4 text-center">
+        <p className="text-xs text-muted-foreground leading-relaxed">Material didático de uso exclusivo dos alunos do Instituto de Desenvolvimento Humano WR-EDU®.<br />Reprodução ou distribuição não autorizada é proibida.</p>
+        <p className="text-xs text-primary mt-2 font-medium">© WR-EDU® — Prof. William Ribeiro</p>
+      </div>
     </div>
   );
 }
