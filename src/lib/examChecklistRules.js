@@ -54,6 +54,8 @@ export function buildModuleChecklist({
   challengeResponses = [],
   moduleWindow = null,
   previousExamCompleted = false,
+  includeTuition = false,
+  tuitionPaid = false,
 }) {
   // Aulas da apostila e tarefas são CUMULATIVAS — uma vez completas, sempre contam
   // independente de quando foram feitas. Não filtramos por janela de tempo.
@@ -99,6 +101,16 @@ export function buildModuleChecklist({
       target: 1,
       to: '/exams',
     }] : []),
+    // Mensalidade: item de bloqueio — alunos com mensalidade pendente não podem prosseguir.
+    // Incluído apenas no módulo atual do aluno (módulo 1 se ainda não concluiu, módulo 2+ caso contrário).
+    ...(includeTuition ? [{
+      key: 'tuition',
+      label: 'Quitar a mensalidade do curso',
+      hint: 'Acesse a área de Mensalidades para realizar o pagamento da sua mensalidade atual.',
+      current: tuitionPaid ? 1 : 0,
+      target: 1,
+      to: '/tuitions',
+    }] : []),
     {
       key: 'apostila',
       label: 'Marcar os capítulos da apostila do módulo como lidos',
@@ -116,7 +128,7 @@ export function buildModuleChecklist({
       to: '/tasks',
     },
     {
-      key: 'debate_topic',
+           key: 'debate_topic',
       label: 'Abrir um tema na Sala de Debates',
       hint: 'Escolha um tema dos capítulos da apostila e proponha o debate.',
       current: Math.min(myDebateTopics, 1),
