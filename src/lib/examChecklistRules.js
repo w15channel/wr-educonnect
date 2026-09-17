@@ -25,7 +25,7 @@ export const submissionTextLength = (submission) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MENSALIDADE POR MÓDULO
+// MENSALIDADES
 // Todas as mensalidades não pagas aparecem como pendência no checklist
 // de cada módulo. Se o aluno pagou todas, nenhum item de mensalidade aparece.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -129,6 +129,7 @@ export function buildModuleChecklist({
   // 7 — Mensalidades voluntárias em aberto.
   // Todas as mensalidades não pagas aparecem como pendência no checklist
   // de cada módulo. Se o aluno pagou todas, nenhum item de mensalidade aparece.
+  // O caminho leva à página de mensalidades (tuitions) com retorno ao checklist.
   const unpaidTuitions = (tuitions || []).filter((t) => t.status !== 'paid');
   const tuitionItems = unpaidTuitions.map((t, idx) => ({
     key: `tuition_${idx}`,
@@ -136,7 +137,7 @@ export function buildModuleChecklist({
     hint: `Contribuição voluntária em aberto. Vencimento: ${t.due_date || 'não definido'}.`,
     current: 0,
     target: 1,
-    to: '/tuition',
+    to: '/tuitions',
   }));
 
   const items = [
