@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import useModuleAccess from '@/hooks/useModuleAccess';
 import useStudentRecords from '@/hooks/useStudentRecords';
 import { base44 } from '@/api/base44Client';
-import { buildModuleChecklist, findOldestUnresolvedModule, parseModuleNumber } from '@/lib/examChecklistRules';
+import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
 
 const MODULE_COUNT = 10;
 // O calendário define o módulo disponível; concluir atividades não antecipa datas.
@@ -55,7 +55,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
     enabled: !!email,
   });
-  // A contribuição segue sempre o último lançamento feito pela administração.
+  // Mensalidades do aluno — cada módulo usa a mensalidade do seu período.
   const { data: tuitions = [], isLoading: l11 } = useQuery({
     queryKey: ['checklist-tuitions', email],
     queryFn: () => base44.entities.Tuition.filter({ student_email: email }, '-created_date', 50),
@@ -66,8 +66,8 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
   const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11 || access.isLoading;
 
   // Data em que cada módulo foi liberado para o aluno — usada para que
-  // debates, terapeuta da semana e ofensiva contem apenas o que foi feito
-  // dentro da janela de tempo daquele módulo, sem herdar participações antigas.
+  // debates, terapeuta da semana, ofensiva e mensalidade contem apenas o que
+  // foi feito dentro da janela de tempo daquele módulo.
   const unlockDateByModule = useMemo(() => {
     const map = new Map();
     moduleUnlocks.filter((u) => (u.course || 'tcc') === course).forEach((u) => {
@@ -76,12 +76,9 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     return map;
   }, [moduleUnlocks, course]);
 
-  const tuitionPaid = useMemo(() => tuitions[0]?.status === 'paid', [tuitions]);
-  const accessCurrentModule = access.currentModule;
-
   const modules = useMemo(() => {
     const submittedExamIds = new Set(examSubmissions.map((s) => s.exam_id));
-    const buildModules = (tuitionModule = null) => Array.from({ length: MODULE_COUNT }, (_, index) => {
+    return Array.from({ length: MODULE_COUNT }, (_, index) => {
       const moduleNumber = index + 1;
       const moduleWindow = { start: unlockDateByModule.get(moduleNumber) || null, end: unlockDateByModule.get(moduleNumber + 1) || null };
       const checklist = buildModuleChecklist({
@@ -95,23 +92,29 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
         pairings,
         challengeResponses,
         moduleWindow,
-        includeTuition: moduleNumber === tuitionModule,
-        tuitionPaid,
+        previousExamCompleted: moduleNumber === 1 ? true : (() => {
+          const previousModuleNumber = moduleNumber - 1;
+          const previousModuleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === previousModuleNumber);
+          return previousModuleExams.length === 0 ? true : previousModuleExams.every((exam) => submittedExamIds.has(exam.id));
+        })(),
+        tuitions,
       });
       const moduleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === moduleNumber);
       const examDone = moduleExams.length > 0 && moduleExams.every((exam) => submittedExamIds.has(exam.id));
       return { moduleNumber, ...checklist, examDone, exams: moduleExams };
     });
+  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, tuitions]);
 
-    const withoutTuition = buildModules();
-    const oldestUnresolved = findOldestUnresolvedModule(withoutTuition, access.availableModules, accessCurrentModule);
-    return buildModules(oldestUnresolved);
-  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, tuitionPaid, access.availableModules, accessCurrentModule]);
-
-  const currentModule = useMemo(
-    () => findOldestUnresolvedModule(modules, access.availableModules, accessCurrentModule),
-    [modules, access.availableModules, accessCurrentModule]
-  );
+  // O módulo atual é o primeiro disponível que ainda tem itens pendentes.
+  const currentModule = useMemo(() => {
+    const available = access.availableModules;
+    for (const mod of modules) {
+      if (available.includes(mod.moduleNumber) && !mod.complete) {
+        return mod.moduleNumber;
+      }
+    }
+    return access.currentModule;
+  }, [modules, access.availableModules, access.currentModule]);
 
   const isModuleUnlockedForExam = (moduleNumber) => {
     const found = modules.find((m) => m.moduleNumber === Number(moduleNumber));
