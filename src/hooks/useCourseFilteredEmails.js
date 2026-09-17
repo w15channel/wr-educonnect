@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 const SLUG_TO_PREFIX = { sex: 'SEX-', tcc: 'EDU-', psi: 'PSI-' };
 const SLUG_TO_COURSE = { sex: 'sexologia', tcc: 'tcc', psi: 'psicanalise' };
 
-export default function useCourseFilteredEmails() {
+export default function useCourseFilteredEmails(session) {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
   const courseSlug = (parts[0] === 'student' || parts[0] === 'adm') && parts[1] ? parts[1] : null;
@@ -16,6 +16,7 @@ export default function useCourseFilteredEmails() {
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes-filter'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 500),
+    enabled: !(session?.code || session?.codeId),
   });
 
   return useMemo(() => {

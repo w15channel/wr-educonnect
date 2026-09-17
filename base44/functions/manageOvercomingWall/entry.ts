@@ -102,6 +102,53 @@ async function syncAchievements(base44, user, requestedCourse) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({})); const user = await authenticatedUser(base44, payload);
+    if (payload.action === 'load') {
+      const service = base44.asServiceRole.entities;
+      const course = payload.course || user.course || 'tcc';
+      const rawCodes = await service.AccessCode.list('-created_date', 2000);
+      const accessCodes = rawCodes.map((item) => ({
+        id: item.id,
+        student_email: item.student_email,
+        student_name: item.student_name,
+        course: item.course,
+        profile_name: item.profile_name,
+        profile_avatar_color: item.profile_avatar_color,
+        profile_avatar_emoji: item.profile_avatar_emoji,
+        profile_photo_url: item.profile_photo_url,
+        is_active: item.is_active,
+        is_online: item.is_online,
+        last_seen_at: item.last_seen_at,
+      }));
+      const lessonProgresses = await service.LessonProgress.list('-created_date', 400);
+      const taskSubmissions = await service.TaskSubmission.list('-created_date', 300);
+      const examSubmissions = await service.ExamSubmission.list('-submitted_at', 200);
+      const challengeResponses = await service.DailyChallengeResponse.list('-created_date', 300);
+      const forumPosts = await service.ForumPost.list('-created_date', 300);
+      const pairings = await service.TherapistPairing.list('-updated_date', 200);
+      const lessons = await service.RecordedLesson.list('-created_date', 500);
+      const tasks = await service.Task.list('-created_date', 300);
+      const exams = await service.Exam.list('-created_date', 300);
+      const achievements = await service.Achievement.filter({ course }, '-occurred_at', 200);
+      const shared = await service.WallPublication.filter({ course }, '-published_at', 100);
+      const notices = await service.Announcement.filter({ course }, '-created_date', 100);
+      const liveSessions = await service.LiveSession.filter({ course }, '-scheduled_at', 100);
+      const calendarEvents = await service.CalendarEvent.list('-date', 200);
+      const reactions = await service.AchievementReaction.list('-created_date', 1500);
+      const notifications = await service.Notification.filter({ recipient_email: user.email }, '-created_date', 100);
+      const personalPosts = await service.StudentWallPost.filter({ student_email: user.email }, '-published_at', 30);
+      const monitorHistory = await service.MonitorHistory.filter({ course }, '-period_start', 100);
+      return Response.json({
+        success: true,
+        accessCodes,
+        activityRecords: { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams },
+        achievements,
+        institutionalRecords: { shared, notices, liveSessions, calendarEvents },
+        reactions,
+        notifications,
+        personalPosts,
+        monitorHistory,
+      });
+    }
     if (payload.action === 'listReads') {
       const records = await base44.asServiceRole.entities.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);
       return Response.json({ success: true, records });
