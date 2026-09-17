@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import useLunaVoice from '@/hooks/useLunaVoice';
 import LunaBubble from '@/components/luna/LunaBubble';
 import LunaShortcuts from '@/components/luna/LunaShortcuts';
+import LunaTuitionIntro from '@/components/luna/LunaTuitionIntro';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting, searchApostila, saveLunaMemory, loadLunaMemory, clearLunaMemory } from '@/lib/lunaPersona';
 import { SUPPORT_CATEGORIES } from '@/components/support/SupportTicketForm';
+import { TUITION_ACTIONS, TUITION_GREETING, TUITION_PROMPT } from '@/lib/lunaTuition';
 import { toast } from 'sonner';
 
 const LUNA_SUPPORT_PROMPT_SUFFIX = `
@@ -29,13 +31,13 @@ MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de suporte. 
  * Conversa com a Luna em balões — usada na página dela e na sobreposição
  * aberta pelo botão ao lado da lâmpada de tema.
  */
-export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false }) {
+export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false, tuitionMode = false }) {
   const voice = useLunaVoice();
   const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo. Pode me contar o que está acontecendo? Vou tentar resolver pra você aqui mesmo — e se eu não conseguir, aí a gente vê sobre abrir um chamado pra equipe de suporte.`;
-  const greeting = supportMode ? supportGreeting : lunaGreeting(session?.name);
+  const greeting = tuitionMode ? TUITION_GREETING : supportMode ? supportGreeting : lunaGreeting(session?.name);
 
   // ── Memória de 24h: restaura conversa anterior se existir ──
-  const memoryKey = `luna_chat_${session?.email || session?.code || 'anon'}`;
+  const memoryKey = `luna_chat_${tuitionMode ? 'tuition_' : ''}${session?.email || session?.code || 'anon'}`;
   const savedMessages = loadLunaMemory(memoryKey);
   const [messages, setMessages] = useState(
     savedMessages && savedMessages.length > 0
@@ -75,7 +77,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
           ).join('\n\n')
         : '';
 
-      const basePrompt = supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
+      const basePrompt = tuitionMode ? LUNA_SYSTEM_PROMPT + TUITION_PROMPT : supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
       const systemPrompt = basePrompt + apostilaContext;
 
       const answer = await base44.integrations.Core.InvokeLLM({
@@ -171,6 +173,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto p-3 bg-gradient-to-b from-rose-50/40 to-secondary/20 dark:from-black dark:to-black">
+        {tuitionMode && <LunaTuitionIntro />}
         {messages.map((message, index) => (
           <div key={index} className="space-y-2">
             <LunaBubble role={message.role}>{message.content}</LunaBubble>
@@ -194,7 +197,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
 
       <div className="shrink-0 border-t border-rose-100 bg-rose-50/20 dark:border-white/20 dark:bg-black px-3 py-2">
         <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-invisible">
-          {(supportMode
+          {(tuitionMode ? TUITION_ACTIONS : supportMode
             ? ['Não consigo acessar minha conta', 'Problema com aulas ou vídeos', 'Problema com tarefa ou prova', 'Problema com mensalidade', 'Outro assunto']
             : LUNA_QUICK_ACTIONS
           ).map((action) => (

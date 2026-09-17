@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
@@ -21,6 +21,7 @@ const STATUS_CONFIG = {
 
 export default function Tuitions() {
   const { user: session } = useOutletContext();
+  const navigate = useNavigate();
   const isAdmin = session?.role === 'admin';
   const queryClient = useQueryClient();
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
@@ -389,9 +390,14 @@ export default function Tuitions() {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${cfg.badge}`}>
-                      <StatusIcon size={12} /> {cfg.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${cfg.badge}`}>
+                        <StatusIcon size={12} /> {cfg.label}
+                      </span>
+                      {t.status === 'pending' && (
+                        <Button size="sm" onClick={() => navigate(`/student/chat?tab=luna&topic=tuition&tuition=${t.id}`)}>Mais Informações</Button>
+                      )}
+                    </div>
                   )}
                   {t.status === 'paid' && (
                     <button onClick={() => handleIssueReceipt(t)} disabled={issuingReceiptId === t.id} className="p-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" title="Gerar recibo artístico em PNG">
