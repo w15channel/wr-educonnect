@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
@@ -21,7 +21,6 @@ const STATUS_CONFIG = {
 
 export default function Tuitions() {
   const { user: session } = useOutletContext();
-  const navigate = useNavigate();
   const isAdmin = session?.role === 'admin';
   const queryClient = useQueryClient();
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
@@ -216,11 +215,6 @@ export default function Tuitions() {
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">Mensalidades</h2>
           <p className="text-muted-foreground text-sm mt-0.5">{isAdmin ? 'Gerencie pagamentos dos alunos' : 'Histórico de mensalidades'}</p>
         </div>
-        {!isAdmin && (
-          <Button className="gap-2" onClick={() => navigate('/student/chat?tab=luna&topic=tuition')}>
-            <span aria-hidden="true">🦉</span> Falar com a Luna
-          </Button>
-        )}
         {isAdmin && (
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" className="gap-2 h-9 text-sm" onClick={() => setShowBulk(v => !v)}>
