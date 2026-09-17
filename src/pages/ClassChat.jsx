@@ -30,6 +30,23 @@ const MSN_COLORS = ['#4f6edc', '#0a7ad1', '#9a59c5', '#de4f8b', '#f2a327', '#17a
 
 const DM_PREFIX = 'dm_';
 
+// ── Controle de leitura das conversas particulares ──────────────────────────
+// Persiste em localStorage um mapa sessionId → timestamp da última leitura.
+// Bolinha vermelha = há mensagens não lidas; verde = todas lidas.
+const DM_READ_KEY = 'admin_dm_read_status';
+
+function getReadStatus() {
+  try {
+    return JSON.parse(localStorage.getItem(DM_READ_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function saveReadStatus(status) {
+  try {
+    localStorage.setItem(DM_READ_KEY, JSON.stringify(status));
+  } catch {}
+}
+
 function formatBRT(dateStr) {
   if (!dateStr) return '';
   const d = new Date(new Date(dateStr).getTime() - 3 * 60 * 60 * 1000);
@@ -48,16 +65,30 @@ function formatDMBRT(dateStr) {
 // Substitui a lista simples de contatos no tab "Particular" quando o usuário
 // é admin. Permite visualizar todas as conversas, enviar mensagens (que são
 // entregues no /student/dm/ do aluno) e compartilhar mensagens em apps externos.
+// Inclui indicador de leitura: bolinha vermelha (não lida) / verde (lida).
 // ───────────────────────────────────────────────────────────────────────────
 function AdminDMConversations({ session, students }) {
   const queryClient = useQueryClient();
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [text, setText] = useState('');
   const [search, setSearch] = useState('');
+  const [readStatus, setReadStatus] = useState(() => getReadStatus());
   const bottomRef = useRef(null);
 
   const adminEmail = session?.email || '';
   const adminName = session?.name || 'Coordenação';
+
+  const markAsRead = (sid) => {
+    if (!sid) return;
+    const updated = { ...readStatus, [sid]: new Date().toISOString() };
+    setReadStatus(updated);
+    saveReadStatus(updated);
+  };
+
+  const openConversation = (sid) => {
+    setSelectedSessionId(sid);
+    markAsRead(sid);
+  };
 
   // Busca mensagens recentes e filtra DMs que envolvem o admin
   const { data: allDMMessages = [] } = useQuery({
@@ -133,6 +164,17 @@ function AdminDMConversations({ session, students }) {
     if (selectedConversation) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [selectedConversation?.messages.length]);
 
+  // Se novas mensagens chegam enquanto a conversa está aberta, marca como lida
+  useEffect(() => {
+    if (selectedSessionId && selectedConversation) {
+      const lastRead = readStatus[selectedSessionId];
+      const hasNew = selectedConversation.messages.some(m =>
+        !lastRead || new Date(m.created_date) > new Date(lastRead)
+      );
+      if (hasNew) markAsRead(selectedSessionId);
+    }
+  }, [selectedConversation?.messages.length, selectedSessionId]);
+
   const sendMessage = async () => {
     if (!text.trim() || !selectedSessionId) return;
     const msg = text.trim();
@@ -177,9 +219,18 @@ function AdminDMConversations({ session, students }) {
     return getAvatarPrefixedName(name, student?.profile_avatar_emoji);
   };
 
+  // Helper: verifica se uma conversa tem mensagens não lidas
+  const getUnreadInfo = (conv) => {
+    const lastRead = readStatus[conv.sessionId];
+    if (!lastRead) return { hasUnread: true, unreadCount: conv.messages.length };
+    const unread = conv.messages.filter(m => new Date(m.created_date) > new Date(lastRead));
+    return { hasUnread: unread.length > 0, unreadCount: unread.length };
+  };
+
   // ── Visualização da conversa selecionada ──────────────────────────────
   if (selectedSessionId && selectedStudent) {
     const messages = selectedConversation?.messages || [];
+    const lastRead = readStatus[selectedSessionId];
     return (
       <div className="flex h-full min-h-0 flex-col">
         <div className="shrink-0 border-b border-rose-100 bg-card dark:border-white/20 dark:bg-black px-3 py-2.5 flex items-center gap-2">
@@ -191,6 +242,9 @@ function AdminDMConversations({ session, students }) {
             <p className="text-sm font-bold text-foreground truncate">{getStudentName(selectedStudent)}</p>
             <p className="text-[11px] text-muted-foreground truncate">{selectedConversation?.hasDistribution ? '📡 Distribuição da Luna' : '💬 Conversa particular'} · {messages.length} mensagem(ns)</p>
           </div>
+          <span className="flex h-3 w-3 shrink-0 items-center justify-center">
+            <span className="h-3 w-3 rounded-full bg-green-500" title="Conversa lida" />
+          </span>
           <Lock size={14} className="text-muted-foreground shrink-0" />
         </div>
 
@@ -205,6 +259,7 @@ function AdminDMConversations({ session, students }) {
           {messages.map(msg => {
             const isMe = msg.author_email === adminEmail || msg.author_email === LUNA_DM_EMAIL;
             const time = formatBRT(msg.created_date);
+            const isRead = lastRead && new Date(msg.created_date) <= new Date(lastRead);
             return (
               <div key={msg.id} className={`text-[13px] leading-relaxed group ${isMe ? 'text-right' : ''}`}>
                 {!isMe && (
@@ -217,6 +272,11 @@ function AdminDMConversations({ session, students }) {
                 </span>
                 <div className={`mt-0.5 flex items-center gap-1 ${isMe ? 'justify-end' : ''}`}>
                   {isMe && <span className="text-[11px] text-muted-foreground">[{time}]</span>}
+                  {!isMe && isRead && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-green-100 dark:bg-green-500/15 px-1.5 py-0.5 text-[9px] font-bold text-green-700 dark:text-green-300">
+                      <CheckCheck size={9} /> Lida
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => shareMessageExternal(msg)}
@@ -284,11 +344,12 @@ function AdminDMConversations({ session, students }) {
         {filteredConversations.map(c => {
           const isMe = c.lastMessage.author_email === adminEmail;
           const name = c.student?.profile_name || c.student?.student_name || c.student?.student_email;
+          const { hasUnread, unreadCount } = getUnreadInfo(c);
           return (
             <button
               key={c.sessionId}
-              onClick={() => setSelectedSessionId(c.sessionId)}
-              className="flex w-full items-center gap-3 rounded-xl border border-rose-100 dark:border-white/10 bg-card px-3 py-3 text-left transition-colors hover:bg-rose-50 dark:hover:bg-white/5"
+              onClick={() => openConversation(c.sessionId)}
+              className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors hover:bg-rose-50 dark:hover:bg-white/5 ${hasUnread ? 'border-rose-200 dark:border-rose-500/30 bg-rose-50/40 dark:bg-rose-500/5' : 'border-rose-100 dark:border-white/10 bg-card'}`}
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-sm font-bold">
                 {name?.charAt(0)?.toUpperCase() || '?'}
@@ -302,7 +363,17 @@ function AdminDMConversations({ session, students }) {
                   {isMe ? 'Você: ' : ''}{c.lastMessage.content?.slice(0, 60)}
                 </p>
               </div>
-              {c.hasDistribution ? <Radio size={15} className="shrink-0 text-amber-500" aria-label="Distribuição da Luna" /> : <MessageCircle size={15} className="shrink-0 text-muted-foreground" />}
+              <div className="flex shrink-0 items-center gap-1.5">
+                {c.hasDistribution && <Radio size={15} className="text-amber-500" aria-label="Distribuição da Luna" />}
+                {hasUnread ? (
+                  <span className="relative flex h-3.5 w-3.5 items-center justify-center" title={`${unreadCount} mensagem(ns) não lida(s)`}>
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                  </span>
+                ) : (
+                  <span className="inline-flex h-3 w-3 rounded-full bg-green-500" title="Conversa lida" />
+                )}
+              </div>
             </button>
           );
         })}
@@ -317,7 +388,7 @@ function AdminDMConversations({ session, students }) {
               return (
                 <button
                   key={s.id}
-                  onClick={() => setSelectedSessionId(getDMSessionId(adminEmail, s.student_email))}
+                  onClick={() => openConversation(getDMSessionId(adminEmail, s.student_email))}
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-rose-50 dark:hover:bg-white/5"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
