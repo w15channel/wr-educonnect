@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { getSession, setSession } from '@/lib/customAuth';
 import { toast } from 'sonner';
 import { ArrowRight, Volume2, VolumeX, RotateCcw, Loader2, CheckCircle2 } from 'lucide-react';
-import useOwlVoice from '@/hooks/useOwlVoice';
+import useLunaVoice from '@/hooks/useLunaVoice';
 import ProfileAssistantField from '@/components/onboarding/ProfileAssistantField';
 import { findStudentProfiles, profileDoneKey } from '@/hooks/useProfileCompletion';
 
@@ -15,7 +15,7 @@ import { findStudentProfiles, profileDoneKey } from '@/hooks/useProfileCompletio
  */
 export default function ProfileAssistant({ session, profile, steps, initialValues, onFinish }) {
   const queryClient = useQueryClient();
-  const voice = useOwlVoice();
+  const voice = useLunaVoice();
   const [index, setIndex] = useState(0);
   const [values, setValues] = useState(initialValues);
   const [error, setError] = useState('');
