@@ -5,7 +5,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // Aulas da apostila e tarefas são CUMULATIVAS (não filtram por data).
 // Debates e ofensivas usam janela de tempo para não herdar de módulos anteriores.
 // Mínimo de 50% do checklist para liberar provas.
-// Item de mensalidade: bloqueio hard — se incluído e não pago, impede a liberação.
+// Item de mensalidade: contribuição voluntária — se o aluno já colaborou em
+// qualquer mês, o requisito é considerado cumprido.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const EXAM_RELEASE_MIN_PERCENT = 50;
@@ -74,7 +75,7 @@ function computeChecklistProgress(params: {
   ).size;
 
   const items = [
-    // Contribuição voluntária: bloqueio hard quando o último lançamento não está pago.
+    // Contribuição voluntária: se o aluno já colaborou em qualquer mês, está cumprido.
     ...(includeTuition ? [{
       key: 'tuition',
       label: 'Contribuição Voluntária',
@@ -216,18 +217,17 @@ export default async function(req) {
       store.Tuition.filter({ student_email: email }, '-created_date', 50),
     ]);
 
-    // Somente o último lançamento da administração define a situação atual.
-    const tuitionPaid = tuitions?.[0]?.status === 'paid';
+    // Contribuição voluntária: se o aluno já colaborou em QUALQUER mês, considera cumprido.
+    // Antes verificava apenas o último lançamento, o que bloqueava alunos que pagaram
+    // meses anteriores quando um novo mês era lançado como 'pending'.
+    const tuitionPaid = (tuitions || []).some((t: Record<string, unknown>) => t.status === 'paid');
 
-    // A prova anterior não é requisito do checklist. A contribuição é o primeiro
-    // requisito do módulo que a administração está avaliando para liberação.
     const includeTuition = true;
 
-    // Bloqueio hard de mensalidade: se o item está incluído e não foi pago,
-    // impede a liberação independentemente do percentual do checklist.
+    // Bloqueio hard de mensalidade: só bloqueia se o aluno NUNCA colaborou.
     if (includeTuition && !tuitionPaid) {
       return Response.json({
-        error: 'A última contribuição voluntária lançada ainda não consta como paga.',
+        error: 'Não há nenhuma contribuição voluntária registrada como paga. Verifique se o aluno já colaborou.',
         progress: {
           items: [{ key: 'tuition', done: false, label: 'Contribuição Voluntária' }],
           total: 1,
@@ -238,6 +238,32 @@ export default async function(req) {
           eligible: false,
         },
       }, { status: 409 });
+    }
+
+    // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
+    if (moduleNumber > 1) {
+      const previousModuleExams = courseExams.filter((exam: Record<string, unknown>) => {
+        const match = String(exam.module_ref || '').match(/(\d+)/);
+        return match && Number(match[1]) === moduleNumber - 1;
+      });
+      if (previousModuleExams.length > 0) {
+        const submittedExamIds = new Set(studentExamSubs.map((s: Record<string, unknown>) => s.exam_id));
+        const previousExamCompleted = previousModuleExams.every((exam: Record<string, unknown>) => submittedExamIds.has(exam.id));
+        if (!previousExamCompleted) {
+          return Response.json({
+            error: `Aluno não concluiu a prova do Módulo ${moduleNumber - 1} — pré-requisito para liberar as provas do Módulo ${moduleNumber}.`,
+            progress: {
+              items: [{ key: 'previous_exam', done: false, label: `Concluir a prova do Módulo ${moduleNumber - 1}` }],
+              total: 1,
+              completed: 0,
+              missing: 1,
+              percent: 0,
+              hasData: true,
+              eligible: false,
+            },
+          }, { status: 409 });
+        }
+      }
     }
 
     const progress = computeChecklistProgress({
