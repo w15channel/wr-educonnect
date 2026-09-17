@@ -6,11 +6,14 @@ import useModuleReleaseSchedule from '@/hooks/useModuleReleaseSchedule';
 export default function useModuleAccess(course = 'tcc', session) {
   const email = session?.email || session?.code || '';
   const customAccess = !!(session?.code || session?.codeId);
-  const { schedule, now, isLoading: loadingSchedule, error: scheduleError } = useModuleReleaseSchedule(!customAccess);
+  // O calendário de liberação é relevante tanto para alunos Google OAuth
+  // quanto para alunos de código de acesso — ambos precisam ver os módulos
+  // liberados pelo calendário além das liberações manuais.
+  const { schedule, now, isLoading: loadingSchedule, error: scheduleError } = useModuleReleaseSchedule(true);
   const { data: saved = [], isLoading, error } = useQuery({
     queryKey: ['module-unlocks', email],
     queryFn: () => base44.entities.StudentModuleUnlock.filter({ student_email: email }, '-unlocked_at', 100),
-    enabled: !!email && !customAccess,
+    enabled: !!email,
     staleTime: 30000,
     refetchInterval: 60000,
   });
