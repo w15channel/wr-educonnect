@@ -17,11 +17,15 @@ const pickBestProfile = (profiles, session) => {
 
 /** Busca todos os cadastros do aluno: pelo vínculo do código e pelo email/código. */
 export async function findStudentProfiles(session) {
-  const results = [];
-  if (session?.codeId) {
-    results.push(...await base44.entities.StudentProfile.filter({ code_id: session.codeId }, '-created_date', 20));
+  if (session?.code || session?.codeId) {
+    const response = await base44.functions.invoke('manageOvercomingWall', {
+      action: 'profiles', actor_email: session?.email,
+      access_code: session?.code, access_code_id: session?.codeId,
+    });
+    return response.data?.records || [];
   }
-  for (const id of [session?.email, session?.code].filter(Boolean).map(normalize)) {
+  const results = [];
+  for (const id of [session?.email].filter(Boolean).map(normalize)) {
     results.push(...await base44.entities.StudentProfile.filter({ student_email: id }, '-created_date', 20));
   }
   const unique = [];

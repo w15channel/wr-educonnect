@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
-export default function useModuleReleaseSchedule() {
+export default function useModuleReleaseSchedule(enabled = true) {
   const [now, setNow] = useState(Date.now);
   const query = useQuery({
     queryKey: ['module-release-schedule'],
     queryFn: () => base44.entities.ModuleReleaseSchedule.list('module_number', 20),
     staleTime: 60000,
     refetchInterval: 60000,
+    enabled,
   });
   const schedule = query.data || [];
   useEffect(() => {

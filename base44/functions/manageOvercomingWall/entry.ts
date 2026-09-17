@@ -129,6 +129,13 @@ export default async function(req) {
       const monitorHistory = await service.MonitorHistory.filter({ course }, '-period_start', 100);
       return Response.json({ success: true, accessCodes, messages, activityRecords: { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams }, savedAchievements, institutionalRecords: { shared, notices, liveSessions, calendarEvents }, reactions, notifications, personalPosts, readReceipts, monitorHistory });
     }
+    if (payload.action === 'profiles') {
+      const service = base44.asServiceRole.entities;
+      const byCode = payload.access_code_id ? await service.StudentProfile.filter({ code_id: payload.access_code_id }, '-created_date', 20) : [];
+      const byEmail = user.email ? await service.StudentProfile.filter({ student_email: user.email }, '-created_date', 20) : [];
+      const records = [...byCode, ...byEmail].filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index);
+      return Response.json({ success: true, records });
+    }
     if (payload.action === 'listReads') {
       const records = await base44.asServiceRole.entities.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);
       return Response.json({ success: true, records });

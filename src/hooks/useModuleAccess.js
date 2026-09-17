@@ -5,11 +5,12 @@ import useModuleReleaseSchedule from '@/hooks/useModuleReleaseSchedule';
 
 export default function useModuleAccess(course = 'tcc', session) {
   const email = session?.email || session?.code || '';
-  const { schedule, now, isLoading: loadingSchedule, error: scheduleError } = useModuleReleaseSchedule();
+  const customAccess = !!(session?.code || session?.codeId);
+  const { schedule, now, isLoading: loadingSchedule, error: scheduleError } = useModuleReleaseSchedule(!customAccess);
   const { data: saved = [], isLoading, error } = useQuery({
     queryKey: ['module-unlocks', email],
     queryFn: () => base44.entities.StudentModuleUnlock.filter({ student_email: email }, '-unlocked_at', 100),
-    enabled: !!email,
+    enabled: !!email && !customAccess,
     staleTime: 30000,
     refetchInterval: 60000,
   });

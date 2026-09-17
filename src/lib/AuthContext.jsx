@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { getSession } from '@/lib/customAuth';
 
 const AuthContext = createContext();
 
@@ -20,6 +21,12 @@ export const AuthProvider = ({ children }) => {
 
   const checkAppState = async () => {
     try {
+      if (getSession()) {
+        setIsLoadingPublicSettings(false);
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+        return;
+      }
       setIsLoadingPublicSettings(true);
       setAuthError(null);
       

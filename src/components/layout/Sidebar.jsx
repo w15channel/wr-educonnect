@@ -187,7 +187,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
   const studentEmail = session?.email || session?.code || '';
   const userCourse = session?.course || 'tcc';
   const today = new Date().toISOString().slice(0, 10);
-  const studentQueryEnabled = !isAdmin && !!studentEmail && !!userCourse;
+  const studentQueryEnabled = !isAdmin && !!studentEmail && !!userCourse && !session?.code && !session?.codeId;
   const queryDefaults = {
     enabled: studentQueryEnabled,
     staleTime: SIDEBAR_STALE_TIME,

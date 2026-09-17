@@ -17,26 +17,30 @@ const parseModuleNumber = (value) => {
 export default function useApostilaModuleUnlocks(course, session) {
   const studentEmail = session?.email || session?.code || '';
   const isTeacher = session?.role === 'admin';
+  const customAccess = !!(session?.code || session?.codeId);
   const access = useModuleAccess(course, session);
 
   const { data: recordedLessons = [], isLoading: loadingLessons } = useQuery({
     queryKey: ['apostila-unlock-lessons', course],
     queryFn: () => base44.entities.RecordedLesson.filter({ course }, 'order', 200),
+    enabled: !customAccess,
   });
-  const { data: progresses = [], isLoading: loadingProgress } = useStudentRecords('LessonProgress', session);
+  const { data: progresses = [], isLoading: loadingProgress } = useStudentRecords('LessonProgress', session, !customAccess);
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ['apostila-unlock-tasks', course],
     queryFn: () => base44.entities.Task.filter({ course }, '-created_date', 300),
+    enabled: !customAccess,
   });
-  const { data: submissions = [], isLoading: loadingSubmissions } = useStudentRecords('TaskSubmission', session);
+  const { data: submissions = [], isLoading: loadingSubmissions } = useStudentRecords('TaskSubmission', session, !customAccess);
   const { data: exams = [], isLoading: loadingExams } = useQuery({
     queryKey: ['apostila-unlock-exams', course],
     queryFn: () => base44.entities.Exam.filter({ course }, '-created_date', 300),
+    enabled: !customAccess,
   });
   const { data: examSubmissions = [], isLoading: loadingExamSubs } = useQuery({
     queryKey: ['apostila-unlock-exam-subs', studentEmail],
     queryFn: () => base44.entities.ExamSubmission.filter({ student_email: studentEmail }, '-submitted_at', 500),
-    enabled: !!studentEmail,
+    enabled: !!studentEmail && !customAccess,
   });
 
   const isLoading = loadingLessons || loadingProgress || loadingTasks || loadingSubmissions || loadingExams || loadingExamSubs;
