@@ -54,9 +54,15 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
     enabled: !!email,
   });
+  // Mensalidades do aluno — verifica se há pelo menos uma com status "paid".
+  const { data: tuitions = [], isLoading: l11 } = useQuery({
+    queryKey: ['checklist-tuitions', email],
+    queryFn: () => base44.entities.Tuition.filter({ student_email: email }, '-month_ref', 50),
+    enabled: !!email,
+  });
   const moduleUnlocks = access.unlocks;
 
-  const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || access.isLoading;
+  const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11 || access.isLoading;
 
   // Data em que cada módulo foi liberado para o aluno — usada para que
   // debates, terapeuta da semana e ofensiva contem apenas o que foi feito
@@ -68,6 +74,22 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     });
     return map;
   }, [moduleUnlocks, course]);
+
+  // Verifica se o aluno já quitou a mensalidade (pelo menos um registro "paid").
+  const tuitionPaid = useMemo(() => tuitions.some((t) => t.status === 'paid'), [tuitions]);
+
+  // Determina em qual módulo o item de mensalidade deve aparecer:
+  //   • Se o aluno ainda não concluiu o Módulo 1 → item no Módulo 1
+  //   • Se já concluiu o Módulo 1 → item no módulo atual (2+)
+  const currentModule = access.currentModule;
+  const tuitionModuleNumber = useMemo(() => {
+    const submittedExamIds = new Set(examSubmissions.map((s) => s.exam_id));
+    const module1Exams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === 1);
+    // Sem provas no módulo 1 = considerado concluído (não há o que entregar).
+    const module1ExamDone = module1Exams.length === 0 ? true : module1Exams.every((exam) => submittedExamIds.has(exam.id));
+    if (!module1ExamDone) return 1;
+    return Math.max(2, currentModule);
+  }, [exams, examSubmissions, currentModule]);
 
   const modules = useMemo(() => {
     const submittedExamIds = new Set(examSubmissions.map((s) => s.exam_id));
@@ -95,14 +117,14 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
         challengeResponses,
         moduleWindow,
         previousExamCompleted,
+        includeTuition: moduleNumber === tuitionModuleNumber,
+        tuitionPaid,
       });
       const moduleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === moduleNumber);
       const examDone = moduleExams.length > 0 && moduleExams.every((exam) => submittedExamIds.has(exam.id));
       return { moduleNumber, ...checklist, examDone, exams: moduleExams };
     });
-  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule]);
-
-  const currentModule = access.currentModule;
+  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, tuitionModuleNumber, tuitionPaid]);
 
   const isModuleUnlockedForExam = (moduleNumber) => {
     const found = modules.find((m) => m.moduleNumber === Number(moduleNumber));
