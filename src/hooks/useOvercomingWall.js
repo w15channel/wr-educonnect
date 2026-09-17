@@ -16,11 +16,26 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
   const activeCourse = course || 'tcc';
   const chatSessionId = `class_chat_${activeCourse}`;
   const on = enabled && !!activeCourse;
+  const customAccess = !!(session?.code || session?.codeId);
 
-  const { data: accessCodes = [] } = useQuery({
+  const { data: secureWallData } = useQuery({
+    queryKey: ['overcoming-wall-bootstrap', activeCourse, session?.email],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('manageOvercomingWall', {
+        action: 'bootstrap', course: activeCourse, actor_email: session?.email,
+        access_code: session?.code, access_code_id: session?.codeId,
+      });
+      return response.data;
+    },
+    enabled: on && customAccess,
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+
+  const { data: accessCodes = secureWallData?.accessCodes || [] } = useQuery({
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
-    enabled: on,
+    enabled: on && !customAccess,
     staleTime: 5 * 60000,
   });
 
@@ -32,10 +47,10 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     },
     refetchInterval: 15000,
     staleTime: 10000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
-  const { data: activityRecords } = useQuery({
+  const { data: activityRecords = secureWallData?.activityRecords } = useQuery({
     queryKey: ['overcoming-wall-activity', activeCourse],
     // Busca sequencial e enxuta: o mural mostra apenas as conquistas recentes,
     // então pedir milhares de registros de uma vez só deixava o site lento.
@@ -52,18 +67,18 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       return { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams };
     },
     staleTime: 5 * 60000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
-  const { data: savedAchievements = [] } = useQuery({
+  const { data: savedAchievements = secureWallData?.savedAchievements || [] } = useQuery({
     queryKey: ['overcoming-wall-achievements', activeCourse],
     queryFn: () => base44.entities.Achievement.filter({ course: activeCourse }, '-occurred_at', 200),
     refetchInterval: 60000,
     staleTime: 30000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
-  const { data: institutionalRecords } = useQuery({
+  const { data: institutionalRecords = secureWallData?.institutionalRecords } = useQuery({
     queryKey: ['overcoming-wall-institutional', activeCourse],
     queryFn: async () => {
       const shared = await base44.entities.WallPublication.filter({ course: activeCourse }, '-published_at', 100);
@@ -74,27 +89,27 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     },
     refetchInterval: 120000,
     staleTime: 60000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
-  const { data: reactions = [] } = useQuery({
+  const { data: reactions = secureWallData?.reactions || [] } = useQuery({
     queryKey: ['overcoming-wall-reactions'],
     queryFn: () => base44.entities.AchievementReaction.list('-created_date', 1500),
     refetchInterval: 30000,
     staleTime: 15000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = secureWallData?.notifications || [] } = useQuery({
     queryKey: ['overcoming-wall-notifications', session?.email],
     queryFn: async () => {
       const records = await base44.entities.Notification.filter({ recipient_email: session.email }, '-created_date', 100);
       return records.filter((item) => item.type === 'wall_reaction' || item.type === 'wall_reply');
     },
-    enabled: on && !!session?.email,
+    enabled: on && !customAccess && !!session?.email,
   });
 
-  const { data: personalPosts = [] } = useQuery({
+  const { data: personalPosts = secureWallData?.personalPosts || [] } = useQuery({
     queryKey: ['student-wall-posts', session?.email],
     queryFn: () => base44.entities.StudentWallPost.filter(
       { student_email: session.email.trim().toLowerCase() },
@@ -102,10 +117,10 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       30
     ),
     refetchInterval: 60000,
-    enabled: on && session?.role !== 'admin' && !!session?.email,
+    enabled: on && !customAccess && session?.role !== 'admin' && !!session?.email,
   });
 
-  const { data: readReceipts = [] } = useQuery({
+  const { data: readReceipts = secureWallData?.readReceipts || [] } = useQuery({
     queryKey: ['overcoming-wall-reads', session?.email],
     queryFn: async () => {
       const response = await base44.functions.invoke('manageOvercomingWall', {
@@ -113,13 +128,13 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       });
       return response.data?.records || [];
     },
-    enabled: on && session?.role !== 'admin' && !!session?.email && !!(session?.code || session?.codeId),
+    enabled: false,
   });
 
-  const { data: monitorHistory = [] } = useQuery({
+  const { data: monitorHistory = secureWallData?.monitorHistory || [] } = useQuery({
     queryKey: ['overcoming-wall-monitors', activeCourse],
     queryFn: () => base44.entities.MonitorHistory.filter({ course: activeCourse }, '-period_start', 100),
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
   // Tempo real: cada publicação nova no chat da turma entra no mural na hora.

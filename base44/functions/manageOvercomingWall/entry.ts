@@ -99,9 +99,35 @@ async function syncAchievements(base44, user, requestedCourse) {
   return { created: candidates.length };
 }
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({})); const user = await authenticatedUser(base44, payload);
+    if (payload.action === 'bootstrap') {
+      const service = base44.asServiceRole.entities;
+      const course = payload.course || user.course || 'tcc';
+      if (user.course && course !== user.course) return Response.json({ error: 'Curso não autorizado.' }, { status: 403 });
+      const accessCodes = (await service.AccessCode.list('-created_date', 2000)).filter((item) => item.course === course || (course === 'tcc' && !item.course));
+      const lessonProgresses = await service.LessonProgress.list('-created_date', 400);
+      const taskSubmissions = await service.TaskSubmission.list('-created_date', 300);
+      const examSubmissions = await service.ExamSubmission.list('-submitted_at', 200);
+      const challengeResponses = await service.DailyChallengeResponse.list('-created_date', 300);
+      const forumPosts = await service.ForumPost.list('-created_date', 300);
+      const pairings = await service.TherapistPairing.list('-updated_date', 200);
+      const lessons = await service.RecordedLesson.list('-created_date', 500);
+      const tasks = await service.Task.list('-created_date', 300);
+      const exams = await service.Exam.list('-created_date', 300);
+      const savedAchievements = await service.Achievement.filter({ course }, '-occurred_at', 200);
+      const shared = await service.WallPublication.filter({ course }, '-published_at', 100);
+      const notices = await service.Announcement.filter({ course }, '-created_date', 100);
+      const liveSessions = await service.LiveSession.filter({ course }, '-scheduled_at', 100);
+      const calendarEvents = await service.CalendarEvent.list('-date', 200);
+      const reactions = await service.AchievementReaction.list('-created_date', 1500);
+      const notifications = (await service.Notification.filter({ recipient_email: user.email }, '-created_date', 100)).filter((item) => item.type === 'wall_reaction' || item.type === 'wall_reply');
+      const personalPosts = await service.StudentWallPost.filter({ student_email: user.email }, '-published_at', 30);
+      const readReceipts = await service.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);
+      const monitorHistory = await service.MonitorHistory.filter({ course }, '-period_start', 100);
+      return Response.json({ success: true, accessCodes, activityRecords: { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams }, savedAchievements, institutionalRecords: { shared, notices, liveSessions, calendarEvents }, reactions, notifications, personalPosts, readReceipts, monitorHistory });
+    }
     if (payload.action === 'listReads') {
       const records = await base44.asServiceRole.entities.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);
       return Response.json({ success: true, records });
@@ -181,4 +207,4 @@ Deno.serve(async (req) => {
     }
     return Response.json({ error: 'Ação inválida.' }, { status: 400 });
   } catch (error) { return Response.json({ error: error.message || 'Erro interno.' }, { status: error.message === 'Acesso não autorizado.' ? 401 : 500 }); }
-});
+}
