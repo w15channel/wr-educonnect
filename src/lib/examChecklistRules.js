@@ -26,11 +26,8 @@ export const submissionTextLength = (submission) => {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MENSALIDADE POR MÓDULO
-// Todo dia 05 de cada mês uma nova mensalidade é emitida.
-// O período da mensalidade vai do dia 05 do mês anterior até o dia 05 do mês
-// de vencimento (due_date). Cada módulo tem uma data de liberação — a
-// mensalidade que aparece no checklist é aquela cujo período contém essa data.
-// Se não há mensalidade para o período do módulo, o item não aparece.
+// Todas as mensalidades não pagas aparecem como pendência no checklist
+// de cada módulo. Se o aluno pagou todas, nenhum item de mensalidade aparece.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
@@ -45,9 +42,7 @@ export function tuitionPeriodFromDueDate(dueDateStr) {
   const year = Number(parts[0]);
   const month = Number(parts[1]); // 1-indexed
   if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
-  // period_end = 5th of due_date's month
   const periodEnd = new Date(year, month - 1, 5).getTime();
-  // period_start = 5th of previous month
   const periodStart = new Date(year, month - 2, 5).getTime();
   return { start: periodStart, end: periodEnd };
 }
@@ -69,10 +64,6 @@ export function findTuitionForModule(moduleReleaseDate, tuitions) {
   return null;
 }
 
-/**
- * Monta os requisitos do módulo para um aluno específico.
- * Cada item traz o progresso atual, a meta e o caminho de ida (com volta ao checklist).
- */
 // Verifica se uma data cai dentro da janela de tempo em que o aluno esteve
 // naquele módulo (entre a liberação do módulo e a liberação do próximo).
 // APENAS para atividades perenes (debates, ofensivas, terapeuta) — 
@@ -135,18 +126,18 @@ export function buildModuleChecklist({
     challengeResponses.filter((r) => r.student_email === email && isWithinModuleWindow(r.date, moduleWindow)).map((r) => r.date)
   ).size;
 
-  // 7 — Mensalidade voluntária do período deste módulo.
-  // A mensalidade que aparece é aquela cujo período contém a data de liberação do módulo.
-  // Se não há mensalidade para o período, o item não aparece (sem cobrança).
-  const moduleTuition = findTuitionForModule(moduleWindow?.start, tuitions);
-  const tuitionItems = moduleTuition ? [{
-    key: 'tuition',
-    label: 'Contribuição Voluntária',
-    hint: `Contribuição referente ao período deste módulo (${moduleTuition.month_ref || 'mês atual'}).`,
-    current: moduleTuition.status === 'paid' ? 1 : 0,
+  // 7 — Mensalidades voluntárias em aberto.
+  // Todas as mensalidades não pagas aparecem como pendência no checklist
+  // de cada módulo. Se o aluno pagou todas, nenhum item de mensalidade aparece.
+  const unpaidTuitions = (tuitions || []).filter((t) => t.status !== 'paid');
+  const tuitionItems = unpaidTuitions.map((t, idx) => ({
+    key: `tuition_${idx}`,
+    label: `Contribuição Voluntária${t.month_ref ? ` — ${t.month_ref}` : ''}`,
+    hint: `Contribuição voluntária em aberto. Vencimento: ${t.due_date || 'não definido'}.`,
+    current: 0,
     target: 1,
     to: '/tuition',
-  }] : [];
+  }));
 
   const items = [
     // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
@@ -216,9 +207,6 @@ export const EXAM_RELEASE_MIN_PERCENT = 50;
 
 /**
  * Resumo do checklist de um módulo para o painel do admin.
- * Aceita tanto o objeto do checklist ({ items }) quanto a lista de itens.
- * Dados ausentes ou inválidos resultam em progresso zerado e não elegível —
- * nunca em uma liberação indevida.
  */
 export function summarizeChecklistProgress(checklistOrItems) {
   const items = Array.isArray(checklistOrItems)
@@ -241,7 +229,6 @@ export function summarizeChecklistProgress(checklistOrItems) {
 
 /**
  * Guarda de liberação: devolve o motivo do bloqueio (ou null quando pode liberar).
- * Usada tanto pelo botão do admin quanto pela validação do backend.
  */
 export function examReleaseBlockReason(summary) {
   if (!summary || !summary.hasData) return 'Checklist do módulo indisponível para este aluno.';
