@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useOutletContext, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Pin, CheckCheck } from 'lucide-react';
+import { Pin, CheckCheck, Send, Share2, ArrowLeft, Search, MessageCircle, Lock } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import useProfessorAutoReactions from '@/hooks/useProfessorAutoReactions';
 import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
@@ -18,6 +18,7 @@ import ChatFeedNotice from '@/components/chat/ChatFeedNotice';
 import ChatReactions from '@/components/chat/ChatReactions';
 import ChatContacts from '@/components/chat/ChatContacts';
 import ChatComposer from '@/components/chat/ChatComposer';
+import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 
 const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
@@ -26,10 +27,314 @@ const ATTENTION_PREFIX = '[MSN_ATTENTION]';
 
 const MSN_COLORS = ['#4f6edc', '#0a7ad1', '#9a59c5', '#de4f8b', '#f2a327', '#17a589'];
 
+const DM_PREFIX = 'dm_';
+
 function formatBRT(dateStr) {
   if (!dateStr) return '';
   const d = new Date(new Date(dateStr).getTime() - 3 * 60 * 60 * 1000);
   return d.toISOString().slice(11, 16);
+}
+
+function formatDMBRT(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(new Date(dateStr).getTime() - 3 * 60 * 60 * 1000);
+  return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function getDMSessionId(emailA, emailB) {
+  const sorted = [emailA, emailB].sort();
+  return `${DM_PREFIX}${sorted[0]}_${sorted[1]}`;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// AdminDMConversations
+// Lista de conversas particulares (DM) entre a coordenação/Luna e os alunos.
+// Substitui a lista simples de contatos no tab "Particular" quando o usuário
+// é admin. Permite visualizar todas as conversas, enviar mensagens (que são
+// entregues no /student/dm/ do aluno) e compartilhar mensagens em apps externos.
+// ───────────────────────────────────────────────────────────────────────────
+function AdminDMConversations({ session, students }) {
+  const queryClient = useQueryClient();
+  const [selectedEmail, setSelectedEmail] = useState(null);
+  const [text, setText] = useState('');
+  const [search, setSearch] = useState('');
+  const bottomRef = useRef(null);
+
+  const adminEmail = session?.email || '';
+  const adminName = session?.name || 'Coordenação';
+
+  // Busca mensagens recentes e filtra DMs que envolvem o admin
+  const { data: allDMMessages = [] } = useQuery({
+    queryKey: ['admin-dm-messages', adminEmail],
+    queryFn: async () => {
+      const msgs = await base44.entities.ChatMessage.list('-created_date', 2000);
+      const lowerAdmin = adminEmail.toLowerCase();
+      return msgs.filter(m =>
+        m.session_id?.startsWith(DM_PREFIX) &&
+        m.session_id?.toLowerCase().includes(lowerAdmin)
+      );
+    },
+    refetchInterval: 5000,
+  });
+
+  // Mapa sessionId → student para correspondência rápida
+  const studentBySession = useMemo(() => {
+    const map = new Map();
+    for (const s of students) {
+      const sid = getDMSessionId(adminEmail, s.student_email);
+      map.set(sid, s);
+    }
+    return map;
+  }, [students, adminEmail]);
+
+  // Agrupa mensagens por session_id → conversas
+  const conversations = useMemo(() => {
+    const groups = new Map();
+    for (const msg of allDMMessages) {
+      const sid = msg.session_id;
+      if (!groups.has(sid)) groups.set(sid, []);
+      groups.get(sid).push(msg);
+    }
+    const result = [];
+    for (const [sid, msgs] of groups) {
+      const student = studentBySession.get(sid);
+      if (!student) continue;
+      const sorted = msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+      const lastMsg = sorted[sorted.length - 1];
+      result.push({ sessionId: sid, student, messages: sorted, lastMessage: lastMsg });
+    }
+    return result.sort((a, b) => new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date));
+  }, [allDMMessages, studentBySession]);
+
+  // Alunos com e sem conversas
+  const studentsWithConversations = useMemo(() => new Set(conversations.map(c => c.student.student_email)), [conversations]);
+  const studentsWithoutConversations = useMemo(() => students.filter(s => !studentsWithConversations.has(s.student_email)), [students, studentsWithConversations]);
+
+  const filteredConversations = conversations.filter(c => {
+    const name = c.student?.profile_name || c.student?.student_name || c.student?.student_email || '';
+    return name.toLowerCase().includes(search.toLowerCase());
+  });
+  const filteredNoConvStudents = studentsWithoutConversations.filter(s => {
+    const name = s.profile_name || s.student_name || s.student_email || '';
+    return name.toLowerCase().includes(search.toLowerCase());
+  });
+
+  const selectedConversation = selectedEmail ? conversations.find(c => c.student?.student_email === selectedEmail) : null;
+  const selectedStudent = selectedEmail ? students.find(s => s.student_email === selectedEmail) : null;
+  const selectedSessionId = selectedEmail ? getDMSessionId(adminEmail, selectedEmail) : null;
+
+  // Assina atualizações em tempo real da conversa selecionada
+  useEffect(() => {
+    if (!selectedSessionId) return;
+    const unsub = base44.entities.ChatMessage.subscribe((event) => {
+      if (event.data?.session_id === selectedSessionId) {
+        queryClient.invalidateQueries({ queryKey: ['admin-dm-messages', adminEmail] });
+      }
+    });
+    return unsub;
+  }, [selectedSessionId, queryClient, adminEmail]);
+
+  useEffect(() => {
+    if (selectedConversation) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [selectedConversation?.messages.length]);
+
+  const sendMessage = async () => {
+    if (!text.trim() || !selectedSessionId) return;
+    const msg = text.trim();
+    setText('');
+    await base44.entities.ChatMessage.create({
+      session_id: selectedSessionId,
+      author_name: adminName,
+      author_email: adminEmail,
+      content: msg,
+      is_hand_raised: false,
+    });
+    queryClient.invalidateQueries({ queryKey: ['admin-dm-messages', adminEmail] });
+  };
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
+  const shareMessageExternal = async (msg) => {
+    const author = msg.author_name || 'Aluno';
+    const shareText = `${author}:\n\n${msg.content}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'EDU Live Messenger', text: shareText });
+      } catch (e) {
+        if (e.name !== 'AbortError') toast.error('Não foi possível compartilhar.');
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        toast.success('Mensagem copiada! Cole no app desejado.');
+      } catch {
+        toast.error('Não foi possível compartilhar.');
+      }
+    }
+  };
+
+  const getStudentName = (student) => {
+    const name = student?.profile_name || student?.student_name || student?.student_email || 'Aluno';
+    return getAvatarPrefixedName(name, student?.profile_avatar_emoji);
+  };
+
+  // ── Visualização da conversa selecionada ──────────────────────────────
+  if (selectedEmail && selectedStudent) {
+    const messages = selectedConversation?.messages || [];
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="shrink-0 border-b border-rose-100 bg-card dark:border-white/20 dark:bg-black px-3 py-2.5 flex items-center gap-2">
+          <button onClick={() => setSelectedEmail(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="Voltar para conversas">
+            <ArrowLeft size={16} />
+          </button>
+          <img src={MSN_LOGO_URL} alt="" className="w-4 h-4 object-contain" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-foreground truncate">{getStudentName(selectedStudent)}</p>
+            <p className="text-[11px] text-muted-foreground truncate">💬 Conversa particular · {messages.length} mensagem(ns)</p>
+          </div>
+          <Lock size={14} className="text-muted-foreground shrink-0" />
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1.5 bg-background dark:bg-black">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full gap-2 text-center text-muted-foreground">
+              <MessageCircle size={40} className="text-rose-300" />
+              <p className="font-bold text-foreground">Nenhuma mensagem ainda</p>
+              <p className="text-sm">Envie a primeira mensagem para {selectedStudent?.profile_name || selectedStudent?.student_name || 'este aluno'}.</p>
+            </div>
+          )}
+          {messages.map(msg => {
+            const isMe = msg.author_email === adminEmail;
+            const time = formatBRT(msg.created_date);
+            return (
+              <div key={msg.id} className={`text-[13px] leading-relaxed group ${isMe ? 'text-right' : ''}`}>
+                {!isMe && (
+                  <span className="block text-[11px] text-muted-foreground mb-0.5">
+                    [{time}] <span className="font-bold text-foreground">{msg.author_name || 'Aluno'}</span> diz:
+                  </span>
+                )}
+                <span className={`inline-block rounded-lg px-3 py-1.5 max-w-[80%] ${isMe ? 'bg-rose-500 text-white' : 'bg-secondary text-foreground'}`}>
+                  {msg.content}
+                </span>
+                <div className={`mt-0.5 flex items-center gap-1 ${isMe ? 'justify-end' : ''}`}>
+                  {isMe && <span className="text-[11px] text-muted-foreground">[{time}]</span>}
+                  <button
+                    type="button"
+                    onClick={() => shareMessageExternal(msg)}
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold text-primary opacity-0 transition group-hover:opacity-100 hover:bg-rose-50 dark:hover:bg-white/10"
+                    title="Compartilhar em aplicativos externos"
+                  >
+                    <Share2 size={11} /> Compartilhar
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
+
+        <div className="shrink-0 border-t border-rose-100 bg-rose-50/20 dark:border-white/20 dark:bg-black p-3">
+          <div className="flex gap-2 items-center">
+            <input
+              className="flex-1 h-10 px-3 text-sm border border-rose-200 dark:border-white/20 rounded-xl bg-input text-foreground dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-300"
+              placeholder="Digite uma mensagem particular..."
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onKeyDown={handleKey}
+            />
+            <VoiceDictationButton value={text} onChange={setText} className="h-10 w-10" />
+            <button
+              onClick={sendMessage}
+              disabled={!text.trim()}
+              className="h-10 px-4 rounded-xl bg-rose-500 text-white text-sm font-semibold hover:bg-rose-600 disabled:opacity-50 flex items-center gap-1"
+            >
+              <Send size={14} /> Enviar
+            </button>
+          </div>
+          <p className="mt-1.5 text-[10px] text-muted-foreground">🔒 A mensagem será entregue no chat particular do aluno em /student/dm/</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Lista de conversas ─────────────────────────────────────────────────
+  return (
+    <div className="h-full min-h-0 flex flex-col">
+      <div className="shrink-0 border-b border-rose-100 bg-card dark:border-white/20 dark:bg-black px-4 py-3">
+        <div className="flex items-center gap-2">
+          <MessageCircle size={16} className="text-rose-500" />
+          <h2 className="text-sm font-bold text-foreground">Conversas Particulares</h2>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">Mensagens enviadas pela coordenação/Luna — entregues no chat particular de cada aluno.</p>
+        <div className="relative mt-3">
+          <Search size={16} className="absolute left-3 top-3 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 w-full rounded-xl border border-rose-200 dark:border-white/20 bg-input pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+            placeholder="Buscar aluno..."
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1">
+        {filteredConversations.length === 0 && filteredNoConvStudents.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma conversa encontrada.</p>
+        )}
+
+        {filteredConversations.map(c => {
+          const isMe = c.lastMessage.author_email === adminEmail;
+          const name = c.student?.profile_name || c.student?.student_name || c.student?.student_email;
+          return (
+            <button
+              key={c.sessionId}
+              onClick={() => setSelectedEmail(c.student.student_email)}
+              className="flex w-full items-center gap-3 rounded-xl border border-rose-100 dark:border-white/10 bg-card px-3 py-3 text-left transition-colors hover:bg-rose-50 dark:hover:bg-white/5"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-sm font-bold">
+                {name?.charAt(0)?.toUpperCase() || '?'}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-sm font-medium text-foreground">{getStudentName(c.student)}</p>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">{formatDMBRT(c.lastMessage.created_date)}</span>
+                </div>
+                <p className="truncate text-xs text-muted-foreground">
+                  {isMe ? 'Você: ' : ''}{c.lastMessage.content?.slice(0, 60)}
+                </p>
+              </div>
+              <MessageCircle size={15} className="shrink-0 text-muted-foreground" />
+            </button>
+          );
+        })}
+
+        {filteredNoConvStudents.length > 0 && (
+          <>
+            <div className="pt-3 pb-1">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Sem conversa ainda</p>
+            </div>
+            {filteredNoConvStudents.map(s => {
+              const name = s.profile_name || s.student_name || s.student_email;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setSelectedEmail(s.student_email)}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-rose-50 dark:hover:bg-white/5"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+                    {name?.charAt(0)?.toUpperCase() || '?'}
+                  </span>
+                  <span className="truncate text-sm text-muted-foreground">{getStudentName(s)}</span>
+                </button>
+              );
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function ClassChat() {
@@ -229,6 +534,9 @@ export default function ClassChat() {
     .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
     .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse)
     .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
+  const adminDMStudents = codes.filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
+    .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
+    .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse);
   const onlineStudents = otherStudents.filter(isStudentOnline);
   const awayStudents = otherStudents.filter(c => !isStudentOnline(c))
     .slice()
@@ -303,7 +611,7 @@ export default function ClassChat() {
             </section>
             <aside aria-label="Contatos da turma" className="hidden w-64 shrink-0 border-l border-border bg-card/50 lg:block"><ChatContacts {...contactProps} compact/></aside>
           </>}
-          {activeTab === 'particular' && <section aria-label="Conversas particulares" className="min-h-0 min-w-0 flex-1"><ChatContacts {...contactProps}/></section>}
+          {activeTab === 'particular' && <section aria-label="Conversas particulares" className="min-h-0 min-w-0 flex-1">{isAdmin ? <AdminDMConversations session={session} students={adminDMStudents} /> : <ChatContacts {...contactProps} />}</section>}
           {!isAdmin && (lunaOpened || activeTab === 'luna') && <section aria-label="Conversa com a Luna" className={activeTab === 'luna' ? 'flex min-h-0 min-w-0 flex-1 flex-col' : 'hidden'}><LunaChat session={session} isActive={activeTab === 'luna'} supportMode={supportMode}/></section>}
         </div>
       </div>
