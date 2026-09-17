@@ -69,6 +69,17 @@ export const STEP_GUIDE = {
       'Conte como foi o atendimento e envie.',
     ],
   },
+  tuition: {
+    emoji: '💳',
+    short: 'Mensalidade',
+    what: 'Quitar a mensalidade do curso',
+    steps: [
+      'Toque no botão abaixo para abrir a área de Mensalidades.',
+      'Verifique o valor e a data de vencimento da sua mensalidade.',
+      'Realize o pagamento via PIX ou transferência.',
+      'Volte e registre o comprovante para confirmação do administrador.',
+    ],
+  },
   ofensiva: {
     emoji: '🔥',
     short: 'Ofensiva',
