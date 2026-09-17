@@ -213,18 +213,11 @@ export default async function(req) {
       store.DailyChallengeResponse.filter({ student_email: email, course }, '-date', 500),
       store.Exam.filter({ course }, '-created_date', 500),
       store.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
-      store.Tuition.filter({ student_email: email }, '-month_ref', 50),
+      store.Tuition.filter({ student_email: email }, '-created_date', 50),
     ]);
 
     // Somente o último lançamento da administração define a situação atual.
     const tuitionPaid = tuitions?.[0]?.status === 'paid';
-
-    // Determina em qual módulo o item de mensalidade deve aparecer:
-    //   • Se o aluno ainda não concluiu o Módulo 1 → item no Módulo 1
-    //   • Se já concluiu o Módulo 1 → item no módulo atual (2+)
-    const submittedExamIds = new Set(studentExamSubs.map((s: Record<string, unknown>) => s.exam_id));
-    const module1Exams = courseExams.filter((exam: Record<string, unknown>) => parseModuleNumber(exam.module_ref) === 1);
-    const module1ExamDone = module1Exams.length === 0 ? true : module1Exams.every((exam: Record<string, unknown>) => submittedExamIds.has(exam.id));
 
     // A prova anterior não é requisito do checklist. A contribuição é o primeiro
     // requisito do módulo que a administração está avaliando para liberação.
@@ -236,7 +229,7 @@ export default async function(req) {
       return Response.json({
         error: 'A última contribuição voluntária lançada ainda não consta como paga.',
         progress: {
-          items: [{ key: 'tuition', done: false, label: 'Quitar a mensalidade do curso' }],
+          items: [{ key: 'tuition', done: false, label: 'Contribuição Voluntária' }],
           total: 1,
           completed: 0,
           missing: 1,

@@ -47,6 +47,11 @@ const isWithinModuleWindow = (dateValue, window) => {
   return true;
 };
 
+export function findOldestUnresolvedModule(modules = [], availableModules = [], fallback = 1) {
+  const available = new Set(availableModules.map(Number));
+  return modules.find((module) => available.has(Number(module.moduleNumber)) && (!module.complete || !module.examDone))?.moduleNumber || fallback;
+}
+
 export function buildModuleChecklist({
   moduleNumber,
   email,

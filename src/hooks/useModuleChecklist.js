@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import useModuleAccess from '@/hooks/useModuleAccess';
 import useStudentRecords from '@/hooks/useStudentRecords';
 import { base44 } from '@/api/base44Client';
-import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
+import { buildModuleChecklist, findOldestUnresolvedModule, parseModuleNumber } from '@/lib/examChecklistRules';
 
 const MODULE_COUNT = 10;
 // O calendário define o módulo disponível; concluir atividades não antecipa datas.
@@ -104,15 +104,14 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     });
 
     const withoutTuition = buildModules();
-    const available = new Set(access.availableModules);
-    const oldestUnresolved = withoutTuition.find((module) => available.has(module.moduleNumber) && (!module.complete || !module.examDone));
-    return buildModules(oldestUnresolved?.moduleNumber || accessCurrentModule);
+    const oldestUnresolved = findOldestUnresolvedModule(withoutTuition, access.availableModules, accessCurrentModule);
+    return buildModules(oldestUnresolved);
   }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, tuitionPaid, access.availableModules, accessCurrentModule]);
 
-  const currentModule = useMemo(() => {
-    const available = new Set(access.availableModules);
-    return modules.find((module) => available.has(module.moduleNumber) && (!module.complete || !module.examDone))?.moduleNumber || accessCurrentModule;
-  }, [modules, access.availableModules, accessCurrentModule]);
+  const currentModule = useMemo(
+    () => findOldestUnresolvedModule(modules, access.availableModules, accessCurrentModule),
+    [modules, access.availableModules, accessCurrentModule]
+  );
 
   const isModuleUnlockedForExam = (moduleNumber) => {
     const found = modules.find((m) => m.moduleNumber === Number(moduleNumber));
