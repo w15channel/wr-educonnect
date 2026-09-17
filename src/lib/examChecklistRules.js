@@ -24,11 +24,50 @@ export const submissionTextLength = (submission) => {
   return `${submission.comment || ''} ${answersText}`.trim().length;
 };
 
-const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
-const debateTopicModule = (topic) => {
-  const match = String(topic || '').match(/^(\d+)\./);
-  return match ? Number(match[1]) : null;
-};
+// ═══════════════════════════════════════════════════════════════════════════
+// MENSALIDADE POR MÓDULO
+// Todo dia 05 de cada mês uma nova mensalidade é emitida.
+// O período da mensalidade vai do dia 05 do mês anterior até o dia 05 do mês
+// de vencimento (due_date). Cada módulo tem uma data de liberação — a
+// mensalidade que aparece no checklist é aquela cujo período contém essa data.
+// Se não há mensalidade para o período do módulo, o item não aparece.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Calcula o período da mensalidade a partir do due_date.
+ * O período vai do dia 05 do mês anterior ao dia 05 do mês de vencimento.
+ * Ex: due_date '2026-09-10' → período [05/08, 05/09)
+ */
+export function tuitionPeriodFromDueDate(dueDateStr) {
+  if (!dueDateStr) return null;
+  const parts = String(dueDateStr).split('-');
+  if (parts.length < 2) return null;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]); // 1-indexed
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
+  // period_end = 5th of due_date's month
+  const periodEnd = new Date(year, month - 1, 5).getTime();
+  // period_start = 5th of previous month
+  const periodStart = new Date(year, month - 2, 5).getTime();
+  return { start: periodStart, end: periodEnd };
+}
+
+/**
+ * Encontra a mensalidade cujo período contém a data de liberação do módulo.
+ * Retorna null se não houver mensalidade para o período.
+ */
+export function findTuitionForModule(moduleReleaseDate, tuitions) {
+  if (!moduleReleaseDate || !tuitions || tuitions.length === 0) return null;
+  const releaseTime = new Date(moduleReleaseDate).getTime();
+  if (!Number.isFinite(releaseTime)) return null;
+  for (const t of tuitions) {
+    const period = tuitionPeriodFromDueDate(t.due_date);
+    if (period && releaseTime >= period.start && releaseTime < period.end) {
+      return t;
+    }
+  }
+  return null;
+}
 
 /**
  * Monta os requisitos do módulo para um aluno específico.
@@ -47,11 +86,6 @@ const isWithinModuleWindow = (dateValue, window) => {
   return true;
 };
 
-export function findOldestUnresolvedModule(modules = [], availableModules = [], fallback = 1) {
-  const available = new Set(availableModules.map(Number));
-  return modules.find((module) => available.has(Number(module.moduleNumber)) && (!module.complete || !module.examDone))?.moduleNumber || fallback;
-}
-
 export function buildModuleChecklist({
   moduleNumber,
   email,
@@ -64,8 +98,8 @@ export function buildModuleChecklist({
   pairings = [],
   challengeResponses = [],
   moduleWindow = null,
-  includeTuition = false,
-  tuitionPaid = false,
+  previousExamCompleted = false,
+  tuitions = [],
 }) {
   // Aulas da apostila e tarefas são CUMULATIVAS — uma vez completas, sempre contam
   // independente de quando foram feitas. Não filtramos por janela de tempo.
@@ -80,25 +114,19 @@ export function buildModuleChecklist({
   ).size;
 
   // 3 — Tarefas do módulo entregues (cumulativo).
-  const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber && task.type !== 'quiz' && !task.is_hidden);
-  const submittedTaskIds = new Set(submissions.filter((submission) =>
-    ['submitted', 'graded'].includes(submission.status) || submissionTextLength(submission) > 0 || !!submission.file_url
-  ).map((submission) => submission.task_id));
-  const tasksDone = moduleTasks.filter((task) => submittedTaskIds.has(task.id)).length;
+  const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber);
+  const tasksDone = moduleTasks.filter((task) => {
+    const submission = submissions.find((s) => s.task_id === task.id);
+    return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
+  }).length;
 
-  // 4 — Sala de debates: temas numerados contam no módulo indicado pelo próprio tema.
-  // Registros antigos/tema livre continuam usando a janela em que foram publicados.
-  const studentEmail = normalizeEmail(email);
-  const belongsToModule = (post) => {
-    const topicModule = debateTopicModule(post?.topic);
-    return topicModule ? topicModule === moduleNumber : isWithinModuleWindow(post?.created_date, moduleWindow);
-  };
-  const moduleDebatePosts = debatePosts.filter(belongsToModule);
-  const myDebateTopics = moduleDebatePosts.filter((post) => normalizeEmail(post.author_email) === studentEmail).length;
-  const postById = new Map(moduleDebatePosts.map((post) => [post.id, post]));
+  // 4 — Sala de debates: abrir um tema e comentar no tema de um colega.
+  // Restrito à janela de tempo do módulo, para não herdar participações de módulos anteriores.
+  const myDebateTopics = debatePosts.filter((post) => post.author_email === email && isWithinModuleWindow(post.created_date, moduleWindow)).length;
+  const postById = new Map(debatePosts.map((post) => [post.id, post]));
   const myDebateComments = debateReplies.filter((reply) => {
     const parent = postById.get(reply.post_id);
-    return normalizeEmail(reply.author_email) === studentEmail && parent && normalizeEmail(parent.author_email) !== studentEmail;
+    return reply.author_email === email && parent && parent.author_email !== email && isWithinModuleWindow(reply.created_date, moduleWindow);
   }).length;
 
   // 6 — Pelo menos 3 dias de ofensiva (não precisam ser consecutivos), dentro da janela do módulo.
@@ -106,17 +134,30 @@ export function buildModuleChecklist({
     challengeResponses.filter((r) => r.student_email === email && isWithinModuleWindow(r.date, moduleWindow)).map((r) => r.date)
   ).size;
 
+  // 7 — Mensalidade voluntária do período deste módulo.
+  // A mensalidade que aparece é aquela cujo período contém a data de liberação do módulo.
+  // Se não há mensalidade para o período, o item não aparece (sem cobrança).
+  const moduleTuition = findTuitionForModule(moduleWindow?.start, tuitions);
+  const tuitionItems = moduleTuition ? [{
+    key: 'tuition',
+    label: 'Contribuição Voluntária',
+    hint: `Contribuição referente ao período deste módulo (${moduleTuition.month_ref || 'mês atual'}).`,
+    current: moduleTuition.status === 'paid' ? 1 : 0,
+    target: 1,
+    to: '/tuition',
+  }] : [];
+
   const items = [
-    // Contribuição voluntária: item confirmado pela administração após o aluno informar sua contribuição.
-    // Incluído apenas no módulo atual do aluno (módulo 1 se ainda não concluiu, módulo 2+ caso contrário).
-    ...(includeTuition ? [{
-      key: 'tuition',
-      label: 'Contribuição Voluntária',
-      hint: 'Nosso sistema de bolsas não possui valor fixo ou mínimo, taxas ou cobranças extras. Você contribui mensalmente com o valor que couber no seu orçamento.',
-      current: tuitionPaid ? 1 : 0,
+    // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
+    ...(moduleNumber > 1 ? [{
+      key: 'previous_exam',
+      label: `Concluir a prova do Módulo ${moduleNumber - 1}`,
+      hint: 'Você precisa ter entregue a prova do módulo anterior antes de prosseguir com as atividades deste módulo.',
+      current: previousExamCompleted ? 1 : 0,
       target: 1,
-      to: '/tuitions',
+      to: '/exams',
     }] : []),
+    ...tuitionItems,
     {
       key: 'apostila',
       label: 'Marcar os capítulos da apostila do módulo como lidos',
@@ -134,7 +175,7 @@ export function buildModuleChecklist({
       to: '/tasks',
     },
     {
-           key: 'debate_topic',
+      key: 'debate_topic',
       label: 'Abrir um tema na Sala de Debates',
       hint: 'Escolha um tema dos capítulos da apostila e proponha o debate.',
       current: Math.min(myDebateTopics, 1),
@@ -149,7 +190,6 @@ export function buildModuleChecklist({
       target: 1,
       to: '/debates',
     },
-
     {
       key: 'ofensiva',
       label: 'Cumprir 3 dias de ofensiva (não precisam ser seguidos)',
