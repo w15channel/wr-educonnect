@@ -365,7 +365,7 @@ export default function ClassChat() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
   const lastAttentionRef = useRef(null);
 
-  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails(session);
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
   const userCourse = routeCourse || session?.course || 'tcc';
   const CHAT_SESSION = `class_chat_${userCourse}`;
 
