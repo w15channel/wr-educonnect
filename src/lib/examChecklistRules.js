@@ -101,12 +101,12 @@ export function buildModuleChecklist({
       target: 1,
       to: '/exams',
     }] : []),
-    // Mensalidade: item de bloqueio — alunos com mensalidade pendente não podem prosseguir.
+    // Contribuição voluntária: item confirmado pela administração após o aluno informar sua contribuição.
     // Incluído apenas no módulo atual do aluno (módulo 1 se ainda não concluiu, módulo 2+ caso contrário).
     ...(includeTuition ? [{
       key: 'tuition',
-      label: 'Quitar a mensalidade do curso',
-      hint: 'Acesse a área de Mensalidades para realizar o pagamento da sua mensalidade atual.',
+      label: 'Contribuição Voluntária',
+      hint: 'Nosso sistema de bolsas não possui valor fixo ou mínimo, taxas ou cobranças extras. Você contribui mensalmente com o valor que couber no seu orçamento.',
       current: tuitionPaid ? 1 : 0,
       target: 1,
       to: '/tuitions',

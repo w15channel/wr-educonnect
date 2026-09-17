@@ -53,7 +53,14 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   activeRef.current = isActive;
   const supportRef = useRef(supportMode);
   supportRef.current = supportMode;
+  const tuitionSpokenRef = useRef(false);
 
+  useEffect(() => {
+    if (isActive && tuitionMode && !tuitionSpokenRef.current) {
+      tuitionSpokenRef.current = true;
+      voice.speak(TUITION_GREETING, { force: true });
+    }
+  }, [isActive, tuitionMode, voice.speak]);
   useEffect(() => { if (!isActive) voice.stop(); }, [isActive]);
   useEffect(() => { if (isActive) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, isActive]);
 
@@ -154,7 +161,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         <div className="ofensiva-owl text-3xl" role="img" aria-label="Luna, assistente do site">🦉</div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-foreground dark:text-white">Luna · Assistente do site</p>
-          <p className="truncate text-[11px] text-muted-foreground">{supportMode ? 'Suporte — conte o que precisa' : 'Dúvidas do curso, plataforma e apoio emocional'}</p>
+          <p className="truncate text-[11px] text-muted-foreground">{tuitionMode ? 'Contribuição Voluntária · sem valor mínimo' : supportMode ? 'Suporte — conte o que precisa' : 'Dúvidas do curso, plataforma e apoio emocional'}</p>
         </div>
         <button
           onClick={voice.toggle}
