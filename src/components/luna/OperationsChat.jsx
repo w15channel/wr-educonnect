@@ -11,6 +11,7 @@ import useLunaVoice from '@/hooks/useLunaVoice';
 import { LUNA_TOOL_PATHS } from '@/lib/lunaPersona';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { getDMSessionId, LUNA_DM_EMAIL, LUNA_DM_NAME } from '@/lib/lunaDM';
 
 const QUICK = [
   'Vamos conversar sobre melhorias na plataforma',
@@ -20,13 +21,6 @@ const QUICK = [
 ];
 
 const APP_BASE_URL = 'https://base44.app/apps/69f55577840a3c93cee191be';
-
-const DM_PREFIX = 'dm_';
-
-function getDMSessionId(emailA, emailB) {
-  const sorted = [emailA, emailB].sort();
-  return `${DM_PREFIX}${sorted[0]}_${sorted[1]}`;
-}
 
 // ── Modal de Mensagens no Chat Particular ────────────────────────────────────
 // Permite ao admin enviar mensagens personalizadas com link de acesso direto
@@ -92,7 +86,7 @@ function QuickMessagesModal({ session, onClose }) {
     setSending(true);
     let success = 0, failed = 0;
     const adminEmail = session?.email || '';
-    const adminName = session?.name || 'Coordenação';
+    const distributionId = `luna-${Date.now()}`;
     for (const student of students) {
       if (!selectedEmails.has(student.student_email)) continue;
       try {
@@ -102,19 +96,22 @@ function QuickMessagesModal({ session, onClose }) {
         if (includeProfileReminder && profileIncomplete(student)) {
           fullContent += '\n\n📋 Ah, e não esqueça: seu perfil ainda está incompleto! Quando entrar, passe na página "Perfil" no menu e adicione sua foto, bio e apelido.';
         }
-        const sessionId = getDMSessionId(adminEmail, student.student_email);
+        const sessionId = getDMSessionId(LUNA_DM_EMAIL, student.student_email);
         await base44.entities.ChatMessage.create({
           session_id: sessionId,
-          author_name: adminName,
-          author_email: adminEmail,
+          author_name: LUNA_DM_NAME,
+          author_email: LUNA_DM_EMAIL,
           content: fullContent,
           is_hand_raised: false,
+          is_luna_distribution: true,
+          distributed_by: adminEmail,
+          distribution_id: distributionId,
         });
         await base44.entities.Notification.create({
           recipient_email: student.student_email,
-          sender_email: adminEmail,
-          sender_name: adminName,
-          message: `Você recebeu uma mensagem particular da coordenação: "${title.trim()}"`,
+          sender_email: LUNA_DM_EMAIL,
+          sender_name: LUNA_DM_NAME,
+          message: `Você recebeu uma mensagem particular da Luna: "${title.trim()}"`,
           type: 'wall_reply',
         });
         success++;

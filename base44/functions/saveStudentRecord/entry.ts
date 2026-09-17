@@ -117,7 +117,9 @@ Deno.serve(async (req) => {
       }
 
       const adminEmail = payload.admin_email || user?.email || '';
-      const adminName = payload.admin_name || user?.name || 'Coordenação';
+      const lunaEmail = 'luna@wr-edu.internal';
+      const lunaName = 'Luna · Assistente digital';
+      const distributionId = `luna-migration-${Date.now()}`;
       const searchText = payload.search_text || 'Eu sou a Luna';
 
       const announcements = await base44.asServiceRole.entities.Announcement.filter(
@@ -139,23 +141,26 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          const sessionId = getDMSessionId(adminEmail, studentEmail);
+          const sessionId = getDMSessionId(lunaEmail, studentEmail);
           const fullContent = ann.title
             ? `${ann.title}\n\n${ann.content}`
             : ann.content;
 
           await base44.asServiceRole.entities.ChatMessage.create({
             session_id: sessionId,
-            author_name: adminName,
-            author_email: adminEmail,
+            author_name: lunaName,
+            author_email: lunaEmail,
             content: fullContent,
             is_hand_raised: false,
+            is_luna_distribution: true,
+            distributed_by: adminEmail,
+            distribution_id: distributionId,
           });
 
           await base44.asServiceRole.entities.Notification.create({
             recipient_email: studentEmail,
-            sender_email: adminEmail,
-            sender_name: adminName,
+            sender_email: lunaEmail,
+            sender_name: lunaName,
             message: `Você recebeu uma mensagem particular da coordenação: "${ann.title || 'Recado importante'}"`,
             type: 'wall_reply',
           });

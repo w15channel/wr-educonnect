@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useOutletContext, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Pin, CheckCheck, Send, Share2, ArrowLeft, Search, MessageCircle, Lock } from 'lucide-react';
+import { Pin, CheckCheck, Send, Share2, ArrowLeft, Search, MessageCircle, Lock, Radio } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import useProfessorAutoReactions from '@/hooks/useProfessorAutoReactions';
@@ -19,6 +19,7 @@ import ChatReactions from '@/components/chat/ChatReactions';
 import ChatContacts from '@/components/chat/ChatContacts';
 import ChatComposer from '@/components/chat/ChatComposer';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
+import { getDMSessionId, isLunaDistribution, LUNA_DM_EMAIL, LUNA_DM_NAME } from '@/lib/lunaDM';
 
 const WALL_EMOJIS = ['🙂', '😉', '😄', '😛', '😮', '😢', '😎', '❤️', '💔', '👍', '👎', '☕', '🍕', '😴', '🌹', '🥀', '💋', '👏', '💪', '✨', '🎉', '🌟', '🎓', '🚀'];
 
@@ -41,11 +42,6 @@ function formatDMBRT(dateStr) {
   return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-function getDMSessionId(emailA, emailB) {
-  const sorted = [emailA, emailB].sort();
-  return `${DM_PREFIX}${sorted[0]}_${sorted[1]}`;
-}
-
 // ───────────────────────────────────────────────────────────────────────────
 // AdminDMConversations
 // Lista de conversas particulares (DM) entre a coordenação/Luna e os alunos.
@@ -55,7 +51,7 @@ function getDMSessionId(emailA, emailB) {
 // ───────────────────────────────────────────────────────────────────────────
 function AdminDMConversations({ session, students }) {
   const queryClient = useQueryClient();
-  const [selectedEmail, setSelectedEmail] = useState(null);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [text, setText] = useState('');
   const [search, setSearch] = useState('');
   const bottomRef = useRef(null);
@@ -71,7 +67,7 @@ function AdminDMConversations({ session, students }) {
       const lowerAdmin = adminEmail.toLowerCase();
       return msgs.filter(m =>
         m.session_id?.startsWith(DM_PREFIX) &&
-        m.session_id?.toLowerCase().includes(lowerAdmin)
+        (m.session_id?.toLowerCase().includes(lowerAdmin) || m.session_id?.toLowerCase().includes(LUNA_DM_EMAIL))
       );
     },
     refetchInterval: 5000,
@@ -81,8 +77,8 @@ function AdminDMConversations({ session, students }) {
   const studentBySession = useMemo(() => {
     const map = new Map();
     for (const s of students) {
-      const sid = getDMSessionId(adminEmail, s.student_email);
-      map.set(sid, s);
+      map.set(getDMSessionId(adminEmail, s.student_email), s);
+      map.set(getDMSessionId(LUNA_DM_EMAIL, s.student_email), s);
     }
     return map;
   }, [students, adminEmail]);
@@ -101,7 +97,7 @@ function AdminDMConversations({ session, students }) {
       if (!student) continue;
       const sorted = msgs.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
       const lastMsg = sorted[sorted.length - 1];
-      result.push({ sessionId: sid, student, messages: sorted, lastMessage: lastMsg });
+      result.push({ sessionId: sid, student, messages: sorted, lastMessage: lastMsg, hasDistribution: sorted.some(isLunaDistribution) });
     }
     return result.sort((a, b) => new Date(b.lastMessage.created_date) - new Date(a.lastMessage.created_date));
   }, [allDMMessages, studentBySession]);
@@ -119,9 +115,8 @@ function AdminDMConversations({ session, students }) {
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
-  const selectedConversation = selectedEmail ? conversations.find(c => c.student?.student_email === selectedEmail) : null;
-  const selectedStudent = selectedEmail ? students.find(s => s.student_email === selectedEmail) : null;
-  const selectedSessionId = selectedEmail ? getDMSessionId(adminEmail, selectedEmail) : null;
+  const selectedConversation = selectedSessionId ? conversations.find(c => c.sessionId === selectedSessionId) : null;
+  const selectedStudent = selectedConversation?.student || studentBySession.get(selectedSessionId);
 
   // Assina atualizações em tempo real da conversa selecionada
   useEffect(() => {
@@ -144,10 +139,12 @@ function AdminDMConversations({ session, students }) {
     setText('');
     await base44.entities.ChatMessage.create({
       session_id: selectedSessionId,
-      author_name: adminName,
-      author_email: adminEmail,
+      author_name: selectedConversation?.hasDistribution ? LUNA_DM_NAME : adminName,
+      author_email: selectedConversation?.hasDistribution ? LUNA_DM_EMAIL : adminEmail,
       content: msg,
       is_hand_raised: false,
+      is_luna_distribution: selectedConversation?.hasDistribution || false,
+      distributed_by: selectedConversation?.hasDistribution ? adminEmail : undefined,
     });
     queryClient.invalidateQueries({ queryKey: ['admin-dm-messages', adminEmail] });
   };
@@ -181,18 +178,18 @@ function AdminDMConversations({ session, students }) {
   };
 
   // ── Visualização da conversa selecionada ──────────────────────────────
-  if (selectedEmail && selectedStudent) {
+  if (selectedSessionId && selectedStudent) {
     const messages = selectedConversation?.messages || [];
     return (
       <div className="flex h-full min-h-0 flex-col">
         <div className="shrink-0 border-b border-rose-100 bg-card dark:border-white/20 dark:bg-black px-3 py-2.5 flex items-center gap-2">
-          <button onClick={() => setSelectedEmail(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="Voltar para conversas">
+          <button onClick={() => setSelectedSessionId(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="Voltar para conversas">
             <ArrowLeft size={16} />
           </button>
           <img src={MSN_LOGO_URL} alt="" className="w-4 h-4 object-contain" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-foreground truncate">{getStudentName(selectedStudent)}</p>
-            <p className="text-[11px] text-muted-foreground truncate">💬 Conversa particular · {messages.length} mensagem(ns)</p>
+            <p className="text-[11px] text-muted-foreground truncate">{selectedConversation?.hasDistribution ? '📡 Distribuição da Luna' : '💬 Conversa particular'} · {messages.length} mensagem(ns)</p>
           </div>
           <Lock size={14} className="text-muted-foreground shrink-0" />
         </div>
@@ -206,7 +203,7 @@ function AdminDMConversations({ session, students }) {
             </div>
           )}
           {messages.map(msg => {
-            const isMe = msg.author_email === adminEmail;
+            const isMe = msg.author_email === adminEmail || msg.author_email === LUNA_DM_EMAIL;
             const time = formatBRT(msg.created_date);
             return (
               <div key={msg.id} className={`text-[13px] leading-relaxed group ${isMe ? 'text-right' : ''}`}>
@@ -290,7 +287,7 @@ function AdminDMConversations({ session, students }) {
           return (
             <button
               key={c.sessionId}
-              onClick={() => setSelectedEmail(c.student.student_email)}
+              onClick={() => setSelectedSessionId(c.sessionId)}
               className="flex w-full items-center gap-3 rounded-xl border border-rose-100 dark:border-white/10 bg-card px-3 py-3 text-left transition-colors hover:bg-rose-50 dark:hover:bg-white/5"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-sm font-bold">
@@ -305,7 +302,7 @@ function AdminDMConversations({ session, students }) {
                   {isMe ? 'Você: ' : ''}{c.lastMessage.content?.slice(0, 60)}
                 </p>
               </div>
-              <MessageCircle size={15} className="shrink-0 text-muted-foreground" />
+              {c.hasDistribution ? <Radio size={15} className="shrink-0 text-amber-500" aria-label="Distribuição da Luna" /> : <MessageCircle size={15} className="shrink-0 text-muted-foreground" />}
             </button>
           );
         })}
@@ -320,7 +317,7 @@ function AdminDMConversations({ session, students }) {
               return (
                 <button
                   key={s.id}
-                  onClick={() => setSelectedEmail(s.student_email)}
+                  onClick={() => setSelectedSessionId(getDMSessionId(adminEmail, s.student_email))}
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-rose-50 dark:hover:bg-white/5"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
@@ -365,7 +362,7 @@ export default function ClassChat() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
   const lastAttentionRef = useRef(null);
 
-  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails();
+  const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails(session);
   const userCourse = routeCourse || session?.course || 'tcc';
   const CHAT_SESSION = `class_chat_${userCourse}`;
 
@@ -533,11 +530,13 @@ export default function ClassChat() {
 
   const isStudentOnline = (student) => student.is_online && student.last_seen_at && Date.now() - new Date(student.last_seen_at).getTime() < 90000;
 
-  const otherStudents = codes.filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
+  const lunaContact = { id: 'luna-dm', student_email: LUNA_DM_EMAIL, profile_name: LUNA_DM_NAME, profile_avatar_emoji: 'owl', is_active: true, is_online: true, last_seen_at: new Date().toISOString() };
+  const studentContacts = codes.filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
     .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
-    .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse)
+    .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse);
+  const otherStudents = [lunaContact, ...studentContacts]
     .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
-  const adminDMStudents = codes.filter(c => c.student_email && c.student_email !== session?.email && c.is_active !== false)
+  const adminDMStudents = studentContacts
     .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
     .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse);
   const onlineStudents = otherStudents.filter(isStudentOnline);

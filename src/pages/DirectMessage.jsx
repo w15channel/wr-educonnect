@@ -7,14 +7,10 @@ import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import StudentProfileCard from '@/components/shared/StudentProfileCard';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
+import { getDMSessionId, LUNA_DM_EMAIL, LUNA_DM_NAME } from '@/lib/lunaDM';
 
 const DM_PREFIX = 'dm_';
 const MSN_LOGO_URL = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/10fc0b060_pngegg.png';
-
-function getDMSessionId(emailA, emailB) {
-  const sorted = [emailA, emailB].sort();
-  return `${DM_PREFIX}${sorted[0]}_${sorted[1]}`;
-}
 
 function MSNAvatar({ color = '#3b82f6', size = 28 }) {
   return (
@@ -36,37 +32,49 @@ export default function DirectMessage() {
   const [text, setText] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const bottomRef = useRef(null);
-  const { emails: courseEmails, codePrefix } = useCourseFilteredEmails();
+  const { emails: courseEmails, codePrefix } = useCourseFilteredEmails(session);
+  const usesCodeSession = !!(session?.code || session?.codeId);
 
   const { data: codes = [] } = useQuery({
-    queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryKey: ['access-codes', session?.email],
+    queryFn: async () => {
+      if (!usesCodeSession) return base44.entities.AccessCode.list('-created_date', 200);
+      const response = await base44.functions.invoke('manageOvercomingWall', {
+        action: 'load', course: session?.course || 'tcc', actor_email: session?.email,
+        access_code: session?.code, access_code_id: session?.codeId,
+      });
+      return response.data?.accessCodes || [];
+    },
     refetchInterval: 15000,
   });
 
   const { data: profiles = [] } = useQuery({
     queryKey: ['student-profiles-dm'],
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 500),
+    enabled: !usesCodeSession,
   });
 
   const sessionId = session?.email ? getDMSessionId(session.email, decodeURIComponent(targetEmail)) : null;
 
   const { data: messages = [] } = useQuery({
     queryKey: ['dm', sessionId],
-    queryFn: () => base44.entities.ChatMessage.filter({ session_id: sessionId }, 'created_date', 200),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: sessionId });
+      return response.data?.records || [];
+    },
     enabled: !!sessionId,
     refetchInterval: 3000,
   });
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId || usesCodeSession) return;
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
       if (event.data?.session_id === sessionId) {
         queryClient.invalidateQueries({ queryKey: ['dm', sessionId] });
       }
     });
     return unsub;
-  }, [sessionId, queryClient]);
+  }, [sessionId, queryClient, usesCodeSession]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,6 +82,7 @@ export default function DirectMessage() {
 
   const getTargetInfo = () => {
     const dec = decodeURIComponent(targetEmail);
+    if (dec === LUNA_DM_EMAIL) return { email: dec, name: LUNA_DM_NAME, nickname: 'Sua assistente na WR-EDU', color: '#d97706', photo: null, online: true, lastSeen: new Date() };
     const code = codes.find(c => c.student_email === dec);
     const profile = profiles.find(p => p.student_email === dec || p.email === dec);
     const lastSeen = code?.last_seen_at ? new Date(code.last_seen_at) : null;
@@ -102,7 +111,7 @@ export default function DirectMessage() {
   const myColor = myCode?.profile_avatar_color || '#f97316';
   const CHAT_EMOJIS = ['😊','😂','😍','🥰','😭','😤','🤔','😅','🙏','❤️','🔥','✨','👏','🎉','💪','😎'];
   const targetCode = codes.find(c => c.student_email === decodeURIComponent(targetEmail));
-  const canMessageTarget = targetCode && (!codePrefix || (targetCode.code || '').startsWith(codePrefix)) && (!courseEmails || courseEmails.has(targetCode.student_email));
+  const canMessageTarget = target.email === LUNA_DM_EMAIL || (targetCode && (!codePrefix || (targetCode.code || '').startsWith(codePrefix)) && (!courseEmails || courseEmails.has(targetCode.student_email)));
 
   const shareMessageExternal = async (msg) => {
     const author = msg.author_name || 'Aluno';
@@ -127,12 +136,16 @@ export default function DirectMessage() {
     if (!text.trim() || !sessionId) return;
     const msg = text.trim();
     setText('');
-    await base44.entities.ChatMessage.create({
-      session_id: sessionId,
-      author_name: session?.name || 'Eu',
-      author_email: session?.email || '',
-      content: msg,
-      is_hand_raised: false,
+    await base44.functions.invoke('saveStudentRecord', {
+      action: 'create',
+      entity: 'ChatMessage',
+      data: {
+        session_id: sessionId,
+        author_name: session?.name || 'Eu',
+        author_email: session?.email || '',
+        content: msg,
+        is_hand_raised: false,
+      },
     });
     queryClient.invalidateQueries({ queryKey: ['dm', sessionId] });
   };

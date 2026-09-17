@@ -22,6 +22,19 @@
       "type": "boolean",
       "default": false,
       "description": "Whether this is a hand raise notification"
+    },
+    "is_luna_distribution": {
+      "type": "boolean",
+      "default": false,
+      "description": "Identifica mensagens distribu\u00eddas automaticamente pela Luna"
+    },
+    "distributed_by": {
+      "type": "string",
+      "description": "Administrador que acionou a distribui\u00e7\u00e3o da Luna"
+    },
+    "distribution_id": {
+      "type": "string",
+      "description": "Identificador comum do lote de distribui\u00e7\u00e3o"
     }
   },
   "required": [
