@@ -5,8 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // Aulas da apostila e tarefas são CUMULATIVAS (não filtram por data).
 // Debates e ofensivas usam janela de tempo para não herdar de módulos anteriores.
 // Mínimo de 50% do checklist para liberar provas.
-// Item de mensalidade: contribuição voluntária — se o aluno já colaborou em
-// qualquer mês, o requisito é considerado cumprido.
+// Mensalidade: cada módulo usa a mensalidade do seu período (05/mês a 05/mês).
 // ═══════════════════════════════════════════════════════════════════════════
 
 const EXAM_RELEASE_MIN_PERCENT = 50;
@@ -28,6 +27,35 @@ function parseModuleNumber(value: unknown): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+// Calcula o período da mensalidade a partir do due_date.
+// O período vai do dia 05 do mês anterior ao dia 05 do mês de vencimento.
+// Ex: due_date '2026-09-10' → período [05/08, 05/09)
+function tuitionPeriodFromDueDate(dueDateStr: string): { start: number; end: number } | null {
+  if (!dueDateStr) return null;
+  const parts = String(dueDateStr).split('-');
+  if (parts.length < 2) return null;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]); // 1-indexed
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
+  const periodEnd = new Date(year, month - 1, 5).getTime();
+  const periodStart = new Date(year, month - 2, 5).getTime();
+  return { start: periodStart, end: periodEnd };
+}
+
+// Encontra a mensalidade cujo período contém a data de liberação do módulo.
+function findTuitionForModule(moduleReleaseDate: string | null, tuitions: any[]): any | null {
+  if (!moduleReleaseDate || !tuitions || tuitions.length === 0) return null;
+  const releaseTime = new Date(moduleReleaseDate).getTime();
+  if (!Number.isFinite(releaseTime)) return null;
+  for (const t of tuitions) {
+    const period = tuitionPeriodFromDueDate(t.due_date);
+    if (period && releaseTime >= period.start && releaseTime < period.end) {
+      return t;
+    }
+  }
+  return null;
+}
+
 function computeChecklistProgress(params: {
   moduleNumber: number;
   email: string;
@@ -38,10 +66,10 @@ function computeChecklistProgress(params: {
   debateReplies: any[];
   pairings: any[];
   challengeResponses: any[];
-  includeTuition: boolean;
-  tuitionPaid: boolean;
+  moduleReleaseDate: string | null;
+  tuitions: any[];
 }) {
-  const { moduleNumber, email, progresses, tasks, submissions, debatePosts, debateReplies, challengeResponses, includeTuition, tuitionPaid } = params;
+  const { moduleNumber, email, progresses, tasks, submissions, debatePosts, debateReplies, challengeResponses, moduleReleaseDate, tuitions } = params;
 
   // Aulas da apostila — CUMULATIVAS (sem filtro de janela de tempo)
   const apostilaPrefix = `apostila:mod${moduleNumber}:`;
@@ -74,15 +102,18 @@ function computeChecklistProgress(params: {
     challengeResponses.filter((r) => r.student_email === email).map((r) => r.date)
   ).size;
 
+  // Mensalidade do período deste módulo
+  const moduleTuition = findTuitionForModule(moduleReleaseDate, tuitions);
+  const tuitionItems = moduleTuition ? [{
+    key: 'tuition',
+    label: 'Contribuição Voluntária',
+    current: moduleTuition.status === 'paid' ? 1 : 0,
+    target: 1,
+    done: moduleTuition.status === 'paid',
+  }] : [];
+
   const items = [
-    // Contribuição voluntária: se o aluno já colaborou em qualquer mês, está cumprido.
-    ...(includeTuition ? [{
-      key: 'tuition',
-      label: 'Contribuição Voluntária',
-      current: tuitionPaid ? 1 : 0,
-      target: 1,
-      done: tuitionPaid,
-    }] : []),
+    ...tuitionItems,
     {
       key: 'apostila',
       label: 'Marcar os capítulos da apostila do módulo como lidos',
@@ -150,12 +181,6 @@ function examReleaseBlockReason(progress: any): string | null {
  * releaseModuleExams
  * ──────────────────
  * Libera (ou revoga) as provas do módulo em vigência de um aluno.
- *
- * Segurança: executa para e-mails cadastrados em AdminCredential ou em
- * AccessCode com profile_category admin/management — o mesmo critério
- * usado pelo adminSave, porque o app usa autenticação customizada.
- * O percentual do checklist é recalculado aqui no servidor; números vindos do
- * navegador não são aceitos como prova de elegibilidade.
  */
 export default async function(req) {
   try {
@@ -169,7 +194,6 @@ export default async function(req) {
     const normAdmin = String(admin_email).trim().toLowerCase();
     const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
     let isValidAdmin = credentials.some((c: Record<string, unknown>) => String(c.email || '').trim().toLowerCase() === normAdmin);
-    // Fallback: verifica AccessCode com profile_category admin/management (mesmo critério do adminSave)
     if (!isValidAdmin) {
       const codes = await base44.asServiceRole.entities.AccessCode.filter(
         { student_email: normAdmin }, '-created_date', 10
@@ -203,7 +227,7 @@ export default async function(req) {
       return Response.json({ success: true, released: false });
     }
 
-    const [lessons, progresses, tasks, submissions, allPosts, allReplies, pairings, challengeResponses, courseExams, studentExamSubs, tuitions] = await Promise.all([
+    const [lessons, progresses, tasks, submissions, allPosts, allReplies, pairings, challengeResponses, courseExams, studentExamSubs, tuitions, moduleUnlocks] = await Promise.all([
       store.RecordedLesson.filter({ course }, 'order', 300),
       store.LessonProgress.filter({ student_email: email }, '-created_date', 2000),
       store.Task.filter({ course }, '-created_date', 300),
@@ -215,30 +239,12 @@ export default async function(req) {
       store.Exam.filter({ course }, '-created_date', 500),
       store.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
       store.Tuition.filter({ student_email: email }, '-created_date', 50),
+      store.StudentModuleUnlock.filter({ student_email: email }, '-unlocked_at', 20),
     ]);
 
-    // Contribuição voluntária: se o aluno já colaborou em QUALQUER mês, considera cumprido.
-    // Antes verificava apenas o último lançamento, o que bloqueava alunos que pagaram
-    // meses anteriores quando um novo mês era lançado como 'pending'.
-    const tuitionPaid = (tuitions || []).some((t: Record<string, unknown>) => t.status === 'paid');
-
-    const includeTuition = true;
-
-    // Bloqueio hard de mensalidade: só bloqueia se o aluno NUNCA colaborou.
-    if (includeTuition && !tuitionPaid) {
-      return Response.json({
-        error: 'Não há nenhuma contribuição voluntária registrada como paga. Verifique se o aluno já colaborou.',
-        progress: {
-          items: [{ key: 'tuition', done: false, label: 'Contribuição Voluntária' }],
-          total: 1,
-          completed: 0,
-          missing: 1,
-          percent: 0,
-          hasData: true,
-          eligible: false,
-        },
-      }, { status: 409 });
-    }
+    // Encontrar a data de liberação do módulo para determinar a mensalidade correspondente
+    const moduleUnlockRecord = (moduleUnlocks || []).find((u: any) => Number(u.module_number) === moduleNumber && (u.course || 'tcc') === course);
+    const moduleReleaseDate = moduleUnlockRecord?.unlocked_at || null;
 
     // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
     if (moduleNumber > 1) {
@@ -276,8 +282,8 @@ export default async function(req) {
       debateReplies: allReplies || [],
       pairings,
       challengeResponses,
-      includeTuition,
-      tuitionPaid,
+      moduleReleaseDate,
+      tuitions,
     });
 
     const blockReason = examReleaseBlockReason(progress);
