@@ -124,11 +124,11 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
 
   // Tempo real: cada publicação nova no chat da turma entra no mural na hora.
   useEffect(() => {
-    if (!on) return;
+    if (!on || session?.code || session?.codeId) return;
     return base44.entities.ChatMessage.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
     });
-  }, [on, chatSessionId, queryClient]);
+  }, [on, chatSessionId, queryClient, session?.code, session?.codeId]);
 
   const courseEmails = useMemo(
     () => new Set(accessCodes.filter((code) => code.student_email && (code.course === activeCourse || (activeCourse === 'tcc' && !code.course))).map((code) => code.student_email)),

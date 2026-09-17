@@ -417,26 +417,29 @@ export default function ClassChat() {
   }, [messages, session?.email]);
 
   useEffect(() => {
+    if (session?.code || session?.codeId) return;
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
       if (event.data?.session_id === CHAT_SESSION) wall.refreshMessages();
     });
     return unsub;
-  }, [queryClient, CHAT_SESSION, userCourse]);
+  }, [CHAT_SESSION, session?.code, session?.codeId]);
 
   useEffect(() => {
-    const myCode = codes.find(c => c.student_email === session?.email);
-    if (!myCode?.id) return;
-    const markOnline = () => base44.entities.AccessCode.update(myCode.id, { is_online: true, last_seen_at: new Date().toISOString() });
-    markOnline();
-    const timer = setInterval(markOnline, 30000);
-    const markAway = () => base44.entities.AccessCode.update(myCode.id, { is_online: false, last_seen_at: new Date().toISOString() });
-    window.addEventListener('beforeunload', markAway);
+    if (!session?.code && !session?.codeId) return;
+    const setPresence = (isOnline) => base44.functions.invoke('saveStudentRecord', {
+      action: 'setPresence',
+      access_code: session?.code,
+      access_code_id: session?.codeId,
+      student_email: session?.email,
+      is_online: isOnline,
+    }).catch(() => null);
+    setPresence(true);
+    const timer = setInterval(() => setPresence(true), 30000);
     return () => {
       clearInterval(timer);
-      window.removeEventListener('beforeunload', markAway);
-      markAway();
+      setPresence(false);
     };
-  }, [codes, session?.email]);
+  }, [session?.code, session?.codeId, session?.email]);
 
   const dmBase = location.pathname.endsWith('/chat') ? location.pathname.slice(0, -5) : location.pathname;
 

@@ -232,6 +232,27 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, records });
     }
 
+    if (action === 'setPresence') {
+      const code = String(payload.access_code || '').trim();
+      const codeId = String(payload.access_code_id || '').trim();
+      const claimedEmail = norm(payload.student_email);
+      let access = codeId
+        ? await base44.asServiceRole.entities.AccessCode.get(codeId).catch(() => null)
+        : null;
+      if (!access && code) {
+        const matches = await base44.asServiceRole.entities.AccessCode.filter({ code }, '-created_date', 5);
+        access = matches.find((item) => item.code === code) || null;
+      }
+      if (!access || access.is_active === false || (code && access.code !== code) || (claimedEmail && norm(access.student_email) !== claimedEmail)) {
+        return Response.json({ error: 'Acesso não autorizado.' }, { status: 401 });
+      }
+      const record = await base44.asServiceRole.entities.AccessCode.update(access.id, {
+        is_online: payload.is_online === true,
+        last_seen_at: new Date().toISOString(),
+      });
+      return Response.json({ success: true, record });
+    }
+
     if (action === 'create') {
       const entity = payload.entity;
       if (!ALLOWED_ENTITIES.has(entity)) {
