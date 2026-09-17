@@ -114,7 +114,8 @@ export function buildModuleChecklist({
   ).size;
 
   // 3 — Tarefas do módulo entregues (cumulativo).
-  const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber);
+  // Filtra tarefas tipo quiz (provas) e ocultas — elas não são trabalhos normais.
+  const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber && task.type !== 'quiz' && !task.is_hidden);
   const tasksDone = moduleTasks.filter((task) => {
     const submission = submissions.find((s) => s.task_id === task.id);
     return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
