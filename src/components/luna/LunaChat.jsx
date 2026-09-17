@@ -9,6 +9,7 @@ import LunaShortcuts from '@/components/luna/LunaShortcuts';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting, searchApostila, saveLunaMemory, loadLunaMemory, clearLunaMemory } from '@/lib/lunaPersona';
 import { SUPPORT_CATEGORIES } from '@/components/support/SupportTicketForm';
+import { LUNA_TUITION_ACTIONS, LUNA_TUITION_GREETING, LUNA_TUITION_PROMPT_SUFFIX } from '@/lib/lunaTuitionScript';
 import { toast } from 'sonner';
 
 const LUNA_SUPPORT_PROMPT_SUFFIX = `
@@ -29,13 +30,13 @@ MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de suporte. 
  * Conversa com a Luna em balões — usada na página dela e na sobreposição
  * aberta pelo botão ao lado da lâmpada de tema.
  */
-export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false }) {
+export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false, tuitionMode = false }) {
   const voice = useLunaVoice();
   const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo. Pode me contar o que está acontecendo? Vou tentar resolver pra você aqui mesmo — e se eu não conseguir, aí a gente vê sobre abrir um chamado pra equipe de suporte.`;
-  const greeting = supportMode ? supportGreeting : lunaGreeting(session?.name);
+  const greeting = tuitionMode ? LUNA_TUITION_GREETING : supportMode ? supportGreeting : lunaGreeting(session?.name);
 
   // ── Memória de 24h: restaura conversa anterior se existir ──
-  const memoryKey = `luna_chat_${session?.email || session?.code || 'anon'}`;
+  const memoryKey = `luna_chat_${tuitionMode ? 'tuition_' : ''}${session?.email || session?.code || 'anon'}`;
   const savedMessages = loadLunaMemory(memoryKey);
   const [messages, setMessages] = useState(
     savedMessages && savedMessages.length > 0
@@ -51,8 +52,17 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   activeRef.current = isActive;
   const supportRef = useRef(supportMode);
   supportRef.current = supportMode;
+  const tuitionRef = useRef(tuitionMode);
+  tuitionRef.current = tuitionMode;
+  const tuitionSpokenRef = useRef(false);
 
   useEffect(() => { if (!isActive) voice.stop(); }, [isActive]);
+  useEffect(() => {
+    if (isActive && tuitionMode && !tuitionSpokenRef.current) {
+      tuitionSpokenRef.current = true;
+      voice.speak(LUNA_TUITION_GREETING);
+    }
+  }, [isActive, tuitionMode, voice.enabled]);
   useEffect(() => { if (isActive) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, isActive]);
 
   const send = async (content = input) => {
@@ -75,7 +85,9 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
           ).join('\n\n')
         : '';
 
-      const basePrompt = supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
+      const basePrompt = tuitionRef.current
+        ? LUNA_SYSTEM_PROMPT + LUNA_TUITION_PROMPT_SUFFIX
+        : supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
       const systemPrompt = basePrompt + apostilaContext;
 
       const answer = await base44.integrations.Core.InvokeLLM({
@@ -152,7 +164,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         <div className="ofensiva-owl text-3xl" role="img" aria-label="Luna, assistente do site">🦉</div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-foreground dark:text-white">Luna · Assistente do site</p>
-          <p className="truncate text-[11px] text-muted-foreground">{supportMode ? 'Suporte — conte o que precisa' : 'Dúvidas do curso, plataforma e apoio emocional'}</p>
+          <p className="truncate text-[11px] text-muted-foreground">{tuitionMode ? 'Contribuição voluntária e mensalidade' : supportMode ? 'Suporte — conte o que precisa' : 'Dúvidas do curso, plataforma e apoio emocional'}</p>
         </div>
         <button
           onClick={voice.toggle}
@@ -194,9 +206,11 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
 
       <div className="shrink-0 border-t border-rose-100 bg-rose-50/20 dark:border-white/20 dark:bg-black px-3 py-2">
         <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-invisible">
-          {(supportMode
-            ? ['Não consigo acessar minha conta', 'Problema com aulas ou vídeos', 'Problema com tarefa ou prova', 'Problema com mensalidade', 'Outro assunto']
-            : LUNA_QUICK_ACTIONS
+          {(tuitionMode
+            ? LUNA_TUITION_ACTIONS
+            : supportMode
+              ? ['Não consigo acessar minha conta', 'Problema com aulas ou vídeos', 'Problema com tarefa ou prova', 'Problema com mensalidade', 'Outro assunto']
+              : LUNA_QUICK_ACTIONS
           ).map((action) => (
             <button
               key={action}

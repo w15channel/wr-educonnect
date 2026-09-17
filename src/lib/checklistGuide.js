@@ -71,13 +71,13 @@ export const STEP_GUIDE = {
   },
   tuition: {
     emoji: '💳',
-    short: 'Mensalidade',
-    what: 'Quitar a mensalidade do curso',
+    short: 'Contribuição',
+    what: 'realizar a contribuição voluntária',
     steps: [
       'Toque no botão abaixo para abrir a área de Mensalidades.',
-      'Verifique o valor e a data de vencimento da sua mensalidade.',
-      'Realize o pagamento via PIX ou transferência.',
-      'Volte e registre o comprovante para confirmação do administrador.',
+      'Toque em “Falar com a Luna”.',
+      'A Luna explicará o processo e fornecerá o código Pix.',
+      'Informe o pagamento e aguarde a confirmação da administração.',
     ],
   },
   ofensiva: {

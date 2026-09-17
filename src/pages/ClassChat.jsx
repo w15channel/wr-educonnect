@@ -344,6 +344,7 @@ export default function ClassChat() {
   const activeTab = requestedTab === 'particular' || (!isAdmin && requestedTab === 'luna') ? requestedTab : 'geral';
   const [lunaOpened, setLunaOpened] = useState(activeTab === 'luna');
   const supportMode = searchParams.get('support') === 'true';
+  const tuitionMode = searchParams.get('topic') === 'tuition';
   const setActiveTab = (tab) => {
     if (tab === 'luna') setLunaOpened(true);
     const next = new URLSearchParams(searchParams);
@@ -614,7 +615,7 @@ export default function ClassChat() {
             <aside aria-label="Contatos da turma" className="hidden w-64 shrink-0 border-l border-border bg-card/50 lg:block"><ChatContacts {...contactProps} compact/></aside>
           </>}
           {activeTab === 'particular' && <section aria-label="Conversas particulares" className="min-h-0 min-w-0 flex-1">{isAdmin ? <AdminDMConversations session={session} students={adminDMStudents} /> : <ChatContacts {...contactProps} />}</section>}
-          {!isAdmin && (lunaOpened || activeTab === 'luna') && <section aria-label="Conversa com a Luna" className={activeTab === 'luna' ? 'flex min-h-0 min-w-0 flex-1 flex-col' : 'hidden'}><LunaChat session={session} isActive={activeTab === 'luna'} supportMode={supportMode}/></section>}
+          {!isAdmin && (lunaOpened || activeTab === 'luna') && <section aria-label="Conversa com a Luna" className={activeTab === 'luna' ? 'flex min-h-0 min-w-0 flex-1 flex-col' : 'hidden'}><LunaChat session={session} isActive={activeTab === 'luna'} supportMode={supportMode} tuitionMode={tuitionMode}/></section>}
         </div>
       </div>
     </div>

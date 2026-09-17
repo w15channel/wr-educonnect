@@ -105,8 +105,8 @@ export function buildModuleChecklist({
     // Incluído apenas no módulo atual do aluno (módulo 1 se ainda não concluiu, módulo 2+ caso contrário).
     ...(includeTuition ? [{
       key: 'tuition',
-      label: 'Quitar a mensalidade do curso',
-      hint: 'Acesse a área de Mensalidades para realizar o pagamento da sua mensalidade atual.',
+      label: 'Contribuição Voluntária',
+      hint: 'Acesse Mensalidades e fale com a Luna para cuidar da sua contribuição voluntária.',
       current: tuitionPaid ? 1 : 0,
       target: 1,
       to: '/tuitions',
