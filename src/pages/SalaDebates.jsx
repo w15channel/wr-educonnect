@@ -74,7 +74,10 @@ export default function SalaDebates() {
       return { previous };
     },
     onError: (_err, _data, context) => { if (context?.previous) queryClient.setQueryData(['debate-posts', userCourse], context.previous); },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['debate-posts'] }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['debate-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist-debates'] });
+    },
     onSuccess: async (post) => {
       triggerCelebration('Debate aberto! Inspire a turma com suas ideias! 🔥');
       if (post?.id && !post.id.startsWith('optimistic-')) {
@@ -97,6 +100,7 @@ export default function SalaDebates() {
     },
     onSuccess: async (reply) => {
       queryClient.invalidateQueries({ queryKey: ['debate-replies-all', userCourse] });
+      queryClient.invalidateQueries({ queryKey: ['checklist-debate-replies'] });
       queryClient.invalidateQueries({ queryKey: ['debate-posts'] });
       setReplyTexts(prev => ({ ...prev, [reply?.post_id]: '' }));
       triggerCelebration('Sua opinião entrou no debate! +0,01 ponto! 💪');

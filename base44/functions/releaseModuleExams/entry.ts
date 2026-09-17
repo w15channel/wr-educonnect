@@ -58,11 +58,14 @@ function computeChecklistProgress(params: {
   }).length;
 
   // Debates — sem janela de tempo no servidor (não há moduleWindow passado)
-  const myDebateTopics = debatePosts.filter((post) => post.author_email === email).length;
-  const postById = new Map(debatePosts.map((post) => [post.id, post]));
+  const normalizeEmail = (value: unknown) => String(value || '').trim().toLowerCase();
+  const topicModule = (topic: unknown) => Number(String(topic || '').match(/^(\d+)\./)?.[1]) || null;
+  const moduleDebatePosts = debatePosts.filter((post) => !topicModule(post.topic) || topicModule(post.topic) === moduleNumber);
+  const myDebateTopics = moduleDebatePosts.filter((post) => normalizeEmail(post.author_email) === email).length;
+  const postById = new Map(moduleDebatePosts.map((post) => [post.id, post]));
   const myDebateComments = debateReplies.filter((reply) => {
     const parent = postById.get(reply.post_id);
-    return reply.author_email === email && parent && parent.author_email !== email;
+    return normalizeEmail(reply.author_email) === email && parent && normalizeEmail(parent.author_email) !== email;
   }).length;
 
   // Ofensivas
@@ -71,15 +74,10 @@ function computeChecklistProgress(params: {
   ).size;
 
   const items = [
-    ...(moduleNumber > 1 ? [{
-      key: 'previous_exam',
-      label: `Concluir a prova do Módulo ${moduleNumber - 1}`,
-      done: params.pairings.length >= 0, // placeholder — previous exam check is done separately above
-    }] : []),
-    // Mensalidade: bloqueio hard — se incluída e não paga, impede a liberação.
+    // Contribuição voluntária: bloqueio hard quando o último lançamento não está pago.
     ...(includeTuition ? [{
       key: 'tuition',
-      label: 'Quitar a mensalidade do curso',
+      label: 'Contribuição Voluntária',
       current: tuitionPaid ? 1 : 0,
       target: 1,
       done: tuitionPaid,
@@ -121,16 +119,14 @@ function computeChecklistProgress(params: {
     },
   ];
 
-  // Remove previous_exam from the count since it's checked separately above
-  const checkableItems = items.filter((item) => item.key !== 'previous_exam');
-  const total = checkableItems.length;
-  const completed = checkableItems.filter((item) => item.done).length;
+  const total = items.length;
+  const completed = items.filter((item) => item.done).length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
   const missing = total - completed;
-  const missingItems = checkableItems.filter((item) => !item.done);
+  const missingItems = items.filter((item) => !item.done);
 
   return {
-    items: checkableItems,
+    items,
     total,
     completed,
     missing,
@@ -160,7 +156,7 @@ function examReleaseBlockReason(progress: any): string | null {
  * O percentual do checklist é recalculado aqui no servidor; números vindos do
  * navegador não são aceitos como prova de elegibilidade.
  */
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json().catch(() => ({}));
@@ -220,8 +216,8 @@ Deno.serve(async (req) => {
       store.Tuition.filter({ student_email: email }, '-month_ref', 50),
     ]);
 
-    // Verifica se o aluno já quitou a mensalidade (pelo menos um registro "paid").
-    const tuitionPaid = (tuitions || []).some((t: Record<string, unknown>) => t.status === 'paid');
+    // Somente o último lançamento da administração define a situação atual.
+    const tuitionPaid = tuitions?.[0]?.status === 'paid';
 
     // Determina em qual módulo o item de mensalidade deve aparecer:
     //   • Se o aluno ainda não concluiu o Módulo 1 → item no Módulo 1
@@ -230,42 +226,15 @@ Deno.serve(async (req) => {
     const module1Exams = courseExams.filter((exam: Record<string, unknown>) => parseModuleNumber(exam.module_ref) === 1);
     const module1ExamDone = module1Exams.length === 0 ? true : module1Exams.every((exam: Record<string, unknown>) => submittedExamIds.has(exam.id));
 
-    // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
-    // O aluno não pode dar sequência ao checklist do módulo seguinte sem concluir a prova do módulo anterior.
-    if (moduleNumber > 1) {
-      const previousModuleExams = courseExams.filter((exam: Record<string, unknown>) => {
-        const match = String(exam.module_ref || '').match(/(\d+)/);
-        return match && Number(match[1]) === moduleNumber - 1;
-      });
-      if (previousModuleExams.length > 0) {
-        const previousExamCompleted = previousModuleExams.every((exam: Record<string, unknown>) => submittedExamIds.has(exam.id));
-        if (!previousExamCompleted) {
-          return Response.json({
-            error: `Aluno não concluiu a prova do Módulo ${moduleNumber - 1} — pré-requisito para liberar as provas do Módulo ${moduleNumber}.`,
-            progress: {
-              items: [{ key: 'previous_exam', done: false, label: `Concluir a prova do Módulo ${moduleNumber - 1}` }],
-              total: 1,
-              completed: 0,
-              missing: 1,
-              percent: 0,
-              hasData: true,
-              eligible: false,
-            },
-          }, { status: 409 });
-        }
-      }
-    }
-
-    // Determina o módulo atual do aluno para saber se a mensalidade deve ser
-    // incluída no checklist deste módulo.
-    const currentModuleEstimate = module1ExamDone ? Math.max(2, moduleNumber) : 1;
-    const includeTuition = moduleNumber === currentModuleEstimate;
+    // A prova anterior não é requisito do checklist. A contribuição é o primeiro
+    // requisito do módulo que a administração está avaliando para liberação.
+    const includeTuition = true;
 
     // Bloqueio hard de mensalidade: se o item está incluído e não foi pago,
     // impede a liberação independentemente do percentual do checklist.
     if (includeTuition && !tuitionPaid) {
       return Response.json({
-        error: 'Aluno com mensalidade pendente — regularize o pagamento para liberar as provas.',
+        error: 'A última contribuição voluntária lançada ainda não consta como paga.',
         progress: {
           items: [{ key: 'tuition', done: false, label: 'Quitar a mensalidade do curso' }],
           total: 1,
@@ -285,7 +254,7 @@ Deno.serve(async (req) => {
       tasks,
       submissions,
       debatePosts: (allPosts || []).filter((p: Record<string, unknown>) => p.space !== 'forum'),
-      debateReplies: (allReplies || []).filter((r: Record<string, unknown>) => r.space !== 'forum'),
+      debateReplies: allReplies || [],
       pairings,
       challengeResponses,
       includeTuition,
@@ -316,4 +285,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: (error as Error)?.message || 'Erro ao liberar as provas.' }, { status: 500 });
   }
-});
+}

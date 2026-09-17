@@ -24,6 +24,12 @@ export const submissionTextLength = (submission) => {
   return `${submission.comment || ''} ${answersText}`.trim().length;
 };
 
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const debateTopicModule = (topic) => {
+  const match = String(topic || '').match(/^(\d+)\./);
+  return match ? Number(match[1]) : null;
+};
+
 /**
  * Monta os requisitos do módulo para um aluno específico.
  * Cada item traz o progresso atual, a meta e o caminho de ida (com volta ao checklist).
@@ -53,7 +59,6 @@ export function buildModuleChecklist({
   pairings = [],
   challengeResponses = [],
   moduleWindow = null,
-  previousExamCompleted = false,
   includeTuition = false,
   tuitionPaid = false,
 }) {
@@ -76,13 +81,19 @@ export function buildModuleChecklist({
   ).map((submission) => submission.task_id));
   const tasksDone = moduleTasks.filter((task) => submittedTaskIds.has(task.id)).length;
 
-  // 4 — Sala de debates: abrir um tema e comentar no tema de um colega.
-  // Restrito à janela de tempo do módulo, para não herdar participações de módulos anteriores.
-  const myDebateTopics = debatePosts.filter((post) => post.author_email === email && isWithinModuleWindow(post.created_date, moduleWindow)).length;
-  const postById = new Map(debatePosts.map((post) => [post.id, post]));
+  // 4 — Sala de debates: temas numerados contam no módulo indicado pelo próprio tema.
+  // Registros antigos/tema livre continuam usando a janela em que foram publicados.
+  const studentEmail = normalizeEmail(email);
+  const belongsToModule = (post) => {
+    const topicModule = debateTopicModule(post?.topic);
+    return topicModule ? topicModule === moduleNumber : isWithinModuleWindow(post?.created_date, moduleWindow);
+  };
+  const moduleDebatePosts = debatePosts.filter(belongsToModule);
+  const myDebateTopics = moduleDebatePosts.filter((post) => normalizeEmail(post.author_email) === studentEmail).length;
+  const postById = new Map(moduleDebatePosts.map((post) => [post.id, post]));
   const myDebateComments = debateReplies.filter((reply) => {
     const parent = postById.get(reply.post_id);
-    return reply.author_email === email && parent && parent.author_email !== email && isWithinModuleWindow(reply.created_date, moduleWindow);
+    return normalizeEmail(reply.author_email) === studentEmail && parent && normalizeEmail(parent.author_email) !== studentEmail;
   }).length;
 
   // 6 — Pelo menos 3 dias de ofensiva (não precisam ser consecutivos), dentro da janela do módulo.
@@ -91,16 +102,6 @@ export function buildModuleChecklist({
   ).size;
 
   const items = [
-    // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
-    // O aluno não pode dar sequência ao checklist do módulo seguinte sem concluir a prova do módulo anterior.
-    ...(moduleNumber > 1 ? [{
-      key: 'previous_exam',
-      label: `Concluir a prova do Módulo ${moduleNumber - 1}`,
-      hint: 'Você precisa ter entregue a prova do módulo anterior antes de prosseguir com as atividades deste módulo.',
-      current: previousExamCompleted ? 1 : 0,
-      target: 1,
-      to: '/exams',
-    }] : []),
     // Contribuição voluntária: item confirmado pela administração após o aluno informar sua contribuição.
     // Incluído apenas no módulo atual do aluno (módulo 1 se ainda não concluiu, módulo 2+ caso contrário).
     ...(includeTuition ? [{
