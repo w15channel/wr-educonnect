@@ -1,5 +1,5 @@
 {
-  "description": "Gera automaticamente a ofensiva di\u00e1ria todos os dias \u00e0s 06:00 UTC.",
+  "description": "A Luna gera diariamente trilhas por curso e m\u00f3dulo atual, usando as cinco aulas recentes dos alunos e compartilhando perguntas dentro do mesmo grupo para economizar IA.",
   "name": "Ofensiva Di\u00e1ria Autom\u00e1tica",
   "trigger": {
     "condition": null,
@@ -34,13 +34,14 @@
             "args": {
               "automation": {
                 "type": "scheduled"
-              }
+              },
+              "mode": "luna_module_cohorts"
             }
           },
           "then": "end",
           "x-base44": {
             "title": "Gerar ofensiva di\u00e1ria",
-            "description": "Executa createDailyChallenge"
+            "description": "Luna cria trilhas por m\u00f3dulo e avan\u00e7o"
           }
         }
       }
