@@ -12,11 +12,11 @@
     },
     "month_ref": {
       "type": "string",
-      "description": "Refer\u00eancia mensal no formato YYYY-MM"
+      "description": "Refer\u00eancia do m\u00eas (ex: 2025-01)"
     },
     "amount": {
       "type": "number",
-      "description": "Valor de refer\u00eancia da mensalidade"
+      "description": "Valor da mensalidade"
     },
     "due_date": {
       "type": "string",
@@ -26,31 +26,16 @@
     "paid_date": {
       "type": "string",
       "format": "date",
-      "description": "Data do pagamento confirmada"
+      "description": "Data de pagamento"
     },
     "paid_amount": {
       "type": "number",
-      "description": "Valor efetivamente contribu\u00eddo e confirmado"
-    },
-    "reported_date": {
-      "type": "string",
-      "format": "date",
-      "description": "Data de pagamento informada pelo aluno"
-    },
-    "reported_amount": {
-      "type": "number",
-      "description": "Valor de pagamento informado pelo aluno"
-    },
-    "reported_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Instante em que o aluno enviou o registro para confer\u00eancia"
+      "description": "Valor efetivamente contribu\u00eddo pelo aluno \u2014 pode ser menor que o valor lan\u00e7ado e ainda assim quita a mensalidade"
     },
     "status": {
       "type": "string",
       "enum": [
         "pending",
-        "under_review",
         "paid",
         "overdue"
       ],
@@ -63,12 +48,12 @@
     },
     "receipt_code": {
       "type": "string",
-      "description": "C\u00f3digo de registro do recibo"
+      "description": "C\u00f3digo de registro do recibo de contribui\u00e7\u00e3o volunt\u00e1ria, gerado na emiss\u00e3o"
     },
     "wall_shared": {
       "type": "boolean",
       "default": false,
-      "description": "Se a contribui\u00e7\u00e3o j\u00e1 foi publicada no mural"
+      "description": "Se a contribui\u00e7\u00e3o j\u00e1 foi publicada no mural de supera\u00e7\u00e3o"
     }
   },
   "required": [
