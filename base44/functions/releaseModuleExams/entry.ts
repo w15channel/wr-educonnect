@@ -5,7 +5,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // Aulas da apostila e tarefas são CUMULATIVAS (não filtram por data).
 // Debates e ofensivas usam janela de tempo para não herdar de módulos anteriores.
 // Mínimo de 50% do checklist para liberar provas.
-// Mensalidade: cada módulo usa a mensalidade do seu período (05/mês a 05/mês).
+// Mensalidades: todas as não pagas aparecem como pendência em cada módulo.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const EXAM_RELEASE_MIN_PERCENT = 50;
@@ -27,35 +27,6 @@ function parseModuleNumber(value: unknown): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
-// Calcula o período da mensalidade a partir do due_date.
-// O período vai do dia 05 do mês anterior ao dia 05 do mês de vencimento.
-// Ex: due_date '2026-09-10' → período [05/08, 05/09)
-function tuitionPeriodFromDueDate(dueDateStr: string): { start: number; end: number } | null {
-  if (!dueDateStr) return null;
-  const parts = String(dueDateStr).split('-');
-  if (parts.length < 2) return null;
-  const year = Number(parts[0]);
-  const month = Number(parts[1]); // 1-indexed
-  if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
-  const periodEnd = new Date(year, month - 1, 5).getTime();
-  const periodStart = new Date(year, month - 2, 5).getTime();
-  return { start: periodStart, end: periodEnd };
-}
-
-// Encontra a mensalidade cujo período contém a data de liberação do módulo.
-function findTuitionForModule(moduleReleaseDate: string | null, tuitions: any[]): any | null {
-  if (!moduleReleaseDate || !tuitions || tuitions.length === 0) return null;
-  const releaseTime = new Date(moduleReleaseDate).getTime();
-  if (!Number.isFinite(releaseTime)) return null;
-  for (const t of tuitions) {
-    const period = tuitionPeriodFromDueDate(t.due_date);
-    if (period && releaseTime >= period.start && releaseTime < period.end) {
-      return t;
-    }
-  }
-  return null;
-}
-
 function computeChecklistProgress(params: {
   moduleNumber: number;
   email: string;
@@ -66,10 +37,9 @@ function computeChecklistProgress(params: {
   debateReplies: any[];
   pairings: any[];
   challengeResponses: any[];
-  moduleReleaseDate: string | null;
   tuitions: any[];
 }) {
-  const { moduleNumber, email, progresses, tasks, submissions, debatePosts, debateReplies, challengeResponses, moduleReleaseDate, tuitions } = params;
+  const { moduleNumber, email, progresses, tasks, submissions, debatePosts, debateReplies, challengeResponses, tuitions } = params;
 
   // Aulas da apostila — CUMULATIVAS (sem filtro de janela de tempo)
   const apostilaPrefix = `apostila:mod${moduleNumber}:`;
@@ -80,13 +50,14 @@ function computeChecklistProgress(params: {
   ).size;
 
   // Tarefas do módulo — CUMULATIVAS (sem filtro de janela de tempo)
+  // Filtra tarefas tipo quiz (provas) e ocultas.
   const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber && task.type !== 'quiz' && !task.is_hidden);
   const tasksDone = moduleTasks.filter((task) => {
     const submission = submissions.find((s) => s.task_id === task.id);
     return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
   }).length;
 
-  // Debates — sem janela de tempo no servidor (não há moduleWindow passado)
+  // Debates — sem janela de tempo no servidor
   const normalizeEmail = (value: unknown) => String(value || '').trim().toLowerCase();
   const topicModule = (topic: unknown) => Number(String(topic || '').match(/^(\d+)\./)?.[1]) || null;
   const moduleDebatePosts = debatePosts.filter((post) => !topicModule(post.topic) || topicModule(post.topic) === moduleNumber);
@@ -102,15 +73,15 @@ function computeChecklistProgress(params: {
     challengeResponses.filter((r) => r.student_email === email).map((r) => r.date)
   ).size;
 
-  // Mensalidade do período deste módulo
-  const moduleTuition = findTuitionForModule(moduleReleaseDate, tuitions);
-  const tuitionItems = moduleTuition ? [{
-    key: 'tuition',
-    label: 'Contribuição Voluntária',
-    current: moduleTuition.status === 'paid' ? 1 : 0,
+  // Mensalidades em aberto — todas as não pagas aparecem como pendência
+  const unpaidTuitions = (tuitions || []).filter((t) => t.status !== 'paid');
+  const tuitionItems = unpaidTuitions.map((t, idx) => ({
+    key: `tuition_${idx}`,
+    label: `Contribuição Voluntária${t.month_ref ? ` — ${t.month_ref}` : ''}`,
+    current: 0,
     target: 1,
-    done: moduleTuition.status === 'paid',
-  }] : [];
+    done: false,
+  }));
 
   const items = [
     ...tuitionItems,
@@ -227,7 +198,7 @@ export default async function(req) {
       return Response.json({ success: true, released: false });
     }
 
-    const [lessons, progresses, tasks, submissions, allPosts, allReplies, pairings, challengeResponses, courseExams, studentExamSubs, tuitions, moduleUnlocks] = await Promise.all([
+    const [lessons, progresses, tasks, submissions, allPosts, allReplies, pairings, challengeResponses, courseExams, studentExamSubs, tuitions] = await Promise.all([
       store.RecordedLesson.filter({ course }, 'order', 300),
       store.LessonProgress.filter({ student_email: email }, '-created_date', 2000),
       store.Task.filter({ course }, '-created_date', 300),
@@ -239,12 +210,7 @@ export default async function(req) {
       store.Exam.filter({ course }, '-created_date', 500),
       store.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
       store.Tuition.filter({ student_email: email }, '-created_date', 50),
-      store.StudentModuleUnlock.filter({ student_email: email }, '-unlocked_at', 20),
     ]);
-
-    // Encontrar a data de liberação do módulo para determinar a mensalidade correspondente
-    const moduleUnlockRecord = (moduleUnlocks || []).find((u: any) => Number(u.module_number) === moduleNumber && (u.course || 'tcc') === course);
-    const moduleReleaseDate = moduleUnlockRecord?.unlocked_at || null;
 
     // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
     if (moduleNumber > 1) {
@@ -282,7 +248,6 @@ export default async function(req) {
       debateReplies: allReplies || [],
       pairings,
       challengeResponses,
-      moduleReleaseDate,
       tuitions,
     });
 
