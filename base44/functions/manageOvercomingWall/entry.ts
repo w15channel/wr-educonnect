@@ -2,6 +2,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 const norm = (value) => String(value || '').trim().toLowerCase();
 const dateOf = (record) => record.updated_date || record.submitted_at || record.created_date || record.date || new Date().toISOString();
+const brazilDateParts = () => Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).filter((part) => part.type !== 'literal').map((part) => [part.type, Number(part.value)]));
+const monthRef = (year, month, shift = 0) => { const date = new Date(Date.UTC(year, month - 1 + shift, 15)); return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`; };
+const financialPeriod = () => { const { year, month, day } = brazilDateParts(); return day >= 4 ? monthRef(year, month) : monthRef(year, month, -1); };
+const nextDueDate = (ref) => { const [year, month] = ref.split('-').map(Number); const date = new Date(Date.UTC(year, month, 5)); return date.toISOString().slice(0, 10); };
 
 async function authenticatedUser(base44, payload) {
   const claimedEmail = norm(payload.actor_email);
@@ -128,6 +132,30 @@ export default async function(req) {
       const readReceipts = await service.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);
       const monitorHistory = await service.MonitorHistory.filter({ course }, '-period_start', 100);
       return Response.json({ success: true, accessCodes, messages, activityRecords: { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams }, savedAchievements, institutionalRecords: { shared, notices, liveSessions, calendarEvents }, reactions, notifications, personalPosts, readReceipts, monitorHistory });
+    }
+    if (payload.action === 'tuitionList') {
+      const service = base44.asServiceRole.entities;
+      const ref = financialPeriod();
+      const studentIdentity = norm(payload.actor_email) || user.email;
+      let records = await service.Tuition.filter({ student_email: studentIdentity }, '-month_ref', 50);
+      const { day } = brazilDateParts();
+      if (day >= 4 && !records.some((record) => record.month_ref === ref)) {
+        const record = await service.Tuition.create({ student_email: studentIdentity, student_name: user.name || user.full_name || '', month_ref: ref, amount: 0, due_date: nextDueDate(ref), status: 'pending' });
+        records = [record, ...records];
+      }
+      return Response.json({ success: true, records });
+    }
+    if (payload.action === 'reportTuitionPayment') {
+      const service = base44.asServiceRole.entities;
+      const record = await service.Tuition.get(String(payload.tuition_id || '')).catch(() => null);
+      const amount = Number(payload.amount);
+      const paidDate = String(payload.paid_date || '');
+      const studentIdentity = norm(payload.actor_email) || user.email;
+      if (!record || norm(record.student_email) !== studentIdentity) return Response.json({ error: 'Mensalidade não encontrada.' }, { status: 404 });
+      if (record.status !== 'pending') return Response.json({ error: 'Esta mensalidade não está disponível para regularização.' }, { status: 400 });
+      if (!Number.isFinite(amount) || amount < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(paidDate)) return Response.json({ error: 'Informe o valor e a data do pagamento.' }, { status: 400 });
+      const updated = await service.Tuition.update(record.id, { status: 'under_review', reported_amount: amount, reported_date: paidDate, reported_at: new Date().toISOString() });
+      return Response.json({ success: true, record: updated });
     }
     if (payload.action === 'profiles') {
       const service = base44.asServiceRole.entities;

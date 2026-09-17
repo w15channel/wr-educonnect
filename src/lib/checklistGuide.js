@@ -69,6 +69,17 @@ export const STEP_GUIDE = {
       'Conte como foi o atendimento e envie.',
     ],
   },
+  tuition: {
+    emoji: '💳',
+    short: 'Mensalidade',
+    what: 'regularizar a contribuição mensal',
+    steps: [
+      'Toque no botão abaixo para abrir Mensalidades.',
+      'Toque em REGULARIZAR e converse com a Luna.',
+      'Copie o código Pix e faça sua contribuição conforme suas possibilidades.',
+      'Registre o valor e a data. A etapa será concluída após a confirmação da administração.',
+    ],
+  },
   ofensiva: {
     emoji: '🔥',
     short: 'Ofensiva',

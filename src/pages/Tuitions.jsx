@@ -12,10 +12,12 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateReceiptCode, generateReceiptImage, downloadReceiptImage, getDefaultReceiptTemplate, setDefaultReceiptTemplate } from '@/lib/generateReceiptImage';
 import ReceiptImageDialog from '@/components/tuitions/ReceiptImageDialog';
+import TuitionLunaDialog from '@/components/tuitions/TuitionLunaDialog';
 
 const STATUS_CONFIG = {
   paid: { label: 'Pago', icon: CheckCircle, card: 'border-green-500/20 bg-green-500/10', badge: 'text-green-500 bg-green-500/10 border-green-500/20', text: 'text-green-500', iconBg: 'bg-green-500/15' },
   pending: { label: 'Pendente', icon: AlertCircle, card: 'border-yellow-500/20 bg-yellow-500/10', badge: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-500', iconBg: 'bg-yellow-500/15' },
+  under_review: { label: 'Em análise', icon: AlertCircle, card: 'border-blue-500/20 bg-blue-500/10', badge: 'text-blue-500 bg-blue-500/10 border-blue-500/20', text: 'text-blue-500', iconBg: 'bg-blue-500/15' },
   overdue: { label: 'Inadimplente', icon: XCircle, card: 'border-red-500/20 bg-red-500/10', badge: 'text-red-500 bg-red-500/10 border-red-500/20', text: 'text-red-500', iconBg: 'bg-red-500/15' },
 };
 
@@ -34,12 +36,18 @@ export default function Tuitions() {
   const [payAmountInput, setPayAmountInput] = useState('');
   const [issuingReceiptId, setIssuingReceiptId] = useState(null);
   const [receipt, setReceipt] = useState(null);
+  const [regularizingTuition, setRegularizingTuition] = useState(null);
 
   const { data: tuitions = [], isLoading } = useQuery({
     queryKey: ['tuitions'],
-    queryFn: () => isAdmin
-      ? base44.entities.Tuition.list('-month_ref', 500)
-      : base44.entities.Tuition.filter({ student_email: session?.email }, '-month_ref', 50),
+    queryFn: async () => {
+      if (isAdmin) return base44.entities.Tuition.list('-month_ref', 500);
+      if (session?.code || session?.codeId) {
+        const response = await base44.functions.invoke('manageOvercomingWall', { action: 'tuitionList', actor_email: session?.email, access_code: session?.code, access_code_id: session?.codeId });
+        return response.data?.records || [];
+      }
+      return base44.entities.Tuition.filter({ student_email: session?.email }, '-month_ref', 50);
+    },
     enabled: !!session,
   });
 
@@ -74,6 +82,12 @@ export default function Tuitions() {
     },
   });
 
+  const reportPaymentMutation = useMutation({
+    mutationFn: ({ tuition, amount, date }) => base44.functions.invoke('manageOvercomingWall', { action: 'reportTuitionPayment', actor_email: session?.email, access_code: session?.code, access_code_id: session?.codeId, tuition_id: tuition.id, amount, paid_date: date }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tuitions'] }); queryClient.invalidateQueries({ queryKey: ['checklist-tuitions'] }); setRegularizingTuition(null); toast.success('Pagamento enviado para confirmação!'); },
+    onError: (error) => toast.error(error?.response?.data?.error || error?.message || 'Não foi possível registrar o pagamento.'),
+  });
+
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Tuition.update(id, data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tuitions'] }); toast.success('Status atualizado!'); },
@@ -90,7 +104,7 @@ export default function Tuitions() {
       id: payDialogTuition.id,
       data: {
         status: 'paid',
-        paid_date: new Date().toISOString().split('T')[0],
+        paid_date: payDialogTuition.reported_date || new Date().toISOString().split('T')[0],
         paid_amount: Number(payAmountInput) || 0,
       },
     });
@@ -205,7 +219,7 @@ export default function Tuitions() {
   const filtered = selectedStudent === 'all' ? visibleTuitions : visibleTuitions.filter(t => t.student_email === selectedStudent);
 
   const overallStatus = !isAdmin && tuitions.length > 0
-    ? (tuitions.some(t => t.status === 'overdue') ? 'overdue' : tuitions.some(t => t.status === 'pending') ? 'pending' : 'paid')
+    ? (tuitions.some(t => t.status === 'overdue') ? 'overdue' : tuitions.some(t => t.status === 'pending') ? 'pending' : tuitions.some(t => t.status === 'under_review') ? 'under_review' : 'paid')
     : null;
 
   return (
@@ -330,7 +344,7 @@ export default function Tuitions() {
           <div>
             <p className="font-bold text-foreground">Situação Financeira</p>
             <p className={`text-sm font-semibold ${STATUS_CONFIG[overallStatus].text}`}>
-              {overallStatus === 'paid' ? '✅ Em dia — Parabéns!' : overallStatus === 'overdue' ? '❌ Inadimplente — Mensalidades em atraso' : '⚠️ Mensalidades pendentes'}
+              {overallStatus === 'paid' ? '✅ Em dia — Parabéns!' : overallStatus === 'under_review' ? 'Pagamento enviado — aguardando confirmação' : overallStatus === 'overdue' ? '❌ Inadimplente — Mensalidades em atraso' : '⚠️ Mensalidades pendentes'}
             </p>
           </div>
         </div>
@@ -376,7 +390,7 @@ export default function Tuitions() {
                 <div className="flex items-center gap-2 shrink-0">
                   {isAdmin ? (
                     <Select value={t.status} onValueChange={v => {
-                      if (v === 'paid') { setPayDialogTuition(t); setPayAmountInput(String(t.paid_amount ?? t.amount ?? '')); return; }
+                      if (v === 'paid') { setPayDialogTuition(t); setPayAmountInput(String(t.reported_amount ?? t.paid_amount ?? t.amount ?? '')); return; }
                       updateMutation.mutate({ id: t.id, data: { status: v } });
                     }}>
                       <SelectTrigger className={`w-36 h-8 text-xs border rounded-xl ${cfg.badge}`}>
@@ -384,6 +398,7 @@ export default function Tuitions() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending">Pendente</SelectItem>
+                        <SelectItem value="under_review">Em análise</SelectItem>
                         <SelectItem value="paid">Pago</SelectItem>
                         <SelectItem value="overdue">Inadimplente</SelectItem>
                       </SelectContent>
@@ -392,6 +407,12 @@ export default function Tuitions() {
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${cfg.badge}`}>
                       <StatusIcon size={12} /> {cfg.label}
                     </span>
+                  )}
+                  {!isAdmin && t.status === 'pending' && (
+                    <Button size="sm" onClick={() => setRegularizingTuition(t)}>REGULARIZAR</Button>
+                  )}
+                  {!isAdmin && t.status === 'under_review' && (
+                    <span className="text-xs font-semibold text-blue-500">Aguardando confirmação</span>
                   )}
                   {t.status === 'paid' && (
                     <button onClick={() => handleIssueReceipt(t)} disabled={issuingReceiptId === t.id} className="p-1.5 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50" title="Gerar recibo artístico em PNG">
@@ -424,6 +445,14 @@ export default function Tuitions() {
         </div>
       )}
 
+      <TuitionLunaDialog
+        tuition={regularizingTuition}
+        open={!!regularizingTuition}
+        onOpenChange={(open) => { if (!open) setRegularizingTuition(null); }}
+        onSubmit={(data) => reportPaymentMutation.mutate(data)}
+        submitting={reportPaymentMutation.isPending}
+      />
+
       <ReceiptImageDialog
         open={!!receipt}
         onOpenChange={(open) => { if (!open) setReceipt(null); }}
@@ -443,8 +472,9 @@ export default function Tuitions() {
           <DialogHeader><DialogTitle>Confirmar Pagamento</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-2">
             <p className="text-sm text-muted-foreground">
-              Informe o valor que o aluno efetivamente contribuiu. A mensalidade será quitada mesmo que o valor seja menor que o lançado.
+              Confira o valor informado pelo aluno. A mensalidade será concluída após esta confirmação.
             </p>
+            {payDialogTuition?.reported_date && <p className="text-sm text-muted-foreground">Data informada: {format(new Date(payDialogTuition.reported_date + 'T12:00:00'), 'dd/MM/yyyy')}</p>}
             <Input type="number" placeholder="Valor contribuído (R$)" value={payAmountInput} onChange={e => setPayAmountInput(e.target.value)} />
             <Button onClick={confirmPayment} className="w-full">Confirmar Quitação</Button>
           </div>

@@ -4,6 +4,7 @@ import useModuleAccess from '@/hooks/useModuleAccess';
 import useStudentRecords from '@/hooks/useStudentRecords';
 import { base44 } from '@/api/base44Client';
 import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
+import { getTuitionPeriodRef } from '@/lib/tuitionPeriod';
 
 const MODULE_COUNT = 10;
 // O calendário define o módulo disponível; concluir atividades não antecipa datas.
@@ -54,9 +55,20 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
     enabled: !!email,
   });
+  const { data: tuitions = [], isLoading: l11 } = useQuery({
+    queryKey: ['checklist-tuitions', email, getTuitionPeriodRef()],
+    queryFn: async () => {
+      if (session?.code || session?.codeId) {
+        const response = await base44.functions.invoke('manageOvercomingWall', { action: 'tuitionList', actor_email: session?.email, access_code: session?.code, access_code_id: session?.codeId });
+        return response.data?.records || [];
+      }
+      return base44.entities.Tuition.filter({ student_email: email }, '-month_ref', 50);
+    },
+    enabled: !!email && session?.role !== 'admin',
+  });
   const moduleUnlocks = access.unlocks;
 
-  const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || access.isLoading;
+  const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11 || access.isLoading;
 
   // Data em que cada módulo foi liberado para o aluno — usada para que
   // debates, terapeuta da semana e ofensiva contem apenas o que foi feito
@@ -98,9 +110,16 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
       });
       const moduleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === moduleNumber);
       const examDone = moduleExams.length > 0 && moduleExams.every((exam) => submittedExamIds.has(exam.id));
+      if (moduleNumber === access.currentModule && session?.role !== 'admin') {
+        const ref = getTuitionPeriodRef();
+        const paid = tuitions.some((tuition) => tuition.month_ref === ref && tuition.status === 'paid');
+        checklist.items.push({ key: 'tuition', label: `Mensalidade de ${ref}`, hint: 'A confirmação da administração conclui esta etapa mensal.', current: paid ? 1 : 0, target: 1, done: paid, to: '/tuitions' });
+        checklist.doneCount = checklist.items.filter((item) => item.done).length;
+        checklist.complete = checklist.items.every((item) => item.done);
+      }
       return { moduleNumber, ...checklist, examDone, exams: moduleExams };
     });
-  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule]);
+  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, access.currentModule, session?.role, tuitions]);
 
   const currentModule = access.currentModule;
 
