@@ -107,6 +107,7 @@ export default async function(req) {
       const course = payload.course || user.course || 'tcc';
       if (user.course && course !== user.course) return Response.json({ error: 'Curso não autorizado.' }, { status: 403 });
       const accessCodes = (await service.AccessCode.list('-created_date', 2000)).filter((item) => item.course === course || (course === 'tcc' && !item.course));
+      const messages = await service.ChatMessage.filter({ session_id: `class_chat_${course}` }, 'created_date', 300);
       const lessonProgresses = await service.LessonProgress.list('-created_date', 400);
       const taskSubmissions = await service.TaskSubmission.list('-created_date', 300);
       const examSubmissions = await service.ExamSubmission.list('-submitted_at', 200);
@@ -126,7 +127,7 @@ export default async function(req) {
       const personalPosts = await service.StudentWallPost.filter({ student_email: user.email }, '-published_at', 30);
       const readReceipts = await service.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);
       const monitorHistory = await service.MonitorHistory.filter({ course }, '-period_start', 100);
-      return Response.json({ success: true, accessCodes, activityRecords: { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams }, savedAchievements, institutionalRecords: { shared, notices, liveSessions, calendarEvents }, reactions, notifications, personalPosts, readReceipts, monitorHistory });
+      return Response.json({ success: true, accessCodes, messages, activityRecords: { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams }, savedAchievements, institutionalRecords: { shared, notices, liveSessions, calendarEvents }, reactions, notifications, personalPosts, readReceipts, monitorHistory });
     }
     if (payload.action === 'listReads') {
       const records = await base44.asServiceRole.entities.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);

@@ -39,7 +39,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     staleTime: 5 * 60000,
   });
 
-  const { data: messages = [] } = useQuery({
+  const { data: messages = secureWallData?.messages || [] } = useQuery({
     queryKey: ['overcoming-wall-messages', chatSessionId],
     queryFn: async () => {
       const res = await base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: chatSessionId });
