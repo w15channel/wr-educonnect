@@ -5,6 +5,7 @@ import {
   resolveLessonMeta,
 } from './ofensivaGenerator.ts';
 import { LESSON_KNOWLEDGE } from './lessonKnowledge.ts';
+import { generateLunaModuleChallenges } from './lunaCohortGenerator.ts';
 
 const COURSES = ['tcc', 'psicanalise', 'sexologia'];
 
@@ -89,48 +90,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Scheduled automation (or no manual params) — generate automatically for today
+    // A automação diária agrupa alunos por curso e módulo atual. A Luna gera uma
+    // única trilha por grupo, usando como tema uma das cinco aulas recentes do grupo.
     const today = ymd(new Date());
-    const existing = await base44.asServiceRole.entities.DailyChallenge.filter({ date: today });
-    if (existing && existing.length > 0) {
-      return Response.json({
-        success: true,
-        message: 'Ofensiva já gerada para hoje',
-        existing_count: existing.length,
-      });
-    }
-
-    // Select theme based on day of year (rotates through apostila lessons)
-    const dayOfYear = Math.floor(
-      (new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24),
-    );
-    const selected = pickLessonByDayOfYear(dayOfYear);
-    const formattedQuestions = toStoredQuestions(
-      buildQuestionsForLesson(selected, dayOfYear, today),
-    );
-
-    // Create DailyChallenge for all courses
-    const created = [];
-    for (const course of COURSES) {
-      const record = await base44.asServiceRole.entities.DailyChallenge.create({
-        date: today,
-        course,
-        lesson_ref: `${selected.moduleTitle} - ${selected.title}`,
-        lesson_id: selected.id,
-        module_number: moduleNumberFrom(selected.id, selected.moduleTitle),
-        questions: formattedQuestions,
-      });
-      created.push({ course, id: record.id });
-    }
-
-    return Response.json({
-      success: true,
-      message: 'Ofensivas geradas automaticamente com algoritmo temático',
-      theme: selected.theme,
-      lesson_id: selected.id,
-      questions_count: formattedQuestions.length,
-      created,
-    });
+    const result = await generateLunaModuleChallenges(base44, today);
+    return Response.json(result);
   } catch (error) {
     return Response.json({ error: (error as Error).message }, { status: 500 });
   }

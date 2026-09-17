@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, skipped: true, reason: 'no points to credit' });
     }
 
+    const challenge = await base44.asServiceRole.entities.DailyChallenge.get(challenge_id).catch(() => null);
     const pts = roundScore(points_earned);
     const refId = `ofensiva:${challenge_id}:${student_email}`;
 
@@ -71,6 +72,7 @@ Deno.serve(async (req) => {
       category: 'ofensiva',
       ref_id: refId,
       ref_title: `Ofensiva Diária (${date || 'data'})`,
+      module_number: Number(challenge?.module_number) || 1,
       score: pts,
       max_score: 1.0,
       verified: true,

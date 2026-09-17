@@ -304,10 +304,16 @@ export default function Ofensivas() {
   // ── Fetch ────────────────────────────────────────────────────────────────
   const { data: challenges = [], isLoading } = useQuery({
     queryKey: ['daily-challenge', userCourse, today],
-    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: today }, '-created_date', 5),
+    queryFn: () => base44.entities.DailyChallenge.filter({ course: userCourse, date: today }, '-created_date', 30),
     staleTime: 60000,
   });
-  const challenge = challenges[0] || null;
+  const { data: myModuleUnlocks = [] } = useQuery({
+    queryKey: ['ofensiva-module-unlocks', session?.email],
+    queryFn: () => base44.entities.StudentModuleUnlock.filter({ student_email: session?.email || '' }, '-unlocked_at', 20),
+    enabled: !isTeacher && !!session?.email,
+  });
+  const currentModuleNumber = myModuleUnlocks.reduce((highest, item) => Math.max(highest, Number(item.module_number) || 1), 1);
+  const challenge = isTeacher ? (challenges[0] || null) : (challenges.find((item) => Number(item.module_number || 1) === currentModuleNumber) || null);
 
   const { data: myResponse } = useQuery({
     queryKey: ['daily-response', challenge?.id, session?.email],
