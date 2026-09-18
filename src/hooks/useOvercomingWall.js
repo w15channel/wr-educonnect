@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { isLegacyMsnAction, isSinceOvercomingWallCutoff } from '@/lib/overcomingWall';
 import { personalizeWallNotice } from '@/lib/wallPersonalization';
+import { buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
 
 /**
  * Base única do Mural de Superação.
@@ -39,6 +40,16 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     staleTime: 5 * 60000,
   });
 
+  // Busca perfis de StudentProfile para resolver nicknames
+  const { data: studentProfiles = [] } = useQuery({
+    queryKey: ['student-profiles-wall', activeCourse],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 5000),
+    enabled: on && !customAccess,
+    staleTime: 5 * 60000,
+  });
+
+  const profileMap = useMemo(() => buildProfileMap(studentProfiles), [studentProfiles]);
+
   const { data: messages = secureWallData?.messages || [] } = useQuery({
     queryKey: ['overcoming-wall-messages', chatSessionId],
     queryFn: async () => {
@@ -52,8 +63,6 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
 
   const { data: activityRecords = secureWallData?.activityRecords } = useQuery({
     queryKey: ['overcoming-wall-activity', activeCourse],
-    // Busca sequencial e enxuta: o mural mostra apenas as conquistas recentes,
-    // então pedir milhares de registros de uma vez só deixava o site lento.
     queryFn: async () => {
       const lessonProgresses = await base44.entities.LessonProgress.list('-created_date', 400);
       const taskSubmissions = await base44.entities.TaskSubmission.list('-created_date', 300);
@@ -150,14 +159,15 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     [accessCodes, activeCourse]
   );
 
+  // Resolve o nome de exibição social: nickname → profile_name → full_name → student_name
   const getStudentName = (email) => {
-    const code = accessCodes.find((item) => item.student_email === email);
-    return code?.profile_name || code?.student_name || 'Um aluno da turma';
+    const name = resolveDisplayNameFromMaps(email, profileMap, accessCodes);
+    return name !== email ? name : 'Um aluno da turma';
   };
 
   const achievementPosts = useMemo(() => {
     if (!activityRecords) return [];
-    const lessonById = Object.fromEntries(activityRecords.lessons.map((item) => [item.id, item]));
+    const lessonById = Object.fromEntries(activityRecords.lessons.map((item) =>!! item.id, item]));
     const taskById = Object.fromEntries(activityRecords.tasks.map((item) => [item.id, item]));
     const examById = Object.fromEntries(activityRecords.exams.map((item) => [item.id, item]));
     const make = (record, kind, content, occurredAt, email = record.student_email) => ({
@@ -205,7 +215,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     ]
       .filter((post) => courseEmails.has(post.studentEmail) && isSinceOvercomingWallCutoff(post.occurredAt))
       .filter((post, index, posts) => posts.findIndex((c) => c.studentEmail === post.studentEmail && c.content === post.content) === index);
-  }, [activityRecords, savedAchievements, accessCodes, courseEmails]);
+  }, [activityRecords, savedAchievements, accessCodes, courseEmails, profileMap]);
 
   const institutionalPosts = useMemo(() => {
     if (!institutionalRecords) return [];
@@ -229,7 +239,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
         })
         .map((item) => ({ id: `calendar-${item.id}`, feedType: 'institutional', icon: 'event', title: 'Compromisso próximo', content: `${item.title} • ${new Date(`${item.date || item.event_date}T${item.time || item.event_time || '12:00'}`).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, occurredAt: item.created_date || item.date || item.event_date })),
     ].filter((item, index, items) => item.content && items.findIndex((c) => c.id === item.id) === index);
-  }, [institutionalRecords, session?.email, accessCodes]);
+  }, [institutionalRecords, session?.email, accessCodes, profileMap]);
 
   // Feed único (mais recente primeiro) — a mesma lista nas duas telas.
   const feed = useMemo(() => [
@@ -248,7 +258,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       await queryClient.invalidateQueries({ queryKey: ['overcoming-wall-reactions'] });
       toast.success(response?.data?.duplicate ? 'Você já registrou esta reação.' : 'Sua reação foi enviada!');
     },
-    onError: (error) => toast.error(error?.message || 'Não foi possível enviar sua reação.'),
+    onError: (error) => toast.error(error?.message || 'Não foi possível enviar a reação.'),
   });
 
   const replyMutation = useMutation({
@@ -298,5 +308,6 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     sendMessageMutation,
     refreshMessages,
     getStudentName,
+    profileMap,
   };
 }
