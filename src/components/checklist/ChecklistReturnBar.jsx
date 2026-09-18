@@ -87,7 +87,7 @@ export default function ChecklistReturnBar() {
 
             {/* Card de parabenização */}
             <motion.div
-n              initial={{ scale: 0.6, y: 30 }}
+              initial={{ scale: 0.6, y: 30 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.8, y: -20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 22 }}
@@ -111,13 +111,13 @@ n              initial={{ scale: 0.6, y: 30 }}
         {itemKey && !celebrated ? (
           /* Antes de marcar: botão de concluir + botão de retorno lado a lado */
           <motion.div
-n            initial={{ y: 20, opacity: 0 }}
+            initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.2 }}
             className="flex gap-2"
           >
             <button
-n              type="button"
+              type="button"
               onClick={handleMarkComplete}
               className="flex items-center justify-center gap-1.5 rounded-2xl border border-green-300 bg-green-500 px-3 py-3 text-xs font-bold text-white shadow-lg hover:bg-green-600 transition-colors whitespace-nowrap"
             >
@@ -125,7 +125,7 @@ n              type="button"
               Concluir
             </button>
             <button
-n              type="button"
+              type="button"
               onClick={() => navigate(returnTo)}
               className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary px-4 py-3 text-xs font-bold text-primary-foreground shadow-lg hover:opacity-90 transition-opacity"
             >
@@ -137,7 +137,7 @@ n              type="button"
         ) : (
           /* Após comemorar (ou sem itemKey): apenas o botão de retorno */
           <motion.button
-n            type="button"
+            type="button"
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.2 }}
