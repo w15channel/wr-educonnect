@@ -10,7 +10,7 @@ import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { capScore, formatScore } from '@/lib/scoreUtils';
-import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji, resolveDisplayName, buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
 import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
@@ -122,87 +122,6 @@ export default function Dashboard() {
     });
   };
 
-  const handleSaveMonitors = async () => {
-    if (selectedMonitorEmails.size === 0) return;
-    setSavingMonitors(true);
-    const periodStart = format(new Date(), 'yyyy-MM-dd');
-    const periodEnd = format(addDays(new Date(), 6), 'yyyy-MM-dd');
-    const existing = await adminApi.list('MonitorHistory', { sort_by: '-period_start', limit: 100 });
-    const courseExisting = existing.filter((m) => m.course === userCourse || !m.course);
-    const latestExistingPeriodStart = courseExisting.reduce(
-      (max, m) => (!max || m.period_start > max ? m.period_start : max),
-      null
-    );
-    const currentBatch = latestExistingPeriodStart
-      ? courseExisting.filter((m) => m.period_start === latestExistingPeriodStart)
-      : [];
-    for (const m of currentBatch) await adminApi.delete('MonitorHistory', m.id);
-    const oldMonitorAnnouncements = await adminApi.list('Announcement', { filter: { course: userCourse || 'tcc' }, sort_by: '-created_date', limit: 300 });
-    for (const announcement of oldMonitorAnnouncements) {
-      const isMonitorNotice = Boolean(announcement.certificate_monitor_id) || (announcement.title || '').includes('Monitor(a) da Semana');
-      if (isMonitorNotice) await adminApi.delete('Announcement', announcement.id);
-    }
-    const emailsArr = [...selectedMonitorEmails];
-    for (let i = 0; i < emailsArr.length; i++) {
-      const email = emailsArr[i];
-      const code = accessCodes.find((c) => c.student_email === email);
-      const studentName = code?.profile_name || code?.student_name || email;
-      const { record: monitorRecord } = await adminApi.create('MonitorHistory', {
-        student_email: email,
-        student_name: studentName,
-        period_start: periodStart,
-        period_end: periodEnd,
-        rank_position: i + 1,
-        course: userCourse || 'tcc'
-      });
-      await adminApi.create('Announcement', {
-        title: '🏅 Você é Monitor(a) da Semana!',
-        content: `${studentName}, parabéns! Você foi selecionado(a) como ${i + 1}º monitor(a) da semana. Abra o link do certificado para baixar o PDF e escolher onde salvar no seu dispositivo.`,
-        type: 'info',
-        course: userCourse || 'tcc',
-        recipient_email: email,
-        certificate_monitor_id: monitorRecord.id,
-      });
-    }
-    const monitorNames = emailsArr.map((email) => {
-      const code = accessCodes.find((c) => c.student_email === email);
-      return code?.profile_name || code?.student_name || email;
-    });
-    await adminApi.create('Achievement', {
-      dedupe_key: `monitor-batch:${userCourse || 'tcc'}:${periodStart}`,
-      student_email: emailsArr[0],
-      mentioned_emails: emailsArr,
-      course: userCourse || 'tcc',
-      kind: 'monitor',
-      title: 'Monitores da Semana',
-      message: `🏅 Monitores da Semana: ${monitorNames.join(', ')}. Parabéns pela dedicação — celebre com a turma!`,
-      occurred_at: new Date().toISOString(),
-    });
-    await queryClient.invalidateQueries();
-    toast.success('✅ Monitores salvos com sucesso!');
-    setMonitorSelectMode(false);
-    setSelectedMonitorEmails(new Set());
-    setSavingMonitors(false);
-  };
-
-  const handleRefreshAll = async () => {
-    setRefreshing(true);
-    await queryClient.invalidateQueries();
-    setTimeout(() => {
-      setRefreshing(false);
-      toast.success('Todos os dados atualizados!');
-    }, 800);
-  };
-
-  const handleImportScoreControlPoints = async () => {
-    setImportingPoints(true);
-    await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
-    setTimeout(() => {
-      setImportingPoints(false);
-      toast.success('Sequência exata do ScoreControl importada!');
-    }, 600);
-  };
-
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', userCourse || 'all'],
     queryFn: () => userCourse ?
@@ -240,6 +159,14 @@ export default function Dashboard() {
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000)
   });
+
+  // ── Resolvedor de nomes sociais (nickname → profile_name → full_name → student_name) ──
+  const profileMap = React.useMemo(() => buildProfileMap(publishedScores), [publishedScores]);
+  const getDisplayName = (email) => {
+    const name = resolveDisplayNameFromMaps(email, profileMap, accessCodes);
+    return name !== email ? name : email;
+  };
+
   // Mural de Superação — base única compartilhada com o chat da turma.
   const wall = useOvercomingWall({ course: userCourse || 'tcc', session, enabled: !isTeacher && !!session?.email });
   const wallReactions = wall.reactions;
@@ -440,6 +367,84 @@ export default function Dashboard() {
     });
   }, [ranking.map((r) => r.email).join('|')]);
 
+  const handleSaveMonitors = async () => {
+    if (selectedMonitorEmails.size === 0) return;
+    setSavingMonitors(true);
+    const periodStart = format(new Date(), 'yyyy-MM-dd');
+    const periodEnd = format(addDays(new Date(), 6), 'yyyy-MM-dd');
+    const existing = await adminApi.list('MonitorHistory', { sort_by: '-period_start', limit: 100 });
+    const courseExisting = existing.filter((m) => m.course === userCourse || !m.course);
+    const latestExistingPeriodStart = courseExisting.reduce(
+      (max, m) => (!max || m.period_start > max ? m.period_start : max),
+      null
+    );
+    const currentBatch = latestExistingPeriodStart
+      ? courseExisting.filter((m) => m.period_start === latestExistingPeriodStart)
+      : [];
+    for (const m of currentBatch) await adminApi.delete('MonitorHistory', m.id);
+    const oldMonitorAnnouncements = await adminApi.list('Announcement', { filter: { course: userCourse || 'tcc' }, sort_by: '-created_date', limit: 300 });
+    for (const announcement of oldMonitorAnnouncements) {
+      const isMonitorNotice = Boolean(announcement.certificate_monitor_id) || (announcement.title || '').includes('Monitor(a) da Semana');
+      if (isMonitorNotice) await adminApi.delete('Announcement', announcement.id);
+    }
+    const emailsArr = [...selectedMonitorEmails];
+    for (let i = 0; i < emailsArr.length; i++) {
+      const email = emailsArr[i];
+      const code = accessCodes.find((c) => c.student_email === email);
+      const studentName = getDisplayName(email);
+      const { record: monitorRecord } = await adminApi.create('MonitorHistory', {
+        student_email: email,
+        student_name: studentName,
+        period_start: periodStart,
+        period_end: periodEnd,
+        rank_position: i + 1,
+        course: userCourse || 'tcc'
+      });
+      await adminApi.create('Announcement', {
+        title: '🏅 Você é Monitor(a) da Semana!',
+        content: `${studentName}, parabéns! Você foi selecionado(a) como ${i + 1}º monitor(a) da semana. Abra o link do certificado para baixar o PDF e escolher onde salvar no seu dispositivo.`,
+        type: 'info',
+        course: userCourse || 'tcc',
+        recipient_email: email,
+        certificate_monitor_id: monitorRecord.id,
+      });
+    }
+    const monitorNames = emailsArr.map((email) => getDisplayName(email));
+    await adminApi.create('Achievement', {
+      dedupe_key: `monitor-batch:${userCourse || 'tcc'}:${periodStart}`,
+      student_email: emailsArr[0],
+      mentioned_emails: emailsArr,
+      course: userCourse || 'tcc',
+      kind: 'monitor',
+      title: 'Monitores da Semana',
+      message: `🏅 Monitores da Semana: ${monitorNames.join(', ')}. Parabéns pela dedicação — celebre com a turma!`,
+      occurred_at: new Date().toISOString(),
+    });
+    await queryClient.invalidateQueries();
+    toast.success('✅ Monitores salvos com sucesso!');
+    setMonitorSelectMode(false);
+    setSelectedMonitorEmails(new Set());
+    setSavingMonitors(false);
+  };
+
+  const handleRefreshAll = async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries();
+    setTimeout(() => {
+      setRefreshing(false);
+      toast.success('Todos os dados atualizados!');
+    }, 800);
+  };
+
+  const handleImportScoreControlPoints = async () => {
+    setImportingPoints(true);
+    await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
+    setTimeout(() => {
+      setImportingPoints(false);
+      toast.success('Sequência exata do ScoreControl importada!');
+    }, 600);
+  };
+
   const saveDashboardOrderMutation = useMutation({
     mutationFn: async () => {
       for (const [index, item] of customRanking.entries()) {
@@ -448,7 +453,7 @@ export default function Dashboard() {
         const assignedPoints = getAssignedPoints(item.email, item.total);
         const payload = {
           student_email: item.email,
-          full_name: code?.profile_name || code?.student_name || item.email,
+          full_name: getDisplayName(item.email),
           points: assignedPoints,
           pontuacao_total: assignedPoints,
           dashboard_rank: index + 1,
@@ -636,7 +641,7 @@ export default function Dashboard() {
                 {visibleStudentRanking.map((r, i) => {
               const isMe = r.email === session?.email;
               const code = accessCodes.find((c) => c.student_email === r.email);
-              const displayName = code?.profile_name || code?.student_name || r.email;
+              const displayName = getDisplayName(r.email);
               const avatarColor = code?.profile_avatar_color || '#5b5ef4';
               const photoUrl = code?.profile_photo_url || '';
               const avatarEmoji = resolveAvatarEmoji(code?.profile_avatar_emoji);
@@ -695,7 +700,7 @@ export default function Dashboard() {
                 <span className="text-[11px] text-muted-foreground">sem colegas online no momento</span> :
                 onlineClassmates.slice(0, 8).map((student) =>
                 <span key={student.id} className="text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
-                      {getAvatarPrefixedName(student.profile_name || student.student_name || student.student_email, student.profile_avatar_emoji)}
+                      {getAvatarPrefixedName(getDisplayName(student.student_email), student.profile_avatar_emoji)}
                     </span>
                 )
                 }
@@ -717,11 +722,10 @@ export default function Dashboard() {
                         {unreadDMCount}
                       </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold luna-pv-shimmer-text">Você tem {unreadDMCount} mensagem(ns) privada(s) não lida(s)</p>
-                      <p className="text-violet-700">Clique aqui para ler no EDU Live Messenger →</p>
+                    <div className="min-w-0">
+                      <p className="font-bold">Mensagem privada não lida</p>
+                      <p className="truncate">Toque para abrir o chat</p>
                     </div>
-                    <ArrowRight size={14} className="shrink-0 text-violet-500" />
                   </button>
                 )}
                 {overcomingWallFeed.length === 0 && unreadDMCount === 0 ?
@@ -762,7 +766,8 @@ export default function Dashboard() {
                   );
                   const isMe = msg.author_email === session?.email;
                   const authorCode = accessCodes.find((c) => c.student_email === msg.author_email);
-                  const authorName = authorCode?.profile_name || authorCode?.student_name || msg.author_name || 'Aluno';
+                  const _authorResolved = getDisplayName(msg.author_email);
+                  const authorName = _authorResolved !== msg.author_email ? _authorResolved : (msg.author_name || 'Aluno');
                   const authorDisplayName = getAvatarPrefixedName(isMe ? 'Voce' : authorName, authorCode?.profile_avatar_emoji);
                   return (
                     <div key={msg.id} className="rounded-lg border border-border/70 bg-background/85 p-2 text-[11px] leading-relaxed dark:border-white/20 dark:bg-black dark:text-white">
@@ -860,43 +865,42 @@ export default function Dashboard() {
               disabled={selectedMonitorEmails.size === 0 || savingMonitors}
               className="flex items-center gap-1.5 text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity">
               
-                  {savingMonitors ? 'Publicando...' : 'Publicar Monitores'}
+                  <Crown size={12} /> {savingMonitors ? 'Salvando...' : 'Salvar Monitores'}
                 </button>
               </div>
-          }
+            }
           </div>
-          {monitorSelectMode &&
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800 mb-3">
-Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada monitor receberá um aviso individual com link para baixar o certificado.
-            </div>
-        }
-          {customRanking.length === 0 ?
-        <p className="text-sm text-muted-foreground text-center py-6">Nenhuma nota lançada ainda</p> :
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              {customRanking.map((r, i) => {
-            const code = accessCodes.find((c) => c.student_email === r.email);
-            const displayName = code?.profile_name || code?.student_name || r.email;
-            const avatarColor = code?.profile_avatar_color || '#5b5ef4';
-            const photoUrl = code?.profile_photo_url || '';
-            const isSelected = selectedMonitorEmails.has(r.email);
-            return (
-              <div
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {visibleStudentRanking.map((r, i) => {
+              const isMe = r.email === session?.email;
+              const code = accessCodes.find((c) => c.student_email === r.email);
+              const displayName = getDisplayName(r.email);
+              const avatarColor = code?.profile_avatar_color || '#5b5ef4';
+              const photoUrl = code?.profile_photo_url || '';
+              const avatarEmoji = resolveAvatarEmoji(code?.profile_avatar_emoji);
+              const isSelected = selectedMonitorEmails.has(r.email);
+              const nameWithAvatar = getAvatarPrefixedName(displayName, code?.profile_avatar_emoji);
+              return (
+                <div
                 key={r.email}
-                draggable
-                onDragStart={() => setDraggedEmail(r.email)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => {
-                  if (!draggedEmail || draggedEmail === r.email) return;
-                  const from = customRanking.findIndex((x) => x.email === draggedEmail);
-                  const to = customRanking.findIndex((x) => x.email === r.email);
-                  if (from < 0 || to < 0) return;
-                  const next = [...customRanking];
-                  const [moved] = next.splice(from, 1);
-                  next.splice(to, 0, moved);
-                  setCustomRanking(next);
+                draggable={monitorSelectMode}
+                onDragStart={(e) => { if (monitorSelectMode) setDraggedEmail(r.email); }}
+                onDragOver={(e) => { if (monitorSelectMode && draggedEmail) e.preventDefault(); }}
+                onDrop={(e) => {
+                  if (!monitorSelectMode || !draggedEmail || draggedEmail === r.email) return;
+                  e.preventDefault();
+                  setCustomRanking((prev) => {
+                    const next = [...prev];
+                    const fromIdx = next.findIndex((x) => x.email === draggedEmail);
+                    const toIdx = next.findIndex((x) => x.email === r.email);
+                    if (fromIdx === -1 || toIdx === -1) return prev;
+                    const [moved] = next.splice(fromIdx, 1);
+                    next.splice(toIdx, 0, moved);
+                    return next;
+                  });
+                  setDraggedEmail(null);
                 }}
-                onClick={() => monitorSelectMode && toggleMonitorEmail(r.email)}
+                onClick={() => { if (monitorSelectMode) toggleMonitorEmail(r.email); }}
                 className={`relative flex flex-col items-center text-center gap-1.5 p-3 rounded-xl border transition-colors ${
                 monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''} ${
 
