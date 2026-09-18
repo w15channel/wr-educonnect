@@ -167,7 +167,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
 
   const achievementPosts = useMemo(() => {
     if (!activityRecords) return [];
-    const lessonById = Object.fromEntries(activityRecords.lessons.map((item) =>!! item.id, item]));
+    const lessonById = Object.fromEntries(activityRecords.lessons.map((item) => [item.id, item]));
     const taskById = Object.fromEntries(activityRecords.tasks.map((item) => [item.id, item]));
     const examById = Object.fromEntries(activityRecords.exams.map((item) => [item.id, item]));
     const make = (record, kind, content, occurredAt, email = record.student_email) => ({
