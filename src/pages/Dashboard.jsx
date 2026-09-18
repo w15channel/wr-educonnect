@@ -125,9 +125,6 @@ export default function Dashboard() {
   const handleSaveMonitors = async () => {
     if (selectedMonitorEmails.size === 0) return;
     setSavingMonitors(true);
-    // Monitores são publicados e reiniciados manualmente pelo administrador,
-    // sem nenhum ciclo automático baseado em tempo. Publicar sempre substitui
-    // o lote de monitores atualmente exibido (o mais recente desta turma).
     const periodStart = format(new Date(), 'yyyy-MM-dd');
     const periodEnd = format(addDays(new Date(), 6), 'yyyy-MM-dd');
     const existing = await adminApi.list('MonitorHistory', { sort_by: '-period_start', limit: 100 });
@@ -167,8 +164,6 @@ export default function Dashboard() {
         certificate_monitor_id: monitorRecord.id,
       });
     }
-    // Conquista pública única: revela os nomes dos monitores e concentra
-    // curtidas, reações e respostas nos alunos mencionados.
     const monitorNames = emailsArr.map((email) => {
       const code = accessCodes.find((c) => c.student_email === email);
       return code?.profile_name || code?.student_name || email;
@@ -249,6 +244,36 @@ export default function Dashboard() {
   const wall = useOvercomingWall({ course: userCourse || 'tcc', session, enabled: !isTeacher && !!session?.email });
   const wallReactions = wall.reactions;
 
+  // ── Detecção de mensagens privadas (DM) não lidas para alerta no mural ──
+  const { data: recentDMs = [] } = useQuery({
+    queryKey: ['dm-unread-check', session?.email],
+    queryFn: () => base44.entities.ChatMessage.list('-created_date', 500),
+    enabled: !isTeacher && !!session?.email,
+    refetchInterval: 30000,
+    staleTime: 20000,
+  });
+
+  const studentEmailLower = (session?.email || '').toLowerCase().trim();
+  const dmLastSeenKey = `wr_dm_last_seen_${studentEmailLower}`;
+  const dmLastSeen = typeof window !== 'undefined' ? localStorage.getItem(dmLastSeenKey) || '0' : '0';
+
+  const unreadDMs = React.useMemo(() => {
+    if (!recentDMs.length || !studentEmailLower) return [];
+    return recentDMs.filter((msg) => {
+      if (!msg.session_id || !msg.session_id.startsWith('dm_')) return false;
+      if (msg.author_email === session?.email) return false;
+      return msg.session_id.includes(studentEmailLower);
+    }).filter((msg) => new Date(msg.created_date || 0).getTime() > new Date(dmLastSeen).getTime());
+  }, [recentDMs, studentEmailLower, session?.email, dmLastSeen]);
+
+  const unreadDMCount = unreadDMs.length;
+
+  const markDMsAsRead = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(dmLastSeenKey, new Date().toISOString());
+    }
+  };
+
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', userCourse || 'all'],
     queryFn: () => userCourse ?
@@ -278,7 +303,6 @@ export default function Dashboard() {
     queryKey: ['announcements'],
     queryFn: () => base44.entities.Announcement.list('-created_date', 20)
   });
-  // Avisos com destinatário definido são pessoais: não aparecem para a turma.
   const announcements = allAnnouncements.filter((item) => isAnnouncementVisible(item, session?.email, isTeacher));
 
   const visibleTasks = isTeacher ? tasks : tasks.filter((task) => !task.is_hidden);
@@ -291,24 +315,20 @@ export default function Dashboard() {
   ).length :
   visibleTasks.filter((t) => isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)).length;
 
-  // Count only students of the current course
   const studentCount = accessCodes.filter((c) => {
     if (!c.is_active) return false;
     if (!userCourse) return true;
     return c.course === userCourse || userCourse === 'tcc' && !c.course;
   }).length;
 
-  // Total de pontos publicado pelo ScoreControl
   const publishedScoreMap = {};
   const publishedRankMap = {};
   publishedScores.forEach((p) => {
     const isSameCourse = !p.dashboard_course || p.dashboard_course === userCourse;
     if (!isSameCourse || !p.student_email) return;
-
     if (typeof p.points === 'number' && publishedScoreMap[p.student_email] === undefined) {
       publishedScoreMap[p.student_email] = p.points;
     }
-
     if (typeof p.dashboard_rank === 'number' && publishedRankMap[p.student_email] === undefined) {
       publishedRankMap[p.student_email] = p.dashboard_rank;
     }
@@ -367,7 +387,6 @@ export default function Dashboard() {
   const watchedCount = progresses.filter((p) => p.watched && lessonIds.has(p.lesson_id)).length;
   const progressPct = visibleLessons.length > 0 ? Math.round(watchedCount / visibleLessons.length * 100) : 0;
 
-  // Ranking — isolated by course only (prefix filter removed: causes students to be invisible)
   const courseCodes = accessCodes.filter((c) => {
     if (!c.student_email) return false;
     if (userCourse && c.course !== userCourse && !(userCourse === 'tcc' && !c.course)) return false;
@@ -406,11 +425,6 @@ export default function Dashboard() {
     if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
     return a.name.localeCompare(b.name);
   });
-  // A sequência publicada pelo ScoreControl (dashboard_rank) é a única fonte
-  // de verdade da classificação — tanto o Ranking Geral do aluno quanto o
-  // Ranking Geral Manual do admin precisam exibir exatamente essa mesma
-  // ordem/pontuação, senão o que o admin salva no módulo ativo do Controle
-  // de Pontuação diverge do que aparece nesses dois lugares.
   const publishedRanking = rankingFull
     .filter((item) => Number.isFinite(item.publishedRank) && item.publishedRank !== Number.MAX_SAFE_INTEGER)
     .sort((a, b) => a.publishedRank - b.publishedRank);
@@ -453,6 +467,19 @@ export default function Dashboard() {
 
   const visibleStudentRanking = ranking;
   const myRank = ranking.findIndex((r) => r.email === session?.email) + 1;
+
+  // ── Mensagem da Luna sobre pontuação e colocação no ranking ──
+  const lunaRankMessage = React.useMemo(() => {
+    if (!myRank || myRank <= 0) return null;
+    if (myRank <= 5) {
+      return `Parabéns! Você está em ${myRank}º lugar no ranking da turma, com ${formatScore(totalPoints)} pontos. Seu desempenho está excelente — continue assim! 🌟`;
+    }
+    if (myRank <= 10) {
+      return `Você está em ${myRank}º lugar no ranking, com ${formatScore(totalPoints)} pontos. Está indo bem, mas tem potencial para chegar ainda mais longe. Não desista! 💪`;
+    }
+    return `Você está em ${myRank}º lugar no ranking, com ${formatScore(totalPoints)} pontos. Sei que está abaixo da meta, mas acredito que seu potencial é incalculável. Cada passo conta — mantenha a regularidade e os resultados virão! 🦉✨`;
+  }, [myRank, totalPoints]);
+
   const isStudentOnline = (student) => student.is_online && student.last_seen_at && Date.now() - new Date(student.last_seen_at).getTime() < 90000;
   const onlineClassmates = accessCodes
     .filter((c) => c.student_email && c.student_email !== session?.email && c.is_active !== false)
@@ -474,7 +501,6 @@ export default function Dashboard() {
   const replyMutation = wall.replyMutation;
 
   const reactionButtons = (item, targetType, ownerEmail, mentionedEmails = []) => {
-    // Em publicações coletivas, quem é homenageado não interage com a própria conquista.
     const isOwnContent = ownerEmail === session?.email || mentionedEmails.includes(session?.email);
     const options = [
       { key: 'love', label: 'Amar', Icon: Heart, active: 'text-rose-600 bg-rose-50' },
@@ -531,6 +557,49 @@ export default function Dashboard() {
           </Button>
         }
       </div>
+
+      {/* Luna Welcome Banner — saudação, orientações e mensagem de pontuação */}
+      {!isTeacher && (
+        <div className="luna-welcome-enter bg-gradient-to-br from-violet-500/8 via-fuchsia-500/5 to-amber-500/8 rounded-2xl border border-violet-200/40 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shrink-0 luna-bounce-soft shadow-lg shadow-violet-500/20">
+              <span className="text-xl">🦉</span>
+            </div>
+            <div className="flex-1 min-w-0 space-y-2">
+              <div>
+                <p className="text-sm font-bold text-foreground">
+                  {greeting}, {firstName}! Eu sou a Luna 🦉
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Que bom ter você aqui! Antes de começar, confira as notificações no <strong>Mural de Superação</strong> logo abaixo — pode haver recados importantes para você. Depois, acesse o seu <strong>Checklist</strong> para dar sequência aos estudos do módulo.
+                </p>
+              </div>
+              {lunaRankMessage && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50/70 border border-amber-200/50 px-3 py-2">
+                  <Star size={13} className="text-amber-500 shrink-0 mt-0.5 fill-amber-400" />
+                  <p className="text-[11px] leading-relaxed text-amber-900">{lunaRankMessage}</p>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => navigate(scoped('/checklist'))}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <BookOpen size={12} /> Abrir Checklist
+                </button>
+                {unreadDMCount > 0 && (
+                  <button
+                    onClick={() => { markDMsAsRead(); navigate(scoped('/chat')); }}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold bg-violet-100 text-violet-700 border border-violet-300 px-3 py-1.5 rounded-lg hover:bg-violet-200 transition-colors"
+                  >
+                    <Bell size={12} /> {unreadDMCount} mensagem(ns) privada(s)
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Student: progress + ranking */}
       {!isTeacher &&
@@ -627,7 +696,29 @@ export default function Dashboard() {
               </div>
 
               <div className="rounded-xl border border-rose-100 bg-gradient-to-b from-rose-50/40 to-secondary/20 p-2 h-48 overflow-y-auto space-y-2">
-                {overcomingWallFeed.length === 0 ?
+                {/* Alerta de mensagem privada — fixado no topo do mural com animação */}
+                {unreadDMCount > 0 && (
+                  <button
+                    onClick={() => { markDMsAsRead(); navigate(scoped('/chat')); }}
+                    className="luna-pv-alert w-full flex items-center gap-2 rounded-lg border-2 border-violet-300 bg-gradient-to-r from-violet-50 to-fuchsia-50 p-2 text-[11px] leading-relaxed text-violet-950 text-left hover:from-violet-100 hover:to-fuchsia-100 transition-colors"
+                    role="alert"
+                  >
+                    <div className="relative shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                        <Bell size={14} className="text-white" />
+                      </div>
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                        {unreadDMCount}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold luna-pv-shimmer-text">Você tem {unreadDMCount} mensagem(ns) privada(s) não lida(s)</p>
+                      <p className="text-violet-700">Clique aqui para ler no EDU Live Messenger →</p>
+                    </div>
+                    <ArrowRight size={14} className="shrink-0 text-violet-500" />
+                  </button>
+                )}
+                {overcomingWallFeed.length === 0 && unreadDMCount === 0 ?
                 <p className="text-xs text-muted-foreground text-center py-8">Seja a primeira pessoa a deixar uma palavra de força para a turma.</p> :
                 overcomingWallFeed.map((msg) => {
                   if (msg.feedType === 'personal') return (
@@ -748,8 +839,8 @@ export default function Dashboard() {
             {!monitorSelectMode ?
           <div className="flex flex-wrap items-center justify-end gap-2">
                 <button
-              onClick={() => setMonitorSelectMode(true)}
-              className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors">
+                  onClick={() => setMonitorSelectMode(true)}
+                  className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors">
               
                   <Crown size={12} /> Selecionar Monitores
                 </button>
@@ -908,9 +999,7 @@ Selecione até 3 alunos para serem os Monitores da semana. Ao publicar, cada mon
             onClick={() => navigate(scoped('/ofensivas'))}
             className="w-full group relative overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-red-500/10 p-5 text-left hover:border-orange-500/60 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-200"
           >
-            {/* Animated background pulse */}
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent animate-pulse rounded-2xl" />
-            {/* Spark sparkles decorative */}
             <div className="absolute top-3 right-12 text-yellow-400 opacity-60 text-lg animate-bounce" style={{ animationDelay: '0.2s' }}>✨</div>
             <div className="absolute top-6 right-6 text-orange-400 opacity-40 text-sm animate-bounce" style={{ animationDelay: '0.7s' }}>🔥</div>
             <div className="absolute bottom-4 right-8 text-amber-400 opacity-30 text-xs animate-bounce" style={{ animationDelay: '1.1s' }}>⭐</div>
