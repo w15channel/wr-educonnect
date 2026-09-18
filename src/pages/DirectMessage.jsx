@@ -89,7 +89,7 @@ export default function DirectMessage() {
     const online = code?.is_online && lastSeen && Date.now() - lastSeen.getTime() < 90000;
     return {
       email: dec,
-      name: code?.profile_name || profile?.full_name || code?.student_name || dec,
+      name: profile?.nickname || code?.profile_name || profile?.full_name || code?.student_name || dec,
       nickname: profile?.nickname || '',
       color: code?.profile_avatar_color || profile?.avatar_color || '#3b82f6',
       photo: code?.profile_photo_url || profile?.photo_url,
@@ -189,7 +189,7 @@ export default function DirectMessage() {
           </button>
           <div className="min-w-0">
             <h2 className="text-2xl text-foreground dark:text-white leading-tight truncate">{target.name}</h2>
-            {target.nickname && <p className="text-sm text-primary truncate -mt-0.5">“{target.nickname}”</p>}
+            {target.nickname && target.nickname !== target.name && <p className="text-sm text-primary truncate -mt-0.5">“{target.nickname}”</p>}
             <p className={`text-xs font-bold ${target.online ? 'text-green-700' : 'text-red-600'}`}>{target.online ? '🟢 Online' : '🔴 Ausente'} · Conversa particular</p>
             <p className="text-xs text-muted-foreground truncate">{statusText}</p>
             <p className="text-xs text-muted-foreground truncate">🔒 Mensagens privadas no EDU Live Messenger</p>
@@ -255,4 +255,3 @@ export default function DirectMessage() {
       </div>
     </div>
   );
-}
