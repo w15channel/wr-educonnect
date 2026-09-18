@@ -43,3 +43,58 @@ export function getAvatarPrefixedName(name, avatarValue) {
   const emoji = resolveAvatarEmoji(avatarValue);
   return emoji ? `${emoji} ${name}` : name;
 }
+
+/**
+ * Resolve o nome de exibição social do aluno.
+ *
+ * Prioridade: nickname (StudentProfile) → profile_name (AccessCode) →
+ * full_name (StudentProfile) → student_name (AccessCode) → email.
+ *
+ * O nickname é a identidade social padrão. Alunos sem nickname aparecem
+ * pelo nome completo. Nome completo é usado somente em documentos oficiais.
+ *
+ * @param {Object}  params
+ * @param {string}  params.email  - Email do aluno
+ * @param {Object}  [params.code]    - Registro de AccessCode
+ * @param {Object}  [params.profile]  - Registro de StudentProfile
+ * @returns {string} Nome de exibição
+ */
+export function resolveDisplayName({ email, code, profile } = {}) {
+  if (profile?.nickname?.trim()) return profile.nickname.trim();
+  if (code?.profile_name?.trim()) return code.profile_name.trim();
+  if (profile?.full_name?.trim()) return profile.full_name.trim();
+  if (code?.student_name?.trim()) return code.student_name.trim();
+  return email || 'Aluno';
+}
+
+/**
+ * Constrói um mapa de email → { nickname, full_name } a partir de StudentProfiles.
+ * Permite lookup rápido em componentes que não têm o perfil individual.
+ *
+ * @param {Array} profiles - Lista de StudentProfile
+ * @returns {Map} email(lowercase) → { nickname, full_name }
+ */
+export function buildProfileMap(profiles = []) {
+  const map = new Map();
+  for (const p of profiles) {
+    if (!p.student_email) continue;
+    map.set(p.student_email.toLowerCase().trim(), p);
+  }
+  return map;
+}
+
+/**
+ * Resolve o nome de exibição usando um mapa de perfis + lista de AccessCodes.
+ *
+ * @param {string} email - Email do aluno
+ * @param {Map}   profileMap - Map de buildProfileMap()
+ * @param {Array} accessCodes - Lista de AccessCodes
+ * @returns {string} Nome de exibição
+ */
+export function resolveDisplayNameFromMaps(email, profileMap, accessCodes = []) {
+  if (!email) return 'Aluno';
+  const lower = email.toLowerCase().trim();
+  const profile = profileMap?.get(lower);
+  const code = accessCodes.find((c) => c.student_email?.toLowerCase().trim() === lower);
+  return resolveDisplayName({ email, code, profile });
+}
