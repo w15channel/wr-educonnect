@@ -8,7 +8,7 @@
  * - Ranking compacto em lista
  * - Não tem painel de ranking administrativo (usa ScoreControl)
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -18,7 +18,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { capScore, formatScore } from '@/lib/scoreUtils';
-import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji, buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
 import { toast } from 'sonner';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 
@@ -77,6 +77,8 @@ export default function DashboardMobile() {
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
   });
+
+  const profileMap = useMemo(() => buildProfileMap(publishedScores), [publishedScores]);
 
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', userCourse],
@@ -152,7 +154,7 @@ export default function DashboardMobile() {
     total: capScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0),
     publishedRank: publishedRankMap[c.student_email] || Number.MAX_SAFE_INTEGER,
     count: participationMap[c.student_email] || 0,
-    name: (c.profile_name || c.student_name || c.student_email || ''),
+    name: resolveDisplayNameFromMaps(c.student_email, profileMap, accessCodes) || (c.profile_name || c.student_name || c.student_email || ''),
     avatarColor: c.profile_avatar_color || '#5b5ef4',
     photoUrl: c.profile_photo_url || '',
     avatarEmoji: resolveAvatarEmoji(c.profile_avatar_emoji),
