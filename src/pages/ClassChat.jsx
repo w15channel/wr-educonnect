@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { getAvatarPrefixedName, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { adminApi } from '@/lib/adminApi';
-import useOvercomingWall from '@/hooks/useOvercomingWall';
+import useOvercomingWall, { useDisplayNameResolver } from '@/hooks/useOvercomingWall';
 import { highlightKey, MONITOR_MEDALS, splitWeeklyHighlights } from '@/lib/chatHighlights';
 import LunaChat from '@/components/luna/LunaChat';
 import ChatHeader from '@/components/chat/ChatHeader';
@@ -74,6 +74,7 @@ function AdminDMConversations({ session, students }) {
   const [search, setSearch] = useState('');
   const [readStatus, setReadStatus] = useState(() => getReadStatus());
   const bottomRef = useRef(null);
+  const { getDisplayName } = useDisplayNameResolver();
 
   const adminEmail = session?.email || '';
   const adminName = session?.name || 'Coordenação';
@@ -138,11 +139,11 @@ function AdminDMConversations({ session, students }) {
   const studentsWithoutConversations = useMemo(() => students.filter(s => !studentsWithConversations.has(s.student_email)), [students, studentsWithConversations]);
 
   const filteredConversations = conversations.filter(c => {
-    const name = c.student?.profile_name || c.student?.student_name || c.student?.student_email || '';
+    const name = getDisplayName(c.student?.student_email) || '';
     return name.toLowerCase().includes(search.toLowerCase());
   });
   const filteredNoConvStudents = studentsWithoutConversations.filter(s => {
-    const name = s.profile_name || s.student_name || s.student_email || '';
+    const name = getDisplayName(s.student_email) || '';
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -150,7 +151,7 @@ function AdminDMConversations({ session, students }) {
   const selectedStudent = selectedConversation?.student || studentBySession.get(selectedSessionId);
 
   // Assina atualizações em tempo real da conversa selecionada
-  useEffect(() => {
+ !!selectedSessionId && useEffect(() => {
     if (!selectedSessionId) return;
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
       if (event.data?.session_id === selectedSessionId) {
@@ -215,7 +216,7 @@ function AdminDMConversations({ session, students }) {
   };
 
   const getStudentName = (student) => {
-    const name = student?.profile_name || student?.student_name || student?.student_email || 'Aluno';
+    const name = getDisplayName(student?.student_email) || student?.profile_name || student?.student_name || student?.student_email || 'Aluno';
     return getAvatarPrefixedName(name, student?.profile_avatar_emoji);
   };
 
@@ -253,7 +254,7 @@ function AdminDMConversations({ session, students }) {
             <div className="flex flex-col items-center justify-center h-full gap-2 text-center text-muted-foreground">
               <MessageCircle size={40} className="text-rose-300" />
               <p className="font-bold text-foreground">Nenhuma mensagem ainda</p>
-              <p className="text-sm">Envie a primeira mensagem para {selectedStudent?.profile_name || selectedStudent?.student_name || 'este aluno'}.</p>
+              <p className="text-sm">Envie a primeira mensagem para {getDisplayName(selectedStudent?.student_email) || 'este aluno'}.</p>
             </div>
           )}
           {messages.map(msg => {
@@ -343,7 +344,7 @@ function AdminDMConversations({ session, students }) {
 
         {filteredConversations.map(c => {
           const isMe = c.lastMessage.author_email === adminEmail;
-          const name = c.student?.profile_name || c.student?.student_name || c.student?.student_email;
+          const name = getDisplayName(c.student?.student_email);
           const { hasUnread, unreadCount } = getUnreadInfo(c);
           return (
             <button
@@ -384,7 +385,7 @@ function AdminDMConversations({ session, students }) {
               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Sem conversa ainda</p>
             </div>
             {filteredNoConvStudents.map(s => {
-              const name = s.profile_name || s.student_name || s.student_email;
+              const name = getDisplayName(s.student_email);
               return (
                 <button
                   key={s.id}
@@ -397,6 +398,7 @@ function AdminDMConversations({ session, students }) {
                   <span className="truncate text-sm text-muted-foreground">{getStudentName(s)}</span>
                 </button>
               );
+
             })}
           </>
         )}
@@ -591,7 +593,8 @@ export default function ClassChat() {
   const getProfile = (email) => {
     const code = codes.find(c => c.student_email === email);
     const idx = Math.abs(email?.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 0) % MSN_COLORS.length;
-    return { color: code?.profile_avatar_color || MSN_COLORS[idx], emoji: resolveAvatarEmoji(code?.profile_avatar_emoji), name: code?.profile_name || null };
+    const resolvedName = wall.getStudentName(email);
+    return { color: code?.profile_avatar_color || MSN_COLORS[idx], emoji: resolveAvatarEmoji(code?.profile_avatar_emoji), name: resolvedName !== 'Um aluno da turma' ? resolvedName : (code?.profile_name || null) };
   };
 
   const formatLastSeen = (dateStr) => {
@@ -607,7 +610,7 @@ export default function ClassChat() {
     .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
     .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse);
   const otherStudents = [lunaContact, ...studentContacts]
-    .filter(c => (c.profile_name || c.student_name || c.student_email || '').toLowerCase().includes(dmSearch.toLowerCase()));
+    .filter(c => (wall.getStudentName(c.student_email) || '').toLowerCase().includes(dmSearch.toLowerCase()));
   const adminDMStudents = studentContacts
     .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
     .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse);
