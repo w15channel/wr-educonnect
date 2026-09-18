@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
+import { useDisplayNameResolver } from '@/hooks/useOvercomingWall';
 import { Video, MessageSquare, Send, Plus, Youtube, Wifi, WifiOff, Trash2, ExternalLink, ChevronLeft, Clock, Calendar, CheckCircle, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,7 @@ export default function LiveSessions() {
   const [attendanceConfirmed, setAttendanceConfirmed] = useState(false);
   const [attendanceTimer, setAttendanceTimer] = useState(1200);
   const chatEndRef = useRef(null);
+  const { getDisplayName } = useDisplayNameResolver();
   const [form, setForm] = useState({
     title: '', description: '', stream_url: '', scheduled_at: '', status: 'scheduled', platform: 'youtube'
   });
@@ -245,7 +247,7 @@ export default function LiveSessions() {
               )}
               {chatMessages.map(msg => (
                 <div key={msg.id} className={`text-sm ${msg.is_hand_raised ? 'bg-amber-50 p-2 rounded-xl border border-amber-200' : 'py-0.5'}`}>
-                  <span className="font-bold text-xs text-gray-900">{msg.author_name}: </span>
+                  <span className="font-bold text-xs text-gray-900">{getDisplayName(msg.author_email) || msg.author_name}: </span>
                   <span className="text-xs text-gray-800">{msg.content}</span>
                 </div>
               ))}
