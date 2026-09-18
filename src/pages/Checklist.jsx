@@ -54,10 +54,12 @@ export default function Checklist() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [script, voice.enabled]);
 
-  // Ida: sai do checklist com checklist=<módulo>; a barra de retorno traz de volta.
+  // Ida: sai do checklist com checklist=<módulo>&checklistItem=<key>;
+  // a barra de retorno traz de volta e oferece marcar como concluído.
   const goToRequirement = (item) => {
     voice.stop();
-    navigate(`${prefix}${item.to}${item.to.includes('?') ? '&' : '?'}checklist=${module.moduleNumber}`);
+    const sep = item.to.includes('?') ? '&' : '?';
+    navigate(`${prefix}${item.to}${sep}checklist=${module.moduleNumber}&checklistItem=${item.key}`);
   };
 
   const nextPendingFrom = (from) => {
