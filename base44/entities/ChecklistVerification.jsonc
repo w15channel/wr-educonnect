@@ -1,0 +1,62 @@
+{
+  "name": "ChecklistVerification",
+  "type": "object",
+  "properties": {
+    "student_key": {
+      "type": "string"
+    },
+    "code_id": {
+      "type": "string"
+    },
+    "student_email": {
+      "type": "string"
+    },
+    "course": {
+      "type": "string"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rules_version": {
+      "type": "number"
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "tuitions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "student_key",
+    "student_email",
+    "course",
+    "verified_at",
+    "rules_version"
+  ],
+  "rls": {
+    "read": true,
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

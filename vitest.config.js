@@ -11,6 +11,6 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.js', 'base44/**/*.test.js'],
+    include: ['src/**/*.test.js', 'base44/**/*.test.js', 'tests/**/*.test.js'],
   },
 });

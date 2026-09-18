@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useModuleAccess from '@/hooks/useModuleAccess';
 import useStudentRecords from '@/hooks/useStudentRecords';
 import { base44 } from '@/api/base44Client';
 import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
+import { applyChecklistVerification, mergeVerifiedTuitions } from '@/lib/verifiedChecklist';
 
 const MODULE_COUNT = 10;
 // O calendário define o módulo disponível; concluir atividades não antecipa datas.
@@ -16,6 +17,7 @@ const MODULE_COUNT = 10;
 export default function useModuleChecklist({ course = 'tcc', session } = {}) {
   const email = session?.email || session?.code || '';
   const access = useModuleAccess(course, session);
+  const queryClient = useQueryClient();
 
   const { data: progresses = [], isLoading: l2, error: progressError } = useStudentRecords('LessonProgress', session);
   const { data: tasks = [], isLoading: l3 } = useQuery({
@@ -61,6 +63,25 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     queryFn: () => base44.entities.Tuition.filter({ student_email: email }, '-created_date', 50),
     enabled: !!email,
   });
+  const { data: verification = null } = useQuery({
+    queryKey: ['checklist-verification', session?.codeId, email, course],
+    queryFn: async () => {
+      const filter = session?.codeId ? { code_id: session.codeId, course } : { student_email: email, course };
+      return (await base44.entities.ChecklistVerification.filter(filter, '-verified_at', 1))[0] || null;
+    },
+    enabled: !!email,
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
+  const verified = verification?.rules_version === 1 ? verification : null;
+  useEffect(() => {
+    if (!verification?.verified_at) return;
+    queryClient.invalidateQueries({ predicate: query => {
+      const key = String(query.queryKey[0]);
+      return key === 'student-learning-records' || key === 'module-unlocks' || (key.startsWith('checklist-') && key !== 'checklist-verification');
+    } });
+  }, [verification?.verified_at, queryClient]);
+  const effectiveTuitions = useMemo(() => mergeVerifiedTuitions(tuitions, verified?.tuitions), [tuitions, verified]);
   const moduleUnlocks = access.unlocks;
 
   const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11 || access.isLoading;
@@ -97,13 +118,19 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
           const previousModuleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === previousModuleNumber);
           return previousModuleExams.length === 0 ? true : previousModuleExams.every((exam) => submittedExamIds.has(exam.id));
         })(),
-        tuitions,
+        tuitions: effectiveTuitions,
+      });
+      const confirmed = verified?.modules?.find(row => row.moduleNumber === moduleNumber);
+      const reconciled = applyChecklistVerification(checklist, confirmed, {
+        taskIds: tasks.filter(task => Number(task.module_number) === moduleNumber && task.type !== 'quiz' && !task.is_hidden).map(task => task.id),
+        previousExamIds: exams.filter(exam => parseModuleNumber(exam.module_ref) === moduleNumber - 1).map(exam => exam.id),
       });
       const moduleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === moduleNumber);
-      const examDone = moduleExams.length > 0 && moduleExams.every((exam) => submittedExamIds.has(exam.id));
-      return { moduleNumber, ...checklist, examDone, exams: moduleExams };
+      const sameExams = JSON.stringify(moduleExams.map(exam => exam.id).sort()) === JSON.stringify(confirmed?.exam_ids || []);
+      const examDone = moduleExams.length > 0 && (moduleExams.every((exam) => submittedExamIds.has(exam.id)) || (sameExams && confirmed?.examDone === true));
+      return { moduleNumber, ...reconciled, examDone, exams: moduleExams };
     });
-  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, tuitions]);
+  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, effectiveTuitions, verified]);
 
   // O módulo atual é o primeiro disponível que ainda tem itens pendentes.
   const currentModule = useMemo(() => {
