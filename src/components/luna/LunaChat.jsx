@@ -53,14 +53,15 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   activeRef.current = isActive;
   const supportRef = useRef(supportMode);
   supportRef.current = supportMode;
-  const tuitionSpokenRef = useRef(false);
+  const initialSpokenRef = useRef(false);
+  const initialVoiceTextRef = useRef(messages[messages.length - 1]?.content || greeting);
 
   useEffect(() => {
-    if (isActive && tuitionMode && !tuitionSpokenRef.current) {
-      tuitionSpokenRef.current = true;
-      voice.speak(TUITION_GREETING, { force: true });
+    if (isActive && !initialSpokenRef.current) {
+      initialSpokenRef.current = true;
+      voice.speak(initialVoiceTextRef.current);
     }
-  }, [isActive, tuitionMode, voice.speak]);
+  }, [isActive, voice.speak]);
   useEffect(() => { if (!isActive) voice.stop(); }, [isActive]);
   useEffect(() => { if (isActive) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, isActive]);
 
@@ -147,9 +148,12 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
 
       setMessages(updatedMessages);
       saveLunaMemory(memoryKey, updatedMessages);
-      if (activeRef.current) await voice.speak(reply);
+      const spokenReply = updatedMessages.slice(next.length).map((message) => message.content).join(' ');
+      if (activeRef.current) await voice.speak(spokenReply);
     } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Tive um problema para responder agora. Verifique sua internet e tente de novo, por favor.' }]);
+      const errorReply = 'Tive um problema para responder agora. Verifique sua internet e tente de novo, por favor.';
+      setMessages((prev) => [...prev, { role: 'assistant', content: errorReply }]);
+      if (activeRef.current) await voice.speak(errorReply);
     } finally {
       setLoading(false);
     }
@@ -171,7 +175,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
           {voice.enabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
         </button>
         <button
-          onClick={() => { voice.stop(); clearLunaMemory(memoryKey); setMessages([{ role: 'assistant', content: greeting }]); }}
+          onClick={() => { voice.stop(); clearLunaMemory(memoryKey); setMessages([{ role: 'assistant', content: greeting }]); voice.speak(greeting); }}
           title="Reiniciar conversa"
           className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >

@@ -179,17 +179,9 @@ export async function createBase44VoiceAudio(text, options = {}) {
   if (useCache) {
     const cachedUrl = getCachedUrl(normalized);
     if (cachedUrl) {
-      try {
-        const audio = new Audio(cachedUrl);
-        await new Promise((resolve, reject) => {
-          audio.oncanplaythrough = resolve;
-          audio.onerror = reject;
-          setTimeout(reject, 5000);
-        });
-        return audio;
-      } catch {
-        // Cached URL might have expired
-      }
+      const audio = new Audio(cachedUrl);
+      audio.preload = 'auto';
+      return audio;
     }
   }
 
@@ -198,8 +190,6 @@ export async function createBase44VoiceAudio(text, options = {}) {
     text: normalized,
     voice: 'honey',
     language_code: 'pt',
-    speed: 1.0,
-    pitch: 1.15,
   });
   const url = response?.url;
   if (!url) throw new Error('Áudio da Luna indisponível.');
