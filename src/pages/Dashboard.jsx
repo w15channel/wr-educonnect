@@ -18,6 +18,7 @@ import { ptBR } from 'date-fns/locale';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 import useModuleTrophies from '@/hooks/useModuleTrophies';
 import ModuleTrophies from '@/components/achievements/ModuleTrophies';
+import LunaDashboardGreetingVoice from '@/components/dashboard/LunaDashboardGreetingVoice';
 
 
 const isTaskAvailable = (task, moduleUnlocked = []) =>
@@ -556,6 +557,12 @@ export default function Dashboard() {
           </Button>
         }
       </div>
+
+      {!isTeacher && (
+        <LunaDashboardGreetingVoice
+          text={`${greeting}, ${firstName}! Eu sou a Luna. Que bom ter você aqui! Antes de começar, confira as notificações no Mural de Superação logo abaixo. Depois, acesse o seu Checklist para dar sequência aos estudos do módulo.`}
+        />
+      )}
 
       {/* Luna Welcome Banner — saudação, orientações e mensagem de pontuação */}
       {!isTeacher && (

@@ -9,8 +9,8 @@ const STORAGE_KEY = 'checklist-owl-voice';
 export default function useOwlVoice() {
   const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const [enabled, setEnabled] = useState(() => {
-    // A Luna sempre começa com som ligado; o aluno pode mutar quando quiser.
-    try { return localStorage.getItem(STORAGE_KEY) !== 'off-session'; } catch { return true; }
+    // A Luna começa com som ligado e respeita apenas o desligamento explícito.
+    try { return localStorage.getItem(STORAGE_KEY) !== 'off'; } catch { return true; }
   });
   const [speaking, setSpeaking] = useState(false);
   const enabledRef = useRef(enabled);

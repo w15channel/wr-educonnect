@@ -11,11 +11,16 @@ export default function useLunaVoice() {
   const fallback = useOwlVoice();
   const audioRef = useRef(null);
   const requestRef = useRef(0);
+  const timeoutRef = useRef(null);
   const [speaking, setSpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const stop = useCallback(() => {
     requestRef.current += 1;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       releaseBase44VoiceAudio(audioRef.current);
@@ -31,6 +36,7 @@ export default function useLunaVoice() {
 
     requestRef.current += 1;
     const requestId = requestRef.current;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (audioRef.current) {
       audioRef.current.pause();
       releaseBase44VoiceAudio(audioRef.current);
@@ -40,34 +46,44 @@ export default function useLunaVoice() {
     setLoading(true);
     setSpeaking(true);
 
-    try {
-      // A voz Base44 é sempre a primeira tentativa; o navegador só assume em caso de falha.
-      const audio = await createBase44VoiceAudio(text, { force });
-
-      // O único caso sem áudio é quando o próprio usuário desligou a voz.
-      if (!audio) {
-        if (requestId === requestRef.current) {
-          setLoading(false);
-          setSpeaking(false);
-        }
-        return;
+    let audio = null;
+    let fallbackStarted = false;
+    const startFallback = () => {
+      if (fallbackStarted || requestId !== requestRef.current) return;
+      fallbackStarted = true;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
-
-      if (requestId !== requestRef.current) {
+      if (audio) {
+        audio.pause();
         releaseBase44VoiceAudio(audio);
-        return;
+        audio = null;
       }
+      audioRef.current = null;
       setLoading(false);
-      audioRef.current = audio;
-      let usedFallback = false;
-      const useFallback = () => {
-        if (usedFallback || requestId !== requestRef.current) return;
-        usedFallback = true;
-        releaseBase44VoiceAudio(audio);
-        audioRef.current = null;
+      setSpeaking(false);
+      fallback.speak(text, { force });
+    };
+
+    // Se a voz Base44 não começar em até cinco segundos, a voz nativa assume.
+    timeoutRef.current = setTimeout(startFallback, 5000);
+
+    try {
+      audio = await createBase44VoiceAudio(text, { force });
+      if (requestId !== requestRef.current || fallbackStarted) {
+        if (audio) releaseBase44VoiceAudio(audio);
+        return;
+      }
+      if (!audio) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+        setLoading(false);
         setSpeaking(false);
-        fallback.speak(text, { force });
-      };
+        return;
+      }
+
+      audioRef.current = audio;
       audio.onended = () => {
         releaseBase44VoiceAudio(audio);
         if (requestId === requestRef.current) {
@@ -75,15 +91,15 @@ export default function useLunaVoice() {
           setSpeaking(false);
         }
       };
-      audio.onerror = useFallback;
+      audio.onerror = startFallback;
       await audio.play();
-    } catch {
-      if (requestId === requestRef.current) {
+      if (!fallbackStarted && requestId === requestRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
         setLoading(false);
-        audioRef.current = null;
-        setSpeaking(false);
-        fallback.speak(text, { force });
       }
+    } catch {
+      startFallback();
     }
   }, [fallback.enabled, fallback.speak, fallback.stop]);
 
@@ -94,6 +110,7 @@ export default function useLunaVoice() {
 
   useEffect(() => () => {
     requestRef.current += 1;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (audioRef.current) {
       audioRef.current.pause();
       releaseBase44VoiceAudio(audioRef.current);
