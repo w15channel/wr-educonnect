@@ -28,3 +28,5 @@
     background: rgb(23 37 84 / 9%);
     box-shadow: 0 0 0 0 rgb(23 37 84 / 24%), 0 4px 14px rgb(23 37 84 / 16%);
     animation: theme-lamp-pulse 3.2s ease-out infinite;
+  }
+}
