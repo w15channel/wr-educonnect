@@ -50,7 +50,7 @@ export default function StudentProfileCard({ email, onClose }) {
       .then(r => { if (r.length > 0) setProfile(r[0]); });
   }, [email]);
 
-  const name = profile?.full_name || code?.profile_name || code?.student_name || email;
+  const name = profile?.nickname || profile?.full_name || code?.profile_name || code?.student_name || email;
   const publicName = getAvatarPrefixedName(name, profile?.avatar_emoji || code?.profile_avatar_emoji);
   const photo = profile?.photo_url || code?.profile_photo_url || '';
   const color = profile?.avatar_color || code?.profile_avatar_color || '#5b5ef4';
@@ -107,7 +107,7 @@ export default function StudentProfileCard({ email, onClose }) {
           )}
 
           <h3 className="mt-3 font-bold text-foreground text-base text-center leading-tight">{publicName}</h3>
-          {nickname && <p className="text-sm text-muted-foreground mt-0.5">"{nickname}"</p>}
+          {nickname && nickname !== name && <p className="text-sm text-muted-foreground mt-0.5">"{nickname}"</p>}
           <p className={`text-[11px] font-semibold mt-1 ${isOnline ? 'text-green-600' : 'text-red-500'}`}>{isOnline ? '🟢' : '🔴'} {lastSeenText}</p>
 
           {bio && (
