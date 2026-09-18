@@ -143,8 +143,8 @@ const AuthenticatedApp = () => {
     return (
       <div className="fixed inset-0 app-shell-bg flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-[#5b5ef4]/30 border-t-[#5b5ef4] rounded-full animate-spin"></div>
-          <p className="text-sm text-white/40 font-medium">Carregando {BRAND_LEGAL_NAME}...</p>
+          <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-sm text-foreground/40 font-medium">Carregando {BRAND_LEGAL_NAME}...</p>
         </div>
       </div>
     );
@@ -197,7 +197,6 @@ const AuthenticatedApp = () => {
       <Route path="/live" element={<Navigate to={`${base}/apostila`} replace />} />
       <Route path="/tasks" element={<Navigate to={`${base}/tasks`} replace />} />
       <Route path="/tests" element={<Navigate to={`${base}/exams`} replace />} />
-      <Route path="/exams" element={<Navigate to={`${base}/exams`} replace />} />
       <Route path="/exams" element={<Navigate to={`${base}/exams`} replace />} />
       <Route path="/forum" element={<Navigate to={`${base}/forum`} replace />} />
       <Route path="/debates" element={<Navigate to={`${base}/debates`} replace />} />
