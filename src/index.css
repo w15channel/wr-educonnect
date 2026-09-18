@@ -86,3 +86,85 @@
 .luna-bounce-soft {
   animation: luna-bounce-soft 2.5s ease-in-out infinite;
 }
+
+/* Restauração integral das proporções do app — referência visual anterior. */
+html {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-size: 16px;
+}
+
+body {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  font-family: var(--font-jakarta);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  min-height: 100%;
+}
+
+input,
+textarea,
+select {
+  background-color: hsl(var(--input)) !important;
+  color: hsl(var(--foreground)) !important;
+  font-size: 16px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.internal-page-shell,
+.app-page {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+  padding-inline: 0.75rem;
+  padding-block: 0.75rem;
+}
+
+.app-page--wide,
+.app-page--narrow,
+.app-page--compact {
+  max-width: 100%;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 768px) {
+  html { font-size: 15px; }
+}
+
+@media (min-width: 768px) {
+  .app-page,
+  .internal-page-shell {
+    padding-inline: clamp(1rem, 2.4vw, 2rem);
+    padding-block: clamp(1rem, 1.8vw, 1.75rem);
+  }
+
+  .app-page--wide,
+  .app-page--narrow,
+  .app-page--compact,
+  .internal-page-shell {
+    max-width: min(100%, 70rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-page,
+  .internal-page-shell {
+    padding-inline: clamp(1.25rem, 2vw, 2.5rem);
+    padding-block: clamp(1.1rem, 1.5vw, 2rem);
+  }
+}
