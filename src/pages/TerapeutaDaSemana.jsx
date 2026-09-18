@@ -247,10 +247,11 @@ export default function TerapeutaDaSemana() {
   const getStudentInfo = (email) => {
     const normalizedEmail = normalizeStudentEmail(email);
     const code = accessCodes.find(c => normalizeStudentEmail(c.student_email) === normalizedEmail);
+    const profile = studentProfiles.find(p => normalizeStudentEmail(p.student_email) === normalizedEmail);
     return {
-      name: code?.profile_name || code?.student_name || email,
-      photo: code?.profile_photo_url || '',
-      color: code?.profile_avatar_color || '#5b5ef4',
+      name: profile?.nickname || code?.profile_name || code?.student_name || email,
+      photo: code?.profile_photo_url || profile?.photo_url || '',
+      color: code?.profile_avatar_color || profile?.avatar_color || '#5b5ef4',
       avatarEmoji: resolveAvatarEmoji(code?.profile_avatar_emoji),
     };
   };
@@ -321,9 +322,9 @@ export default function TerapeutaDaSemana() {
     for (const { therapist, patient } of pairs) {
       await createPairingMutation.mutateAsync({
         therapist_email: therapist.student_email,
-        therapist_name: therapist.profile_name || therapist.student_name,
+        therapist_name: getStudentInfo(therapist.student_email).name,
         patient_email: patient.student_email,
-        patient_name: patient.profile_name || patient.student_name,
+        patient_name: getStudentInfo(patient.student_email).name,
         pairing_date: date,
         module_number: Number(selectedModule),
         is_published: false,
@@ -366,9 +367,9 @@ export default function TerapeutaDaSemana() {
     // com a dupla da Maria Aglair, que ficou invisível para os alunos.
     createPairingMutation.mutate({
       therapist_email: therapistCode.student_email,
-      therapist_name: therapistCode.profile_name || therapistCode.student_name,
+      therapist_name: getStudentInfo(therapistCode.student_email).name,
       patient_email: student.student_email,
-      patient_name: student.profile_name || student.student_name,
+      patient_name: getStudentInfo(student.student_email).name,
       pairing_date: hasDraftBatch ? latestPairingDate : todayStr,
       module_number: Number(selectedModule),
       is_published: !hasDraftBatch,
@@ -515,7 +516,7 @@ export default function TerapeutaDaSemana() {
                   title={isPaired ? 'Já em dupla nesta rodada' : isSelected ? 'Clique para cancelar a seleção' : manualTherapist ? 'Clique para definir como paciente' : 'Clique para definir como terapeuta'}
                 >
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-foreground truncate">{student.profile_name || student.student_name || 'Sem nome'}</p>
+                    <p className="text-xs font-bold text-foreground truncate">{getStudentInfo(student.student_email).name || 'Sem nome'}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{student.student_email}</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
