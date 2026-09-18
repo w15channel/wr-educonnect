@@ -119,7 +119,7 @@ export default function ChecklistReturnBar() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 30, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed bottom-40 lg:bottom-24 left-1/2 -translate-x-1/2 z-40 px-3 w-full max-w-md"
+            className="fixed bottom-40 lg:bottom-24 left-0 right-0 z-40 mx-auto w-full max-w-md px-3"
           >
             <div className="rounded-3xl border-2 border-amber-300/70 bg-gradient-to-br from-amber-50 via-card to-orange-50/70 p-4 shadow-lg dark:border-amber-400/25 dark:from-amber-950/30 dark:via-card dark:to-orange-950/20">
               {/* Cabeçalho */}
@@ -233,7 +233,7 @@ export default function ChecklistReturnBar() {
 
       {/* ── Barra flutuante de retorno ─────────────────────────────────── */}
       {phase !== 'celebrating' && (
-        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-40 px-3 w-full max-w-md">
+        <div className="fixed bottom-20 lg:bottom-6 left-0 right-0 z-40 mx-auto w-full max-w-md px-3">
           {phase === 'ready' && itemKey ? (
             /* Antes de marcar: botão de concluir + botão de retorno lado a lado */
             <motion.div
@@ -245,7 +245,7 @@ export default function ChecklistReturnBar() {
               <button
                 type="button"
                 onClick={handleMarkComplete}
-                className="flex items-center justify-center gap-1.5 rounded-2xl border border-green-300 bg-green-500 px-3 py-3 text-xs font-bold text-white shadow-lg hover:bg-green-600 transition-colors whitespace-nowrap"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-2xl border border-green-300 bg-green-500 px-3 py-3 text-xs font-bold text-white shadow-lg hover:bg-green-600 transition-colors"
               >
                 <CheckCircle2 size={14} />
                 Concluir
