@@ -151,7 +151,7 @@ function AdminDMConversations({ session, students }) {
   const selectedStudent = selectedConversation?.student || studentBySession.get(selectedSessionId);
 
   // Assina atualizações em tempo real da conversa selecionada
- !!selectedSessionId && useEffect(() => {
+  useEffect(() => {
     if (!selectedSessionId) return;
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
       if (event.data?.session_id === selectedSessionId) {
@@ -398,7 +398,6 @@ function AdminDMConversations({ session, students }) {
                   <span className="truncate text-sm text-muted-foreground">{getStudentName(s)}</span>
                 </button>
               );
-
             })}
           </>
         )}
@@ -610,7 +609,11 @@ export default function ClassChat() {
     .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
     .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse);
   const otherStudents = [lunaContact, ...studentContacts]
-    .filter(c => (wall.getStudentName(c.student_email) || '').toLowerCase().includes(dmSearch.toLowerCase()));
+    .filter(c => {
+      const resolved = wall.getStudentName(c.student_email);
+      const name = resolved !== 'Um aluno da turma' ? resolved : (c.profile_name || c.student_name || c.student_email || '');
+      return name.toLowerCase().includes(dmSearch.toLowerCase());
+    });
   const adminDMStudents = studentContacts
     .filter(c => codePrefix ? (c.code || '').startsWith(codePrefix) : true)
     .filter(c => courseEmails ? courseEmails.has(c.student_email) : !userCourse || c.course === userCourse);
