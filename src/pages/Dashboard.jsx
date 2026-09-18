@@ -10,7 +10,7 @@ import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { capScore, formatScore } from '@/lib/scoreUtils';
-import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji, resolveDisplayName, buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji, buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
 import { format, addDays } from 'date-fns';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
@@ -530,7 +530,11 @@ export default function Dashboard() {
     </form>
   );
 
-  const firstName = (session?.name || 'Usuário').split(' ')[0];
+  const currentStudentProfile = publishedScores.find((profile) =>
+    profile.student_email === session?.email || (session?.codeId && profile.code_id === session.codeId)
+  );
+  const nickname = currentStudentProfile?.nickname?.trim();
+  const firstName = nickname || (currentAccessCode?.profile_name || session?.name || 'Usuário').trim().split(' ')[0];
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
@@ -954,7 +958,6 @@ export default function Dashboard() {
 
           })}
             </div>
-        }
           <div className="mt-3 flex justify-end">
             <Button size="sm" variant="outline" onClick={() => saveDashboardOrderMutation.mutate()} disabled={saveDashboardOrderMutation.isPending || customRanking.length === 0}>
               {saveDashboardOrderMutation.isPending ? 'Publicando ranking...' : 'Publicar ranking manual'}
