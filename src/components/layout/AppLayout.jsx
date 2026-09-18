@@ -112,7 +112,7 @@ export default function AppLayout() {
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
           {showIndicator && (
             <div
-n              className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all pointer-events-none lg:hidden"
+              className="absolute top-0 left-0 right-0 z-30 flex items-center justify-center transition-all pointer-events-none lg:hidden"
               style={{ height: pullY, overflow: 'hidden' }}
             >
               <div
