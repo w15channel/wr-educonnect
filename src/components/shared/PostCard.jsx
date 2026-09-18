@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
+import { useDisplayNameResolver } from '@/hooks/useOvercomingWall';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -52,7 +53,9 @@ export default function PostCard({
   onUpdateReply,
   replyPlaceholder = 'Escreva sua resposta...',
 }) {
+  const { getDisplayName } = useDisplayNameResolver();
   const av = getAvatar(post.author_email, post.author_role);
+  const authorName = getDisplayName(post.author_email) || post.author_name;
   const myPostParticipated = post.author_email === myEmail;
 
   // Check if current user has replied to this post
@@ -63,12 +66,12 @@ export default function PostCard({
       {/* Post header */}
       <div className="p-4 sm:p-5">
         <div className="flex items-start gap-3">
-          <Avatar photoUrl={av.photoUrl} name={post.author_name} color={av.avatarColor} avatarEmoji={av.avatarEmoji} size={9} />
+          <Avatar photoUrl={av.photoUrl} name={authorName} color={av.avatarColor} avatarEmoji={av.avatarEmoji} size={9} />
 
           <div className="flex-1 min-w-0">
             {/* Meta row */}
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <ClickableStudent email={post.author_email} className="font-bold text-sm text-foreground">{post.author_name}</ClickableStudent>
+              <ClickableStudent email={post.author_email} className="font-bold text-sm text-foreground">{authorName}</ClickableStudent>
               {post.author_role === 'teacher' && (
                 <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] py-0 px-1.5">Professor</Badge>
               )}
@@ -139,12 +142,13 @@ export default function PostCard({
         <div className="border-t border-border bg-secondary/10 p-4 space-y-3">
           {(replies || []).map(reply => {
             const rav = getAvatar(reply.author_email, reply.author_role);
+            const replyAuthorName = getDisplayName(reply.author_email) || reply.author_name;
             return (
               <div key={reply.id} className="flex gap-3 pl-2">
-                <Avatar photoUrl={rav.photoUrl} name={reply.author_name} color={rav.avatarColor} avatarEmoji={rav.avatarEmoji} size={7} />
+                <Avatar photoUrl={rav.photoUrl} name={replyAuthorName} color={rav.avatarColor} avatarEmoji={rav.avatarEmoji} size={7} />
                 <div className="flex-1 bg-card rounded-xl p-3 border border-border">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <ClickableStudent email={reply.author_email} className="font-bold text-xs text-foreground">{reply.author_name}</ClickableStudent>
+                    <ClickableStudent email={reply.author_email} className="font-bold text-xs text-foreground">{replyAuthorName}</ClickableStudent>
                     {reply.author_role === 'teacher' && <Badge className="bg-primary/10 text-primary text-[9px] py-0 px-1">Prof.</Badge>}
                     <span className="text-[10px] text-muted-foreground ml-auto flex items-center gap-1">
                       {reply.created_date ? format(new Date(reply.created_date), "dd/MM 'às' HH:mm", { locale: ptBR }) : ''}
