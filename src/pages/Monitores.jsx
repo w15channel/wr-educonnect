@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
+import { useDisplayNameResolver } from '@/hooks/useOvercomingWall';
 import { Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Star, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ export default function Monitores() {
   const [certStudent, setCertStudent] = useState(null);
   const [defining, setDefining] = useState(false);
   const certRef = useRef(null);
+  const { getDisplayName } = useDisplayNameResolver();
 
   // Current course for filtering based on route (/adm/sex => SEX- / sexologia)
   const { emails: courseEmails, course: routeCourse } = useCourseFilteredEmails();
@@ -93,7 +95,7 @@ export default function Monitores() {
     .map((code) => ({
       email: code.student_email,
       total: roundScore(code.pontuacao_total || 0),
-      name: (code.profile_name || code.student_name || code.student_email || '').toLowerCase(),
+      name: (getDisplayName(code.student_email) || code.profile_name || code.student_name || code.student_email || '').toLowerCase(),
       createdAt: code.created_date ? new Date(code.created_date).getTime() : Number.MAX_SAFE_INTEGER,
     }))
     .sort((a, b) => {
@@ -141,7 +143,7 @@ export default function Monitores() {
         const code = accessCodes.find(c => c.student_email === r.email);
         await base44.entities.MonitorHistory.create({
           student_email: r.email,
-          student_name: code?.profile_name || code?.student_name || r.email,
+          student_name: getDisplayName(r.email) || code?.profile_name || code?.student_name || r.email,
           period_start: newPeriodStart,
           period_end: newPeriodEnd,
           rank_position: i + 1,
@@ -168,7 +170,7 @@ export default function Monitores() {
   const getStudentInfo = (email) => {
     const code = accessCodes.find(c => c.student_email === email);
     return {
-      name: code?.profile_name || code?.student_name || email,
+      name: getDisplayName(email) || code?.profile_name || code?.student_name || email,
       photo: code?.profile_photo_url || '',
       color: code?.profile_avatar_color || '#5b5ef4',
     };
@@ -179,7 +181,7 @@ export default function Monitores() {
     return html2canvas(certRef.current, { scale: 2, backgroundColor: '#fff', useCORS: true });
   };
 
-  const getCertificateFileBase = () => `certificado-monitor-${certStudent?.student_name?.replace(/\s/g, '-') || 'aluno'}`;
+  const getCertificateFileBase = () => `certificado-monitor-${(getDisplayName(certStudent?.student_email) || certStudent?.student_name || 'aluno').replace(/\s/g, '-')}`;
 
   const handleDownloadPDF = async () => {
     const canvas = await getCertificateCanvas();
@@ -345,7 +347,7 @@ export default function Monitores() {
                     {group.map(m => (
                       <div key={m.id} className="flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg border border-border text-xs">
                         <Crown size={10} className="text-yellow-500" />
-                        <span className="font-semibold">{m.student_name}</span>
+                        <span className="font-semibold">{getDisplayName(m.student_email) || m.student_name}</span>
                         <span className="text-muted-foreground">#{m.rank_position}</span>
                         {isTeacher && (
                           <button onClick={() => handleDeleteHistory(m.id)} className="text-red-500 hover:text-red-700">
@@ -369,7 +371,7 @@ export default function Monitores() {
             {weeklyReport.length === 0 && <p className="text-xs text-muted-foreground">Sem monitores ativos no momento.</p>}
             {weeklyReport.map(item => (
               <div key={item.student_email} className="rounded-xl border border-border p-3 bg-secondary/20">
-                <p className="text-sm font-semibold">{item.student_name}</p>
+                <p className="text-sm font-semibold">{getDisplayName(item.student_email) || item.student_name}</p>
                 <p className="text-xs text-muted-foreground">Frequência de interações (7 dias): {item.interactions}</p>
               </div>
             ))}
@@ -384,7 +386,7 @@ export default function Monitores() {
           <div className="max-h-56 overflow-y-auto space-y-2 border rounded-xl p-3 bg-secondary/10">
             {[...monitorChat].reverse().map(msg => (
               <div key={msg.id} className="text-xs">
-                <span className="font-semibold text-foreground">{msg.author_name || msg.author_email}: </span>
+                <span className="font-semibold text-foreground">{getDisplayName(msg.author_email) || msg.author_name || msg.author_email}: </span>
                 <span className="text-muted-foreground">{msg.content}</span>
               </div>
             ))}
@@ -410,7 +412,7 @@ export default function Monitores() {
             <p style={{ fontSize: 11, letterSpacing: 5, color: '#7a6a3a', textTransform: 'uppercase', margin: '0 0 8px' }}>Certificado de Reconhecimento Acadêmico</p>
             <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 28px', letterSpacing: 2, textTransform: 'uppercase' }}>Monitor de Excelência</h1>
             <p style={{ fontSize: 13, color: '#444', margin: '0 0 10px' }}>Certificamos que</p>
-            <h2 style={{ fontSize: 30, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 20px', fontStyle: 'italic' }}>{certStudent?.student_name}</h2>
+            <h2 style={{ fontSize: 30, fontWeight: 'bold', color: '#1e3a5f', margin: '0 0 20px', fontStyle: 'italic' }}>{getDisplayName(certStudent?.student_email) || certStudent?.student_name}</h2>
             <p style={{ fontSize: 13, color: '#444', lineHeight: 1.9, maxWidth: 480, margin: '0 auto 24px', textAlign: 'justify' }}>
               foi reconhecido(a) como <strong>Monitor de Classe por Mérito Acadêmico</strong>, integrando o grupo de destaque da turma entre as melhores notas da semana, demonstrando excelência e dedicação, durante o período de{' '}
               <strong>{certStudent?.period_start ? format(new Date(certStudent.period_start + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : ''}</strong>{' '}
