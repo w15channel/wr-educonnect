@@ -311,3 +311,32 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     profileMap,
   };
 }
+
+/**
+ * Hook leve para resolver nomes sociais (nickname → profile_name → full_name → student_name).
+ * Para páginas que NÃO usam o mural completo (ClassChat, SalaDebates, Monitores, etc.).
+ * Páginas que já usam useOvercomingWall devem usar wall.getStudentName diretamente.
+ */
+export function useDisplayNameResolver(course) {
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['display-name-profiles', course || 'all'],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 10000),
+    staleTime: 60000,
+  });
+
+  const { data: accessCodes = [] } = useQuery({
+    queryKey: ['display-name-codes', course || 'all'],
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 5000),
+    staleTime: 60000,
+  });
+
+  const profileMap = useMemo(() => buildProfileMap(profiles), [profiles]);
+
+  const getDisplayName = (email) => {
+    if (!email) return '';
+    const name = resolveDisplayNameFromMaps(email, profileMap, accessCodes);
+    return name !== email ? name : email;
+  };
+
+  return { getDisplayName, profileMap, accessCodes, profiles };
+}
