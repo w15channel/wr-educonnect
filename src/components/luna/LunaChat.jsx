@@ -11,6 +11,7 @@ import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting, searchApostila, saveLunaMemory, loadLunaMemory, clearLunaMemory } from '@/lib/lunaPersona';
 import { SUPPORT_CATEGORIES } from '@/components/support/SupportTicketForm';
 import { TUITION_ACTIONS, TUITION_GREETING, TUITION_PROMPT } from '@/lib/lunaTuition';
+import { getLunaSupportOffer, getLunaSupportDecision, LUNA_SUPPORT_REASONS } from '@/lib/lunaSupport';
 import { toast } from 'sonner';
 
 const LUNA_SUPPORT_PROMPT_SUFFIX = `
@@ -20,12 +21,17 @@ MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de suporte. 
 2. TENTE RESOLVER o problema primeiro — use seu conhecimento da plataforma e do conteúdo do curso para ajudar de verdade.
 3. Se você conseguiu resolver, ótimo! Pergunte se precisa de mais alguma coisa.
 4. Se você NÃO conseguiu resolver após tentar, seja honesta: "Eu tentei te ajudar com isso, mas acho que isso precisa da equipe de suporte. Quer que eu abra um chamado formal pra você?"
-5. Só preencha o campo "ticket" do JSON QUANDO o aluno confirmar explicitamente que deseja abrir o chamado (respondendo sim, quero, pode abrir, etc.):
-   - title: um resumo curto do problema (máximo 80 caracteres)
-   - description: a descrição completa do problema relatado pelo aluno, em primeira pessoa
-   - category: escolha a categoria mais adequada entre: ${SUPPORT_CATEGORIES.join(', ')}
-6. NÃO preencha o campo "ticket" se o aluno ainda não confirmou que deseja abrir o chamado.
-7. Após preencher o campo "ticket", confirme ao aluno que o chamado foi registrado e que a equipe entrará em contato.`;
+5. Entrar pelo atalho de suporte NÃO autoriza a abertura de um chamado. Siga as mesmas regras de diálogo e confirmação dos demais modos.`;
+
+const SUPPORT_OFFER_PROMPT = `
+FORMATO DA PROPOSTA DE SUPORTE:
+Somente quando identificar necessidade de intervenção humana, inclua "support_offer" com:
+- reason: "technical" (problema técnico), "administrative" (demanda administrativa) ou "unanswered" (dúvida não sanada pela base e pelo seu conhecimento).
+- explanation: por que a equipe é necessária, com base no relato.
+- title: resumo do problema, até 80 caracteres.
+- description: descrição fiel do relato e das tentativas de solução, sem inventar dados.
+- category: uma destas categorias: ${SUPPORT_CATEGORIES.join(', ')}.
+Caso contrário, omita "support_offer". A proposta não cria chamado. O aplicativo mostrará o resumo e pedirá confirmação; oriente o aluno a escolher "Sim, abrir chamado" ou "Não, continuar conversando".`;
 
 /**
  * Conversa com a Luna em balões — usada na página dela e na sobreposição
@@ -39,15 +45,22 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   // ── Memória de 24h: restaura conversa anterior se existir ──
   const memoryKey = `luna_chat_${tuitionMode ? 'tuition_' : ''}${session?.email || session?.code || 'anon'}`;
   const savedMessages = loadLunaMemory(memoryKey);
+  const lastSavedMessage = savedMessages?.[savedMessages.length - 1];
+  const savedOffer = lastSavedMessage?.role === 'assistant'
+    ? getLunaSupportOffer(lastSavedMessage, SUPPORT_CATEGORIES)
+    : null;
   const [messages, setMessages] = useState(
     savedMessages && savedMessages.length > 0
-      ? [...savedMessages, { role: 'assistant', content: '🦉 Continuando nossa conversa de hoje. Como posso te ajudar agora?' }]
+      ? savedOffer ? savedMessages : [...savedMessages, { role: 'assistant', content: '🦉 Continuando nossa conversa de hoje. Como posso te ajudar agora?' }]
       : [{ role: 'assistant', content: greeting }]
   );
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [ticketCreating, setTicketCreating] = useState(false);
+  const [supportOffer, setSupportOffer] = useState(savedOffer);
+  const supportOfferRef = useRef(savedOffer);
+  const busyRef = useRef(false);
   const endRef = useRef(null);
   const activeRef = useRef(isActive);
   activeRef.current = isActive;
@@ -65,11 +78,61 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   useEffect(() => { if (!isActive) voice.stop(); }, [isActive]);
   useEffect(() => { if (isActive) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, isActive]);
 
+  const respondToSupportOffer = async (confirmed, text) => {
+    const offer = supportOfferRef.current;
+    if (!offer || busyRef.current) return;
+    busyRef.current = true;
+    supportOfferRef.current = null;
+    setSupportOffer(null);
+    voice.stop();
+    const next = [...messages, { role: 'user', content: text || (confirmed ? 'Sim, abrir chamado.' : 'Não, continuar conversando.') }];
+    setMessages(next);
+    // Consome a proposta antes da requisição para não repeti-la ao recarregar.
+    saveLunaMemory(memoryKey, next);
+    setInput('');
+    let reply = 'Tudo bem, não abri nenhum chamado. Vamos continuar conversando: como posso ajudar?';
+    try {
+      if (confirmed) {
+        setTicketCreating(true);
+        await base44.entities.SupportTicket.create({
+          title: offer.title,
+          description: offer.description,
+          category: offer.category,
+          student_email: session?.email || session?.code || '',
+          student_name: session?.name || '',
+          course: session?.course || 'tcc',
+          status: 'open',
+        });
+        reply = `✅ Chamado registrado com sucesso!\n\n📋 Assunto: ${offer.title}\n🏷️ Categoria: ${offer.category}\n\nSua solicitação foi encaminhada para a equipe de suporte. Você pode acompanhar o status na página "Suporte" no menu.`;
+        toast.success('Chamado registrado com sucesso!');
+      }
+    } catch {
+      reply = 'Não consegui confirmar o registro do chamado. Confira a página "Suporte" antes de tentar novamente, para evitar duplicidade. Posso continuar ajudando por aqui.';
+      toast.error('Não foi possível confirmar o registro do chamado.');
+    } finally {
+      const updated = [...next, { role: 'assistant', content: reply }];
+      setMessages(updated);
+      saveLunaMemory(memoryKey, updated);
+      setTicketCreating(false);
+      busyRef.current = false;
+    }
+    if (activeRef.current) await voice.speak(reply);
+  };
+
   const send = async (content = input) => {
     const text = String(content || '').trim();
-    if (!text || loading) return;
+    if (!text || busyRef.current) return;
+    const decision = getLunaSupportDecision(text, supportOfferRef.current);
+    if (decision) {
+      await respondToSupportOffer(decision === 'confirm', text);
+      return;
+    }
+    busyRef.current = true;
+    supportOfferRef.current = null;
+    setSupportOffer(null);
     const next = [...messages, { role: 'user', content: text }];
     setMessages(next);
+    saveLunaMemory(memoryKey, next);
     setInput('');
     setLoading(true);
     voice.stop();
@@ -86,7 +149,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         : '';
 
       const basePrompt = tuitionMode ? LUNA_SYSTEM_PROMPT + TUITION_PROMPT : supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
-      const systemPrompt = basePrompt + apostilaContext;
+      const systemPrompt = basePrompt + SUPPORT_OFFER_PROMPT + apostilaContext;
 
       const answer = await base44.integrations.Core.InvokeLLM({
         prompt: `${systemPrompt}\n\nNome do aluno: ${session?.name || 'Aluno'}\n\nConversa:\n${history}\n\nLuna:`,
@@ -101,12 +164,16 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
                 properties: { key: { type: 'string' }, label: { type: 'string' } },
               },
             },
-            ticket: {
+            support_offer: {
               type: 'object',
+              description: 'Proposta opcional, nunca uma autorização de abertura. Omitir quando puder ajudar no chat.',
+              required: ['reason', 'explanation', 'title', 'description', 'category'],
               properties: {
+                reason: { type: 'string', enum: LUNA_SUPPORT_REASONS },
+                explanation: { type: 'string' },
                 title: { type: 'string' },
                 description: { type: 'string' },
-                category: { type: 'string' },
+                category: { type: 'string', enum: SUPPORT_CATEGORIES },
               },
             },
           },
@@ -115,35 +182,15 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       const reply = answer?.answer || 'Desculpe, não consegui responder agora. Poderia tentar novamente, por favor?';
       const updatedMessages = [...next, { role: 'assistant', content: reply, links: answer?.links || [] }];
 
-      // Se a Luna retornou um ticket, criar o SupportTicket
-      if (answer?.ticket?.title && answer?.ticket?.description) {
-        setTicketCreating(true);
-        try {
-          const userCourse = session?.course || 'tcc';
-          const ticketData = {
-            title: String(answer.ticket.title).slice(0, 200),
-            description: String(answer.ticket.description),
-            category: SUPPORT_CATEGORIES.includes(answer.ticket.category) ? answer.ticket.category : 'Outro assunto',
-            student_email: session?.email || session?.code || '',
-            student_name: session?.name || '',
-            course: userCourse,
-            status: 'open',
-          };
-          await base44.entities.SupportTicket.create(ticketData);
-          updatedMessages.push({
-            role: 'assistant',
-            content: `✅ Chamado registrado com sucesso!\n\n📋 Assunto: ${ticketData.title}\n🏷️ Categoria: ${ticketData.category}\n\nSua solicitação foi encaminhada para a equipe de suporte. Eles entrarão em contato com você em breve. Você pode acompanhar o status na página "Suporte" no menu.`,
-          });
-          toast.success('Chamado registrado com sucesso!');
-        } catch (err) {
-          updatedMessages.push({
-            role: 'assistant',
-            content: 'Tive um problema para registrar o chamado agora, mas tente novamente ou acesse a página "Suporte" no menu para abrir manualmente.',
-          });
-          toast.error('Não foi possível registrar o chamado.');
-        } finally {
-          setTicketCreating(false);
-        }
+      const offer = getLunaSupportOffer(answer, SUPPORT_CATEGORIES);
+      supportOfferRef.current = offer;
+      setSupportOffer(offer);
+      if (offer) {
+        updatedMessages.push({
+          role: 'assistant',
+          support_offer: offer,
+          content: `${offer.explanation}\n\n📋 Assunto: ${offer.title}\n🏷️ Categoria: ${offer.category}\n${offer.description}\n\nVocê deseja abrir um chamado para a equipe atender essa demanda? Nada foi registrado ainda. Escolha "Sim, abrir chamado" ou "Não, continuar conversando".`,
+        });
       }
 
       setMessages(updatedMessages);
@@ -155,6 +202,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       setMessages((prev) => [...prev, { role: 'assistant', content: errorReply }]);
       if (activeRef.current) await voice.speak(errorReply);
     } finally {
+      busyRef.current = false;
       setLoading(false);
     }
   };
@@ -175,7 +223,13 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
           {voice.enabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
         </button>
         <button
-          onClick={() => { voice.stop(); clearLunaMemory(memoryKey); setMessages([{ role: 'assistant', content: greeting }]); voice.speak(greeting); }}
+          onClick={() => {
+            if (busyRef.current) return;
+            voice.stop(); clearLunaMemory(memoryKey);
+            supportOfferRef.current = null; setSupportOffer(null);
+            setMessages([{ role: 'assistant', content: greeting }]); voice.speak(greeting);
+          }}
+          disabled={loading || ticketCreating}
           title="Reiniciar conversa"
           className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
@@ -193,6 +247,16 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
             )}
           </div>
         ))}
+        {supportOffer && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Confirmar abertura de chamado">
+            <Button onClick={() => respondToSupportOffer(true)} disabled={loading || ticketCreating}>
+              Sim, abrir chamado
+            </Button>
+            <Button variant="outline" onClick={() => respondToSupportOffer(false)} disabled={loading || ticketCreating}>
+              Não, continuar conversando
+            </Button>
+          </div>
+        )}
         {(loading || ticketCreating) && (
           <LunaBubble role="assistant">
             <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -228,7 +292,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         onSubmit={(e) => { e.preventDefault(); send(); }}
         className="flex shrink-0 gap-2 border-t border-rose-100 bg-card dark:border-white/20 dark:bg-black p-3"
       >
-        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Converse com a Luna..." className="h-11 flex-1 border-rose-200 dark:border-white/20" disabled={loading} />
+        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Converse com a Luna..." className="h-11 flex-1 border-rose-200 dark:border-white/20" disabled={loading || ticketCreating} />
         <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
         <Button type="submit" className="h-11 w-11 shrink-0 p-0 bg-rose-500 hover:bg-rose-600" disabled={!input.trim() || loading || ticketCreating}>
           <Send size={16} />
