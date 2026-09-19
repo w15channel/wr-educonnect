@@ -18,19 +18,21 @@ const LUNA_SUPPORT_PROMPT_SUFFIX = `
 
 MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de suporte. Nesta conversa:
 1. Pergunte o que o aluno precisa ou qual problema está enfrentando na plataforma.
-2. TENTE RESOLVER o problema primeiro — use seu conhecimento da plataforma e do conteúdo do curso para ajudar de verdade.
-3. Se você conseguiu resolver, ótimo! Pergunte se precisa de mais alguma coisa.
-4. Se você NÃO conseguiu resolver após tentar, seja honesta: "Eu tentei te ajudar com isso, mas acho que isso precisa da equipe de suporte. Quer que eu abra um chamado formal pra você?"
-5. Entrar pelo atalho de suporte NÃO autoriza a abertura de um chamado. Siga as mesmas regras de diálogo e confirmação dos demais modos.`;
+2. TENTE RESOLVER o problema primeiro — use seu conhecimento da plataforma, o conteúdo da apostila fornecido e sua inteligência para ajudar de verdade. Seja minuciosa: explore alternativas, sugira passos práticos, explique caminhos.
+3. Se você conseguiu resolver, ótimo! Pergunte se precisa de mais alguma coisa e continue conversando.
+4. Se você realmente esgotou todas as alternativas e não conseguiu resolver, seja honesta e natural: "Eu tentei te ajudar com isso de várias formas, mas acho que essa situação precisa da equipe de suporte. Quer que eu abra um chamado pra você?"
+5. Entrar pelo atalho de suporte NÃO autoriza a abertura de um chamado. Siga as mesmas regras de diálogo e confirmação dos demais modos.
+6. O chamado deve ser oferecido NO MÁXIMO UMA VEZ por conversa. Se já ofereceu e o aluno recusou ou continuou conversando, não ofereça novamente.`;
 
 const SUPPORT_OFFER_PROMPT = `
 FORMATO DA PROPOSTA DE SUPORTE:
-Somente quando identificar necessidade de intervenção humana, inclua "support_offer" com:
+Somente quando identificar necessidade de intervenção humana E ainda não tiver oferecido suporte nesta conversa, inclua "support_offer" com:
 - reason: "technical" (problema técnico), "administrative" (demanda administrativa) ou "unanswered" (dúvida não sanada pela base e pelo seu conhecimento).
 - explanation: por que a equipe é necessária, com base no relato.
 - title: resumo do problema, até 80 caracteres.
 - description: descrição fiel do relato e das tentativas de solução, sem inventar dados.
 - category: uma destas categorias: ${SUPPORT_CATEGORIES.join(', ')}.
+REGRA CRÍTICA: inclua "support_offer" no MÁXIMO UMA VEZ por conversa. Se já incluiu antes (o contexto indicará "SUPORTE_JÁ_OFERECIDO"), NÃO inclua novamente — mesmo que o aluno insista no tema, continue tentando ajudar na conversa.
 Caso contrário, omita "support_offer". A proposta não cria chamado. O aplicativo mostrará o resumo e pedirá confirmação; oriente o aluno a escolher "Sim, abrir chamado" ou "Não, continuar conversando".`;
 
 /**
@@ -39,7 +41,7 @@ Caso contrário, omita "support_offer". A proposta não cria chamado. O aplicati
  */
 export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false, tuitionMode = false }) {
   const voice = useLunaVoice();
-  const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo. Pode me contar o que está acontecendo? Vou tentar resolver pra você aqui mesmo — e se eu não conseguir, aí a gente vê sobre abrir um chamado pra equipe de suporte.`;
+  const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo. Pode me contar o que está acontecendo? Vou fazer o possível pra te ajudar aqui mesmo — e só se eu não conseguir, aí a gente vê sobre abrir um chamado pra equipe de suporte.`;
   const greeting = tuitionMode ? TUITION_GREETING : supportMode ? supportGreeting : lunaGreeting(session?.name);
 
   // ── Memória de 24h: restaura conversa anterior se existir ──
@@ -60,6 +62,11 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   const [ticketCreating, setTicketCreating] = useState(false);
   const [supportOffer, setSupportOffer] = useState(savedOffer);
   const supportOfferRef = useRef(savedOffer);
+  // ── Controle "uma vez por conversa" ──
+  // Rastreia se a Luna já ofereceu suporte (support_offer) nesta conversa.
+  // Se sim, o prompt enviado ao LLM inclui "SUPORTE_JÁ_OFERECIDO" para impedir
+  // que a IA proponha chamado novamente, mesmo que o aluno insista no tema.
+  const supportAlreadyOfferedRef = useRef(Boolean(savedOffer || savedMessages?.some(m => m.support_offer)));
   const busyRef = useRef(false);
   const endRef = useRef(null);
   const activeRef = useRef(isActive);
@@ -148,8 +155,13 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
           ).join('\n\n')
         : '';
 
+      // Indica ao LLM se o suporte já foi oferecido nesta conversa
+      const supportFlag = supportAlreadyOfferedRef.current
+        ? '\n\n⚠️ SUPORTE_JÁ_OFERECIDO: Você já ofereceu um chamado de suporte nesta conversa. NÃO inclua "support_offer" novamente. Continue ajudando o aluno normalmente na conversa.'
+        : '';
+
       const basePrompt = tuitionMode ? LUNA_SYSTEM_PROMPT + TUITION_PROMPT : supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
-      const systemPrompt = basePrompt + SUPPORT_OFFER_PROMPT + apostilaContext;
+      const systemPrompt = basePrompt + SUPPORT_OFFER_PROMPT + apostilaContext + supportFlag;
 
       const answer = await base44.integrations.Core.InvokeLLM({
         prompt: `${systemPrompt}\n\nNome do aluno: ${session?.name || 'Aluno'}\n\nConversa:\n${history}\n\nLuna:`,
@@ -166,7 +178,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
             },
             support_offer: {
               type: 'object',
-              description: 'Proposta opcional, nunca uma autorização de abertura. Omitir quando puder ajudar no chat.',
+              description: 'Proposta opcional, nunca uma autorização de abertura. Omitir quando puder ajudar no chat ou quando já tiver oferecido suporte antes nesta conversa.',
               required: ['reason', 'explanation', 'title', 'description', 'category'],
               properties: {
                 reason: { type: 'string', enum: LUNA_SUPPORT_REASONS },
@@ -183,9 +195,11 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       const updatedMessages = [...next, { role: 'assistant', content: reply, links: answer?.links || [] }];
 
       const offer = getLunaSupportOffer(answer, SUPPORT_CATEGORIES);
-      supportOfferRef.current = offer;
-      setSupportOffer(offer);
-      if (offer) {
+      // Só exibe a proposta de suporte se ainda não tiver oferecido antes nesta conversa
+      if (offer && !supportAlreadyOfferedRef.current) {
+        supportAlreadyOfferedRef.current = true;
+        supportOfferRef.current = offer;
+        setSupportOffer(offer);
         updatedMessages.push({
           role: 'assistant',
           support_offer: offer,
@@ -227,6 +241,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
             if (busyRef.current) return;
             voice.stop(); clearLunaMemory(memoryKey);
             supportOfferRef.current = null; setSupportOffer(null);
+            supportAlreadyOfferedRef.current = false;
             setMessages([{ role: 'assistant', content: greeting }]); voice.speak(greeting);
           }}
           disabled={loading || ticketCreating}
