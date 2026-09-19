@@ -815,10 +815,21 @@ export default function ScoreControl() {
   // daquele módulo (aula/tarefa/prova) ou, para atividades sem módulo, quando
   // aconteceu dentro da janela de datas do período.
   const scoreItemInSelectedModule = (item) => {
-    // Registros antigos, inclusive conteúdos cadastrados como Módulo 2+, são
-    // Módulo 1 até existir uma liberação individual. A data de ingresso não
-    // interfere nessa atribuição.
-    return resolveItemModule(item, unlocksByEmail.get(item.student_email) || []) === activeModule;
+    // Resolve o módulo do item: primeiro pelo module_number explícito, depois
+    // pelo módulo da atividade de origem (lesson/task/exam), e por último pela
+    // linha do tempo de liberações do aluno.
+    const refId = String(item.ref_id || '').replace(/^exam:/, '');
+    let fallbackModule = null;
+    if (item.category === 'lesson') fallbackModule = lessonModuleById.get(refId);
+    else if (item.category === 'task' || item.category === 'quiz') fallbackModule = taskModuleById.get(refId);
+    else if (item.category === 'exam') fallbackModule = examModuleById.get(refId);
+    else if (item.category === 'mentorship') fallbackModule = mentorshipModuleById.get(refId);
+    else if (item.category === 'therapist' || String(item.ref_id || '').startsWith('therapist_pairing:')) {
+      const pairingId = String(item.ref_id || '').split(':')[1];
+      fallbackModule = pairingModuleById.get(pairingId);
+    }
+    const fallbackNum = Number(fallbackModule);
+    return resolveItemModule(item, unlocksByEmail.get(item.student_email) || [], Number.isFinite(fallbackNum) && fallbackNum > 0 ? fallbackNum : null) === activeModule;
   };
 
   useEffect(() => {
@@ -832,11 +843,10 @@ export default function ScoreControl() {
     )
     );
     if (firstPending) setSelectedCode(firstPending);
-  }, [codes, submissions, scoreItems, location.search]);
+  }, [location.search, selectedCode, codes.length, submissions.length, scoreItems]);
 
-  // Fallback manual do agente de pontuação: caso a automação disparada por
-  // entidade (TaskSubmission/ExamSubmission) falhe ou atrase, o admin pode
-  // forçar o recálculo/atribuição de notas por aqui, sem depender do agendador.
+  // Itens de pontuação do aluno que pertencem ao curso ativo. Com
+  // applyModuleFilter=false devolve todos (usado para atribuir um módulo).
   const handleRetro = async () => {
     setRetroLoading(true);
     try {
@@ -850,13 +860,15 @@ export default function ScoreControl() {
     }
   };
 
-  const filtered = codes.filter((c) => {
-    if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
-    if (courseEmails && !courseEmails.has(c.student_email || '')) return false;
+  const filtered = codes.filter((code) => {
+    if (!courseEmails || courseEmails.size === 0) return true;
+    const email = code.student_email;
+    if (!email) return false;
+    if (!courseEmails.has(email)) return false;
     const matchSearch = !search ||
-    (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.student_email || '').toLowerCase().includes(search.toLowerCase());
+      (code.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (code.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (code.student_email || '').toLowerCase().includes(search.toLowerCase());
     return matchSearch;
   });
 
@@ -872,6 +884,7 @@ export default function ScoreControl() {
   }));
   const mentorshipModuleById = new Map(mentorships.map((m) => [m.id, m.module_number]));
   const pairingModuleById = new Map(therapistPairings.map((p) => [p.id, p.module_number]));
+
   const allowedEmails = new Set(filtered.map((c) => c.student_email).filter(Boolean));
   const courseSubmissions = submissions.filter((s) => allowedEmails.has(s.student_email) && taskIds.has(s.task_id));
   const pendingCount = courseSubmissions.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length;
@@ -1163,7 +1176,11 @@ export default function ScoreControl() {
           if (!studentEmail) continue;
           for (const scoreItem of getCourseScoreItems(studentEmail, { applyModuleFilter: false })) {
             const current = Number(scoreItem.module_number);
-            if (!current || current === activeModule) idsToStamp.push(scoreItem.id);
+            // Só estampa itens que já pertencem ao módulo ativo ou que, não
+            // tendo module_number, resolvem para este módulo via origem/timeline.
+            // Isso impede o espelhamento: itens do Módulo 1 não são estampados
+            // no Módulo 2 ao salvar a sequência lá.
+            if (current === activeModule || (!current && scoreItemInSelectedModule(scoreItem))) idsToStamp.push(scoreItem.id);
           }
         }
         if (idsToStamp.length > 0) {
