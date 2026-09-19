@@ -8,6 +8,15 @@ import { parseUtcDate } from '@/lib/scoreUtils';
  * StudentModuleUnlock com o instante da liberação — a partir dele, tudo que o
  * aluno pontuar passa a valer para o novo módulo. Assim o histórico anterior
  * permanece no módulo em que foi feito, sem precisar reetiquetar registros.
+ *
+ * PRIORIDADE DE ATRIBUIÇÃO:
+ * 1. module_number explícito no próprio ScoreItem (estampado pelo admin ou
+ *    pela automação) — é a fonte autoritativa.
+ * 2. fallbackModule (módulo da atividade de origem: lesson.module_number,
+ *    task.module_number, exam.module_ref) — usado quando o ScoreItem não
+ *    tem module_number, mas a atividade original pertence a um módulo claro.
+ * 3. Linha do tempo de liberações do aluno (tempo) — usado apenas para
+ *    atividades sem módulo próprio (fórum, ofensivas, etc.).
  */
 export function groupUnlocksByEmail(unlocks = []) {
   const map = new Map();
@@ -35,7 +44,23 @@ export function resolveCurrentStudentModule(unlocks = []) {
   return resolveStudentModuleAt(unlocks, new Date().toISOString());
 }
 
-/** Módulo de um ScoreItem: o módulo liberado ao aluno quando ele pontuou. */
-export function resolveItemModule(item, unlocks = []) {
+/**
+ * Módulo de um ScoreItem.
+ *
+ * @param {object} item            - O ScoreItem (ou objeto com module_number/created_date).
+ * @param {Array}  unlocks        - StudentModuleUnlock[] do aluno.
+ * @param {number} [fallbackModule] - Módulo da atividade de origem (lesson/task/exam).
+ *                                    Usado quando o ScoreItem não tem module_number.
+ */
+export function resolveItemModule(item, unlocks = [], fallbackModule = null) {
+  // 1. module_number explícito no ScoreItem — autoritativo.
+  const explicitModule = Number(item?.module_number);
+  if (Number.isFinite(explicitModule) && explicitModule > 0) return explicitModule;
+
+  // 2. Módulo da atividade de origem (lesson.module_number, task.module_number, etc.).
+  const fallback = Number(fallbackModule);
+  if (Number.isFinite(fallback) && fallback > 0) return fallback;
+
+  // 3. Linha do tempo de liberações do aluno.
   return resolveStudentModuleAt(unlocks, item?.created_date);
 }
