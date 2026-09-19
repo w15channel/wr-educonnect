@@ -464,15 +464,30 @@ export function buildStudentScoreSummary(params, { studentUnlocks = [], moduleNu
     const scoreItem = scoreByKey.get(row.key)
       || (row.key.startsWith('forum_ofensiva:') ? scoreByKey.get(row.key.replace(/^forum_/, 'ofensiva_')) : null)
       || (row.key.startsWith('task_therapist_pairing:') ? scoreByKey.get(row.key.replace(/^task_/, 'therapist_')) : null);
+    // Passa row.module como fallback: se o ScoreItem não tem module_number,
+    // usamos o módulo da atividade de origem (lesson/task/exam) antes de
+    // recorrer à linha do tempo de liberações do aluno.
     return {
       ...row,
-      module: resolveItemModule(scoreItem || { module_number: row.module, created_date: row.date }, studentUnlocks),
+      module: resolveItemModule(scoreItem || { module_number: row.module, created_date: row.date }, studentUnlocks, row.module),
     };
   });
   const scopedRows = moduleNumber ? rows.filter((row) => row.module === Number(moduleNumber)) : rows;
 
+  // Quando um módulo está selecionado, o totalScore reflete apenas os pontos
+  // daquele módulo — não o somatório de todos os módulos. Isso garante que ao
+  // trocar de módulo no Controle de Pontuação, os valores exibidos sejam
+  // próprios de cada módulo, sem espelhamento.
+  const scopedScore = moduleNumber
+    ? scopedRows.filter((r) => r.status === 'Avaliado').reduce(
+        (sum, r) => roundScore(sum + (r.score !== null ? roundScore(r.score) : 0)),
+        0
+      )
+    : academic.totalScore;
+
   return {
     ...academic,
+    totalScore: scopedScore,
     rows,
     scopedRows,
     activityCount: scopedRows.filter((r) => r.status === 'Avaliado').length,
