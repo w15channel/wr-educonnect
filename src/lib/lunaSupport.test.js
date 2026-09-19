@@ -25,6 +25,7 @@ describe('propostas de suporte da Luna', () => {
   it.each(['technical', 'administrative', 'unanswered'])('aceita proposta completa para %s', reason => {
     expect(getLunaSupportOffer({ support_offer: { ...proposal, reason } }, categories))
       .toEqual({
+        reason,
         title: proposal.title,
         description: proposal.description,
         category: proposal.category,
@@ -48,6 +49,13 @@ describe('propostas de suporte da Luna', () => {
     }, categories);
     expect(offer.title).toHaveLength(80);
     expect(offer.category).toBe('Outro assunto');
+  });
+
+  it('preserva a proposta validada ao salvar e restaurar a conversa', () => {
+    const offer = getLunaSupportOffer({ support_offer: proposal }, categories);
+    const restored = JSON.parse(JSON.stringify({ role: 'assistant', support_offer: offer }));
+    expect(getLunaSupportOffer(restored, categories)).toEqual(offer);
+    expect(getLunaSupportDecision('Sim, abrir chamado', getLunaSupportOffer(restored, categories))).toBe('confirm');
   });
 });
 

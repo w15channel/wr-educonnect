@@ -8,6 +8,7 @@ export function getLunaSupportOffer(response, categories) {
   )) return null;
 
   return {
+    reason: offer.reason,
     title: offer.title.trim().slice(0, 80),
     description: offer.description.trim(),
     category: categories.includes(offer.category) ? offer.category : 'Outro assunto',

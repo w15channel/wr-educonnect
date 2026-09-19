@@ -45,17 +45,21 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   // ── Memória de 24h: restaura conversa anterior se existir ──
   const memoryKey = `luna_chat_${tuitionMode ? 'tuition_' : ''}${session?.email || session?.code || 'anon'}`;
   const savedMessages = loadLunaMemory(memoryKey);
+  const lastSavedMessage = savedMessages?.[savedMessages.length - 1];
+  const savedOffer = lastSavedMessage?.role === 'assistant'
+    ? getLunaSupportOffer(lastSavedMessage, SUPPORT_CATEGORIES)
+    : null;
   const [messages, setMessages] = useState(
     savedMessages && savedMessages.length > 0
-      ? [...savedMessages, { role: 'assistant', content: '🦉 Continuando nossa conversa de hoje. Como posso te ajudar agora?' }]
+      ? savedOffer ? savedMessages : [...savedMessages, { role: 'assistant', content: '🦉 Continuando nossa conversa de hoje. Como posso te ajudar agora?' }]
       : [{ role: 'assistant', content: greeting }]
   );
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [ticketCreating, setTicketCreating] = useState(false);
-  const [supportOffer, setSupportOffer] = useState(null);
-  const supportOfferRef = useRef(null);
+  const [supportOffer, setSupportOffer] = useState(savedOffer);
+  const supportOfferRef = useRef(savedOffer);
   const busyRef = useRef(false);
   const endRef = useRef(null);
   const activeRef = useRef(isActive);
@@ -83,6 +87,8 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
     voice.stop();
     const next = [...messages, { role: 'user', content: text || (confirmed ? 'Sim, abrir chamado.' : 'Não, continuar conversando.') }];
     setMessages(next);
+    // Consome a proposta antes da requisição para não repeti-la ao recarregar.
+    saveLunaMemory(memoryKey, next);
     setInput('');
     let reply = 'Tudo bem, não abri nenhum chamado. Vamos continuar conversando: como posso ajudar?';
     try {
@@ -126,6 +132,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
     setSupportOffer(null);
     const next = [...messages, { role: 'user', content: text }];
     setMessages(next);
+    saveLunaMemory(memoryKey, next);
     setInput('');
     setLoading(true);
     voice.stop();
@@ -181,6 +188,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       if (offer) {
         updatedMessages.push({
           role: 'assistant',
+          support_offer: offer,
           content: `${offer.explanation}\n\n📋 Assunto: ${offer.title}\n🏷️ Categoria: ${offer.category}\n${offer.description}\n\nVocê deseja abrir um chamado para a equipe atender essa demanda? Nada foi registrado ainda. Escolha "Sim, abrir chamado" ou "Não, continuar conversando".`,
         });
       }
