@@ -12,6 +12,7 @@ import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting, searchApostila, s
 import { SUPPORT_CATEGORIES } from '@/components/support/SupportTicketForm';
 import { TUITION_ACTIONS, TUITION_GREETING, TUITION_PROMPT } from '@/lib/lunaTuition';
 import { getLunaSupportOffer, getLunaSupportDecision, LUNA_SUPPORT_REASONS } from '@/lib/lunaSupport';
+import { getDMSessionId, LUNA_DM_EMAIL, LUNA_DM_NAME } from '@/lib/lunaDM';
 import { toast } from 'sonner';
 
 const LUNA_SUPPORT_PROMPT_SUFFIX = `
@@ -34,6 +35,28 @@ Somente quando identificar necessidade de intervenção humana E ainda não tive
 - category: uma destas categorias: ${SUPPORT_CATEGORIES.join(', ')}.
 REGRA CRÍTICA: inclua "support_offer" no MÁXIMO UMA VEZ por conversa. Se já incluiu antes (o contexto indicará "SUPORTE_JÁ_OFERECIDO"), NÃO inclua novamente — mesmo que o aluno insista no tema, continue tentando ajudar na conversa.
 Caso contrário, omita "support_offer". A proposta não cria chamado. O aplicativo mostrará o resumo e pedirá confirmação; oriente o aluno a escolher "Sim, abrir chamado" ou "Não, continuar conversando".`;
+
+/**
+ * Constrói o texto do histórico da conversa para envio ao admin.
+ * Inclui todas as mensagens trocadas entre o aluno e a Luna na sessão atual.
+ */
+function buildConversationTranscript(messages, studentName) {
+  const lines = [];
+  lines.push('════════════════════════════════════════');
+  lines.push('📋 HISTÓRICO DA CONVERSA COM A LUNA');
+  lines.push('════════════════════════════════════════');
+  lines.push('');
+  for (const msg of messages) {
+    const speaker = msg.role === 'user' ? (studentName || 'Aluno') : 'Luna';
+    const content = String(msg.content || '').trim();
+    if (!content) continue;
+    lines.push(`【${speaker}】: ${content}`);
+    lines.push('');
+  }
+  lines.push('════════════════════════════════════════');
+  lines.push('Fim do histórico.');
+  return lines.join('\n');
+}
 
 /**
  * Conversa com a Luna em balões — usada na página dela e na sobreposição
@@ -101,15 +124,36 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
     try {
       if (confirmed) {
         setTicketCreating(true);
-        await base44.entities.SupportTicket.create({
+        const studentEmail = session?.email || session?.code || '';
+        const studentName = session?.name || 'Aluno';
+        const course = session?.course || 'tcc';
+
+        // 1. Cria o chamado de suporte
+        const ticket = await base44.entities.SupportTicket.create({
           title: offer.title,
           description: offer.description,
           category: offer.category,
-          student_email: session?.email || session?.code || '',
-          student_name: session?.name || '',
-          course: session?.course || 'tcc',
+          student_email: studentEmail,
+          student_name: studentName,
+          course,
           status: 'open',
         });
+
+        // 2. Encaminha o chamado + histórico da conversa para o DM admin-aluno
+        //    O admin vê essa conversa em adm/chat?tab=particular
+        const dmSessionId = getDMSessionId(LUNA_DM_EMAIL, studentEmail);
+        const transcript = buildConversationTranscript(next, studentName);
+        const adminMessage = `🎫 CHAMADO DE SUPORTE ABERTO\n\n📋 Assunto: ${offer.title}\n🏷️ Categoria: ${offer.category}\n👤 Aluno: ${studentName} (${studentEmail})\n📝 Descrição: ${offer.description}\n\n${transcript}`;
+
+        await base44.entities.ChatMessage.create({
+          session_id: dmSessionId,
+          author_name: LUNA_DM_NAME,
+          author_email: LUNA_DM_EMAIL,
+          content: adminMessage,
+          is_hand_raised: false,
+          is_luna_distribution: true,
+        });
+
         reply = `✅ Chamado registrado com sucesso!\n\n📋 Assunto: ${offer.title}\n🏷️ Categoria: ${offer.category}\n\nSua solicitação foi encaminhada para a equipe de suporte. Você pode acompanhar o status na página "Suporte" no menu.`;
         toast.success('Chamado registrado com sucesso!');
       }
