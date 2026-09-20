@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 const norm = (value) => String(value || '').trim().toLowerCase();
 const dateOf = (record) => record.updated_date || record.submitted_at || record.created_date || record.date || new Date().toISOString();
+
 const PIN_MARKER_RE = /^📌\[PIN:(\d{4}-\d{2}-\d{2})\]\s*/;
 
 async function authenticatedUser(base44, payload) {
@@ -21,25 +22,25 @@ async function authenticatedUser(base44, payload) {
   return { email, name: access.profile_name || access.student_name, full_name: access.profile_name || access.student_name, course: access.course };
 }
 
-/**
- * Autenticação de admin para ações administrativas do mural.
- * Aceita: native admin role, AdminCredential, ou AccessCode com profile admin/management.
- */
 async function adminAuth(base44, payload) {
   const user = await base44.auth.me().catch(() => null);
-  if (user?.role === 'admin') {
-    return { email: norm(user.email), name: user.name || user.email, full_name: user.name || user.email, course: payload.course || 'tcc' };
-  }
-  const adminEmail = norm(payload.admin_email || user?.email);
-  if (adminEmail) {
+  let isAdmin = user?.role === 'admin';
+  if (!isAdmin && payload.admin_email) {
+    const normAdmin = String(payload.admin_email).trim().toLowerCase();
     const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
-    const isAdmin = credentials.some((c) => norm(c.email) === adminEmail);
-    if (isAdmin) return { email: adminEmail, name: adminEmail, full_name: adminEmail, course: payload.course || 'tcc' };
-    const codes = await base44.asServiceRole.entities.AccessCode.filter({ student_email: adminEmail }, '-created_date', 10);
-    const codeAdmin = codes.find((c) => c.is_active !== false && ['admin', 'management'].includes(c.profile_category));
-    if (codeAdmin) return { email: adminEmail, name: codeAdmin.profile_name || codeAdmin.student_name || adminEmail, full_name: codeAdmin.profile_name || codeAdmin.student_name || adminEmail, course: payload.course || codeAdmin.course || 'tcc' };
+    isAdmin = credentials.some((c) => String(c.email || '').trim().toLowerCase() === normAdmin);
+    if (!isAdmin) {
+      const codes = await base44.asServiceRole.entities.AccessCode.filter(
+        { student_email: normAdmin }, '-created_date', 10
+      );
+      isAdmin = codes.some((c) =>
+        c.is_active !== false &&
+        ['admin', 'management'].includes(c.profile_category)
+      );
+    }
   }
-  throw new Error('Acesso não autorizado.');
+  if (!isAdmin) throw new Error('Acesso não autorizado.');
+  return { email: String(payload.admin_email || user?.email || '').trim().toLowerCase(), name: 'Admin', full_name: 'Admin', course: payload.course || 'tcc' };
 }
 
 async function resolveRecipients(base44, payload, targetType) {
@@ -111,26 +112,44 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({}));
 
-    // Admin actions use separate auth (no access code required)
-    const ADMIN_ACTIONS = new Set(['adminDeleteMessage', 'adminPinMessage', 'adminUnpinMessage']);
-    let user;
-    if (ADMIN_ACTIONS.has(payload.action)) {
-      user = await adminAuth(base44, payload);
-    } else {
-      user = await authenticatedUser(base44, payload);
+    // ── Admin actions (no access code required) ──────────────────────────
+    if (payload.action === 'adminDeleteMessage') {
+      const admin = await adminAuth(base44, payload);
+      const messageId = String(payload.message_id || '').trim();
+      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
+      await base44.asServiceRole.entities.ChatMessage.delete(messageId).catch(() => {});
+      return Response.json({ success: true, deleted: messageId });
+    }
+    if (payload.action === 'adminPinMessage') {
+      const admin = await adminAuth(base44, payload);
+      const messageId = String(payload.message_id || '').trim();
+      const durationDays = Math.min(365, Math.max(1, Number(payload.duration_days) || 30));
+      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
+      const msg = await base44.asServiceRole.entities.ChatMessage.get(messageId).catch(() => null);
+      if (!msg) return Response.json({ error: 'Mensagem não encontrada.' }, { status: 404 });
+      const expiry = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      let content = String(msg.content || '').replace(PIN_MARKER_RE, '');
+      content = `📌[PIN:${expiry}] ${content}`;
+      await base44.asServiceRole.entities.ChatMessage.update(messageId, { content });
+      return Response.json({ success: true, pinned_until: expiry, message_id: messageId });
+    }
+    if (payload.action === 'adminUnpinMessage') {
+      const admin = await adminAuth(base44, payload);
+      const messageId = String(payload.message_id || '').trim();
+      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
+      const msg = await base44.asServiceRole.entities.ChatMessage.get(messageId).catch(() => null);
+      if (!msg) return Response.json({ error: 'Mensagem não encontrada.' }, { status: 404 });
+      const content = String(msg.content || '').replace(PIN_MARKER_RE, '');
+      await base44.asServiceRole.entities.ChatMessage.update(messageId, { content });
+      return Response.json({ success: true, unpinned: messageId });
     }
 
+    // ── Student actions (access code required) ────────────────────────────
+    const user = await authenticatedUser(base44, payload);
     if (payload.action === 'bootstrap') {
       const service = base44.asServiceRole.entities;
       const course = payload.course || user.course || 'tcc';
       if (user.course && course !== user.course) return Response.json({ error: 'Curso não autorizado.' }, { status: 403 });
-
-      // One-time cleanup: delete test messages created during policy update
-      await Promise.all([
-        service.ChatMessage.delete('6ab063a728f1f7bc98693119').catch(() => null),
-        service.ChatMessage.delete('6ab064bde799f6a6819fa784').catch(() => null),
-      ]);
-
       const accessCodes = (await service.AccessCode.list('-created_date', 2000)).filter((item) => item.course === course || (course === 'tcc' && !item.course));
       const messages = await service.ChatMessage.filter({ session_id: `class_chat_${course}` }, 'created_date', 300);
       const lessonProgresses = await service.LessonProgress.list('-created_date', 400);
@@ -236,36 +255,6 @@ export default async function(req) {
       }
       return Response.json({ success: true });
     }
-
-    // ── Admin actions: delete, pin, unpin ChatMessages ──────────────────────
-    if (payload.action === 'adminDeleteMessage') {
-      const messageId = String(payload.message_id || '').trim();
-      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
-      await base44.asServiceRole.entities.ChatMessage.delete(messageId).catch(() => null);
-      return Response.json({ success: true, deleted: true });
-    }
-    if (payload.action === 'adminPinMessage') {
-      const messageId = String(payload.message_id || '').trim();
-      const durationDays = Math.min(90, Math.max(1, Number(payload.duration_days) || 30));
-      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
-      const msg = await base44.asServiceRole.entities.ChatMessage.get(messageId).catch(() => null);
-      if (!msg) return Response.json({ error: 'Mensagem não encontrada.' }, { status: 404 });
-      const expiry = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const cleanContent = (msg.content || '').replace(PIN_MARKER_RE, '');
-      const newContent = `📌[PIN:${expiry}] ${cleanContent}`;
-      await base44.asServiceRole.entities.ChatMessage.update(messageId, { content: newContent });
-      return Response.json({ success: true, pinned_until: expiry });
-    }
-    if (payload.action === 'adminUnpinMessage') {
-      const messageId = String(payload.message_id || '').trim();
-      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
-      const msg = await base44.asServiceRole.entities.ChatMessage.get(messageId).catch(() => null);
-      if (!msg) return Response.json({ error: 'Mensagem não encontrada.' }, { status: 404 });
-      const cleanContent = (msg.content || '').replace(PIN_MARKER_RE, '');
-      await base44.asServiceRole.entities.ChatMessage.update(messageId, { content: cleanContent });
-      return Response.json({ success: true, unpinned: true });
-    }
-
     return Response.json({ error: 'Ação inválida.' }, { status: 400 });
   } catch (error) { return Response.json({ error: error.message || 'Erro interno.' }, { status: error.message === 'Acesso não autorizado.' ? 401 : 500 }); }
 }
