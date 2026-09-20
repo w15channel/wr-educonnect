@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, CheckCircle, AlertTriangle, ExternalLink, ArrowLeft, Scale, Award } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, ExternalLink, ArrowLeft, Scale, Award, DollarSign } from 'lucide-react';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const ABED_WHITE = 'https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png';
@@ -189,13 +189,41 @@ export default function PoliticaDeTrabalho() {
           </div>
         </div>
 
-        <div className="space-y-4 mb-10">
+        <div className="space-y-4 mb-8">
           <h2 className="text-lg font-black text-white flex items-center gap-2">
             <Shield size={16} className="text-[#5b5ef4]" /> 5. Propriedade Intelectual e Direitos
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
               Todo o material didático, metodologias exclusivas (como a <strong className="text-white">Teoria da Utilidade Comportamental</strong>) e conteúdos disponibilizados na plataforma são de <strong className="text-white">propriedade intelectual da {BRAND_LEGAL_NAME} e de seu mantenedor</strong>. O uso desse material é restrito ao aprendizado individual, sendo proibida a reprodução ou distribuição sem autorização prévia.
+            </p>
+          </div>
+        </div>
+
+        {/* 6. Contribuição Voluntária e Sustentabilidade do Projeto Social */}
+        <div className="space-y-4 mb-8">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <DollarSign size={16} className="text-[#1db89e]" /> 6. Contribuição Voluntária e Sustentabilidade do Projeto Social
+          </h2>
+          <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 space-y-5 text-sm text-white/60 leading-relaxed">
+            <p>
+              A {BRAND_LEGAL_NAME} opera como <strong className="text-white">projeto social de iniciativa do coordenador Prof. William Ribeiro</strong>, não sendo vinculada a grandes instituições ou grupos econômicos. O projeto destina-se a favorecer o ingresso de pessoas com baixa possibilidade financeira, em situação de impossibilidade de custear seus estudos, oferecendo bolsas integrais ou parciais.
+            </p>
+            <div className="h-px bg-white/5" />
+            <p>
+              <strong className="text-white">Da emissão dos débitos e dos custos reais:</strong> O valor integral dos débitos do aluno bolsista é emitido porque existe um custo operacional real para a instituição — servidores, plataforma, materiais, certificação e suporte. Esse valor precisa ser emitido por completo, pois alguém precisa pagar a conta final. Nos casos em que o aluno bolsista não puder pagar o valor integral, através da bolsa esse valor é descontado das mensalidades de alunos pagantes integrais do comercial. Nos casos em que houver indisponibilidade financeira por parte dos alunos do comercial, essas despesas são pagas através de fundo próprio da instituição, com a consequente tomada de risco assumida pelo coordenador.
+            </p>
+            <div className="h-px bg-white/5" />
+            <p>
+              <strong className="text-white">Da voluntariedade da contribuição:</strong> Não existe obrigatoriedade ao aluno bolsista em pagar algum valor prefixado, tampouco necessidade de contribuir. A contribuição é voluntária e parte do próprio aluno. Contudo, a mensalidade precisa ser emitida, pois existem custos reais envolvidos na manutenção da plataforma e do serviço educacional.
+            </p>
+            <div className="h-px bg-white/5" />
+            <p>
+              <strong className="text-white">Da realidade financeira da instituição:</strong> É importante que o aluno compreenda que <strong className="text-white">não existe curso gratuito — alguém está pagando por ele</strong>. Nos últimos anos, a operação da instituição é negativa em questão de captação de recursos. Até agosto de 2026, a instituição não captava nem recursos voluntários para sua auto-manutenção. Aproximadamente 80% dos investimentos realizados são aportados pelo coordenador Prof. William Ribeiro, que atua como voluntário em projeto social em sua cidade, percebendo remuneração não superior a dois salários mínimos, e ainda assim, com suas poucas economias, mantém o sonho de oferecer oportunidade a quem precisa.
+            </p>
+            <div className="h-px bg-white/5" />
+            <p>
+              <strong className="text-white">Das responsabilidades acadêmicas:</strong> O aluno bolsista deve estar ciente de suas responsabilidades acadêmicas, participando ativamente do curso. O projeto social visa favorecer quem genuinamente necessita, e a má-fé, o desleixo intencional ou a utilização da bolsa sem o devido comprometimento configuram violação dos princípios éticos que sustentam esta instituição.
             </p>
           </div>
         </div>
@@ -246,7 +274,7 @@ export default function PoliticaDeTrabalho() {
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
             <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
+            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-004-00</span>
           </div>
         </div>
       </div>
