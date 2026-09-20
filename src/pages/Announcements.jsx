@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format } from 'date-fns';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { ptBR } from 'date-fns/locale';
+import { linkifyText } from '@/lib/utils';
 
 const EMPTY_FORM = { title: '', content: '', type: 'info' };
 
@@ -213,7 +214,7 @@ export default function Announcements() {
                           {format(new Date(a.created_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         </span>
                       </div>
-                      <p className="text-sm text-foreground/80 leading-relaxed">{a.content}</p>
+                      <p className="text-sm text-foreground/80 leading-relaxed" dangerouslySetInnerHTML={{ __html: linkifyText(a.content) }} />
                       {a.certificate_monitor_id && (
                         <Link
                           to={`${prefix}/monitor-certificate/${a.certificate_monitor_id}`}
