@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { Pencil, Trash2, Share2, Pin, PinOff } from 'lucide-react';
+import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 
 const PIN_DURATIONS = [
@@ -11,9 +14,47 @@ const PIN_DURATIONS = [
   { label: '90 dias', value: 90 },
 ];
 
-export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time, onEdit, onDelete, onShare, onShareExternal, sharing, shared, reactions, isPinned, pinnedUntil, onPin, onUnpin }) {
+export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time, onEdit, onDelete, onShare, onShareExternal, sharing, shared, reactions, isPinned, pinnedUntil, adminEmail, chatSessionId }) {
   const [showPinMenu, setShowPinMenu] = useState(false);
+  const queryClient = useQueryClient();
   const content = (msg.content || '').replace('[MSN_ATTENTION]', '').replace('[MSN_ACTION]', '').trim();
+
+  const adminPinMutation = useMutation({
+    mutationFn: ({ messageId, durationDays }) => base44.functions.invoke('manageOvercomingWall', {
+      action: 'adminPinMessage', admin_email: adminEmail, message_id: messageId, duration_days: durationDays,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
+      toast.success('Publicação fixada no topo do mural.');
+      setShowPinMenu(false);
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível fixar.'),
+  });
+
+  const adminUnpinMutation = useMutation({
+    mutationFn: (messageId) => base44.functions.invoke('manageOvercomingWall', {
+      action: 'adminUnpinMessage', admin_email: adminEmail, message_id: messageId,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
+      toast.success('Publicação desafixada.');
+      setShowPinMenu(false);
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível desafixar.'),
+  });
+
+  const adminDeleteMutation = useMutation({
+    mutationFn: (messageId) => base44.functions.invoke('manageOvercomingWall', {
+      action: 'adminDeleteMessage', admin_email: adminEmail, message_id: messageId,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
+      toast.success('Mensagem excluída do mural.');
+      setShowPinMenu(false);
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível excluir.'),
+  });
+
   return <article className={`min-w-0 rounded-xl border p-3 sm:p-4 ${isPinned ? 'border-primary/40 bg-primary/5' : isMe ? 'border-rose-200 bg-rose-50/60 dark:border-white/20 dark:bg-black' : 'border-border/70 bg-background/85 dark:border-white/20 dark:bg-black'}`}>
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
       <ClickableStudent email={email} className="min-w-0 break-words text-sm font-semibold text-foreground">{name}</ClickableStudent>
@@ -29,20 +70,21 @@ export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time,
                   <>
                     <p className="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Fixar no topo</p>
                     {PIN_DURATIONS.map(d => (
-                      <button key={d.value} type="button" onClick={() => { onPin?.(msg.id, d.value); setShowPinMenu(false); }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground hover:bg-secondary transition-colors"><Pin size={12}/> {d.label}</button>
+                      <button key={d.value} type="button" onClick={() => adminPinMutation.mutate({ messageId: msg.id, durationDays: d.value })} disabled={adminPinMutation.isPending} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-50"><Pin size={12}/> {d.label}</button>
                     ))}
                   </>
                 ) : (
-                  <button type="button" onClick={() => { onUnpin?.(msg.id); setShowPinMenu(false); }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground hover:bg-secondary transition-colors"><PinOff size={12}/> Desafixar</button>
+                  <button type="button" onClick={() => adminUnpinMutation.mutate(msg.id)} disabled={adminUnpinMutation.isPending} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-50"><PinOff size={12}/> Desafixar</button>
                 )}
                 <div className="my-1 border-t border-border"/>
-                <button type="button" onClick={() => { if (confirm('Excluir esta publicação do mural?')) { onDelete(msg); setShowPinMenu(false); } }} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors"><Trash2 size={12}/> Excluir</button>
+                <button type="button" onClick={() => { if (confirm('Excluir esta publicação do mural?')) adminDeleteMutation.mutate(msg.id); }} disabled={adminDeleteMutation.isPending} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"><Trash2 size={12}/> Excluir</button>
               </div>
             )}
           </div>
         )}
         <button type="button" onClick={() => onShareExternal(msg)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground" title="Compartilhar em aplicativos externos" aria-label="Compartilhar em aplicativos externos"><Share2 size={15}/></button>
         {isMe && <button type="button" onClick={() => onEdit(msg)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground" title="Editar minha mensagem" aria-label="Editar minha mensagem"><Pencil size={15}/></button>}
+        {isAdmin && !showPinMenu && <button type="button" onClick={() => onDelete(msg)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Excluir permanentemente" aria-label="Excluir permanentemente"><Trash2 size={15}/></button>}
       </div>
     </div>
     <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground dark:text-white">{content}</p>
