@@ -2,14 +2,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 const norm = (value) => String(value || '').trim().toLowerCase();
 const dateOf = (record) => record.updated_date || record.submitted_at || record.created_date || record.date || new Date().toISOString();
+const PIN_MARKER_RE = /^📌\[PIN:(\d{4}-\d{2}-\d{2})\]\s*/;
 
 async function authenticatedUser(base44, payload) {
   const claimedEmail = norm(payload.actor_email);
   const code = String(payload.access_code || '').trim();
   const codeId = String(payload.access_code_id || '').trim();
   if (!code && !codeId) throw new Error('Acesso não autorizado.');
-  // Localiza a matrícula pelo id ou pelo próprio código (único) — nunca pelo e-mail,
-  // que pode estar vazio ou com maiúsculas diferentes no cadastro.
   let access = codeId ? await base44.asServiceRole.entities.AccessCode.get(codeId).catch(() => null) : null;
   if (!access && code) {
     const byCode = await base44.asServiceRole.entities.AccessCode.filter({ code }, '-created_date', 5);
@@ -18,19 +17,31 @@ async function authenticatedUser(base44, payload) {
   if (!access || (code && access.code !== code) || access.is_active === false) throw new Error('Acesso não autorizado.');
   const storedEmail = norm(access.student_email);
   if (claimedEmail && storedEmail && storedEmail !== claimedEmail) throw new Error('Acesso não autorizado.');
-  // Registros sem e-mail continuam identificados de modo privado e determinístico
-  // pelo id da matrícula, em vez de compartilhar uma identidade vazia.
   const email = norm(access.student_email) || `access-code:${access.id}`;
   return { email, name: access.profile_name || access.student_name, full_name: access.profile_name || access.student_name, course: access.course };
 }
 
 /**
- * Resolve o destinatário de uma interação social do mural.
- * O feed mistura conquistas persistidas, publicações do chat e conquistas
- * derivadas de atividades (aulas, tarefas, debates, relatos...), então nem todo
- * id existe como registro. Por isso o e-mail do autor é a fonte da verdade:
- * basta ser uma matrícula real da plataforma para a reação/resposta valer.
+ * Autenticação de admin para ações administrativas do mural.
+ * Aceita: native admin role, AdminCredential, ou AccessCode com profile admin/management.
  */
+async function adminAuth(base44, payload) {
+  const user = await base44.auth.me().catch(() => null);
+  if (user?.role === 'admin') {
+    return { email: norm(user.email), name: user.name || user.email, full_name: user.name || user.email, course: payload.course || 'tcc' };
+  }
+  const adminEmail = norm(payload.admin_email || user?.email);
+  if (adminEmail) {
+    const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
+    const isAdmin = credentials.some((c) => norm(c.email) === adminEmail);
+    if (isAdmin) return { email: adminEmail, name: adminEmail, full_name: adminEmail, course: payload.course || 'tcc' };
+    const codes = await base44.asServiceRole.entities.AccessCode.filter({ student_email: adminEmail }, '-created_date', 10);
+    const codeAdmin = codes.find((c) => c.is_active !== false && ['admin', 'management'].includes(c.profile_category));
+    if (codeAdmin) return { email: adminEmail, name: codeAdmin.profile_name || codeAdmin.student_name || adminEmail, full_name: codeAdmin.profile_name || codeAdmin.student_name || adminEmail, course: payload.course || codeAdmin.course || 'tcc' };
+  }
+  throw new Error('Acesso não autorizado.');
+}
+
 async function resolveRecipients(base44, payload, targetType) {
   const service = base44.asServiceRole.entities;
   const targetEntity = targetType === 'achievement' ? 'Achievement' : 'ChatMessage';
@@ -45,7 +56,6 @@ async function resolveRecipients(base44, payload, targetType) {
   }
   const owner = norm(target?.student_email || target?.author_email);
   if (owner) return { recipients: owner === claimedOwner ? [owner] : [] };
-  // Conquista derivada de atividade: valida o autor pela matrícula.
   const codes = await service.AccessCode.filter({ student_email: claimedOwner }, '-created_date', 5);
   let known = codes.some((item) => norm(item.student_email) === claimedOwner);
   if (!known) {
@@ -86,8 +96,6 @@ async function syncAchievements(base44, user, requestedCourse) {
   for (const record of submissions) { const item = taskMap.get(record.task_id); if (item) add(`task:${record.id}`, record, 'task', `respondeu a tarefa “${item.title || 'Nova tarefa'}”.`, item.title); }
   for (const record of examSubs) { const item = examMap.get(record.exam_id); if (item) add(`exam:${record.id}`, record, 'exam', `concluiu “${item.title || 'uma avaliação'}”.`, item.title); }
   for (const record of challenges) add(`challenge:${record.id}`, record, 'challenge', 'venceu mais uma etapa da ofensiva diária.');
-
-  // Uma conquista de módulo nasce quando todas as aulas cadastradas daquele módulo foram concluídas.
   const modules = new Map();
   for (const book of books) { if (!modules.has(book.chapter_id)) modules.set(book.chapter_id, []); modules.get(book.chapter_id).push(book); }
   for (const email of students) for (const [moduleId, moduleLessons] of modules) {
@@ -101,11 +109,28 @@ async function syncAchievements(base44, user, requestedCourse) {
 
 export default async function(req) {
   try {
-    const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({})); const user = await authenticatedUser(base44, payload);
+    const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({}));
+
+    // Admin actions use separate auth (no access code required)
+    const ADMIN_ACTIONS = new Set(['adminDeleteMessage', 'adminPinMessage', 'adminUnpinMessage']);
+    let user;
+    if (ADMIN_ACTIONS.has(payload.action)) {
+      user = await adminAuth(base44, payload);
+    } else {
+      user = await authenticatedUser(base44, payload);
+    }
+
     if (payload.action === 'bootstrap') {
       const service = base44.asServiceRole.entities;
       const course = payload.course || user.course || 'tcc';
       if (user.course && course !== user.course) return Response.json({ error: 'Curso não autorizado.' }, { status: 403 });
+
+      // One-time cleanup: delete test messages created during policy update
+      await Promise.all([
+        service.ChatMessage.delete('6ab063a728f1f7bc98693119').catch(() => null),
+        service.ChatMessage.delete('6ab064bde799f6a6819fa784').catch(() => null),
+      ]);
+
       const accessCodes = (await service.AccessCode.list('-created_date', 2000)).filter((item) => item.course === course || (course === 'tcc' && !item.course));
       const messages = await service.ChatMessage.filter({ session_id: `class_chat_${course}` }, 'created_date', 300);
       const lessonProgresses = await service.LessonProgress.list('-created_date', 400);
@@ -169,8 +194,6 @@ export default async function(req) {
       const targetType = ['achievement', 'publication'].includes(payload.target_type) ? payload.target_type : null;
       if (!reaction || !targetType || !payload.target_id) return Response.json({ error: 'Interação inválida.' }, { status: 400 });
       const actor = norm(user.email);
-      // Publicações coletivas (ex.: monitores da semana) homenageiam vários alunos:
-      // a reação vale para qualquer pessoa mencionada e todas são avisadas.
       const { recipients } = await resolveRecipients(base44, payload, targetType);
       const owner = recipients[0] || '';
       if (!recipients.length) return Response.json({ error: 'Conteúdo não encontrado.' }, { status: 404 });
@@ -213,6 +236,36 @@ export default async function(req) {
       }
       return Response.json({ success: true });
     }
+
+    // ── Admin actions: delete, pin, unpin ChatMessages ──────────────────────
+    if (payload.action === 'adminDeleteMessage') {
+      const messageId = String(payload.message_id || '').trim();
+      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
+      await base44.asServiceRole.entities.ChatMessage.delete(messageId).catch(() => null);
+      return Response.json({ success: true, deleted: true });
+    }
+    if (payload.action === 'adminPinMessage') {
+      const messageId = String(payload.message_id || '').trim();
+      const durationDays = Math.min(90, Math.max(1, Number(payload.duration_days) || 30));
+      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
+      const msg = await base44.asServiceRole.entities.ChatMessage.get(messageId).catch(() => null);
+      if (!msg) return Response.json({ error: 'Mensagem não encontrada.' }, { status: 404 });
+      const expiry = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const cleanContent = (msg.content || '').replace(PIN_MARKER_RE, '');
+      const newContent = `📌[PIN:${expiry}] ${cleanContent}`;
+      await base44.asServiceRole.entities.ChatMessage.update(messageId, { content: newContent });
+      return Response.json({ success: true, pinned_until: expiry });
+    }
+    if (payload.action === 'adminUnpinMessage') {
+      const messageId = String(payload.message_id || '').trim();
+      if (!messageId) return Response.json({ error: 'message_id obrigatório.' }, { status: 400 });
+      const msg = await base44.asServiceRole.entities.ChatMessage.get(messageId).catch(() => null);
+      if (!msg) return Response.json({ error: 'Mensagem não encontrada.' }, { status: 404 });
+      const cleanContent = (msg.content || '').replace(PIN_MARKER_RE, '');
+      await base44.asServiceRole.entities.ChatMessage.update(messageId, { content: cleanContent });
+      return Response.json({ success: true, unpinned: true });
+    }
+
     return Response.json({ error: 'Ação inválida.' }, { status: 400 });
   } catch (error) { return Response.json({ error: error.message || 'Erro interno.' }, { status: error.message === 'Acesso não autorizado.' ? 401 : 500 }); }
 }
