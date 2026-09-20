@@ -5,6 +5,7 @@ import { Bell, AlertCircle, Info, ChevronDown, ChevronUp, ExternalLink } from 'l
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { isAnnouncementVisible } from '@/lib/announcementVisibility';
+import { linkifyText } from '@/lib/utils';
 
 const READ_KEY = 'wреdu_read_announcements';
 
@@ -106,7 +107,10 @@ export default function AnnouncementsBell({ limit = 3, viewerEmail = '', isTeach
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0">{format(new Date(a.created_date), 'dd/MM')}</span>
                 </div>
-                <p className={`text-xs mt-0.5 line-clamp-2 ${isUnread ? 'text-foreground/80' : 'text-muted-foreground'}`}>{a.content}</p>
+                <div
+                  className={`text-xs mt-0.5 line-clamp-2 ${isUnread ? 'text-foreground/80' : 'text-muted-foreground'}`}
+                  dangerouslySetInnerHTML={{ __html: linkifyText(a.content) }}
+                />
               </div>
             </div>
           );
