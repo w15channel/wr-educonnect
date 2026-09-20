@@ -242,13 +242,23 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
   }, [institutionalRecords, session?.email, accessCodes, profileMap]);
 
   // Feed único (mais recente primeiro) — a mesma lista nas duas telas.
+  // Mensagens com 📌 no início do conteúdo ficam fixadas no topo por 30 dias.
+  const pinCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const isPinnedMsg = (msg) => {
+    if (!msg?.content?.startsWith('📌')) return false;
+    return new Date(msg.created_date || msg.updated_date || 0).getTime() >= pinCutoff;
+  };
   const feed = useMemo(() => [
     ...notifications.map((item) => ({ ...item, id: `notification-${item.id}`, feedType: 'notification', occurredAt: item.created_date })),
     ...personalPosts.map((item) => ({ ...item, id: `personal-${item.id}`, feedType: 'personal', occurredAt: item.published_at || item.created_date })),
     ...institutionalPosts,
     ...achievementPosts,
-    ...messages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({ ...message, feedType: 'encouragement', occurredAt: message.created_date || message.updated_date })),
-  ].sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0)), [notifications, personalPosts, institutionalPosts, achievementPosts, messages]);
+    ...messages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({ ...message, feedType: 'encouragement', occurredAt: message.created_date || message.updated_date, isPinned: isPinnedMsg(message) })),
+  ].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0);
+  }), [notifications, personalPosts, institutionalPosts, achievementPosts, messages, pinCutoff]);
 
   const sharedPublications = institutionalRecords?.shared || [];
 
