@@ -1,10 +1,13 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { isLegacyMsnAction, isSinceOvercomingWallCutoff } from '@/lib/overcomingWall';
 import { personalizeWallNotice } from '@/lib/wallPersonalization';
 import { buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
+
+const PIN_MARKER_RE = /^📌\[PIN:(\d{4}-\d{2}-\d{2})\]\s*/;
+const HIDDEN_MESSAGE_IDS = new Set(['6ab063a728f1f7bc98693119', '6ab064bde799f6a6819fa784']);
 
 /**
  * Base única do Mural de Superação.
@@ -18,6 +21,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
   const chatSessionId = `class_chat_${activeCourse}`;
   const on = enabled && !!activeCourse;
   const customAccess = !!(session?.code || session?.codeId);
+  const isAdmin = session?.role === 'admin';
 
   const { data: secureWallData } = useQuery({
     queryKey: ['overcoming-wall-bootstrap', activeCourse, session?.email],
@@ -40,7 +44,6 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     staleTime: 5 * 60000,
   });
 
-  // Busca perfis de StudentProfile para resolver nicknames
   const { data: studentProfiles = [] } = useQuery({
     queryKey: ['student-profiles-wall', activeCourse],
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 5000),
@@ -146,7 +149,6 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     enabled: on && !customAccess,
   });
 
-  // Tempo real: cada publicação nova no chat da turma entra no mural na hora.
   useEffect(() => {
     if (!on || session?.code || session?.codeId) return;
     return base44.entities.ChatMessage.subscribe(() => {
@@ -159,7 +161,6 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     [accessCodes, activeCourse]
   );
 
-  // Resolve o nome de exibição social: nickname → profile_name → full_name → student_name
   const getStudentName = (email) => {
     const name = resolveDisplayNameFromMaps(email, profileMap, accessCodes);
     return name !== email ? name : 'Um aluno da turma';
@@ -241,26 +242,79 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     ].filter((item, index, items) => item.content && items.findIndex((c) => c.id === item.id) === index);
   }, [institutionalRecords, session?.email, accessCodes, profileMap]);
 
-  // Feed único (mais recente primeiro) — a mesma lista nas duas telas.
-  // Mensagens com 📌 no início do conteúdo ficam fixadas no topo por 30 dias.
-  const pinCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  // ── Pin logic: messages com 📌[PIN:YYYY-MM-DD] no início ficam no topo ──
   const isPinnedMsg = (msg) => {
-    if (!msg?.content?.startsWith('📌')) return false;
-    return new Date(msg.created_date || msg.updated_date || 0).getTime() >= pinCutoff;
+    const match = String(msg?.content || '').match(PIN_MARKER_RE);
+    if (!match) return false;
+    const expiry = new Date(match[1] + 'T23:59:59Z').getTime();
+    return Date.now() <= expiry;
   };
+  const getPinnedUntil = (msg) => {
+    const match = String(msg?.content || '').match(PIN_MARKER_RE);
+    return match ? match[1] : null;
+  };
+  const stripPinMarker = (content) => String(content || '').replace(PIN_MARKER_RE, '');
+
+  // Feed único (mais recente primeiro) — a mesma lista nas duas telas.
   const feed = useMemo(() => [
     ...notifications.map((item) => ({ ...item, id: `notification-${item.id}`, feedType: 'notification', occurredAt: item.created_date })),
     ...personalPosts.map((item) => ({ ...item, id: `personal-${item.id}`, feedType: 'personal', occurredAt: item.published_at || item.created_date })),
     ...institutionalPosts,
     ...achievementPosts,
-    ...messages.filter((message) => !isLegacyMsnAction(message)).map((message) => ({ ...message, feedType: 'encouragement', occurredAt: message.created_date || message.updated_date, isPinned: isPinnedMsg(message) })),
+    ...messages
+      .filter((message) => !isLegacyMsnAction(message) && !HIDDEN_MESSAGE_IDS.has(message.id))
+      .map((message) => {
+        const pinned = isPinnedMsg(message);
+        return {
+          ...message,
+          content: pinned ? stripPinMarker(message.content) : message.content,
+          feedType: 'encouragement',
+          occurredAt: message.created_date || message.updated_date,
+          isPinned: pinned,
+          pinnedUntil: pinned ? getPinnedUntil(message) : null,
+        };
+      }),
   ].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
     return new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0);
-  }), [notifications, personalPosts, institutionalPosts, achievementPosts, messages, pinCutoff]);
+  }), [notifications, personalPosts, institutionalPosts, achievementPosts, messages]);
 
   const sharedPublications = institutionalRecords?.shared || [];
+
+  // ── Admin mutations: delete / pin / unpin ─────────────────────────────
+  const adminDeleteMessageMutation = useMutation({
+    mutationFn: (messageId) => base44.functions.invoke('manageOvercomingWall', {
+      action: 'adminDeleteMessage', admin_email: session?.email, message_id: messageId,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
+      toast.success('Mensagem excluída do mural.');
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível excluir.'),
+  });
+
+  const adminPinMessageMutation = useMutation({
+    mutationFn: ({ messageId, durationDays }) => base44.functions.invoke('manageOvercomingWall', {
+      action: 'adminPinMessage', admin_email: session?.email, message_id: messageId, duration_days: durationDays,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
+      toast.success('Publicação fixada no topo do mural.');
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível fixar.'),
+  });
+
+  const adminUnpinMessageMutation = useMutation({
+    mutationFn: (messageId) => base44.functions.invoke('manageOvercomingWall', {
+      action: 'adminUnpinMessage', admin_email: session?.email, message_id: messageId,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
+      toast.success('Publicação desafixada.');
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível desafixar.'),
+  });
 
   const reactMutation = useMutation({
     mutationFn: (payload) => base44.functions.invoke('manageOvercomingWall', { action: 'react', actor_email: session?.email, access_code: session?.code, access_code_id: session?.codeId, ...payload }),
@@ -319,14 +373,13 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     refreshMessages,
     getStudentName,
     profileMap,
+    isAdmin,
+    adminDeleteMessageMutation,
+    adminPinMessageMutation,
+    adminUnpinMessageMutation,
   };
 }
 
-/**
- * Hook leve para resolver nomes sociais (nickname → profile_name → full_name → student_name).
- * Para páginas que NÃO usam o mural completo (ClassChat, SalaDebates, Monitores, etc.).
- * Páginas que já usam useOvercomingWall devem usar wall.getStudentName diretamente.
- */
 export function useDisplayNameResolver(course) {
   const { data: profiles = [] } = useQuery({
     queryKey: ['display-name-profiles', course || 'all'],
