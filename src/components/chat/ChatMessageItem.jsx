@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useOutletContext } from 'react-router-dom';
 import { Pencil, Trash2, Share2, Pin, PinOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -14,20 +15,24 @@ const PIN_DURATIONS = [
   { label: '90 dias', value: 90 },
 ];
 
-export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time, onEdit, onDelete, onShare, onShareExternal, sharing, shared, reactions, isPinned, pinnedUntil, adminEmail, chatSessionId }) {
+export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time, onEdit, onDelete, onShare, onShareExternal, sharing, shared, reactions, isPinned, pinnedUntil }) {
   const [showPinMenu, setShowPinMenu] = useState(false);
   const queryClient = useQueryClient();
+  const { user: session } = useOutletContext();
+  const adminEmail = session?.email || '';
+  const sessionId = msg.session_id || '';
   const content = (msg.content || '').replace('[MSN_ATTENTION]', '').replace('[MSN_ACTION]', '').trim();
+
+  const invalidateWall = () => {
+    if (sessionId) queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', sessionId] });
+    queryClient.invalidateQueries({ queryKey: ['overcoming-wall-bootstrap'] });
+  };
 
   const adminPinMutation = useMutation({
     mutationFn: ({ messageId, durationDays }) => base44.functions.invoke('manageOvercomingWall', {
       action: 'adminPinMessage', admin_email: adminEmail, message_id: messageId, duration_days: durationDays,
     }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
-      toast.success('Publicação fixada no topo do mural.');
-      setShowPinMenu(false);
-    },
+    onSuccess: () => { invalidateWall(); toast.success('Publicação fixada no topo do mural.'); setShowPinMenu(false); },
     onError: (error) => toast.error(error?.message || 'Não foi possível fixar.'),
   });
 
@@ -35,11 +40,7 @@ export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time,
     mutationFn: (messageId) => base44.functions.invoke('manageOvercomingWall', {
       action: 'adminUnpinMessage', admin_email: adminEmail, message_id: messageId,
     }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
-      toast.success('Publicação desafixada.');
-      setShowPinMenu(false);
-    },
+    onSuccess: () => { invalidateWall(); toast.success('Publicação desafixada.'); setShowPinMenu(false); },
     onError: (error) => toast.error(error?.message || 'Não foi possível desafixar.'),
   });
 
@@ -47,11 +48,7 @@ export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time,
     mutationFn: (messageId) => base44.functions.invoke('manageOvercomingWall', {
       action: 'adminDeleteMessage', admin_email: adminEmail, message_id: messageId,
     }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-messages', chatSessionId] });
-      toast.success('Mensagem excluída do mural.');
-      setShowPinMenu(false);
-    },
+    onSuccess: () => { invalidateWall(); toast.success('Mensagem excluída do mural.'); setShowPinMenu(false); },
     onError: (error) => toast.error(error?.message || 'Não foi possível excluir.'),
   });
 
@@ -84,7 +81,6 @@ export default function ChatMessageItem({ msg, isMe, isAdmin, name, email, time,
         )}
         <button type="button" onClick={() => onShareExternal(msg)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground" title="Compartilhar em aplicativos externos" aria-label="Compartilhar em aplicativos externos"><Share2 size={15}/></button>
         {isMe && <button type="button" onClick={() => onEdit(msg)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground" title="Editar minha mensagem" aria-label="Editar minha mensagem"><Pencil size={15}/></button>}
-        {isAdmin && !showPinMenu && <button type="button" onClick={() => onDelete(msg)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Excluir permanentemente" aria-label="Excluir permanentemente"><Trash2 size={15}/></button>}
       </div>
     </div>
     <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground dark:text-white">{content}</p>
