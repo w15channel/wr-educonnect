@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, CheckCircle, ArrowLeft, Lock, Eye, Database, Share2, Cookie, AlertTriangle, FileText, Server, Users, RefreshCw } from 'lucide-react';
+import { Shield, CheckCircle, ArrowLeft, Lock, Eye, Database, Share2, Cookie, AlertTriangle, FileText, Server, Users, RefreshCw, DollarSign } from 'lucide-react';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const ARTICLES = [
@@ -80,6 +80,13 @@ const ARTICLES = [
     title: 'Atualização desta Política',
     text: 'Esta Política de Privacidade é dinâmica e poderá ser atualizada para garantir que o direito à privacidade e o acesso à informação estejam sempre adequados diante de novas tecnologias, mudanças legislativas ou aprimoramentos nos nossos serviços. O usuário será notificado sobre alterações relevantes, e o uso continuado da plataforma após a publicação das atualizações implicará na aceitação das novas condições.',
   },
+  {
+    num: '12',
+    icon: DollarSign,
+    color: '#1db89e',
+    title: 'Transparência sobre a Natureza Financeira do Projeto Social',
+    text: `A ${BRAND_LEGAL_NAME} esclarece que os dados financeiros processados para emissão de mensalidades e recibos de contribuição voluntária refletem custos operacionais reais da instituição. O valor integral dos débitos do aluno bolsista é emitido porque existe um custo operacional real, sendo necessário que o valor seja emitido por completo. Não existe obrigatoriedade ao aluno bolsista em pagar algum valor prefixado — a contribuição é voluntária e parte do próprio aluno. Contudo, a mensalidade precisa ser emitida, pois existem custos reais. Nos casos de impossibilidade do aluno bolsista, o valor é abatido das mensalidades de alunos pagantes do comercial; nos casos de indisponibilidade dos alunos do comercial, as despesas são pagas com fundo próprio da instituição, assumidas pelo coordenador. A instituição não é vinculada a grandes instituições, e nos últimos anos sua operação é negativa em captação de recursos, sendo que até agosto de 2026 não captava nem recursos voluntários para sua auto-manutenção. Aproximadamente 80% dos investimentos são aportados pelo coordenador Prof. William Ribeiro, voluntário em projeto social, percebendo remuneração não superior a dois salários mínimos. Não existe curso gratuito — alguém está pagando por ele. O tratamento dos dados financeiros do aluno bolsista tem como base legal o legítimo interesse da instituição em manter transparência sobre os custos reais envolvidos e a execução de procedimentos preliminares relacionados à bolsa concedida.`,
+  },
 ];
 
 export default function PoliticaDePrivacidade() {
@@ -110,7 +117,7 @@ export default function PoliticaDePrivacidade() {
           <p className="text-white/50 max-w-xl mx-auto text-sm leading-relaxed">
             Seus dados estão protegidos. Conheça como coletamos, usamos e guardamos suas informações com responsabilidade e transparência.
           </p>
-          <p className="text-white/30 text-xs mt-3">Última atualização: Maio de 2026</p>
+          <p className="text-white/30 text-xs mt-3">Última atualização: Setembro de 2026</p>
         </div>
 
         {/* Destaque LGPD */}
@@ -195,7 +202,7 @@ export default function PoliticaDePrivacidade() {
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
             <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
+            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-004-00</span>
           </div>
         </div>
       </div>
