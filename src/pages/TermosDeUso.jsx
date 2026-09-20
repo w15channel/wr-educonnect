@@ -73,6 +73,13 @@ const TERMS = [
     title: 'Atualizações dos Termos',
     text: 'Estes Termos de Uso são dinâmicos e poderão ser atualizados periodicamente para refletir melhorias no ecossistema de aprendizagem, ajustes nas normas vigentes de ensino livre ou exigências legais. O usuário será notificado sobre alterações relevantes e o uso continuado da plataforma após qualquer atualização implicará na aceitação automática das novas condições.',
   },
+  {
+    num: '11',
+    icon: DollarSign,
+    color: '#1db89e',
+    title: 'Contribuição Voluntária e Sustentabilidade do Projeto Social',
+    text: `A ${BRAND_LEGAL_NAME} opera como projeto social de iniciativa do coordenador Prof. William Ribeiro, não sendo vinculada a grandes instituições ou grupos econômicos. O projeto destina-se a favorecer o ingresso de pessoas com baixa possibilidade financeira em situação de impossibilidade de custear seus estudos, mediante concessão de bolsas integrais ou parciais. Esclarece-se o seguinte: (i) O valor integral dos débitos do aluno bolsista é emitido porque existe um custo operacional real para a instituição — servidores, plataforma, materiais, certificação e suporte —, sendo necessário que o valor seja emitido por completo, pois alguém precisa pagar a conta final; (ii) Nos casos em que o aluno bolsista não puder pagar o valor integral, através da bolsa esse valor é descontado das mensalidades de alunos pagantes integrais do comercial; (iii) Nos casos em que houver indisponibilidade financeira por parte dos alunos do comercial, essas despesas são pagas através de fundo próprio da instituição, com a consequente tomada de risco assumida pelo coordenador; (iv) Não existe obrigatoriedade ao aluno bolsista em pagar algum valor prefixado, tampouco necessidade de contribuir — a contribuição é voluntária e parte do próprio aluno; (v) Contudo, a mensalidade precisa ser emitida, pois existem custos reais envolvidos na manutenção da plataforma e do serviço educacional. O aluno reconhece e declara estar ciente de que: não existe curso gratuito — alguém está pagando por ele; nos últimos anos a operação da instituição é negativa em questão de captação de recursos; até agosto de 2026 a instituição não captava nem recursos voluntários para sua auto-manutenção; aproximadamente 80% dos investimentos realizados são aportados pelo coordenador Prof. William Ribeiro, que atua como voluntário em projeto social em sua cidade, percebendo remuneração não superior a dois salários mínimos; a manutenção deste projeto depende do comprometimento acadêmico e da boa-fé de todos os envolvidos. O aluno bolsista que não participa adequadamente do curso, não cumpre suas responsabilidades acadêmicas ou demonstra má-fé na relação educacional poderá ter sua bolsa revisada, nos termos do Art. 9 destes Termos.`,
+  },
 ];
 
 export default function TermosDeUso() {
@@ -103,7 +110,7 @@ export default function TermosDeUso() {
           <p className="text-white/50 max-w-xl mx-auto text-sm leading-relaxed">
             Ao utilizar a plataforma {BRAND_LEGAL_NAME}, o usuário declara ter lido, compreendido e concordado integralmente com os termos a seguir.
           </p>
-          <p className="text-white/30 text-xs mt-3">Última atualização: Maio de 2026</p>
+          <p className="text-white/30 text-xs mt-3">Última atualização: Setembro de 2026</p>
         </div>
 
         {/* Termos */}
@@ -174,7 +181,7 @@ export default function TermosDeUso() {
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
             <div className="w-1.5 h-1.5 rounded-full bg-[#1db89e]" />
-            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-003-00</span>
+            <span className="text-white/30 text-[10px] font-mono font-semibold tracking-widest">V-004-00</span>
           </div>
         </div>
       </div>
