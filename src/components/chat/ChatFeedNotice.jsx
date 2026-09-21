@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Pin, PinOff, Trash2, Share2, Megaphone, Bell, BookOpen, Sparkles, Gem } from 'lucide-react';
-import { isContributionWallHighlight } from '@/lib/contributionAwards';
+import { Pin, PinOff, Trash2, Share2, Trophy, Lock, Megaphone, Bell, BookOpen, Sparkles } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 
 const PIN_DURATIONS = [
@@ -18,18 +17,14 @@ export default function ChatFeedNotice({ msg, isPinned, pinnedUntil, readButton,
   const achievement = msg.feedType === 'achievement';
   const institutional = msg.feedType === 'institutional';
   const canAdminManage = isAdmin && msg.feedType === 'encouragement';
-  const contributionAward = achievement && msg.kind === 'tuition';
-  const contributionHighlight = isContributionWallHighlight(msg);
 
-  const Icon = privateNotice ? Bell : contributionAward ? Gem : achievement ? Sparkles : institutional ? (msg.icon === 'event' ? Bell : msg.icon === 'content' ? BookOpen : Megaphone) : Megaphone;
-  const title = msg.feedType === 'personal' ? msg.title || 'Aviso para você' : msg.feedType === 'notification' ? (msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista') : msg.feedType === 'institutional' ? msg.title || 'Destaque para a turma' : contributionAward ? 'Diamante da Contribuição' : 'Conquista da turma';
+  const Icon = privateNotice ? Bell : achievement ? Sparkles : institutional ? (msg.icon === 'event' ? Bell : msg.icon === 'content' ? BookOpen : Megaphone) : Megaphone;
+  const title = msg.feedType === 'personal' ? msg.title || 'Aviso para você' : msg.feedType === 'notification' ? (msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista') : msg.feedType === 'institutional' ? msg.title || 'Destaque para a turma' : 'Conquista da turma';
 
   const wrapperClass = isPinned
     ? 'border-primary/40 bg-primary/5'
     : privateNotice
     ? 'border-violet-200 bg-violet-50 text-violet-950'
-    : contributionAward
-    ? 'border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 shadow-sm shadow-cyan-200/60 dark:border-cyan-400 dark:bg-cyan-950/40 dark:text-white'
     : achievement
     ? 'border-amber-200 bg-amber-50/80 dark:border-white dark:bg-white dark:text-black'
     : institutional
@@ -38,8 +33,6 @@ export default function ChatFeedNotice({ msg, isPinned, pinnedUntil, readButton,
 
   const iconClass = privateNotice
     ? 'text-violet-600'
-    : contributionAward
-    ? 'text-cyan-600'
     : achievement
     ? 'text-amber-500'
     : institutional
@@ -50,7 +43,7 @@ export default function ChatFeedNotice({ msg, isPinned, pinnedUntil, readButton,
     <div className="mb-2 flex items-start gap-2">
       <Icon size={16} className={`mt-0.5 shrink-0 ${iconClass}`}/>
       <h2 className="min-w-0 flex-1 font-semibold text-foreground">{title}</h2>
-      {(isPinned || contributionHighlight) && <Pin size={14} className="shrink-0 text-primary" aria-label={contributionHighlight ? 'Em destaque por 7 dias' : 'Fixado'}/>}
+      {isPinned && <Pin size={14} className="shrink-0 text-primary"/>}
       {canAdminManage && (
         <div className="relative shrink-0">
           <button
@@ -101,7 +94,6 @@ export default function ChatFeedNotice({ msg, isPinned, pinnedUntil, readButton,
       )}
     </div>
     {achievement ? <p className="whitespace-pre-wrap break-words text-foreground"><strong className="font-semibold">{msg.isCollective ? 'Monitores da semana!' : msg.studentName || 'Um colega da turma'}</strong> {msg.content}</p> : <p className="whitespace-pre-wrap break-words text-foreground">{privateNotice ? msg.message : msg.content}</p>}
-    {contributionHighlight && <span className="mt-2 inline-flex rounded-full bg-cyan-600/10 px-2 py-1 text-[11px] font-bold text-cyan-700 dark:text-cyan-300">💎 Destaque da semana</span>}
     {msg.feedType === 'personal' && msg.related_email && <p className="mt-2 text-xs text-muted-foreground">Contato: <ClickableStudent email={msg.related_email} className="font-medium text-foreground">{msg.related_name || msg.related_email}</ClickableStudent></p>}
     {msg.feedType === 'notification' && msg.reply_text && <blockquote className="mt-2 rounded-lg border-l-2 border-primary bg-secondary/50 p-2 text-foreground">“{msg.reply_text}”</blockquote>}
     {privateNotice && <span className="mt-2 block text-xs text-muted-foreground">Visível somente para você</span>}

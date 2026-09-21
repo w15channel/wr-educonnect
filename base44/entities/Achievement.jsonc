@@ -44,16 +44,6 @@
     "occurred_at": {
       "type": "string",
       "format": "date-time"
-    },
-    "student_feature_until": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Fim do destaque individual da conquista"
-    },
-    "wall_highlight_until": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Fim do destaque da conquista no mural coletivo"
     }
   },
   "required": [
