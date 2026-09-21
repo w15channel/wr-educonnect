@@ -4,6 +4,62 @@ const norm = (value) => String(value || '').trim().toLowerCase();
 const dateOf = (record) => record.updated_date || record.submitted_at || record.created_date || record.date || new Date().toISOString();
 
 const PIN_MARKER_RE = /^📌\[PIN:(\d{4}-\d{2}-\d{2})\]\s*/;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+async function syncContributionAwards(base44, course) {
+  const service = base44.asServiceRole.entities;
+  const [tuitions, achievements, codes] = await Promise.all([
+    service.Tuition.list('-paid_date', 10000),
+    service.Achievement.list('-occurred_at', 20000),
+    service.AccessCode.list('-created_date', 10000),
+  ]);
+  const courseByEmail = new Map(codes.map((code) => [norm(code.student_email), code.course || 'tcc']));
+  const known = new Set(achievements.map((item) => item.dedupe_key));
+  const tuitionById = new Map(tuitions.map((item) => [String(item.id), item]));
+  const eligible = tuitions.filter((item) => item.wall_shared === true
+    && item.status === 'paid'
+    && Number.isFinite(Number(item.paid_amount))
+    && Number(item.paid_amount) > 0
+    && (courseByEmail.get(norm(item.student_email)) || 'tcc') === course);
+
+  // Corrige reconhecimentos antigos: registros de valor zero deixam de ser
+  // prêmio e os válidos passam a usar a identidade e os prazos do diamante.
+  for (const achievement of achievements.filter((item) => item.kind === 'tuition' && item.course === course)) {
+    const tuition = tuitionById.get(String(achievement.source_id || ''));
+    if (!tuition || tuition.status !== 'paid' || !(Number(tuition.paid_amount) > 0)) {
+      await service.Achievement.delete(achievement.id);
+      continue;
+    }
+    const occurredAt = achievement.occurred_at || (tuition.paid_date ? new Date(`${tuition.paid_date}T12:00:00.000Z`).toISOString() : dateOf(tuition));
+    await service.Achievement.update(achievement.id, {
+      title: 'Diamante da Contribuição',
+      message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
+      student_feature_until: new Date(Date.parse(occurredAt) + 15 * DAY_MS).toISOString(),
+      wall_highlight_until: new Date(Date.parse(occurredAt) + 7 * DAY_MS).toISOString(),
+    });
+  }
+
+  for (const tuition of eligible) {
+    const dedupeKey = `tuition:${tuition.id}`;
+    if (known.has(dedupeKey)) continue;
+    const occurredAt = tuition.paid_date
+      ? new Date(`${tuition.paid_date}T12:00:00.000Z`).toISOString()
+      : dateOf(tuition);
+    await service.Achievement.create({
+      dedupe_key: dedupeKey,
+      student_email: norm(tuition.student_email),
+      course,
+      kind: 'tuition',
+      title: 'Diamante da Contribuição',
+      message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
+      mentioned_emails: [norm(tuition.student_email)],
+      source_id: tuition.id,
+      occurred_at: occurredAt,
+      student_feature_until: new Date(Date.parse(occurredAt) + 15 * DAY_MS).toISOString(),
+      wall_highlight_until: new Date(Date.parse(occurredAt) + 7 * DAY_MS).toISOString(),
+    });
+  }
+}
 
 async function authenticatedUser(base44, payload) {
   const claimedEmail = norm(payload.actor_email);
@@ -150,6 +206,7 @@ export default async function(req) {
       const service = base44.asServiceRole.entities;
       const course = payload.course || user.course || 'tcc';
       if (user.course && course !== user.course) return Response.json({ error: 'Curso não autorizado.' }, { status: 403 });
+      await syncContributionAwards(base44, course);
       const accessCodes = (await service.AccessCode.list('-created_date', 2000)).filter((item) => item.course === course || (course === 'tcc' && !item.course));
       const messages = await service.ChatMessage.filter({ session_id: `class_chat_${course}` }, 'created_date', 300);
       const lessonProgresses = await service.LessonProgress.list('-created_date', 400);
