@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getLunaSupportOffer, getLunaSupportDecision } from './lunaSupport';
+import { countLunaStudentInteractions, getLunaSupportOffer, getLunaSupportDecision, MIN_LUNA_SUPPORT_INTERACTIONS } from './lunaSupport';
 
 const categories = ['Acesso e login', 'Outro assunto'];
 const proposal = {
@@ -11,6 +11,21 @@ const proposal = {
 };
 
 describe('propostas de suporte da Luna', () => {
+  it('bloqueia a proposta antes de dez interações do aluno', () => {
+    expect(getLunaSupportOffer({ support_offer: proposal }, categories, MIN_LUNA_SUPPORT_INTERACTIONS - 1)).toBeNull();
+    expect(getLunaSupportOffer({ support_offer: proposal }, categories, MIN_LUNA_SUPPORT_INTERACTIONS)).toMatchObject(proposal);
+  });
+
+  it('conta somente mensagens não vazias enviadas pelo aluno', () => {
+    expect(countLunaStudentInteractions([
+      { role: 'assistant', content: 'Como posso ajudar?' },
+      { role: 'user', content: ' ' },
+      { role: 'user', content: 'Não consigo acessar.' },
+      { role: 'assistant', content: 'Vamos tentar juntos.' },
+      { role: 'user', content: 'Ainda não funcionou.' },
+    ])).toBe(2);
+  });
+
   it.each([
     undefined,
     { answer: 'Olá! Como posso ajudar?' },

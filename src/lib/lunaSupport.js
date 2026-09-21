@@ -1,6 +1,17 @@
 export const LUNA_SUPPORT_REASONS = ['technical', 'administrative', 'unanswered'];
+export const MIN_LUNA_SUPPORT_INTERACTIONS = 10;
 
-export function getLunaSupportOffer(response, categories) {
+/**
+ * Conta as tentativas do aluno de solucionar o caso na conversa atual.
+ * Uma interação é uma mensagem enviada pelo aluno; respostas da Luna não
+ * contam como uma nova tentativa.
+ */
+export function countLunaStudentInteractions(messages = []) {
+  return messages.filter(message => message?.role === 'user' && String(message.content || '').trim()).length;
+}
+
+export function getLunaSupportOffer(response, categories, interactionCount = MIN_LUNA_SUPPORT_INTERACTIONS) {
+  if (interactionCount < MIN_LUNA_SUPPORT_INTERACTIONS) return null;
   const offer = response?.support_offer;
   if (!offer || !LUNA_SUPPORT_REASONS.includes(offer.reason)) return null;
   if (['title', 'description', 'explanation'].some(key =>
