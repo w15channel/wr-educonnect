@@ -29,7 +29,7 @@ export default function ChatFeedNotice({ msg, isPinned, pinnedUntil, readButton,
     : privateNotice
     ? 'border-violet-200 bg-violet-50 text-violet-950'
     : contributionAward
-    ? 'border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 shadow-sm shadow-cyan-200/60 dark:border-cyan-400 dark:bg-cyan-950/40 dark:text-white'
+    ? 'border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 shadow-sm shadow-cyan-200/60 dark:border-cyan-500/70 dark:from-cyan-950 dark:via-slate-950 dark:to-indigo-950 dark:shadow-cyan-950/50 dark:text-cyan-50'
     : achievement
     ? 'border-amber-200 bg-amber-50/80 dark:border-white dark:bg-white dark:text-black'
     : institutional
@@ -39,7 +39,7 @@ export default function ChatFeedNotice({ msg, isPinned, pinnedUntil, readButton,
   const iconClass = privateNotice
     ? 'text-violet-600'
     : contributionAward
-    ? 'text-cyan-600'
+    ? 'text-cyan-700 dark:text-cyan-300'
     : achievement
     ? 'text-amber-500'
     : institutional

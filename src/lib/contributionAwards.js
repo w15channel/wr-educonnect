@@ -7,6 +7,26 @@ export function hasPositiveContribution(tuition) {
   return tuition?.status === 'paid' && Number.isFinite(value) && value > 0;
 }
 
+const contributionPeriod = (tuition) => String(tuition?.month_ref || tuition?.due_date || '').trim();
+
+/**
+ * Retorna uma contribuição por aluno para o período mais recente lançado.
+ * O período é calculado com todas as mensalidades (inclusive pendentes), para
+ * não premiar por engano um pagamento antigo enquanto o mês atual está aberto.
+ */
+export function getLatestContributors(tuitions = []) {
+  const periods = tuitions.map(contributionPeriod).filter(Boolean);
+  if (!periods.length) return [];
+  const latestPeriod = [...periods].sort((a, b) => b.localeCompare(a))[0];
+  const seen = new Set();
+  return tuitions.filter((tuition) => {
+    const email = String(tuition?.student_email || '').trim().toLowerCase();
+    if (contributionPeriod(tuition) !== latestPeriod || !email || seen.has(email) || !hasPositiveContribution(tuition)) return false;
+    seen.add(email);
+    return true;
+  });
+}
+
 export function isActiveForDays(date, days, now = Date.now()) {
   const timestamp = new Date(date || 0).getTime();
   return Number.isFinite(timestamp) && timestamp <= now && now < timestamp + days * DAY_MS;
