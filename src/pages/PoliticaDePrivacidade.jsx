@@ -3,90 +3,18 @@ import { Shield, CheckCircle, ArrowLeft, Lock, Eye, Database, Share2, Cookie, Al
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const ARTICLES = [
-  {
-    num: '1',
-    icon: Shield,
-    color: '#5b5ef4',
-    title: 'Compromisso com a Privacidade',
-    text: `A ${BRAND_LEGAL_NAME} reafirma seu compromisso com a segurança e a privacidade de todos os seus usuários, tratando a proteção de dados pessoais como um pilar fundamental da nossa relação de confiança. CNPJ ${BRAND_CNPJ}. Esta Política de Privacidade é regida pela Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018), pelo Marco Civil da Internet (Lei nº 12.965/2014) e pelas normativas que regulamentam a transparência de informações em plataformas de ensino online credenciadas.`,
-  },
-  {
-    num: '2',
-    icon: Database,
-    color: '#1db89e',
-    title: 'Dados Coletados e Finalidade',
-    text: 'Coletamos apenas os dados estritamente necessários para o ingresso, identificação e gestão acadêmica na plataforma — como nome completo, CPF, data de nascimento, telefone e e-mail — essenciais para a criação do histórico de aprendizagem e emissão de certificados com validade legal. As informações coletadas têm como finalidade exclusiva o gerenciamento do seu progresso acadêmico, a comunicação direta sobre o curso e o suporte técnico necessário durante a jornada EAD. Não solicitamos dados que excedam essa necessidade.',
-  },
-  {
-    num: '3',
-    icon: Lock,
-    color: '#a855f7',
-    title: 'Dados Financeiros e Segurança de Pagamentos',
-    text: `Os dados financeiros utilizados no ato da compra são processados exclusivamente por gateways de pagamento certificados com criptografia de ponta a ponta (padrão PCI-DSS), garantindo que a ${BRAND_LEGAL_NAME} não armazene, em nenhuma hipótese, informações sensíveis de cartões de crédito ou débito. Toda transação é processada em ambiente seguro e auditável.`,
-  },
-  {
-    num: '4',
-    icon: Eye,
-    color: '#5b5ef4',
-    title: 'Transparência e Direitos do Titular',
-    text: 'Em observância ao princípio da transparência previsto na LGPD, o usuário tem o direito de solicitar, a qualquer momento: (a) acesso aos seus dados pessoais armazenados; (b) correção de informações incompletas, inexatas ou desatualizadas; (c) anonimização, bloqueio ou eliminação de dados desnecessários; (d) portabilidade dos dados a outro fornecedor de serviço; (e) exclusão definitiva dos dados pessoais tratados com base no seu consentimento. As solicitações devem ser encaminhadas ao nosso canal oficial de suporte e serão atendidas no prazo legal.',
-  },
-  {
-    num: '5',
-    icon: Share2,
-    color: '#ef4444',
-    title: 'Não Comercialização de Dados',
-    text: `A ${BRAND_LEGAL_NAME} compromete-se expressamente a não vender, alugar, ceder ou compartilhar seus dados pessoais com terceiros para fins comerciais, publicitários ou estranhos ao escopo do seu curso profissionalizante. Eventuais parceiros técnicos que necessitem de acesso a dados para prestação de serviços (como plataformas de emissão de certificados e sistemas de pagamento) estão contratualmente vinculados às mesmas obrigações de confidencialidade e segurança exigidas por esta política.`,
-  },
-  {
-    num: '6',
-    icon: Cookie,
-    color: '#f4a23d',
-    title: 'Uso de Cookies e Tecnologias de Rastreamento',
-    text: 'Utilizamos tecnologias de rastreamento (cookies de sessão e cookies funcionais) apenas para otimizar a sua experiência de navegação, garantir que o progresso das aulas seja salvo corretamente na sua área do aluno e manter a segurança da sessão autenticada. Não utilizamos cookies de rastreamento publicitário ou de perfil comportamental para fins externos à plataforma.',
-  },
-  {
-    num: '7',
-    icon: Server,
-    color: '#1db89e',
-    title: 'Armazenamento e Segurança dos Dados',
-    text: 'O armazenamento das informações ocorre em servidores com padrões internacionais de segurança digital (incluindo criptografia em repouso e em trânsito), visando proteger o aluno contra acessos não autorizados, vazamentos acidentais ou ataques cibernéticos. Os registros de acesso são mantidos pelo tempo necessário ao cumprimento das obrigações legais e regulatórias vinculadas ao setor educacional, conforme previsto no Art. 15 do Marco Civil da Internet.',
-  },
-  {
-    num: '8',
-    icon: Users,
-    color: '#5b5ef4',
-    title: 'Privacidade Mútua nas Interações',
-    text: 'Durante as interações em tempo real, grupos de integração e demais ambientes colaborativos da plataforma, a proteção da privacidade é uma responsabilidade compartilhada. É dever de cada aluno não divulgar, reproduzir ou compartilhar dados pessoais, vivências ou informações de colegas sem o devido consentimento expresso do titular. A violação desta disposição poderá resultar nas sanções previstas nos Termos de Uso.',
-  },
-  {
-    num: '9',
-    icon: AlertTriangle,
-    color: '#f4a23d',
-    title: 'Incidentes de Segurança',
-    text: `Na hipótese improvável de incidente de segurança que possa acarretar risco ou dano relevante aos titulares, a ${BRAND_LEGAL_NAME} se compromete a comunicar a ocorrência à Autoridade Nacional de Proteção de Dados (ANPD) e aos usuários afetados, no prazo previsto em lei, descrevendo a natureza dos dados afetados e as medidas adotadas para mitigação.`,
-  },
-  {
-    num: '10',
-    icon: CheckCircle,
-    color: '#1db89e',
-    title: 'Base Legal para o Tratamento',
-    text: `O tratamento de dados pessoais realizado pela ${BRAND_LEGAL_NAME} está fundamentado nas seguintes bases legais previstas no Art. 7º da LGPD: (i) consentimento do titular, formalizado no ato de cadastro na plataforma; (ii) execução de contrato ou de procedimentos preliminares relacionados ao contrato do qual o titular é parte; e (iii) cumprimento de obrigação legal ou regulatória pelo controlador.`,
-  },
-  {
-    num: '11',
-    icon: RefreshCw,
-    color: '#5b5ef4',
-    title: 'Atualização desta Política',
-    text: 'Esta Política de Privacidade é dinâmica e poderá ser atualizada para garantir que o direito à privacidade e o acesso à informação estejam sempre adequados diante de novas tecnologias, mudanças legislativas ou aprimoramentos nos nossos serviços. O usuário será notificado sobre alterações relevantes, e o uso continuado da plataforma após a publicação das atualizações implicará na aceitação das novas condições.',
-  },
-  {
-    num: '12',
-    icon: DollarSign,
-    color: '#1db89e',
-    title: 'Transparência sobre a Natureza Financeira do Projeto Social',
-    text: `A ${BRAND_LEGAL_NAME} esclarece que os dados financeiros processados para emissão de mensalidades e recibos de contribuição voluntária refletem custos operacionais reais da instituição. O valor integral dos débitos do aluno bolsista é emitido porque existe um custo operacional real, sendo necessário que o valor seja emitido por completo. Não existe obrigatoriedade ao aluno bolsista em pagar algum valor prefixado — a contribuição é voluntária e parte do próprio aluno. Contudo, a mensalidade precisa ser emitida, pois existem custos reais. Nos casos de impossibilidade do aluno bolsista, o valor é abatido das mensalidades de alunos pagantes do comercial; nos casos de indisponibilidade dos alunos do comercial, as despesas são pagas com fundo próprio da instituição, assumidas pelo coordenador. A instituição não é vinculada a grandes instituições, e nos últimos anos sua operação é negativa em captação de recursos, sendo que até agosto de 2026 não captava nem recursos voluntários para sua auto-manutenção. Aproximadamente 80% dos investimentos são aportados pelo coordenador Prof. William Ribeiro, voluntário em projeto social, percebendo remuneração não superior a dois salários mínimos. Não existe curso gratuito — alguém está pagando por ele. O tratamento dos dados financeiros do aluno bolsista tem como base legal o legítimo interesse da instituição em manter transparência sobre os custos reais envolvidos e a execução de procedimentos preliminares relacionados à bolsa concedida.`,
-  },
+  { num: '1', icon: Shield, color: '#5b5ef4', title: 'Controladora e Abrangência', text: `A ${BRAND_LEGAL_NAME}, inscrita no CNPJ sob o nº ${BRAND_CNPJ}, atua como controladora dos dados pessoais tratados no contexto da plataforma. Esta Política descreve as práticas aplicáveis ao tratamento de dados pessoais, em conformidade com a Lei nº 13.709/2018 (LGPD), o Marco Civil da Internet e demais normas aplicáveis.` },
+  { num: '2', icon: Database, color: '#1db89e', title: 'Dados Tratados e Finalidades', text: 'Poderão ser tratados dados cadastrais, de contato, identificação, matrícula, progresso acadêmico, registros de acesso, comunicações e informações necessárias à emissão de documentos. O tratamento ocorre para viabilizar cadastro, prestação dos serviços educacionais, suporte, gestão acadêmica, segurança, comunicação institucional e cumprimento de obrigações legais ou regulatórias.' },
+  { num: '3', icon: Lock, color: '#a855f7', title: 'Pagamentos', text: `As informações necessárias à cobrança e à confirmação de pagamentos poderão ser tratadas por prestadores especializados. A ${BRAND_LEGAL_NAME} não mantém dados completos de cartões quando o processamento é realizado diretamente pelo ambiente do respectivo intermediador. As medidas de segurança aplicáveis dependem dos sistemas e serviços efetivamente utilizados em cada operação.` },
+  { num: '4', icon: Eye, color: '#5b5ef4', title: 'Direitos do Titular', text: 'O titular poderá solicitar confirmação da existência de tratamento, acesso, correção, anonimização, bloqueio, eliminação, portabilidade, informação sobre compartilhamentos e revogação de consentimento, quando aplicável, nos termos da LGPD. O exercício dos direitos será avaliado conforme a base legal, a finalidade do tratamento e as hipóteses legais de retenção.' },
+  { num: '5', icon: Share2, color: '#ef4444', title: 'Compartilhamento de Dados', text: `Os dados pessoais não são comercializados. O compartilhamento poderá ocorrer quando necessário à operação da plataforma, à prestação dos serviços, ao processamento de pagamentos, à emissão de documentos, ao suporte técnico, ao cumprimento de obrigação legal ou à proteção de direitos, sempre limitado à finalidade pertinente e sujeito às salvaguardas aplicáveis.` },
+  { num: '6', icon: Cookie, color: '#f4a23d', title: 'Cookies e Registros de Navegação', text: 'A plataforma poderá utilizar cookies, identificadores e registros de navegação para autenticação, segurança, funcionamento, preferências e aperfeiçoamento do serviço. O usuário pode gerenciar cookies pelo navegador, ciente de que a desativação de determinados recursos poderá afetar a experiência e o funcionamento da plataforma.' },
+  { num: '7', icon: Server, color: '#1db89e', title: 'Segurança e Retenção', text: 'São adotadas medidas técnicas e administrativas razoáveis para prevenir acessos não autorizados, perda, alteração, divulgação ou tratamento indevido de dados. Os dados serão conservados pelo período necessário às finalidades informadas, ao cumprimento de obrigações legais, regulatórias ou contratuais e ao exercício regular de direitos.' },
+  { num: '8', icon: Users, color: '#5b5ef4', title: 'Interações entre Usuários', text: 'Informações compartilhadas em aulas, grupos ou outros ambientes colaborativos devem ser utilizadas exclusivamente para as finalidades do respectivo ambiente. É vedada a reprodução, gravação, divulgação ou compartilhamento de dados pessoais e conteúdos de terceiros sem autorização ou fundamento legal aplicável.' },
+  { num: '9', icon: AlertTriangle, color: '#f4a23d', title: 'Incidentes de Segurança', text: `Na ocorrência de incidente de segurança que possa acarretar risco ou dano relevante aos titulares, a ${BRAND_LEGAL_NAME} adotará as medidas de contenção e apuração cabíveis e realizará as comunicações à Autoridade Nacional de Proteção de Dados e aos titulares, quando exigidas pela legislação aplicável.` },
+  { num: '10', icon: CheckCircle, color: '#1db89e', title: 'Bases Legais', text: `O tratamento de dados poderá fundamentar-se, conforme o caso, na execução de contrato ou de procedimentos preliminares, no cumprimento de obrigação legal ou regulatória, no exercício regular de direitos, no legítimo interesse, observado o equilíbrio com os direitos do titular, e no consentimento, quando necessário.` },
+  { num: '11', icon: RefreshCw, color: '#5b5ef4', title: 'Atualização da Política', text: 'Esta Política poderá ser atualizada para refletir alterações legais, operacionais ou tecnológicas. A versão vigente estará disponível na plataforma, com indicação da data de atualização. Quando aplicável, alterações relevantes serão comunicadas pelos canais adequados.' },
+  { num: '12', icon: DollarSign, color: '#1db89e', title: 'Dados Relacionados a Bolsas e Cobranças', text: 'Os dados necessários à análise, formalização e gestão de bolsas, descontos, contribuições voluntárias e cobranças poderão ser tratados para a execução da relação educacional, controles administrativos, atendimento e cumprimento de obrigações legais. Os critérios e condições financeiros aplicáveis são apresentados nos instrumentos e comunicações pertinentes.' },
 ];
 
 export default function PoliticaDePrivacidade() {
@@ -115,7 +43,7 @@ export default function PoliticaDePrivacidade() {
           </div>
           <h1 className="text-4xl font-black text-white mb-3">Política de Privacidade</h1>
           <p className="text-white/50 max-w-xl mx-auto text-sm leading-relaxed">
-            Seus dados estão protegidos. Conheça como coletamos, usamos e guardamos suas informações com responsabilidade e transparência.
+            Informações sobre o tratamento de dados pessoais no contexto dos serviços educacionais e da utilização da plataforma.
           </p>
           <p className="text-white/30 text-xs mt-3">Última atualização: Setembro de 2026</p>
         </div>
@@ -127,9 +55,9 @@ export default function PoliticaDePrivacidade() {
               <Shield size={18} className="text-[#1db89e]" />
             </div>
             <div>
-              <p className="text-white font-bold text-sm mb-2">Seus dados são tratados com responsabilidade</p>
+              <p className="text-white font-bold text-sm mb-2">Tratamento de dados pessoais</p>
               <p className="text-white/60 text-sm leading-relaxed">
-                A {BRAND_LEGAL_NAME} atua como <strong className="text-white">Controladora de Dados</strong> nos termos da LGPD, sendo responsável pelas decisões referentes ao tratamento dos seus dados pessoais. Nosso compromisso é coletar o mínimo necessário, com finalidade clara e proteção máxima.
+                A {BRAND_LEGAL_NAME} atua como <strong className="text-white">Controladora de Dados</strong> no contexto desta plataforma e define as finalidades e os meios do tratamento de dados pessoais, observadas as disposições legais aplicáveis.
               </p>
             </div>
           </div>
@@ -163,18 +91,18 @@ export default function PoliticaDePrivacidade() {
             <FileText size={13} className="text-[#5b5ef4]" /> Encarregado de Proteção de Dados (DPO)
           </p>
           <p className="text-white/60 text-sm leading-relaxed mb-4">
-            Para exercer seus direitos como titular de dados, solicitar informações ou reportar qualquer questão relacionada à privacidade, entre em contato com nosso encarregado pelo canal oficial de suporte da plataforma. Todas as solicitações serão respondidas no prazo de até <strong className="text-white">15 (quinze) dias úteis</strong>, conforme previsto na LGPD.
+            Para exercer direitos como titular, solicitar informações ou encaminhar questões relacionadas à privacidade, utilize o canal oficial de suporte da plataforma. As solicitações serão tratadas nos <strong className="text-white">prazos e condições previstos na legislação aplicável</strong>.
           </p>
           <div className="bg-white/5 border border-white/8 rounded-2xl px-5 py-3 flex items-center gap-3">
             <Lock size={14} className="text-[#1db89e] shrink-0" />
-            <p className="text-white/50 text-xs">As comunicações são tratadas com sigilo e respondidas diretamente pela direção da {BRAND_LEGAL_NAME}.</p>
+            <p className="text-white/50 text-xs">As comunicações são registradas e tratadas de forma compatível com a finalidade da solicitação e com os deveres de confidencialidade aplicáveis.</p>
           </div>
         </div>
 
         {/* Aviso legal */}
         <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 mb-10 text-sm leading-relaxed">
           <p className="text-yellow-200/80">
-            <strong className="text-yellow-200">Importante:</strong> A presente Política de Privacidade não substitui os Termos de Uso da plataforma. Recomendamos a leitura conjunta de ambos os documentos para total compreensão dos direitos e deveres envolvidos na relação educacional com a {BRAND_LEGAL_NAME}.
+            <strong className="text-yellow-200">Importante:</strong> Esta Política integra o conjunto de documentos aplicáveis à relação com a plataforma e deve ser lida em conjunto com os Termos de Uso e as condições específicas de matrícula ou contratação.
           </p>
         </div>
 
@@ -195,9 +123,9 @@ export default function PoliticaDePrivacidade() {
               letterSpacing: 2,
               display: 'block',
               lineHeight: 1.2,
-            }}>William Ribeiro S.</span>
+            }}>Documento institucional</span>
             <div className="w-48 border-t border-white/15 pt-2 mx-auto">
-              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · {BRAND_LEGAL_NAME}</p>
+              <p className="text-white/30 text-[10px] uppercase tracking-widest">Política de Privacidade · {BRAND_LEGAL_NAME}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
