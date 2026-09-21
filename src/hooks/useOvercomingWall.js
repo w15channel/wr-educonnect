@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { isLegacyMsnAction, isSinceOvercomingWallCutoff } from '@/lib/overcomingWall';
 import { personalizeWallNotice } from '@/lib/wallPersonalization';
 import { buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
+import { isContributionAwardFeatured, isContributionWallHighlight } from '@/lib/contributionAwards';
 
 const PIN_MARKER_RE = /^📌\[PIN:(\d{4}-\d{2}-\d{2})\]\s*/;
 const HIDDEN_MESSAGE_IDS = new Set(['6ab063a728f1f7bc98693119', '6ab064bde799f6a6819fa784']);
@@ -191,6 +192,8 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       kind: record.kind,
       content: record.message,
       occurredAt: record.occurred_at || record.created_date,
+      studentFeatureUntil: record.student_feature_until,
+      wallHighlightUntil: record.wall_highlight_until,
     }));
 
     return [
@@ -275,10 +278,16 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
         };
       }),
   ].sort((a, b) => {
+    const aPersonalAward = isContributionAwardFeatured(a, session?.email);
+    const bPersonalAward = isContributionAwardFeatured(b, session?.email);
+    if (aPersonalAward !== bPersonalAward) return aPersonalAward ? -1 : 1;
+    const aWallHighlight = isContributionWallHighlight(a);
+    const bWallHighlight = isContributionWallHighlight(b);
+    if (aWallHighlight !== bWallHighlight) return aWallHighlight ? -1 : 1;
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
     return new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0);
-  }), [notifications, personalPosts, institutionalPosts, achievementPosts, messages]);
+  }), [notifications, personalPosts, institutionalPosts, achievementPosts, messages, session?.email]);
 
   const sharedPublications = institutionalRecords?.shared || [];
 

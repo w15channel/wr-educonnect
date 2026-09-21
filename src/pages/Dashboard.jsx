@@ -4,7 +4,7 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, Crown, Heart, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2 } from 'lucide-react';
+import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, Crown, Heart, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2, Gem, Pin } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 import useModuleTrophies from '@/hooks/useModuleTrophies';
 import ModuleTrophies from '@/components/achievements/ModuleTrophies';
 import LunaDashboardGreetingVoice from '@/components/dashboard/LunaDashboardGreetingVoice';
+import { isContributionAwardFeatured, isContributionWallHighlight } from '@/lib/contributionAwards';
 
 
 const isTaskAvailable = (task, moduleUnlocked = []) =>
@@ -756,14 +757,16 @@ export default function Dashboard() {
                     </div>
                   );
                   if (msg.feedType === 'achievement') return (
-                    <div key={msg.id} className="rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-[11px] leading-relaxed dark:border-white dark:bg-white dark:text-black">
+                    <div key={msg.id} className={`rounded-lg border p-2 text-[11px] leading-relaxed ${msg.kind === 'tuition' ? 'border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 dark:border-cyan-400 dark:bg-cyan-950/40 dark:text-white' : 'border-amber-200 bg-amber-50/80 dark:border-white dark:bg-white dark:text-black'}`}>
                       <div className="flex gap-2">
-                      <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                      {msg.kind === 'tuition' ? <Gem size={14} className="mt-0.5 shrink-0 text-cyan-600" /> : <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />}
                       {msg.isCollective
                         ? <p><span className="font-bold text-amber-800 dark:text-black">Conquista da turma!</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span></p>
-                        : <p><span className="font-bold text-amber-800 dark:text-black">Conquista desbloqueada!</span> <span className="font-semibold text-foreground dark:text-[#b8860b]">{msg.studentName}</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span> <span aria-hidden="true">🎉</span></p>
+                        : <p><span className={`font-bold ${msg.kind === 'tuition' ? 'text-cyan-800 dark:text-cyan-200' : 'text-amber-800 dark:text-black'}`}>{isContributionAwardFeatured(msg, session?.email) ? 'Parabéns! Seu diamante foi conquistado!' : msg.kind === 'tuition' ? 'Diamante conquistado!' : 'Conquista desbloqueada!'}</span> <span className="font-semibold text-foreground dark:text-[#b8860b]">{msg.studentName}</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span> <span aria-hidden="true">{msg.kind === 'tuition' ? '💎' : '🎉'}</span></p>
                       }
                       </div>
+                      {isContributionAwardFeatured(msg, session?.email) && <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-cyan-600/10 px-2 py-1 font-bold text-cyan-700"><Pin size={10} /> Sua conquista em destaque por 15 dias</span>}
+                      {!isContributionAwardFeatured(msg, session?.email) && isContributionWallHighlight(msg) && <span className="mt-2 inline-flex rounded-full bg-cyan-600/10 px-2 py-1 font-bold text-cyan-700">💎 Destaque da semana</span>}
                       {reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails)}
                       {privateReplyForm(msg)}
                     </div>
