@@ -14,6 +14,7 @@ import { TUITION_ACTIONS, TUITION_GREETING, TUITION_PROMPT } from '@/lib/lunaTui
 import { countLunaStudentInteractions, getLunaSupportOffer, getLunaSupportDecision, LUNA_SUPPORT_REASONS, MIN_LUNA_SUPPORT_INTERACTIONS } from '@/lib/lunaSupport';
 import { getDMSessionId, LUNA_DM_EMAIL, LUNA_DM_NAME } from '@/lib/lunaDM';
 import { toast } from 'sonner';
+import useSocialIdentity from '@/hooks/useSocialIdentity';
 
 const LUNA_SUPPORT_PROMPT_SUFFIX = `
 
@@ -87,11 +88,13 @@ async function loadLunaMessagesFromServer(studentEmail) {
 
 export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false, tuitionMode = false }) {
   const voice = useLunaVoice();
-  const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Eu sou a Luna, uma inteligência artificial programada para ajudar você. Posso orientar e buscar uma solução junto com você, mas tenho limitações: alguns casos precisam ser analisados pela equipe técnica. Pode me contar o que está acontecendo? Vamos tentar resolver por aqui antes de pensar em um chamado.`;
-  const greeting = tuitionMode ? TUITION_GREETING : supportMode ? supportGreeting : lunaGreeting(session?.name);
+  const { socialName, firstName, isLoading: isSocialIdentityLoading } = useSocialIdentity(session);
+  const supportGreeting = `Olá, ${firstName}! 🦉 Eu sou a Luna, uma inteligência artificial programada para ajudar você. Posso orientar e buscar uma solução junto com você, mas tenho limitações: alguns casos precisam ser analisados pela equipe técnica. Pode me contar o que está acontecendo? Vamos tentar resolver por aqui antes de pensar em um chamado.`;
+  const greeting = tuitionMode ? TUITION_GREETING : supportMode ? supportGreeting : lunaGreeting(socialName);
 
   const memoryKey = `luna_chat_${tuitionMode ? 'tuition_' : ''}${session?.email || session?.code || 'anon'}`;
   const savedMessages = loadLunaMemory(memoryKey);
+  const hasSavedConversation = Boolean(savedMessages?.length);
   const lastSavedMessage = savedMessages?.[savedMessages.length - 1];
   const savedInteractionCount = countLunaStudentInteractions(savedMessages);
   const savedOffer = lastSavedMessage?.role === 'assistant'
@@ -122,11 +125,18 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   const initialVoiceTextRef = useRef(messages[messages.length - 1]?.content || greeting);
 
   useEffect(() => {
-    if (isActive && !initialSpokenRef.current) {
+    if (!hasSavedConversation) {
+      setMessages([{ role: 'assistant', content: greeting }]);
+      initialVoiceTextRef.current = greeting;
+    }
+  }, [greeting, hasSavedConversation]);
+
+  useEffect(() => {
+    if (isActive && !isSocialIdentityLoading && !initialSpokenRef.current) {
       initialSpokenRef.current = true;
       voice.speak(initialVoiceTextRef.current);
     }
-  }, [isActive, voice.speak]);
+  }, [isActive, isSocialIdentityLoading, voice.speak]);
   useEffect(() => { if (!isActive) voice.stop(); }, [isActive]);
   useEffect(() => { if (isActive) endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [messages, loading, isActive]);
 
@@ -151,14 +161,14 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
     const next = [...messages, { role: 'user', content: userText }];
     setMessages(next);
     saveLunaMemory(memoryKey, next);
-    saveLunaMessageToServer('user', userText, session?.email, session?.name);
+    saveLunaMessageToServer('user', userText, session?.email, socialName);
     setInput('');
     let reply = 'Tudo bem, não abri nenhum chamado. Vamos continuar conversando: como posso ajudar?';
     try {
       if (confirmed) {
         setTicketCreating(true);
         const studentEmail = session?.email || session?.code || '';
-        const studentName = session?.name || 'Aluno';
+        const studentName = socialName;
         const course = session?.course || 'tcc';
         await base44.entities.SupportTicket.create({
           title: offer.title, description: offer.description, category: offer.category,
@@ -181,7 +191,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       const updated = [...next, { role: 'assistant', content: reply }];
       setMessages(updated);
       saveLunaMemory(memoryKey, updated);
-      saveLunaMessageToServer('assistant', reply, session?.email, session?.name);
+      saveLunaMessageToServer('assistant', reply, session?.email, socialName);
       setTicketCreating(false);
       busyRef.current = false;
     }
@@ -202,7 +212,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
     const next = [...messages, { role: 'user', content: text }];
     setMessages(next);
     saveLunaMemory(memoryKey, next);
-    saveLunaMessageToServer('user', text, session?.email, session?.name);
+    saveLunaMessageToServer('user', text, session?.email, socialName);
     setInput('');
     setLoading(true);
     voice.stop();
@@ -219,7 +229,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       const basePrompt = tuitionMode ? LUNA_SYSTEM_PROMPT + TUITION_PROMPT : supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
       const systemPrompt = basePrompt + SUPPORT_OFFER_PROMPT + apostilaContext + supportFlag;
       const answer = await base44.integrations.Core.InvokeLLM({
-        prompt: `${systemPrompt}\n\nNome do aluno: ${session?.name || 'Aluno'}\n\nConversa:\n${history}\n\nLuna:`,
+        prompt: `${systemPrompt}\n\nNome social do aluno: ${socialName}\n\nConversa:\n${history}\n\nLuna:`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -253,13 +263,13 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       }
       setMessages(updatedMessages);
       saveLunaMemory(memoryKey, updatedMessages);
-      saveLunaMessageToServer('assistant', reply, session?.email, session?.name);
+      saveLunaMessageToServer('assistant', reply, session?.email, socialName);
       const spokenReply = updatedMessages.slice(next.length).map((message) => message.content).join(' ');
       if (activeRef.current) await voice.speak(spokenReply);
     } catch {
       const errorReply = 'Tive um problema para responder agora. Verifique sua internet e tente de novo, por favor.';
       setMessages((prev) => [...prev, { role: 'assistant', content: errorReply }]);
-      saveLunaMessageToServer('assistant', errorReply, session?.email, session?.name);
+      saveLunaMessageToServer('assistant', errorReply, session?.email, socialName);
       if (activeRef.current) await voice.speak(errorReply);
     } finally {
       busyRef.current = false;

@@ -9,6 +9,7 @@ import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice'
 import LobbyTutorialChoice from '@/components/onboarding/LobbyTutorialChoice';
 import ProfileCompletionPrompt from '@/components/onboarding/ProfileCompletionPrompt';
 import { toast } from 'sonner';
+import useSocialIdentity from '@/hooks/useSocialIdentity';
 
 const G = '#d4b96a';
 const BG = '#07080f';
@@ -238,6 +239,7 @@ export default function CourseLobby() {
   const navigate = useNavigate();
   const { session, logout, login, isAdmin } = useCustomAuth();
   const userCourse = session?.course || 'tcc';
+  const { socialName, firstName } = useSocialIdentity(session);
 
   const termsAccepted = true;
   const [reserveOpen, setReserveOpen] = useState(false);
@@ -341,7 +343,7 @@ export default function CourseLobby() {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-light text-white/60 uppercase tracking-[0.15em]">{session?.name}</p>
+            <p className="text-xs font-light text-white/60 uppercase tracking-[0.15em]">{isAdmin ? session?.name : socialName}</p>
             <p className="text-[9px] text-white/25 uppercase tracking-[0.15em]">{isAdmin ? 'Administrador' : 'Aluno(a)'}</p>
           </div>
           <button onClick={logout} className="border border-white/10 p-2 text-white/30 hover:text-white/60 hover:border-white/20 transition-all" title="Sair">
@@ -403,7 +405,7 @@ export default function CourseLobby() {
       <Header />
 
       {showTutorialChoice && (
-        <LobbyTutorialChoice studentName={session?.name} onFinish={finishTutorialChoice} />
+        <LobbyTutorialChoice studentName={socialName} onFinish={finishTutorialChoice} />
       )}
 
       {showProfilePrompt && (
@@ -419,7 +421,7 @@ export default function CourseLobby() {
             <div className="h-px w-8" style={{ background: `${G}50` }} />
           </div>
           <h1 className="text-4xl lg:text-5xl font-thin text-white mb-3 tracking-[-0.01em]">
-            Olá, <span className="font-light italic" style={{ color: G }}>{session?.name?.split(' ')[0]}!</span>
+            Olá, <span className="font-light italic" style={{ color: G }}>{firstName}!</span>
           </h1>
           <p className="text-white/35 max-w-md mx-auto text-sm font-light">
             Acesse sua formação em Terapia Comportamental.
