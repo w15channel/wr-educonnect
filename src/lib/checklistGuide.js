@@ -72,12 +72,13 @@ export const STEP_GUIDE = {
   tuition: {
     emoji: '💚',
     short: 'Contribuição',
-    what: 'Conhecer a Contribuição Voluntária',
+    what: 'Fazer sua Contribuição Voluntária do mês',
     steps: [
-      'Toque no botão abaixo para abrir a área de Mensalidades.',
-      'Em “Mais Informações”, a Luna explicará o demonstrativo e mostrará o código Pix.',
-      'Não há valor fixo ou mínimo: escolha quanto cabe no seu orçamento, sem taxas ou cobranças extras.',
-      'Depois de contribuir, informe o valor e a data e aguarde a confirmação da administração.',
+      'Toque no botão abaixo para abrir a área de Contribuição Voluntária.',
+      'Veja o demonstrativo dos custos mensais por aluno (R$ 450 de referência).',
+      'Pense com sinceridade: hoje, com quanto você poderia colaborar?',
+      'Não há valor mínimo — o que importa é sua participação sincera na comunidade.',
+      'Faça a transferência via Pix e depois informe o valor e a data para a administração confirmar.',
     ],
   },
   ofensiva: {
