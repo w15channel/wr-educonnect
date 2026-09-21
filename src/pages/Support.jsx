@@ -23,7 +23,7 @@ function ExpandableGroup({ group, tickets, isTeacher, isDefaultOpen, onRespond, 
       <button
         type="button"
         onClick={() => setExpanded(v => !v)}
-        className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/50 ${group.accent} border-l-4`}
+        className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/50 border-l-4 ${group.accent}`}
       >
         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${group.badge}`}>
           <Icon size={16} />
@@ -103,7 +103,6 @@ export default function Support() {
     onError: () => toast.error('Não foi possível excluir o chamado.'),
   });
 
-  // Agrupa chamados por status
   const groupedTickets = STATUS_GROUPS.reduce((acc, group) => {
     acc[group.id] = tickets.filter((t) => t.status === group.id);
     return acc;
@@ -159,11 +158,11 @@ export default function Support() {
         <div className="space-y-3">
           {STATUS_GROUPS.map((group) => (
             <ExpandableGroup
-n              key={group.id}
+              key={group.id}
               group={group}
               tickets={groupedTickets[group.id] || []}
               {...cardProps}
-              isDefaultOpen={group.id === 'open' || group.id === 'in_progress'}
+              isDefaultOpen={group.id !== 'resolved'}
             />
           ))}
         </div>
