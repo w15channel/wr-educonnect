@@ -11,7 +11,7 @@ import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { LUNA_SYSTEM_PROMPT, LUNA_QUICK_ACTIONS, lunaGreeting, searchApostila, saveLunaMemory, loadLunaMemory, clearLunaMemory } from '@/lib/lunaPersona';
 import { SUPPORT_CATEGORIES } from '@/components/support/SupportTicketForm';
 import { TUITION_ACTIONS, TUITION_GREETING, TUITION_PROMPT } from '@/lib/lunaTuition';
-import { getLunaSupportOffer, getLunaSupportDecision, LUNA_SUPPORT_REASONS } from '@/lib/lunaSupport';
+import { countLunaStudentInteractions, getLunaSupportOffer, getLunaSupportDecision, LUNA_SUPPORT_REASONS, MIN_LUNA_SUPPORT_INTERACTIONS } from '@/lib/lunaSupport';
 import { getDMSessionId, LUNA_DM_EMAIL, LUNA_DM_NAME } from '@/lib/lunaDM';
 import { toast } from 'sonner';
 
@@ -19,11 +19,12 @@ const LUNA_SUPPORT_PROMPT_SUFFIX = `
 
 MODO DE SUPORTE ATIVO: O aluno chegou até você através do atalho de suporte. Nesta conversa:
 1. Pergunte o que o aluno precisa ou qual problema está enfrentando na plataforma.
-2. TENTE RESOLVER o problema primeiro — use seu conhecimento da plataforma, o conteúdo da apostila fornecido e sua inteligência para ajudar de verdade. Seja minuciosa: explore alternativas, sugira passos práticos, explique caminhos.
+2. TENTE RESOLVER o problema primeiro — use seu conhecimento da plataforma, o conteúdo da apostila fornecido e sua inteligência para ajudar de verdade. Seja minuciosa: explore alternativas, sugira passos práticos, explique caminhos, valide o resultado de cada tentativa e ajuste a orientação com o relato do aluno.
 3. Se você conseguiu resolver, ótimo! Pergunte se precisa de mais alguma coisa e continue conversando.
-4. Se você realmente esgotou todas as alternativas e não conseguiu resolver, seja honesta e natural: "Eu tentei te ajudar com isso de várias formas, mas acho que essa situação precisa da equipe de suporte. Quer que eu abra um chamado pra você?"
-5. Entrar pelo atalho de suporte NÃO autoriza a abertura de um chamado. Siga as mesmas regras de diálogo e confirmação dos demais modos.
-6. O chamado deve ser oferecido NO MÁXIMO UMA VEZ por conversa. Se já ofereceu e o aluno recusou ou continuou conversando, não ofereça novamente.`;
+4. NÃO proponha chamado antes de completar pelo menos ${MIN_LUNA_SUPPORT_INTERACTIONS} interações do aluno sobre o caso. Durante essas interações, continue investigando e tentando resolver junto com ele; nunca use a contagem como desculpa para deixar de ajudar.
+5. Depois desse mínimo, somente se você realmente esgotou alternativas úteis e o problema persistir, seja honesta e natural: "Sou uma inteligência artificial programada para ajudar e tenho limitações para acessar ou alterar alguns casos. Tentei resolver isso com você de várias formas, mas esta situação precisa da equipe técnica. Você deseja abrir um chamado para que ela analise este caso?"
+6. Entrar pelo atalho de suporte NÃO autoriza a abertura de um chamado. Siga as mesmas regras de diálogo e confirmação dos demais modos.
+7. O chamado deve ser oferecido NO MÁXIMO UMA VEZ por conversa. Se já ofereceu e o aluno recusou ou continuou conversando, não ofereça novamente.`;
 
 const SUPPORT_OFFER_PROMPT = `
 FORMATO DA PROPOSTA DE SUPORTE:
@@ -33,7 +34,7 @@ Somente quando identificar necessidade de intervenção humana E ainda não tive
 - title: resumo do problema, até 80 caracteres.
 - description: descrição fiel do relato e das tentativas de solução, sem inventar dados.
 - category: uma destas categorias: ${SUPPORT_CATEGORIES.join(', ')}.
-REGRA CRÍTICA: inclua "support_offer" no MÁXIMO UMA VEZ por conversa. Se já incluiu antes (o contexto indicará "SUPORTE_JÁ_OFERECIDO"), NÃO inclua novamente — mesmo que o aluno insista no tema, continue tentando ajudar na conversa.
+REGRA CRÍTICA: inclua "support_offer" somente depois de pelo menos ${MIN_LUNA_SUPPORT_INTERACTIONS} interações do aluno sobre o caso, no MÁXIMO UMA VEZ por conversa. Se já incluiu antes (o contexto indicará "SUPORTE_JÁ_OFERECIDO"), NÃO inclua novamente — mesmo que o aluno insista no tema, continue tentando ajudar na conversa.
 Caso contrário, omita "support_offer". A proposta não cria chamado. O aplicativo mostrará o resumo e pedirá confirmação; oriente o aluno a escolher "Sim, abrir chamado" ou "Não, continuar conversando".`;
 
 function buildConversationTranscript(messages, studentName) {
@@ -86,15 +87,19 @@ async function loadLunaMessagesFromServer(studentEmail) {
 
 export default function LunaChat({ session, onNavigated, isActive = true, supportMode = false, tuitionMode = false }) {
   const voice = useLunaVoice();
-  const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Vi que você precisa de ajuda com algo. Pode me contar o que está acontecendo? Vou fazer o possível pra te ajudar aqui mesmo — e só se eu não conseguir, aí a gente vê sobre abrir um chamado pra equipe de suporte.`;
+  const supportGreeting = `Olá, ${String(session?.name || 'aluno(a)').split(' ')[0]}! 🦉 Eu sou a Luna, uma inteligência artificial programada para ajudar você. Posso orientar e buscar uma solução junto com você, mas tenho limitações: alguns casos precisam ser analisados pela equipe técnica. Pode me contar o que está acontecendo? Vamos tentar resolver por aqui antes de pensar em um chamado.`;
   const greeting = tuitionMode ? TUITION_GREETING : supportMode ? supportGreeting : lunaGreeting(session?.name);
 
   const memoryKey = `luna_chat_${tuitionMode ? 'tuition_' : ''}${session?.email || session?.code || 'anon'}`;
   const savedMessages = loadLunaMemory(memoryKey);
   const lastSavedMessage = savedMessages?.[savedMessages.length - 1];
+  const savedInteractionCount = countLunaStudentInteractions(savedMessages);
   const savedOffer = lastSavedMessage?.role === 'assistant'
-    ? getLunaSupportOffer(lastSavedMessage, SUPPORT_CATEGORIES)
+    ? getLunaSupportOffer(lastSavedMessage, SUPPORT_CATEGORIES, savedInteractionCount)
     : null;
+  const hadSavedSupportOffer = savedMessages?.some(message =>
+    message?.role === 'assistant' && getLunaSupportOffer(message, SUPPORT_CATEGORIES, savedInteractionCount)
+  );
   const [messages, setMessages] = useState(
     savedMessages && savedMessages.length > 0
       ? savedOffer ? savedMessages : [...savedMessages, { role: 'assistant', content: '🦉 Continuando nossa conversa de hoje. Como posso te ajudar agora?' }]
@@ -106,7 +111,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   const [ticketCreating, setTicketCreating] = useState(false);
   const [supportOffer, setSupportOffer] = useState(savedOffer);
   const supportOfferRef = useRef(savedOffer);
-  const supportAlreadyOfferedRef = useRef(Boolean(savedOffer || savedMessages?.some(m => m.support_offer)));
+  const supportAlreadyOfferedRef = useRef(Boolean(savedOffer || hadSavedSupportOffer));
   const busyRef = useRef(false);
   const endRef = useRef(null);
   const activeRef = useRef(isActive);
@@ -210,7 +215,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         : '';
       const supportFlag = supportAlreadyOfferedRef.current
         ? '\n\n⚠️ SUPORTE_JÁ_OFERECIDO: Você já ofereceu um chamado de suporte nesta conversa. NÃO inclua "support_offer" novamente. Continue ajudando o aluno normalmente na conversa.'
-        : '';
+        : `\n\nINTERAÇÕES DO ALUNO SOBRE O CASO: ${countLunaStudentInteractions(next)}/${MIN_LUNA_SUPPORT_INTERACTIONS}. ${countLunaStudentInteractions(next) < MIN_LUNA_SUPPORT_INTERACTIONS ? 'Ainda não é permitido incluir "support_offer"; continue investigando e orientando.' : 'O mínimo foi atingido, mas só inclua "support_offer" se todas as alternativas úteis tiverem sido esgotadas.'}`;
       const basePrompt = tuitionMode ? LUNA_SYSTEM_PROMPT + TUITION_PROMPT : supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
       const systemPrompt = basePrompt + SUPPORT_OFFER_PROMPT + apostilaContext + supportFlag;
       const answer = await base44.integrations.Core.InvokeLLM({
@@ -236,14 +241,14 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       });
       const reply = answer?.answer || 'Desculpe, não consegui responder agora. Poderia tentar novamente, por favor?';
       const updatedMessages = [...next, { role: 'assistant', content: reply, links: answer?.links || [] }];
-      const offer = getLunaSupportOffer(answer, SUPPORT_CATEGORIES);
+      const offer = getLunaSupportOffer(answer, SUPPORT_CATEGORIES, countLunaStudentInteractions(next));
       if (offer && !supportAlreadyOfferedRef.current) {
         supportAlreadyOfferedRef.current = true;
         supportOfferRef.current = offer;
         setSupportOffer(offer);
         updatedMessages.push({
           role: 'assistant', support_offer: offer,
-          content: `${offer.explanation}\n\n📋 Assunto: ${offer.title}\n🏷️ Categoria: ${offer.category}\n${offer.description}\n\nVocê deseja abrir um chamado para a equipe atender essa demanda? Nada foi registrado ainda. Escolha "Sim, abrir chamado" ou "Não, continuar conversando".`,
+          content: `Sou uma inteligência artificial programada para ajudar, mas tenho limitações: este caso precisa ser analisado pela equipe técnica.\n\n${offer.explanation}\n\n📋 Assunto: ${offer.title}\n🏷️ Categoria: ${offer.category}\n${offer.description}\n\nVocê deseja abrir um chamado para a equipe atender essa demanda? Nada foi registrado ainda. Escolha "Sim, abrir chamado" ou "Não, continuar conversando".`,
         });
       }
       setMessages(updatedMessages);
@@ -295,7 +300,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
         <Button type="submit" className="h-11 w-11 shrink-0 p-0 bg-rose-500 hover:bg-rose-600" disabled={!input.trim() || loading || ticketCreating}><Send size={16} /></Button>
       </form>
-      <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">A Luna acolhe e orienta, mas não substitui atendimento profissional. Em crise, ligue 188 (CVV).</p>
+      <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">A Luna é uma inteligência artificial programada para orientar; ela tem limitações e alguns casos precisam da equipe técnica. Em crise, ligue 188 (CVV).</p>
     </div>
   );
 }
