@@ -26,6 +26,11 @@ describe('propostas de suporte da Luna', () => {
     ])).toBe(2);
   });
 
+  it('trata uma conversa ainda inexistente sem interromper a tela da Luna', () => {
+    expect(countLunaStudentInteractions(null)).toBe(0);
+    expect(countLunaStudentInteractions({})).toBe(0);
+  });
+
   it.each([
     undefined,
     { answer: 'Olá! Como posso ajudar?' },
