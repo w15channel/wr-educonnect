@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateReceiptCode, generateReceiptImage, downloadReceiptImage, getDefaultReceiptTemplate, setDefaultReceiptTemplate } from '@/lib/generateReceiptImage';
 import ReceiptImageDialog from '@/components/tuitions/ReceiptImageDialog';
-import { CONTRIBUTION_STUDENT_FEATURE_DAYS, CONTRIBUTION_WALL_HIGHLIGHT_DAYS, DAY_MS, hasPositiveContribution } from '@/lib/contributionAwards';
+import { CONTRIBUTION_STUDENT_FEATURE_DAYS, CONTRIBUTION_WALL_HIGHLIGHT_DAYS, DAY_MS, getLatestContributors, hasPositiveContribution } from '@/lib/contributionAwards';
 
 const STATUS_CONFIG = {
   paid: { label: 'Pago', icon: CheckCircle, card: 'border-green-500/20 bg-green-500/10', badge: 'text-green-500 bg-green-500/10 border-green-500/20', text: 'text-green-500', iconBg: 'bg-green-500/15' },
@@ -65,6 +65,7 @@ export default function Tuitions() {
 
   const allowedStudentKeys = new Set(allStudents.flatMap(s => [s.key, s.email]).filter(Boolean));
   const visibleTuitions = isAdmin ? tuitions.filter(t => allowedStudentKeys.has(t.student_email)) : tuitions;
+  const automaticAwardSyncRef = useRef('');
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Tuition.create(data),
@@ -100,35 +101,73 @@ export default function Tuitions() {
     setPayAmountInput('');
   };
 
-  // Publica no mural individual e no mural coletivo de superação que o aluno
-  // contribuiu voluntariamente — nunca exibindo o valor da contribuição.
+  // Concede o reconhecimento sem expor o valor contribuído. A chave por
+  // mensalidade torna a operação segura para sincronizações e cliques repetidos.
+  const grantContributionAward = async (t) => {
+    if (!hasPositiveContribution(t)) throw new Error('O diamante é concedido somente para contribuições acima de zero.');
+    const dedupeKey = `tuition:${t.id}`;
+    const existing = await base44.entities.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
+    if (!existing.length) {
+      const studentCourse = codes.find((c) => c.student_email === t.student_email)?.course || routeCourse || 'tcc';
+      const occurredAt = new Date().toISOString();
+      await base44.entities.Achievement.create({
+        dedupe_key: dedupeKey,
+        student_email: t.student_email,
+        course: studentCourse,
+        kind: 'tuition',
+        title: 'Diamante da Contribuição',
+        message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
+        mentioned_emails: [t.student_email],
+        source_id: t.id,
+        occurred_at: occurredAt,
+        student_feature_until: new Date(Date.parse(occurredAt) + CONTRIBUTION_STUDENT_FEATURE_DAYS * DAY_MS).toISOString(),
+        wall_highlight_until: new Date(Date.parse(occurredAt) + CONTRIBUTION_WALL_HIGHLIGHT_DAYS * DAY_MS).toISOString(),
+      });
+    }
+    if (!t.wall_shared) await base44.entities.Tuition.update(t.id, { wall_shared: true });
+    return !existing.length;
+  };
+
+  // Publica no mural individual e coletivo. O botão continua disponível como
+  // recuperação manual, mas novos pagamentos não dependem mais dessa ação.
   const shareMutation = useMutation({
-    mutationFn: async (t) => {
-      if (!hasPositiveContribution(t)) throw new Error('O diamante é concedido somente para contribuições acima de zero.');
-      const dedupeKey = `tuition:${t.id}`;
-      const existing = await base44.entities.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
-      if (!existing.length) {
-        const studentCourse = codes.find((c) => c.student_email === t.student_email)?.course || routeCourse || 'tcc';
-        const occurredAt = new Date().toISOString();
-        await base44.entities.Achievement.create({
-          dedupe_key: dedupeKey,
-          student_email: t.student_email,
-          course: studentCourse,
-          kind: 'tuition',
-          title: 'Diamante da Contribuição',
-          message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
-          mentioned_emails: [t.student_email],
-          source_id: t.id,
-          occurred_at: occurredAt,
-          student_feature_until: new Date(Date.parse(occurredAt) + CONTRIBUTION_STUDENT_FEATURE_DAYS * DAY_MS).toISOString(),
-          wall_highlight_until: new Date(Date.parse(occurredAt) + CONTRIBUTION_WALL_HIGHLIGHT_DAYS * DAY_MS).toISOString(),
-        });
-      }
-      return base44.entities.Tuition.update(t.id, { wall_shared: true });
+    mutationFn: grantContributionAward,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tuitions'] });
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
+      queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
+      toast.success('Diamante concedido e publicado no mural!');
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['tuitions'] }); toast.success('Diamante concedido e publicado no mural!'); },
     onError: (error) => toast.error(error?.message || 'Não foi possível conceder o diamante.'),
   });
+
+  const latestContributors = getLatestContributors(visibleTuitions);
+  const latestContributorSignature = latestContributors.map((item) => item.id).sort().join('|');
+
+  // Corrige também registros anteriores: ao abrir a gestão, todos que
+  // contribuíram na última mensalidade recebem o diamante, não apenas quem teve
+  // o botão de compartilhamento acionado individualmente.
+  useEffect(() => {
+    if (!isAdmin || !latestContributorSignature || automaticAwardSyncRef.current === latestContributorSignature) return;
+    automaticAwardSyncRef.current = latestContributorSignature;
+    let cancelled = false;
+    (async () => {
+      let created = 0;
+      for (const tuition of latestContributors) {
+        if (cancelled) return;
+        if (await grantContributionAward(tuition)) created += 1;
+      }
+      if (!cancelled && created > 0) {
+        queryClient.invalidateQueries({ queryKey: ['tuitions'] });
+        queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
+        queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
+        toast.success(`${created} diamante${created === 1 ? '' : 's'} da última mensalidade ${created === 1 ? 'foi concedido' : 'foram concedidos'}.`);
+      }
+    })().catch((error) => {
+      if (!cancelled) toast.error(error?.message || 'Não foi possível sincronizar os diamantes da última mensalidade.');
+    });
+    return () => { cancelled = true; };
+  }, [isAdmin, latestContributorSignature]);
 
   const [defaultTemplateUrl, setDefaultTemplateUrl] = useState(null);
   const [savingDefault, setSavingDefault] = useState(false);

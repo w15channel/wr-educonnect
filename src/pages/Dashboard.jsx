@@ -757,16 +757,16 @@ export default function Dashboard() {
                     </div>
                   );
                   if (msg.feedType === 'achievement') return (
-                    <div key={msg.id} className={`rounded-lg border p-2 text-[11px] leading-relaxed ${msg.kind === 'tuition' ? 'border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 dark:border-cyan-400 dark:bg-cyan-950/40 dark:text-white' : 'border-amber-200 bg-amber-50/80 dark:border-white dark:bg-white dark:text-black'}`}>
+                    <div key={msg.id} className={`rounded-lg border p-2 text-[11px] leading-relaxed ${msg.kind === 'tuition' ? 'border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 dark:border-cyan-500/70 dark:from-cyan-950 dark:via-slate-950 dark:to-indigo-950 dark:text-cyan-50' : 'border-amber-200 bg-amber-50/80 dark:border-white dark:bg-white dark:text-black'}`}>
                       <div className="flex gap-2">
-                      {msg.kind === 'tuition' ? <Gem size={14} className="mt-0.5 shrink-0 text-cyan-600" /> : <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />}
+                      {msg.kind === 'tuition' ? <Gem size={14} className="mt-0.5 shrink-0 text-cyan-700 dark:text-cyan-300" /> : <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />}
                       {msg.isCollective
                         ? <p><span className="font-bold text-amber-800 dark:text-black">Conquista da turma!</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span></p>
-                        : <p><span className={`font-bold ${msg.kind === 'tuition' ? 'text-cyan-800 dark:text-cyan-200' : 'text-amber-800 dark:text-black'}`}>{isContributionAwardFeatured(msg, session?.email) ? 'Parabéns! Seu diamante foi conquistado!' : msg.kind === 'tuition' ? 'Diamante conquistado!' : 'Conquista desbloqueada!'}</span> <span className="font-semibold text-foreground dark:text-[#b8860b]">{msg.studentName}</span> <span className="text-muted-foreground dark:text-black">{msg.content}</span> <span aria-hidden="true">{msg.kind === 'tuition' ? '💎' : '🎉'}</span></p>
+                        : <p><span className={`font-bold ${msg.kind === 'tuition' ? 'text-cyan-800 dark:text-cyan-200' : 'text-amber-800 dark:text-black'}`}>{isContributionAwardFeatured(msg, session?.email) ? 'Parabéns! Seu diamante foi conquistado!' : msg.kind === 'tuition' ? 'Diamante conquistado!' : 'Conquista desbloqueada!'}</span> <span className={`font-semibold ${msg.kind === 'tuition' ? 'text-slate-900 dark:text-white' : 'text-foreground dark:text-[#b8860b]'}`}>{msg.studentName}</span> <span className={msg.kind === 'tuition' ? 'text-slate-700 dark:text-cyan-50/90' : 'text-muted-foreground dark:text-black'}>{msg.content}</span> <span aria-hidden="true">{msg.kind === 'tuition' ? '💎' : '🎉'}</span></p>
                       }
                       </div>
-                      {isContributionAwardFeatured(msg, session?.email) && <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-cyan-600/10 px-2 py-1 font-bold text-cyan-700"><Pin size={10} /> Sua conquista em destaque por 15 dias</span>}
-                      {!isContributionAwardFeatured(msg, session?.email) && isContributionWallHighlight(msg) && <span className="mt-2 inline-flex rounded-full bg-cyan-600/10 px-2 py-1 font-bold text-cyan-700">💎 Destaque da semana</span>}
+                      {isContributionAwardFeatured(msg, session?.email) && <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-cyan-700/10 px-2 py-1 font-bold text-cyan-800 dark:bg-cyan-300/15 dark:text-cyan-200"><Pin size={10} /> Sua conquista em destaque por 15 dias</span>}
+                      {!isContributionAwardFeatured(msg, session?.email) && isContributionWallHighlight(msg) && <span className="mt-2 inline-flex rounded-full bg-cyan-700/10 px-2 py-1 font-bold text-cyan-800 dark:bg-cyan-300/15 dark:text-cyan-200">💎 Destaque da semana</span>}
                       {reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails)}
                       {privateReplyForm(msg)}
                     </div>
