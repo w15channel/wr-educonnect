@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useOutletContext, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Pin, CheckCheck, Send, Share2, ArrowLeft, Search, MessageCircle, Lock, Radio } from 'lucide-react';
+import { Pin, CheckCheck, Send, Share2, ArrowLeft, Search, MessageCircle, Lock, Radio, Pencil, Trash2, Save, X } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import useProfessorAutoReactions from '@/hooks/useProfessorAutoReactions';
@@ -73,6 +73,9 @@ function AdminDMConversations({ session, students }) {
   const [text, setText] = useState('');
   const [search, setSearch] = useState('');
   const [readStatus, setReadStatus] = useState(() => getReadStatus());
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [historyActionPending, setHistoryActionPending] = useState(false);
   const bottomRef = useRef(null);
   const { getDisplayName } = useDisplayNameResolver();
 
@@ -215,6 +218,49 @@ function AdminDMConversations({ session, students }) {
     }
   };
 
+  const beginEditMessage = (message) => {
+    setEditingMessageId(message.id);
+    setEditText(message.content || '');
+  };
+
+  const cancelEditMessage = () => {
+    setEditingMessageId(null);
+    setEditText('');
+  };
+
+  const saveEditedMessage = async (message) => {
+    const content = editText.trim();
+    if (!content || !message?.id || historyActionPending) return;
+    setHistoryActionPending(true);
+    try {
+      await adminApi.update('ChatMessage', message.id, { content });
+      cancelEditMessage();
+      await queryClient.invalidateQueries({ queryKey: ['admin-dm-messages', adminEmail] });
+      toast.success('Mensagem atualizada.');
+    } catch (error) {
+      toast.error(error?.message || 'Não foi possível editar a mensagem.');
+    } finally {
+      setHistoryActionPending(false);
+    }
+  };
+
+  const deleteConversationHistory = async () => {
+    const messages = selectedConversation?.messages || [];
+    if (!messages.length || historyActionPending) return;
+    if (!window.confirm(`Excluir permanentemente as ${messages.length} mensagens desta conversa? Esta ação não pode ser desfeita.`)) return;
+    setHistoryActionPending(true);
+    try {
+      for (const message of messages) await adminApi.delete('ChatMessage', message.id);
+      await queryClient.invalidateQueries({ queryKey: ['admin-dm-messages', adminEmail] });
+      setSelectedSessionId(null);
+      toast.success('Histórico da conversa excluído.');
+    } catch (error) {
+      toast.error(error?.message || 'Não foi possível excluir todo o histórico.');
+    } finally {
+      setHistoryActionPending(false);
+    }
+  };
+
   const getStudentName = (student) => {
     const name = getDisplayName(student?.student_email) || student?.profile_name || student?.student_name || student?.student_email || 'Aluno';
     return getAvatarPrefixedName(name, student?.profile_avatar_emoji);
@@ -246,6 +292,15 @@ function AdminDMConversations({ session, students }) {
           <span className="flex h-3 w-3 shrink-0 items-center justify-center">
             <span className="h-3 w-3 rounded-full bg-green-500" title="Conversa lida" />
           </span>
+          <button
+            type="button"
+            onClick={deleteConversationHistory}
+            disabled={!messages.length || historyActionPending}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-300 dark:hover:bg-red-500/10"
+            title="Excluir todo o histórico desta conversa"
+          >
+            <Trash2 size={13} /> <span className="hidden sm:inline">Excluir histórico</span>
+          </button>
           <Lock size={14} className="text-muted-foreground shrink-0" />
         </div>
 
@@ -268,11 +323,24 @@ function AdminDMConversations({ session, students }) {
                     [{time}] <span className="font-bold text-foreground">{msg.author_name || 'Aluno'}</span> diz:
                   </span>
                 )}
-                <span className={`inline-block rounded-lg px-3 py-1.5 max-w-[80%] ${isMe ? 'bg-rose-500 text-white' : 'bg-secondary text-foreground'}`}>
-                  {msg.content}
-                </span>
+                {editingMessageId === msg.id ? (
+                  <form onSubmit={(event) => { event.preventDefault(); saveEditedMessage(msg); }} className="ml-auto flex max-w-[90%] items-center justify-end gap-1.5">
+                    <input autoFocus value={editText} onChange={(event) => setEditText(event.target.value)} className="h-9 min-w-0 flex-1 rounded-lg border border-rose-300 bg-input px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-rose-300" aria-label="Editar mensagem" />
+                    <button type="submit" disabled={!editText.trim() || historyActionPending} className="rounded-lg bg-emerald-600 p-2 text-white disabled:opacity-40" title="Salvar edição"><Save size={14} /></button>
+                    <button type="button" onClick={cancelEditMessage} className="rounded-lg bg-secondary p-2 text-foreground" title="Cancelar edição"><X size={14} /></button>
+                  </form>
+                ) : (
+                  <span className={`inline-block rounded-lg px-3 py-1.5 max-w-[80%] whitespace-pre-wrap ${isMe ? 'bg-rose-500 text-white' : 'bg-secondary text-foreground'}`}>
+                    {msg.content}
+                  </span>
+                )}
                 <div className={`mt-0.5 flex items-center gap-1 ${isMe ? 'justify-end' : ''}`}>
                   {isMe && <span className="text-[11px] text-muted-foreground">[{time}]</span>}
+                  {isMe && editingMessageId !== msg.id && (
+                    <button type="button" onClick={() => beginEditMessage(msg)} disabled={historyActionPending} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold text-primary opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-rose-50 dark:hover:bg-white/10" title="Editar mensagem enviada">
+                      <Pencil size={11} /> Editar
+                    </button>
+                  )}
                   {!isMe && isRead && (
                     <span className="inline-flex items-center gap-0.5 rounded-full bg-green-100 dark:bg-green-500/15 px-1.5 py-0.5 text-[9px] font-bold text-green-700 dark:text-green-300">
                       <CheckCheck size={9} /> Lida

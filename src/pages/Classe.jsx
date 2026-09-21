@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { startOfWeek, format } from 'date-fns';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
-import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
+import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji, resolveDisplayName } from '@/lib/avatarUtils';
 import Monitores from './Monitores';
 import useModuleTrophies from '@/hooks/useModuleTrophies';
 import ModuleTrophies from '@/components/achievements/ModuleTrophies';
@@ -45,7 +45,7 @@ function StudentAvatar({ name, photoUrl, avatarColor, avatarEmoji, size = 56 }) 
 }
 
 function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, trophies, session, navigate, onOpenDetails }) {
-  const name = profile?.full_name || code?.profile_name || code?.student_name || code?.student_email || 'Aluno';
+  const name = resolveDisplayName({ email: code?.student_email, code, profile });
   const nickname = profile?.nickname || '';
   const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
   const avatarColor = profile?.avatar_color || code?.profile_avatar_color || '#5b5ef4';
@@ -102,7 +102,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, t
       />
       <div className="w-full min-w-0">
         <div className="flex items-center justify-center gap-1"><p className="min-w-0 truncate font-bold text-foreground text-sm leading-tight">{publicName}</p><ModuleTrophies completions={trophies} compact /></div>
-        {nickname && <p className="text-xs text-muted-foreground truncate">"{nickname}"</p>}
+        {nickname && nickname !== name && <p className="text-xs text-muted-foreground truncate">"{nickname}"</p>}
         {bio && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{bio}</p>}
         {points > 0 && (
           <div className="flex items-center justify-center gap-1 mt-1.5">
@@ -221,13 +221,13 @@ export default function Classe() {
   });
 
   const sorted = [...students].sort((a, b) => {
-    const nameA = (a.profile?.full_name || a.code?.profile_name || a.code?.student_name || '').toLowerCase();
-    const nameB = (b.profile?.full_name || b.code?.profile_name || b.code?.student_name || '').toLowerCase();
+    const nameA = resolveDisplayName({ email: a.code?.student_email, code: a.code, profile: a.profile }).toLowerCase();
+    const nameB = resolveDisplayName({ email: b.code?.student_email, code: b.code, profile: b.profile }).toLowerCase();
     return nameA.localeCompare(nameB, 'pt-BR');
   });
 
   const filtered = sorted.filter(({ code, profile }) => {
-    const name = (profile?.full_name || code?.profile_name || code?.student_name || '').toLowerCase();
+    const name = resolveDisplayName({ email: code?.student_email, code, profile }).toLowerCase();
     const nick = (profile?.nickname || '').toLowerCase();
     const q = search.toLowerCase();
     return name.includes(q) || nick.includes(q);
@@ -257,8 +257,8 @@ export default function Classe() {
                   <div>
                     <p className="text-xs font-bold text-yellow-600 uppercase tracking-wide">Conquistas da Semana</p>
                     <div className="flex flex-wrap gap-1.5 mt-1">
-                      {currentMonitors.sort((a, b) => a.rank_position - b.rank_position).map(m => <span key={m.id} className="text-xs font-semibold text-foreground bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full">{m.rank_position === 1 ? '🥇' : m.rank_position === 2 ? '🥈' : '🥉'} {m.student_name}</span>)}
-                      {weeklyTrophies.map((item) => { const code = codes.find((entry) => entry.student_email === item.student_email); const profile = profiles.find((entry) => entry.student_email === item.student_email); return <span key={item.id} className="inline-flex items-center gap-1 text-xs font-semibold text-foreground bg-violet-400/10 border border-violet-400/20 px-2 py-0.5 rounded-full"><ModuleTrophies completions={[item]} compact /> {profile?.full_name || code?.profile_name || code?.student_name || item.student_name || 'Aluno'} · Módulo {item.moduleNumber}</span>; })}
+                      {currentMonitors.sort((a, b) => a.rank_position - b.rank_position).map(m => { const code = codes.find((entry) => entry.student_email === m.student_email); const profile = profiles.find((entry) => entry.student_email === m.student_email); return <span key={m.id} className="text-xs font-semibold text-foreground bg-yellow-400/10 border border-yellow-400/20 px-2 py-0.5 rounded-full">{m.rank_position === 1 ? '🥇' : m.rank_position === 2 ? '🥈' : '🥉'} {resolveDisplayName({ email: m.student_email, code, profile })}</span>; })}
+                      {weeklyTrophies.map((item) => { const code = codes.find((entry) => entry.student_email === item.student_email); const profile = profiles.find((entry) => entry.student_email === item.student_email); return <span key={item.id} className="inline-flex items-center gap-1 text-xs font-semibold text-foreground bg-violet-400/10 border border-violet-400/20 px-2 py-0.5 rounded-full"><ModuleTrophies completions={[item]} compact /> {resolveDisplayName({ email: item.student_email, code, profile })} · Módulo {item.moduleNumber}</span>; })}
                     </div>
                   </div>
                 </div>
@@ -272,7 +272,7 @@ export default function Classe() {
                       {(() => {
                         const c = codes.find(c => c.student_email === weeklyTopEmail);
                         const p = profiles.find(p => p.student_email === weeklyTopEmail);
-                        return p?.full_name || c?.profile_name || c?.student_name || weeklyTopEmail;
+                        return resolveDisplayName({ email: weeklyTopEmail, code: c, profile: p });
                       })()}
                     </p>
                     <p className="text-xs text-muted-foreground">1º lugar no ranking geral da turma</p>
@@ -341,7 +341,7 @@ export default function Classe() {
             {(() => {
               const code = selectedStudent.code;
               const profile = selectedStudent.profile;
-              const name = profile?.full_name || code?.profile_name || code?.student_name || code?.student_email || 'Aluno';
+              const name = resolveDisplayName({ email: code?.student_email, code, profile });
               const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
               const avatarColor = profile?.avatar_color || code?.profile_avatar_color || '#5b5ef4';
               const avatarEmoji = resolveAvatarEmoji(profile?.avatar_emoji || code?.profile_avatar_emoji);
@@ -356,7 +356,7 @@ export default function Classe() {
                     <StudentAvatar name={name} photoUrl={photoUrl} avatarColor={avatarColor} avatarEmoji={avatarEmoji} size={132} />
                   </div>
                   <h3 className="text-xl font-bold text-center">{publicName}</h3>
-                  {nickname && <p className="text-center text-sm text-white/70 mt-0.5">"{nickname}"</p>}
+                  {nickname && nickname !== name && <p className="text-center text-sm text-white/70 mt-0.5">"{nickname}"</p>}
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
                       <p className="text-white/60">Idade</p>
