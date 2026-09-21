@@ -134,7 +134,7 @@ export function buildModuleChecklist({
   const tuitionItems = unpaidTuitions.map((t, idx) => ({
     key: `tuition_${idx}`,
     label: `Contribuição Voluntária${t.month_ref ? ` — ${t.month_ref}` : ''}`,
-    hint: `Contribuição voluntária em aberto. Vencimento: ${t.due_date || 'não definido'}.`,
+    hint: `O curso tem custos mensais reais (professor, plataforma, tecnologia). O custo de referência é R$ 450 por aluno — mas você escolhe quanto pode colaborar, sem valor mínimo. Hoje, com quanto você poderia contribuir? Vá até a página de Mensalidades para informar seu valor.`,
     current: 0,
     target: 1,
     to: '/tuitions',
