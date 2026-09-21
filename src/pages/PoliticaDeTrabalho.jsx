@@ -30,7 +30,7 @@ export default function PoliticaDeTrabalho() {
           </div>
           <h1 className="text-4xl font-black text-white mb-3">Política de Trabalho</h1>
           <p className="text-white/50 max-w-xl mx-auto text-sm leading-relaxed">
-            Nossa política reflete o compromisso com a legalidade, transparência e respeito aos nossos alunos e à sociedade.
+            Documento institucional que estabelece diretrizes para a oferta dos serviços educacionais, a certificação e a conduta no ambiente de aprendizagem.
           </p>
         </div>
 
@@ -45,7 +45,7 @@ export default function PoliticaDeTrabalho() {
               <div>
                 <p className="text-white font-bold text-sm mb-1">Associação Brasileira de Educação a Distância</p>
                 <p className="text-white/50 text-xs leading-relaxed">
-                  A {BRAND_LEGAL_NAME} é associada à ABED, habilitada a operar em conformidade com a <strong className="text-white/70">Lei nº 9.394/96</strong> (LDB) e o <strong className="text-white/70">Decreto Presidencial nº 5.154/04</strong>. CNPJ {BRAND_CNPJ}.
+                  A filiação associativa é informada para fins de transparência institucional. A consulta pública de associados deve ser realizada diretamente no canal oficial da entidade. CNPJ {BRAND_CNPJ}.
                 </p>
               </div>
               <a href="https://www.abed.org.br/site/associados/consulta-associados-ativos/" target="_blank" rel="noopener noreferrer"
@@ -64,7 +64,7 @@ export default function PoliticaDeTrabalho() {
               <div>
                 <p className="text-white font-bold text-sm mb-1">Association for Human Development and Evolution</p>
                 <p className="text-white/50 text-xs leading-relaxed">
-                  Órgão internacional que registra e fiscaliza a atuação de profissionais em métodos terapêuticos comportamentais. Prof. William Ribeiro registrado sob o <strong className="text-white/70">ID: 00403THE</strong>.
+                  Informações sobre registros, associações e critérios de atuação devem ser verificadas diretamente nos canais oficiais da entidade responsável.
                 </p>
               </div>
               <a href="https://ahde-global.org/?lang=pt-br" target="_blank" rel="noopener noreferrer"
@@ -77,7 +77,7 @@ export default function PoliticaDeTrabalho() {
           <div className="mt-5 bg-white/4 border border-white/8 rounded-2xl px-6 py-4 flex items-start gap-3">
             <CheckCircle size={15} className="text-[#1db89e] mt-0.5 shrink-0" />
             <p className="text-white/60 text-sm">
-              Nossos cursos estão em <strong className="text-white">conformidade com os critérios do Ministério Público do Estado do Paraná</strong>, garantindo segurança jurídica para alunos e instituição.
+              A oferta dos cursos observa o enquadramento aplicável à modalidade de cursos livres e as disposições legais pertinentes, sem prejuízo das obrigações específicas de cada atividade profissional.
             </p>
           </div>
         </div>
@@ -89,11 +89,11 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 space-y-4 text-sm text-white/60 leading-relaxed">
             <p>
-              Todos os cursos são <strong className="text-white">totalmente on-line</strong>, com atividades práticas de técnicas terapêuticas voltadas ao acolhimento, cuidado, mediação e preservação da vida, destinados à capacitação profissional.
+              Os cursos são ofertados <strong className="text-white">em ambiente on-line</strong>, com conteúdos e atividades destinados à formação e ao aperfeiçoamento profissional, conforme o programa de cada curso.
             </p>
             <div className="h-px bg-white/5" />
             <p>
-              Os cursos são voltados para pessoas que buscam aprender, de forma prática, o uso das ferramentas terapêuticas para levar <strong className="text-white">cuidado, dignidade e empatia</strong> a quem necessitar.
+              A participação em atividades práticas, estudos de caso ou simulações não autoriza o exercício de profissões regulamentadas nem substitui habilitações, registros, supervisões ou requisitos legais eventualmente exigíveis.
             </p>
           </div>
         </div>
@@ -105,12 +105,11 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 space-y-4 text-sm leading-relaxed">
             <p className="text-yellow-200/80">
-              Os cursos <strong className="text-yellow-200">não são considerados de nível superior</strong> (graduação, extensão ou pós-graduação).
+              Os cursos possuem natureza de <strong className="text-yellow-200">curso livre</strong> e não se caracterizam como graduação ou pós-graduação.
             </p>
             <div className="h-px bg-yellow-500/10" />
             <p className="text-yellow-200/80">
-              Os cursos <strong className="text-yellow-200">não possuem reconhecimento ou autorização</strong> de órgãos como:
-              MEC, CONTRAN, DENATRAN, CIRETRAN, DETRAN, CETRAN, CONTRANDIFE, COFFITO, CRO, CRM, CFP, CREA, entre outros.
+              A conclusão do curso não confere habilitação, registro profissional ou autorização para o exercício de atividades privativas de profissões regulamentadas. Cabe ao participante verificar os requisitos legais e éticos aplicáveis à sua atuação.
             </p>
           </div>
         </div>
@@ -122,16 +121,16 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 space-y-5 text-sm text-white/60 leading-relaxed">
             <p>
-              Para obter o certificado é necessário estar <strong className="text-white">aprovado na avaliação</strong> e cumprir todos os requisitos dos Termos de Serviço deste site, bem como o tempo de estudo exigido.
+              A emissão de certificado depende do <strong className="text-white">cumprimento integral dos requisitos acadêmicos e administrativos</strong> divulgados para o curso, incluindo, quando previstos, carga horária, participação, avaliações e regularidade da matrícula.
             </p>
             <div className="flex items-start gap-3 bg-[#1db89e]/8 border border-[#1db89e]/20 rounded-xl p-4">
               <CheckCircle size={15} className="text-[#1db89e] mt-0.5 shrink-0" />
               <p className="text-white/70 text-sm">
-                <strong className="text-white">Temos orgulho de afirmar</strong> que nesta Instituição não antecipamos o certificado nem retroagimos datas, pois temos profundo respeito pelos alunos que genuinamente dedicam seu tempo aos estudos e conquistam seus certificados de maneira honrosa.
+                Os certificados são emitidos após a verificação dos requisitos aplicáveis. Não são admitidas antecipação de conclusão, alteração retroativa de datas ou emissão em desacordo com os registros acadêmicos.
               </p>
             </div>
             <p>
-              É com base nesse princípio que reiteramos nosso compromisso em garantir que nossos certificados tenham <strong className="text-white">valor real e sejam considerados documentos legítimos</strong>.
+              Os documentos acadêmicos refletem os dados e registros disponíveis na plataforma, observadas as condições de emissão e a legislação aplicável.
             </p>
           </div>
         </div>
@@ -141,7 +140,7 @@ export default function PoliticaDeTrabalho() {
         <div className="mb-10">
           <h2 className="text-2xl font-black text-white mb-3">Política de Trabalho e Compromisso Ético</h2>
           <p className="text-white/55 text-sm leading-relaxed">
-            Nossa Política de Trabalho reflete os valores que sustentam cada etapa da nossa formação. Acreditamos que a excelência não é um destino, mas um padrão de conduta aplicado diariamente na relação entre professor, aluno e o futuro paciente.
+            Esta Política estabelece parâmetros institucionais de oferta, participação e conduta aplicáveis às atividades educacionais disponibilizadas na plataforma.
           </p>
         </div>
 
@@ -151,7 +150,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              A {BRAND_LEGAL_NAME} dedica-se à oferta de <strong className="text-white">Cursos de Formação Profissionalizante Livre</strong>, em conformidade com a <strong className="text-white">Lei nº 9.394 (Diretrizes e Bases da Educação Nacional)</strong>. Nossas certificações são de caráter profissionalizante e de atualização técnica, não se configurando como cursos de graduação ou pós-graduação acadêmica. Nosso objetivo é a capacitação prática para o exercício ético e técnico da terapia no âmbito das terapias integrativas e comportamentais.
+              A {BRAND_LEGAL_NAME} oferta <strong className="text-white">cursos livres de formação e aperfeiçoamento</strong>. As certificações emitidas não equivalem a diplomas de graduação ou pós-graduação e não substituem requisitos legais ou regulatórios exigidos para o exercício de atividades profissionais específicas.
             </p>
           </div>
         </div>
@@ -162,7 +161,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              Nosso compromisso é com o <strong className="text-white">aprendizado ativo</strong>. Diferente de modelos de ensino passivos, nossa política de trabalho prioriza a <strong className="text-white">interação em tempo real</strong>. As aulas e mentorias são desenhadas para proporcionar o diálogo direto com o professor e a troca de experiências entre os membros da classe. A participação nos grupos de integração é incentivada como ferramenta fundamental para o networking e o fortalecimento da comunidade acadêmica e profissional.
+              A metodologia poderá incluir conteúdos gravados, encontros ao vivo, mentorias, exercícios e ambientes colaborativos, conforme a configuração de cada curso. A disponibilidade e as regras de participação de cada recurso serão informadas no respectivo programa ou ambiente de matrícula.
             </p>
           </div>
         </div>
@@ -173,7 +172,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              A excelência na terapia nasce da vivência. Nossa política garante que o aluno tenha contato com <strong className="text-white">simulações e práticas de consultório</strong> ainda durante o período de formação. Essas atividades são conduzidas sob rigorosos critérios éticos, preparando o futuro terapeuta para lidar com a subjetividade humana em áreas como <strong className="text-white">Terapia Comportamental, Psicanálise e Sexualidade Humana</strong> com segurança e profundidade.
+              Eventuais simulações, estudos de caso e atividades práticas possuem finalidade exclusivamente pedagógica. O participante deverá respeitar os limites éticos, a confidencialidade e as normas aplicáveis, não sendo tais atividades equivalentes a estágio profissional, supervisão legal ou autorização de prática clínica.
             </p>
           </div>
         </div>
@@ -184,7 +183,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              Pautamos nosso trabalho no resgate da dignidade e no acolhimento. Espera-se que todos os alunos e colaboradores mantenham conduta baseada no <strong className="text-white">respeito mútuo</strong>, no <strong className="text-white">sigilo das informações compartilhadas em aula</strong> e na busca constante pela humanização do atendimento. Não formamos apenas técnicos; formamos <strong className="text-white">agentes de transformação social</strong> que utilizam a empatia como ferramenta de trabalho.
+              Todos os participantes deverão manter conduta compatível com o ambiente educacional, baseada em <strong className="text-white">respeito, não discriminação e confidencialidade</strong>. É vedada a divulgação não autorizada de dados, relatos, gravações ou conteúdos compartilhados por terceiros, bem como qualquer conduta ilícita, ofensiva ou incompatível com a finalidade do curso.
             </p>
           </div>
         </div>
@@ -195,7 +194,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 text-sm text-white/60 leading-relaxed">
             <p>
-              Todo o material didático, metodologias exclusivas (como a <strong className="text-white">Teoria da Utilidade Comportamental</strong>) e conteúdos disponibilizados na plataforma são de <strong className="text-white">propriedade intelectual da {BRAND_LEGAL_NAME} e de seu mantenedor</strong>. O uso desse material é restrito ao aprendizado individual, sendo proibida a reprodução ou distribuição sem autorização prévia.
+              Os materiais, conteúdos, marcas e metodologias disponibilizados são protegidos pela legislação aplicável e pertencem à <strong className="text-white">{BRAND_LEGAL_NAME} e/ou aos respectivos titulares</strong>. O uso é limitado às finalidades educacionais da matrícula, sendo vedada a reprodução, distribuição ou exploração sem autorização expressa.
             </p>
           </div>
         </div>
@@ -207,23 +206,23 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-[#0d1120] border border-white/8 rounded-2xl p-6 space-y-5 text-sm text-white/60 leading-relaxed">
             <p>
-              A {BRAND_LEGAL_NAME} opera como <strong className="text-white">projeto social de iniciativa do coordenador Prof. William Ribeiro</strong>, não sendo vinculada a grandes instituições ou grupos econômicos. O projeto destina-se a favorecer o ingresso de pessoas com baixa possibilidade financeira, em situação de impossibilidade de custear seus estudos, oferecendo bolsas integrais ou parciais.
+              A instituição poderá disponibilizar <strong className="text-white">bolsas, descontos ou condições especiais de acesso</strong>, conforme critérios de elegibilidade, disponibilidade e regras divulgadas para cada iniciativa.
             </p>
             <div className="h-px bg-white/5" />
             <p>
-              <strong className="text-white">Da emissão dos débitos e dos custos reais:</strong> O valor integral dos débitos do aluno bolsista é emitido porque existe um custo operacional real para a instituição — servidores, plataforma, materiais, certificação e suporte. Esse valor precisa ser emitido por completo, pois alguém precisa pagar a conta final. Nos casos em que o aluno bolsista não puder pagar o valor integral, através da bolsa esse valor é descontado das mensalidades de alunos pagantes integrais do comercial. Nos casos em que houver indisponibilidade financeira por parte dos alunos do comercial, essas despesas são pagas através de fundo próprio da instituição, com a consequente tomada de risco assumida pelo coordenador.
+              <strong className="text-white">Das condições financeiras:</strong> Valores, descontos, bolsas, contribuições voluntárias e eventuais documentos de cobrança observarão as condições apresentadas no processo de matrícula ou no instrumento aplicável. A concessão de benefício não dispensa o cumprimento dos requisitos acadêmicos e administrativos informados.
             </p>
             <div className="h-px bg-white/5" />
             <p>
-              <strong className="text-white">Da voluntariedade da contribuição:</strong> Não existe obrigatoriedade ao aluno bolsista em pagar algum valor prefixado, tampouco necessidade de contribuir. A contribuição é voluntária e parte do próprio aluno. Contudo, a mensalidade precisa ser emitida, pois existem custos reais envolvidos na manutenção da plataforma e do serviço educacional.
+              <strong className="text-white">Das contribuições voluntárias:</strong> Quando expressamente qualificadas como voluntárias, as contribuições não constituem condição obrigatória para o benefício concedido. As informações financeiras serão apresentadas de maneira clara, com a identificação da respectiva natureza.
             </p>
             <div className="h-px bg-white/5" />
             <p>
-              <strong className="text-white">Da realidade financeira da instituição:</strong> É importante que o aluno compreenda que <strong className="text-white">não existe curso gratuito — alguém está pagando por ele</strong>. Nos últimos anos, a operação da instituição é negativa em questão de captação de recursos. Até agosto de 2026, a instituição não captava nem recursos voluntários para sua auto-manutenção. Aproximadamente 80% dos investimentos realizados são aportados pelo coordenador Prof. William Ribeiro, que atua como voluntário em projeto social em sua cidade, percebendo remuneração não superior a dois salários mínimos, e ainda assim, com suas poucas economias, mantém o sonho de oferecer oportunidade a quem precisa.
+              <strong className="text-white">Da transparência:</strong> As condições de contratação e de concessão de benefícios serão disponibilizadas pelos canais institucionais pertinentes. Informações adicionais poderão ser solicitadas ao suporte antes da confirmação de matrícula ou adesão a programas de bolsa.
             </p>
             <div className="h-px bg-white/5" />
             <p>
-              <strong className="text-white">Das responsabilidades acadêmicas:</strong> O aluno bolsista deve estar ciente de suas responsabilidades acadêmicas, participando ativamente do curso. O projeto social visa favorecer quem genuinamente necessita, e a má-fé, o desleixo intencional ou a utilização da bolsa sem o devido comprometimento configuram violação dos princípios éticos que sustentam esta instituição.
+              <strong className="text-white">Das obrigações do beneficiário:</strong> O beneficiário deverá observar os requisitos de participação, conduta e aproveitamento previstos para a modalidade concedida. O benefício poderá ser revisto em caso de descumprimento das condições aplicáveis, mediante análise administrativa.
             </p>
           </div>
         </div>
@@ -231,10 +230,10 @@ export default function PoliticaDeTrabalho() {
         {/* Citação */}
         <div className="bg-gradient-to-r from-[#5b5ef4]/10 via-white/4 to-[#1db89e]/10 border border-white/10 rounded-3xl p-8 mb-10 text-center">
           <p className="text-white/80 text-lg italic leading-relaxed mb-3">
-            "Você pode fazer muitas coisas na sua vida, mas a excelência vai se apresentar somente quando encontrar o que realmente nasceu para fazer."
+            "A relação educacional é orientada por transparência, integridade acadêmica e observância das normas aplicáveis."
           </p>
-          <p className="text-[#5b5ef4] text-sm font-bold">— William Ribeiro</p>
-          <p className="text-white/40 text-xs mt-4">Esta política visa assegurar que sua jornada conosco seja produtiva, segura e, acima de tudo, transformadora.</p>
+          <p className="text-[#5b5ef4] text-sm font-bold">— Diretriz institucional</p>
+          <p className="text-white/40 text-xs mt-4">Esta Política deve ser lida em conjunto com os Termos de Uso e as condições específicas de matrícula.</p>
         </div>
 
         {/* Aviso Penal */}
@@ -244,8 +243,7 @@ export default function PoliticaDeTrabalho() {
           </h2>
           <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 text-sm leading-relaxed">
             <p className="text-red-200/80">
-              A utilização e/ou emissão de certificados <strong className="text-red-200">sem o devido cumprimento da carga horária</strong> não apenas decepciona os alunos comprometidos, mas também pode configurar <strong className="text-red-200">crime de falsidade ideológica</strong>, conforme previsto no{' '}
-              <strong className="text-red-100">Art. 299 do Código Penal Brasileiro</strong>, sujeito a pena de reclusão de um a cinco anos.
+              A emissão, alteração ou utilização de documentos acadêmicos deverá corresponder aos registros e requisitos efetivamente cumpridos. Eventuais irregularidades poderão ensejar a adoção das medidas administrativas e legais cabíveis, conforme a legislação aplicável.
             </p>
           </div>
         </div>
@@ -267,9 +265,9 @@ export default function PoliticaDeTrabalho() {
               letterSpacing: 2,
               display: 'block',
               lineHeight: 1.2,
-            }}>William Ribeiro S.</span>
+            }}>Documento institucional</span>
             <div className="w-48 border-t border-white/15 pt-2 mx-auto">
-              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · {BRAND_LEGAL_NAME}</p>
+              <p className="text-white/30 text-[10px] uppercase tracking-widest">Política de Trabalho · {BRAND_LEGAL_NAME}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">

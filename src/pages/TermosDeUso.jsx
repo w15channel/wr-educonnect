@@ -3,83 +3,17 @@ import { Shield, CheckCircle, AlertTriangle, ArrowLeft, FileText, Lock, Users, R
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 
 const TERMS = [
-  {
-    num: '1',
-    icon: FileText,
-    color: '#5b5ef4',
-    title: 'Aceitação dos Termos',
-    text: 'O acesso e a utilização deste portal são estritamente voluntários e destinados a indivíduos que buscam capacitação profissional no âmbito das terapias integrativas e comportamentais. Ao ingressar no ambiente de aprendizagem ou navegar por suas páginas, o usuário manifesta sua aceitação automática, plena e irrestrita a todos os termos e condições aqui estabelecidos. Caso o usuário não concorde com qualquer uma das diretrizes apresentadas, deverá, por decisão própria, abster-se imediatamente de utilizar a plataforma e seus serviços.',
-  },
-  {
-    num: '2',
-    icon: BookOpen,
-    color: '#1db89e',
-    title: 'Natureza Jurídica da Instituição',
-    text: `A ${BRAND_LEGAL_NAME} é uma instituição dedicada à oferta de cursos de formação profissionalizante livre, fundamentada na Lei nº 9.394/96 (Lei de Diretrizes e Bases da Educação Nacional), não se configurando como curso de graduação ou pós-graduação acadêmica. CNPJ ${BRAND_CNPJ}. As certificações emitidas possuem caráter técnico e profissionalizante, com validade reconhecida no âmbito das terapias integrativas e comportamentais.`,
-  },
-  {
-    num: '3',
-    icon: Shield,
-    color: '#5b5ef4',
-    title: 'Propriedade Intelectual',
-    text: `Todo o conteúdo disponibilizado na plataforma — incluindo a metodologia exclusiva da Teoria da Utilidade Comportamental, videoaulas, materiais didáticos, textos e recursos interativos — é de propriedade intelectual protegida e exclusiva do Professor William Ribeiro e da ${BRAND_LEGAL_NAME}. É terminantemente proibida a reprodução, cópia, distribuição ou venda de qualquer material sem autorização prévia e por escrito, sob pena de suspensão imediata do acesso e adoção das medidas legais cabíveis, incluindo ação por danos materiais e morais.`,
-  },
-  {
-    num: '4',
-    icon: Lock,
-    color: '#a855f7',
-    title: 'Acesso Individual e Intransferibilidade',
-    text: 'O acesso à área do aluno é estritamente individual e intransferível. O compartilhamento de credenciais de acesso (login e senha) é considerado uma violação grave destes Termos e resultará na rescisão imediata do vínculo educacional sem direito a reembolso de qualquer valor pago. Cada aluno é responsável pela guarda e confidencialidade de suas credenciais.',
-  },
-  {
-    num: '5',
-    icon: Users,
-    color: '#1db89e',
-    title: 'Conduta Ética e Sigilo',
-    text: `Durante as aulas em tempo real, interações nos grupos de integração e demais ambientes da plataforma, o aluno compromete-se a manter uma conduta ética, respeitosa e pautada pelo sigilo absoluto das vivências, casos clínicos e informações pessoais compartilhadas. A ${BRAND_LEGAL_NAME} é um espaço rigorosamente inclusivo e não tolerará atitudes de desrespeito, preconceito ou qualquer forma de discriminação. O aluno reconhece-se como corresponsável pela harmonia e bem-estar do ambiente de ensino, comprometendo-se ao diálogo construtivo com colegas e professores.`,
-  },
-  {
-    num: '6',
-    icon: CheckCircle,
-    color: '#1db89e',
-    title: 'Responsabilidade pelo Aprendizado',
-    text: 'A plataforma oferece as ferramentas, o suporte técnico e o acompanhamento pedagógico necessários para o aprendizado. Contudo, a aplicação prática dos conceitos adquiridos, o desempenho nas avaliações e o êxito profissional são de responsabilidade exclusiva do aluno. A metodologia aplicada não possui direcionamento ideológico, sendo orientada exclusivamente pelo amparo científico, com a intenção estrita de educar e fornecer aprendizagem técnica de qualidade.',
-  },
-  {
-    num: '7',
-    icon: DollarSign,
-    color: '#f4a23d',
-    title: 'Transações Financeiras e Direito de Arrependimento',
-    text: 'As transações financeiras e o direito de arrependimento seguem rigorosamente o Código de Defesa do Consumidor (Lei nº 8.078/90), garantindo ao aluno o direito ao reembolso integral em até 7 (sete) dias corridos após a confirmação da compra, desde que solicitado formalmente. Após este prazo, não caberá restituição de valores pagos referentes ao período em curso.',
-  },
-  {
-    num: '8',
-    icon: RefreshCw,
-    color: '#5b5ef4',
-    title: 'Sistema de Locação de Acesso e Renovação Parcial',
-    text: 'O uso da plataforma opera em regime de locação de acesso por período determinado, vinculado à duração do curso matriculado. Caso o aluno não conclua a carga horária mínima exigida ou não obtenha aprovação nas avaliações ao término do período regular, poderá solicitar uma Renovação Parcial de Acesso, que será concedida pelo valor equivalente a 50% da mensalidade padrão do curso. Importante: durante o período de renovação parcial, o acompanhamento de tutor não estará disponível, sendo este serviço exclusivo das turmas em vigência regular. O aluno terá acesso ao conteúdo gravado para fins de revisão e complementação, sem suporte pedagógico individualizado.',
-  },
-  {
-    num: '9',
-    icon: Ban,
-    color: '#ef4444',
-    title: 'Suspensão e Rescisão de Acesso',
-    text: `A ${BRAND_LEGAL_NAME} reserva-se o direito de suspender ou rescindir o acesso de usuários que violem os códigos de conduta, os direitos de propriedade intelectual ou quaisquer outras disposições estabelecidas nestes Termos, visando proteger a integridade do grupo e do processo educativo. Em casos de rescisão por infração, não haverá direito a reembolso.`,
-  },
-  {
-    num: '10',
-    icon: FileText,
-    color: '#1db89e',
-    title: 'Atualizações dos Termos',
-    text: 'Estes Termos de Uso são dinâmicos e poderão ser atualizados periodicamente para refletir melhorias no ecossistema de aprendizagem, ajustes nas normas vigentes de ensino livre ou exigências legais. O usuário será notificado sobre alterações relevantes e o uso continuado da plataforma após qualquer atualização implicará na aceitação automática das novas condições.',
-  },
-  {
-    num: '11',
-    icon: DollarSign,
-    color: '#1db89e',
-    title: 'Contribuição Voluntária e Sustentabilidade do Projeto Social',
-    text: `A ${BRAND_LEGAL_NAME} opera como projeto social de iniciativa do coordenador Prof. William Ribeiro, não sendo vinculada a grandes instituições ou grupos econômicos. O projeto destina-se a favorecer o ingresso de pessoas com baixa possibilidade financeira em situação de impossibilidade de custear seus estudos, mediante concessão de bolsas integrais ou parciais. Esclarece-se o seguinte: (i) O valor integral dos débitos do aluno bolsista é emitido porque existe um custo operacional real para a instituição — servidores, plataforma, materiais, certificação e suporte —, sendo necessário que o valor seja emitido por completo, pois alguém precisa pagar a conta final; (ii) Nos casos em que o aluno bolsista não puder pagar o valor integral, através da bolsa esse valor é descontado das mensalidades de alunos pagantes integrais do comercial; (iii) Nos casos em que houver indisponibilidade financeira por parte dos alunos do comercial, essas despesas são pagas através de fundo próprio da instituição, com a consequente tomada de risco assumida pelo coordenador; (iv) Não existe obrigatoriedade ao aluno bolsista em pagar algum valor prefixado, tampouco necessidade de contribuir — a contribuição é voluntária e parte do próprio aluno; (v) Contudo, a mensalidade precisa ser emitida, pois existem custos reais envolvidos na manutenção da plataforma e do serviço educacional. O aluno reconhece e declara estar ciente de que: não existe curso gratuito — alguém está pagando por ele; nos últimos anos a operação da instituição é negativa em questão de captação de recursos; até agosto de 2026 a instituição não captava nem recursos voluntários para sua auto-manutenção; aproximadamente 80% dos investimentos realizados são aportados pelo coordenador Prof. William Ribeiro, que atua como voluntário em projeto social em sua cidade, percebendo remuneração não superior a dois salários mínimos; a manutenção deste projeto depende do comprometimento acadêmico e da boa-fé de todos os envolvidos. O aluno bolsista que não participa adequadamente do curso, não cumpre suas responsabilidades acadêmicas ou demonstra má-fé na relação educacional poderá ter sua bolsa revisada, nos termos do Art. 9 destes Termos.`,
-  },
+  { num: '1', icon: FileText, color: '#5b5ef4', title: 'Objeto e Aceitação', text: 'Estes Termos disciplinam o acesso e a utilização da plataforma e dos serviços educacionais disponibilizados. Ao realizar cadastro, matrícula ou utilizar recursos restritos da plataforma, o usuário declara ciência e concordância com estas disposições. Caso não concorde com os Termos, o usuário deverá abster-se de utilizar os serviços.' },
+  { num: '2', icon: BookOpen, color: '#1db89e', title: 'Natureza da Formação', text: `A ${BRAND_LEGAL_NAME}, inscrita no CNPJ sob o nº ${BRAND_CNPJ}, oferta cursos livres de formação e aperfeiçoamento profissional. Tais cursos não se confundem com graduação, pós-graduação ou cursos regulados pelo sistema federal de ensino, e os certificados são emitidos de acordo com os requisitos acadêmicos e administrativos informados para cada formação.` },
+  { num: '3', icon: Shield, color: '#5b5ef4', title: 'Propriedade Intelectual', text: `Os conteúdos, materiais didáticos, videoaulas, textos, marcas, metodologias e demais recursos disponibilizados na plataforma são protegidos pela legislação aplicável e pertencem à ${BRAND_LEGAL_NAME} e/ou aos respectivos titulares. É vedada sua reprodução, distribuição, adaptação, comercialização ou disponibilização a terceiros sem autorização prévia e expressa, ressalvadas as hipóteses legalmente permitidas.` },
+  { num: '4', icon: Lock, color: '#a855f7', title: 'Credenciais de Acesso', text: 'As credenciais de acesso são pessoais, individuais e intransferíveis. O usuário é responsável por sua guarda, sigilo e pelo uso realizado por meio de sua conta. A instituição poderá adotar medidas de segurança, inclusive suspensão preventiva, diante de indícios de compartilhamento indevido, acesso não autorizado ou uso em desconformidade com estes Termos.' },
+  { num: '5', icon: Users, color: '#1db89e', title: 'Conduta em Ambientes de Aprendizagem', text: `Nos ambientes síncronos, assíncronos e colaborativos, o usuário deverá observar conduta respeitosa, lícita e compatível com a finalidade educacional do serviço. É vedada a divulgação não autorizada de dados pessoais, relatos, imagens, gravações ou informações compartilhadas por terceiros, bem como a prática de assédio, discriminação, ameaça ou qualquer conduta que comprometa a segurança e o regular funcionamento do ambiente.` },
+  { num: '6', icon: CheckCircle, color: '#1db89e', title: 'Responsabilidades Acadêmicas', text: 'A participação, o acompanhamento das atividades, o cumprimento de prazos, a realização de avaliações e a observância dos requisitos de certificação são de responsabilidade do aluno. A disponibilização de conteúdos e recursos pedagógicos não constitui garantia de resultado individual, desempenho profissional ou aplicação de técnicas fora dos limites legais, éticos e de habilitação do usuário.' },
+  { num: '7', icon: DollarSign, color: '#f4a23d', title: 'Condições Financeiras e Arrependimento', text: 'Os valores, formas de pagamento, condições de bolsa e eventuais regras de renovação são informados no momento da contratação ou da matrícula. Nas contratações realizadas fora do estabelecimento comercial, o direito de arrependimento será observado nos termos do Código de Defesa do Consumidor. As solicitações serão analisadas conforme a modalidade contratada, o período de acesso usufruído e a legislação aplicável.' },
+  { num: '8', icon: RefreshCw, color: '#5b5ef4', title: 'Vigência e Renovação de Acesso', text: 'O acesso aos conteúdos observará o prazo e as condições vinculados à matrícula. Eventual renovação, extensão ou acesso complementar dependerá de disponibilidade, solicitação do aluno e condições vigentes à época, podendo possuir escopo distinto do período regular, inclusive quanto a tutorias, encontros ao vivo, grupos e certificação.' },
+  { num: '9', icon: Ban, color: '#ef4444', title: 'Medidas por Descumprimento', text: `O descumprimento destes Termos, das regras de convivência ou da legislação aplicável poderá ensejar advertência, limitação de funcionalidades, suspensão ou encerramento do acesso, conforme a gravidade do caso e observados os direitos de defesa aplicáveis. A adoção dessas medidas não afasta a apuração de perdas e danos ou outras providências cabíveis.` },
+  { num: '10', icon: FileText, color: '#1db89e', title: 'Alterações dos Termos', text: 'Estes Termos poderão ser atualizados para refletir alterações legais, operacionais ou de serviços. A versão vigente permanecerá disponível na plataforma, com indicação da data de atualização. Mudanças relevantes serão comunicadas pelos canais adequados, quando exigido ou recomendável.' },
+  { num: '11', icon: DollarSign, color: '#1db89e', title: 'Bolsas e Contribuições Voluntárias', text: `A concessão de bolsas, descontos ou contribuições voluntárias, quando existentes, observará critérios, disponibilidade e condições previamente comunicados. A eventual emissão de documentos de cobrança ou registros administrativos vinculados à bolsa não altera a natureza voluntária de contribuição expressamente qualificada como tal. O beneficiário deverá cumprir as obrigações acadêmicas e as regras aplicáveis à modalidade concedida, sob pena de revisão ou encerramento do benefício, mediante análise do caso.` },
 ];
 
 export default function TermosDeUso() {
@@ -108,7 +42,7 @@ export default function TermosDeUso() {
           </div>
           <h1 className="text-4xl font-black text-white mb-3">Termos de Uso</h1>
           <p className="text-white/50 max-w-xl mx-auto text-sm leading-relaxed">
-            Ao utilizar a plataforma {BRAND_LEGAL_NAME}, o usuário declara ter lido, compreendido e concordado integralmente com os termos a seguir.
+            Documento que estabelece as condições de acesso, uso da plataforma e participação nas atividades educacionais.
           </p>
           <p className="text-white/30 text-xs mt-3">Última atualização: Setembro de 2026</p>
         </div>
@@ -144,7 +78,7 @@ export default function TermosDeUso() {
             <div>
               <p className="text-white font-bold text-sm mb-2">Aviso sobre Renovação Parcial de Acesso</p>
               <p className="text-white/60 text-sm leading-relaxed">
-                O período de renovação parcial tem caráter exclusivamente de <strong className="text-white">revisão e complementação de conteúdo gravado</strong>. Não inclui acesso a aulas ao vivo, suporte de tutor, participação em grupos de integração da turma ativa nem emissão de certificado. A renovação é uma cortesia oferecida ao aluno que, por razões justificadas, não concluiu o curso no período regular.
+                A renovação ou extensão de acesso, quando disponibilizada, possui as condições apresentadas no ato da solicitação. O escopo poderá ser restrito a <strong className="text-white">conteúdos gravados e atividades de revisão</strong>, sem incluir recursos próprios do período regular, tais como aulas ao vivo, tutoria, grupos da turma ativa ou emissão de certificado.
               </p>
             </div>
           </div>
@@ -153,7 +87,7 @@ export default function TermosDeUso() {
         {/* Aviso legal geral */}
         <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 mb-10 text-sm leading-relaxed">
           <p className="text-yellow-200/80">
-            <strong className="text-yellow-200">Atenção:</strong> Os presentes Termos de Uso foram redigidos em conformidade com a legislação brasileira vigente, incluindo a Lei nº 9.394/96 (LDB), a Lei nº 8.078/90 (CDC) e as disposições aplicáveis ao ensino livre. Para questões relativas ao tratamento de dados pessoais (LGPD), consulte nossa Política de Privacidade.
+            <strong className="text-yellow-200">Atenção:</strong> Estes Termos devem ser interpretados conforme a legislação brasileira aplicável, inclusive as normas de proteção ao consumidor e as regras pertinentes à oferta de cursos livres. Para informações sobre o tratamento de dados pessoais, consulte a Política de Privacidade.
           </p>
         </div>
 
@@ -174,9 +108,9 @@ export default function TermosDeUso() {
               letterSpacing: 2,
               display: 'block',
               lineHeight: 1.2,
-            }}>William Ribeiro S.</span>
+            }}>Documento institucional</span>
             <div className="w-48 border-t border-white/15 pt-2 mx-auto">
-              <p className="text-white/30 text-[10px] uppercase tracking-widest">Direção Geral · {BRAND_LEGAL_NAME}</p>
+              <p className="text-white/30 text-[10px] uppercase tracking-widest">Termos de Uso · {BRAND_LEGAL_NAME}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-white/5 border border-white/8 rounded-full px-3 py-1">
