@@ -6,7 +6,8 @@ export const MIN_LUNA_SUPPORT_INTERACTIONS = 10;
  * Uma interação é uma mensagem enviada pelo aluno; respostas da Luna não
  * contam como uma nova tentativa.
  */
-export function countLunaStudentInteractions(messages = []) {
+export function countLunaStudentInteractions(messages) {
+  if (!Array.isArray(messages)) return 0;
   return messages.filter(message => message?.role === 'user' && String(message.content || '').trim()).length;
 }
 
