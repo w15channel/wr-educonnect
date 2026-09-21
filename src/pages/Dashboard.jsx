@@ -20,6 +20,7 @@ import useModuleTrophies from '@/hooks/useModuleTrophies';
 import ModuleTrophies from '@/components/achievements/ModuleTrophies';
 import LunaDashboardGreetingVoice from '@/components/dashboard/LunaDashboardGreetingVoice';
 import { isContributionAwardFeatured, isContributionWallHighlight } from '@/lib/contributionAwards';
+import useSocialIdentity from '@/hooks/useSocialIdentity';
 
 
 const isTaskAvailable = (task, moduleUnlocked = []) =>
@@ -69,6 +70,7 @@ export default function Dashboard() {
   const scoped = (p) => prefix + p;
   const queryClient = useQueryClient();
   const isTeacher = session?.role === 'admin';
+  const { firstName: socialFirstName, isLoading: isSocialIdentityLoading } = useSocialIdentity(session);
   const userCourse = session?.course;
   const { byEmail: moduleTrophiesByEmail } = useModuleTrophies(userCourse || 'tcc');
   const [refreshing, setRefreshing] = React.useState(false);
@@ -531,11 +533,9 @@ export default function Dashboard() {
     </form>
   );
 
-  const currentStudentProfile = publishedScores.find((profile) =>
-    profile.student_email === session?.email || (session?.codeId && profile.code_id === session.codeId)
-  );
-  const nickname = currentStudentProfile?.nickname?.trim();
-  const firstName = nickname || (currentAccessCode?.profile_name || session?.name || 'Usuário').trim().split(' ')[0];
+  const firstName = isTeacher
+    ? (session?.name || 'Usuário').trim().split(' ')[0]
+    : socialFirstName;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
@@ -544,8 +544,8 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-muted-foreground font-medium mb-0.5">
-            {greeting}, {firstName} 👋
+          <p className="text-xs text-muted-foreground font-medium mb-0.5" aria-live="polite">
+            {!isTeacher && isSocialIdentityLoading ? 'Preparando sua experiência…' : `${greeting}, ${firstName} 👋`}
           </p>
           <h2 className="text-xl lg:text-2xl font-bold text-foreground">
             {isTeacher ? 'Painel Administrativo' : 'Meu Dashboard'}
@@ -568,7 +568,7 @@ export default function Dashboard() {
         }
       </div>
 
-      {!isTeacher && (
+      {!isTeacher && !isSocialIdentityLoading && (
         <LunaDashboardGreetingVoice
           text={`${greeting}, ${firstName}! Eu sou a Luna. Que bom ter você aqui! Antes de começar, confira as notificações no Mural de Superação logo abaixo. Depois, acesse o seu Checklist para dar sequência aos estudos do módulo.`}
         />

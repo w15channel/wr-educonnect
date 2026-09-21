@@ -7,6 +7,7 @@ import { ArrowRight, Volume2, VolumeX, RotateCcw, Loader2, CheckCircle2 } from '
 import useLunaVoice from '@/hooks/useLunaVoice';
 import ProfileAssistantField from '@/components/onboarding/ProfileAssistantField';
 import { findStudentProfiles, profileDoneKey } from '@/hooks/useProfileCompletion';
+import { invalidateStudentIdentity } from '@/lib/studentIdentityCache';
 
 /**
  * Assistente Luna do cadastro: no primeiro acesso à área do curso, pede
@@ -79,11 +80,12 @@ export default function ProfileAssistant({ session, profile, steps, initialValue
       setSession({
         ...current,
         name: finalValues.full_name,
+        nickname: finalValues.nickname,
         bio: finalValues.bio,
         avatarColor: finalValues.avatar_color,
         avatarEmoji: finalValues.avatar_emoji,
       });
-      await queryClient.invalidateQueries({ queryKey: ['profile-completion'] });
+      await invalidateStudentIdentity(queryClient);
       voice.speak(`Cadastro completo, ${firstName}! Obrigada. Agora você já pode usar a plataforma.`, { force: voice.enabled });
       toast.success('Cadastro completo!');
       onFinish();

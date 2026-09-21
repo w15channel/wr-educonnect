@@ -12,11 +12,14 @@ export default function useSocialIdentity(session) {
   const isStudent = !!session && session.role !== 'admin';
   const hasIdentifier = !!(session?.email || session?.code || session?.codeId);
 
-  const { data: profiles = [], isLoading } = useQuery({
+  const { data: profiles = [], isLoading, isFetching } = useQuery({
     queryKey: ['social-identity', session?.codeId, session?.email, session?.code],
     queryFn: () => findStudentProfiles(session),
     enabled: isStudent && hasIdentifier,
-    staleTime: 60000,
+    // A identidade é pequena, sensível e pode ter sido alterada em outra tela
+    // ou dispositivo. Confirme-a no ingresso antes de saudar o aluno.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const profile = useMemo(() => {
@@ -28,6 +31,7 @@ export default function useSocialIdentity(session) {
     email: session?.email,
     profile,
     code: {
+      nickname: session?.nickname,
       profile_name: session?.profile_name,
       student_name: session?.name || session?.full_name,
     },
@@ -37,6 +41,6 @@ export default function useSocialIdentity(session) {
     profile,
     socialName,
     firstName: socialName.trim().split(/\s+/)[0] || 'Aluno',
-    isLoading,
+    isLoading: isLoading || isFetching,
   };
 }
