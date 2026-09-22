@@ -117,6 +117,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   const supportAlreadyOfferedRef = useRef(Boolean(savedOffer || hadSavedSupportOffer));
   const busyRef = useRef(false);
   const endRef = useRef(null);
+  const dictationRef = useRef(null);
   const activeRef = useRef(isActive);
   activeRef.current = isActive;
   const supportRef = useRef(supportMode);
@@ -201,6 +202,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
   const send = async (content = input) => {
     const text = String(content || '').trim();
     if (!text || busyRef.current) return;
+    dictationRef.current?.stop();
     const decision = getLunaSupportDecision(text, supportOfferRef.current);
     if (decision) {
       await respondToSupportOffer(decision === 'confirm', text);
@@ -307,7 +309,7 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       </div>
       <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex shrink-0 gap-2 border-t border-rose-100 bg-card dark:border-white/20 dark:bg-black p-3">
         <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Converse com a Luna..." className="h-11 flex-1 border-rose-200 dark:border-white/20" disabled={loading || ticketCreating} />
-        <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
+        <VoiceDictationButton ref={dictationRef} value={input} onChange={setInput} className="h-11 w-11" />
         <Button type="submit" className="h-11 w-11 shrink-0 p-0 bg-rose-500 hover:bg-rose-600" disabled={!input.trim() || loading || ticketCreating}><Send size={16} /></Button>
       </form>
       <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">A Luna é uma inteligência artificial programada para orientar; ela tem limitações e alguns casos precisam da equipe técnica. Em crise, ligue 188 (CVV).</p>

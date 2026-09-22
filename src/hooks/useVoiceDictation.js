@@ -11,16 +11,23 @@ export default function useVoiceDictation({ onResult }) {
   const supported = Boolean(Recognition);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
+  const shouldListenRef = useRef(false);
+  const restartTimerRef = useRef(null);
   const resultRef = useRef(onResult);
   resultRef.current = onResult;
 
   const stop = useCallback(() => {
+    shouldListenRef.current = false;
+    clearTimeout(restartTimerRef.current);
+    restartTimerRef.current = null;
     recognitionRef.current?.stop();
+    recognitionRef.current = null;
     setListening(false);
   }, []);
 
   const start = useCallback(() => {
     if (!supported || recognitionRef.current) return;
+    shouldListenRef.current = true;
     const recognition = new Recognition();
     recognition.lang = 'pt-BR';
     recognition.continuous = true;
@@ -32,8 +39,35 @@ export default function useVoiceDictation({ onResult }) {
       }
       if (text.trim()) resultRef.current?.(text.trim());
     };
-    recognition.onend = () => { recognitionRef.current = null; setListening(false); };
-    recognition.onerror = () => { recognitionRef.current = null; setListening(false); };
+    recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      if (!shouldListenRef.current) {
+        setListening(false);
+        return;
+      }
+
+      // Chromium encerra sessões de reconhecimento mesmo com `continuous`
+      // após alguns segundos de silêncio. Reinicie enquanto o usuário não
+      // desligar explicitamente o microfone.
+      restartTimerRef.current = setTimeout(() => {
+        restartTimerRef.current = null;
+        if (!shouldListenRef.current || recognitionRef.current) return;
+        try {
+          recognitionRef.current = recognition;
+          recognition.start();
+        } catch {
+          recognitionRef.current = null;
+          shouldListenRef.current = false;
+          setListening(false);
+        }
+      }, 150);
+    };
+    recognition.onerror = (event) => {
+      if (['not-allowed', 'service-not-allowed', 'audio-capture'].includes(event.error)) {
+        shouldListenRef.current = false;
+        setListening(false);
+      }
+    };
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
@@ -44,7 +78,11 @@ export default function useVoiceDictation({ onResult }) {
     else start();
   }, [listening, start, stop]);
 
-  useEffect(() => () => recognitionRef.current?.abort(), []);
+  useEffect(() => () => {
+    shouldListenRef.current = false;
+    clearTimeout(restartTimerRef.current);
+    recognitionRef.current?.abort();
+  }, []);
 
   return { supported, listening, start, stop, toggle };
 }
