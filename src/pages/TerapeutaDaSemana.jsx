@@ -21,7 +21,7 @@ import { resolveAvatarEmoji } from '@/lib/avatarUtils';
 import RelatosMural from '@/components/therapist/RelatosMural';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
-import { buildScoreBalancedPairings, findStudentPairings, getLatestPairingDate, isActiveStudent, normalizeStudentEmail } from '@/lib/therapistPairings';
+import { buildScoreBalancedPairings, getLatestPairingDate, getStudentPendingReports, isActiveStudent, normalizeStudentEmail } from '@/lib/therapistPairings';
 import { visiblePairingsForReportWall } from '@/lib/therapistReports';
 
 export default function TerapeutaDaSemana() {
@@ -238,11 +238,10 @@ export default function TerapeutaDaSemana() {
   // arquivado, independentemente de qual rodada (data) ele pertence.
   const publishedActivePairings = domainPairingsAll.filter(p => p.is_published && !p.is_archived);
 
-  // Pairings do aluno logado (apenas publicados e não arquivados)
-  const { asTherapist: myTherapistPairing, asPatient: myPatientPairing } = findStudentPairings(
-    publishedActivePairings,
-    session?.email
-  );
+  // A troca de rodada não pode apagar uma obrigação anterior. Mantemos até
+  // cinco relatos publicados e ainda não respondidos, inclusive de duplas já
+  // arquivadas; a fila diminui automaticamente após cada envio.
+  const pendingReports = getStudentPendingReports(domainPairingsAll, session?.email);
 
   const getStudentInfo = (email) => {
     const normalizedEmail = normalizeStudentEmail(email);
@@ -536,77 +535,59 @@ export default function TerapeutaDaSemana() {
         </div>
       )}
 
-      {/* Meus pareamentos */}
+      {/* Fila de relatos pendentes */}
       {!isTeacher && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Sou terapeuta de... */}
-          <div className={`bg-card rounded-2xl border p-5 space-y-3 ${myTherapistPairing ? 'border-pink-200' : 'border-border'}`}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-pink-100 flex items-center justify-center">
-                <UserCheck size={16} className="text-pink-600" />
-              </div>
-              <div>
-                <p className="font-bold text-sm text-foreground">Você é Terapeuta de</p>
-                <p className="text-xs text-muted-foreground">Você realiza a sessão</p>
-              </div>
+        <section className="space-y-4" aria-labelledby="pending-reports-title">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 id="pending-reports-title" className="font-bold text-foreground">Relatos para publicar</h3>
+              <p className="text-xs text-muted-foreground mt-1">As rodadas anteriores ficam disponíveis aqui, mesmo quando uma nova dupla é publicada.</p>
             </div>
-            {myTherapistPairing ? (
-              <>
-                <div className="flex items-center gap-3 rounded-xl p-3 border border-pink-200 bg-transparent backdrop-blur-sm">
-                  <StudentAvatar email={myTherapistPairing.patient_email} />
-                  <div>
-                    <ClickableStudent email={myTherapistPairing.patient_email} className="font-bold text-sm">{getStudentInfo(myTherapistPairing.patient_email).name}</ClickableStudent>
-                    <p className="text-xs text-muted-foreground">Paciente</p>
-                    <ContactLine contact={getStudentContact(myTherapistPairing.patient_email)} roleLabel="Contato do paciente" />
-                  </div>
-                </div>
-                {myTherapistPairing.therapist_submitted ? (
-                  <Badge className="bg-green-100 text-green-700 border-green-200 gap-1"><CheckCircle2 size={11} /> Avaliação enviada</Badge>
-                ) : (
-                  <Button size="sm" className="w-full gap-2" onClick={() => { setEvalDialog({ pairing: myTherapistPairing, role: 'therapist' }); setComment(''); setScore([7]); }}>
-                    <ClipboardList size={14} /> Avaliar Paciente
-                  </Button>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhum pareamento ativo</p>
-            )}
+            <Badge className="shrink-0 bg-amber-100 text-amber-800 border-amber-200">
+              {pendingReports.length} {pendingReports.length === 1 ? 'pendente' : 'pendentes'}
+            </Badge>
           </div>
-
-          {/* Sou paciente de... */}
-          <div className={`bg-card rounded-2xl border p-5 space-y-3 ${myPatientPairing ? 'border-blue-200' : 'border-border'}`}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
-                <Heart size={16} className="text-blue-600" />
-              </div>
-              <div>
-                <p className="font-bold text-sm text-foreground">Seu Terapeuta é</p>
-                <p className="text-xs text-muted-foreground">Você é o paciente</p>
-              </div>
+          {pendingReports.length === 0 ? (
+            <div className="rounded-2xl border border-green-200 bg-green-50/60 p-5 text-center">
+              <CheckCircle2 size={24} className="mx-auto mb-2 text-green-600" />
+              <p className="text-sm font-semibold text-green-800">Todos os seus relatos foram publicados.</p>
             </div>
-            {myPatientPairing ? (
-              <>
-                <div className="flex items-center gap-3 rounded-xl p-3 border border-blue-200 bg-transparent backdrop-blur-sm">
-                  <StudentAvatar email={myPatientPairing.therapist_email} />
-                  <div>
-                    <ClickableStudent email={myPatientPairing.therapist_email} className="font-bold text-sm">{getStudentInfo(myPatientPairing.therapist_email).name}</ClickableStudent>
-                    <p className="text-xs text-muted-foreground">Terapeuta</p>
-                    <ContactLine contact={getStudentContact(myPatientPairing.therapist_email)} roleLabel="Contato do terapeuta" />
-                  </div>
-                </div>
-                {myPatientPairing.patient_submitted ? (
-                  <Badge className="bg-green-100 text-green-700 border-green-200 gap-1"><CheckCircle2 size={11} /> Avaliação enviada</Badge>
-                ) : (
-                  <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => { setEvalDialog({ pairing: myPatientPairing, role: 'patient' }); setComment(''); setScore([7]); }}>
-                    <ClipboardList size={14} /> Avaliar Terapeuta
-                  </Button>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhum pareamento ativo</p>
-            )}
-          </div>
-        </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {pendingReports.map(({ pairing, role }) => {
+                const isTherapist = role === 'therapist';
+                const colleagueEmail = isTherapist ? pairing.patient_email : pairing.therapist_email;
+                return (
+                  <article key={`${pairing.id}-${role}`} className={`bg-card rounded-2xl border p-5 space-y-3 ${isTherapist ? 'border-pink-200' : 'border-blue-200'}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isTherapist ? 'bg-pink-100' : 'bg-blue-100'}`}>
+                          {isTherapist ? <UserCheck size={16} className="text-pink-600" /> : <Heart size={16} className="text-blue-600" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-foreground">{isTherapist ? 'Você foi terapeuta de' : 'Você foi paciente de'}</p>
+                          <p className="text-[11px] text-muted-foreground">Rodada de {pairing.pairing_date || 'data não informada'}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`flex items-center gap-3 rounded-xl p-3 border ${isTherapist ? 'border-pink-200' : 'border-blue-200'}`}>
+                      <StudentAvatar email={colleagueEmail} />
+                      <div className="min-w-0">
+                        <ClickableStudent email={colleagueEmail} className="font-bold text-sm">{getStudentInfo(colleagueEmail).name}</ClickableStudent>
+                        <p className="text-xs text-muted-foreground">{isTherapist ? 'Paciente' : 'Terapeuta'}</p>
+                        <ContactLine contact={getStudentContact(colleagueEmail)} roleLabel={`Contato do ${isTherapist ? 'paciente' : 'terapeuta'}`} />
+                      </div>
+                    </div>
+                    <Button size="sm" variant={isTherapist ? 'default' : 'outline'} className="w-full gap-2" onClick={() => { setEvalDialog({ pairing, role }); setComment(''); setScore([7]); }}>
+                      <ClipboardList size={14} /> Publicar relato desta rodada
+                    </Button>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-[11px] text-muted-foreground">São exibidos até 5 relatos pendentes por vez. Ao publicar um, o contador diminui e o próximo fica disponível.</p>
+        </section>
       )}
 
       {/* Visão do professor: todos os pareamentos */}
