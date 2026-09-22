@@ -61,6 +61,7 @@ export function getAvatarPrefixedName(name, avatarValue) {
  */
 export function resolveDisplayName({ email, code, profile } = {}) {
   if (profile?.nickname?.trim()) return profile.nickname.trim();
+  if (code?.nickname?.trim()) return code.nickname.trim();
   if (code?.profile_name?.trim()) return code.profile_name.trim();
   if (profile?.full_name?.trim()) return profile.full_name.trim();
   if (code?.student_name?.trim()) return code.student_name.trim();

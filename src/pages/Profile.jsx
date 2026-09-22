@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Save, CheckCircle, Camera, User, Trash2, GraduationCap, Users, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 import { AVATAR_OPTIONS, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
 import { functionLabel } from '@/lib/profileRoles';
+import { invalidateStudentIdentity } from '@/lib/studentIdentityCache';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -24,6 +26,7 @@ const AVATAR_COLORS = [
 export default function Profile() {
   const session = getSession();
   const { logout } = useCustomAuth();
+  const queryClient = useQueryClient();
   const [name, setName] = useState(session?.name || '');
   const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState(session?.bio || '');
@@ -76,7 +79,7 @@ export default function Profile() {
 
   const handleSave = async () => {
     setSaving(true);
-    setSession({ ...session, name, bio, avatarColor, photoUrl, avatarEmoji: selectedAvatar, study_mode: studyMode });
+    setSession({ ...session, name, nickname: nickname.trim(), bio, avatarColor, photoUrl, avatarEmoji: selectedAvatar, study_mode: studyMode });
     setSaved(true);
     try {
       if (session?.codeId) {
@@ -110,6 +113,7 @@ export default function Profile() {
       } else {
         await base44.entities.StudentProfile.create(profileData);
       }
+      await invalidateStudentIdentity(queryClient);
       toast.success('Perfil atualizado!');
     } catch {
       setSession(session);

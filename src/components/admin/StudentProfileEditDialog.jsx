@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { invalidateStudentIdentity } from '@/lib/studentIdentityCache';
 
 // Permite ao admin pré-preencher informações importantes do perfil de um aluno
 // (apelido, data de nascimento, WhatsApp, e-mail pessoal, apresentação) no momento
@@ -58,9 +59,10 @@ export default function StudentProfileEditDialog({ code, onClose }) {
       }
       return base44.entities.StudentProfile.create(data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['student-profile-edit', code.id] });
       queryClient.invalidateQueries({ queryKey: ['student-profiles'] });
+      await invalidateStudentIdentity(queryClient);
       toast.success('Perfil do aluno atualizado!');
       onClose();
     },

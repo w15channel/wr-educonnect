@@ -19,4 +19,11 @@ describe('resolveDisplayName', () => {
 
     expect(resolveDisplayName({ email: 'aluno@example.com' })).toBe('aluno@example.com');
   });
+
+  it('usa o apelido persistido na sessão enquanto o perfil é confirmado', () => {
+    expect(resolveDisplayName({
+      profile: null,
+      code: { nickname: 'Lua', student_name: 'Nome Completo' },
+    })).toBe('Lua');
+  });
 });
