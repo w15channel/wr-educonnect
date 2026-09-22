@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildScoreBalancedPairings, findStudentPairings, getLatestPublishedPairings, haveSimilarSurnames, isActiveStudent } from './therapistPairings';
+import { buildScoreBalancedPairings, findStudentPairings, getLatestPublishedPairings, getStudentPendingReports, haveSimilarSurnames, isActiveStudent } from './therapistPairings';
 
 describe('therapist pairings visible to students', () => {
   it('keeps the latest published round visible while a newer draft exists', () => {
@@ -27,6 +27,36 @@ describe('therapist pairings visible to students', () => {
 
     expect(findStudentPairings([pairing], 'student@example.com').asTherapist).toBe(pairing);
     expect(findStudentPairings([pairing], ' PATIENT@EXAMPLE.COM ').asPatient).toBe(pairing);
+  });
+
+  it('keeps up to five unpublished reports from current and previous rounds', () => {
+    const pairings = Array.from({ length: 7 }, (_, index) => ({
+      id: `round-${index + 1}`,
+      pairing_date: `2026-09-${String(index + 1).padStart(2, '0')}`,
+      is_published: true,
+      therapist_email: 'student@example.com',
+      patient_email: `patient-${index}@example.com`,
+      therapist_submitted: index === 5,
+    }));
+
+    expect(getStudentPendingReports(pairings, ' STUDENT@example.com ')).toHaveLength(5);
+    expect(getStudentPendingReports(pairings, 'student@example.com').map(({ pairing }) => pairing.id))
+      .toEqual(['round-7', 'round-5', 'round-4', 'round-3', 'round-2']);
+  });
+
+  it('removes a report from the queue as soon as its role is submitted', () => {
+    const pairing = {
+      id: 'round-2', pairing_date: '2026-09-22', is_published: true,
+      therapist_email: 'same@example.com', patient_email: 'same@example.com',
+      therapist_submitted: true, patient_submitted: false,
+    };
+
+    expect(getStudentPendingReports([pairing], 'same@example.com')).toEqual([{ pairing, role: 'patient' }]);
+  });
+
+  it('does not expose draft pairings in the pending queue', () => {
+    const draft = { id: 'draft', is_published: false, therapist_email: 'student@example.com' };
+    expect(getStudentPendingReports([draft], 'student@example.com')).toEqual([]);
   });
 });
 

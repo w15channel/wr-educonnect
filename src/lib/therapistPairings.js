@@ -126,3 +126,34 @@ export function findStudentPairings(pairings = [], studentEmail) {
     ),
   };
 }
+
+export const MAX_PENDING_THERAPIST_REPORTS = 5;
+
+/**
+ * Monta a fila de relatos que o aluno ainda precisa enviar. Cada papel em uma
+ * dupla conta como um relato, e rodadas antigas continuam disponíveis mesmo
+ * depois da publicação de uma nova dupla.
+ */
+export function getStudentPendingReports(pairings = [], studentEmail, limit = MAX_PENDING_THERAPIST_REPORTS) {
+  const email = normalizeStudentEmail(studentEmail);
+  if (!email || limit <= 0) return [];
+
+  return pairings
+    .filter(isPublishedPairing)
+    .flatMap((pairing) => {
+      const reports = [];
+      if (normalizeStudentEmail(pairing.therapist_email) === email && !pairing.therapist_submitted) {
+        reports.push({ pairing, role: 'therapist' });
+      }
+      if (normalizeStudentEmail(pairing.patient_email) === email && !pairing.patient_submitted) {
+        reports.push({ pairing, role: 'patient' });
+      }
+      return reports;
+    })
+    .sort((left, right) => {
+      const dateComparison = String(right.pairing.pairing_date || '').localeCompare(String(left.pairing.pairing_date || ''));
+      if (dateComparison !== 0) return dateComparison;
+      return String(right.pairing.created_date || '').localeCompare(String(left.pairing.created_date || ''));
+    })
+    .slice(0, limit);
+}
