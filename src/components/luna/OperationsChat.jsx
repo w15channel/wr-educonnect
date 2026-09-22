@@ -216,6 +216,7 @@ export default function OperationsChat({ session }) {
   const [input, setInput] = useState('');
   const [showQuickMessages, setShowQuickMessages] = useState(false);
   const endRef = useRef(null);
+  const dictationRef = useRef(null);
   const spokenRef = useRef({ conversationId: null, fingerprint: '' });
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, phase]);
   useEffect(() => {
@@ -234,6 +235,7 @@ export default function OperationsChat({ session }) {
   const send = async (content = input) => {
     const text = String(content || '').trim();
     if (!text || !canSend) return;
+    dictationRef.current?.stop();
     setInput('');
     voice.stop();
     if (!await operations.send(text)) setInput(value => value || text);
@@ -285,7 +287,7 @@ export default function OperationsChat({ session }) {
 
       <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex shrink-0 gap-2 border-t border-rose-100 bg-card dark:border-white/20 dark:bg-black p-3">
         <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Converse, peça um plano ou solicite uma ação..." className="h-11 flex-1 border-rose-200 dark:border-white/20" disabled={!canSend} />
-        <VoiceDictationButton value={input} onChange={setInput} className="h-11 w-11" />
+        <VoiceDictationButton ref={dictationRef} value={input} onChange={setInput} className="h-11 w-11" />
         <Button type="submit" className="h-11 w-11 shrink-0 p-0 bg-rose-500 hover:bg-rose-600" disabled={!input.trim() || !canSend}><Send size={16} /></Button>
       </form>
       <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">
