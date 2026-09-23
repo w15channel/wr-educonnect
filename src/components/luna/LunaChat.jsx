@@ -15,6 +15,7 @@ import { countLunaStudentInteractions, getLunaSupportOffer, getLunaSupportDecisi
 import { getDMSessionId, LUNA_DM_EMAIL, LUNA_DM_NAME } from '@/lib/lunaDM';
 import { toast } from 'sonner';
 import useSocialIdentity from '@/hooks/useSocialIdentity';
+import { invokeLunaAI } from '@/lib/lunaAI';
 
 const LUNA_SUPPORT_PROMPT_SUFFIX = `
 
@@ -230,26 +231,32 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
         : `\n\nINTERAÇÕES DO ALUNO SOBRE O CASO: ${countLunaStudentInteractions(next)}/${MIN_LUNA_SUPPORT_INTERACTIONS}. ${countLunaStudentInteractions(next) < MIN_LUNA_SUPPORT_INTERACTIONS ? 'Ainda não é permitido incluir "support_offer"; continue investigando e orientando.' : 'O mínimo foi atingido, mas só inclua "support_offer" se todas as alternativas úteis tiverem sido esgotadas.'}`;
       const basePrompt = tuitionMode ? LUNA_SYSTEM_PROMPT + TUITION_PROMPT : supportRef.current ? LUNA_SYSTEM_PROMPT + LUNA_SUPPORT_PROMPT_SUFFIX : LUNA_SYSTEM_PROMPT;
       const systemPrompt = basePrompt + SUPPORT_OFFER_PROMPT + apostilaContext + supportFlag;
-      const answer = await base44.integrations.Core.InvokeLLM({
-        prompt: `${systemPrompt}\n\nNome social do aluno: ${socialName}\n\nConversa:\n${history}\n\nLuna:`,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            answer: { type: 'string' },
-            links: { type: 'array', items: { type: 'object', properties: { key: { type: 'string' }, label: { type: 'string' } } } },
-            support_offer: {
-              type: 'object', description: 'Proposta opcional, nunca uma autorização de abertura. Omitir quando puder ajudar no chat ou quando já tiver oferecido suporte antes nesta conversa.',
-              required: ['reason', 'explanation', 'title', 'description', 'category'],
-              properties: {
-                reason: { type: 'string', enum: LUNA_SUPPORT_REASONS },
-                explanation: { type: 'string' },
-                title: { type: 'string' },
-                description: { type: 'string' },
-                category: { type: 'string', enum: SUPPORT_CATEGORIES },
-              },
+      const prompt = `${systemPrompt}\n\nNome social do aluno: ${socialName}\n\nConversa:\n${history}\n\nLuna:`;
+      const responseJsonSchema = {
+        type: 'object',
+        properties: {
+          answer: { type: 'string' },
+          links: { type: 'array', items: { type: 'object', properties: { key: { type: 'string' }, label: { type: 'string' } } } },
+          support_offer: {
+            type: 'object', description: 'Proposta opcional, nunca uma autorização de abertura. Omitir quando puder ajudar no chat ou quando já tiver oferecido suporte antes nesta conversa.',
+            required: ['reason', 'explanation', 'title', 'description', 'category'],
+            properties: {
+              reason: { type: 'string', enum: LUNA_SUPPORT_REASONS },
+              explanation: { type: 'string' },
+              title: { type: 'string' },
+              description: { type: 'string' },
+              category: { type: 'string', enum: SUPPORT_CATEGORIES },
             },
           },
         },
+      };
+      const { answer } = await invokeLunaAI({
+        prompt,
+        responseJsonSchema,
+        primary: () => base44.integrations.Core.InvokeLLM({
+          prompt,
+          response_json_schema: responseJsonSchema,
+        }),
       });
       const reply = answer?.answer || 'Desculpe, não consegui responder agora. Poderia tentar novamente, por favor?';
       const updatedMessages = [...next, { role: 'assistant', content: reply, links: answer?.links || [] }];
