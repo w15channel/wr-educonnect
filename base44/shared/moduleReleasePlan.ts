@@ -1,5 +1,23 @@
 export const pause = () => new Promise(resolve => setTimeout(resolve, 250));
 
+export const FALLBACK_MODULE_RELEASE_SCHEDULE = [
+  '2026-09-24', '2026-10-03', '2026-10-11', '2026-10-20', '2026-10-28',
+  '2026-11-06', '2026-11-14', '2026-11-23', '2026-12-01',
+].map((date, index) => ({ module_number: index + 2, release_at: `${date}T00:00:00-03:00` }));
+
+export function completeReleaseSchedule(schedule = []) {
+  const releases = new Map(FALLBACK_MODULE_RELEASE_SCHEDULE.map(item => [item.module_number, item]));
+  for (const item of schedule) {
+    const module = Number(item?.module_number);
+    const time = Date.parse(item?.release_at);
+    const fallback = releases.get(module);
+    if (module >= 2 && module <= 10 && Number.isFinite(time) && (!fallback || time < Date.parse(fallback.release_at))) {
+      releases.set(module, { ...item, module_number: module });
+    }
+  }
+  return [...releases.values()].sort((a, b) => a.module_number - b.module_number);
+}
+
 export async function readAll(entity, filter = {}) {
   const rows = [];
   for (let offset = 0; ; offset += 500) {

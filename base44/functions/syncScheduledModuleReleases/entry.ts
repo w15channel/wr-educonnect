@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { readAll, pause, planModuleReleases } from '../../shared/moduleReleasePlan.ts';
+import { completeReleaseSchedule, readAll, pause, planModuleReleases } from '../../shared/moduleReleasePlan.ts';
 
 export default async function(req) {
   try {
@@ -8,8 +8,9 @@ export default async function(req) {
     if (user?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
     const payload = await req.json();
     const store = base44.asServiceRole.entities;
-    const schedule = await readAll(store.ModuleReleaseSchedule);
-    if (schedule.length !== 9) return Response.json({ error: 'Calendário incompleto; nenhuma liberação realizada.' }, { status: 409 });
+    // O calendário embarcado impede que registros ausentes ou uma automação
+    // anterior sem créditos interrompam a progressão da turma.
+    const schedule = completeReleaseSchedule(await readAll(store.ModuleReleaseSchedule));
     const codes = await readAll(store.AccessCode);
     const unlocks = await readAll(store.StudentModuleUnlock);
     let initialData = null;

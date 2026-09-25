@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'npm:vitest@4.1.11';
-import { planModuleReleases } from './moduleReleasePlan.ts';
+import { completeReleaseSchedule, planModuleReleases } from './moduleReleasePlan.ts';
 
 const dates = ['2026-09-24', '2026-10-03', '2026-10-11', '2026-10-20', '2026-10-28', '2026-11-06', '2026-11-14', '2026-11-23', '2026-12-01'];
 const schedule = dates.map((date, i) => ({ module_number: i + 2, release_at: `${date}T00:00:00-03:00` }));
@@ -7,6 +7,10 @@ const codes = ['tcc', 'psicanalise', 'sexologia'].map(course => ({ course, stude
 const initial = { profiles: [], lessons: [], tasks: [], exams: [], examSubs: [], progress: [], submissions: [] };
 
 describe('Liberação progressiva por datas', () => {
+  it('reconstrói o calendário completo sem depender dos registros remotos', () => {
+    expect(completeReleaseSchedule([])).toEqual(schedule);
+  });
+
   it.each(schedule)('abre módulo $module_number exatamente à meia-noite de Brasília', release => {
     const before = new Date(Date.parse(release.release_at) - 1).toISOString();
     expect(planModuleReleases(codes, [], schedule, before).some(r => r.module_number === release.module_number)).toBe(false);
