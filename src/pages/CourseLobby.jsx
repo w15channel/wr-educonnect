@@ -6,8 +6,6 @@ import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X } from 'lucid
 import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
-import LobbyTutorialChoice from '@/components/onboarding/LobbyTutorialChoice';
-import ProfileCompletionPrompt from '@/components/onboarding/ProfileCompletionPrompt';
 import { toast } from 'sonner';
 import useSocialIdentity from '@/hooks/useSocialIdentity';
 
@@ -248,22 +246,6 @@ export default function CourseLobby() {
   const [leadInput, setLeadInput] = useState('');
   const [leadLoading, setLeadLoading] = useState(false);
 
-  // Em todo acesso ao lobby o aluno pode rever os tutoriais (escrito ou vídeo),
-  // com a opção de pular caso não queira ver novamente.
-  const [showTutorialChoice, setShowTutorialChoice] = useState(true);
-
-  // No primeiro acesso, depois do tutorial, convidamos o aluno a completar o perfil.
-  const profilePromptKey = `wr_profile_prompt_${session?.code || session?.email || 'aluno'}`;
-  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
-
-  const finishTutorialChoice = () => {
-    setShowTutorialChoice(false);
-    if (typeof window !== 'undefined' && !localStorage.getItem(profilePromptKey)) {
-      localStorage.setItem(profilePromptKey, 'done');
-      setShowProfilePrompt(true);
-    }
-  };
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(LOBBY_MUSIC_KEY, 'off');
@@ -278,12 +260,7 @@ export default function CourseLobby() {
 
   const handleStudentEnter = () => {
     if (!termsAccepted) return;
-    const savedMode = getSession()?.study_mode || session?.study_mode || 'interativa';
-    if (savedMode === 'diploma') {
-      navigate(`/degree/student/dashboard`);
-    } else {
-      navigate(`/student/dashboard`);
-    }
+    navigate(`/degree/student/dashboard`);
   };
 
   const openReserve = (course) => {
@@ -404,14 +381,6 @@ export default function CourseLobby() {
 
       <Header />
 
-      {showTutorialChoice && !isSocialIdentityLoading && (
-        <LobbyTutorialChoice studentName={socialName} onFinish={finishTutorialChoice} />
-      )}
-
-      {showProfilePrompt && (
-        <ProfileCompletionPrompt onClose={() => setShowProfilePrompt(false)} />
-      )}
-
       <div className="internal-page-shell">
         {/* Title */}
         <div className="text-center mb-12">
@@ -424,22 +393,8 @@ export default function CourseLobby() {
             {isSocialIdentityLoading ? 'Preparando sua experiência…' : <>Olá, <span className="font-light italic" style={{ color: G }}>{firstName}!</span></>}
           </h1>
           <p className="text-white/35 max-w-md mx-auto text-sm font-light">
-            Acesse sua formação em Terapia Comportamental.
+            Acesse seu ambiente simplificado de estudos e certificação.
           </p>
-        </div>
-
-        {/* Oferta dos outros cursos */}
-        <div className="max-w-2xl mx-auto w-full mb-10">
-          <div className="flex items-center gap-3 mb-5 justify-center">
-            <div className="h-px flex-1" style={{ background: `${G}20` }} />
-            <span className="text-[10px] uppercase tracking-[0.3em] font-light" style={{ color: `${G}60` }}>Próximas Formações</span>
-            <div className="h-px flex-1" style={{ background: `${G}20` }} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {OFFER_COURSES.map((c) => (
-              <OfferCard key={c.id} course={c} onReserve={openReserve} />
-            ))}
-          </div>
         </div>
 
         {/* Course Card — acesso do aluno */}

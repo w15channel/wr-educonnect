@@ -23,6 +23,7 @@ import AnnualExamGenerator from '../components/exams/AnnualExamGenerator';
 function useScopedPrefix() {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
+  if (parts[0] === 'degree' && parts[1] === 'student') return '/degree/student';
   if (parts[0] === 'student' || parts[0] === 'adm') return `/${parts[0]}`;
   return '';
 }
