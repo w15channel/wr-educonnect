@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowRight, CheckCircle2, Flame, GraduationCap, History, ScrollText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import SimplifiedOvercomingWall from '@/components/dashboard/SimplifiedOvercomingWall';
 
 const PREFIX = '/degree/student';
 
@@ -118,6 +119,8 @@ export default function DiplomaDashboard() {
           </div>
         </div>
       )}
+
+      <SimplifiedOvercomingWall course={userCourse} session={session} />
 
       <section>
         <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground mb-3">Acesso rápido</h2>

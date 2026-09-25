@@ -185,6 +185,8 @@ const AuthenticatedApp = () => {
         <Route path="apostila" element={<Apostila />} />
         <Route path="profile" element={<Profile />} />
         <Route path="study-profile" element={<StudyProfile />} />
+        <Route path="chat" element={<ClassChat />} />
+        <Route path="chat/dm/:email" element={<DirectMessage />} />
       </Route>
 
       {/* Main student routes */}
