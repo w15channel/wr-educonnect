@@ -8,8 +8,6 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import MobileSplash from './MobileSplash';
 import ChecklistReturnBar from '../checklist/ChecklistReturnBar';
-import ProfileAssistant from '../onboarding/ProfileAssistant';
-import useProfileCompletion from '@/hooks/useProfileCompletion';
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -38,15 +36,6 @@ export default function AppLayout() {
   }, [session, location.pathname, navigate]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Custom auth: students are any non-admin role
-  const isStudent = session?.role !== 'admin';
-  // Assistente Luna do cadastro: ao ingressar na área do curso, pede item
-  // por item os dados obrigatórios do perfil (a foto continua opcional).
-  // O tutorial da plataforma acontece somente no lobby, sem duplicidade aqui.
-  const { profile, values, missing, needsCompletion } = useProfileCompletion(session);
-  const [assistantDone, setAssistantDone] = useState(false);
-  const showAssistant = isStudent && !assistantDone && needsCompletion;
-
   // Pull-to-refresh
   const [pullY, setPullY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,15 +75,6 @@ export default function AppLayout() {
   return (
     <div className="app-shell-bg flex overflow-hidden lg:pt-0" style={{ height: '100dvh' }}>
       <MobileSplash />
-      {showAssistant && (
-        <ProfileAssistant
-          session={session}
-          profile={profile}
-          steps={missing}
-          initialValues={values}
-          onFinish={() => setAssistantDone(true)}
-        />
-      )}
 
       {/* Desktop sidebar — visível apenas em telas grandes (≥1024px) */}
       <div className="hidden lg:block shrink-0">
