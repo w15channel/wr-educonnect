@@ -1,9 +1,9 @@
+import { invokePollinations } from '@/lib/pollinationsAI';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
 import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
 import { toast } from 'sonner';
@@ -284,7 +284,7 @@ export default function CourseLobby() {
     setLeadLoading(true);
     try {
       const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto para reserva antecipada do curso ${selectedCourse?.title}. Colete nome completo, WhatsApp, email e motivação. Faça uma pergunta por vez, de forma amigável. A resposta anterior foi: "${userMessage.content}". Qual é a próxima pergunta?`;
-      const response = await base44.integrations.Core.InvokeLLM({ prompt });
+      const response = await invokePollinations({ prompt });
       if (response && typeof response === 'string') {
         setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]);
       } else {

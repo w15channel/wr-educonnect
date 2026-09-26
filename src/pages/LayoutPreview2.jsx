@@ -1,3 +1,4 @@
+import { invokePollinations } from '@/lib/pollinationsAI';
 import React, { useState, useEffect } from 'react';
 import {
   Key, Sparkles, Users, BookOpen, Heart,
@@ -311,7 +312,7 @@ export default function LandingPage({ onLogin }) {
     if (answeredQuestions >= MAX_RESERVATION_AI_QUESTIONS) { setLeadMessages(prev => [...prev, { role: 'assistant', content: RESERVATION_FINAL_MESSAGE }]); return; }
     setLeadLoading(true);
     const prompt = `Você é a IA de pré-reserva da ${BRAND_LEGAL_NAME}. Conduza um questionário curto em formato de chat para reserva antecipada do curso ${selectedCourse?.title}.\nFaça no máximo ${MAX_RESERVATION_AI_QUESTIONS} perguntas no total, uma pergunta por vez, até coletar: nome completo, WhatsApp, curso de interesse, objetivo profissional e melhor horário de contato.\nQuando os dados principais já estiverem presentes, ou quando alcançar o limite de ${MAX_RESERVATION_AI_QUESTIONS} perguntas, encerre o diálogo pedindo para a pessoa selecionar a opção de enviar a reserva ao WhatsApp oficial. Explique que a mensagem será enviada pelo aplicativo WhatsApp e que, caso haja qualquer problema no envio, ela deve entrar em contato com a equipe pelo WhatsApp 4199253-1598. Seja acolhedor, objetivo e use português do Brasil.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Interessado' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
-    const response = await base44.integrations.Core.InvokeLLM({ prompt });
+    const response = await invokePollinations({ prompt });
     setLeadMessages(prev => [...prev, { role: 'assistant', content: response }]); setLeadLoading(false);
   };
 
@@ -335,7 +336,7 @@ export default function LandingPage({ onLogin }) {
     if (answeredQuestions >= 5) { setSocialMessages(prev => [...prev, { role: 'assistant', content: SOCIAL_FINAL_MESSAGE }]); return; }
     setSocialLoading(true);
     const prompt = `Você é a IA de triagem acolhedora do Atendimento Terapêutico Social da ${BRAND_LEGAL_NAME}. Faça uma entrevista curta com no máximo 5 perguntas no total, uma pergunta por vez, em português do Brasil. Colete: nome e WhatsApp, principal motivo da busca, urgência emocional, se já faz acompanhamento, preferência de horário. Não faça diagnóstico. Reforce que é um espaço sério, seguro e de cuidado comportamental. Ao final, oriente a pessoa a escolher data e horário no calendário e informe que em até 48 horas um atendente enviará o Pix de R$ 35,00 por consulta.\n\nHistórico:\n${nextMessages.map(m => `${m.role === 'user' ? 'Pessoa' : 'IA'}: ${m.content}`).join('\n')}\n\nIA:`;
-    const response = await base44.integrations.Core.InvokeLLM({ prompt });
+    const response = await invokePollinations({ prompt });
     setSocialMessages(prev => [...prev, { role: 'assistant', content: response }]); setSocialLoading(false);
   };
 

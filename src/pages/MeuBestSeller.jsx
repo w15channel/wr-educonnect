@@ -1,3 +1,4 @@
+import { invokePollinations } from '@/lib/pollinationsAI';
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -5,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import {
   BookOpen, Plus, Trash2, ChevronLeft, Download, Wand2,
   Loader2, Image, AlignLeft, FileText, BookMarked, Lightbulb, ChevronDown, ChevronUp,
-  Sparkles, Award, FileEdit, TrendingUp
+  FileEdit, TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME } from '@/lib/brand';
-import { saveBlobWithPicker } from '@/lib/fileExport';
 
 const ALL_COVERS = [
   { url: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&q=80', tags: 'livro escrita literatura' },
@@ -167,7 +167,7 @@ export default function MeuBestSeller() {
   const handleSuggestReferences = async () => {
     if (!selectedBook?.title) return;
     setSuggestingRefs(true);
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokePollinations({
       prompt: `Sugira 5 referências bibliográficas reais e relevantes para um livro chamado "${selectedBook.title}"${selectedBook.subtitle ? ` (subtítulo: ${selectedBook.subtitle})` : ''}. Formate cada referência nas normas ABNT. Responda apenas com a lista numerada, uma por linha.`,
     });
     const current = selectedBook.references || '';
@@ -312,7 +312,7 @@ export default function MeuBestSeller() {
   const handleAISpellcheck = async () => {
     if (!chapterContent.trim()) return;
     setAiLoading(true);
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokePollinations({
       prompt: `Corrija ortografia e gramática do texto a seguir, mantendo o estilo e conteúdo do autor. Retorne apenas o texto corrigido, sem comentários:\n\n${chapterContent}`,
     });
     setChapterContent(result);

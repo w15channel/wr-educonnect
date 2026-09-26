@@ -1,14 +1,14 @@
 /**
  * ChapterRewriteModal — ferramenta admin de reescrita de capítulos da apostila.
- * Usa a mesma base de IA do portal (base44.integrations.Core.InvokeLLM, também
+ * Usa a mesma base temporária Pollinations do portal, também
  * utilizada no gerador de provas e no Tutor EDU) para reescrever o conteúdo de
  * uma aula seguindo a estrutura padronizada: cabeçalho, 6 tópicos numerados e
  * 6 parágrafos uniformes (~60–65 palavras) por tópico. Cada tópico é
  * dimensionado para ocupar exatamente uma página do PDF impresso: começa no
  * topo da página e termina antes da quebra — inclusive o último tópico.
  */
+import { invokePollinations } from '@/lib/pollinationsAI';
 import React, { useMemo, useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { Sparkles, Loader2, X, Wand2, Save, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -107,7 +107,7 @@ export default function ChapterRewriteModal({ chapters, onClose, onSave, saving 
         toast.error('Esta aula ainda não possui conteúdo para reescrever.');
         return;
       }
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await invokePollinations({
         prompt: buildRewritePrompt(lesson.title || 'Aula da apostila', sourceText),
         model: 'claude_sonnet_4_6',
       });

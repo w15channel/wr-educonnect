@@ -1,3 +1,4 @@
+import { invokePollinations } from '@/lib/pollinationsAI';
 import React, { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -106,7 +107,7 @@ export default function SiteEditorAgent() {
     const userMessage = { role: 'user', content: requestText.trim() };
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
-    const response = await base44.integrations.Core.InvokeLLM({
+    const response = await invokePollinations({
       prompt: buildPrompt(requestText.trim(), 'pedido digitado', courseName, selectedItem),
     });
     setMessages((prev) => [...prev, { role: 'assistant', content: response }]);
@@ -121,7 +122,7 @@ export default function SiteEditorAgent() {
     }
 
     setLoading(true);
-    const response = await base44.integrations.Core.InvokeLLM({
+    const response = await invokePollinations({
       prompt: buildPrompt(`Inspecione o item selecionado e proponha melhorias detalhadas: ${selectedItem.label}`, 'inspeção guiada de item', courseName, selectedItem),
     });
 
@@ -135,7 +136,7 @@ export default function SiteEditorAgent() {
 
   const generateSuggestion = async () => {
     setLoading(true);
-    const response = await base44.integrations.Core.InvokeLLM({
+    const response = await invokePollinations({
       prompt: buildPrompt('', 'sugestão de otimização profunda', courseName, selectedItem),
       response_json_schema: {
         type: 'object',

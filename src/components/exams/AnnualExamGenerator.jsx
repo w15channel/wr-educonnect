@@ -1,6 +1,6 @@
+import { invokePollinations } from '@/lib/pollinationsAI';
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { ChevronLeft, CheckCircle, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,7 @@ ${moduleContent(module)}`;
     },
     required: ['questions'],
   };
-  const result = await base44.integrations.Core.InvokeLLM({
+  const result = await invokePollinations({
     prompt,
     response_json_schema: schema,
     model: 'claude_sonnet_4_6',
