@@ -253,10 +253,6 @@ export default function LunaChat({ session, onNavigated, isActive = true, suppor
       const { answer } = await invokeLunaAI({
         prompt,
         responseJsonSchema,
-        primary: () => base44.integrations.Core.InvokeLLM({
-          prompt,
-          response_json_schema: responseJsonSchema,
-        }),
       });
       const reply = answer?.answer || 'Desculpe, não consegui responder agora. Poderia tentar novamente, por favor?';
       const updatedMessages = [...next, { role: 'assistant', content: reply, links: answer?.links || [] }];

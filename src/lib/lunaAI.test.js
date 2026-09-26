@@ -1,47 +1,52 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { invokeLunaAI, LUNA_PUTER_MODELS } from './lunaAI';
+import { invokeLunaAI, LUNA_POLLINATIONS_MODEL } from './lunaAI';
 
 const schema = { type: 'object', properties: { answer: { type: 'string' } } };
 
 afterEach(() => {
-  delete globalThis.puter;
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe('invokeLunaAI', () => {
-  it('não aciona o Puter quando o servidor original responde', async () => {
-    const chat = vi.fn();
-    globalThis.puter = { ai: { chat } };
-
-    const result = await invokeLunaAI({
-      prompt: 'Olá', responseJsonSchema: schema,
-      primary: vi.fn().mockResolvedValue({ answer: 'Resposta principal' }),
+  it('gera o diálogo pela API do Pollinations sem consumir a integração Base44', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '```json\n{"answer":"Olá da Luna"}\n```' } }] }),
     });
+    vi.stubGlobal('fetch', fetchMock);
 
-    expect(result).toEqual({ answer: { answer: 'Resposta principal' }, provider: 'primary' });
-    expect(chat).not.toHaveBeenCalled();
+    const result = await invokeLunaAI({ prompt: 'Olá', responseJsonSchema: schema });
+
+    expect(result).toEqual({
+      answer: { answer: 'Olá da Luna' },
+      provider: `pollinations:${LUNA_POLLINATIONS_MODEL}`,
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://text.pollinations.ai/openai');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body)).toMatchObject({
+      model: LUNA_POLLINATIONS_MODEL,
+      stream: false,
+      messages: [{ role: 'user' }],
+    });
   });
 
-  it('tenta Claude, DeepSeek e OpenAI nessa ordem até obter resposta', async () => {
-    const chat = vi.fn()
-      .mockRejectedValueOnce(new Error('Claude indisponível'))
-      .mockResolvedValueOnce({ message: { content: '```json\n{"answer":"Resposta reserva"}\n```' } });
-    globalThis.puter = { ai: { chat } };
+  it('informa a indisponibilidade do Pollinations sem tentar outro provedor', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429 }));
 
-    const result = await invokeLunaAI({
-      prompt: 'Olá', responseJsonSchema: schema,
-      primary: vi.fn().mockRejectedValue(new Error('Sem créditos')),
-    });
-
-    expect(result.answer.answer).toBe('Resposta reserva');
-    expect(result.provider).toBe(`puter:${LUNA_PUTER_MODELS[1]}`);
-    expect(chat.mock.calls.map(call => call[1].model)).toEqual(LUNA_PUTER_MODELS.slice(0, 2));
+    await expect(invokeLunaAI({ prompt: 'Olá', responseJsonSchema: schema }))
+      .rejects.toThrow('Pollinations indisponível (429)');
   });
 
-  it('propaga uma falha consolidada quando nenhuma alternativa está disponível', async () => {
-    await expect(invokeLunaAI({
-      prompt: 'Olá', responseJsonSchema: schema,
-      primary: vi.fn().mockRejectedValue(new Error('Servidor fora do ar')),
-    })).rejects.toThrow('Puter não está disponível');
+  it('rejeita uma resposta sem o campo obrigatório', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '{"links":[]}' } }] }),
+    }));
+
+    await expect(invokeLunaAI({ prompt: 'Olá', responseJsonSchema: schema }))
+      .rejects.toThrow('Resposta sem o campo obrigatório');
   });
 });

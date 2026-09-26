@@ -62,7 +62,7 @@ function SubmittedView({ submission }) {
 }
 
 export default function Exams() {
-  const { user: session } = useOutletContext();
+  const { user: session, isDiplomaMode = false } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const prefix = useScopedPrefix();
   const navigate = useNavigate();
@@ -370,8 +370,13 @@ export default function Exams() {
                 ) : (() => {
                   const examModule = parseModuleNumber(exam.module_ref);
                   const dateLocked = !isTeacher && !!examModule && !availableModules.includes(examModule);
-                  const checklistLocked = dateLocked || (!isTeacher && !!examModule && !isModuleUnlockedForExam(examModule) && !isReleasedByAdmin(examModule));
-                  if (checklistLocked) {
+                  // A modalidade simplificada dá acesso direto às avaliações e
+                  // não apresenta nem aplica requisitos do checklist. A regra
+                  // original permanece intacta na experiência completa.
+                  const checklistLocked = !isDiplomaMode && !isTeacher && !!examModule
+                    && !isModuleUnlockedForExam(examModule) && !isReleasedByAdmin(examModule);
+                  const accessLocked = dateLocked || checklistLocked;
+                  if (accessLocked) {
                     return (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3">
