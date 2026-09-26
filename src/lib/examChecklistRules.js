@@ -24,46 +24,6 @@ export const submissionTextLength = (submission) => {
   return `${submission.comment || ''} ${answersText}`.trim().length;
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MENSALIDADES
-// Todas as mensalidades não pagas aparecem como pendência no checklist
-// de cada módulo. Se o aluno pagou todas, nenhum item de mensalidade aparece.
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Calcula o período da mensalidade a partir do due_date.
- * O período vai do dia 05 do mês anterior ao dia 05 do mês de vencimento.
- * Ex: due_date '2026-09-10' → período [05/08, 05/09)
- */
-export function tuitionPeriodFromDueDate(dueDateStr) {
-  if (!dueDateStr) return null;
-  const parts = String(dueDateStr).split('-');
-  if (parts.length < 2) return null;
-  const year = Number(parts[0]);
-  const month = Number(parts[1]); // 1-indexed
-  if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
-  const periodEnd = new Date(year, month - 1, 5).getTime();
-  const periodStart = new Date(year, month - 2, 5).getTime();
-  return { start: periodStart, end: periodEnd };
-}
-
-/**
- * Encontra a mensalidade cujo período contém a data de liberação do módulo.
- * Retorna null se não houver mensalidade para o período.
- */
-export function findTuitionForModule(moduleReleaseDate, tuitions) {
-  if (!moduleReleaseDate || !tuitions || tuitions.length === 0) return null;
-  const releaseTime = new Date(moduleReleaseDate).getTime();
-  if (!Number.isFinite(releaseTime)) return null;
-  for (const t of tuitions) {
-    const period = tuitionPeriodFromDueDate(t.due_date);
-    if (period && releaseTime >= period.start && releaseTime < period.end) {
-      return t;
-    }
-  }
-  return null;
-}
-
 // Verifica se uma data cai dentro da janela de tempo em que o aluno esteve
 // naquele módulo (entre a liberação do módulo e a liberação do próximo).
 // APENAS para atividades perenes (debates, ofensivas, terapeuta) — 
@@ -90,7 +50,6 @@ export function buildModuleChecklist({
   challengeResponses = [],
   moduleWindow = null,
   previousExamCompleted = false,
-  tuitions = [],
 }) {
   // Aulas da apostila e tarefas são CUMULATIVAS — uma vez completas, sempre contam
   // independente de quando foram feitas. Não filtramos por janela de tempo.
@@ -126,20 +85,6 @@ export function buildModuleChecklist({
     challengeResponses.filter((r) => r.student_email === email && isWithinModuleWindow(r.date, moduleWindow)).map((r) => r.date)
   ).size;
 
-  // 7 — Mensalidades voluntárias em aberto.
-  // Todas as mensalidades não pagas aparecem como pendência no checklist
-  // de cada módulo. Se o aluno pagou todas, nenhum item de mensalidade aparece.
-  // O caminho leva à página de mensalidades (tuitions) com retorno ao checklist.
-  const unpaidTuitions = (tuitions || []).filter((t) => t.status !== 'paid');
-  const tuitionItems = unpaidTuitions.map((t, idx) => ({
-    key: `tuition_${idx}`,
-    label: `Contribuição Voluntária${t.month_ref ? ` — ${t.month_ref}` : ''}`,
-    hint: `O curso tem custos mensais reais (professor, plataforma, tecnologia). O custo de referência é R$ 450 por aluno — mas você escolhe quanto pode colaborar, sem valor mínimo. Hoje, com quanto você poderia contribuir? Vá até a página de Mensalidades para informar seu valor.`,
-    current: 0,
-    target: 1,
-    to: '/tuitions',
-  }));
-
   const items = [
     // Pré-requisito: para módulos 2+, a prova do módulo anterior deve ter sido entregue.
     ...(moduleNumber > 1 ? [{
@@ -150,7 +95,6 @@ export function buildModuleChecklist({
       target: 1,
       to: '/exams',
     }] : []),
-    ...tuitionItems,
     {
       key: 'apostila',
       label: 'Marcar os capítulos da apostila do módulo como lidos',

@@ -1,16 +1,14 @@
 import React from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Flame, Heart } from 'lucide-react';
+import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_SHORT_NAME } from '@/lib/brand';
 
 
 const G = '#d4b96a';
 
 const DIPLOMA_MENU = [
-  { icon: Heart, label: 'Mural de superação',     path: '/chat',         color: 'text-rose-400' },
-  { icon: GraduationCap, label: 'Provas',         path: '/exams',        color: 'text-violet-400' },
-  { icon: Flame, label: 'Ofensiva diária',        path: '/ofensivas',    color: 'text-orange-400' },
+  { icon: BookOpen, label: 'Aulas',              path: '/lessons',      color: 'text-purple-400' },
   { icon: FileText, label: 'Tarefas',             path: '/tasks',        color: 'text-orange-400' },
   { icon: ScrollText, label: 'Apostila TCC',      path: '/apostila',     color: 'text-emerald-400' },
   { icon: DollarSign, label: 'Mensalidades',      path: '/tuitions',     color: 'text-teal-400' },
@@ -123,14 +121,14 @@ export default function DiplomaLayout() {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav aria-label="Navegação do modo simplificado" className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#07080f] border-t border-[#151c30] flex items-center justify-start overflow-x-auto px-2 py-2 safe-bottom scrollbar-invisible">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#07080f] border-t border-[#151c30] flex items-center justify-around px-2 py-2 safe-bottom">
         {DIPLOMA_MENU.map((item) => {
           const active = isActive(item.path);
           return (
             <Link
               key={item.path}
               to={prefix + item.path}
-              className={`flex min-w-[72px] flex-col items-center gap-0.5 px-2 py-1 transition-colors ${active ? 'text-[#d4b96a]' : 'text-white/30'}`}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 transition-colors ${active ? 'text-[#d4b96a]' : 'text-white/30'}`}
             >
               <item.icon size={18} />
               <span className="text-[9px] font-light">{item.label.split(' ')[0]}</span>

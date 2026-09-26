@@ -165,8 +165,7 @@ const AuthenticatedApp = () => {
   if (pathname === '/lobby') return <CourseLobby />;
 
   const isAdmin = session.role === 'admin';
-  // Temporariamente, todos os alunos usam a experiência simplificada.
-  const base = isAdmin ? '/adm' : '/degree/student';
+  const base = isAdmin ? '/adm' : '/student';
 
   return (
     <Routes>
@@ -174,9 +173,7 @@ const AuthenticatedApp = () => {
       <Route path="/degree/student/*" element={<DiplomaLayout />}>
         <Route index element={<DiplomaDashboard />} />
         <Route path="dashboard" element={<DiplomaDashboard />} />
-        <Route path="exams" element={<Exams />} />
-        <Route path="exams/quiz/:id" element={<ExamQuizView />} />
-        <Route path="ofensivas" element={<Ofensivas />} />
+        <Route path="lessons" element={<Lessons />} />
         <Route path="tasks" element={<Tasks mode="tasks" />} />
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
         <Route path="tuitions" element={<Tuitions />} />
@@ -185,12 +182,10 @@ const AuthenticatedApp = () => {
         <Route path="apostila" element={<Apostila />} />
         <Route path="profile" element={<Profile />} />
         <Route path="study-profile" element={<StudyProfile />} />
-        <Route path="chat" element={<ClassChat />} />
-        <Route path="chat/dm/:email" element={<DirectMessage />} />
       </Route>
 
       {/* Main student routes */}
-      <Route path="/student/*" element={isAdmin ? <AppRoutesTree /> : <Navigate to="/degree/student/dashboard" replace />} />
+      <Route path="/student/*" element={<AppRoutesTree />} />
 
       {/* Main admin routes */}
       <Route path="/adm/*" element={<AppRoutesTree />} />

@@ -4,7 +4,7 @@ import useModuleAccess from '@/hooks/useModuleAccess';
 import useStudentRecords from '@/hooks/useStudentRecords';
 import { base44 } from '@/api/base44Client';
 import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
-import { applyChecklistVerification, mergeVerifiedTuitions } from '@/lib/verifiedChecklist';
+import { applyChecklistVerification } from '@/lib/verifiedChecklist';
 
 const MODULE_COUNT = 10;
 // O calendário define o módulo disponível; concluir atividades não antecipa datas.
@@ -57,12 +57,6 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
     enabled: !!email,
   });
-  // Mensalidades do aluno — cada módulo usa a mensalidade do seu período.
-  const { data: tuitions = [], isLoading: l11 } = useQuery({
-    queryKey: ['checklist-tuitions', email],
-    queryFn: () => base44.entities.Tuition.filter({ student_email: email }, '-created_date', 50),
-    enabled: !!email,
-  });
   const { data: verification = null } = useQuery({
     queryKey: ['checklist-verification', session?.codeId, email, course],
     queryFn: async () => {
@@ -81,13 +75,12 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
       return key === 'student-learning-records' || key === 'module-unlocks' || (key.startsWith('checklist-') && key !== 'checklist-verification');
     } });
   }, [verification?.verified_at, queryClient]);
-  const effectiveTuitions = useMemo(() => mergeVerifiedTuitions(tuitions, verified?.tuitions), [tuitions, verified]);
   const moduleUnlocks = access.unlocks;
 
-  const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || l11 || access.isLoading;
+  const isLoading = l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9 || l10 || access.isLoading;
 
   // Data em que cada módulo foi liberado para o aluno — usada para que
-  // debates, terapeuta da semana, ofensiva e mensalidade contem apenas o que
+  // debates, terapeuta da semana, ofensiva contem apenas o que
   // foi feito dentro da janela de tempo daquele módulo.
   const unlockDateByModule = useMemo(() => {
     const map = new Map();
@@ -118,7 +111,6 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
           const previousModuleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === previousModuleNumber);
           return previousModuleExams.length === 0 ? true : previousModuleExams.every((exam) => submittedExamIds.has(exam.id));
         })(),
-        tuitions: effectiveTuitions,
       });
       const confirmed = verified?.modules?.find(row => row.moduleNumber === moduleNumber);
       const reconciled = applyChecklistVerification(checklist, confirmed, {
@@ -130,7 +122,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
       const examDone = moduleExams.length > 0 && (moduleExams.every((exam) => submittedExamIds.has(exam.id)) || (sameExams && confirmed?.examDone === true));
       return { moduleNumber, ...reconciled, examDone, exams: moduleExams };
     });
-  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, effectiveTuitions, verified]);
+  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, verified]);
 
   // O módulo atual é o primeiro disponível que ainda tem itens pendentes.
   const currentModule = useMemo(() => {

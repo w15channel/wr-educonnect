@@ -23,7 +23,6 @@ import AnnualExamGenerator from '../components/exams/AnnualExamGenerator';
 function useScopedPrefix() {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
-  if (parts[0] === 'degree' && parts[1] === 'student') return '/degree/student';
   if (parts[0] === 'student' || parts[0] === 'adm') return `/${parts[0]}`;
   return '';
 }
@@ -62,7 +61,7 @@ function SubmittedView({ submission }) {
 }
 
 export default function Exams() {
-  const { user: session, isDiplomaMode = false } = useOutletContext();
+  const { user: session } = useOutletContext();
   const isTeacher = session?.role === 'admin';
   const prefix = useScopedPrefix();
   const navigate = useNavigate();
@@ -370,13 +369,8 @@ export default function Exams() {
                 ) : (() => {
                   const examModule = parseModuleNumber(exam.module_ref);
                   const dateLocked = !isTeacher && !!examModule && !availableModules.includes(examModule);
-                  // A modalidade simplificada dá acesso direto às avaliações e
-                  // não apresenta nem aplica requisitos do checklist. A regra
-                  // original permanece intacta na experiência completa.
-                  const checklistLocked = !isDiplomaMode && !isTeacher && !!examModule
-                    && !isModuleUnlockedForExam(examModule) && !isReleasedByAdmin(examModule);
-                  const accessLocked = dateLocked || checklistLocked;
-                  if (accessLocked) {
+                  const checklistLocked = dateLocked || (!isTeacher && !!examModule && !isModuleUnlockedForExam(examModule) && !isReleasedByAdmin(examModule));
+                  if (checklistLocked) {
                     return (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3">
