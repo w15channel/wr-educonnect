@@ -2,6 +2,14 @@ import { base44 } from '@/api/base44Client';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const POLLINATIONS_IMAGE_URL = import.meta.env.VITE_POLLINATIONS_IMAGE_URL || 'https://image.pollinations.ai/prompt';
+const POLLINATIONS_IMAGE_MODEL = import.meta.env.VITE_POLLINATIONS_IMAGE_MODEL || 'flux';
+
+function pollinationsImage(prompt, { width = 1052, height = 1488, reference = null } = {}) {
+  const referenceHint = reference ? `\nUse esta imagem como referência visual: ${reference}` : '';
+  const params = new URLSearchParams({ width: String(width), height: String(height), model: POLLINATIONS_IMAGE_MODEL, nologo: 'true', enhance: 'true' });
+  return `${POLLINATIONS_IMAGE_URL}/${encodeURIComponent(prompt + referenceHint)}?${params}`;
+}
 
 export function generateReceiptCode() {
   const block = (len) => Array.from({ length: len }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
@@ -48,11 +56,7 @@ export async function generateReceiptImage(data, templateUrl = null) {
   const prompt = templateUrl
     ? `Reproduce EXACTLY the same receipt design as the reference image — same layout, frame, colors, typography, seal, signature block and footer — changing ONLY the variable data to the values below. Keep every other word identical to the reference.\n\n${buildPrompt(data)}`
     : buildPrompt(data);
-  const result = await base44.integrations.Core.GenerateImage({
-    prompt,
-    ...(templateUrl ? { existing_image_urls: [templateUrl] } : {}),
-  });
-  return result.url;
+  return pollinationsImage(prompt, { reference: templateUrl });
 }
 
 export async function downloadReceiptImage(url, receiptCode) {
@@ -120,11 +124,7 @@ export async function generateCertificateBackground({ style = 'classic', courseL
   const prompt = templateUrl
     ? 'Reproduce EXACTLY the same certificate background design as the reference image — same layout, frame, colors, ornaments, and style — but regenerate it in maximum quality. Keep it as a BACKGROUND ONLY with no text.\n\n' + buildCertBgPrompt({ style, courseLabel })
     : buildCertBgPrompt({ style, courseLabel });
-  const result = await base44.integrations.Core.GenerateImage({
-    prompt,
-    ...(templateUrl ? { existing_image_urls: [templateUrl] } : {}),
-  });
-  return result.url;
+  return pollinationsImage(prompt, { width: 1052, height: 744, reference: templateUrl });
 }
 
 /**
@@ -188,11 +188,7 @@ export async function generateSocialMediaCertificate(certData, templateUrl = nul
   const prompt = templateUrl
     ? 'Reproduce EXACTLY the same certificate design as the reference image — same layout, frame, colors, typography, seal, signature block and footer — changing ONLY the variable data to the values below. Keep every other word identical to the reference.\n\n' + buildSocialMediaCertPrompt(certData)
     : buildSocialMediaCertPrompt(certData);
-  const result = await base44.integrations.Core.GenerateImage({
-    prompt,
-    ...(templateUrl ? { existing_image_urls: [templateUrl] } : {}),
-  });
-  return result.url;
+  return pollinationsImage(prompt, { width: 1052, height: 744, reference: templateUrl });
 }
 
 /**

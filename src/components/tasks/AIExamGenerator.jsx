@@ -6,13 +6,13 @@
  * prazo, quantidade de questões e pontuação total.
  * A IA gera as questões com base no texto completo do módulo.
  */
+import { invokePollinations } from '@/lib/pollinationsAI';
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import {
   Sparkles, Loader2, ChevronLeft, GraduationCap,
-  List, AlignLeft, AlertCircle, CheckCircle, Calendar, Hash, FileText
+  List, AlignLeft, CheckCircle, Calendar, Hash, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,7 +139,7 @@ ${sourceContent}`;
     };
 
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await invokePollinations({
         prompt,
         response_json_schema: schema,
         model: 'claude_sonnet_4_6',

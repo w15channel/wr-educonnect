@@ -1,4 +1,5 @@
 import { LESSON_KNOWLEDGE } from './lessonKnowledge.ts';
+import { invokePollinations } from '../../shared/pollinations.ts';
 
 const norm = (value: unknown) => String(value || '').trim().toLowerCase();
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,8 +35,8 @@ function chooseLesson(moduleNumber: number, students: any[], progressByEmail: Ma
   return pool[dayNumber % Math.max(pool.length, 1)] || LESSON_KNOWLEDGE[0].lessons[0];
 }
 
-async function askLuna(base44: any, lesson: any) {
-  const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+async function askLuna(_base44: any, lesson: any) {
+  const result = await invokePollinations({
     prompt: `Você é Luna, tutora acadêmica. Crie uma Ofensiva Diária com exatamente 8 perguntas abertas, em português do Brasil, exclusivamente sobre a aula abaixo. Preserve esta dificuldade e pontuação: perguntas 1, 2, 4, 5, 7 e 8 são fáceis (0,1 ponto cada: compreensão e aplicação direta); perguntas 3 e 6 são medianas e aparecem em baús (0,2 ponto cada: integração, raciocínio clínico e justificativa). Total: 1,0 ponto. Não faça perguntas genéricas, não repita ideias e não invente conteúdo fora da aula. Cada pergunta deve ter uma dica curta, sem entregar a resposta.
 
 Módulo: ${lesson.moduleTitle}
