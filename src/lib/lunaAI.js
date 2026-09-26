@@ -1,8 +1,6 @@
-const PUTER_MODELS = [
-  'anthropic/claude-opus-5',
-  'deepseek/deepseek-v4-pro',
-  'openai/gpt-5.5',
-];
+const POLLINATIONS_ENDPOINT = import.meta.env.VITE_POLLINATIONS_TEXT_URL
+  || 'https://text.pollinations.ai/openai';
+const POLLINATIONS_MODEL = import.meta.env.VITE_POLLINATIONS_TEXT_MODEL || 'openai';
 
 const FALLBACK_TIMEOUT_MS = 45_000;
 
@@ -14,14 +12,11 @@ function withTimeout(promise, timeoutMs = FALLBACK_TIMEOUT_MS) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
-function getPuterText(response) {
-  if (typeof response === 'string') return response;
-  if (typeof response?.message?.content === 'string') return response.message.content;
-  if (Array.isArray(response?.message?.content)) {
-    return response.message.content.map(part => part?.text || '').join('');
-  }
-  if (typeof response?.text === 'string') return response.text;
-  return '';
+function getPollinationsText(response) {
+  const content = response?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) return content.map((part) => part?.text || '').join('');
+  return typeof response === 'string' ? response : '';
 }
 
 function parseJsonResponse(value) {
@@ -44,42 +39,39 @@ function parseJsonResponse(value) {
   }
 }
 
-function fallbackPrompt(prompt, responseJsonSchema) {
+function jsonPrompt(prompt, responseJsonSchema) {
   return `${prompt}\n\nINSTRUÇÃO DE FORMATO: responda somente com JSON válido, sem markdown nem texto antes ou depois, obedecendo a este JSON Schema:\n${JSON.stringify(responseJsonSchema)}`;
 }
 
 /**
- * Usa o provedor original da Luna e, apenas se ele falhar, tenta a cadeia
- * independente do Puter. O fallback mantém a ordem Claude → DeepSeek → OpenAI.
+ * Gera o diálogo da Luna diretamente pela API OpenAI-compatible do Pollinations.
+ * A chave é opcional para o acesso público; quando configurada, deve ser uma
+ * chave publicável e restrita por origem, pois este código roda no navegador.
  */
-export async function invokeLunaAI({ prompt, responseJsonSchema, primary }) {
-  try {
-    const answer = await primary();
-    if (answer?.answer) return { answer, provider: 'primary' };
-    throw new Error('O servidor principal retornou uma resposta vazia.');
-  } catch (primaryError) {
-    const puter = globalThis.puter;
-    if (!puter?.ai?.chat) {
-      throw new AggregateError([primaryError], 'O servidor principal falhou e o Puter não está disponível.');
-    }
+export async function invokeLunaAI({ prompt, responseJsonSchema }) {
+  const headers = { 'Content-Type': 'application/json' };
+  const apiKey = import.meta.env.VITE_POLLINATIONS_API_KEY;
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
 
-    const errors = [primaryError];
-    for (const model of PUTER_MODELS) {
-      try {
-        const response = await withTimeout(puter.ai.chat(
-          fallbackPrompt(prompt, responseJsonSchema),
-          { model },
-        ));
-        const answer = parseJsonResponse(getPuterText(response));
-        if (!answer?.answer) throw new Error('Resposta sem o campo obrigatório "answer".');
-        return { answer, provider: `puter:${model}` };
-      } catch (error) {
-        errors.push(error);
-      }
-    }
+  const response = await withTimeout(fetch(POLLINATIONS_ENDPOINT, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model: POLLINATIONS_MODEL,
+      messages: [{ role: 'user', content: jsonPrompt(prompt, responseJsonSchema) }],
+      temperature: 0.4,
+      stream: false,
+    }),
+  }));
 
-    throw new AggregateError(errors, 'Nenhum provedor da Luna respondeu.');
+  if (!response.ok) {
+    throw new Error(`Pollinations indisponível (${response.status}).`);
   }
+
+  const payload = await response.json();
+  const answer = parseJsonResponse(getPollinationsText(payload));
+  if (!answer?.answer) throw new Error('Resposta sem o campo obrigatório "answer".');
+  return { answer, provider: `pollinations:${POLLINATIONS_MODEL}` };
 }
 
-export const LUNA_PUTER_MODELS = Object.freeze([...PUTER_MODELS]);
+export const LUNA_POLLINATIONS_MODEL = POLLINATIONS_MODEL;
