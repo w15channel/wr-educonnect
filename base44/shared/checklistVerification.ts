@@ -65,10 +65,7 @@ export function buildVerifiedChecklist(student, data, now) {
       item('debate_comment', replies.map(row => row.id), 1, Math.min(replies.length, 1)),
       item('ofensiva', responses.map(row => row.id), 3, Math.min(unique(responses.map(row => row.date)).length, 3)),
     ];
-    const tuitions = mine('Tuition');
-    for (const tuition of tuitions) items.push(item(`tuition_${tuition.id}`, [tuition.id], 1, tuition.status === 'paid' ? 1 : 0));
     modules.push({ moduleNumber: number, items, complete: items.every(row => row.done), task_ids: moduleTasks.map(row => row.id).sort(), previous_exam_ids: previous.map(row => row.id).sort(), exam_ids: currentExams.map(row => row.id).sort(), examDone: currentExams.length > 0 && currentExams.every(row => submittedIds.has(row.id)) });
   }
-  return { student_key: student.key, code_id: student.code_id || '', student_email: student.email, course, verified_at: now, rules_version: 1, modules,
-    tuitions: mine('Tuition').map(({ id, month_ref, due_date, status, created_date, updated_date }) => ({ id, month_ref, due_date, status, created_date, updated_date })) };
+  return { student_key: student.key, code_id: student.code_id || '', student_email: student.email, course, verified_at: now, rules_version: 1, modules };
 }

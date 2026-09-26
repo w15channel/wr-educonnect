@@ -28,14 +28,14 @@ it('counts unique challenge days only for the correct module', () => {
   expect(find(run(data), 2, 'ofensiva').current).toBe(3);
   expect(find(run(data), 1, 'ofensiva').current).toBe(0);
 });
-it('requires actual exam submissions and admin payment confirmation', () => {
+it('requires actual exam submissions without making payment a checklist requirement', () => {
   const data = empty(); data.ModuleReleaseSchedule = [{ module_number: 2, release_at: '2026-09-01T00:00:00Z' }];
   data.Exam = [{ id: 'e', module_ref: 'Módulo 1' }]; data.Tuition = [{ id: 't', student_email: 'edu-1', status: 'pending' }];
   expect(find(run(data), 2, 'previous_exam').done).toBe(false);
-  expect(find(run(data), 1, 'tuition_t').done).toBe(false);
+  expect(run(data).modules[0].items.some(item => item.key.startsWith('tuition'))).toBe(false);
   data.ExamSubmission = [{ id: 's', exam_id: 'e', student_email: 'edu-1' }]; data.Tuition[0].status = 'paid';
   expect(find(run(data), 2, 'previous_exam').done).toBe(true);
-  expect(find(run(data), 1, 'tuition_t').done).toBe(true);
+  expect(run(data).modules[0].items.some(item => item.key.startsWith('tuition'))).toBe(false);
 });
 it('does not unlock future modules or fabricate evidence', () => {
   expect(run(empty()).modules).toHaveLength(1);
