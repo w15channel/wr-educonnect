@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'npm:vitest@4.1.11';
 import { completeReleaseSchedule, planModuleReleases } from './moduleReleasePlan.ts';
 
-const dates = ['2026-09-24', '2026-10-03', '2026-10-11', '2026-10-20', '2026-10-28', '2026-11-06', '2026-11-14', '2026-11-23', '2026-12-01'];
+const dates = ['2026-09-24', '2026-09-24', '2026-09-24', '2026-09-24', '2026-10-28', '2026-11-06', '2026-11-14', '2026-11-23', '2026-12-01'];
 const schedule = dates.map((date, i) => ({ module_number: i + 2, release_at: `${date}T00:00:00-03:00` }));
 const codes = ['tcc', 'psicanalise', 'sexologia'].map(course => ({ course, student_email: `${course}@test.local`, pontuacao_total: 0 }));
 const initial = { profiles: [], lessons: [], tasks: [], exams: [], examSubs: [], progress: [], submissions: [] };
@@ -22,7 +22,7 @@ describe('Liberação progressiva por datas', () => {
   it('preserva liberações e não duplica ao repetir', () => {
     const saved = [{ student_email: codes[0].student_email, course: 'tcc', module_number: 2, unlocked_at: '2026-09-01T00:00:00Z' }];
     const planned = planModuleReleases(codes, saved, schedule, '2026-09-24T03:00:00Z');
-    expect(planned).toHaveLength(2);
+    expect(planned).toHaveLength(11);
     expect(saved[0].unlocked_at).toBe('2026-09-01T00:00:00Z');
     expect(planModuleReleases(codes, [...saved, ...planned], schedule, '2026-09-24T03:00:00Z')).toEqual([]);
   });

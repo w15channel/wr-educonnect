@@ -3,7 +3,7 @@ import { buildVerifiedChecklist } from '../base44/shared/checklistVerification.t
 import { applyChecklistVerification, mergeVerifiedTuitions } from '../src/lib/verifiedChecklist.js';
 const student = { key: 'code:1', code_id: '1', email: 'Student@Example.com', course: 'tcc', aliases: ['student@example.com', 'edu-1'] };
 const empty = () => Object.fromEntries(['Task', 'Exam', 'ForumPost', 'ForumReply', 'DailyChallenge', 'ModuleReleaseSchedule', 'LessonProgress', 'TaskSubmission', 'ExamSubmission', 'DailyChallengeResponse', 'Tuition', 'StudentModuleUnlock'].map(key => [key, []]));
-const run = data => buildVerifiedChecklist(student, data, '2026-09-18T15:00:00Z');
+const run = data => buildVerifiedChecklist(student, data, '2026-09-27T15:00:00Z');
 const find = (result, module, key) => result.modules.find(row => row.moduleNumber === module).items.find(row => row.key === key);
 it('recognizes aliases and a valid submission among duplicates', () => {
   const data = empty(); data.Task = [{ id: 't', module_number: 1, course: 'tcc' }];
@@ -37,8 +37,20 @@ it('requires actual exam submissions without making payment a checklist requirem
   expect(find(run(data), 2, 'previous_exam').done).toBe(true);
   expect(run(data).modules[0].items.some(item => item.key.startsWith('tuition'))).toBe(false);
 });
-it('does not unlock future modules or fabricate evidence', () => {
-  expect(run(empty()).modules).toHaveLength(1);
+it('releases modules 3 to 5 globally but keeps every checklist behind the previous exam', () => {
+  const data = empty();
+  data.Exam = [1, 2, 3, 4].map(number => ({ id: `e${number}`, module_ref: `Módulo ${number}` }));
+  const result = run(data);
+  expect(result.modules.map(row => row.moduleNumber)).toEqual([1, 2, 3, 4, 5]);
+  expect([2, 3, 4, 5].map(number => find(result, number, 'previous_exam').done)).toEqual([false, false, false, false]);
+  data.ExamSubmission = [1, 2, 3, 4].map(number => ({ id: `s${number}`, exam_id: `e${number}`, student_email: 'edu-1' }));
+  expect([2, 3, 4, 5].map(number => find(run(data), number, 'previous_exam').done)).toEqual([true, true, true, true]);
+});
+it('does not accept an absent previous exam as a completed prerequisite', () => {
+  expect(find(run(empty()), 2, 'previous_exam').done).toBe(false);
+});
+it('does not unlock modules after the globally released range or fabricate evidence', () => {
+  expect(run(empty()).modules).toHaveLength(5);
   expect(find(run(empty()), 1, 'tasks').done).toBe(false);
 });
 it('updates visible checklist without overwriting newer financial status', () => {

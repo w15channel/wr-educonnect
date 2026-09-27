@@ -1,8 +1,10 @@
+import { completeReleaseSchedule } from './moduleReleasePlan.ts';
+
 export const normalizeIdentity = value => String(value || '').trim().toLowerCase();
 const moduleOf = value => Number(String(value || '').match(/\d+/)?.[0]) || null;
 const courseOf = row => ({ psi: 'psicanalise', sex: 'sexologia' }[row.course] || row.course || 'tcc');
 const unique = values => [...new Set(values.filter(Boolean))];
-const hasSubmission = row => !!row.file_url || !![row.comment, ...(row.quiz_answers || []).map(a => a?.text)].filter(Boolean).join(' ').trim();
+const hasSubmission = row => ['submitted', 'graded'].includes(row.status) || !!row.file_url || !![row.comment, ...(row.quiz_answers || []).map(a => a?.text)].filter(Boolean).join(' ').trim();
 const item = (key, ids, target, count = unique(ids).length) => ({ key, current: count, target, done: count >= target, source_ids: unique(ids) });
 
 export function buildVerifiedChecklist(student, data, now) {
@@ -23,7 +25,9 @@ export function buildVerifiedChecklist(student, data, now) {
   for (const row of unlocks.sort((a, b) => Date.parse(a.unlocked_at) - Date.parse(b.unlocked_at))) {
     if (!dates.has(Number(row.module_number))) dates.set(Number(row.module_number), row.unlocked_at);
   }
-  for (const row of data.ModuleReleaseSchedule) {
+  // Espelha o calendário garantido pelo cliente: a apuração não pode ignorar
+  // módulos liberados apenas porque a entidade remota ainda não foi populada.
+  for (const row of completeReleaseSchedule(data.ModuleReleaseSchedule)) {
     if (!dates.has(Number(row.module_number)) && Date.parse(row.release_at) <= Date.parse(now)) dates.set(Number(row.module_number), row.release_at);
   }
   const modules = [];
@@ -58,7 +62,7 @@ export function buildVerifiedChecklist(student, data, now) {
     const previous = exams.filter(row => moduleOf(row.module_ref) === number - 1);
     const currentExams = exams.filter(row => moduleOf(row.module_ref) === number);
     const items = [
-      ...(number > 1 ? [item('previous_exam', examSubs.filter(row => previous.some(e => e.id === row.exam_id)).map(row => row.id), 1, previous.every(row => submittedIds.has(row.id)) ? 1 : 0)] : []),
+      ...(number > 1 ? [item('previous_exam', examSubs.filter(row => previous.some(e => e.id === row.exam_id)).map(row => row.id), 1, previous.length > 0 && previous.every(row => submittedIds.has(row.id)) ? 1 : 0)] : []),
       item('apostila', reads.map(row => row.id), 5, unique(reads.map(row => row.lesson_id)).length),
       item('tasks', submissions.filter(row => doneTasks.some(task => task.id === row.task_id) && hasSubmission(row)).map(row => row.id), moduleTasks.length || 5, doneTasks.length),
       item('debate_topic', topics.map(row => row.id), 1, Math.min(topics.length, 1)),

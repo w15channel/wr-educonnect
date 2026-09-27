@@ -90,8 +90,9 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
     return map;
   }, [moduleUnlocks, course]);
 
+  const submittedExamIds = useMemo(() => new Set(examSubmissions.map((s) => s.exam_id)), [examSubmissions]);
+
   const modules = useMemo(() => {
-    const submittedExamIds = new Set(examSubmissions.map((s) => s.exam_id));
     return Array.from({ length: MODULE_COUNT }, (_, index) => {
       const moduleNumber = index + 1;
       const moduleWindow = { start: unlockDateByModule.get(moduleNumber) || null, end: unlockDateByModule.get(moduleNumber + 1) || null };
@@ -109,7 +110,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
         previousExamCompleted: moduleNumber === 1 ? true : (() => {
           const previousModuleNumber = moduleNumber - 1;
           const previousModuleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === previousModuleNumber);
-          return previousModuleExams.length === 0 ? true : previousModuleExams.every((exam) => submittedExamIds.has(exam.id));
+          return previousModuleExams.length > 0 && previousModuleExams.every((exam) => submittedExamIds.has(exam.id));
         })(),
       });
       const confirmed = verified?.modules?.find(row => row.moduleNumber === moduleNumber);
@@ -122,23 +123,30 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
       const examDone = moduleExams.length > 0 && (moduleExams.every((exam) => submittedExamIds.has(exam.id)) || (sameExams && confirmed?.examDone === true));
       return { moduleNumber, ...reconciled, examDone, exams: moduleExams };
     });
-  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, examSubmissions, unlockDateByModule, verified]);
+  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, submittedExamIds, unlockDateByModule, verified]);
 
-  // O módulo atual é o primeiro disponível que ainda tem itens pendentes.
+  // Conteúdo liberado pelo calendário não equivale a acesso antecipado à
+  // trilha. O checklist N só abre depois da entrega da prova N-1.
+  const checklistAvailableModules = useMemo(() => access.availableModules.filter((moduleNumber) => {
+    if (moduleNumber === 1 || session?.role === 'admin') return true;
+    const previousExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === moduleNumber - 1);
+    return previousExams.length > 0 && previousExams.every((exam) => submittedExamIds.has(exam.id));
+  }), [access.availableModules, exams, submittedExamIds, session?.role]);
+
+  // O módulo atual é o primeiro checklist acessível que ainda tem itens pendentes.
   const currentModule = useMemo(() => {
-    const available = access.availableModules;
     for (const mod of modules) {
-      if (available.includes(mod.moduleNumber) && !mod.complete) {
+      if (checklistAvailableModules.includes(mod.moduleNumber) && !mod.complete) {
         return mod.moduleNumber;
       }
     }
-    return access.currentModule;
-  }, [modules, access.availableModules, access.currentModule]);
+    return checklistAvailableModules.at(-1) || 1;
+  }, [modules, checklistAvailableModules]);
 
   const isModuleUnlockedForExam = (moduleNumber) => {
     const found = modules.find((m) => m.moduleNumber === Number(moduleNumber));
     return access.moduleUnlocked[Number(moduleNumber) - 1] === true && !!found?.complete;
   };
 
-  return { modules, currentModule, isModuleUnlockedForExam, isLoading, error: progressError || submissionError || access.error, availableModules: access.availableModules };
+  return { modules, currentModule, isModuleUnlockedForExam, isLoading, error: progressError || submissionError || access.error, availableModules: access.availableModules, checklistAvailableModules };
 }

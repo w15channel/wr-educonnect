@@ -4,11 +4,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // INLINE CHECKLIST LOGIC — mirrors src/lib/examChecklistRules.js
 // Aulas da apostila e tarefas são CUMULATIVAS (não filtram por data).
 // Debates e ofensivas usam janela de tempo para não herdar de módulos anteriores.
-// Mínimo de 50% do checklist para liberar provas.
+// O servidor exige o checklist integral antes de liberar provas.
 // Mensalidades: todas as não pagas aparecem como pendência em cada módulo.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const EXAM_RELEASE_MIN_PERCENT = 50;
+const EXAM_RELEASE_MIN_PERCENT = 100;
 const APOSTILA_CHAPTERS = 5;
 const OFENSIVA_DAYS = 3;
 
