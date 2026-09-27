@@ -8,9 +8,12 @@
  */
 export const FALLBACK_MODULE_RELEASE_SCHEDULE = Object.freeze([
   { module_number: 2, release_at: '2026-09-24T00:00:00-03:00' },
-  { module_number: 3, release_at: '2026-10-03T00:00:00-03:00' },
-  { module_number: 4, release_at: '2026-10-11T00:00:00-03:00' },
-  { module_number: 5, release_at: '2026-10-20T00:00:00-03:00' },
+  // Módulos 3–5 ficam disponíveis para toda a turma junto do Módulo 2.
+  // O acesso ao checklist continua sequencial, condicionado à entrega da
+  // prova do módulo imediatamente anterior (useModuleChecklist).
+  { module_number: 3, release_at: '2026-09-24T00:00:00-03:00' },
+  { module_number: 4, release_at: '2026-09-24T00:00:00-03:00' },
+  { module_number: 5, release_at: '2026-09-24T00:00:00-03:00' },
   { module_number: 6, release_at: '2026-10-28T00:00:00-03:00' },
   { module_number: 7, release_at: '2026-11-06T00:00:00-03:00' },
   { module_number: 8, release_at: '2026-11-14T00:00:00-03:00' },

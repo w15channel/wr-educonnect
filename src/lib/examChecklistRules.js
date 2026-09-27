@@ -24,6 +24,11 @@ export const submissionTextLength = (submission) => {
   return `${submission.comment || ''} ${answersText}`.trim().length;
 };
 
+const normalizeIdentity = (value) => String(value || '').trim().toLowerCase();
+const isDeliveredSubmission = (submission) => ['submitted', 'graded'].includes(submission?.status)
+  || submissionTextLength(submission) > 0
+  || !!submission?.file_url;
+
 // Verifica se uma data cai dentro da janela de tempo em que o aluno esteve
 // naquele módulo (entre a liberação do módulo e a liberação do próximo).
 // APENAS para atividades perenes (debates, ofensivas, terapeuta) — 
@@ -67,17 +72,20 @@ export function buildModuleChecklist({
   // Filtra tarefas tipo quiz (provas) e ocultas — elas não são trabalhos normais.
   const moduleTasks = tasks.filter((task) => Number(task.module_number) === moduleNumber && task.type !== 'quiz' && !task.is_hidden);
   const tasksDone = moduleTasks.filter((task) => {
-    const submission = submissions.find((s) => s.task_id === task.id);
-    return !!submission && (submissionTextLength(submission) > 0 || !!submission.file_url);
+    // Há históricos com mais de um registro para a mesma tarefa. A entrega é
+    // única por tarefa e basta um registro válido; nunca usamos apenas o
+    // primeiro (que pode ser um rascunho vazio).
+    return submissions.some((submission) => submission.task_id === task.id && isDeliveredSubmission(submission));
   }).length;
 
   // 4 — Sala de debates: abrir um tema e comentar no tema de um colega.
   // Restrito à janela de tempo do módulo, para não herdar participações de módulos anteriores.
-  const myDebateTopics = debatePosts.filter((post) => post.author_email === email && isWithinModuleWindow(post.created_date, moduleWindow)).length;
+  const studentIdentity = normalizeIdentity(email);
+  const myDebateTopics = debatePosts.filter((post) => normalizeIdentity(post.author_email) === studentIdentity && isWithinModuleWindow(post.created_date, moduleWindow)).length;
   const postById = new Map(debatePosts.map((post) => [post.id, post]));
   const myDebateComments = debateReplies.filter((reply) => {
     const parent = postById.get(reply.post_id);
-    return reply.author_email === email && parent && parent.author_email !== email && isWithinModuleWindow(reply.created_date, moduleWindow);
+    return normalizeIdentity(reply.author_email) === studentIdentity && parent && normalizeIdentity(parent.author_email) !== studentIdentity && isWithinModuleWindow(reply.created_date, moduleWindow);
   }).length;
 
   // 6 — Pelo menos 3 dias de ofensiva (não precisam ser consecutivos), dentro da janela do módulo.
@@ -146,9 +154,9 @@ export function buildModuleChecklist({
 
 /**
  * Percentual mínimo do checklist exigido para liberar as provas do módulo.
- * Alunos com 50% ou mais do checklist completo podem ter o próximo módulo liberado.
+ * A prova só pode ser liberada quando todo o checklist estiver concluído.
  */
-export const EXAM_RELEASE_MIN_PERCENT = 50;
+export const EXAM_RELEASE_MIN_PERCENT = 100;
 
 /**
  * Resumo do checklist de um módulo para o painel do admin.

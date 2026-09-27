@@ -35,7 +35,7 @@ export async function checklistBatchData(store, students) {
       for (const row of page) {
         if (!fields[name] || aliases.has(normalizeIdentity(row[fields[name]]))) {
           // Retain identifiers and proof flags, never whole essays or challenge answers.
-          const keys = ['id', 'student_email', 'author_email', 'course', 'module_number', 'module_ref', 'type', 'is_hidden', 'lesson_id', 'watched', 'task_id', 'exam_id', 'challenge_id', 'date', 'post_id', 'topic', 'space', 'created_date', 'updated_date', 'unlocked_at', 'release_at'];
+          const keys = ['id', 'student_email', 'author_email', 'course', 'module_number', 'module_ref', 'type', 'status', 'is_hidden', 'lesson_id', 'watched', 'task_id', 'exam_id', 'challenge_id', 'date', 'post_id', 'topic', 'space', 'created_date', 'updated_date', 'unlocked_at', 'release_at'];
           const evidence = Object.fromEntries(keys.filter(key => row[key] !== undefined).map(key => [key, row[key]]));
           if (name === 'TaskSubmission') {
             evidence.file_url = row.file_url ? 'present' : '';

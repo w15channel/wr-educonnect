@@ -1,7 +1,7 @@
 export const pause = () => new Promise(resolve => setTimeout(resolve, 250));
 
 export const FALLBACK_MODULE_RELEASE_SCHEDULE = [
-  '2026-09-24', '2026-10-03', '2026-10-11', '2026-10-20', '2026-10-28',
+  '2026-09-24', '2026-09-24', '2026-09-24', '2026-09-24', '2026-10-28',
   '2026-11-06', '2026-11-14', '2026-11-23', '2026-12-01',
 ].map((date, index) => ({ module_number: index + 2, release_at: `${date}T00:00:00-03:00` }));
 

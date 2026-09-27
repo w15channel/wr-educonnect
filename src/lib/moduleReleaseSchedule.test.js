@@ -12,7 +12,7 @@ describe('calendário independente de liberação', () => {
       { module_number: 3, release_at: '2026-10-01T00:00:00-03:00' },
     ]);
     expect(schedule[0].release_at).toBe('2026-09-24T00:00:00-03:00');
-    expect(schedule[1].release_at).toBe('2026-10-01T00:00:00-03:00');
+    expect(schedule[1].release_at).toBe('2026-09-24T00:00:00-03:00');
   });
 
   it('ignora registros inválidos', () => {

@@ -16,7 +16,7 @@ export default function Checklist() {
   const parts = location.pathname.split('/').filter(Boolean);
   const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
   const course = session?.course || 'tcc';
-  const { modules, currentModule, isLoading, error, availableModules } = useModuleChecklist({ course, session });
+  const { modules, currentModule, isLoading, error, checklistAvailableModules } = useModuleChecklist({ course, session });
   const voice = useLunaVoice();
 
   const requestedModule = Number(new URLSearchParams(location.search).get('module')) || null;
@@ -25,7 +25,7 @@ export default function Checklist() {
     if (!requestedModule) setSelected(currentModule);
   }, [currentModule, requestedModule]);
 
-  const visibleModules = modules.filter((m) => availableModules.includes(m.moduleNumber));
+  const visibleModules = modules.filter((m) => checklistAvailableModules.includes(m.moduleNumber));
   const module = visibleModules.find((m) => m.moduleNumber === selected) || visibleModules.find((m) => m.moduleNumber === currentModule) || modules[0];
 
   const items = module?.items || [];
