@@ -1,288 +1,123 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { BookOpen, FileText, ClipboardList, Circle, ArrowRight, GraduationCap, Heart, MessagesSquare } from 'lucide-react';
-import ServicosCard from '@/components/dashboard/ServicosCard';
+import { ArrowRight, Heart, MessageCircle, Volume2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
+import ServicosCard from '@/components/dashboard/ServicosCard';
+import useOvercomingWall from '@/hooks/useOvercomingWall';
 
-const extractSequenceNumber = (item = {}) => {
-  const direct = Number(item.order ?? item.sequence);
-  if (Number.isFinite(direct) && direct > 0) return direct;
-  const title = item.title || '';
-  const match = title.match(/(?:aula|tarefa)\s*(\d{1,2})\b|\b(\d{1,2})\b/i);
-  const parsed = Number(match?.[1] || match?.[2]);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-};
+const DIPLOMA_PREFIX = '/degree/student';
 
-const sortBySeq = (items = []) => [...items].sort((a, b) => {
-  const an = extractSequenceNumber(a), bn = extractSequenceNumber(b);
-  if (an !== null && bn !== null) return an - bn;
-  if (an !== null) return -1;
-  if (bn !== null) return 1;
-  return (a.created_date || '').localeCompare(b.created_date || '');
-});
+function BrowserGreetingReader({ greeting }) {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const speechAvailable = typeof window !== 'undefined'
+    && 'speechSynthesis' in window
+    && typeof window.SpeechSynthesisUtterance !== 'undefined';
 
-const getUnlockedLessonCount = (rules = []) => {
-  const lessonUnlockRule = rules.find((r) => r.scope === 'lessons');
-  return Math.max(10, Number(lessonUnlockRule?.unlock_until || 10));
-};
+  const readGreeting = () => {
+    if (!speechAvailable) return;
+    window.speechSynthesis.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(greeting);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 0.95;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  };
 
-const isTaskAvailable = (task, moduleUnlocked = []) =>
-  !task.module_number || moduleUnlocked[Number(task.module_number) - 1];
+  return (
+    <button
+      type="button"
+      onClick={readGreeting}
+      disabled={!speechAvailable || isSpeaking}
+      className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-violet-200 bg-background/80 px-3 py-2 text-xs font-semibold text-violet-700 transition-colors hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-violet-200 dark:hover:bg-violet-950/30"
+      aria-label={isSpeaking ? 'Lendo a saudação' : 'Ouvir saudação com o leitor do navegador'}
+      title={speechAvailable ? 'Ouvir saudação' : 'Leitor de texto indisponível neste navegador'}
+    >
+      <Volume2 size={16} aria-hidden="true" />
+      <span>{isSpeaking ? 'Lendo...' : 'Ouvir saudação'}</span>
+    </button>
+  );
+}
 
-function useScopedPrefix() {
-  // Diploma routes are always under /degree/student/*
-  return '/degree/student';
+function WallPreview({ course, session, onOpenWall }) {
+  const wall = useOvercomingWall({ course: course || 'tcc', session, enabled: !!session?.email });
+  const latestMessages = useMemo(() => wall.feed
+    .filter((item) => item.feedType === 'encouragement')
+    .slice(0, 5), [wall.feed]);
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 to-violet-50 shadow-sm dark:from-rose-950/20 dark:to-violet-950/20" aria-labelledby="wall-preview-title">
+      <div className="flex items-center gap-3 border-b border-rose-200/70 p-4 sm:p-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/20">
+          <Heart size={20} fill="currentColor" aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 id="wall-preview-title" className="font-bold text-foreground">Mural de Superação</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">Deslize para acompanhar as mensagens mais recentes da turma.</p>
+        </div>
+        <button type="button" onClick={onOpenWall} className="hidden min-h-10 items-center gap-1 rounded-xl px-3 text-xs font-bold text-rose-700 hover:bg-rose-100 sm:inline-flex dark:text-rose-200 dark:hover:bg-rose-950/40">
+          Abrir mural <ArrowRight size={14} aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto p-4 [scrollbar-width:thin]" aria-label="Últimas mensagens de superação">
+        {latestMessages.length > 0 ? latestMessages.map((message) => (
+          <button
+            type="button"
+            key={message.id}
+            onClick={onOpenWall}
+            className="min-h-36 w-[82%] shrink-0 snap-start rounded-2xl border border-white/80 bg-background/90 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-rose-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 sm:w-[46%] lg:w-[31%]"
+            aria-label={`Abrir no Mural de Superação: ${message.content || 'mensagem'}`}
+          >
+            <div className="flex items-center gap-2 text-xs font-semibold text-rose-700 dark:text-rose-200">
+              <MessageCircle size={14} aria-hidden="true" />
+              <span className="truncate">{wall.getStudentName(message.author_email) || message.author_name || 'Turma'}</span>
+            </div>
+            <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-foreground">{message.content}</p>
+            <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">Interagir no mural <ArrowRight size={11} aria-hidden="true" /></span>
+          </button>
+        )) : (
+          <button type="button" onClick={onOpenWall} className="min-h-32 w-full snap-start rounded-2xl border border-dashed border-rose-300 bg-background/70 p-5 text-center text-sm text-muted-foreground hover:bg-background">
+            Ainda não há mensagens recentes. Acesse o mural e seja a primeira pessoa a compartilhar uma palavra de superação.
+          </button>
+        )}
+      </div>
+      <button type="button" onClick={onOpenWall} className="mx-4 mb-4 flex min-h-11 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 text-sm font-bold text-white transition-colors hover:bg-rose-600 sm:hidden">
+        Abrir Mural de Superação <ArrowRight size={15} aria-hidden="true" />
+      </button>
+    </section>
+  );
 }
 
 export default function DiplomaDashboard() {
-  const ctx = useOutletContext();
-  const session = ctx?.user;
-  const userCourse = ctx?.course || session?.course;
+  const context = /** @type {any} */ (useOutletContext());
+  const session = context?.user;
+  const course = context?.course || session?.course;
   const navigate = useNavigate();
-  const prefix = useScopedPrefix();
-  const scoped = (p) => prefix + p;
-
-  const firstName = (session?.name || 'Estudante').split(' ')[0];
+  const firstName = (session?.name || 'Estudante').trim().split(/\s+/)[0];
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-
-  const { data: unlockRules = [] } = useQuery({
-    queryKey: ['unlock-rules-lessons-diploma', userCourse],
-    queryFn: () => userCourse
-      ? base44.entities.Announcement.filter({ course: userCourse, type: 'unlock_rule' }, '-updated_date', 20)
-      : base44.entities.Announcement.filter({ type: 'unlock_rule' }, '-updated_date', 20),
-  });
-
-  const { data: lessons = [] } = useQuery({
-    queryKey: ['lessons-diploma', userCourse],
-    queryFn: () => userCourse
-      ? base44.entities.RecordedLesson.filter({ course: userCourse }, 'order', 200)
-      : base44.entities.RecordedLesson.list('order', 200),
-  });
-
-  const { data: progresses = [] } = useQuery({
-    queryKey: ['progress-diploma', session?.email],
-    queryFn: () => base44.entities.LessonProgress.filter({ student_email: session?.email }, '-created_date', 200),
-    enabled: !!session?.email,
-  });
-
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks-diploma', userCourse],
-    queryFn: () => userCourse
-      ? base44.entities.Task.filter({ course: userCourse }, '-created_date', 200)
-      : base44.entities.Task.list('-created_date', 200),
-  });
-
-  const { data: submissions = [] } = useQuery({
-    queryKey: ['submissions-diploma', session?.email],
-    queryFn: () => base44.entities.TaskSubmission.filter({ student_email: session?.email || '' }, '-created_date', 200),
-    enabled: !!session?.email,
-  });
-
-  const { moduleUnlocked } = useApostilaModuleUnlocks(userCourse, session);
-
-  const visibleLessonsAll = lessons.filter(l => !l.is_hidden);
-  const visibleTasksAll = tasks.filter(t => !t.is_hidden);
-
-  const watchedCount = progresses.filter(p => p.watched).length;
-  const progressPct = visibleLessonsAll.length > 0 ? Math.round((watchedCount / visibleLessonsAll.length) * 100) : 0;
-
-  const unlockedLessonCount = getUnlockedLessonCount(unlockRules);
-  const availableLessons = sortBySeq(visibleLessonsAll).slice(0, unlockedLessonCount);
-  const unwatchedLessons = sortBySeq(availableLessons.filter(l => !progresses.find(p => p.lesson_id === l.id && p.watched)));
-  const pendingUploadTasks = sortBySeq(visibleTasksAll.filter(t => t.type === 'upload' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)));
-  const pendingQuizzes = visibleTasksAll.filter(t => t.type === 'quiz' && isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id));
-
-  const visibleLessons = unwatchedLessons.slice(0, 1);
-  const visibleTasks = pendingUploadTasks.slice(0, 1);
-
-  const totalPending = Math.min(unwatchedLessons.length, 1) + Math.min(pendingUploadTasks.length, 1) + Math.min(pendingQuizzes.length, 1);
+  const periodGreeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+  const greeting = `${periodGreeting}, ${firstName}!`;
 
   return (
     <div className="app-page app-page--narrow space-y-5 animate-fade-in-up pb-20 md:pb-6">
-      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground">
-          {greeting}, {firstName}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground">
           {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })} · Modalidade Certificado
         </p>
       </div>
 
-      {/* Boas-vindas — mantém a mesma orientação do acesso regular. */}
-      <section className="rounded-2xl border border-violet-200/40 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-amber-500/10 p-4 sm:p-5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-xl shadow-lg shadow-violet-500/20" aria-hidden="true">🦉</div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-foreground">{greeting}, {firstName}! Eu sou a Luna 🦉</p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Que bom ter você aqui! Antes de começar, confira as notificações no <strong>Mural de Superação</strong> logo abaixo — pode haver recados importantes para você. Depois, acesse o seu <strong>Checklist</strong> para dar sequência aos estudos do módulo.
-            </p>
-            <button onClick={() => navigate(scoped('/checklist'))} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition-opacity hover:opacity-90">
-              <BookOpen size={12} /> Abrir Checklist
-            </button>
-          </div>
+      <section className="rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-amber-500/10 p-4 sm:p-5" aria-labelledby="diploma-greeting">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 id="diploma-greeting" className="text-2xl font-bold text-foreground">{greeting}</h1>
+          <BrowserGreetingReader greeting={greeting} />
         </div>
       </section>
 
-      {/* Mural de Superação */}
-      <button onClick={() => navigate(scoped('/chat'))} className="group w-full rounded-2xl border border-rose-200 bg-gradient-to-r from-rose-50 to-violet-50 p-5 text-left transition-all hover:border-rose-300 hover:shadow-md">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/20"><Heart size={22} fill="currentColor" /></div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-foreground">Mural de Superação</h3>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">Leia os recados da turma e compartilhe palavras de ânimo, aprendizados e conquistas da sua jornada.</p>
-          </div>
-          <span className="hidden items-center gap-1 text-xs font-bold text-rose-600 sm:flex">Acessar <MessagesSquare size={14} /></span>
-        </div>
-      </button>
+      <WallPreview course={course} session={session} onOpenWall={() => navigate(`${DIPLOMA_PREFIX}/chat`)} />
 
-      {/* Progresso */}
-      <div
-        onClick={() => navigate(scoped('/lessons'))}
-        className="cursor-pointer bg-card rounded-xl border border-border p-5 hover:border-primary/20 transition-all"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center">
-              <BookOpen size={16} className="text-purple-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-foreground">Progresso nas Aulas</h3>
-              <p className="text-xs text-muted-foreground">{watchedCount} de {visibleLessonsAll.length} concluídas</p>
-            </div>
-          </div>
-          <span className="text-2xl font-black text-primary">{progressPct}%</span>
-        </div>
-        <div className="relative w-full bg-secondary rounded-full h-2.5 overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-700"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Resumo */}
-      <div className="grid grid-cols-3 gap-3">
-        <button
-          onClick={() => navigate(scoped('/lessons'))}
-          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-purple-300 transition-all text-center"
-        >
-          <BookOpen size={20} className="text-purple-500" />
-          <p className="text-xl font-black text-foreground">{unwatchedLessons.length}</p>
-          <p className="text-[10px] text-muted-foreground">Aulas pendentes</p>
-        </button>
-        <button
-          onClick={() => navigate(scoped('/tasks'))}
-          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-orange-300 transition-all text-center"
-        >
-          <FileText size={20} className="text-orange-500" />
-          <p className="text-xl font-black text-foreground">{pendingUploadTasks.length}</p>
-          <p className="text-[10px] text-muted-foreground">Tarefas pendentes</p>
-        </button>
-        <button
-          onClick={() => navigate(scoped('/tasks'))}
-          className="bg-card rounded-xl border border-border p-4 flex flex-col items-center gap-1 hover:border-violet-300 transition-all text-center"
-        >
-          <GraduationCap size={20} className="text-violet-500" />
-          <p className="text-xl font-black text-foreground">{pendingQuizzes.length}</p>
-          <p className="text-[10px] text-muted-foreground">Provas pendentes</p>
-        </button>
-      </div>
-
-      {/* Pendências */}
-      {totalPending > 0 && (
-        <div className="bg-card rounded-xl border border-orange-200 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center">
-              <ClipboardList size={16} className="text-orange-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-foreground">Minhas Pendências</h3>
-              <p className="text-xs text-muted-foreground">{totalPending} {totalPending === 1 ? 'item pendente' : 'itens pendentes'}</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {/* Aulas */}
-            {visibleLessons.map(l => (
-              <button key={l.id} onClick={() => navigate(scoped('/lessons'))}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 border border-purple-100 hover:bg-purple-100 transition-colors text-left">
-                <Circle size={13} className="text-purple-400 shrink-0" />
-                <BookOpen size={13} className="text-purple-600 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-purple-700 truncate">
-                    {extractSequenceNumber(l) ? `Aula ${extractSequenceNumber(l)} · ` : ''}{l.title}
-                  </p>
-                  <p className="text-[10px] text-purple-500">Aula não assistida</p>
-                </div>
-                <ArrowRight size={12} className="text-purple-400 shrink-0" />
-              </button>
-            ))}
-            {unwatchedLessons.length > visibleLessons.length && (
-              <button onClick={() => navigate(scoped('/lessons'))} className="w-full text-xs text-purple-600 font-semibold py-1 hover:underline">
-                +{unwatchedLessons.length - visibleLessons.length} aulas no aguardo → Ver todas
-              </button>
-            )}
-
-            {/* Tarefas */}
-            {visibleTasks.map(t => (
-              <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-colors text-left">
-                <ClipboardList size={13} className="text-orange-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-orange-700 truncate">
-                    {extractSequenceNumber(t) ? `Tarefa ${extractSequenceNumber(t)} · ` : ''}{t.title}
-                  </p>
-                  <p className="text-[10px] text-orange-500">
-                    Tarefa pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
-                  </p>
-                </div>
-                <ArrowRight size={12} className="text-orange-400 shrink-0" />
-              </button>
-            ))}
-            {pendingUploadTasks.length > visibleTasks.length && (
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-orange-600 font-semibold py-1 hover:underline">
-                +{pendingUploadTasks.length - visibleTasks.length} tarefas no aguardo → Ver todas
-              </button>
-            )}
-
-            {/* Provas */}
-            {pendingQuizzes.slice(0, 1).map(t => (
-              <button key={t.id} onClick={() => navigate(scoped('/tasks'))}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left">
-                <GraduationCap size={13} className="text-violet-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-violet-700 truncate">{t.title}</p>
-                  <p className="text-[10px] text-violet-500">
-                    Prova pendente{t.deadline ? ` · Entrega: ${format(new Date(t.deadline), 'dd/MM HH:mm')}` : ''}
-                  </p>
-                </div>
-                <ArrowRight size={12} className="text-violet-400 shrink-0" />
-              </button>
-            ))}
-            {pendingQuizzes.length > 1 && (
-              <button onClick={() => navigate(scoped('/tasks'))} className="w-full text-xs text-violet-600 font-semibold py-1 hover:underline">
-                +{pendingQuizzes.length - 1} provas no aguardo → Ver todas
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {totalPending === 0 && (
-        <div className="bg-card rounded-xl border border-green-200 p-8 text-center">
-          <p className="text-3xl mb-2">🎉</p>
-          <p className="font-bold text-foreground">Tudo em dia!</p>
-          <p className="text-sm text-muted-foreground mt-1">Nenhuma pendência no momento. Continue assim!</p>
-        </div>
-      )}
-
-      {/* Ofertas opcionais de apoio individual, exibidas após o mural e a jornada acadêmica. */}
       <ServicosCard />
     </div>
   );
