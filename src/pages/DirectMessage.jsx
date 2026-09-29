@@ -35,7 +35,7 @@ export default function DirectMessage() {
   const { emails: courseEmails, codePrefix } = useCourseFilteredEmails(session);
   const usesCodeSession = !!(session?.code || session?.codeId);
 
-  const { data: codes = [] } = useQuery({
+  const { data: codes = [], isLoading: codesLoading } = useQuery({
     queryKey: ['access-codes', session?.email],
     queryFn: async () => {
       if (!usesCodeSession) return base44.entities.AccessCode.list('-created_date', 200);
@@ -153,6 +153,14 @@ export default function DirectMessage() {
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
+
+  if (codesLoading) {
+    return (
+      <div className="p-6 text-center text-muted-foreground" role="status">
+        Carregando conversa...
+      </div>
+    );
+  }
 
   if (!canMessageTarget) {
     return (
