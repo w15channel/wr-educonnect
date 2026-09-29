@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { Bell, BookOpen, Heart, Send, Sparkles } from 'lucide-react';
+import { Bell, BookOpen, CalendarDays, Heart, Send, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -107,7 +107,10 @@ export default function DiplomaDashboard() {
               <p className="text-sm font-bold text-foreground">{greeting}, {firstName}! Eu sou a Luna 🦉</p>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">Que bom ter você aqui! Antes de começar, confira as notificações no <strong>Mural de Superação</strong> logo abaixo — pode haver recados importantes para você. Depois, acesse o seu <strong>Checklist</strong> para dar sequência aos estudos do módulo.</p>
             </div>
-            <button type="button" onClick={() => navigate(`${DIPLOMA_PREFIX}/checklist`)} className="inline-flex items-center gap-1 text-[11px] font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"><BookOpen size={12} /> Abrir Checklist</button>
+            <div className="flex flex-wrap gap-2" aria-label="Atalhos de estudo">
+              <button type="button" onClick={() => navigate(`${DIPLOMA_PREFIX}/checklist`)} className="inline-flex items-center gap-1 text-[11px] font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"><BookOpen size={12} aria-hidden="true" /> Abrir Checklist</button>
+              <button type="button" onClick={() => navigate(`${DIPLOMA_PREFIX}/calendar`)} className="inline-flex items-center gap-1 text-[11px] font-bold border border-border bg-background px-3 py-1.5 rounded-lg text-foreground hover:bg-secondary transition-colors"><CalendarDays size={12} className="text-cyan-500" aria-hidden="true" /> Abrir Calendário</button>
+            </div>
           </div>
         </div>
       </section>

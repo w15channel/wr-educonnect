@@ -182,6 +182,7 @@ const AuthenticatedApp = () => {
         <Route path="chat" element={<ClassChat />} />
         <Route path="dm/:email" element={<DirectMessage />} />
         <Route path="practice" element={<Practice />} />
+        <Route path="calendar" element={<Calendar />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="certificadora" element={<Certificadora />} />
