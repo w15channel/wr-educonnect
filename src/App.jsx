@@ -15,6 +15,8 @@ import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import TermosDeUso from './pages/TermosDeUso';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade';
 import AppLayout from './components/layout/AppLayout';
+import DiplomaLayout from './pages/DiplomaLayout';
+import DiplomaDashboard from './pages/DiplomaDashboard';
 import Dashboard from './pages/Dashboard';
 import Lessons from './pages/Lessons';
 import LessonAnswers from './pages/LessonAnswers';
@@ -166,17 +168,36 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      {/* Students and admins share the complete application shell and tools. */}
-      <Route path="/student/*" element={<AppRoutesTree />} />
+      {/* Diploma isolated shell */}
+      <Route path="/degree/student/*" element={<DiplomaLayout />}>
+        <Route index element={<DiplomaDashboard />} />
+        <Route path="dashboard" element={<DiplomaDashboard />} />
+        <Route path="lessons" element={<Lessons />} />
+        <Route path="tasks" element={<Tasks mode="tasks" />} />
+        <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
+        <Route path="exams" element={<Exams />} />
+        <Route path="exams/quiz/:id" element={<ExamQuizView />} />
+        <Route path="checklist" element={<Checklist />} />
+        <Route path="debates" element={<SalaDebates />} />
+        <Route path="chat" element={<ClassChat />} />
+        <Route path="dm/:email" element={<DirectMessage />} />
+        <Route path="practice" element={<Practice />} />
+        <Route path="tuitions" element={<Tuitions />} />
+        <Route path="historico" element={<HistoricoAcademico />} />
+        <Route path="certificadora" element={<Certificadora />} />
+        <Route path="apostila" element={<Apostila />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="study-profile" element={<Navigate to="../dashboard" replace />} />
+      </Route>
 
-      {/* Keep diploma bookmarks working without maintaining a second interface. */}
-      <Route path="/degree/student/*" element={<Navigate to="/student/dashboard" replace />} />
+      {/* Main student routes */}
+      <Route path="/student/*" element={<Navigate to="/degree/student/dashboard" replace />} />
 
       {/* Main admin routes */}
       <Route path="/adm/*" element={<AppRoutesTree />} />
 
       {/* Root & legacy redirects → flat paths */}
-      <Route path="/" element={<Navigate to={isAdmin ? '/adm/dashboard' : '/student/dashboard'} replace />} />
+      <Route path="/" element={<Navigate to={isAdmin ? '/adm/dashboard' : '/degree/student/dashboard'} replace />} />
       <Route path="/dashboard" element={<Navigate to={`${base}/dashboard`} replace />} />
       <Route path="/lessons" element={<Navigate to={`${base}/lessons`} replace />} />
       <Route path="/live" element={<Navigate to={`${base}/apostila`} replace />} />
