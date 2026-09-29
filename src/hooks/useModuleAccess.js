@@ -5,7 +5,6 @@ import useModuleReleaseSchedule from '@/hooks/useModuleReleaseSchedule';
 
 export default function useModuleAccess(course = 'tcc', session) {
   const email = session?.email || session?.code || '';
-  const customAccess = !!(session?.code || session?.codeId);
   // O calendário de liberação é relevante tanto para alunos Google OAuth
   // quanto para alunos de código de acesso — ambos precisam ver os módulos
   // liberados pelo calendário além das liberações manuais.
@@ -23,7 +22,9 @@ export default function useModuleAccess(course = 'tcc', session) {
     return [...current, ...schedule.filter(r => Date.parse(r.release_at) <= now && !known.has(Number(r.module_number)))
       .map(r => ({ student_email: email, course, module_number: Number(r.module_number), unlocked_at: r.release_at, unlocked_by: 'sistema:calendario-2026' }))];
   }, [saved, course, schedule, now, email]);
-  const availableModules = useMemo(() => [...new Set([1, ...unlocks.map(u => Number(u.module_number))])].sort((a, b) => a - b), [unlocks]);
-  const moduleUnlocked = Array.from({ length: 10 }, (_, i) => session?.role === 'admin' || availableModules.includes(i + 1));
+  // Todos os dez modulos fazem parte da formacao desde o primeiro acesso.
+  // A progressao individual e protegida pela prova anterior, nao por datas.
+  const availableModules = useMemo(() => Array.from({ length: 10 }, (_, index) => index + 1), []);
+  const moduleUnlocked = Array.from({ length: 10 }, () => true);
   return { unlocks, schedule, availableModules, moduleUnlocked, currentModule: Math.max(...availableModules), isLoading: loadingSchedule || (!!email && isLoading), error: scheduleError || error };
 }

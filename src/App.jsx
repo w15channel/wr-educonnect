@@ -28,7 +28,6 @@ import SalaDebates from './pages/SalaDebates';
 import Students from './pages/Students';
 import Announcements from './pages/Announcements';
 import Profile from './pages/Profile';
-import StudyProfile from './pages/StudyProfile';
 import Calendar from './pages/Calendar';
 import Tuitions from './pages/Tuitions';
 import TutorDigital from './pages/TutorDigital';
@@ -99,7 +98,7 @@ function AppRoutesTree() {
         <Route path="keys" element={<Keys />} />
         <Route path="announcements" element={<Announcements />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="study-profile" element={<StudyProfile />} />
+        <Route path="study-profile" element={<Navigate to="../dashboard" replace />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="tutor" element={<TutorDigital />} />
@@ -176,22 +175,25 @@ const AuthenticatedApp = () => {
         <Route path="lessons" element={<Lessons />} />
         <Route path="tasks" element={<Tasks mode="tasks" />} />
         <Route path="tasks/quiz/:id" element={<TaskQuizView />} />
+        <Route path="exams" element={<Exams />} />
+        <Route path="exams/quiz/:id" element={<ExamQuizView />} />
+        <Route path="checklist" element={<Checklist />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="apostila" element={<Apostila />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="study-profile" element={<StudyProfile />} />
+        <Route path="study-profile" element={<Navigate to="../dashboard" replace />} />
       </Route>
 
       {/* Main student routes */}
-      <Route path="/student/*" element={<AppRoutesTree />} />
+      <Route path="/student/*" element={<Navigate to="/degree/student/dashboard" replace />} />
 
       {/* Main admin routes */}
       <Route path="/adm/*" element={<AppRoutesTree />} />
 
       {/* Root & legacy redirects → flat paths */}
-      <Route path="/" element={<Navigate to={`${base}/dashboard`} replace />} />
+      <Route path="/" element={<Navigate to={isAdmin ? '/adm/dashboard' : '/degree/student/dashboard'} replace />} />
       <Route path="/dashboard" element={<Navigate to={`${base}/dashboard`} replace />} />
       <Route path="/lessons" element={<Navigate to={`${base}/lessons`} replace />} />
       <Route path="/live" element={<Navigate to={`${base}/apostila`} replace />} />

@@ -6,8 +6,6 @@ import { setSession, getSession } from '@/lib/customAuth';
 import { Lock, ChevronRight, LogOut, Brain, MessageCircle, Send, X } from 'lucide-react';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import SocialInitiativeNotice from '@/components/landing/SocialInitiativeNotice';
-import LobbyTutorialChoice from '@/components/onboarding/LobbyTutorialChoice';
-import ProfileCompletionPrompt from '@/components/onboarding/ProfileCompletionPrompt';
 import { toast } from 'sonner';
 import useSocialIdentity from '@/hooks/useSocialIdentity';
 
@@ -248,21 +246,8 @@ export default function CourseLobby() {
   const [leadInput, setLeadInput] = useState('');
   const [leadLoading, setLeadLoading] = useState(false);
 
-  // Em todo acesso ao lobby o aluno pode rever os tutoriais (escrito ou vídeo),
-  // com a opção de pular caso não queira ver novamente.
-  const [showTutorialChoice, setShowTutorialChoice] = useState(true);
-
-  // No primeiro acesso, depois do tutorial, convidamos o aluno a completar o perfil.
-  const profilePromptKey = `wr_profile_prompt_${session?.code || session?.email || 'aluno'}`;
-  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
-
-  const finishTutorialChoice = () => {
-    setShowTutorialChoice(false);
-    if (typeof window !== 'undefined' && !localStorage.getItem(profilePromptKey)) {
-      localStorage.setItem(profilePromptKey, 'done');
-      setShowProfilePrompt(true);
-    }
-  };
+  // O lobby agora e a entrada direta da conta. O tutorial deixou de fazer
+  // parte do fluxo para reduzir atrito no acesso recorrente.
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -278,12 +263,7 @@ export default function CourseLobby() {
 
   const handleStudentEnter = () => {
     if (!termsAccepted) return;
-    const savedMode = getSession()?.study_mode || session?.study_mode || 'interativa';
-    if (savedMode === 'diploma') {
-      navigate(`/degree/student/dashboard`);
-    } else {
-      navigate(`/student/dashboard`);
-    }
+    navigate(`/degree/student/dashboard`);
   };
 
   const openReserve = (course) => {
@@ -403,14 +383,6 @@ export default function CourseLobby() {
       </div>
 
       <Header />
-
-      {showTutorialChoice && !isSocialIdentityLoading && (
-        <LobbyTutorialChoice studentName={socialName} onFinish={finishTutorialChoice} />
-      )}
-
-      {showProfilePrompt && (
-        <ProfileCompletionPrompt onClose={() => setShowProfilePrompt(false)} />
-      )}
 
       <div className="internal-page-shell">
         {/* Title */}

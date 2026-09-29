@@ -4,7 +4,7 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User, Trash2, GraduationCap, Users, Sparkles } from 'lucide-react';
+import { Save, CheckCircle, Camera, User, Trash2, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -40,7 +40,7 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [studyMode, setStudyMode] = useState(session?.study_mode || 'interativa');
+  const studyMode = 'diploma';
   const fileRef = useRef();
 
 
@@ -60,7 +60,6 @@ export default function Profile() {
           setNickname(p.nickname || '');
           setSelectedAvatar(p.avatar_emoji || session?.avatarEmoji || '');
           setEmail(p.email || session?.email || '');
-          setStudyMode(p.study_mode || session?.study_mode || 'interativa');
         }
       });
   }, []);
@@ -276,37 +275,10 @@ export default function Profile() {
             <GraduationCap size={18} className="text-primary" />
             <h3 className="font-bold text-sm text-foreground">Modalidade de Estudo</h3>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Escolha como prefere experienciar o curso</p>
+          <p className="text-xs text-muted-foreground mt-1">Acesso acadêmico padronizado para todos os alunos</p>
         </div>
         <div className="p-5 space-y-3">
-          {/* Interativa (Completa) */}
-          <button
-            onClick={() => setStudyMode('interativa')}
-            className={`w-full text-left p-4 rounded-xl border-2 transition-all ${studyMode === 'interativa' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${studyMode === 'interativa' ? 'bg-primary/15' : 'bg-secondary'}`}>
-                <Users size={18} className={studyMode === 'interativa' ? 'text-primary' : 'text-muted-foreground'} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-foreground">Formação Prática (Completa)</p>
-                <p className="text-xs text-muted-foreground">Vivência completa com comunidade, debates e prática terapêutica</p>
-              </div>
-              {studyMode === 'interativa' && <CheckCircle size={18} className="text-primary shrink-0" />}
-            </div>
-            <div className="flex flex-wrap gap-1.5 pl-13">
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Mural & Debates</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Ofensivas Diárias</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Terapeuta da Semana</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Ranking & Monitores</span>
-            </div>
-          </button>
-
-          {/* Diploma (Simplificada) */}
-          <button
-            onClick={() => setStudyMode('diploma')}
-            className={`w-full text-left p-4 rounded-xl border-2 transition-all ${studyMode === 'diploma' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
-          >
+          <div className="w-full text-left p-4 rounded-xl border-2 border-primary bg-primary/5">
             <div className="flex items-center gap-3 mb-2">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${studyMode === 'diploma' ? 'bg-primary/15' : 'bg-secondary'}`}>
                 <GraduationCap size={18} className={studyMode === 'diploma' ? 'text-primary' : 'text-muted-foreground'} />
@@ -322,11 +294,11 @@ export default function Profile() {
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Tarefas & Provas</span>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Certificação</span>
             </div>
-          </button>
+          </div>
 
           <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-secondary/40 rounded-lg p-3">
-            <Sparkles size={13} className="shrink-0 mt-0.5 text-primary/60" />
-            <span>A mudança de modalidade entra em vigor na próxima vez que você entrar no curso. Seu progresso acadêmico é preservado em ambos os modos. Clique em "Salvar Perfil" para confirmar.</span>
+            <GraduationCap size={13} className="shrink-0 mt-0.5 text-primary/60" />
+            <span>Seu progresso acadêmico permanece preservado no acesso Diploma.</span>
           </div>
         </div>
       </div>
