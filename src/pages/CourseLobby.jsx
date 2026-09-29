@@ -263,7 +263,7 @@ export default function CourseLobby() {
 
   const handleStudentEnter = () => {
     if (!termsAccepted) return;
-    navigate('/student/dashboard');
+    navigate(`/degree/student/dashboard`);
   };
 
   const openReserve = (course) => {

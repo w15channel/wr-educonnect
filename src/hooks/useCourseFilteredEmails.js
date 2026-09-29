@@ -5,17 +5,13 @@ import { useMemo } from 'react';
 
 const SLUG_TO_PREFIX = { sex: 'SEX-', tcc: 'EDU-', psi: 'PSI-' };
 const SLUG_TO_COURSE = { sex: 'sexologia', tcc: 'tcc', psi: 'psicanalise' };
-const COURSE_TO_PREFIX = { sexologia: 'SEX-', tcc: 'EDU-', psicanalise: 'PSI-' };
 
 export default function useCourseFilteredEmails(session) {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
-  const routeSlug = (parts[0] === 'student' || parts[0] === 'adm') && parts[1] ? parts[1] : null;
-  const courseSlug = routeSlug && SLUG_TO_COURSE[routeSlug] ? routeSlug : null;
-  // Current routes are intentionally flat (/student/chat). Prefer the course in
-  // the authenticated session and retain support for legacy course-scoped URLs.
-  const course = courseSlug ? SLUG_TO_COURSE[courseSlug] : session?.course || null;
-  const codePrefix = courseSlug ? SLUG_TO_PREFIX[courseSlug] : COURSE_TO_PREFIX[course] || null;
+  const courseSlug = (parts[0] === 'student' || parts[0] === 'adm') && parts[1] ? parts[1] : null;
+  const codePrefix = courseSlug ? SLUG_TO_PREFIX[courseSlug] : null;
+  const course = courseSlug ? SLUG_TO_COURSE[courseSlug] : null;
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes-filter'],
