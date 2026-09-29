@@ -40,7 +40,7 @@ export default function DirectMessage() {
     queryFn: async () => {
       if (!usesCodeSession) return base44.entities.AccessCode.list('-created_date', 200);
       const response = await base44.functions.invoke('manageOvercomingWall', {
-        action: 'load', course: session?.course || 'tcc', actor_email: session?.email,
+        action: 'bootstrap', course: session?.course || 'tcc', actor_email: session?.email,
         access_code: session?.code, access_code_id: session?.codeId,
       });
       return response.data?.accessCodes || [];
@@ -83,8 +83,9 @@ export default function DirectMessage() {
   const getTargetInfo = () => {
     const dec = decodeURIComponent(targetEmail);
     if (dec === LUNA_DM_EMAIL) return { email: dec, name: LUNA_DM_NAME, nickname: 'Sua assistente na WR-EDU', color: '#d97706', photo: null, online: true, lastSeen: new Date() };
-    const code = codes.find(c => c.student_email === dec);
-    const profile = profiles.find(p => p.student_email === dec || p.email === dec);
+    const normalizedTarget = dec.trim().toLowerCase();
+    const code = codes.find(c => String(c.student_email || '').trim().toLowerCase() === normalizedTarget);
+    const profile = profiles.find(p => [p.student_email, p.email].some(email => String(email || '').trim().toLowerCase() === normalizedTarget));
     const lastSeen = code?.last_seen_at ? new Date(code.last_seen_at) : null;
     const online = code?.is_online && lastSeen && Date.now() - lastSeen.getTime() < 90000;
     return {
@@ -107,11 +108,18 @@ export default function DirectMessage() {
     return `visto por último em ${date.toLocaleDateString('pt-BR')} às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   };
   const statusText = target.online ? 'Online agora' : formatLastSeen(target.lastSeen);
-  const myCode = codes.find(c => c.student_email === session?.email);
+  const normalizedSessionEmail = String(session?.email || '').trim().toLowerCase();
+  const normalizedTargetEmail = String(target.email || '').trim().toLowerCase();
+  const myCode = codes.find(c => String(c.student_email || '').trim().toLowerCase() === normalizedSessionEmail);
   const myColor = myCode?.profile_avatar_color || '#f97316';
   const CHAT_EMOJIS = ['😊','😂','😍','🥰','😭','😤','🤔','😅','🙏','❤️','🔥','✨','👏','🎉','💪','😎'];
-  const targetCode = codes.find(c => c.student_email === decodeURIComponent(targetEmail));
-  const canMessageTarget = target.email === LUNA_DM_EMAIL || (targetCode && (!codePrefix || (targetCode.code || '').startsWith(codePrefix)) && (!courseEmails || courseEmails.has(targetCode.student_email)));
+  const targetCode = codes.find(c => String(c.student_email || '').trim().toLowerCase() === normalizedTargetEmail);
+  const normalizedCourseEmails = courseEmails && new Set([...courseEmails].map(email => String(email).trim().toLowerCase()));
+  const sameCourse = !session?.course || targetCode?.course === session.course || (session.course === 'tcc' && !targetCode?.course);
+  const canMessageTarget = normalizedTargetEmail === LUNA_DM_EMAIL || Boolean(targetCode
+    && sameCourse
+    && (!codePrefix || String(targetCode.code || '').toUpperCase().startsWith(codePrefix))
+    && (!normalizedCourseEmails || normalizedCourseEmails.has(normalizedTargetEmail)));
 
   const shareMessageExternal = async (msg) => {
     const author = msg.author_name || 'Aluno';

@@ -4,7 +4,7 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User, Trash2, GraduationCap } from 'lucide-react';
+import { Save, CheckCircle, Camera, User, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -147,7 +147,7 @@ export default function Profile() {
     <div className="app-page max-w-2xl mx-auto animate-fade-in-up">
       <div className="mb-6">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Meu Perfil</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações e modalidade de estudo</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Personalize suas informações acadêmicas e de contato</p>
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
@@ -265,41 +265,6 @@ export default function Profile() {
           <Button onClick={handleSave} disabled={saving} className="w-full h-11 font-bold gap-2">
             {saved ? <><CheckCircle size={16} /> Perfil Salvo!</> : <><Save size={16} /> {saving ? 'Salvando...' : 'Salvar Perfil'}</>}
           </Button>
-        </div>
-      </div>
-
-      {/* Modalidade de Estudo */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden mt-4">
-        <div className="p-5 border-b border-border">
-          <div className="flex items-center gap-2">
-            <GraduationCap size={18} className="text-primary" />
-            <h3 className="font-bold text-sm text-foreground">Modalidade de Estudo</h3>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">Acesso acadêmico padronizado para todos os alunos</p>
-        </div>
-        <div className="p-5 space-y-3">
-          <div className="w-full text-left p-4 rounded-xl border-2 border-primary bg-primary/5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${studyMode === 'diploma' ? 'bg-primary/15' : 'bg-secondary'}`}>
-                <GraduationCap size={18} className={studyMode === 'diploma' ? 'text-primary' : 'text-muted-foreground'} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-foreground">Experiência Simplificada (Diploma)</p>
-                <p className="text-xs text-muted-foreground">Foco no conteúdo essencial, no seu próprio ritmo</p>
-              </div>
-              {studyMode === 'diploma' && <CheckCircle size={18} className="text-primary shrink-0" />}
-            </div>
-            <div className="flex flex-wrap gap-1.5 pl-13">
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Aulas & Apostila</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Tarefas & Provas</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">Certificação</span>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-secondary/40 rounded-lg p-3">
-            <GraduationCap size={13} className="shrink-0 mt-0.5 text-primary/60" />
-            <span>Seu progresso acadêmico permanece preservado no acesso Diploma.</span>
-          </div>
         </div>
       </div>
 
