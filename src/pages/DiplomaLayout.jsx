@@ -1,15 +1,12 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Menu, X, ClipboardCheck, LayoutDashboard, MessagesSquare, Heart } from 'lucide-react';
-import { WR_PRIMARY_LOGO, BRAND_SHORT_NAME } from '@/lib/brand';
+import { FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Menu, X, ClipboardCheck, LayoutDashboard, MessagesSquare, Heart } from 'lucide-react';
+import { WR_PRIMARY_LOGO, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 
-
-const G = '#d4b96a';
 
 const DIPLOMA_MENU = [
   { icon: LayoutDashboard, label: 'Dashboard',          path: '/dashboard',    color: 'text-amber-400' },
-  { icon: BookOpen, label: 'Aulas',              path: '/lessons',      color: 'text-purple-400' },
   { icon: FileText, label: 'Tarefas',             path: '/tasks',        color: 'text-orange-400' },
   { icon: ScrollText, label: 'Apostila',          path: '/apostila',     color: 'text-emerald-400' },
   { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-blue-400' },
@@ -39,6 +36,7 @@ export default function DiplomaLayout() {
     ? session.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : '?';
   const avatarBg = session?.avatarColor || '#7c3aed';
+  const currentPage = DIPLOMA_MENU.find((item) => isActive(item.path))?.label || BRAND_LEGAL_NAME;
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden app-shell-bg">
@@ -52,15 +50,9 @@ export default function DiplomaLayout() {
           </div>
           <div>
             <p className="text-[12px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME}</p>
-            <p className="text-[8px] text-[#c8bfa8]/30 font-light uppercase tracking-[0.15em]">Formação Certificado</p>
+            <p className="text-[8px] text-[#c8bfa8]/45 font-light tracking-wide">Instituto de Desenvolvimento Humano</p>
           </div>
           <button type="button" className="ml-auto p-2 text-white/50 md:hidden" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X size={18} /></button>
-        </div>
-
-        {/* Badge modo */}
-        <div className="mx-3 mt-3 mb-1 border px-3 py-2 text-[9px] font-light uppercase tracking-[0.18em] text-center"
-          style={{ borderColor: `${G}25`, color: `${G}80`, background: `${G}06` }}>
-          Modalidade · Somente Certificado
         </div>
 
         {/* Nav */}
@@ -100,7 +92,7 @@ export default function DiplomaLayout() {
             )}
             <div className="min-w-0 flex-1">
               <p className="text-[12px] font-light text-[#e8dfc8]/80 truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-[9px] text-[#c8bfa8]/30 uppercase tracking-[0.15em] font-light">Estudante · Certificado</p>
+              <p className="text-[9px] text-[#c8bfa8]/45 font-light">Estudante</p>
             </div>
           </div>
           <button
@@ -116,11 +108,14 @@ export default function DiplomaLayout() {
       <div className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 py-3 bg-[#07080f] border-b border-[#151c30]">
         <div className="flex items-center gap-2">
           <img src={WR_PRIMARY_LOGO} alt="WR" className="w-6 h-6 object-contain" />
-          <span className="text-[11px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME} · Certificado</span>
+          <span className="text-sm font-bold text-[#e8dfc8]">{currentPage}</span>
         </div>
-        <button onClick={() => setMobileOpen(true)} className="text-white/70 hover:text-white transition-colors p-2" aria-label="Abrir menu lateral">
-          <Menu size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-[9px] font-bold uppercase tracking-widest text-[#c8bfa8]/40 sm:inline">{BRAND_LEGAL_NAME}</span>
+          <button onClick={() => setMobileOpen(true)} className="text-white/70 hover:text-white transition-colors p-2" aria-label="Abrir menu lateral">
+            <Menu size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Main content */}
