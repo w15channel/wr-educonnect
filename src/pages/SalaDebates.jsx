@@ -136,7 +136,7 @@ export default function SalaDebates() {
 
       <div className="mb-5">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">Sala de Debates</h2>
-        <p className="text-muted-foreground text-sm mt-0.5">Debata temas de TCC e proponha novas ideias. Cada participação vale +0,01 ponto.</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Debata temas de TC e proponha novas ideias. Cada participação vale +0,01 ponto.</p>
       </div>
 
       {/* New Post */}

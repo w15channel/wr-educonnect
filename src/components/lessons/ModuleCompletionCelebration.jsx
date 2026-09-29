@@ -13,7 +13,7 @@ export const MODULE_THEMES = [
   { id: 6, label: 'Família, Infância e Desenvolvimento', emoji: '👨‍👩‍👧', color: 'from-orange-500 to-amber-600', light: 'text-orange-400', bg: 'bg-orange-500/10' },
   { id: 7, label: 'Sofrimento e Sentido de Vida', emoji: '✨', color: 'from-cyan-500 to-sky-700', light: 'text-cyan-400', bg: 'bg-cyan-500/10' },
   { id: 8, label: 'Prática Clínica Avançada', emoji: '⚡', color: 'from-fuchsia-500 to-pink-700', light: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10' },
-  { id: 9, label: 'TCC e Abordagens Integrativas', emoji: '🔬', color: 'from-lime-500 to-green-700', light: 'text-lime-400', bg: 'bg-lime-500/10' },
+  { id: 9, label: 'TC e Abordagens Integrativas', emoji: '🔬', color: 'from-lime-500 to-green-700', light: 'text-lime-400', bg: 'bg-lime-500/10' },
   { id: 10, label: 'Identidade e Formação Profissional', emoji: '🎓', color: 'from-amber-500 to-yellow-700', light: 'text-amber-400', bg: 'bg-amber-500/10' },
 ];
 

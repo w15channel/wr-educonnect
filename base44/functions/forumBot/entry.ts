@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     const courseLabel =
       post.course === 'psicanalise' ? 'Psicanálise Freudiana' :
       post.course === 'sexologia' ? 'Sexologia Integrativa' :
-      'Terapia Cognitivo-Comportamental (TCC)';
+      'Terapia Comportamental (TC)';
 
     const reply = await invokePollinations({
       prompt: `Você é o Professor William Ribeiro, especialista em psicoterapia e formador de terapeutas no curso de ${courseLabel}. Um aluno publicou o seguinte no fórum da turma:\n\n"${post.content}"\n\nResponda de forma acolhedora, técnica e encorajadora, como professor experiente. Seja direto, empático e orientador. Máximo 180 palavras. Responda em português, sem saudações formais excessivas.`

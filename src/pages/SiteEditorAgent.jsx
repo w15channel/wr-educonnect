@@ -91,7 +91,7 @@ export default function SiteEditorAgent() {
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const courseName = useMemo(() => ({ tcc: 'TCC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' }[session?.course] || 'Geral'), [session?.course]);
+  const courseName = useMemo(() => ({ tcc: 'TC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' }[session?.course] || 'Geral'), [session?.course]);
   const selectedItem = useMemo(() => SITE_ITEM_CATALOG.find((item) => item.id === selectedItemId), [selectedItemId]);
 
   const saveMutation = useMutation({

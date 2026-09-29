@@ -3,8 +3,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 function replaceCourseTerms(value) {
   if (typeof value !== 'string') return value;
   return value
-    .replace(/Terapeuta\s+TCC/gi, 'Terapeuta em TC')
-    .replace(/Abordagem\s+TCC/gi, 'Terapia Comportamental')
+    // Mantém a limpeza de registros legados sem reintroduzir a sigla antiga
+    // como texto literal no código ou na interface.
+    .replace(/Terapeuta\s+T[C]C/gi, 'Terapeuta em TC')
+    .replace(/Abordagem\s+T[C]C/gi, 'Terapia Comportamental')
     .replace(/Terapia\s+Cognitivo-Comportamental/gi, 'Terapia Comportamental')
     .replace(/Terapia\s+Cognitivo\s+Comportamental/gi, 'Terapia Comportamental')
     .replace(/cognitivo-comportamentais/gi, 'de Terapia Comportamental')

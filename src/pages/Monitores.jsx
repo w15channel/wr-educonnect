@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
-import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, formatDocumentIssuer } from '@/lib/brand';
+import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 
 const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
@@ -242,7 +242,7 @@ export default function Monitores() {
     }
   };
 
-  const courseLabel = { tcc: 'TCC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' }[activeCourse] || activeCourse;
+  const courseLabel = { tcc: 'TC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' }[activeCourse] || activeCourse;
 
   return (
     <div className="app-page app-page--narrow space-y-5 animate-fade-in-up">

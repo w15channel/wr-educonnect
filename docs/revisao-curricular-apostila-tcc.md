@@ -1,4 +1,4 @@
-# Revisao curricular da apostila TCC
+# Revisao curricular da apostila TC
 
 ## Contexto
 
