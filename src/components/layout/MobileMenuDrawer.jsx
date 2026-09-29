@@ -15,7 +15,7 @@ import {
   MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, ClipboardCheck
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -48,7 +48,6 @@ const adminGroups = [
     { icon: Key, label: 'Acessos', path: '/keys', color: 'text-emerald-400' },
     { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
     { icon: Trophy, label: 'Pontuação', path: '/scorecontrol', color: 'text-yellow-400' },
-    { icon: ClipboardCheck, label: 'Liberação de Provas', path: '/exam-release', color: 'text-violet-400' },
     { icon: GraduationCap, label: 'Histórico', path: '/historico', color: 'text-cyan-400' },
     { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
   ]},

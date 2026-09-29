@@ -5,7 +5,6 @@ import useModuleChecklist from '@/hooks/useModuleChecklist';
 import useLunaVoice from '@/hooks/useLunaVoice';
 import ChecklistTrail from '@/components/checklist/ChecklistTrail';
 import OwlStepGuide from '@/components/checklist/OwlStepGuide';
-import ModuleUnlockRequestCard from '@/components/checklist/ModuleUnlockRequestCard';
 import ModuleCompletionCard from '@/components/checklist/ModuleCompletionCard';
 import { buildVoiceScript, buildFinishScript } from '@/lib/checklistGuide';
 
@@ -148,7 +147,6 @@ export default function Checklist() {
                 {module.complete ? `Ir para as provas do Módulo ${module.moduleNumber}` : 'Prova bloqueada até concluir a trilha'}
                 {module.complete && <ArrowRight size={14} />}
               </button>
-              <ModuleUnlockRequestCard session={session} course={course} module={module} />
             </>
           )}
         </>
