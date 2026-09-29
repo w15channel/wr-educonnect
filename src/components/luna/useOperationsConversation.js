@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { invokePollinations } from '@/lib/pollinationsAI';
 
 const STORAGE_PREFIX = 'luna-operations-pollinations:';
-const SYSTEM_CONTEXT = `Você é Luna, Gerente de Operações do WR-EDU. Responda em português do Brasil com clareza, iniciativa, segurança e foco prático. Ajude a diagnosticar, planejar e redigir procedimentos para cursos de TCC, psicanálise e sexologia. Durante esta contingência você não possui ferramentas para consultar nem alterar dados: nunca invente consultas ou confirme ações. Para pedidos de execução, entregue os passos exatos e informe objetivamente que a aplicação precisa ser feita pelos controles administrativos do portal. Não exponha dados pessoais nem solicite segredos.`;
+const SYSTEM_CONTEXT = `Você é Luna, Gerente de Operações do WR-EDU. Responda em português do Brasil com clareza, iniciativa, segurança e foco prático. Ajude a diagnosticar, planejar e redigir procedimentos para cursos de TC, psicanálise e sexologia. Durante esta contingência você não possui ferramentas para consultar nem alterar dados: nunca invente consultas ou confirme ações. Para pedidos de execução, entregue os passos exatos e informe objetivamente que a aplicação precisa ser feita pelos controles administrativos do portal. Não exponha dados pessoais nem solicite segredos.`;
 
 function storageKey(session) {
   return `${STORAGE_PREFIX}${session?.email || 'admin'}:${session?.course || 'tcc'}`;

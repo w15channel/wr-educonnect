@@ -1,12 +1,120 @@
 import React, { useState } from 'react';
-import { ArrowRight, Check, Crown, HeartPulse, Sparkles, Trophy } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight, Check, ChevronDown, Crown, HeartPulse, Sparkles, Trophy } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import ServiceRequestChatModal from './ServiceRequestChatModal';
 
 
-export default function ServicosCard() {
+const COMPACT_SERVICES = [
+  {
+    id: 'mentoria',
+    label: 'Mentoria particular',
+    eyebrow: 'Direção individual para avançar',
+    description: 'Aprofunde dúvidas e transforme o conteúdo em um plano prático ao lado de W.Ribeiro.',
+    benefits: ['Plano personalizado', 'Orientação prática 1:1', 'R$ 45,00 por hora'],
+    action: 'Quero minha mentoria',
+    requestLabel: 'Mentoria Particular',
+    Icon: Sparkles,
+    accent: 'violet',
+  },
+  {
+    id: 'terapia',
+    label: 'Atendimento terapêutico',
+    eyebrow: 'Um espaço seguro para cuidar de você',
+    description: 'Escuta responsável, acolhedora e confidencial para fortalecer sua saúde emocional.',
+    benefits: ['Escuta individual', 'Ambiente confidencial', 'R$ 45,00 por hora'],
+    action: 'Quero cuidar de mim',
+    requestLabel: 'Atendimento Terapêutico Pessoal',
+    Icon: HeartPulse,
+    accent: 'rose',
+  },
+];
+
+function CompactServices({ onRequest, reduceMotion }) {
+  const [expanded, setExpanded] = useState(null);
+
+  return (
+    <section aria-labelledby="services-title" className="space-y-3">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-600">Apoio para sua jornada</p>
+        <h2 id="services-title" className="mt-1 text-base font-bold text-foreground">Cuidado e orientação quando você precisar</h2>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {COMPACT_SERVICES.map((service, index) => {
+          const open = expanded === service.id;
+          const rose = service.accent === 'rose';
+          return (
+            <motion.article
+              key={service.id}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.08 }}
+              className={`relative overflow-hidden rounded-2xl border bg-card shadow-sm ${rose ? 'border-rose-300/60' : 'border-violet-300/60'}`}
+            >
+              <motion.span
+                aria-hidden="true"
+                className={`pointer-events-none absolute inset-0 rounded-2xl border-2 ${rose ? 'border-rose-400/50' : 'border-violet-400/50'}`}
+                animate={reduceMotion ? undefined : { opacity: [0.2, 0.75, 0.2], scale: [0.99, 1.01, 0.99] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut', delay: index * 0.5 }}
+              />
+              <button
+                type="button"
+                onClick={() => setExpanded(open ? null : service.id)}
+                className="relative flex w-full items-center gap-3 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500"
+                aria-expanded={open}
+                aria-controls={`${service.id}-details`}
+              >
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${rose ? 'bg-gradient-to-br from-rose-500 to-fuchsia-500' : 'bg-gradient-to-br from-violet-500 to-indigo-500'}`}>
+                  <service.Icon size={19} aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-black text-foreground">{service.label}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{service.eyebrow}</span>
+                </span>
+                <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}><ChevronDown size={18} aria-hidden="true" /></motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {open && (
+                  <motion.div
+                    id={`${service.id}-details`}
+                    initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="relative overflow-hidden"
+                  >
+                    <div className="border-t border-border/70 px-4 pb-4 pt-3">
+                      <p className="text-xs leading-relaxed text-muted-foreground">{service.description}</p>
+                      <ul className="my-3 flex flex-wrap gap-1.5" aria-label="Benefícios">
+                        {service.benefits.map((benefit) => <li key={benefit} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-[10px] font-semibold text-foreground"><Check size={11} className="text-emerald-500" />{benefit}</li>)}
+                      </ul>
+                      <button type="button" onClick={() => onRequest(service.requestLabel)} className={`flex min-h-10 w-full items-center justify-center gap-2 rounded-xl px-4 text-xs font-black text-white transition-transform hover:-translate-y-0.5 ${rose ? 'bg-gradient-to-r from-rose-500 to-fuchsia-500' : 'bg-gradient-to-r from-violet-500 to-indigo-500'}`}>
+                        {service.action} <ArrowRight size={14} aria-hidden="true" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export default function ServicosCard({ expandable = false }) {
   const [activeService, setActiveService] = useState(null);
   const reduceMotion = useReducedMotion();
+
+  if (expandable) {
+    return (
+      <>
+        <CompactServices onRequest={setActiveService} reduceMotion={reduceMotion} />
+        {activeService && <ServiceRequestChatModal serviceLabel={activeService} onClose={() => setActiveService(null)} />}
+      </>
+    );
+  }
 
   return (
     <>

@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 
-const COURSE_LABELS = { tcc: 'TCC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' };
+const COURSE_LABELS = { tcc: 'TC', psicanalise: 'Psicanálise', sexologia: 'Sexologia' };
 
 function getStudentName(code, fallbackEmail) {
   return code?.profile_name || code?.student_name || fallbackEmail || `Aluno ${BRAND_SHORT_NAME}`;
