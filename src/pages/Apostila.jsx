@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
+import { useLocation } from 'react-router-dom';
 import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipBack, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
 import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
@@ -28,7 +29,7 @@ import { MOD10 } from '@/lib/apostila/mod10';
 
 const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
 const APOSTILA_BOOK_ID = 'apostila-tcc';
-const APOSTILA_BOOK_TITLE = 'Apostila TCC';
+const APOSTILA_BOOK_TITLE = 'Apostila';
 
 const APOSTILA_AUTHOR_EMAIL = 'apostila@wr-edu.local';
 const INLINE_CONTENT_LIMIT = 6000;
@@ -168,6 +169,7 @@ function ReadingViewport({ paragraphs, activeParagraph, activeWord, isPlaying, n
 export default function Apostila() {
   const { session } = useCustomAuth();
   const isAdmin = session?.role === 'admin';
+  const isDiplomaMode = useLocation().pathname.startsWith('/degree/student');
   const queryClient = useQueryClient();
   const { moduleUnlocked, isLoading: loadingUnlocks } = useApostilaModuleUnlocks(session?.course || 'tcc', session);
 
@@ -713,7 +715,7 @@ export default function Apostila() {
                                   <Button size="sm" variant="outline" onClick={() => setPrintLesson({ lesson, chapterTitle: chapter.title })} className="gap-1.5"><FileText size={13} /> Baixar PDF</Button>
                                   {isAdmin && <Button size="sm" variant="outline" onClick={() => handleEditLesson(chapter.id, lesson.id, lesson.content)}><Edit2 size={13} /> Editar conteúdo</Button>}
                                   {!isAdmin && (isRead ? <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl"><CheckCircle size={13} /> Leitura concluída!</span> : <button disabled={!!savingReadKey || loadingReadProgress || !!readProgressError} onClick={() => markRead(chapter.id, lesson.id)} className="apostila-mark-read-button inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-all active:scale-95 disabled:opacity-50"><BookMarked size={13} /> {savingReadKey === key ? 'Salvando...' : 'Marcar como lida'}</button>)}
-                                  {!isAdmin && <NextStepLink to="/ofensivas" icon={Flame} tone="orange" size="sm" title="Usar o conhecimento na Ofensiva" />}
+                                  {!isAdmin && !isDiplomaMode && <NextStepLink to="/ofensivas" icon={Flame} tone="orange" size="sm" title="Usar o conhecimento na Ofensiva" />}
                                 </div>
                               </div>
                             )}

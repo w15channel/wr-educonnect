@@ -178,6 +178,9 @@ const AuthenticatedApp = () => {
         <Route path="exams" element={<Exams />} />
         <Route path="exams/quiz/:id" element={<ExamQuizView />} />
         <Route path="checklist" element={<Checklist />} />
+        <Route path="debates" element={<SalaDebates />} />
+        <Route path="chat" element={<ClassChat />} />
+        <Route path="practice" element={<Practice />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="certificadora" element={<Certificadora />} />

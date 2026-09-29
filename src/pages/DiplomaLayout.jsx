@@ -1,17 +1,20 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Menu, X, ClipboardCheck } from 'lucide-react';
+import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Menu, X, ClipboardCheck, LayoutDashboard, MessagesSquare, Heart } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_SHORT_NAME } from '@/lib/brand';
 
 
 const G = '#d4b96a';
 
 const DIPLOMA_MENU = [
+  { icon: LayoutDashboard, label: 'Dashboard',          path: '/dashboard',    color: 'text-amber-400' },
   { icon: BookOpen, label: 'Aulas',              path: '/lessons',      color: 'text-purple-400' },
   { icon: FileText, label: 'Tarefas',             path: '/tasks',        color: 'text-orange-400' },
-  { icon: ScrollText, label: 'Apostila TCC',      path: '/apostila',     color: 'text-emerald-400' },
+  { icon: ScrollText, label: 'Apostila',          path: '/apostila',     color: 'text-emerald-400' },
   { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-blue-400' },
+  { icon: MessagesSquare, label: 'Sala de Debates', path: '/debates', color: 'text-sky-400' },
+  { icon: Heart, label: 'Mural de Superação', path: '/chat', color: 'text-rose-400' },
   { icon: GraduationCap, label: 'Provas',         path: '/exams',        color: 'text-violet-400' },
   { icon: DollarSign, label: 'Mensalidades',      path: '/tuitions',     color: 'text-teal-400' },
   { icon: History, label: 'Histórico Acadêmico',  path: '/historico',    color: 'text-cyan-400' },

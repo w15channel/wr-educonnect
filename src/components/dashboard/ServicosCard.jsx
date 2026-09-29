@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Check, Crown, Sparkles, Trophy } from 'lucide-react';
+import { ArrowRight, Check, Crown, HeartPulse, Sparkles, Trophy } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import ServiceRequestChatModal from './ServiceRequestChatModal';
 
@@ -84,6 +84,22 @@ export default function ServicosCard() {
             </button>
             <p className="mt-2 text-center text-[10px] text-white/40">Sessão individual · R$ 45,00/hora</p>
           </div>
+        </div>
+
+        <div className="relative mx-6 mb-6 flex flex-col gap-4 rounded-2xl border border-rose-300/20 bg-gradient-to-r from-rose-400/10 to-fuchsia-400/10 p-5 sm:mx-8 sm:mb-8 sm:flex-row sm:items-center">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-400/15 text-rose-200" aria-hidden="true">
+            <HeartPulse size={22} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-black text-white">Atendimento terapêutico pessoal</p>
+            <p className="mt-1 text-xs leading-relaxed text-white/60">Um espaço individual, acolhedor e confidencial para cuidar de questões pessoais com escuta responsável e acompanhamento humano.</p>
+          </div>
+          <button
+            onClick={() => setActiveService('Atendimento Terapêutico Pessoal')}
+            className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-rose-200/25 bg-rose-500 px-4 py-3 text-sm font-black text-white transition-all hover:-translate-y-0.5 hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
+          >
+            Quero ser atendido(a) <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+          </button>
         </div>
       </motion.section>
 

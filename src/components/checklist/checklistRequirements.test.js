@@ -23,3 +23,12 @@ it('não inclui mensalidades entre os requisitos do checklist', () => {
   const checklist = buildModuleChecklist({ moduleNumber: 1, email: 'aluno@test.local' });
   expect(checklist.items.some(item => item.key.startsWith('tuition'))).toBe(false);
 });
+
+it('remove a ofensiva diária da trilha no modo somente certificado', () => {
+  const checklist = buildModuleChecklist({
+    moduleNumber: 1,
+    email: 'aluno@test.local',
+    includeOfensiva: false,
+  });
+  expect(checklist.items.map(item => item.key)).toEqual(['apostila', 'tasks', 'debate_topic', 'debate_comment']);
+});

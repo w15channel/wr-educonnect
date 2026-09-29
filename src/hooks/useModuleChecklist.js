@@ -14,7 +14,7 @@ const MODULE_COUNT = 10;
  * e identifica o módulo em que ele está agora — o primeiro cuja prova ainda
  * não foi entregue. Nada é compartilhado entre alunos.
  */
-export default function useModuleChecklist({ course = 'tcc', session } = {}) {
+export default function useModuleChecklist({ course = 'tcc', session, includeOfensiva = true } = {}) {
   const email = session?.email || session?.code || '';
   const access = useModuleAccess(course, session);
   const queryClient = useQueryClient();
@@ -46,7 +46,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
   const { data: challengeResponses = [], isLoading: l8 } = useQuery({
     queryKey: ['checklist-ofensivas', email, course],
     queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: email, course }, '-date', 500),
-    enabled: !!email,
+    enabled: !!email && includeOfensiva,
   });
   const { data: exams = [], isLoading: l9 } = useQuery({
     queryKey: ['checklist-exams', course],
@@ -107,6 +107,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
         pairings,
         challengeResponses,
         moduleWindow,
+        includeOfensiva,
         previousExamCompleted: moduleNumber === 1 ? true : (() => {
           const previousModuleNumber = moduleNumber - 1;
           const previousModuleExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === previousModuleNumber);
@@ -123,7 +124,7 @@ export default function useModuleChecklist({ course = 'tcc', session } = {}) {
       const examDone = moduleExams.length > 0 && (moduleExams.every((exam) => submittedExamIds.has(exam.id)) || (sameExams && confirmed?.examDone === true));
       return { moduleNumber, ...reconciled, examDone, exams: moduleExams };
     });
-  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, submittedExamIds, unlockDateByModule, verified]);
+  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, submittedExamIds, unlockDateByModule, verified, includeOfensiva]);
 
   // Conteúdo liberado pelo calendário não equivale a acesso antecipado à
   // trilha. O checklist N só abre depois da entrega da prova N-1.

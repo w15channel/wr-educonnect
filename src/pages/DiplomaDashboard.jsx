@@ -2,7 +2,8 @@ import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { BookOpen, FileText, ClipboardList, Circle, ArrowRight, GraduationCap } from 'lucide-react';
+import { BookOpen, FileText, ClipboardList, Circle, ArrowRight, GraduationCap, Heart, MessagesSquare } from 'lucide-react';
+import ServicosCard from '@/components/dashboard/ServicosCard';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
@@ -112,6 +113,34 @@ export default function DiplomaDashboard() {
           {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })} · Modalidade Certificado
         </p>
       </div>
+
+      {/* Boas-vindas — mantém a mesma orientação do acesso regular. */}
+      <section className="rounded-2xl border border-violet-200/40 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-amber-500/10 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-xl shadow-lg shadow-violet-500/20" aria-hidden="true">🦉</div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-foreground">{greeting}, {firstName}! Eu sou a Luna 🦉</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Que bom ter você aqui! Antes de começar, confira as notificações no <strong>Mural de Superação</strong> logo abaixo — pode haver recados importantes para você. Depois, acesse o seu <strong>Checklist</strong> para dar sequência aos estudos do módulo.
+            </p>
+            <button onClick={() => navigate(scoped('/checklist'))} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground transition-opacity hover:opacity-90">
+              <BookOpen size={12} /> Abrir Checklist
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Mural de Superação */}
+      <button onClick={() => navigate(scoped('/chat'))} className="group w-full rounded-2xl border border-rose-200 bg-gradient-to-r from-rose-50 to-violet-50 p-5 text-left transition-all hover:border-rose-300 hover:shadow-md">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/20"><Heart size={22} fill="currentColor" /></div>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-foreground">Mural de Superação</h3>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">Leia os recados da turma e compartilhe palavras de ânimo, aprendizados e conquistas da sua jornada.</p>
+          </div>
+          <span className="hidden items-center gap-1 text-xs font-bold text-rose-600 sm:flex">Acessar <MessagesSquare size={14} /></span>
+        </div>
+      </button>
 
       {/* Progresso */}
       <div
@@ -252,6 +281,9 @@ export default function DiplomaDashboard() {
           <p className="text-sm text-muted-foreground mt-1">Nenhuma pendência no momento. Continue assim!</p>
         </div>
       )}
+
+      {/* Ofertas opcionais de apoio individual, exibidas após o mural e a jornada acadêmica. */}
+      <ServicosCard />
     </div>
   );
 }
