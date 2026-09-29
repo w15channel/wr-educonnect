@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { getLatestContributors, hasPositiveContribution, isContributionAwardFeatured, isContributionWallHighlight } from './contributionAwards';
 
 describe('prêmio de contribuição voluntária', () => {
-  it('premia somente mensalidade paga com contribuição acima de zero', () => {
+  it('premia somente mensalidade paga com contribuição acima de dez reais', () => {
     expect(hasPositiveContribution({ status: 'paid', paid_amount: 0 })).toBe(false);
-    expect(hasPositiveContribution({ status: 'paid', paid_amount: '0.01' })).toBe(true);
+    expect(hasPositiveContribution({ status: 'paid', paid_amount: '0.01' })).toBe(false);
+    expect(hasPositiveContribution({ status: 'paid', paid_amount: 10 })).toBe(false);
+    expect(hasPositiveContribution({ status: 'paid', paid_amount: '10.01' })).toBe(true);
     expect(hasPositiveContribution({ status: 'pending', paid_amount: 50 })).toBe(false);
     expect(hasPositiveContribution({ status: 'paid' })).toBe(false);
   });
@@ -12,9 +14,9 @@ describe('prêmio de contribuição voluntária', () => {
   it('inclui todos os participantes financeiros da mensalidade mais recente, sem duplicar aluno', () => {
     const records = [
       { id: 'antiga', student_email: 'ana@edu.test', month_ref: '2026-08', status: 'paid', paid_amount: 50 },
-      { id: 'ana', student_email: 'ANA@edu.test', month_ref: '2026-09', status: 'paid', paid_amount: 10 },
+      { id: 'ana', student_email: 'ANA@edu.test', month_ref: '2026-09', status: 'paid', paid_amount: 10.01 },
       { id: 'ana-duplicada', student_email: 'ana@edu.test', month_ref: '2026-09', status: 'paid', paid_amount: 20 },
-      { id: 'bia', student_email: 'bia@edu.test', month_ref: '2026-09', status: 'paid', paid_amount: '0.01' },
+      { id: 'bia', student_email: 'bia@edu.test', month_ref: '2026-09', status: 'paid', paid_amount: '11' },
       { id: 'sem-contribuicao', student_email: 'carla@edu.test', month_ref: '2026-09', status: 'paid', paid_amount: 0 },
       { id: 'pendente', student_email: 'dani@edu.test', month_ref: '2026-09', status: 'pending', paid_amount: 30 },
     ];

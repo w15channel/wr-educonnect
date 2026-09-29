@@ -1,10 +1,11 @@
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const CONTRIBUTION_STUDENT_FEATURE_DAYS = 15;
 export const CONTRIBUTION_WALL_HIGHLIGHT_DAYS = 7;
+export const MINIMUM_DIAMOND_CONTRIBUTION = 10;
 
 export function hasPositiveContribution(tuition) {
   const value = Number(tuition?.paid_amount);
-  return tuition?.status === 'paid' && Number.isFinite(value) && value > 0;
+  return tuition?.status === 'paid' && Number.isFinite(value) && value > MINIMUM_DIAMOND_CONTRIBUTION;
 }
 
 const contributionPeriod = (tuition) => String(tuition?.month_ref || tuition?.due_date || '').trim();
