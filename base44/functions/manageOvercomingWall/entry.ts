@@ -19,14 +19,14 @@ async function syncContributionAwards(base44, course) {
   const eligible = tuitions.filter((item) => item.wall_shared === true
     && item.status === 'paid'
     && Number.isFinite(Number(item.paid_amount))
-    && Number(item.paid_amount) > 0
+    && Number(item.paid_amount) > 10
     && (courseByEmail.get(norm(item.student_email)) || 'tcc') === course);
 
   // Corrige reconhecimentos antigos: registros de valor zero deixam de ser
   // prêmio e os válidos passam a usar a identidade e os prazos do diamante.
   for (const achievement of achievements.filter((item) => item.kind === 'tuition' && item.course === course)) {
     const tuition = tuitionById.get(String(achievement.source_id || ''));
-    if (!tuition || tuition.status !== 'paid' || !(Number(tuition.paid_amount) > 0)) {
+    if (!tuition || tuition.status !== 'paid' || !(Number(tuition.paid_amount) > 10)) {
       await service.Achievement.delete(achievement.id);
       continue;
     }
@@ -150,6 +150,14 @@ async function syncAchievements(base44, user, requestedCourse) {
     if (video) add(`lesson:${record.id}`, record, 'lesson', `concluiu a aula “${video.title || 'Nova aula'}”.`, video.title);
     if (book) add(`book:${record.student_email}:${record.lesson_id}`, record, 'book_lesson', `concluiu a aula “${book.lesson_title || book.title || 'Aula da apostila'}” na apostila.`, book.lesson_title || book.title);
   }
+  // A primeira atividade concluída marca o início da jornada. Uma única coroa
+  // é mantida por aluno, mesmo se houver Aula 1 em vídeo e na apostila.
+  const firstVideoIds = new Set(lessons.filter((lesson) => Number(lesson.order) === 1 || /^aula\s*1\b/i.test(String(lesson.title || ''))).map((lesson) => lesson.id));
+  const firstBookIds = new Set(books.filter((lesson) => Number(lesson.lesson_id) === 1 || /^aula\s*1\b/i.test(String(lesson.lesson_title || lesson.title || ''))).map((lesson) => `apostila:${lesson.chapter_id}:${lesson.lesson_id}`));
+  for (const email of students) {
+    const initial = progresses.filter((progress) => norm(progress.student_email) === email && progress.watched && (firstVideoIds.has(progress.lesson_id) || firstBookIds.has(progress.lesson_id))).sort((a, b) => new Date(dateOf(a)) - new Date(dateOf(b)))[0];
+    if (initial) add(`beginner:${course}:${email}`, { ...initial, student_email: email }, 'beginner', 'concluiu a atividade inicial e conquistou a Coroa Bronze do Iniciante. 👑', 'Coroa Bronze do Iniciante');
+  }
   for (const record of submissions) { const item = taskMap.get(record.task_id); if (item) add(`task:${record.id}`, record, 'task', `respondeu a tarefa “${item.title || 'Nova tarefa'}”.`, item.title); }
   for (const record of examSubs) { const item = examMap.get(record.exam_id); if (item) add(`exam:${record.id}`, record, 'exam', `concluiu “${item.title || 'uma avaliação'}”.`, item.title); }
   for (const record of challenges) add(`challenge:${record.id}`, record, 'challenge', 'venceu mais uma etapa da ofensiva diária.');
@@ -169,6 +177,47 @@ export default async function(req) {
     const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({}));
 
     // ── Admin actions (no access code required) ──────────────────────────
+    if (payload.action === 'adminSettleAugust2026') {
+      await adminAuth(base44, payload);
+      const service = base44.asServiceRole.entities;
+      const monthRef = 'Agosto - 2026';
+      const [codes, tuitions, achievements] = await Promise.all([
+        service.AccessCode.list('-created_date', 10000),
+        service.Tuition.list('-month_ref', 10000),
+        service.Achievement.list('-occurred_at', 20000),
+      ]);
+      const active = [...new Map(codes.filter((code) => code.is_active !== false && code.student_email).map((code) => [norm(code.student_email), code])).values()];
+      let created = 0; let settled = 0; let removedDiamonds = 0;
+      for (const code of active) {
+        const email = norm(code.student_email);
+        const matches = tuitions.filter((tuition) => {
+          const reference = String(tuition.month_ref || '').trim().toLowerCase();
+          return norm(tuition.student_email) === email && (reference === '2026-08' || (/agosto/.test(reference) && /2026/.test(reference)));
+        });
+        if (!matches.length) {
+          await service.Tuition.create({ student_email: email, student_name: code.profile_name || code.student_name || '', month_ref: monthRef, amount: 0, paid_amount: 0, paid_date: '2026-08-31', status: 'paid', notes: 'Contribuição voluntária encerrada sem débito.' });
+          created += 1;
+        } else {
+          for (const tuition of matches) {
+            if (tuition.status !== 'paid') {
+              await service.Tuition.update(tuition.id, { status: 'paid', paid_amount: Number(tuition.paid_amount) || 0, paid_date: tuition.paid_date || '2026-08-31' });
+              tuition.status = 'paid';
+              tuition.paid_amount = Number(tuition.paid_amount) || 0;
+              settled += 1;
+            }
+          }
+        }
+      }
+      const tuitionById = new Map(tuitions.map((tuition) => [String(tuition.id), tuition]));
+      for (const achievement of achievements.filter((item) => item.kind === 'tuition')) {
+        const tuition = tuitionById.get(String(achievement.source_id || ''));
+        if (!tuition || tuition.status !== 'paid' || !(Number(tuition.paid_amount) > 10)) { await service.Achievement.delete(achievement.id); removedDiamonds += 1; }
+      }
+      let beginnerCrowns = 0;
+      const courses = new Set(active.map((code) => code.course || 'tcc'));
+      for (const course of courses) beginnerCrowns += (await syncAchievements(base44, { course }, course)).created;
+      return Response.json({ success: true, created, settled, removedDiamonds, beginnerCrowns });
+    }
     if (payload.action === 'adminDeleteMessage') {
       const admin = await adminAuth(base44, payload);
       const messageId = String(payload.message_id || '').trim();
@@ -207,6 +256,7 @@ export default async function(req) {
       const course = payload.course || user.course || 'tcc';
       if (user.course && course !== user.course) return Response.json({ error: 'Curso não autorizado.' }, { status: 403 });
       await syncContributionAwards(base44, course);
+      await syncAchievements(base44, user, course);
       const accessCodes = (await service.AccessCode.list('-created_date', 2000)).filter((item) => item.course === course || (course === 'tcc' && !item.course));
       const messages = await service.ChatMessage.filter({ session_id: `class_chat_${course}` }, 'created_date', 300);
       const lessonProgresses = await service.LessonProgress.list('-created_date', 400);

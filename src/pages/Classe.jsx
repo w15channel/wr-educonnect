@@ -44,7 +44,7 @@ function StudentAvatar({ name, photoUrl, avatarColor, avatarEmoji, size = 56 }) 
   );
 }
 
-function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, trophies, contributionAwards = [], session, navigate, onOpenDetails }) {
+function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, trophies, contributionAwards = [], beginnerAwards = [], session, navigate, onOpenDetails }) {
   const name = resolveDisplayName({ email: code?.student_email, code, profile });
   const nickname = profile?.nickname || '';
   const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
@@ -101,7 +101,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, t
         size={64}
       />
       <div className="w-full min-w-0">
-        <div className="flex items-center justify-center gap-1"><p className="min-w-0 truncate font-bold text-foreground text-sm leading-tight">{publicName}</p><ModuleTrophies completions={trophies} compact />{contributionAwards.length > 0 && <span title="Diamante da Contribuição" aria-label="Diamante da Contribuição" className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-cyan-300 bg-cyan-100 text-[11px] shadow-sm dark:border-cyan-400/60 dark:bg-cyan-950 dark:text-cyan-100">💎</span>}</div>
+        <div className="flex items-center justify-center gap-1"><p className="min-w-0 truncate font-bold text-foreground text-sm leading-tight">{publicName}</p><ModuleTrophies completions={trophies} compact />{beginnerAwards.length > 0 && <span title="Coroa Bronze do Iniciante" aria-label="Coroa Bronze do Iniciante" className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-amber-700/40 bg-amber-800/15 text-amber-700"><Crown size={12} /></span>}{contributionAwards.length > 0 && <span title="Diamante da Contribuição" aria-label="Diamante da Contribuição" className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-cyan-300 bg-cyan-100 text-[11px] shadow-sm dark:border-cyan-400/60 dark:bg-cyan-950 dark:text-cyan-100">💎</span>}</div>
         {nickname && nickname !== name && <p className="text-xs text-muted-foreground truncate">"{nickname}"</p>}
         {bio && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{bio}</p>}
         {points > 0 && (
@@ -180,6 +180,10 @@ export default function Classe() {
   const { data: contributionAwards = [] } = useQuery({
     queryKey: ['class-contribution-awards', activeCourse],
     queryFn: () => base44.entities.Achievement.filter({ course: activeCourse, kind: 'tuition' }, '-occurred_at', 2000),
+  });
+  const { data: beginnerAwards = [] } = useQuery({
+    queryKey: ['class-beginner-awards', activeCourse],
+    queryFn: () => base44.entities.Achievement.filter({ course: activeCourse, kind: 'beginner' }, '-occurred_at', 2000),
   });
 
   const today = new Date();
@@ -321,6 +325,7 @@ export default function Classe() {
                   monitorRank={currentMonitors.find(m => m.student_email === code.student_email)?.rank_position}
                   isTopTask={code.student_email === weeklyTopEmail}
                   trophies={moduleTrophiesByEmail.get(String(code.student_email).toLowerCase()) || []}
+                  beginnerAwards={beginnerAwards.filter((item) => String(item.student_email).toLowerCase() === String(code.student_email).toLowerCase())}
                   contributionAwards={contributionAwards.filter((item) => String(item.student_email).toLowerCase() === String(code.student_email).toLowerCase())}
                   onOpenDetails={setSelectedStudent}
                   session={session}
@@ -381,7 +386,7 @@ export default function Classe() {
                     <p className="text-xs text-white/60 mb-1">Apresentação pessoal / descrição completa</p>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{bio || 'Este colega ainda não adicionou descrição no perfil.'}</p>
                   </div>
-                  <AchievementShowcase dark trophies={moduleTrophiesByEmail.get(String(code?.student_email || '').toLowerCase()) || []} monitorAwards={monitorHistory.filter((item) => item.student_email === code?.student_email)} contributionAwards={contributionAwards.filter((item) => String(item.student_email).toLowerCase() === String(code?.student_email).toLowerCase())} />
+                  <AchievementShowcase dark trophies={moduleTrophiesByEmail.get(String(code?.student_email || '').toLowerCase()) || []} monitorAwards={monitorHistory.filter((item) => item.student_email === code?.student_email)} contributionAwards={contributionAwards.filter((item) => String(item.student_email).toLowerCase() === String(code?.student_email).toLowerCase())} beginnerAwards={beginnerAwards.filter((item) => String(item.student_email).toLowerCase() === String(code?.student_email).toLowerCase())} />
                 </div>
               );
             })()}

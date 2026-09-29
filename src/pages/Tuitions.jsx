@@ -36,6 +36,7 @@ export default function Tuitions() {
   const [payAmountInput, setPayAmountInput] = useState('');
   const [issuingReceiptId, setIssuingReceiptId] = useState(null);
   const [receipt, setReceipt] = useState(null);
+  const [settlingAugust, setSettlingAugust] = useState(false);
 
   const { data: tuitions = [], isLoading } = useQuery({
     queryKey: ['tuitions'],
@@ -104,7 +105,7 @@ export default function Tuitions() {
   // Concede o reconhecimento sem expor o valor contribuído. A chave por
   // mensalidade torna a operação segura para sincronizações e cliques repetidos.
   const grantContributionAward = async (t) => {
-    if (!hasPositiveContribution(t)) throw new Error('O diamante é concedido somente para contribuições acima de zero.');
+    if (!hasPositiveContribution(t)) throw new Error('O diamante é concedido somente para contribuições acima de R$ 10,00.');
     const dedupeKey = `tuition:${t.id}`;
     const existing = await base44.entities.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
     if (!existing.length) {
@@ -136,6 +137,7 @@ export default function Tuitions() {
       queryClient.invalidateQueries({ queryKey: ['tuitions'] });
       queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
       queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
+      queryClient.invalidateQueries({ queryKey: ['class-beginner-awards'] });
       toast.success('Diamante concedido e publicado no mural!');
     },
     onError: (error) => toast.error(error?.message || 'Não foi possível conceder o diamante.'),
@@ -239,6 +241,20 @@ export default function Tuitions() {
     toast.success(`Mensalidades lançadas para ${targets.length} aluno(s)!`);
   };
 
+  const settleAugust2026 = async () => {
+    if (!window.confirm('Dar baixa em Agosto/2026 para todos os alunos e remover diamantes de contribuições de até R$ 10,00?')) return;
+    setSettlingAugust(true);
+    try {
+      const response = await base44.functions.invoke('manageOvercomingWall', { action: 'adminSettleAugust2026', admin_email: session?.email, course: routeCourse || session?.course || 'tcc' });
+      queryClient.invalidateQueries({ queryKey: ['tuitions'] });
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
+      queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
+      queryClient.invalidateQueries({ queryKey: ['class-beginner-awards'] });
+      toast.success(`Agosto/2026 regularizado: ${response.data?.created || 0} lançamentos, ${response.data?.settled || 0} baixas, ${response.data?.removedDiamonds || 0} diamantes corrigidos e ${response.data?.beginnerCrowns || 0} conquistas sincronizadas.`);
+    } catch (error) { toast.error(error?.message || 'Não foi possível regularizar Agosto/2026.'); }
+    finally { setSettlingAugust(false); }
+  };
+
   const toggleBulkEmail = (key) => {
     setBulk(prev => ({
       ...prev,
@@ -263,6 +279,9 @@ export default function Tuitions() {
         </div>
         {isAdmin && (
           <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" className="gap-2 h-9 text-sm" onClick={settleAugust2026} disabled={settlingAugust}>
+              <CheckCircle size={15} /> {settlingAugust ? 'Regularizando...' : 'Dar baixa Ago/2026'}
+            </Button>
             <Button variant="outline" className="gap-2 h-9 text-sm" onClick={() => setShowBulk(v => !v)}>
               <Users size={15} /> Lançamento em Massa
               {showBulk ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
