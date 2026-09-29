@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateReceiptCode, generateReceiptImage, downloadReceiptImage, getDefaultReceiptTemplate, setDefaultReceiptTemplate } from '@/lib/generateReceiptImage';
 import ReceiptImageDialog from '@/components/tuitions/ReceiptImageDialog';
-import { CONTRIBUTION_STUDENT_FEATURE_DAYS, CONTRIBUTION_WALL_HIGHLIGHT_DAYS, DAY_MS, getLatestContributors, hasPositiveContribution } from '@/lib/contributionAwards';
+import { CONTRIBUTION_STUDENT_FEATURE_DAYS, CONTRIBUTION_WALL_HIGHLIGHT_DAYS, DAY_MS, hasPositiveContribution } from '@/lib/contributionAwards';
 
 const STATUS_CONFIG = {
   paid: { label: 'Pago', icon: CheckCircle, card: 'border-green-500/20 bg-green-500/10', badge: 'text-green-500 bg-green-500/10 border-green-500/20', text: 'text-green-500', iconBg: 'bg-green-500/15' },
@@ -66,7 +66,6 @@ export default function Tuitions() {
 
   const allowedStudentKeys = new Set(allStudents.flatMap(s => [s.key, s.email]).filter(Boolean));
   const visibleTuitions = isAdmin ? tuitions.filter(t => allowedStudentKeys.has(t.student_email)) : tuitions;
-  const automaticAwardSyncRef = useRef('');
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Tuition.create(data),
@@ -143,33 +142,8 @@ export default function Tuitions() {
     onError: (error) => toast.error(error?.message || 'Não foi possível conceder o diamante.'),
   });
 
-  const latestContributors = getLatestContributors(visibleTuitions);
-  const latestContributorSignature = latestContributors.map((item) => item.id).sort().join('|');
-
-  // Corrige também registros anteriores: ao abrir a gestão, todos que
-  // contribuíram na última mensalidade recebem o diamante, não apenas quem teve
-  // o botão de compartilhamento acionado individualmente.
-  useEffect(() => {
-    if (!isAdmin || !latestContributorSignature || automaticAwardSyncRef.current === latestContributorSignature) return;
-    automaticAwardSyncRef.current = latestContributorSignature;
-    let cancelled = false;
-    (async () => {
-      let created = 0;
-      for (const tuition of latestContributors) {
-        if (cancelled) return;
-        if (await grantContributionAward(tuition)) created += 1;
-      }
-      if (!cancelled && created > 0) {
-        queryClient.invalidateQueries({ queryKey: ['tuitions'] });
-        queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
-        queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
-        toast.success(`${created} diamante${created === 1 ? '' : 's'} da última mensalidade ${created === 1 ? 'foi concedido' : 'foram concedidos'}.`);
-      }
-    })().catch((error) => {
-      if (!cancelled) toast.error(error?.message || 'Não foi possível sincronizar os diamantes da última mensalidade.');
-    });
-    return () => { cancelled = true; };
-  }, [isAdmin, latestContributorSignature]);
+  // Os diamantes de agosto são reconciliados pela ação administrativa abaixo,
+  // usando a lista confirmada de contribuintes em vez de inferir pelo valor.
 
   const [defaultTemplateUrl, setDefaultTemplateUrl] = useState(null);
   const [savingDefault, setSavingDefault] = useState(false);
@@ -242,7 +216,7 @@ export default function Tuitions() {
   };
 
   const settleAugust2026 = async () => {
-    if (!window.confirm('Dar baixa em Agosto/2026 para todos os alunos e remover diamantes de contribuições de até R$ 10,00?')) return;
+    if (!window.confirm('Sincronizar Agosto/2026, mantendo o Diamante somente para Marih, Diane, Cristiane, Ageane, Lidiane e Andrezza?')) return;
     setSettlingAugust(true);
     try {
       const response = await base44.functions.invoke('manageOvercomingWall', { action: 'adminSettleAugust2026', admin_email: session?.email, course: routeCourse || session?.course || 'tcc' });
@@ -250,7 +224,7 @@ export default function Tuitions() {
       queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
       queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
       queryClient.invalidateQueries({ queryKey: ['class-beginner-awards'] });
-      toast.success(`Agosto/2026 regularizado: ${response.data?.created || 0} lançamentos, ${response.data?.settled || 0} baixas, ${response.data?.removedDiamonds || 0} diamantes corrigidos e ${response.data?.beginnerCrowns || 0} conquistas sincronizadas.`);
+      toast.success(`Agosto/2026 sincronizado: ${response.data?.created || 0} diamante(s) concedido(s), ${response.data?.removedDiamonds || 0} revogado(s) e ${response.data?.messagesSent || 0} mensagem(ns) enviada(s).`);
     } catch (error) { toast.error(error?.message || 'Não foi possível regularizar Agosto/2026.'); }
     finally { setSettlingAugust(false); }
   };
@@ -280,7 +254,7 @@ export default function Tuitions() {
         {isAdmin && (
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" className="gap-2 h-9 text-sm" onClick={settleAugust2026} disabled={settlingAugust}>
-              <CheckCircle size={15} /> {settlingAugust ? 'Regularizando...' : 'Dar baixa Ago/2026'}
+              <CheckCircle size={15} /> {settlingAugust ? 'Sincronizando...' : 'Sincronizar Ago/2026'}
             </Button>
             <Button variant="outline" className="gap-2 h-9 text-sm" onClick={() => setShowBulk(v => !v)}>
               <Users size={15} /> Lançamento em Massa

@@ -14,7 +14,6 @@ import { format } from 'date-fns';
 import { formatScore } from '@/lib/scoreUtils';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
 import { parseModuleNumber } from '@/lib/examChecklistRules';
-import { buildExamReleaseIndex } from '@/lib/adminModuleProgress';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ExamEditor from '../components/exams/ExamEditor';
 import ExamSubmissionGrader from '../components/exams/ExamSubmissionGrader';
@@ -101,21 +100,6 @@ export default function Exams() {
     },
     enabled: exams.length > 0,
   });
-
-  // Liberação manual do admin (ferramenta "Liberação de Provas"): abre a prova
-  // do módulo mesmo que o checklist ainda não esteja marcado como concluído.
-  const { data: examReleases = [] } = useQuery({
-    queryKey: ['exam-releases-student', studentEmails.join('|')],
-    queryFn: async () => {
-      const results = await Promise.all(
-        studentEmails.map((mail) => base44.entities.ExamRelease.filter({ student_email: mail }, '-released_at', 50))
-      );
-      return results.flat();
-    },
-    enabled: !isTeacher && studentEmails.length > 0,
-  });
-  const releaseIndex = useMemo(() => buildExamReleaseIndex(examReleases), [examReleases]);
-  const isReleasedByAdmin = (moduleNumber) => studentEmails.some((mail) => releaseIndex.has(`${mail}|${moduleNumber}`));
 
   // Get unique students for filter
   const uniqueStudents = useMemo(() => {
@@ -370,12 +354,12 @@ export default function Exams() {
                 ) : (() => {
                   const examModule = parseModuleNumber(exam.module_ref);
                   const checklistComplete = !examModule || isModuleUnlockedForExam(examModule);
-                  const checklistLocked = !isTeacher && !!examModule && (!checklistComplete || !isReleasedByAdmin(examModule));
+                  const checklistLocked = !isTeacher && !!examModule && !checklistComplete;
                   if (checklistLocked) {
                     return (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3">
-                          <AlertCircle size={15} /> {!checklistComplete ? `Prova bloqueada: conclua a trilha do Módulo ${examModule}.` : 'Prova solicitada: aguarde a liberação da equipe.'}
+                          <AlertCircle size={15} /> {`Prova bloqueada: conclua a trilha do Módulo ${examModule}.`}
                         </div>
                         <Button
                           size="sm"
@@ -383,7 +367,7 @@ export default function Exams() {
                           className="gap-1.5 font-bold"
                           onClick={() => navigate(`${prefix}/checklist?module=${examModule}`)}
                         >
-                          {checklistComplete ? 'Acompanhar solicitação' : `Ver trilha do Módulo ${examModule}`}
+                          {`Ver trilha do Módulo ${examModule}`}
                         </Button>
                       </div>
                     );

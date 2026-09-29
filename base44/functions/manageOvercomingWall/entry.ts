@@ -5,61 +5,16 @@ const dateOf = (record) => record.updated_date || record.submitted_at || record.
 
 const PIN_MARKER_RE = /^📌\[PIN:(\d{4}-\d{2}-\d{2})\]\s*/;
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-async function syncContributionAwards(base44, course) {
-  const service = base44.asServiceRole.entities;
-  const [tuitions, achievements, codes] = await Promise.all([
-    service.Tuition.list('-paid_date', 10000),
-    service.Achievement.list('-occurred_at', 20000),
-    service.AccessCode.list('-created_date', 10000),
-  ]);
-  const courseByEmail = new Map(codes.map((code) => [norm(code.student_email), code.course || 'tcc']));
-  const known = new Set(achievements.map((item) => item.dedupe_key));
-  const tuitionById = new Map(tuitions.map((item) => [String(item.id), item]));
-  const eligible = tuitions.filter((item) => item.wall_shared === true
-    && item.status === 'paid'
-    && Number.isFinite(Number(item.paid_amount))
-    && Number(item.paid_amount) > 10
-    && (courseByEmail.get(norm(item.student_email)) || 'tcc') === course);
-
-  // Corrige reconhecimentos antigos: registros de valor zero deixam de ser
-  // prêmio e os válidos passam a usar a identidade e os prazos do diamante.
-  for (const achievement of achievements.filter((item) => item.kind === 'tuition' && item.course === course)) {
-    const tuition = tuitionById.get(String(achievement.source_id || ''));
-    if (!tuition || tuition.status !== 'paid' || !(Number(tuition.paid_amount) > 10)) {
-      await service.Achievement.delete(achievement.id);
-      continue;
-    }
-    const occurredAt = achievement.occurred_at || (tuition.paid_date ? new Date(`${tuition.paid_date}T12:00:00.000Z`).toISOString() : dateOf(tuition));
-    await service.Achievement.update(achievement.id, {
-      title: 'Diamante da Contribuição',
-      message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
-      student_feature_until: new Date(Date.parse(occurredAt) + 15 * DAY_MS).toISOString(),
-      wall_highlight_until: new Date(Date.parse(occurredAt) + 7 * DAY_MS).toISOString(),
-    });
-  }
-
-  for (const tuition of eligible) {
-    const dedupeKey = `tuition:${tuition.id}`;
-    if (known.has(dedupeKey)) continue;
-    const occurredAt = tuition.paid_date
-      ? new Date(`${tuition.paid_date}T12:00:00.000Z`).toISOString()
-      : dateOf(tuition);
-    await service.Achievement.create({
-      dedupe_key: dedupeKey,
-      student_email: norm(tuition.student_email),
-      course,
-      kind: 'tuition',
-      title: 'Diamante da Contribuição',
-      message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
-      mentioned_emails: [norm(tuition.student_email)],
-      source_id: tuition.id,
-      occurred_at: occurredAt,
-      student_feature_until: new Date(Date.parse(occurredAt) + 15 * DAY_MS).toISOString(),
-      wall_highlight_until: new Date(Date.parse(occurredAt) + 7 * DAY_MS).toISOString(),
-    });
-  }
-}
+const AUGUST_2026_CONTRIBUTORS = new Set(['marih', 'diane', 'cristiane', 'ageane', 'lidiane', 'andrezza']);
+const foldName = (value) => norm(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const isAugust2026 = (value) => {
+  const reference = foldName(value);
+  return reference === '2026-08' || (reference.includes('agosto') && reference.includes('2026'));
+};
+const isSelectedAugustContributor = (code) => {
+  const words = foldName(code.profile_name || code.student_name).split(/\s+/).filter(Boolean);
+  return words.some((word) => AUGUST_2026_CONTRIBUTORS.has(word));
+};
 
 async function authenticatedUser(base44, payload) {
   const claimedEmail = norm(payload.actor_email);
@@ -181,13 +136,19 @@ export default async function(req) {
       await adminAuth(base44, payload);
       const service = base44.asServiceRole.entities;
       const monthRef = 'Agosto - 2026';
-      const [codes, tuitions, achievements] = await Promise.all([
+      const [codes, tuitions, achievements, personalPosts] = await Promise.all([
         service.AccessCode.list('-created_date', 10000),
         service.Tuition.list('-month_ref', 10000),
         service.Achievement.list('-occurred_at', 20000),
+        service.StudentWallPost.list('-published_at', 10000),
       ]);
       const active = [...new Map(codes.filter((code) => code.is_active !== false && code.student_email).map((code) => [norm(code.student_email), code])).values()];
-      let created = 0; let settled = 0; let removedDiamonds = 0;
+      const selected = active.filter(isSelectedAugustContributor);
+      const matchedNames = new Set(selected.flatMap((code) => foldName(code.profile_name || code.student_name).split(/\s+/)).filter((word) => AUGUST_2026_CONTRIBUTORS.has(word)));
+      const missingNames = [...AUGUST_2026_CONTRIBUTORS].filter((name) => !matchedNames.has(name));
+      if (missingNames.length) return Response.json({ error: `Alunas não localizadas: ${missingNames.join(', ')}.` }, { status: 409 });
+      const eligibleEmails = new Set(selected.map((code) => norm(code.student_email)));
+      let created = 0; let settled = 0; let removedDiamonds = 0; let messagesSent = 0; let messagesRevoked = 0;
       for (const code of active) {
         const email = norm(code.student_email);
         const matches = tuitions.filter((tuition) => {
@@ -211,12 +172,30 @@ export default async function(req) {
       const tuitionById = new Map(tuitions.map((tuition) => [String(tuition.id), tuition]));
       for (const achievement of achievements.filter((item) => item.kind === 'tuition')) {
         const tuition = tuitionById.get(String(achievement.source_id || ''));
-        if (!tuition || tuition.status !== 'paid' || !(Number(tuition.paid_amount) > 10)) { await service.Achievement.delete(achievement.id); removedDiamonds += 1; }
+        const belongsToAugust = isAugust2026(tuition?.month_ref) || String(achievement.dedupe_key || '').startsWith('contribution:2026-08:');
+        if (belongsToAugust && !eligibleEmails.has(norm(achievement.student_email))) { await service.Achievement.delete(achievement.id); removedDiamonds += 1; }
+      }
+      const now = new Date().toISOString();
+      for (const code of selected) {
+        const email = norm(code.student_email);
+        const dedupeKey = `contribution:2026-08:${email}`;
+        if (!achievements.some((item) => item.dedupe_key === dedupeKey || (item.kind === 'tuition' && norm(item.student_email) === email && isAugust2026(tuitionById.get(String(item.source_id || ''))?.month_ref)))) {
+          await service.Achievement.create({ dedupe_key: dedupeKey, student_email: email, course: code.course || 'tcc', kind: 'tuition', title: 'Diamante da Contribuição', message: 'conquistou o Diamante da Contribuição pela participação e pelo apoio à nossa comunidade em agosto. 💎', mentioned_emails: [email], source_id: 'august-2026-contribution', occurred_at: now, student_feature_until: new Date(Date.parse(now) + 15 * DAY_MS).toISOString(), wall_highlight_until: new Date(Date.parse(now) + 7 * DAY_MS).toISOString() });
+          created += 1;
+        }
+        const sourceId = `august-2026-diamond:${email}`;
+        if (!personalPosts.some((post) => post.source_id === sourceId)) {
+          await service.StudentWallPost.create({ student_email: email, title: 'Parabéns pelo seu Diamante! 💎', message: `Parabéns, ${code.profile_name || code.student_name}! Sua contribuição e participação em agosto fizeram a diferença em nossa comunidade. Este Diamante da Contribuição reconhece o seu apoio e a sua presença nessa jornada.`, source_type: 'other', source_id: sourceId, published_by: payload.admin_email || 'sistema', published_at: now, is_read: false });
+          messagesSent += 1;
+        }
+      }
+      for (const post of personalPosts.filter((item) => String(item.source_id || '').startsWith('august-2026-diamond:') && !eligibleEmails.has(norm(item.student_email)))) {
+        await service.StudentWallPost.delete(post.id); messagesRevoked += 1;
       }
       let beginnerCrowns = 0;
       const courses = new Set(active.map((code) => code.course || 'tcc'));
       for (const course of courses) beginnerCrowns += (await syncAchievements(base44, { course }, course)).created;
-      return Response.json({ success: true, created, settled, removedDiamonds, beginnerCrowns });
+      return Response.json({ success: true, created, settled, removedDiamonds, messagesSent, messagesRevoked, beginnerCrowns, contributors: selected.map((code) => code.profile_name || code.student_name) });
     }
     if (payload.action === 'adminDeleteMessage') {
       const admin = await adminAuth(base44, payload);
@@ -255,29 +234,22 @@ export default async function(req) {
       const service = base44.asServiceRole.entities;
       const course = payload.course || user.course || 'tcc';
       if (user.course && course !== user.course) return Response.json({ error: 'Curso não autorizado.' }, { status: 403 });
-      await syncContributionAwards(base44, course);
-      await syncAchievements(base44, user, course);
-      const accessCodes = (await service.AccessCode.list('-created_date', 2000)).filter((item) => item.course === course || (course === 'tcc' && !item.course));
-      const messages = await service.ChatMessage.filter({ session_id: `class_chat_${course}` }, 'created_date', 300);
-      const lessonProgresses = await service.LessonProgress.list('-created_date', 400);
-      const taskSubmissions = await service.TaskSubmission.list('-created_date', 300);
-      const examSubmissions = await service.ExamSubmission.list('-submitted_at', 200);
-      const challengeResponses = await service.DailyChallengeResponse.list('-created_date', 300);
-      const forumPosts = await service.ForumPost.list('-created_date', 300);
-      const pairings = await service.TherapistPairing.list('-updated_date', 200);
-      const lessons = await service.RecordedLesson.list('-created_date', 500);
-      const tasks = await service.Task.list('-created_date', 300);
-      const exams = await service.Exam.list('-created_date', 300);
-      const savedAchievements = await service.Achievement.filter({ course }, '-occurred_at', 200);
-      const shared = await service.WallPublication.filter({ course }, '-published_at', 100);
-      const notices = await service.Announcement.filter({ course }, '-created_date', 100);
-      const liveSessions = await service.LiveSession.filter({ course }, '-scheduled_at', 100);
-      const calendarEvents = await service.CalendarEvent.list('-date', 200);
-      const reactions = await service.AchievementReaction.list('-created_date', 1500);
-      const notifications = (await service.Notification.filter({ recipient_email: user.email }, '-created_date', 100)).filter((item) => item.type === 'wall_reaction' || item.type === 'wall_reply');
-      const personalPosts = await service.StudentWallPost.filter({ student_email: user.email }, '-published_at', 30);
-      const readReceipts = await service.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 500);
-      const monitorHistory = await service.MonitorHistory.filter({ course }, '-period_start', 100);
+      // O bootstrap é somente leitura e executa consultas independentes em paralelo.
+      // Sincronizações pesadas continuam disponíveis pela ação `sync`, sem
+      // bloquear cada abertura da dashboard.
+      const [allAccessCodes, messages, lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams, savedAchievements, shared, notices, liveSessions, calendarEvents, reactions, allNotifications, personalPosts, readReceipts, monitorHistory] = await Promise.all([
+        service.AccessCode.list('-created_date', 2000), service.ChatMessage.filter({ session_id: `class_chat_${course}` }, 'created_date', 150),
+        service.LessonProgress.list('-created_date', 200), service.TaskSubmission.list('-created_date', 150), service.ExamSubmission.list('-submitted_at', 100),
+        service.DailyChallengeResponse.list('-created_date', 150), service.ForumPost.list('-created_date', 150), service.TherapistPairing.list('-updated_date', 100),
+        service.RecordedLesson.list('-created_date', 500), service.Task.list('-created_date', 300), service.Exam.list('-created_date', 300),
+        service.Achievement.filter({ course }, '-occurred_at', 150), service.WallPublication.filter({ course }, '-published_at', 50),
+        service.Announcement.filter({ course }, '-created_date', 50), service.LiveSession.filter({ course }, '-scheduled_at', 50), service.CalendarEvent.list('-date', 100),
+        service.AchievementReaction.list('-created_date', 750), service.Notification.filter({ recipient_email: user.email }, '-created_date', 50),
+        service.StudentWallPost.filter({ student_email: user.email }, '-published_at', 30), service.WallReadReceipt.filter({ reader_email: user.email }, '-read_at', 250),
+        service.MonitorHistory.filter({ course }, '-period_start', 50),
+      ]);
+      const accessCodes = allAccessCodes.filter((item) => item.course === course || (course === 'tcc' && !item.course));
+      const notifications = allNotifications.filter((item) => item.type === 'wall_reaction' || item.type === 'wall_reply');
       return Response.json({ success: true, accessCodes, messages, activityRecords: { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams }, savedAchievements, institutionalRecords: { shared, notices, liveSessions, calendarEvents }, reactions, notifications, personalPosts, readReceipts, monitorHistory });
     }
     if (payload.action === 'profiles') {

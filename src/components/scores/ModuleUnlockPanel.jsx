@@ -17,20 +17,11 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
     queryFn: () => base44.entities.ModuleUnlockRequest.filter({ course, status: 'pending' }, '-created_date', 200),
   });
 
+  const moduleRequests = requests.filter((request) => request.request_type !== 'exam');
+
   const resolveMutation = useMutation({
     mutationFn: async ({ request, approve }) => {
-      if (approve && request.request_type === 'exam') {
-        const response = await base44.functions.invoke('releaseModuleExams', {
-          admin_email: adminEmail,
-          student_email: request.student_email,
-          student_name: request.student_name || request.student_email,
-          module_number: Number(request.module_number),
-          course: request.course || course,
-          action: 'release',
-        });
-        const data = response?.data || response;
-        if (data?.error || data?.success === false) throw new Error(data?.error || 'Falha ao liberar a prova.');
-      } else if (approve) {
+      if (approve) {
         await base44.entities.StudentModuleUnlock.create({
           student_email: request.student_email,
           student_name: request.student_name || request.student_email,
@@ -50,7 +41,7 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
       queryClient.invalidateQueries({ queryKey: ['module-unlock-requests-admin', course] });
       queryClient.invalidateQueries({ queryKey: ['ranking-module-unlocks'] });
       toast.success(variables.approve
-        ? (variables.request.request_type === 'exam' ? 'Prova liberada para o aluno!' : 'Módulo liberado para o aluno!')
+        ? 'Módulo liberado para o aluno!'
         : 'Pedido recusado.');
     },
     onError: () => toast.error('Não foi possível concluir a ação.'),
@@ -60,10 +51,10 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
     <div className="mb-5 rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center gap-2">
         <KeyRound size={16} className="text-primary" />
-        <p className="text-sm font-bold text-foreground">Solicitações de provas e módulos</p>
-        {requests.length > 0 && (
+        <p className="text-sm font-bold text-foreground">Solicitações de módulos</p>
+        {moduleRequests.length > 0 && (
           <span className="ml-auto rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
-            {requests.length} pedido(s)
+            {moduleRequests.length} pedido(s)
           </span>
         )}
       </div>
@@ -73,18 +64,16 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
 
       {isLoading ? (
         <div className="mt-3 h-14 animate-pulse rounded-xl bg-muted" />
-      ) : requests.length === 0 ? (
+      ) : moduleRequests.length === 0 ? (
         <p className="mt-3 text-xs text-muted-foreground">Nenhum pedido de liberação pendente.</p>
       ) : (
         <div className="mt-3 space-y-2">
-          {requests.map((request) => (
+          {moduleRequests.map((request) => (
             <div key={request.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-secondary/40 px-3 py-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-foreground">{request.student_name || request.student_email}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {request.request_type === 'exam'
-                    ? `Solicita a prova do Módulo ${request.module_number}`
-                    : `Concluiu o Módulo ${request.from_module || Number(request.module_number) - 1} · pede o Módulo ${request.module_number}`}
+                  {`Concluiu o Módulo ${request.from_module || Number(request.module_number) - 1} · pede o Módulo ${request.module_number}`}
                 </p>
               </div>
               <Button
@@ -93,7 +82,7 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
                 disabled={resolveMutation.isPending}
                 onClick={() => resolveMutation.mutate({ request, approve: true })}
               >
-                <Check size={13} /> {request.request_type === 'exam' ? `Liberar Prova ${request.module_number}` : `Liberar Módulo ${request.module_number}`}
+                <Check size={13} /> {`Liberar Módulo ${request.module_number}`}
               </Button>
               <Button
                 size="sm"
