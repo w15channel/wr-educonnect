@@ -10,13 +10,13 @@ import ModuleCompletionCard from '@/components/checklist/ModuleCompletionCard';
 import { buildVoiceScript, buildFinishScript } from '@/lib/checklistGuide';
 
 export default function Checklist() {
-  const { user: session } = useOutletContext();
+  const { user: session, isDiplomaMode = false } = useOutletContext();
   const navigate = useNavigate();
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
   const prefix = parts[0] === 'degree' ? '/degree/student' : (parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '');
   const course = session?.course || 'tcc';
-  const { modules, currentModule, isLoading, error, checklistAvailableModules } = useModuleChecklist({ course, session });
+  const { modules, currentModule, isLoading, error, checklistAvailableModules } = useModuleChecklist({ course, session, includeOfensiva: !isDiplomaMode });
   const voice = useLunaVoice();
 
   const requestedModule = Number(new URLSearchParams(location.search).get('module')) || null;

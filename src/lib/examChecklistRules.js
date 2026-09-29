@@ -55,6 +55,7 @@ export function buildModuleChecklist({
   challengeResponses = [],
   moduleWindow = null,
   previousExamCompleted = false,
+  includeOfensiva = true,
 }) {
   // Aulas da apostila e tarefas são CUMULATIVAS — uma vez completas, sempre contam
   // independente de quando foram feitas. Não filtramos por janela de tempo.
@@ -135,14 +136,14 @@ export function buildModuleChecklist({
       target: 1,
       to: '/debates',
     },
-    {
+    ...(includeOfensiva ? [{
       key: 'ofensiva',
       label: 'Cumprir 3 dias de ofensiva (não precisam ser seguidos)',
       hint: 'Responda a ofensiva diária em três dias diferentes.',
       current: Math.min(ofensivaDays, CHECKLIST_RULES.ofensivaDays),
       target: CHECKLIST_RULES.ofensivaDays,
       to: '/ofensivas',
-    },
+    }] : []),
   ].map((item) => ({ ...item, done: item.current >= item.target }));
 
   return {
