@@ -129,7 +129,7 @@ export default function useModuleChecklist({ course = 'tcc', session, includeOfe
   // Conteúdo liberado pelo calendário não equivale a acesso antecipado à
   // trilha. O checklist N só abre depois da entrega da prova N-1.
   const checklistAvailableModules = useMemo(() => access.availableModules.filter((moduleNumber) => {
-    if (moduleNumber === 1 || session?.role === 'admin') return true;
+    if (moduleNumber <= 5 || session?.role === 'admin') return true;
     const previousExams = exams.filter((exam) => parseModuleNumber(exam.module_ref) === moduleNumber - 1);
     return previousExams.length > 0 && previousExams.every((exam) => submittedExamIds.has(exam.id));
   }), [access.availableModules, exams, submittedExamIds, session?.role]);

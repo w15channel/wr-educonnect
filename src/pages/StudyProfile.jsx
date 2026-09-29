@@ -83,8 +83,8 @@ export default function StudyProfile() {
         }
       }
       setSession({ ...(getSession() || {}), study_mode: selected });
-      toast.success('Perfil de estudos salvo! Ingresse novamente para ativar.');
-      navigate('/lobby');
+      toast.success('Perfil de estudos salvo! Seu novo modo já está ativo.');
+      navigate(selected === 'interativa' ? '/student/dashboard' : '/degree/student/dashboard', { replace: true });
     } catch {
       toast.error('Não foi possível salvar o perfil de estudos.');
       setSaving(false);
@@ -129,8 +129,8 @@ export default function StudyProfile() {
 
       <div className="mt-5 rounded-2xl border border-border bg-card p-4">
         <p className="text-[12px] text-muted-foreground">
-          Ao salvar, você será reconduzido ao lobby. Basta ingressar novamente para que o novo perfil
-          de estudos seja ativado na plataforma.
+          Ao salvar, o novo modo será ativado imediatamente. Seu progresso e seu histórico permanecem
+          os mesmos ao alternar entre as experiências.
         </p>
         <Button onClick={handleSave} disabled={saving} className="w-full h-11 mt-3 font-bold gap-2">
           <Save size={16} /> {saving ? 'Salvando...' : 'Salvar perfil de estudos'}

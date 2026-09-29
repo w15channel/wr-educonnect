@@ -263,7 +263,7 @@ export default function CourseLobby() {
 
   const handleStudentEnter = () => {
     if (!termsAccepted) return;
-    navigate(`/degree/student/dashboard`);
+    navigate(session?.study_mode === 'interativa' ? '/student/dashboard' : '/degree/student/dashboard');
   };
 
   const openReserve = (course) => {

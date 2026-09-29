@@ -1,29 +1,33 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Menu, X, ClipboardCheck, LayoutDashboard, MessagesSquare, Heart, CalendarDays } from 'lucide-react';
+import { User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ChevronDown, Menu, X, ClipboardCheck, LayoutDashboard, CalendarDays, Users } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 
 
-const DIPLOMA_MENU = [
-  { icon: LayoutDashboard, label: 'Dashboard',          path: '/dashboard',    color: 'text-amber-400' },
-  { icon: FileText, label: 'Tarefas',             path: '/tasks',        color: 'text-orange-400' },
-  { icon: ScrollText, label: 'Apostila',          path: '/apostila',     color: 'text-emerald-400' },
-  { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-blue-400' },
-  { icon: MessagesSquare, label: 'Sala de Debates', path: '/debates', color: 'text-sky-400' },
-  { icon: Heart, label: 'Mural de Superação', path: '/chat', color: 'text-rose-400' },
-  { icon: GraduationCap, label: 'Provas',         path: '/exams',        color: 'text-violet-400' },
-  { icon: CalendarDays, label: 'Calendário',       path: '/calendar',     color: 'text-cyan-400' },
-  { icon: DollarSign, label: 'Mensalidades',      path: '/tuitions',     color: 'text-teal-400' },
-  { icon: History, label: 'Histórico Acadêmico',  path: '/historico',    color: 'text-cyan-400' },
-  { icon: GraduationCap, label: 'Certificação',   path: '/certificadora',color: 'text-yellow-400' },
-  { icon: User, label: 'Meu Perfil',              path: '/profile',      color: 'text-indigo-400' },
+const DIPLOMA_GROUPS = [
+  { label: 'Conteúdo', items: [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', color: 'text-amber-400' },
+    { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-blue-400' },
+  ] },
+  { label: 'Ferramentas', items: [
+    { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
+    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
+    { icon: History, label: 'Histórico acadêmico', path: '/historico', color: 'text-cyan-400' },
+    { icon: GraduationCap, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },
+  ] },
 ];
+const DIPLOMA_STANDALONE = [
+  { icon: Users, label: 'Classe', path: '/classe', color: 'text-sky-400' },
+  { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
+];
+const DIPLOMA_MENU = [...DIPLOMA_GROUPS.flatMap(group => group.items), ...DIPLOMA_STANDALONE];
 
 export default function DiplomaLayout() {
   const location = useLocation();
   const { logout, session } = useCustomAuth();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [openGroups, setOpenGroups] = React.useState(() => ({ Conteúdo: true, Ferramentas: true }));
 
   const prefix = `/degree/student`;
 
@@ -58,7 +62,11 @@ export default function DiplomaLayout() {
 
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto scrollbar-invisible">
-          {DIPLOMA_MENU.map((item) => {
+          {DIPLOMA_GROUPS.map((group) => <div key={group.label} className="mb-2">
+            <button type="button" onClick={() => setOpenGroups(current => ({ ...current, [group.label]: !current[group.label] }))} aria-expanded={openGroups[group.label]} className="flex w-full items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#c8bfa8]/45 hover:text-[#e8dfc8]">
+              {group.label}<ChevronDown size={13} className={`transition-transform ${openGroups[group.label] ? 'rotate-180' : ''}`} />
+            </button>
+            {openGroups[group.label] && <div className="space-y-0.5">{group.items.map((item) => {
             const active = isActive(item.path);
             return (
               <Link
@@ -77,6 +85,15 @@ export default function DiplomaLayout() {
                 {active && <ChevronRight size={12} className="text-[#d4b96a] opacity-60" />}
               </Link>
             );
+            })}</div>}
+          </div>)}
+          <div className="my-2 border-t border-[#151c30]" />
+          {DIPLOMA_STANDALONE.map((item) => {
+            const active = isActive(item.path);
+            return <Link key={item.path} to={prefix + item.path} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${active ? 'bg-[#161c32] text-[#e8dfc8]' : 'text-white/45 hover:bg-white/5 hover:text-white/75'}`}>
+              {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#d4b96a]" />}
+              <item.icon size={16} className={active ? 'text-[#d4b96a]' : item.color} /><span className="text-[13px] font-medium flex-1">{item.label}</span>{active && <ChevronRight size={12} className="text-[#d4b96a] opacity-60" />}
+            </Link>;
           })}
         </nav>
 
