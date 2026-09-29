@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Menu, X, ClipboardCheck, LayoutDashboard, MessagesSquare, Heart } from 'lucide-react';
+import { FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Menu, X, ClipboardCheck, LayoutDashboard, MessagesSquare, Heart, CalendarDays } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 
 
@@ -13,6 +13,7 @@ const DIPLOMA_MENU = [
   { icon: MessagesSquare, label: 'Sala de Debates', path: '/debates', color: 'text-sky-400' },
   { icon: Heart, label: 'Mural de Superação', path: '/chat', color: 'text-rose-400' },
   { icon: GraduationCap, label: 'Provas',         path: '/exams',        color: 'text-violet-400' },
+  { icon: CalendarDays, label: 'Calendário',       path: '/calendar',     color: 'text-cyan-400' },
   { icon: DollarSign, label: 'Mensalidades',      path: '/tuitions',     color: 'text-teal-400' },
   { icon: History, label: 'Histórico Acadêmico',  path: '/historico',    color: 'text-cyan-400' },
   { icon: GraduationCap, label: 'Certificação',   path: '/certificadora',color: 'text-yellow-400' },
