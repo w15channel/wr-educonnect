@@ -1,7 +1,7 @@
 import React from 'react';
-import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText } from 'lucide-react';
+import { BookOpen, FileText, User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ScrollText, Menu, X, ClipboardCheck } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_SHORT_NAME } from '@/lib/brand';
 
 
@@ -11,6 +11,8 @@ const DIPLOMA_MENU = [
   { icon: BookOpen, label: 'Aulas',              path: '/lessons',      color: 'text-purple-400' },
   { icon: FileText, label: 'Tarefas',             path: '/tasks',        color: 'text-orange-400' },
   { icon: ScrollText, label: 'Apostila TCC',      path: '/apostila',     color: 'text-emerald-400' },
+  { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-blue-400' },
+  { icon: GraduationCap, label: 'Provas',         path: '/exams',        color: 'text-violet-400' },
   { icon: DollarSign, label: 'Mensalidades',      path: '/tuitions',     color: 'text-teal-400' },
   { icon: History, label: 'Histórico Acadêmico',  path: '/historico',    color: 'text-cyan-400' },
   { icon: GraduationCap, label: 'Certificação',   path: '/certificadora',color: 'text-yellow-400' },
@@ -19,8 +21,8 @@ const DIPLOMA_MENU = [
 
 export default function DiplomaLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { logout, session } = useCustomAuth();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const prefix = `/degree/student`;
 
@@ -38,7 +40,8 @@ export default function DiplomaLayout() {
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden app-shell-bg">
       {/* Sidebar estreita — diploma only */}
-      <aside className="hidden md:flex flex-col w-52 shrink-0 bg-[#07080f] border-r border-[#151c30] h-full">
+      {mobileOpen && <button type="button" aria-label="Fechar menu" className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setMobileOpen(false)} />}
+      <aside className={`${mobileOpen ? 'flex' : 'hidden'} fixed inset-y-0 left-0 z-50 md:static md:flex flex-col w-72 md:w-52 shrink-0 bg-[#07080f] border-r border-[#151c30] h-full`}>
         {/* Logo */}
         <div className="p-5 flex items-center gap-3 border-b border-[#151c30]">
           <div className="w-8 h-8 flex items-center justify-center">
@@ -48,6 +51,7 @@ export default function DiplomaLayout() {
             <p className="text-[12px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME}</p>
             <p className="text-[8px] text-[#c8bfa8]/30 font-light uppercase tracking-[0.15em]">Formação Certificado</p>
           </div>
+          <button type="button" className="ml-auto p-2 text-white/50 md:hidden" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X size={18} /></button>
         </div>
 
         {/* Badge modo */}
@@ -64,6 +68,7 @@ export default function DiplomaLayout() {
               <Link
                 key={item.path}
                 to={prefix + item.path}
+                onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${
                   active
                     ? 'bg-[#161c32] text-[#e8dfc8]'
@@ -104,14 +109,14 @@ export default function DiplomaLayout() {
         </div>
       </aside>
 
-      {/* Mobile top bar */}
+      {/* Mobile top bar: a mesma navegacao lateral do desktop abre como drawer. */}
       <div className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 py-3 bg-[#07080f] border-b border-[#151c30]">
         <div className="flex items-center gap-2">
           <img src={WR_PRIMARY_LOGO} alt="WR" className="w-6 h-6 object-contain" />
           <span className="text-[11px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME} · Certificado</span>
         </div>
-        <button onClick={logout} className="text-white/30 hover:text-red-400/70 transition-colors p-1">
-          <LogOut size={15} />
+        <button onClick={() => setMobileOpen(true)} className="text-white/70 hover:text-white transition-colors p-2" aria-label="Abrir menu lateral">
+          <Menu size={20} />
         </button>
       </div>
 
@@ -120,22 +125,6 @@ export default function DiplomaLayout() {
         <Outlet context={{ user: session, course: session?.course, isDiplomaMode: true }} />
       </main>
 
-      {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#07080f] border-t border-[#151c30] flex items-center justify-around px-2 py-2 safe-bottom">
-        {DIPLOMA_MENU.map((item) => {
-          const active = isActive(item.path);
-          return (
-            <Link
-              key={item.path}
-              to={prefix + item.path}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 transition-colors ${active ? 'text-[#d4b96a]' : 'text-white/30'}`}
-            >
-              <item.icon size={18} />
-              <span className="text-[9px] font-light">{item.label.split(' ')[0]}</span>
-            </Link>
-          );
-        })}
-      </nav>
     </div>
   );
 }

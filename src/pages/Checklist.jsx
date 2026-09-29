@@ -14,7 +14,7 @@ export default function Checklist() {
   const navigate = useNavigate();
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
-  const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
+  const prefix = parts[0] === 'degree' ? '/degree/student' : (parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '');
   const course = session?.course || 'tcc';
   const { modules, currentModule, isLoading, error, checklistAvailableModules } = useModuleChecklist({ course, session });
   const voice = useLunaVoice();
@@ -109,7 +109,7 @@ export default function Checklist() {
               {module.complete ? <Unlock size={16} className="text-green-600" /> : <Lock size={16} className="text-amber-600" />}
               <p className={`text-sm font-bold ${module.complete ? 'text-green-800' : 'text-amber-800'}`}>
                 {module.complete
-                  ? `Módulo ${module.moduleNumber} concluído — prova liberada!`
+                  ? `Trilha do Módulo ${module.moduleNumber} concluída — solicite sua prova.`
                   : `Faltam ${module.items.length - module.doneCount} etapa(s) para liberar a prova do Módulo ${module.moduleNumber}`}
               </p>
             </div>
@@ -145,7 +145,7 @@ export default function Checklist() {
                 className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-700 px-4 py-3.5 text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <GraduationCap size={16} />
-                {module.complete ? `Fazer a prova do Módulo ${module.moduleNumber}` : 'Prova bloqueada até concluir a trilha'}
+                {module.complete ? `Ir para as provas do Módulo ${module.moduleNumber}` : 'Prova bloqueada até concluir a trilha'}
                 {module.complete && <ArrowRight size={14} />}
               </button>
               <ModuleUnlockRequestCard session={session} course={course} module={module} />

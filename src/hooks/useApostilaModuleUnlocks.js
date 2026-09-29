@@ -17,30 +17,29 @@ const parseModuleNumber = (value) => {
 export default function useApostilaModuleUnlocks(course, session) {
   const studentEmail = session?.email || session?.code || '';
   const isTeacher = session?.role === 'admin';
-  const customAccess = !!(session?.code || session?.codeId);
   const access = useModuleAccess(course, session);
 
   const { data: recordedLessons = [], isLoading: loadingLessons } = useQuery({
     queryKey: ['apostila-unlock-lessons', course],
     queryFn: () => base44.entities.RecordedLesson.filter({ course }, 'order', 200),
-    enabled: !customAccess,
+    enabled: !!course,
   });
-  const { data: progresses = [], isLoading: loadingProgress } = useStudentRecords('LessonProgress', session, !customAccess);
+  const { data: progresses = [], isLoading: loadingProgress } = useStudentRecords('LessonProgress', session);
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ['apostila-unlock-tasks', course],
     queryFn: () => base44.entities.Task.filter({ course }, '-created_date', 300),
-    enabled: !customAccess,
+    enabled: !!course,
   });
-  const { data: submissions = [], isLoading: loadingSubmissions } = useStudentRecords('TaskSubmission', session, !customAccess);
+  const { data: submissions = [], isLoading: loadingSubmissions } = useStudentRecords('TaskSubmission', session);
   const { data: exams = [], isLoading: loadingExams } = useQuery({
     queryKey: ['apostila-unlock-exams', course],
     queryFn: () => base44.entities.Exam.filter({ course }, '-created_date', 300),
-    enabled: !customAccess,
+    enabled: !!course,
   });
   const { data: examSubmissions = [], isLoading: loadingExamSubs } = useQuery({
     queryKey: ['apostila-unlock-exam-subs', studentEmail],
     queryFn: () => base44.entities.ExamSubmission.filter({ student_email: studentEmail }, '-submitted_at', 500),
-    enabled: !!studentEmail && !customAccess,
+    enabled: !!studentEmail,
   });
 
   const isLoading = loadingLessons || loadingProgress || loadingTasks || loadingSubmissions || loadingExams || loadingExamSubs;
@@ -68,7 +67,11 @@ export default function useApostilaModuleUnlocks(course, session) {
     moduleComplete.push(lessonsDone && tasksDone && examDone);
   }
 
-  const moduleUnlocked = access.moduleUnlocked;
+  // O Modulo 1 e imediato; cada modulo seguinte exige a prova anterior.
+  // Administradores mantem visao integral para editar e validar o curso.
+  const moduleUnlocked = Array.from({ length: MODULE_COUNT }, (_, index) => (
+    isTeacher || index === 0 || moduleExamDone[index - 1] === true
+  ));
 
   return { moduleUnlocked, moduleComplete, moduleExamDone, isLoading: isLoading || access.isLoading };
 }

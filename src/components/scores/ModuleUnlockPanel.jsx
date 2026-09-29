@@ -19,7 +19,18 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
 
   const resolveMutation = useMutation({
     mutationFn: async ({ request, approve }) => {
-      if (approve) {
+      if (approve && request.request_type === 'exam') {
+        const response = await base44.functions.invoke('releaseModuleExams', {
+          admin_email: adminEmail,
+          student_email: request.student_email,
+          student_name: request.student_name || request.student_email,
+          module_number: Number(request.module_number),
+          course: request.course || course,
+          action: 'release',
+        });
+        const data = response?.data || response;
+        if (data?.error || data?.success === false) throw new Error(data?.error || 'Falha ao liberar a prova.');
+      } else if (approve) {
         await base44.entities.StudentModuleUnlock.create({
           student_email: request.student_email,
           student_name: request.student_name || request.student_email,
@@ -38,7 +49,9 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['module-unlock-requests-admin', course] });
       queryClient.invalidateQueries({ queryKey: ['ranking-module-unlocks'] });
-      toast.success(variables.approve ? 'Módulo liberado para o aluno!' : 'Pedido recusado.');
+      toast.success(variables.approve
+        ? (variables.request.request_type === 'exam' ? 'Prova liberada para o aluno!' : 'Módulo liberado para o aluno!')
+        : 'Pedido recusado.');
     },
     onError: () => toast.error('Não foi possível concluir a ação.'),
   });
@@ -47,7 +60,7 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
     <div className="mb-5 rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center gap-2">
         <KeyRound size={16} className="text-primary" />
-        <p className="text-sm font-bold text-foreground">Liberação de módulos</p>
+        <p className="text-sm font-bold text-foreground">Solicitações de provas e módulos</p>
         {requests.length > 0 && (
           <span className="ml-auto rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
             {requests.length} pedido(s)
@@ -69,7 +82,9 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-foreground">{request.student_name || request.student_email}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Concluiu o Módulo {request.from_module || Number(request.module_number) - 1} · pede o Módulo {request.module_number}
+                  {request.request_type === 'exam'
+                    ? `Solicita a prova do Módulo ${request.module_number}`
+                    : `Concluiu o Módulo ${request.from_module || Number(request.module_number) - 1} · pede o Módulo ${request.module_number}`}
                 </p>
               </div>
               <Button
@@ -78,7 +93,7 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
                 disabled={resolveMutation.isPending}
                 onClick={() => resolveMutation.mutate({ request, approve: true })}
               >
-                <Check size={13} /> Liberar Módulo {request.module_number}
+                <Check size={13} /> {request.request_type === 'exam' ? `Liberar Prova ${request.module_number}` : `Liberar Módulo ${request.module_number}`}
               </Button>
               <Button
                 size="sm"
