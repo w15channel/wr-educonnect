@@ -113,7 +113,7 @@ export default function DiplomaDashboard() {
       </section>
 
       <DiplomaWall course={course} session={session} onOpenWall={() => navigate(`${DIPLOMA_PREFIX}/chat`)} />
-      <ServicosCard expandable />
+      <ServicosCard />
     </div>
   );
 }

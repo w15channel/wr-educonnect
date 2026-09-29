@@ -10,8 +10,11 @@ export default function useCourseFilteredEmails(session) {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
   const courseSlug = (parts[0] === 'student' || parts[0] === 'adm') && parts[1] ? parts[1] : null;
-  const codePrefix = courseSlug ? SLUG_TO_PREFIX[courseSlug] : null;
-  const course = courseSlug ? SLUG_TO_COURSE[courseSlug] : null;
+  // O acesso /degree/student usa exatamente a mesma turma do ambiente completo.
+  // Nesse caminho não existe slug na URL, portanto a sessão é a fonte canônica.
+  const sessionPrefix = String(session?.code || '').match(/^[A-Z]+-/i)?.[0]?.toUpperCase() || null;
+  const codePrefix = courseSlug ? SLUG_TO_PREFIX[courseSlug] : sessionPrefix;
+  const course = courseSlug ? SLUG_TO_COURSE[courseSlug] : (session?.course || null);
 
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes-filter'],
@@ -20,10 +23,10 @@ export default function useCourseFilteredEmails(session) {
   });
 
   return useMemo(() => {
-    if (!codePrefix || !course) return { emails: null, course: null };
+    if (!course) return { emails: null, course: null, codePrefix };
     const emails = new Set();
     accessCodes.forEach(c => {
-      if ((c.code || '').startsWith(codePrefix) && c.student_email) {
+      if ((!codePrefix || (c.code || '').startsWith(codePrefix)) && c.student_email) {
         const validCourse = c.course === course || (course === 'tcc' && !c.course);
         if (validCourse) emails.add(c.student_email);
       }
