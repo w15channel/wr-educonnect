@@ -105,7 +105,7 @@ export default function DiplomaDashboard() {
     <div className="app-page app-page--narrow space-y-5 animate-fade-in-up pb-20 md:pb-6">
       <div>
         <p className="text-sm text-muted-foreground">
-          {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })} · Modalidade Certificado
+          {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
         </p>
       </div>
 

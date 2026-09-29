@@ -86,20 +86,44 @@ export default function ServicosCard() {
           </div>
         </div>
 
-        <div className="relative mx-6 mb-6 flex flex-col gap-4 rounded-2xl border border-rose-300/20 bg-gradient-to-r from-rose-400/10 to-fuchsia-400/10 p-5 sm:mx-8 sm:mb-8 sm:flex-row sm:items-center">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-400/15 text-rose-200" aria-hidden="true">
-            <HeartPulse size={22} />
+        <div className="relative mx-6 mb-6 overflow-hidden rounded-3xl border border-rose-300/25 bg-[#1b0c20] shadow-xl shadow-rose-950/20 sm:mx-8 sm:mb-8">
+          <div aria-hidden="true" className="absolute -left-16 -top-20 h-52 w-52 rounded-full bg-rose-500/20 blur-3xl" />
+          <div className="relative grid gap-7 p-6 sm:p-7 lg:grid-cols-[1.25fr_.75fr] lg:items-center">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-rose-200">
+                <HeartPulse size={12} /> Cuidado que também transforma
+              </span>
+              <h3 className="mt-4 max-w-xl text-2xl font-black leading-tight sm:text-3xl">
+                Cuide de quem sustenta todos os seus projetos: você
+              </h3>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/65">
+                Um espaço individual, acolhedor e confidencial para cuidar da sua saúde emocional com escuta responsável e acompanhamento humano.
+              </p>
+              <div className="mt-5 grid gap-2 text-xs text-white/75 sm:grid-cols-3">
+                {['Escuta individual', 'Ambiente confidencial', 'Cuidado com propósito'].map((benefit) => (
+                  <div key={benefit} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.045] px-3 py-2.5">
+                    <Check size={14} className="shrink-0 text-rose-300" /> {benefit}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-rose-300/20 bg-gradient-to-b from-rose-200/[0.11] to-white/[0.04] p-5 shadow-xl">
+              <p className="text-sm font-black text-rose-200">Seu cuidado fortalece esta jornada</p>
+              <p className="mt-2 text-xs leading-relaxed text-white/65">
+                Além de investir no seu bem-estar psicológico, cada atendimento contribui para manter e aprimorar a estrutura que apoia sua formação.
+              </p>
+              <div className="my-4 border-t border-white/10" />
+              <p className="text-2xl font-black text-white">R$ 45,00 <span className="text-xs font-semibold text-white/50">/ hora</span></p>
+              <button
+                onClick={() => setActiveService('Atendimento Terapêutico Pessoal')}
+                className="group mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-fuchsia-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-rose-500/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1b0c20]"
+              >
+                Quero cuidar de mim <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </button>
+              <p className="mt-2 text-center text-[10px] text-white/40">Atendimento individual · Solicitação sem compromisso</p>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-black text-white">Atendimento terapêutico pessoal</p>
-            <p className="mt-1 text-xs leading-relaxed text-white/60">Um espaço individual, acolhedor e confidencial para cuidar de questões pessoais com escuta responsável e acompanhamento humano.</p>
-          </div>
-          <button
-            onClick={() => setActiveService('Atendimento Terapêutico Pessoal')}
-            className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-rose-200/25 bg-rose-500 px-4 py-3 text-sm font-black text-white transition-all hover:-translate-y-0.5 hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
-          >
-            Quero ser atendido(a) <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-          </button>
         </div>
       </motion.section>
 
