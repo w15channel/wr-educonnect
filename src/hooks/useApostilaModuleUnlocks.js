@@ -67,10 +67,10 @@ export default function useApostilaModuleUnlocks(course, session) {
     moduleComplete.push(lessonsDone && tasksDone && examDone);
   }
 
-  // O Modulo 1 e imediato; cada modulo seguinte exige a prova anterior.
-  // Administradores mantem visao integral para editar e validar o curso.
+  // Os cinco primeiros módulos são de livre acesso para todos os alunos.
+  // A partir do módulo 6, a prova do módulo anterior volta a proteger a trilha.
   const moduleUnlocked = Array.from({ length: MODULE_COUNT }, (_, index) => (
-    isTeacher || index === 0 || moduleExamDone[index - 1] === true
+    isTeacher || index < 5 || moduleExamDone[index - 1] === true
   ));
 
   return { moduleUnlocked, moduleComplete, moduleExamDone, isLoading: isLoading || access.isLoading };

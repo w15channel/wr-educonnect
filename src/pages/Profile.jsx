@@ -4,7 +4,7 @@ import { getSession, setSession } from '@/lib/customAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, CheckCircle, Camera, User, Trash2 } from 'lucide-react';
+import { Save, CheckCircle, Camera, User, Trash2, GraduationCap, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -40,7 +40,7 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const studyMode = 'diploma';
+  const [studyMode, setStudyMode] = useState(session?.study_mode || 'diploma');
   const fileRef = useRef();
 
 
@@ -60,6 +60,7 @@ export default function Profile() {
           setNickname(p.nickname || '');
           setSelectedAvatar(p.avatar_emoji || session?.avatarEmoji || '');
           setEmail(p.email || session?.email || '');
+          setStudyMode(p.study_mode || session?.study_mode || 'diploma');
         }
       });
   }, []);
@@ -114,6 +115,9 @@ export default function Profile() {
       }
       await invalidateStudentIdentity(queryClient);
       toast.success('Perfil atualizado!');
+      if (studyMode !== (session?.study_mode || 'diploma')) {
+        window.location.assign(studyMode === 'interativa' ? '/student/dashboard' : '/degree/student/dashboard');
+      }
     } catch {
       setSession(session);
       toast.error('Erro ao salvar perfil.');
@@ -253,6 +257,22 @@ export default function Profile() {
             <label className="text-xs font-bold text-foreground block mb-1.5">Apresentação Pessoal</label>
             <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Conte um pouco sobre você, sua jornada..." rows={3} />
           </div>
+
+          <fieldset className="rounded-2xl border border-border bg-secondary/20 p-4">
+            <legend className="px-1 text-xs font-bold text-foreground">Modo de estudo</legend>
+            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">Você pode alternar quando quiser. Seu progresso, entregas e histórico são preservados nos dois modos.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                { value: 'diploma', title: 'Modo simplificado', description: 'Uma navegação mais direta, focada na trilha essencial.', icon: GraduationCap },
+                { value: 'interativa', title: 'Modo completo', description: 'Todas as ferramentas, comunidade e experiências práticas.', icon: Users },
+              ].map(option => (
+                <button key={option.value} type="button" onClick={() => setStudyMode(option.value)} aria-pressed={studyMode === option.value} className={`rounded-xl border-2 p-3 text-left transition-all ${studyMode === option.value ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}>
+                  <span className="flex items-center gap-2 text-sm font-bold"><option.icon size={17} className={studyMode === option.value ? 'text-primary' : 'text-muted-foreground'} />{option.title}{studyMode === option.value && <CheckCircle size={15} className="ml-auto text-primary" />}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{option.description}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
 
           {session?.code && (
             <div>

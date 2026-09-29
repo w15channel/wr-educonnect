@@ -24,6 +24,9 @@ export default function useCourseFilteredEmails(session) {
 
   return useMemo(() => {
     if (!course) return { emails: null, course: null, codePrefix };
+    // Sessões por código não carregam a consulta OAuth acima. Nesse caso o
+    // prefixo do código já isola a turma; um Set vazio esconderia todos.
+    if (session?.code || session?.codeId) return { emails: null, course, codePrefix };
     const emails = new Set();
     accessCodes.forEach(c => {
       if ((!codePrefix || (c.code || '').startsWith(codePrefix)) && c.student_email) {
@@ -32,5 +35,5 @@ export default function useCourseFilteredEmails(session) {
       }
     });
     return { emails, course, codePrefix };
-  }, [accessCodes, codePrefix, course]);
+  }, [accessCodes, codePrefix, course, session?.code, session?.codeId]);
 }

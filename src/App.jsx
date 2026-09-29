@@ -28,6 +28,7 @@ import SalaDebates from './pages/SalaDebates';
 import Students from './pages/Students';
 import Announcements from './pages/Announcements';
 import Profile from './pages/Profile';
+import StudyProfile from './pages/StudyProfile';
 import Calendar from './pages/Calendar';
 import Tuitions from './pages/Tuitions';
 import TutorDigital from './pages/TutorDigital';
@@ -98,7 +99,7 @@ function AppRoutesTree() {
         <Route path="keys" element={<Keys />} />
         <Route path="announcements" element={<Announcements />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="study-profile" element={<Navigate to="../dashboard" replace />} />
+        <Route path="study-profile" element={<StudyProfile />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="tuitions" element={<Tuitions />} />
         <Route path="tutor" element={<TutorDigital />} />
@@ -188,11 +189,12 @@ const AuthenticatedApp = () => {
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="apostila" element={<Apostila />} />
         <Route path="profile" element={<Profile />} />
-        <Route path="study-profile" element={<Navigate to="../dashboard" replace />} />
+        <Route path="study-profile" element={<StudyProfile />} />
+        <Route path="classe" element={<Classe />} />
       </Route>
 
       {/* Main student routes */}
-      <Route path="/student/*" element={<Navigate to="/degree/student/dashboard" replace />} />
+      <Route path="/student/*" element={<AppRoutesTree />} />
 
       {/* Main admin routes */}
       <Route path="/adm/*" element={<AppRoutesTree />} />

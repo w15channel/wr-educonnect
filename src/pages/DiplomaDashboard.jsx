@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LunaDashboardGreetingVoice from '@/components/dashboard/LunaDashboardGreetingVoice';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
+import useSocialIdentity from '@/hooks/useSocialIdentity';
 
 const DIPLOMA_PREFIX = '/degree/student';
 
@@ -85,7 +86,7 @@ export default function DiplomaDashboard() {
   const session = context?.user;
   const course = context?.course || session?.course;
   const navigate = useNavigate();
-  const firstName = (session?.name || 'Estudante').trim().split(/\s+/)[0];
+  const { firstName } = useSocialIdentity(session);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
   const voiceText = `${greeting}, ${firstName}! Eu sou a Luna. Que bom ter você aqui! Antes de começar, confira as notificações no Mural de Superação logo abaixo. Depois, acesse o seu Checklist para dar sequência aos estudos do módulo.`;
