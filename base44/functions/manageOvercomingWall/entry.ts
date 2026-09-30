@@ -1,20 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import {
+  AUGUST_2026_CONTRIBUTORS,
+  augustAwardKey,
+  augustMessageKey,
+  contributorName,
+  isDiamondRecognitionPost,
+  isSelectedAugustContributor,
+} from '../../shared/augustContributionAwards.ts';
 
 const norm = (value) => String(value || '').trim().toLowerCase();
 const dateOf = (record) => record.updated_date || record.submitted_at || record.created_date || record.date || new Date().toISOString();
 
 const PIN_MARKER_RE = /^📌\[PIN:(\d{4}-\d{2}-\d{2})\]\s*/;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const AUGUST_2026_CONTRIBUTORS = new Set(['marih', 'diane', 'cristiane', 'ageane', 'lidiane', 'andrezza']);
-const foldName = (value) => norm(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-const isAugust2026 = (value) => {
-  const reference = foldName(value);
-  return reference === '2026-08' || (reference.includes('agosto') && reference.includes('2026'));
-};
-const isSelectedAugustContributor = (code) => {
-  const words = foldName(code.profile_name || code.student_name).split(/\s+/).filter(Boolean);
-  return words.some((word) => AUGUST_2026_CONTRIBUTORS.has(word));
-};
 
 async function authenticatedUser(base44, payload) {
   const claimedEmail = norm(payload.actor_email);
@@ -144,11 +142,13 @@ export default async function(req) {
       ]);
       const active = [...new Map(codes.filter((code) => code.is_active !== false && code.student_email).map((code) => [norm(code.student_email), code])).values()];
       const selected = active.filter(isSelectedAugustContributor);
-      const matchedNames = new Set(selected.flatMap((code) => foldName(code.profile_name || code.student_name).split(/\s+/)).filter((word) => AUGUST_2026_CONTRIBUTORS.has(word)));
-      const missingNames = [...AUGUST_2026_CONTRIBUTORS].filter((name) => !matchedNames.has(name));
+      const matchedNames = new Set(selected.map(contributorName));
+      const missingNames = AUGUST_2026_CONTRIBUTORS.filter((name) => !matchedNames.has(name));
       if (missingNames.length) return Response.json({ error: `Alunas não localizadas: ${missingNames.join(', ')}.` }, { status: 409 });
+      const duplicatedNames = AUGUST_2026_CONTRIBUTORS.filter((name) => selected.filter((code) => contributorName(code) === name).length > 1);
+      if (duplicatedNames.length) return Response.json({ error: `Há mais de um cadastro ativo para: ${duplicatedNames.join(', ')}. Revise os cadastros antes de sincronizar.` }, { status: 409 });
       const eligibleEmails = new Set(selected.map((code) => norm(code.student_email)));
-      let created = 0; let settled = 0; let removedDiamonds = 0; let messagesSent = 0; let messagesRevoked = 0;
+      let tuitionRecordsCreated = 0; let settled = 0; let diamondsGranted = 0; let removedDiamonds = 0; let messagesSent = 0; let messagesRevoked = 0;
       for (const code of active) {
         const email = norm(code.student_email);
         const matches = tuitions.filter((tuition) => {
@@ -157,7 +157,7 @@ export default async function(req) {
         });
         if (!matches.length) {
           await service.Tuition.create({ student_email: email, student_name: code.profile_name || code.student_name || '', month_ref: monthRef, amount: 0, paid_amount: 0, paid_date: '2026-08-31', status: 'paid', notes: 'Contribuição voluntária encerrada sem débito.' });
-          created += 1;
+          tuitionRecordsCreated += 1;
         } else {
           for (const tuition of matches) {
             if (tuition.status !== 'paid') {
@@ -169,33 +169,38 @@ export default async function(req) {
           }
         }
       }
-      const tuitionById = new Map(tuitions.map((tuition) => [String(tuition.id), tuition]));
+      // A lista informada é a fonte de verdade: perfis fora dela perdem todos
+      // os diamantes, e cada aluna selecionada conserva apenas a chave canônica.
       for (const achievement of achievements.filter((item) => item.kind === 'tuition')) {
-        const tuition = tuitionById.get(String(achievement.source_id || ''));
-        const belongsToAugust = isAugust2026(tuition?.month_ref) || String(achievement.dedupe_key || '').startsWith('contribution:2026-08:');
-        if (belongsToAugust && !eligibleEmails.has(norm(achievement.student_email))) { await service.Achievement.delete(achievement.id); removedDiamonds += 1; }
+        const email = norm(achievement.student_email);
+        if (!eligibleEmails.has(email) || achievement.dedupe_key !== augustAwardKey(email)) {
+          await service.Achievement.delete(achievement.id); removedDiamonds += 1;
+        }
       }
       const now = new Date().toISOString();
       for (const code of selected) {
         const email = norm(code.student_email);
-        const dedupeKey = `contribution:2026-08:${email}`;
-        if (!achievements.some((item) => item.dedupe_key === dedupeKey || (item.kind === 'tuition' && norm(item.student_email) === email && isAugust2026(tuitionById.get(String(item.source_id || ''))?.month_ref)))) {
+        const dedupeKey = augustAwardKey(email);
+        if (!achievements.some((item) => item.kind === 'tuition' && item.dedupe_key === dedupeKey && norm(item.student_email) === email)) {
           await service.Achievement.create({ dedupe_key: dedupeKey, student_email: email, course: code.course || 'tcc', kind: 'tuition', title: 'Diamante da Contribuição', message: 'conquistou o Diamante da Contribuição pela participação e pelo apoio à nossa comunidade em agosto. 💎', mentioned_emails: [email], source_id: 'august-2026-contribution', occurred_at: now, student_feature_until: new Date(Date.parse(now) + 15 * DAY_MS).toISOString(), wall_highlight_until: new Date(Date.parse(now) + 7 * DAY_MS).toISOString() });
-          created += 1;
+          diamondsGranted += 1;
         }
-        const sourceId = `august-2026-diamond:${email}`;
+        const sourceId = augustMessageKey(email);
         if (!personalPosts.some((post) => post.source_id === sourceId)) {
           await service.StudentWallPost.create({ student_email: email, title: 'Parabéns pelo seu Diamante! 💎', message: `Parabéns, ${code.profile_name || code.student_name}! Sua contribuição e participação em agosto fizeram a diferença em nossa comunidade. Este Diamante da Contribuição reconhece o seu apoio e a sua presença nessa jornada.`, source_type: 'other', source_id: sourceId, published_by: payload.admin_email || 'sistema', published_at: now, is_read: false });
           messagesSent += 1;
         }
       }
-      for (const post of personalPosts.filter((item) => String(item.source_id || '').startsWith('august-2026-diamond:') && !eligibleEmails.has(norm(item.student_email)))) {
-        await service.StudentWallPost.delete(post.id); messagesRevoked += 1;
+      for (const post of personalPosts.filter(isDiamondRecognitionPost)) {
+        const email = norm(post.student_email);
+        if (!eligibleEmails.has(email) || post.source_id !== augustMessageKey(email)) {
+          await service.StudentWallPost.delete(post.id); messagesRevoked += 1;
+        }
       }
       let beginnerCrowns = 0;
       const courses = new Set(active.map((code) => code.course || 'tcc'));
       for (const course of courses) beginnerCrowns += (await syncAchievements(base44, { course }, course)).created;
-      return Response.json({ success: true, created, settled, removedDiamonds, messagesSent, messagesRevoked, beginnerCrowns, contributors: selected.map((code) => code.profile_name || code.student_name) });
+      return Response.json({ success: true, tuitionRecordsCreated, settled, diamondsGranted, removedDiamonds, messagesSent, messagesRevoked, beginnerCrowns, contributors: selected.map((code) => code.profile_name || code.student_name) });
     }
     if (payload.action === 'adminDeleteMessage') {
       const admin = await adminAuth(base44, payload);
