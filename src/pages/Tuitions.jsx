@@ -224,7 +224,7 @@ export default function Tuitions() {
       queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
       queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
       queryClient.invalidateQueries({ queryKey: ['class-beginner-awards'] });
-      toast.success(`Agosto/2026 sincronizado: ${response.data?.created || 0} diamante(s) concedido(s), ${response.data?.removedDiamonds || 0} revogado(s) e ${response.data?.messagesSent || 0} mensagem(ns) enviada(s).`);
+      toast.success(`Agosto/2026 sincronizado: ${response.data?.diamondsGranted || 0} diamante(s) concedido(s), ${response.data?.removedDiamonds || 0} revogado(s), ${response.data?.messagesSent || 0} mensagem(ns) enviada(s) e ${response.data?.messagesRevoked || 0} revogada(s).`);
     } catch (error) { toast.error(error?.message || 'Não foi possível regularizar Agosto/2026.'); }
     finally { setSettlingAugust(false); }
   };
