@@ -3,7 +3,7 @@ import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { DollarSign, Plus, CheckCircle, XCircle, AlertCircle, Trash2, CreditCard, Users, ChevronDown, ChevronUp, Share2, FileDown, Check } from 'lucide-react';
+import { DollarSign, Plus, CheckCircle, XCircle, AlertCircle, Trash2, CreditCard, Users, ChevronDown, ChevronUp, Gem, FileDown, RotateCcw, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,7 +12,8 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateReceiptCode, generateReceiptImage, downloadReceiptImage, getDefaultReceiptTemplate, setDefaultReceiptTemplate } from '@/lib/generateReceiptImage';
 import ReceiptImageDialog from '@/components/tuitions/ReceiptImageDialog';
-import { CONTRIBUTION_STUDENT_FEATURE_DAYS, CONTRIBUTION_WALL_HIGHLIGHT_DAYS, DAY_MS, hasPositiveContribution } from '@/lib/contributionAwards';
+import { hasPositiveContribution } from '@/lib/contributionAwards';
+import { sortTuitionsByStudents, sortTuitionStudents } from '@/lib/tuitionAdmin';
 
 const STATUS_CONFIG = {
   paid: { label: 'Pago', icon: CheckCircle, card: 'border-green-500/20 bg-green-500/10', badge: 'text-green-500 bg-green-500/10 border-green-500/20', text: 'text-green-500', iconBg: 'bg-green-500/15' },
@@ -36,7 +37,8 @@ export default function Tuitions() {
   const [payAmountInput, setPayAmountInput] = useState('');
   const [issuingReceiptId, setIssuingReceiptId] = useState(null);
   const [receipt, setReceipt] = useState(null);
-  const [settlingAugust, setSettlingAugust] = useState(false);
+  const [sortBy, setSortBy] = useState('alphabetical');
+  const [awardTuition, setAwardTuition] = useState(null);
 
   const { data: tuitions = [], isLoading } = useQuery({
     queryKey: ['tuitions'],
@@ -61,6 +63,7 @@ export default function Tuitions() {
       key: c.student_email || c.code,
       email: c.student_email || '',
       name: c.profile_name || c.student_name || c.code || 'Sem nome',
+      lastSeenAt: c.last_seen_at || c.last_login || '',
     }))
     .filter((s, i, arr) => arr.findIndex(x => x.key === s.key) === i); // dedup
 
@@ -101,49 +104,31 @@ export default function Tuitions() {
     setPayAmountInput('');
   };
 
-  // Concede o reconhecimento sem expor o valor contribuído. A chave por
-  // mensalidade torna a operação segura para sincronizações e cliques repetidos.
-  const grantContributionAward = async (t) => {
-    if (!hasPositiveContribution(t)) throw new Error('O diamante é concedido somente para contribuições acima de R$ 10,00.');
-    const dedupeKey = `tuition:${t.id}`;
-    const existing = await base44.entities.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
-    if (!existing.length) {
-      const studentCourse = codes.find((c) => c.student_email === t.student_email)?.course || routeCourse || 'tcc';
-      const occurredAt = new Date().toISOString();
-      await base44.entities.Achievement.create({
-        dedupe_key: dedupeKey,
-        student_email: t.student_email,
-        course: studentCourse,
-        kind: 'tuition',
-        title: 'Diamante da Contribuição',
-        message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
-        mentioned_emails: [t.student_email],
-        source_id: t.id,
-        occurred_at: occurredAt,
-        student_feature_until: new Date(Date.parse(occurredAt) + CONTRIBUTION_STUDENT_FEATURE_DAYS * DAY_MS).toISOString(),
-        wall_highlight_until: new Date(Date.parse(occurredAt) + CONTRIBUTION_WALL_HIGHLIGHT_DAYS * DAY_MS).toISOString(),
-      });
-    }
-    if (!t.wall_shared) await base44.entities.Tuition.update(t.id, { wall_shared: true });
-    return !existing.length;
-  };
-
-  // Publica no mural individual e coletivo. O botão continua disponível como
-  // recuperação manual, mas novos pagamentos não dependem mais dessa ação.
   const shareMutation = useMutation({
-    mutationFn: grantContributionAward,
-    onSuccess: () => {
+    mutationFn: (tuition) => base44.functions.invoke('manageOvercomingWall', {
+      action: 'adminGrantContributionAward', tuition_id: tuition.id, admin_email: session?.email, course: routeCourse || session?.course || 'tcc',
+    }),
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['tuitions'] });
       queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
       queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
       queryClient.invalidateQueries({ queryKey: ['class-beginner-awards'] });
-      toast.success('Diamante concedido e publicado no mural!');
+      setAwardTuition(null);
+      toast.success(response.data?.duplicate ? 'Este Diamante já havia sido atribuído.' : 'Diamante atribuído individualmente!');
     },
     onError: (error) => toast.error(error?.message || 'Não foi possível conceder o diamante.'),
   });
 
-  // Os diamantes de agosto são reconciliados pela ação administrativa abaixo,
-  // usando a lista confirmada de contribuintes em vez de inferir pelo valor.
+  const resetAwardsMutation = useMutation({
+    mutationFn: () => base44.functions.invoke('manageOvercomingWall', { action: 'adminResetContributionAwards', admin_email: session?.email }),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['tuitions'] });
+      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
+      queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
+      toast.success(`${response.data?.removedDiamonds || 0} diamante(s) e ${response.data?.removedMessages || 0} mensagem(ns) removidos.`);
+    },
+    onError: (error) => toast.error(error?.message || 'Não foi possível remover os diamantes.'),
+  });
 
   const [defaultTemplateUrl, setDefaultTemplateUrl] = useState(null);
   const [savingDefault, setSavingDefault] = useState(false);
@@ -215,20 +200,6 @@ export default function Tuitions() {
     toast.success(`Mensalidades lançadas para ${targets.length} aluno(s)!`);
   };
 
-  const settleAugust2026 = async () => {
-    if (!window.confirm('Sincronizar Agosto/2026, mantendo o Diamante somente para Marih, Diane, Cristiane, Ageane, Lidiane e Andrezza?')) return;
-    setSettlingAugust(true);
-    try {
-      const response = await base44.functions.invoke('manageOvercomingWall', { action: 'adminSettleAugust2026', admin_email: session?.email, course: routeCourse || session?.course || 'tcc' });
-      queryClient.invalidateQueries({ queryKey: ['tuitions'] });
-      queryClient.invalidateQueries({ queryKey: ['overcoming-wall-achievements'] });
-      queryClient.invalidateQueries({ queryKey: ['class-contribution-awards'] });
-      queryClient.invalidateQueries({ queryKey: ['class-beginner-awards'] });
-      toast.success(`Agosto/2026 sincronizado: ${response.data?.diamondsGranted || 0} diamante(s) concedido(s), ${response.data?.removedDiamonds || 0} revogado(s), ${response.data?.messagesSent || 0} mensagem(ns) enviada(s) e ${response.data?.messagesRevoked || 0} revogada(s).`);
-    } catch (error) { toast.error(error?.message || 'Não foi possível regularizar Agosto/2026.'); }
-    finally { setSettlingAugust(false); }
-  };
-
   const toggleBulkEmail = (key) => {
     setBulk(prev => ({
       ...prev,
@@ -238,7 +209,12 @@ export default function Tuitions() {
     }));
   };
 
-  const filtered = selectedStudent === 'all' ? visibleTuitions : visibleTuitions.filter(t => t.student_email === selectedStudent);
+  const sortedStudents = sortTuitionStudents(allStudents, visibleTuitions, sortBy);
+  const filtered = sortTuitionsByStudents(
+    selectedStudent === 'all' ? visibleTuitions : visibleTuitions.filter(t => t.student_email === selectedStudent),
+    sortedStudents,
+    sortBy,
+  );
 
   const overallStatus = !isAdmin && tuitions.length > 0
     ? (tuitions.some(t => t.status === 'overdue') ? 'overdue' : tuitions.some(t => t.status === 'pending') ? 'pending' : 'paid')
@@ -253,8 +229,13 @@ export default function Tuitions() {
         </div>
         {isAdmin && (
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" className="gap-2 h-9 text-sm" onClick={settleAugust2026} disabled={settlingAugust}>
-              <CheckCircle size={15} /> {settlingAugust ? 'Sincronizando...' : 'Sincronizar Ago/2026'}
+            <Button
+              variant="outline"
+              className="gap-2 h-9 text-sm text-destructive hover:text-destructive"
+              onClick={() => window.confirm('Remover TODOS os Diamantes da Contribuição, mensagens e reações relacionadas? Esta ação não pode ser desfeita.') && resetAwardsMutation.mutate()}
+              disabled={resetAwardsMutation.isPending}
+            >
+              <RotateCcw size={15} /> {resetAwardsMutation.isPending ? 'Removendo...' : 'Remover todos os diamantes'}
             </Button>
             <Button variant="outline" className="gap-2 h-9 text-sm" onClick={() => setShowBulk(v => !v)}>
               <Users size={15} /> Lançamento em Massa
@@ -377,15 +358,24 @@ export default function Tuitions() {
 
       {/* Admin filter */}
       {isAdmin && (
-        <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-          <SelectTrigger className="w-full sm:w-64 h-9 text-sm"><SelectValue placeholder="Filtrar por aluno" /></SelectTrigger>
-          <SelectContent>
-          <SelectItem value="all">Todos os alunos</SelectItem>
-          {allStudents.map(s => (
-            <SelectItem key={s.key} value={s.key}>{s.name}</SelectItem>
-          ))}
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-label="Filtros e classificação de alunos">
+          <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+            <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Filtrar por aluno" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os alunos</SelectItem>
+              {sortedStudents.map(s => <SelectItem key={s.key} value={s.key}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="h-9 text-sm"><span className="flex items-center gap-2"><ArrowUpDown size={14} /><SelectValue /></span></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alphabetical">Ordem alfabética</SelectItem>
+              <SelectItem value="amount">Maior valor de mensalidade</SelectItem>
+              <SelectItem value="overdue">Inadimplentes primeiro</SelectItem>
+              <SelectItem value="last_visit">Última visita ao portal</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
       {isLoading ? (
@@ -444,13 +434,13 @@ export default function Tuitions() {
                   )}
                   {isAdmin && t.status === 'paid' && hasPositiveContribution(t) && (
                     t.wall_shared ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-600 px-2">
-                        <Check size={12} /> No mural
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-cyan-500/10 px-2 py-1 text-[10px] font-bold text-cyan-700 dark:text-cyan-300" title="Diamante já atribuído">
+                        <Gem size={12} /> Diamante atribuído
                       </span>
                     ) : (
-                      <button onClick={() => shareMutation.mutate(t)} disabled={shareMutation.isPending} className="p-1.5 text-muted-foreground hover:text-primary transition-colors" title="Compartilhar no mural">
-                        <Share2 size={14} />
-                      </button>
+                      <Button size="sm" variant="outline" onClick={() => setAwardTuition(t)} disabled={shareMutation.isPending} className="h-8 gap-1.5 border-cyan-500/30 text-xs text-cyan-700 hover:bg-cyan-500/10 dark:text-cyan-300" title="Atribuir o troféu por esta contribuição voluntária">
+                        <Gem size={13} /> Atribuir Diamante
+                      </Button>
                     )
                   )}
                   {isAdmin && (
@@ -480,6 +470,22 @@ export default function Tuitions() {
         onSetDefault={handleSetDefaultTemplate}
         onDownload={() => receipt?.imageUrl && downloadReceiptImage(receipt.imageUrl, receipt.receiptCode)}
       />
+
+      <Dialog open={!!awardTuition} onOpenChange={(open) => { if (!open) setAwardTuition(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Atribuir Diamante da Contribuição</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4">
+              <p className="font-bold text-foreground">{awardTuition?.student_name || awardTuition?.student_email}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Contribuição voluntária de R$ {Number(awardTuition?.paid_amount || 0).toFixed(2)} • {awardTuition?.month_ref}</p>
+            </div>
+            <p className="text-sm text-muted-foreground">O reconhecimento aparecerá no mural da turma sem divulgar o valor contribuído.</p>
+            <Button onClick={() => shareMutation.mutate(awardTuition)} disabled={shareMutation.isPending} className="w-full gap-2 bg-cyan-700 hover:bg-cyan-800">
+              <Gem size={16} /> {shareMutation.isPending ? 'Atribuindo...' : 'Confirmar Diamante'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmação de pagamento com valor contribuído */}
       <Dialog open={!!payDialogTuition} onOpenChange={(open) => { if (!open) { setPayDialogTuition(null); setPayAmountInput(''); } }}>
