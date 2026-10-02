@@ -130,6 +130,71 @@ export default async function(req) {
     const base44 = createClientFromRequest(req); const payload = await req.json().catch(() => ({}));
 
     // ── Admin actions (no access code required) ──────────────────────────
+    if (payload.action === 'adminResetContributionAwards') {
+      await adminAuth(base44, payload);
+      const service = base44.asServiceRole.entities;
+      const [achievements, personalPosts, chatMessages, tuitions, reactions, notifications] = await Promise.all([
+        service.Achievement.list('-occurred_at', 20000),
+        service.StudentWallPost.list('-published_at', 20000),
+        service.ChatMessage.list('-created_date', 20000),
+        service.Tuition.list('-month_ref', 20000),
+        service.AchievementReaction.list('-created_date', 20000),
+        service.Notification.list('-created_date', 20000),
+      ]);
+      const diamonds = achievements.filter((item) => item.kind === 'tuition');
+      const diamondIds = new Set(diamonds.map((item) => item.id));
+      const diamondCopy = (item) => /\bdiamante\b/i.test(`${item.title || ''} ${item.message || ''} ${item.content || ''}`);
+      const diamondPosts = personalPosts.filter((item) => isDiamondRecognitionPost(item) || diamondCopy(item));
+      const diamondChats = chatMessages.filter(diamondCopy);
+      const diamondReactions = reactions.filter((item) => item.target_type === 'achievement' && diamondIds.has(item.target_id));
+      const diamondNotifications = notifications.filter((item) => diamondIds.has(item.target_id) || diamondCopy(item));
+
+      for (const item of diamondReactions) await service.AchievementReaction.delete(item.id);
+      for (const item of diamondNotifications) await service.Notification.delete(item.id);
+      for (const item of diamondPosts) await service.StudentWallPost.delete(item.id);
+      for (const item of diamondChats) await service.ChatMessage.delete(item.id);
+      for (const item of diamonds) await service.Achievement.delete(item.id);
+      for (const tuition of tuitions.filter((item) => item.wall_shared)) await service.Tuition.update(tuition.id, { wall_shared: false });
+
+      return Response.json({
+        success: true,
+        removedDiamonds: diamonds.length,
+        removedMessages: diamondPosts.length + diamondChats.length + diamondNotifications.length,
+        removedReactions: diamondReactions.length,
+      });
+    }
+    if (payload.action === 'adminGrantContributionAward') {
+      const admin = await adminAuth(base44, payload);
+      const service = base44.asServiceRole.entities;
+      const tuitionId = String(payload.tuition_id || '').trim();
+      if (!tuitionId) return Response.json({ error: 'Selecione uma contribuição.' }, { status: 400 });
+      const tuition = await service.Tuition.get(tuitionId).catch(() => null);
+      const paidAmount = Number(tuition?.paid_amount);
+      if (!tuition || tuition.status !== 'paid' || !Number.isFinite(paidAmount) || paidAmount <= 10) {
+        return Response.json({ error: 'O Diamante exige uma contribuição voluntária quitada acima de R$ 10,00.' }, { status: 409 });
+      }
+      const email = norm(tuition.student_email);
+      const dedupeKey = `tuition:${tuition.id}`;
+      const prior = await service.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
+      if (prior.length) return Response.json({ success: true, duplicate: true, achievement: prior[0] });
+      const code = (await service.AccessCode.filter({ student_email: email }, '-created_date', 10)).find((item) => item.is_active !== false);
+      const occurredAt = new Date().toISOString();
+      const achievement = await service.Achievement.create({
+        dedupe_key: dedupeKey,
+        student_email: email,
+        course: code?.course || payload.course || 'tcc',
+        kind: 'tuition',
+        title: 'Diamante da Contribuição',
+        message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
+        mentioned_emails: [email],
+        source_id: tuition.id,
+        occurred_at: occurredAt,
+        student_feature_until: new Date(Date.parse(occurredAt) + 15 * DAY_MS).toISOString(),
+        wall_highlight_until: new Date(Date.parse(occurredAt) + 7 * DAY_MS).toISOString(),
+      });
+      await service.Tuition.update(tuition.id, { wall_shared: true });
+      return Response.json({ success: true, duplicate: false, achievement, grantedBy: admin.email });
+    }
     if (payload.action === 'adminSettleAugust2026') {
       await adminAuth(base44, payload);
       const service = base44.asServiceRole.entities;
