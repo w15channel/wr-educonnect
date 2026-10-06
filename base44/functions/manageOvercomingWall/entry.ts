@@ -1,8 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import {
   AUGUST_2026_CONTRIBUTORS,
-  augustAwardKey,
-  augustMessageKey,
   contributorName,
   isDiamondRecognitionPost,
   isSelectedAugustContributor,
@@ -133,13 +131,14 @@ export default async function(req) {
     if (payload.action === 'adminResetContributionAwards') {
       await adminAuth(base44, payload);
       const service = base44.asServiceRole.entities;
-      const [achievements, personalPosts, chatMessages, tuitions, reactions, notifications] = await Promise.all([
+      const [achievements, personalPosts, chatMessages, tuitions, reactions, notifications, wallPublications] = await Promise.all([
         service.Achievement.list('-occurred_at', 20000),
         service.StudentWallPost.list('-published_at', 20000),
         service.ChatMessage.list('-created_date', 20000),
         service.Tuition.list('-month_ref', 20000),
         service.AchievementReaction.list('-created_date', 20000),
         service.Notification.list('-created_date', 20000),
+        service.WallPublication.list('-published_at', 20000),
       ]);
       const diamonds = achievements.filter((item) => item.kind === 'tuition');
       const diamondIds = new Set(diamonds.map((item) => item.id));
@@ -148,9 +147,13 @@ export default async function(req) {
       const diamondChats = chatMessages.filter(diamondCopy);
       const diamondReactions = reactions.filter((item) => item.target_type === 'achievement' && diamondIds.has(item.target_id));
       const diamondNotifications = notifications.filter((item) => diamondIds.has(item.target_id) || diamondCopy(item));
+      const diamondPublications = wallPublications.filter((item) =>
+        (item.source_type === 'achievement' && diamondIds.has(item.source_id)) || diamondCopy(item)
+      );
 
       for (const item of diamondReactions) await service.AchievementReaction.delete(item.id);
       for (const item of diamondNotifications) await service.Notification.delete(item.id);
+      for (const item of diamondPublications) await service.WallPublication.delete(item.id);
       for (const item of diamondPosts) await service.StudentWallPost.delete(item.id);
       for (const item of diamondChats) await service.ChatMessage.delete(item.id);
       for (const item of diamonds) await service.Achievement.delete(item.id);
@@ -159,8 +162,9 @@ export default async function(req) {
       return Response.json({
         success: true,
         removedDiamonds: diamonds.length,
-        removedMessages: diamondPosts.length + diamondChats.length + diamondNotifications.length,
+        removedMessages: diamondPosts.length + diamondChats.length + diamondNotifications.length + diamondPublications.length,
         removedReactions: diamondReactions.length,
+        removedWallPublications: diamondPublications.length,
       });
     }
     if (payload.action === 'adminGrantContributionAward') {
@@ -199,11 +203,9 @@ export default async function(req) {
       await adminAuth(base44, payload);
       const service = base44.asServiceRole.entities;
       const monthRef = 'Agosto - 2026';
-      const [codes, tuitions, achievements, personalPosts] = await Promise.all([
+      const [codes, tuitions] = await Promise.all([
         service.AccessCode.list('-created_date', 10000),
         service.Tuition.list('-month_ref', 10000),
-        service.Achievement.list('-occurred_at', 20000),
-        service.StudentWallPost.list('-published_at', 10000),
       ]);
       const active = [...new Map(codes.filter((code) => code.is_active !== false && code.student_email).map((code) => [norm(code.student_email), code])).values()];
       const selected = active.filter(isSelectedAugustContributor);
@@ -212,8 +214,7 @@ export default async function(req) {
       if (missingNames.length) return Response.json({ error: `Alunas não localizadas: ${missingNames.join(', ')}.` }, { status: 409 });
       const duplicatedNames = AUGUST_2026_CONTRIBUTORS.filter((name) => selected.filter((code) => contributorName(code) === name).length > 1);
       if (duplicatedNames.length) return Response.json({ error: `Há mais de um cadastro ativo para: ${duplicatedNames.join(', ')}. Revise os cadastros antes de sincronizar.` }, { status: 409 });
-      const eligibleEmails = new Set(selected.map((code) => norm(code.student_email)));
-      let tuitionRecordsCreated = 0; let settled = 0; let diamondsGranted = 0; let removedDiamonds = 0; let messagesSent = 0; let messagesRevoked = 0;
+      let tuitionRecordsCreated = 0; let settled = 0;
       for (const code of active) {
         const email = norm(code.student_email);
         const matches = tuitions.filter((tuition) => {
@@ -234,38 +235,10 @@ export default async function(req) {
           }
         }
       }
-      // A lista informada é a fonte de verdade: perfis fora dela perdem todos
-      // os diamantes, e cada aluna selecionada conserva apenas a chave canônica.
-      for (const achievement of achievements.filter((item) => item.kind === 'tuition')) {
-        const email = norm(achievement.student_email);
-        if (!eligibleEmails.has(email) || achievement.dedupe_key !== augustAwardKey(email)) {
-          await service.Achievement.delete(achievement.id); removedDiamonds += 1;
-        }
-      }
-      const now = new Date().toISOString();
-      for (const code of selected) {
-        const email = norm(code.student_email);
-        const dedupeKey = augustAwardKey(email);
-        if (!achievements.some((item) => item.kind === 'tuition' && item.dedupe_key === dedupeKey && norm(item.student_email) === email)) {
-          await service.Achievement.create({ dedupe_key: dedupeKey, student_email: email, course: code.course || 'tcc', kind: 'tuition', title: 'Diamante da Contribuição', message: 'conquistou o Diamante da Contribuição pela participação e pelo apoio à nossa comunidade em agosto. 💎', mentioned_emails: [email], source_id: 'august-2026-contribution', occurred_at: now, student_feature_until: new Date(Date.parse(now) + 15 * DAY_MS).toISOString(), wall_highlight_until: new Date(Date.parse(now) + 7 * DAY_MS).toISOString() });
-          diamondsGranted += 1;
-        }
-        const sourceId = augustMessageKey(email);
-        if (!personalPosts.some((post) => post.source_id === sourceId)) {
-          await service.StudentWallPost.create({ student_email: email, title: 'Parabéns pelo seu Diamante! 💎', message: `Parabéns, ${code.profile_name || code.student_name}! Sua contribuição e participação em agosto fizeram a diferença em nossa comunidade. Este Diamante da Contribuição reconhece o seu apoio e a sua presença nessa jornada.`, source_type: 'other', source_id: sourceId, published_by: payload.admin_email || 'sistema', published_at: now, is_read: false });
-          messagesSent += 1;
-        }
-      }
-      for (const post of personalPosts.filter(isDiamondRecognitionPost)) {
-        const email = norm(post.student_email);
-        if (!eligibleEmails.has(email) || post.source_id !== augustMessageKey(email)) {
-          await service.StudentWallPost.delete(post.id); messagesRevoked += 1;
-        }
-      }
       let beginnerCrowns = 0;
       const courses = new Set(active.map((code) => code.course || 'tcc'));
       for (const course of courses) beginnerCrowns += (await syncAchievements(base44, { course }, course)).created;
-      return Response.json({ success: true, tuitionRecordsCreated, settled, diamondsGranted, removedDiamonds, messagesSent, messagesRevoked, beginnerCrowns, contributors: selected.map((code) => code.profile_name || code.student_name) });
+      return Response.json({ success: true, tuitionRecordsCreated, settled, beginnerCrowns, contributors: selected.map((code) => code.profile_name || code.student_name) });
     }
     if (payload.action === 'adminDeleteMessage') {
       const admin = await adminAuth(base44, payload);
