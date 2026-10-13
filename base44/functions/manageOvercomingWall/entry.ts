@@ -1,5 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.53';
-import { contributionAward } from '../../shared/automaticAchievementAwards.ts';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import {
   AUGUST_2026_CONTRIBUTORS,
   contributorName,
@@ -113,8 +112,13 @@ async function syncAchievements(base44, user, requestedCourse) {
   for (const record of submissions) { const item = taskMap.get(record.task_id); if (item) add(`task:${record.id}`, record, 'task', `respondeu a tarefa “${item.title || 'Nova tarefa'}”.`, item.title); }
   for (const record of examSubs) { const item = examMap.get(record.exam_id); if (item) add(`exam:${record.id}`, record, 'exam', `concluiu “${item.title || 'uma avaliação'}”.`, item.title); }
   for (const record of challenges) add(`challenge:${record.id}`, record, 'challenge', 'venceu mais uma etapa da ofensiva diária.');
-  // Troféus de módulo são concedidos pela conferência de checklist + prova,
-  // nunca apenas pela leitura da apostila.
+  const modules = new Map();
+  for (const book of books) { if (!modules.has(book.chapter_id)) modules.set(book.chapter_id, []); modules.get(book.chapter_id).push(book); }
+  for (const email of students) for (const [moduleId, moduleLessons] of modules) {
+    if (!moduleLessons.length || !moduleLessons.every((lesson) => progresses.some((p) => norm(p.student_email) === email && p.watched && p.lesson_id === `apostila:${lesson.chapter_id}:${lesson.lesson_id}`))) continue;
+    const latest = progresses.filter((p) => norm(p.student_email) === email && moduleLessons.some((l) => p.lesson_id === `apostila:${l.chapter_id}:${l.lesson_id}`)).sort((a,b) => new Date(dateOf(b)) - new Date(dateOf(a)))[0];
+    add(`module:${email}:${moduleId}`, { ...latest, student_email: email, id: moduleId }, 'module', `concluiu o ${moduleLessons[0].chapter_title || moduleId}.`, moduleLessons[0].chapter_title || moduleId);
+  }
   for (const achievement of candidates) await service.Achievement.create(achievement);
   return { created: candidates.length };
 }
@@ -178,11 +182,22 @@ export default async function(req) {
       const prior = await service.Achievement.filter({ dedupe_key: dedupeKey }, '-created_date', 1);
       if (prior.length) return Response.json({ success: true, duplicate: true, achievement: prior[0] });
       const code = (await service.AccessCode.filter({ student_email: email }, '-created_date', 10)).find((item) => item.is_active !== false);
-      const award = contributionAward(tuition, { email, course: code?.course || payload.course || 'tcc' }, new Date().toISOString());
-      const saved = await service.Achievement.upsert([award], { key: 'dedupe_key' });
-      const achievement = saved.records[0];
+      const occurredAt = new Date().toISOString();
+      const achievement = await service.Achievement.create({
+        dedupe_key: dedupeKey,
+        student_email: email,
+        course: code?.course || payload.course || 'tcc',
+        kind: 'tuition',
+        title: 'Diamante da Contribuição',
+        message: 'conquistou o Diamante da Contribuição por apoiar voluntariamente nossa comunidade. 💎',
+        mentioned_emails: [email],
+        source_id: tuition.id,
+        occurred_at: occurredAt,
+        student_feature_until: new Date(Date.parse(occurredAt) + 15 * DAY_MS).toISOString(),
+        wall_highlight_until: new Date(Date.parse(occurredAt) + 7 * DAY_MS).toISOString(),
+      });
       await service.Tuition.update(tuition.id, { wall_shared: true });
-      return Response.json({ success: true, duplicate: saved.created === 0, achievement, grantedBy: admin.email });
+      return Response.json({ success: true, duplicate: false, achievement, grantedBy: admin.email });
     }
     if (payload.action === 'adminSettleAugust2026') {
       await adminAuth(base44, payload);

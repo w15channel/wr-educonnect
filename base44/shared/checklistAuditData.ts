@@ -25,33 +25,28 @@ export async function checklistRoster(store) {
 
 export async function checklistBatchData(store, students) {
   const aliases = new Set(students.flatMap(student => student.aliases));
-  const fields = { LessonProgress: 'student_email', TaskSubmission: 'student_email', ExamSubmission: 'student_email', DailyChallengeResponse: 'student_email', StudentModuleUnlock: 'student_email', ForumReply: 'author_email', Tuition: 'student_email' };
+  const fields = { LessonProgress: 'student_email', TaskSubmission: 'student_email', ExamSubmission: 'student_email', DailyChallengeResponse: 'student_email', StudentModuleUnlock: 'student_email', ForumReply: 'author_email' };
   const data = {};
-  const courses = [...new Set(students.map(student => student.course))];
-  const courseQuery = courses.includes('tcc') ? { $or: [{ course: { $in: courses } }, { course: { $exists: false } }, { course: '' }] } : { course: { $in: courses } };
-  const escape = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const identityPatterns = [...aliases].map(alias => `^${escape(alias)}$`);
-  const keys = ['id', 'student_email', 'author_email', 'course', 'module_number', 'module_ref', 'type', 'status', 'is_hidden', 'lesson_id', 'watched', 'task_id', 'exam_id', 'challenge_id', 'date', 'post_id', 'topic', 'space', 'created_date', 'updated_date', 'submitted_at', 'unlocked_at', 'release_at', 'paid_amount', 'paid_date', 'wall_shared'];
-  // Sync only the selected students' evidence; read every matching page with pauses.
+  // Paginate every source, retaining only this batch's evidence. No truncated histories.
   for (const name of ['Task', 'Exam', 'ForumPost', 'DailyChallenge', 'ModuleReleaseSchedule', ...Object.keys(fields)]) {
     data[name] = [];
-    if (fields[name] && !aliases.size) continue;
-    const query = fields[name] ? { $or: identityPatterns.map(pattern => ({ [fields[name]]: { $regex: pattern, $options: 'i' } })) } : name === 'ModuleReleaseSchedule' ? {} : courseQuery;
-    let cursor;
-    do {
-      const page = await store[name].filter(query, { sort: 'created_date', limit: 500, cursor, fields: name === 'TaskSubmission' ? [...keys, 'file_url', 'comment', 'quiz_answers'] : keys })
-        .catch(error => { throw new Error(`Consulta de ${name}: ${error.message}`); });
-      for (const row of page.items) {
-        const evidence = Object.fromEntries(keys.filter(key => row[key] !== undefined).map(key => [key, row[key]]));
-        if (name === 'TaskSubmission') {
-          evidence.file_url = row.file_url ? 'present' : '';
-          evidence.comment = [row.comment, ...(row.quiz_answers || []).map(a => a?.text)].filter(Boolean).join(' ').trim() ? 'present' : '';
+    for (let skip = 0; ; skip += 500) {
+      const page = await store[name].list('created_date', 500, skip);
+      for (const row of page) {
+        if (!fields[name] || aliases.has(normalizeIdentity(row[fields[name]]))) {
+          // Retain identifiers and proof flags, never whole essays or challenge answers.
+          const keys = ['id', 'student_email', 'author_email', 'course', 'module_number', 'module_ref', 'type', 'status', 'is_hidden', 'lesson_id', 'watched', 'task_id', 'exam_id', 'challenge_id', 'date', 'post_id', 'topic', 'space', 'created_date', 'updated_date', 'unlocked_at', 'release_at'];
+          const evidence = Object.fromEntries(keys.filter(key => row[key] !== undefined).map(key => [key, row[key]]));
+          if (name === 'TaskSubmission') {
+            evidence.file_url = row.file_url ? 'present' : '';
+            evidence.comment = [row.comment, ...(row.quiz_answers || []).map(a => a?.text)].filter(Boolean).join(' ').trim() ? 'present' : '';
+          }
+          data[name].push(evidence);
         }
-        data[name].push(evidence);
       }
       await pause();
-      cursor = page.has_more ? page.next_cursor : null;
-    } while (cursor);
+      if (page.length < 500) break;
+    }
   }
   return data;
 }

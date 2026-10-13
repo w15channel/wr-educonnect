@@ -247,7 +247,7 @@ export default function OperationsChat({ session }) {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"><Briefcase size={17} /></div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-foreground dark:text-white">Luna · Gerente de Operações</p>
-          <p className="truncate text-[11px] text-muted-foreground">IA Base44 · Edição do site e gestão de dados</p>
+          <p className="truncate text-[11px] text-muted-foreground">Executa continuamente até concluir o pedido</p>
         </div>
         <button
           onClick={() => setShowQuickMessages(true)}
@@ -291,7 +291,7 @@ export default function OperationsChat({ session }) {
         <Button type="submit" className="h-11 w-11 shrink-0 p-0 bg-rose-500 hover:bg-rose-600" disabled={!input.trim() || !canSend}><Send size={16} /></Button>
       </form>
       <p className="shrink-0 pb-2 text-center text-[10px] text-muted-foreground">
-        IA Base44 com consumo de créditos de integração. Ações destrutivas exigem confirmação por segurança.
+        A Luna segue todas as etapas autorizadas sem pausas. Ações destrutivas ainda exigem confirmação por segurança.
       </p>
 
       {showQuickMessages && <QuickMessagesModal session={session} onClose={() => setShowQuickMessages(false)} />}

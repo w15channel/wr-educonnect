@@ -46,7 +46,6 @@ export default function Tuitions() {
       ? base44.entities.Tuition.list('-month_ref', 500)
       : base44.entities.Tuition.filter({ student_email: session?.email }, '-month_ref', 50),
     enabled: !!session,
-    refetchInterval: 60000,
   });
 
   const { data: codes = [] } = useQuery({
