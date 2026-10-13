@@ -180,6 +180,7 @@ export default function Classe() {
   const { data: contributionAwards = [] } = useQuery({
     queryKey: ['class-contribution-awards', activeCourse],
     queryFn: () => base44.entities.Achievement.filter({ course: activeCourse, kind: 'tuition' }, '-occurred_at', 2000),
+    refetchInterval: 60000,
   });
   const { data: beginnerAwards = [] } = useQuery({
     queryKey: ['class-beginner-awards', activeCourse],

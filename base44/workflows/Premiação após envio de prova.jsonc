@@ -1,0 +1,41 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "premiacao_prova_enviada",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "verify_student": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "reconcileStudentChecklists",
+            "args": {
+              "source_entity": "ExamSubmission",
+              "source_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Conferir checklist e conceder trof\u00e9u",
+            "description": "Somente o aluno que enviou a prova"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "ExamSubmission"
+    }
+  },
+  "description": "Reconfere o checklist do aluno quando uma prova \u00e9 enviada e concede o trof\u00e9u apenas se todos os requisitos estiverem conclu\u00eddos.",
+  "name": "Premia\u00e7\u00e3o ap\u00f3s envio de prova"
+}
