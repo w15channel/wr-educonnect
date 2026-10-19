@@ -427,7 +427,7 @@ export default function Apostila() {
 
     setReader((current) => ({ ...current, lessonKey, paragraphIndex, wordIndex: 0, rate, isPlaying: true, nativeFallback: false }));
 
-    // Always try Luna voice first (force = true bypasses mute setting)
+    // Reutiliza áudio existente; sem cache, lê no dispositivo sem geração paga.
     try {
       const audio = await createBase44VoiceAudio(text, { force: true });
       if (!audio) {

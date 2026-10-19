@@ -36,16 +36,21 @@ export default function DirectMessage() {
   const usesCodeSession = !!(session?.code || session?.codeId);
 
   const { data: codes = [] } = useQuery({
-    queryKey: ['access-codes', session?.email],
+    queryKey: usesCodeSession
+      ? ['overcoming-wall-bootstrap', session?.course || 'tcc', session?.email]
+      : ['access-codes', session?.email],
     queryFn: async () => {
-      if (!usesCodeSession) return base44.entities.AccessCode.list('-created_date', 200);
+      if (!usesCodeSession) return { accessCodes: await base44.entities.AccessCode.list('-created_date', 200) };
       const response = await base44.functions.invoke('manageOvercomingWall', {
         action: 'bootstrap', course: session?.course || 'tcc', actor_email: session?.email,
         access_code: session?.code, access_code_id: session?.codeId,
       });
-      return response.data?.accessCodes || [];
+      return response.data;
     },
-    refetchInterval: 15000,
+    select: (data) => data?.accessCodes || [],
+    staleTime: 15000,
+    refetchInterval: 30000,
+    placeholderData: undefined,
   });
 
   const { data: profiles = [] } = useQuery({

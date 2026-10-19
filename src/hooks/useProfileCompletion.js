@@ -48,6 +48,8 @@ export default function useProfileCompletion(session) {
     queryFn: () => findStudentProfiles(session),
     enabled: !!codeId && isStudent,
     staleTime: 60000,
+    refetchOnWindowFocus: true,
+    placeholderData: undefined,
   });
 
   const profile = useMemo(() => pickBestProfile(profiles, session), [profiles, session]);

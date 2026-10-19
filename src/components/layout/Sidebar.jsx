@@ -242,7 +242,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     refetchInterval: SIDEBAR_REFETCH_INTERVAL,
   });
   const { data: chatMessages = [] } = useQuery({
-    queryKey: ['sidebar-chat-messages', userCourse],
+    queryKey: ['overcoming-wall-messages', `class_chat_${userCourse}`],
     queryFn: () => base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: `class_chat_${userCourse}` }).then(res => res?.data?.records || res?.data || []),
     ...queryDefaults,
     refetchInterval: SIDEBAR_ACTIVITY_REFETCH_INTERVAL,

@@ -3,9 +3,8 @@ import useOwlVoice from '@/hooks/useOwlVoice';
 import { createBase44VoiceAudio, releaseBase44VoiceAudio } from '@/lib/base44Voice';
 
 /**
- * Voz consistente da Luna, com narração nativa como reserva.
- * - Respeita o mute: se desligado, NÃO gera voz por IA.
- * - Usa cache: reaproveita áudio já gerado para o mesmo texto.
+ * Voz econômica da Luna: áudio existente ou narração do dispositivo.
+ * Respeita o silêncio e nunca gera novos áudios pagos.
  */
 export default function useLunaVoice() {
   const fallback = useOwlVoice();
@@ -76,10 +75,7 @@ export default function useLunaVoice() {
         return;
       }
       if (!audio) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-        setLoading(false);
-        setSpeaking(false);
+        startFallback();
         return;
       }
 

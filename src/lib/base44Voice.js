@@ -1,15 +1,12 @@
-import { base44 } from '@/api/base44Client';
+// Narração econômica: reutiliza gravações existentes, sem gerar novos áudios pagos.
 
 // ════════════════════════════════════════════════════════════════════════
 // LUNA VOICE SYSTEM
 // ════════════════════════════════════════════════════════════════════════
 // Features:
-//   • Voice caching: reuses audio already generated for the same text,
-//     saving AI generation costs when multiple students read the same lesson.
-//   • Mute-aware: when the student has muted Luna, NO AI generation happens.
-//   • Text normalization: removes page breaks and excessive whitespace that
-//     cause long pauses (>3s) in TTS output.
-//   • Friendly tone: uses 'honey' voice with warm pitch/speed parameters.
+//   • Reutiliza gravações anteriores disponíveis neste dispositivo.
+//   • Não gera novos áudios por integração: texto novo usa a voz nativa.
+//   • Preserva silêncio, normalização e controles dos leitores existentes.
 // ════════════════════════════════════════════════════════════════════════
 
 const VOICE_CACHE_KEY = 'wr_luna_voice_cache';
@@ -54,22 +51,6 @@ function loadPersistentCache() {
 }
 
 /**
- * Saves the voice cache to localStorage.
- */
-function savePersistentCache(cache) {
-  try {
-    const entries = Object.entries(cache);
-    if (entries.length > 200) {
-      entries.sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
-      cache = Object.fromEntries(entries.slice(0, 200));
-    }
-    localStorage.setItem(VOICE_CACHE_KEY, JSON.stringify(cache));
-  } catch {
-    // localStorage might be full; silently ignore
-  }
-}
-
-/**
  * Retrieves a cached audio URL for the given text, if available.
  */
 function getCachedUrl(text) {
@@ -87,19 +68,6 @@ function getCachedUrl(text) {
     return persistent[key].url;
   }
   return null;
-}
-
-/**
- * Stores an audio URL in both memory and persistent cache.
- */
-function setCachedUrl(text, url) {
-  if (!url) return;
-  const key = hashText(text);
-  const entry = { url, ts: Date.now() };
-  memoryCache.set(key, entry);
-  const persistent = loadPersistentCache();
-  persistent[key] = entry;
-  savePersistentCache(persistent);
 }
 
 /**
@@ -154,13 +122,13 @@ export function isVoiceMuted() {
 }
 
 /**
- * Generates AI voice audio for the given text.
- * Uses cache when available to avoid redundant AI generation.
- * Returns null if the voice is muted (no AI generation).
+ * Recupera somente áudio já armazenado no cache deste dispositivo.
+ * Retorna null sem cache ou no silêncio, para o chamador usar voz nativa.
+ * Nunca chama serviços de geração.
  *
  * @param {string} text - The text to convert to speech
  * @param {Object} options - Optional parameters
- * @param {boolean} options.force - Generate even if muted (default: false)
+ * @param {boolean} options.force - Reproduzir mesmo no silêncio (default: false)
  * @param {boolean} options.useCache - Use cached audio if available (default: true)
  * @returns {Promise<Audio|null>} Audio element or null if muted
  */
@@ -185,21 +153,9 @@ export async function createBase44VoiceAudio(text, options = {}) {
     }
   }
 
-  // Generate new audio via AI
-  const response = await base44.integrations.Core.GenerateSpeech({
-    text: normalized,
-    voice: 'honey',
-    language_code: 'pt',
-  });
-  const url = response?.url;
-  if (!url) throw new Error('Áudio da Luna indisponível.');
-
-  // Cache the generated URL for reuse by other students
-  if (useCache) {
-    setCachedUrl(normalized, url);
-  }
-
-  return new Audio(url);
+  // Sem gravação disponível, o chamador usa speechSynthesis no dispositivo.
+  // Não recorrer a integrações pagas, mesmo quando force=true.
+  return null;
 }
 
 /**

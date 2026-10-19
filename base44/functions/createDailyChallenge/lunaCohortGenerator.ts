@@ -1,5 +1,5 @@
 import { LESSON_KNOWLEDGE } from './lessonKnowledge.ts';
-import { invokePollinations } from '../../shared/pollinations.ts';
+import { buildQuestionsForLesson } from './ofensivaGenerator.ts';
 
 const norm = (value: unknown) => String(value || '').trim().toLowerCase();
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -35,30 +35,11 @@ function chooseLesson(moduleNumber: number, students: any[], progressByEmail: Ma
   return pool[dayNumber % Math.max(pool.length, 1)] || LESSON_KNOWLEDGE[0].lessons[0];
 }
 
-async function askLuna(_base44: any, lesson: any) {
-  const result = await invokePollinations({
-    prompt: `Você é Luna, tutora acadêmica. Crie uma Ofensiva Diária com exatamente 8 perguntas abertas, em português do Brasil, exclusivamente sobre a aula abaixo. Preserve esta dificuldade e pontuação: perguntas 1, 2, 4, 5, 7 e 8 são fáceis (0,1 ponto cada: compreensão e aplicação direta); perguntas 3 e 6 são medianas e aparecem em baús (0,2 ponto cada: integração, raciocínio clínico e justificativa). Total: 1,0 ponto. Não faça perguntas genéricas, não repita ideias e não invente conteúdo fora da aula. Cada pergunta deve ter uma dica curta, sem entregar a resposta.
-
-Módulo: ${lesson.moduleTitle}
-Aula: ${lesson.title}
-Tema: ${lesson.theme}
-Conceitos: ${lesson.concepts.join('; ')}
-Técnicas: ${lesson.techniques.join('; ')}
-Pontos centrais: ${lesson.insights.join(' ')}`,
-    response_json_schema: {
-      type: 'object',
-      properties: {
-        questions: {
-          type: 'array', minItems: 8, maxItems: 8,
-          items: { type: 'object', properties: { text: { type: 'string' }, hint: { type: 'string' } }, required: ['text', 'hint'] },
-        },
-      },
-      required: ['questions'],
-    },
-  });
-  const questions = Array.isArray(result?.questions) ? result.questions : [];
-  if (questions.length !== 8) throw new Error(`A Luna retornou ${questions.length} perguntas para ${lesson.id}.`);
-  return questions.map((question, index) => ({ id: `q${index + 1}`, text: String(question.text).trim(), hint: String(question.hint).trim() }));
+export function buildCohortQuestions(lesson: any, today: string, course: string) {
+  // Banco pedagógico da apostila: mesmas oito questões e níveis de dificuldade,
+  // com variação determinística por aula, curso e dia, sem chamadas de IA.
+  return buildQuestionsForLesson(lesson, 0, `${today}|${course}`)
+    .map(({ id, text, hint }) => ({ id, text, hint }));
 }
 
 export async function generateLunaModuleChallenges(base44: any, today: string) {
@@ -91,8 +72,8 @@ export async function generateLunaModuleChallenges(base44: any, today: string) {
     if (existing.some((item) => item.course === course && Number(item.module_number) === moduleNumber)) { skipped.push(key); continue; }
     const lesson = chooseLesson(moduleNumber, students, progressByEmail, today);
     try {
-      const questions = await askLuna(base44, lesson);
-      const record = await service.DailyChallenge.create({ date: today, course, module_number: moduleNumber, lesson_id: lesson.id, lesson_ref: `${lesson.moduleTitle} - ${lesson.title}`, questions, created_by_admin: 'luna-ai-module-cohort-v3' });
+      const questions = buildCohortQuestions(lesson, today, course);
+      const record = await service.DailyChallenge.create({ date: today, course, module_number: moduleNumber, lesson_id: lesson.id, lesson_ref: `${lesson.moduleTitle} - ${lesson.title}`, questions, created_by_admin: 'local-module-cohort-v4' });
       created.push({ id: record.id, course, module_number: moduleNumber, lesson_id: lesson.id, students: students.length });
     } catch (error) {
       failed.push({ group: key, error: (error as Error).message });
@@ -100,5 +81,5 @@ export async function generateLunaModuleChallenges(base44: any, today: string) {
     await pause(400);
   }
   if (!created.length && failed.length) throw new Error(failed.map((item) => `${item.group}: ${item.error}`).join(' | '));
-  return { success: true, generator: 'luna-ai-module-cohort-v3', created, skipped, failed };
+  return { success: true, generator: 'local-module-cohort-v4', created, skipped, failed };
 }

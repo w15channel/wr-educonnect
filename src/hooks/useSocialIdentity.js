@@ -13,13 +13,13 @@ export default function useSocialIdentity(session) {
   const hasIdentifier = !!(session?.email || session?.code || session?.codeId);
 
   const { data: profiles = [], isLoading, isFetching } = useQuery({
-    queryKey: ['social-identity', session?.codeId, session?.email, session?.code],
+    // Compartilha a leitura com o assistente de cadastro e todas as saudações.
+    queryKey: ['profile-completion', session?.codeId, session?.email, session?.code],
     queryFn: () => findStudentProfiles(session),
     enabled: isStudent && hasIdentifier,
-    // A identidade é pequena, sensível e pode ter sido alterada em outra tela
-    // ou dispositivo. Confirme-a no ingresso antes de saudar o aluno.
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 60000,
+    refetchOnWindowFocus: true,
+    placeholderData: undefined,
   });
 
   const profile = useMemo(() => {
