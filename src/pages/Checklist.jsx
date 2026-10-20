@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
-import { ClipboardCheck, Lock, Unlock, GraduationCap, ArrowRight } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { ClipboardCheck, Lock, Unlock, GraduationCap, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
 import useLunaVoice from '@/hooks/useLunaVoice';
 import ChecklistTrail from '@/components/checklist/ChecklistTrail';
@@ -11,6 +14,7 @@ import { buildVoiceScript, buildFinishScript } from '@/lib/checklistGuide';
 export default function Checklist() {
   const { user: session, isDiplomaMode = false } = useOutletContext();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
   const prefix = parts[0] === 'degree' ? '/degree/student' : (parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '');
@@ -39,6 +43,7 @@ export default function Checklist() {
   }, [isLoading, firstPending, items.length, module?.moduleNumber]);
 
   const focusItem = items[focusIndex];
+  const [savingCompletion, setSavingCompletion] = useState(false);
   const script = useMemo(() => {
     if (isLoading || error || !module) return '';
     if (module.complete && module.examDone) return '';
@@ -59,6 +64,27 @@ export default function Checklist() {
     voice.stop();
     const sep = item.to.includes('?') ? '&' : '?';
     navigate(`${prefix}${item.to}${sep}checklist=${module.moduleNumber}&checklistItem=${item.key}`);
+  };
+
+  const markActivityComplete = async () => {
+    if (!focusItem || focusItem.done || savingCompletion) return;
+    setSavingCompletion(true);
+    try {
+      await base44.functions.invoke('saveStudentRecord', {
+        action: 'lessonProgressUpsert',
+        lesson_id: `checklist:mod${module.moduleNumber}:${focusItem.key}`,
+        student_email: session?.email || session?.code,
+        student_identifiers: [session?.email, session?.code].filter(Boolean),
+        patch: { watched: true, comment: `Autodeclarada concluída pelo aluno no módulo ${module.moduleNumber}.` },
+      });
+      await queryClient.invalidateQueries({ queryKey: ['student-learning-records', 'LessonProgress'] });
+      toast.success('Atividade marcada como concluída.');
+      setFocusIndex((prev) => nextPendingFrom(prev));
+    } catch (err) {
+      toast.error(err?.message || 'Não foi possível salvar a conclusão. Tente novamente.');
+    } finally {
+      setSavingCompletion(false);
+    }
   };
 
   const nextPendingFrom = (from) => {
@@ -137,6 +163,17 @@ export default function Checklist() {
                 onRepeat={() => voice.speak(script, { force: true })}
               />
               <ChecklistTrail items={items} focusIndex={focusIndex} onSelect={setFocusIndex} />
+              {focusItem && focusItem.key !== 'previous_exam' && (
+                <button
+                  type="button"
+                  onClick={markActivityComplete}
+                  disabled={focusItem.done || savingCompletion || isLoading}
+                  className={`w-full flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold transition-colors disabled:cursor-not-allowed ${focusItem.done ? 'border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-950/30 dark:text-green-300' : 'border-green-300 bg-green-500 text-white shadow-lg hover:bg-green-600 disabled:opacity-60'}`}
+                >
+                  <CheckCircle2 size={17} />
+                  {savingCompletion ? 'Salvando...' : focusItem.done ? 'Atividade concluída' : 'Marcar atividade como concluída'}
+                </button>
+              )}
               <button
                 type="button"
                 disabled={!module.complete}
