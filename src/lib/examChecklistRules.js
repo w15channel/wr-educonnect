@@ -144,7 +144,15 @@ export function buildModuleChecklist({
       target: CHECKLIST_RULES.ofensivaDays,
       to: '/ofensivas',
     }] : []),
-  ].map((item) => ({ ...item, done: item.current >= item.target }));
+  ].map((item) => {
+    // A autodeclaração fica gravada junto ao histórico individual do aluno.
+    // Ela é usada apenas para a etapa correspondente e não altera outros módulos.
+    const selfMarked = progresses.some((progress) => progress.watched
+      && progress.lesson_id === `checklist:mod${moduleNumber}:${item.key}`
+      && normalizeIdentity(progress.student_email) === studentIdentity);
+    const current = selfMarked ? item.target : item.current;
+    return { ...item, current, done: current >= item.target, selfMarked };
+  });
 
   return {
     items,
