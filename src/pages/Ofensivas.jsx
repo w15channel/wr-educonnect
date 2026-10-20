@@ -385,15 +385,15 @@ export default function Ofensivas() {
       });
       pts = Math.round(pts * 1000) / 1000;
 
-      if (myResponseRecord) {
-        await base44.entities.DailyChallengeResponse.update(myResponseRecord.id, { answers: updatedAnswers, questions_answered: newCount, points_earned: pts });
-      } else {
-        await base44.entities.DailyChallengeResponse.create({
+      const saved = myResponseRecord
+        ? await base44.entities.DailyChallengeResponse.update(myResponseRecord.id, { answers: updatedAnswers, questions_answered: newCount, points_earned: pts })
+        : await base44.entities.DailyChallengeResponse.create({
           challenge_id: challenge.id, date: today, course: userCourse,
           student_email: session?.email || '', student_name: session?.name || session?.full_name || '',
           answers: updatedAnswers, questions_answered: newCount, points_earned: pts,
         });
-      }
+      // Credita a pontuação diretamente, sem automação.
+      base44.functions.invoke('saveStudentRecord', { action: 'creditOfensiva', response_id: saved?.id || myResponseRecord?.id }).catch(() => null);
 
       await queryClient.invalidateQueries({ queryKey: ['daily-response'] });
       await queryClient.invalidateQueries({ queryKey: ['all-my-responses'] });

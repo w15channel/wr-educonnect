@@ -5,6 +5,7 @@ import useStudentRecords from '@/hooks/useStudentRecords';
 import { base44 } from '@/api/base44Client';
 import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
 import { applyChecklistVerification } from '@/lib/verifiedChecklist';
+import { allocateWindowActivities } from '@/lib/checklistAllocation';
 
 const MODULE_COUNT = 10;
 // O calendário define o módulo disponível; concluir atividades não antecipa datas.
@@ -43,20 +44,13 @@ export default function useModuleChecklist({ course = 'tcc', session, includeOfe
     queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 1000),
     enabled: !!email,
   });
-  const { data: challengeResponses = [], isLoading: l8 } = useQuery({
-    queryKey: ['checklist-ofensivas', email, course],
-    queryFn: () => base44.entities.DailyChallengeResponse.filter({ student_email: email, course }, '-date', 500),
-    enabled: !!email && includeOfensiva,
-  });
+  // Busca por todas as identidades do aluno (email e código), em qualquer grafia.
+  const { data: challengeResponses = [], isLoading: l8 } = useStudentRecords('DailyChallengeResponse', session, includeOfensiva);
   const { data: exams = [], isLoading: l9 } = useQuery({
     queryKey: ['checklist-exams', course],
     queryFn: () => base44.entities.Exam.filter({ course }, '-created_date', 300),
   });
-  const { data: examSubmissions = [], isLoading: l10 } = useQuery({
-    queryKey: ['checklist-exam-subs', email],
-    queryFn: () => base44.entities.ExamSubmission.filter({ student_email: email }, '-submitted_at', 500),
-    enabled: !!email,
-  });
+  const { data: examSubmissions = [], isLoading: l10 } = useStudentRecords('ExamSubmission', session);
   const { data: verification = null } = useQuery({
     queryKey: ['checklist-verification', session?.codeId, email, course],
     queryFn: async () => {
@@ -92,21 +86,26 @@ export default function useModuleChecklist({ course = 'tcc', session, includeOfe
 
   const submittedExamIds = useMemo(() => new Set(examSubmissions.map((s) => s.exam_id)), [examSubmissions]);
 
+  const identities = useMemo(() => new Set([session?.email, session?.code].filter(Boolean).map((v) => String(v).trim().toLowerCase())), [session?.email, session?.code]);
+
   const modules = useMemo(() => {
+    const { result: allocation, otherPosts } = allocateWindowActivities({
+      moduleCount: MODULE_COUNT, identities, unlockDateByModule, debatePosts, debateReplies, challengeResponses, course,
+    });
     return Array.from({ length: MODULE_COUNT }, (_, index) => {
       const moduleNumber = index + 1;
-      const moduleWindow = { start: unlockDateByModule.get(moduleNumber) || null, end: unlockDateByModule.get(moduleNumber + 1) || null };
+      const own = allocation.get(moduleNumber);
       const checklist = buildModuleChecklist({
         moduleNumber,
         email,
         progresses,
         tasks,
         submissions,
-        debatePosts,
-        debateReplies,
+        debatePosts: [...otherPosts, ...own.posts.map((p) => ({ ...p, author_email: email }))],
+        debateReplies: own.replies.map((r) => ({ ...r, author_email: email })),
         pairings,
-        challengeResponses,
-        moduleWindow,
+        challengeResponses: own.days.map((date) => ({ student_email: email, date })),
+        moduleWindow: null,
         includeOfensiva,
         previousExamCompleted: moduleNumber === 1 ? true : (() => {
           const previousModuleNumber = moduleNumber - 1;
@@ -124,7 +123,7 @@ export default function useModuleChecklist({ course = 'tcc', session, includeOfe
       const examDone = moduleExams.length > 0 && (moduleExams.every((exam) => submittedExamIds.has(exam.id)) || (sameExams && confirmed?.examDone === true));
       return { moduleNumber, ...reconciled, examDone, exams: moduleExams };
     });
-  }, [email, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, submittedExamIds, unlockDateByModule, verified, includeOfensiva]);
+  }, [email, identities, course, progresses, tasks, submissions, debatePosts, debateReplies, pairings, challengeResponses, exams, submittedExamIds, unlockDateByModule, verified, includeOfensiva]);
 
   // Conteúdo liberado pelo calendário não equivale a acesso antecipado à
   // trilha. O checklist N só abre depois da entrega da prova N-1.

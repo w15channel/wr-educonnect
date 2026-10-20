@@ -7,6 +7,14 @@ function norm(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+// Pontuação direta por código: chamada logo após salvar, sem depender de automação.
+async function creditScore(base44, functionName, record) {
+  if (!record?.id) return;
+  await base44.asServiceRole.functions.invoke(functionName, {
+    automation: { type: 'entity' }, event: { entity_id: record.id }, data: record,
+  }).catch((error) => console.error(`Pontuação ${functionName}:`, error?.message));
+}
+
 function uniqueNormList(values = []) {
   return Array.from(new Set((values || []).map(norm).filter(Boolean)));
 }
@@ -199,6 +207,7 @@ Deno.serve(async (req) => {
         ? await base44.asServiceRole.entities.LessonProgress.update(existing.id, data)
         : await base44.asServiceRole.entities.LessonProgress.create(data);
 
+      await creditScore(base44, 'updateLessonScore', record);
       return Response.json({ success: true, record });
     }
 
@@ -275,13 +284,23 @@ Deno.serve(async (req) => {
           if (existing) {
             const merged = cleanObject({ ...existing, ...data, student_email: norm(data.student_email) || norm(existing.student_email) });
             const record = await base44.asServiceRole.entities.TaskSubmission.update(existing.id, merged);
+            await creditScore(base44, 'gradeTaskSubmission', record);
             return Response.json({ success: true, record, restored: true });
           }
         }
       }
 
       const record = await base44.asServiceRole.entities[entity].create(data);
+      if (entity === 'TaskSubmission') await creditScore(base44, 'gradeTaskSubmission', record);
       return Response.json({ success: true, record });
+    }
+
+    if (action === 'creditOfensiva') {
+      // Carrega o registro no servidor: o cliente não informa pontos.
+      const record = await base44.asServiceRole.entities.DailyChallengeResponse.get(payload.response_id).catch(() => null);
+      if (!record) return Response.json({ error: 'Resposta não encontrada.' }, { status: 404 });
+      await creditScore(base44, 'syncOfensivaScore', record);
+      return Response.json({ success: true });
     }
 
     if (action === 'updateForumReplyCount') {
