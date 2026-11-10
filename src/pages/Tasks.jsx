@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -25,6 +25,7 @@ import useStudentRecords from '@/hooks/useStudentRecords';
 import MinLengthHint from '@/components/shared/MinLengthHint';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { isTextLongEnough, insufficientTextMessage } from '@/lib/minTextLength';
+import { pickAutoCorrectionResponse } from '@/lib/autoCorrectionResponses';
 
 const EMPTY_FORM = { title: '', description: '', type: 'upload', deadline: '', max_grade: 6, quiz_questions: [], module_number: '' };
 
@@ -50,25 +51,25 @@ function taskSorter(a, b) {
 }
 
 function SubmittedView({ submission, onSaveEdit, isSaving }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(submission.comment || '');
+  const resolvedFeedback = submission.feedback || pickAutoCorrectionResponse(submission.task_id || submission.id, 'task');
+  const resolvedGrade = submission.grade != null ? submission.grade : 5;
 
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
-          <CheckCircle size={12} /> Entregue
+          <CheckCircle size={12} /> Corrigido (+{resolvedGrade} pts)
         </span>
 
-        {(submission.comment || submission.file_name) && (
-          <button
-            onClick={() => setOpen(!open)}
-            className="inline-flex items-center gap-1 text-xs text-primary border border-primary/20 px-2.5 py-1.5 rounded-xl hover:bg-primary/5 transition-colors"
-          >
-            <Eye size={11} /> {open ? 'Ocultar' : 'Ver minha entrega'}
-          </button>
-        )}
+        <button
+          onClick={() => setOpen(!open)}
+          className="inline-flex items-center gap-1 text-xs text-primary border border-primary/20 px-2.5 py-1.5 rounded-xl hover:bg-primary/5 transition-colors"
+        >
+          <Eye size={11} /> {open ? 'Ocultar entrega e parecer' : 'Ver entrega e parecer'}
+        </button>
 
         {submission.comment && (
           <button
@@ -116,10 +117,10 @@ function SubmittedView({ submission, onSaveEdit, isSaving }) {
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{submission.comment}</p>
             </div>
           )}
-          {submission.feedback && (
+          {resolvedFeedback && (
             <div className="border-t border-border pt-2">
-              <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Feedback:</p>
-              <p className="text-muted-foreground">{submission.feedback}</p>
+              <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Parecer de Autocorreção:</p>
+              <p className="text-muted-foreground leading-relaxed">{resolvedFeedback}</p>
             </div>
           )}
           <p className="text-muted-foreground/50 text-[10px]">
@@ -163,6 +164,19 @@ export default function Tasks({ mode = 'tasks' }) {
     enabled: isTeacher,
   });
   const submissions = isTeacher ? adminSubmissions : ownSubmissions;
+
+  useEffect(() => {
+    const hasPending = submissions.some((s) => s.status !== 'graded' || !s.feedback);
+    if (!hasPending) return;
+    base44.functions.invoke('saveStudentRecord', {
+      action: 'autoCorrectPending',
+      student_email: isTeacher ? undefined : (user?.email || user?.code || ''),
+      student_identifiers: isTeacher ? undefined : [user?.email, user?.code].filter(Boolean),
+    }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['submissions-mine'] });
+      queryClient.invalidateQueries({ queryKey: ['student-learning-records', 'TaskSubmission'] });
+    }).catch(() => null);
+  }, [submissions.length, isTeacher, user?.email, user?.code, queryClient]);
 
   const submissionByTaskId = {};
   submissions.forEach(s => { if (!submissionByTaskId[s.task_id]) submissionByTaskId[s.task_id] = s; });

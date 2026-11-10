@@ -1,10 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import {
+  examScoreNote,
+  forumScoreNote,
+  pickAutoCorrectionResponse,
+  preserveOrGenerateFeedback,
+  taskScoreNote,
+} from '../../shared/scoreMessages.ts';
 
-const ALLOWED_ENTITIES = new Set(['ForumPost', 'ForumReply', 'ChatMessage', 'TaskSubmission', 'LiveAttendance']);
+const ALLOWED_ENTITIES = new Set([
+  'ForumPost',
+  'ForumReply',
+  'ChatMessage',
+  'TaskSubmission',
+  'ExamSubmission',
+  'LiveAttendance',
+]);
 const CERTIFICATE_LIST_LIMIT = 5000;
 
 function norm(value) {
   return String(value || '').trim().toLowerCase();
+}
+
+function parseModNum(value) {
+  const m = String(value || '').match(/(\d+)/);
+  return m ? Number(m[1]) : null;
 }
 
 // Pontuação direta por código: chamada logo após salvar, sem depender de automação.
@@ -15,10 +34,121 @@ async function creditScore(base44, functionName, record) {
   }).catch((error) => console.error(`Pontuação ${functionName}:`, error?.message));
 }
 
+async function refreshStudentScoreCache(base44, studentEmail) {
+  const email = norm(studentEmail);
+  if (!email) return;
+  await base44.asServiceRole.functions.invoke('populateScoreCache', {
+    automation: { type: 'scheduled' },
+    student_email: email,
+  }).catch((error) => console.error('populateScoreCache:', error?.message));
+}
+
+async function autoGradeExamSubmission(base44, record) {
+  if (!record?.id || !record?.exam_id) return record;
+  const studentEmail = norm(record.student_email);
+  const exam = await base44.asServiceRole.entities.Exam.get(record.exam_id).catch(() => null);
+  const maxPoints = 50;
+  const grade = Number.isFinite(Number(record.grade)) && Number(record.grade) > 0
+    ? Number(record.grade)
+    : maxPoints;
+  const feedback = preserveOrGenerateFeedback(
+    record.feedback,
+    null,
+    examScoreNote(record.exam_id, grade),
+  );
+  const moduleNum = parseModNum(exam?.module_ref);
+
+  const updated = await base44.asServiceRole.entities.ExamSubmission.update(record.id, {
+    grade,
+    feedback,
+    status: 'graded',
+  });
+
+  if (studentEmail) {
+    const existingScores = await base44.asServiceRole.entities.ScoreItem.filter(
+      { student_email: studentEmail, category: 'exam' },
+      '-created_date',
+      50,
+    );
+    const matching = existingScores?.find(
+      (item) => item.ref_id === `exam:${record.exam_id}` || item.ref_id === record.exam_id,
+    );
+    const scoreData = {
+      student_email: studentEmail,
+      category: 'exam',
+      ref_id: `exam:${record.exam_id}`,
+      ref_title: exam?.title || 'Prova do Módulo',
+      score: maxPoints,
+      max_score: maxPoints,
+      verified: true,
+      notes: feedback,
+      ...(moduleNum ? { module_number: moduleNum } : {}),
+    };
+    if (matching) {
+      await base44.asServiceRole.entities.ScoreItem.update(matching.id, scoreData);
+    } else {
+      await base44.asServiceRole.entities.ScoreItem.create(scoreData);
+    }
+    await refreshStudentScoreCache(base44, studentEmail);
+  }
+
+  return updated;
+}
+
+async function autoCreditForumParticipation(base44, entity, record) {
+  if (!record?.id) return;
+  const studentEmail = norm(record.author_email);
+  const isReply = entity === 'ForumReply';
+  const spaceLabel = record.space === 'forum' ? 'Fórum' : 'Sala de Debates';
+  const note = forumScoreNote(record.id, 0.01, spaceLabel, isReply);
+
+  if (studentEmail && record.author_role !== 'teacher') {
+    const existing = await base44.asServiceRole.entities.ScoreItem.filter(
+      { student_email: studentEmail, category: 'forum', ref_id: record.id },
+      '-created_date',
+      5,
+    );
+    const scoreData = {
+      student_email: studentEmail,
+      category: 'forum',
+      ref_id: record.id,
+      ref_title: isReply ? `Comentário na ${spaceLabel}` : `Tópico criado na ${spaceLabel}`,
+      score: 0.01,
+      max_score: 0.01,
+      verified: true,
+      notes: note,
+    };
+    if (existing?.[0]) {
+      await base44.asServiceRole.entities.ScoreItem.update(existing[0].id, scoreData);
+    } else {
+      await base44.asServiceRole.entities.ScoreItem.create(scoreData);
+    }
+    await refreshStudentScoreCache(base44, studentEmail);
+  }
+
+  // Autocorreção imediata do tópico aberto pelo aluno com uma das 30 respostas próprias em código
+  if (!isReply && record.author_role !== 'teacher' && !record.bot_replied) {
+    const autoReplyText = pickAutoCorrectionResponse(record.id, 'participation');
+    await base44.asServiceRole.entities.ForumReply.create({
+      post_id: record.id,
+      content: autoReplyText,
+      author_name: 'Prof. William Ribeiro · Autocorreção',
+      author_email: 'professor@wr-edu.com',
+      author_role: 'teacher',
+      course: record.course || 'tcc',
+      space: record.space || 'debates',
+    }).catch(() => null);
+
+    await base44.asServiceRole.entities.ForumPost.update(record.id, {
+      bot_replied: true,
+      reply_count: (Number(record.reply_count) || 0) + 1,
+    }).catch(() => null);
+  }
+}
+
 function uniqueNormList(values = []) {
   return Array.from(new Set((values || []).map(norm).filter(Boolean)));
 }
-
 
 function normalizeVerificationCode(value) {
   return String(value || '')
@@ -277,22 +407,101 @@ Deno.serve(async (req) => {
       if (entity === 'TaskSubmission') {
         const taskId = data.task_id;
         const identifiers = uniqueNormList([data.student_email, ...(payload.student_identifiers || [])]);
+        const autoFeedback = preserveOrGenerateFeedback(
+          data.feedback,
+          null,
+          taskScoreNote(taskId, data.grade || 5, Boolean(data.quiz_answers?.length)),
+        );
+        const enrichedData = cleanObject({
+          ...data,
+          status: 'graded',
+          feedback: autoFeedback,
+        });
 
         if (taskId && identifiers.length > 0) {
           const records = await base44.asServiceRole.entities.TaskSubmission.list('-updated_date', 5000);
           const existing = records.find((item) => item.task_id === taskId && identifiers.includes(norm(item.student_email)));
           if (existing) {
-            const merged = cleanObject({ ...existing, ...data, student_email: norm(data.student_email) || norm(existing.student_email) });
+            const merged = cleanObject({
+              ...existing,
+              ...enrichedData,
+              student_email: norm(data.student_email) || norm(existing.student_email),
+            });
             const record = await base44.asServiceRole.entities.TaskSubmission.update(existing.id, merged);
             await creditScore(base44, 'gradeTaskSubmission', record);
             return Response.json({ success: true, record, restored: true });
           }
         }
+
+        const record = await base44.asServiceRole.entities.TaskSubmission.create(enrichedData);
+        await creditScore(base44, 'gradeTaskSubmission', record);
+        return Response.json({ success: true, record });
+      }
+
+      if (entity === 'ExamSubmission') {
+        const examId = data.exam_id;
+        const identifiers = uniqueNormList([data.student_email, ...(payload.student_identifiers || [])]);
+        let record = null;
+
+        if (examId && identifiers.length > 0) {
+          const records = await base44.asServiceRole.entities.ExamSubmission.list('-submitted_at', 3000);
+          const existing = records.find(
+            (item) => item.exam_id === examId && identifiers.includes(norm(item.student_email)),
+          );
+          if (existing) {
+            record = await base44.asServiceRole.entities.ExamSubmission.update(
+              existing.id,
+              cleanObject({ ...existing, ...data, student_email: norm(data.student_email) || norm(existing.student_email) }),
+            );
+          }
+        }
+        if (!record) {
+          record = await base44.asServiceRole.entities.ExamSubmission.create(data);
+        }
+        const gradedRecord = await autoGradeExamSubmission(base44, record);
+        return Response.json({ success: true, record: gradedRecord });
       }
 
       const record = await base44.asServiceRole.entities[entity].create(data);
-      if (entity === 'TaskSubmission') await creditScore(base44, 'gradeTaskSubmission', record);
+      if (entity === 'ForumPost' || entity === 'ForumReply') {
+        await autoCreditForumParticipation(base44, entity, record);
+      }
       return Response.json({ success: true, record });
+    }
+
+    if (action === 'autoCorrectPending') {
+      const identifiers = uniqueNormList([payload.student_email, ...(payload.student_identifiers || [])]);
+      const filterByStudent = identifiers.length > 0;
+
+      const [taskSubs, examSubs] = await Promise.all([
+        base44.asServiceRole.entities.TaskSubmission.list('-updated_date', 2000),
+        base44.asServiceRole.entities.ExamSubmission.list('-submitted_at', 2000),
+      ]);
+
+      let correctedTasks = 0;
+      let correctedExams = 0;
+
+      for (const sub of taskSubs) {
+        if (filterByStudent && !identifiers.includes(norm(sub.student_email))) continue;
+        if (sub.status !== 'graded' || !sub.feedback) {
+          await creditScore(base44, 'gradeTaskSubmission', sub);
+          correctedTasks++;
+        }
+      }
+
+      for (const exSub of examSubs) {
+        if (filterByStudent && !identifiers.includes(norm(exSub.student_email))) continue;
+        if (exSub.status !== 'graded' || !exSub.feedback || exSub.grade == null) {
+          await autoGradeExamSubmission(base44, exSub);
+          correctedExams++;
+        }
+      }
+
+      return Response.json({
+        success: true,
+        correctedTasks,
+        correctedExams,
+      });
     }
 
     if (action === 'creditOfensiva') {

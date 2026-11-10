@@ -85,11 +85,17 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.ScoreItem.create(scorePayload);
     }
 
+    await base44.asServiceRole.functions.invoke('populateScoreCache', {
+      automation: { type: 'scheduled' },
+      student_email: studentEmail,
+    }).catch(() => null);
+
     return Response.json({
       success: true,
       student_email: studentEmail,
       task_id: taskId,
       grade: points,
+      feedback,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

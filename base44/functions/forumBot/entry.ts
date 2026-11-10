@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import { invokePollinations } from '../../shared/pollinations.ts';
+import { pickAutoCorrectionResponse } from '../../shared/scoreMessages.ts';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -12,38 +12,24 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Forbidden: only admin/teacher users or scheduled automation can run forumBot' }, { status: 403 });
   }
 
-  const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
-
-  // Get recent posts not yet bot-replied
+  // Busca posts recentes que ainda não receberam resposta automática
   const allPosts = await base44.asServiceRole.entities.ForumPost.list('-created_date', 100);
-
-  const eligible = allPosts.filter(p =>
-    !p.bot_replied &&
-    p.author_role !== 'teacher' &&
-    new Date(p.created_date) < thirtyMinAgo
-  );
+  const eligible = allPosts.filter((p) => !p.bot_replied && p.author_role !== 'teacher');
 
   let processed = 0;
 
   for (const post of eligible) {
-    const courseLabel =
-      post.course === 'psicanalise' ? 'Psicanálise Freudiana' :
-      post.course === 'sexologia' ? 'Sexologia Integrativa' :
-      'Terapia Comportamental (TC)';
-
-    const reply = await invokePollinations({
-      prompt: `Você é o Professor William Ribeiro, especialista em psicoterapia e formador de terapeutas no curso de ${courseLabel}. Um aluno publicou o seguinte no fórum da turma:\n\n"${post.content}"\n\nResponda de forma acolhedora, técnica e encorajadora, como professor experiente. Seja direto, empático e orientador. Máximo 180 palavras. Responda em português, sem saudações formais excessivas.`
-    });
-
-    const replyText = typeof reply === 'string' ? reply : '';
+    const replyText = pickAutoCorrectionResponse(post.id, 'participation');
     if (!replyText) continue;
 
     await base44.asServiceRole.entities.ForumReply.create({
       post_id: post.id,
       content: replyText,
-      author_name: 'Prof. William Ribeiro',
+      author_name: 'Prof. William Ribeiro · Autocorreção',
       author_email: 'professor@wr-edu.com',
       author_role: 'teacher',
+      course: post.course || 'tcc',
+      space: post.space || 'debates',
     });
 
     await base44.asServiceRole.entities.ForumPost.update(post.id, {

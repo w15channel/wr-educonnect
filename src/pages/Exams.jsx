@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { formatScore } from '@/lib/scoreUtils';
+import { pickAutoCorrectionResponse } from '@/lib/autoCorrectionResponses';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
 import { parseModuleNumber } from '@/lib/examChecklistRules';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
@@ -28,32 +29,26 @@ function useScopedPrefix() {
 }
 
 function SubmittedView({ submission }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
+  const resolvedFeedback = submission.feedback || pickAutoCorrectionResponse(submission.exam_id || submission.id, 'exam');
+  const resolvedGrade = submission.grade != null ? submission.grade : 50;
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
-          <CheckCircle size={12} /> Enviada
+          <CheckCircle size={12} /> Corrigida automaticamente
         </span>
-        {submission.grade != null ? (
-          <span className="text-sm font-black text-foreground bg-secondary px-3 py-1.5 rounded-xl border border-border">
-            Nota: {formatScore(submission.grade)}
-          </span>
-        ) : (
-          <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
-            ⏳ Aguardando correção
-          </span>
-        )}
-        {submission.feedback && (
-          <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-1 text-xs text-primary border border-primary/20 px-2.5 py-1.5 rounded-xl hover:bg-primary/5 transition-colors">
-            <Eye size={11} /> {open ? 'Ocultar' : 'Ver feedback'}
-          </button>
-        )}
+        <span className="text-sm font-black text-foreground bg-secondary px-3 py-1.5 rounded-xl border border-border">
+          Nota: {formatScore(resolvedGrade)}
+        </span>
+        <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-1 text-xs text-primary border border-primary/20 px-2.5 py-1.5 rounded-xl hover:bg-primary/5 transition-colors">
+          <Eye size={11} /> {open ? 'Ocultar parecer' : 'Ver parecer de autocorreção'}
+        </button>
       </div>
-      {open && submission.feedback && (
+      {open && resolvedFeedback && (
         <div className="bg-secondary/40 border border-border rounded-xl p-3 text-xs">
-          <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Feedback:</p>
-          <p className="text-muted-foreground">{submission.feedback}</p>
+          <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Parecer de Autocorreção:</p>
+          <p className="text-muted-foreground leading-relaxed">{resolvedFeedback}</p>
         </div>
       )}
     </div>
@@ -100,6 +95,18 @@ export default function Exams() {
     },
     enabled: exams.length > 0,
   });
+
+  useEffect(() => {
+    const hasPending = submissions.some((s) => s.status !== 'graded' || !s.feedback || s.grade == null);
+    if (!hasPending) return;
+    base44.functions.invoke('saveStudentRecord', {
+      action: 'autoCorrectPending',
+      student_email: isTeacher ? undefined : (session?.email || session?.code || ''),
+      student_identifiers: isTeacher ? undefined : [session?.email, session?.code].filter(Boolean),
+    }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['exam-submissions', userCourse] });
+    }).catch(() => null);
+  }, [submissions.length, isTeacher, session?.email, session?.code, userCourse, queryClient]);
 
   // Get unique students for filter
   const uniqueStudents = useMemo(() => {

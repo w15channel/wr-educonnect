@@ -6,20 +6,22 @@ import confetti from 'canvas-confetti';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, ArrowLeft, PartyPopper, Clock, AlertTriangle } from 'lucide-react';
+import { CheckCircle, ArrowLeft, PartyPopper, Clock, AlertTriangle, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
+import { evaluateQuizOrExamSubmission } from '@/lib/autoCorrectionResponses';
+import { formatScore } from '@/lib/scoreUtils';
 
 const EXAM_DURATION_SECONDS = 60 * 60;
 
 export default function ExamQuizView({ exam, user, onBack }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [autoResult, setAutoResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(EXAM_DURATION_SECONDS);
   const [tabSwitchDetected, setTabSwitchDetected] = useState(false);
 
   const questions = exam.quiz_questions || [];
-  const hasTextQuestions = questions.some(q => q.answer_type === 'text');
 
   // Timer
   useEffect(() => {
@@ -69,19 +71,33 @@ export default function ExamQuizView({ exam, user, onBack }) {
 
   const handleSubmit = async (timeUp = false) => {
     if (questions.length === 0) return;
-    await base44.entities.ExamSubmission.create({
-      exam_id: exam.id,
-      student_email: user.email || '',
-      student_name: user.full_name || '',
-      course: user.course || exam.course || 'tcc',
-      quiz_answers: questions.map((q, i) => q.answer_type === 'text' ? (answers[i]?.text || '') : String(answers[i] ?? '')),
-      status: 'submitted',
-      submitted_at: new Date().toISOString(),
-      time_spent_seconds: EXAM_DURATION_SECONDS - timeLeft,
-      tab_switch_detected: tabSwitchDetected,
+    const evaluation = evaluateQuizOrExamSubmission({
+      questions,
+      answers,
+      maxGrade: Number(exam.max_grade) || 50,
+      seed: `${exam.id}:${user?.email || user?.code || ''}`,
     });
+    await base44.functions.invoke('saveStudentRecord', {
+      action: 'create',
+      entity: 'ExamSubmission',
+      student_identifiers: [user?.email, user?.code].filter(Boolean),
+      data: {
+        exam_id: exam.id,
+        student_email: user?.email || user?.code || '',
+        student_name: user?.name || user?.full_name || '',
+        course: user?.course || exam.course || 'tcc',
+        quiz_answers: questions.map((q, i) => q.answer_type === 'text' ? (answers[i]?.text || '') : String(answers[i] ?? '')),
+        grade: evaluation.grade,
+        feedback: evaluation.feedback,
+        status: 'graded',
+        submitted_at: new Date().toISOString(),
+        time_spent_seconds: EXAM_DURATION_SECONDS - timeLeft,
+        tab_switch_detected: tabSwitchDetected,
+      },
+    });
+    setAutoResult(evaluation);
     setSubmitted(true);
-    toast.success(timeUp ? 'Tempo esgotado! Prova enviada.' : 'Prova enviada com sucesso!');
+    toast.success(timeUp ? 'Tempo esgotado! Prova enviada e corrigida.' : 'Prova enviada e corrigida automaticamente!');
   };
 
   const allAnswered = questions.every((q, i) => q.answer_type === 'text' ? (answers[i]?.text || '').trim() : answers[i] !== undefined);
@@ -127,16 +143,18 @@ export default function ExamQuizView({ exam, user, onBack }) {
             <PartyPopper size={32} className="text-yellow-500 absolute -mt-8 ml-16 animate-bounce" />
           </div>
           <h3 className="text-2xl font-black text-foreground mb-2">🎉 Parabéns pela Conclusão!</h3>
-          <p className="text-sm text-muted-foreground mb-4">Sua prova foi enviada com sucesso.</p>
-          {hasTextQuestions ? (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-              <p className="text-sm text-emerald-400 font-bold">⏳ Nota em breve</p>
-              <p className="text-xs text-emerald-300/70 mt-1">O professor irá corrigir sua prova.</p>
-            </div>
-          ) : (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <p className="text-sm text-amber-400 font-bold">📋 Aguarde a correção</p>
-              <p className="text-xs text-amber-300/70 mt-1">Sua nota será publicada em breve.</p>
+          <p className="text-sm text-muted-foreground mb-4">Sua prova foi corrigida e pontuada imediatamente.</p>
+          {autoResult && (
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-2 text-left">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1.5">
+                  <Award size={16} /> Autocorreção Concluída
+                </p>
+                <span className="text-base font-black text-primary">
+                  Nota: {formatScore(autoResult.grade)} / {formatScore(autoResult.maxGrade)}
+                </span>
+              </div>
+              <p className="text-xs text-foreground leading-relaxed">{autoResult.feedback}</p>
             </div>
           )}
           {tabSwitchDetected && (

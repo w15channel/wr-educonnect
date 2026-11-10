@@ -12,6 +12,7 @@ import PostCard from '@/components/shared/PostCard';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { resolveAvatarEmoji } from '@/lib/avatarUtils';
+import { pickAutoCorrectionResponse } from '@/lib/autoCorrectionResponses';
 
 import { DEBATE_TOPIC_GROUPS, FREE_TOPIC, topicModuleNumber } from '@/lib/apostila/debateTopics';
 
@@ -76,15 +77,14 @@ export default function SalaDebates() {
     onError: (_err, _data, context) => { if (context?.previous) queryClient.setQueryData(['debate-posts', userCourse], context.previous); },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['debate-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['debate-replies-all', userCourse] });
       queryClient.invalidateQueries({ queryKey: ['checklist-debates'] });
+      queryClient.invalidateQueries({ queryKey: ['checklist-debate-replies'] });
+      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
     },
     onSuccess: async (post) => {
-      triggerCelebration('Debate aberto! Inspire a turma com suas ideias! 🔥');
-      if (post?.id && !post.id.startsWith('optimistic-')) {
-        await base44.entities.ScoreItem.create({ student_email: session?.email || '', category: 'forum', ref_id: post.id, ref_title: 'Tópico criado na Sala de Debates', score: 0.01, max_score: 0.01, verified: true });
-        await base44.functions.invoke('populateScoreCache', { student_email: session?.email || '' });
-        queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-      }
+      const autoFeedback = pickAutoCorrectionResponse(post?.id || 'post', 'participation');
+      triggerCelebration(autoFeedback);
     },
   });
 
@@ -102,11 +102,10 @@ export default function SalaDebates() {
       queryClient.invalidateQueries({ queryKey: ['debate-replies-all', userCourse] });
       queryClient.invalidateQueries({ queryKey: ['checklist-debate-replies'] });
       queryClient.invalidateQueries({ queryKey: ['debate-posts'] });
-      setReplyTexts(prev => ({ ...prev, [reply?.post_id]: '' }));
-      triggerCelebration('Sua opinião entrou no debate! +0,01 ponto! 💪');
-      await base44.entities.ScoreItem.create({ student_email: session?.email || '', category: 'forum', ref_id: reply?.id || `reply-${Date.now()}`, ref_title: 'Comentário na Sala de Debates', score: 0.01, max_score: 0.01, verified: true, notes: 'Participação na Sala de Debates (comentário): +0,01 ponto.' });
-      await base44.functions.invoke('populateScoreCache', { student_email: session?.email || '' });
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
+      setReplyTexts(prev => ({ ...prev, [reply?.post_id]: '' }));
+      const autoFeedback = pickAutoCorrectionResponse(reply?.id || 'reply', 'participation');
+      triggerCelebration(autoFeedback);
     },
   });
 

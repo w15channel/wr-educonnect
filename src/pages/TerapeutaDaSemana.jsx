@@ -23,6 +23,7 @@ import ParticipationCelebration from '@/components/shared/ParticipationCelebrati
 import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 import { buildScoreBalancedPairings, getLatestPairingDate, getStudentPendingReports, isActiveStudent, normalizeStudentEmail } from '@/lib/therapistPairings';
 import { visiblePairingsForReportWall } from '@/lib/therapistReports';
+import { pickAutoCorrectionResponse } from '@/lib/autoCorrectionResponses';
 
 export default function TerapeutaDaSemana() {
   const { user: session } = useOutletContext();
@@ -99,11 +100,12 @@ export default function TerapeutaDaSemana() {
       const studentEmail = role === 'therapist' ? pairing.therapist_email : pairing.patient_email;
       const refId = `therapist_pairing:${pairing.id}:${role}`;
       const existing = await adminApi.list('ScoreItem', { filter: { student_email: studentEmail, ref_id: refId }, limit: 10 });
+      const autoFeedback = pickAutoCorrectionResponse(refId, 'participation');
       const scoreData = {
         student_email: studentEmail, category: 'task', ref_id: refId,
         ref_title: role === 'therapist' ? `Relato Terapeuta da Semana (${pairing.pairing_date})` : `Relato Terapeuta da Semana — Paciente (${pairing.pairing_date})`,
         score: 10, max_score: 10, verified: true, module_number: Number(pairing.module_number) || Number(selectedModule),
-        notes: `Relato enviado como ${role === 'therapist' ? 'terapeuta' : 'paciente'} na atividade Terapeuta da Semana: +10 pontos.`,
+        notes: `${autoFeedback} (Papel de ${role === 'therapist' ? 'terapeuta' : 'paciente'}: +10 pontos 💎)`,
       };
       if (existing[0]) await adminApi.update('ScoreItem', existing[0].id, scoreData);
       else await adminApi.create('ScoreItem', scoreData);

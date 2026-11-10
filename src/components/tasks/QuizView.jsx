@@ -3,15 +3,17 @@ import confetti from 'canvas-confetti';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, ArrowLeft, PartyPopper } from 'lucide-react';
+import { CheckCircle, ArrowLeft, PartyPopper, Award } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { formatScore } from '@/lib/scoreUtils';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
+import { evaluateQuizOrExamSubmission } from '@/lib/autoCorrectionResponses';
 
 export default function QuizView({ task, user, onBack }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(null);
+  const [feedback, setFeedback] = useState('');
 
   const questions = task.quiz_questions || [];
 
@@ -65,36 +67,37 @@ export default function QuizView({ task, user, onBack }) {
   const handleSubmit = async () => {
     if (questions.length === 0) { toast.info('Esta prova ainda não possui perguntas.'); return; }
 
-    const choiceQuestions = questions.filter(q => q.answer_type !== 'text');
-    let correct = 0;
-    choiceQuestions.forEach((q, i) => {
-      const origIndex = questions.indexOf(q);
-      if (answers[origIndex] === q.correct_index) correct++;
+    const evaluation = evaluateQuizOrExamSubmission({
+      questions,
+      answers,
+      maxGrade: 50,
+      seed: `${task.id}:${user?.email || user?.code || ''}`,
     });
 
-    const grade = choiceQuestions.length > 0
-      ? roundScore((correct / choiceQuestions.length) * (50))
-      : null;
-
-    const hasTextQuestions = questions.some(q => q.answer_type === 'text');
-
-    await base44.entities.TaskSubmission.create({
-      task_id: task.id,
-      student_email: user.email || user.code || '',
-      student_name: user.name || user.full_name || '',
-      course: user.course || task.course || 'tcc',
-      quiz_answers: questions.map((q, i) => {
-        const ans = answers[i];
-        if (q.answer_type === 'text') return ans?.text ?? '';
-        return ans !== undefined ? String(ans) : '';
-      }),
-      grade: grade !== null ? grade : undefined,
-      status: hasTextQuestions ? 'submitted' : 'graded',
+    await base44.functions.invoke('saveStudentRecord', {
+      action: 'create',
+      entity: 'TaskSubmission',
+      student_identifiers: [user?.email, user?.code].filter(Boolean),
+      data: {
+        task_id: task.id,
+        student_email: user?.email || user?.code || '',
+        student_name: user?.name || user?.full_name || '',
+        course: user?.course || task.course || 'tcc',
+        quiz_answers: questions.map((q, i) => {
+          const ans = answers[i];
+          if (q.answer_type === 'text') return ans?.text ?? '';
+          return ans !== undefined ? String(ans) : '';
+        }),
+        grade: evaluation.grade,
+        feedback: evaluation.feedback,
+        status: 'graded',
+      },
     });
 
-    setScore(grade);
+    setScore(evaluation.grade);
+    setFeedback(evaluation.feedback);
     setSubmitted(true);
-    toast.success(grade !== null ? `Prova enviada! Nota parcial: ${formatScore(grade)}` : 'Prova enviada! O professor irá corrigir as respostas escritas.');
+    toast.success(`Prova enviada e corrigida automaticamente! Nota: ${formatScore(evaluation.grade)}`);
   };
 
   const allAnswered = questions.every((q, i) =>
@@ -130,28 +133,18 @@ export default function QuizView({ task, user, onBack }) {
             </div>
           </div>
           <h3 className="text-2xl font-black text-foreground mb-2">🎉 Parabéns pela Entrega!</h3>
-          {score !== null ? (
-            <>
-              <p className="text-muted-foreground text-sm mt-2">Nota parcial nas questões objetivas:</p>
-              <p className="text-4xl font-black text-primary mt-2">{formatScore(score)} / {formatScore(50)}</p>
-              {questions.some(q => q.answer_type === 'text') && (
-                <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                  <p className="text-sm text-amber-400 font-bold">📝 Questões dissertativas pendentes</p>
-                  <p className="text-xs text-amber-300/70 mt-1">O professor irá corrigir suas respostas escritas em breve.</p>
+          {score !== null && (
+            <div className="mt-3 space-y-3">
+              <p className="text-muted-foreground text-sm">Nota final da autocorreção:</p>
+              <p className="text-4xl font-black text-primary">{formatScore(score)} / {formatScore(50)}</p>
+              {feedback && (
+                <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-left space-y-1">
+                  <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <Award size={14} /> Parecer de Autocorreção
+                  </p>
+                  <p className="text-xs text-foreground leading-relaxed">{feedback}</p>
                 </div>
               )}
-            </>
-          ) : (
-            <div className="mt-4 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Suas respostas foram enviadas com sucesso!
-              </p>
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                <p className="text-sm text-emerald-400 font-bold">⏳ Nota em breve</p>
-                <p className="text-xs text-emerald-300/70 mt-1">
-                  O professor irá corrigir sua prova e a nota será publicada em breve.
-                </p>
-              </div>
             </div>
           )}
           <p className="text-xs text-muted-foreground/60 mt-6">
