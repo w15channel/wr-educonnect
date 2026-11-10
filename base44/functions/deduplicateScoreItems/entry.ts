@@ -117,53 +117,30 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Audit-all or Batch Deduplication mode ──────────────────────────────
+    // ── Audit-all mode ──────────────────────────────────────────────────────
     const codes = await base44.asServiceRole.entities.AccessCode.list('-created_date', 5000);
-    const studentEmails = payload?.batch_emails && Array.isArray(payload.batch_emails)
-      ? payload.batch_emails
-      : [...new Set(codes.map(c => c.student_email).filter(Boolean))];
+    const studentEmails = [...new Set(codes.map(c => c.student_email).filter(Boolean))];
 
     const summary = [];
     let totalDuplicateGroups = 0;
     let totalToDelete = 0;
-    let totalDeleted = 0;
-    let totalFailed = 0;
 
     for (const email of studentEmails) {
       const { totalItems, duplicateGroups, toDelete } = await getDuplicatesForStudent(base44, email);
+      totalDuplicateGroups += duplicateGroups;
+      totalToDelete += toDelete.length;
       if (duplicateGroups > 0) {
-        totalDuplicateGroups += duplicateGroups;
-        totalToDelete += toDelete.length;
-
-        let deleted = 0;
-        let failed = 0;
-        if (!dryRun) {
-          const batch = toDelete.slice(0, maxDelete);
-          const WAVE = 5;
-          for (let i = 0; i < batch.length; i += WAVE) {
-            const wave = batch.slice(i, i + WAVE);
-            const results = await Promise.allSettled(
-              wave.map(id => base44.asServiceRole.entities.ScoreItem.delete(id))
-            );
-            results.forEach(r => r.status === 'fulfilled' ? deleted++ : failed++);
-            await sleep(300);
-          }
-        }
-        totalDeleted += deleted;
-        totalFailed += failed;
-        summary.push({ email, totalItems, duplicateGroups, toDelete: toDelete.length, deleted, failed });
+        summary.push({ email, totalItems, duplicateGroups, toDelete: toDelete.length });
       }
     }
 
     return Response.json({
       success: true,
-      dryRun,
+      dryRun: true,
+      note: 'Call with { student_email: "email" } for each affected student to delete duplicates.',
       studentsProcessed: studentEmails.length,
-      affectedStudentsCount: summary.length,
       totalDuplicateGroups,
       totalToDelete,
-      totalDeleted: dryRun ? 0 : totalDeleted,
-      totalFailed: dryRun ? 0 : totalFailed,
       affectedStudents: summary.sort((a, b) => b.toDelete - a.toDelete),
     });
 
@@ -171,4 +148,3 @@ Deno.serve(async (req) => {
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
-

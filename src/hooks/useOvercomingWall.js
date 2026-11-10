@@ -41,41 +41,28 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
   const { data: accessCodes = secureWallData?.accessCodes || [] } = useQuery({
     queryKey: ['access-codes'],
     queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
-    enabled: on,
+    enabled: on && !customAccess,
     staleTime: 5 * 60000,
   });
 
   const { data: studentProfiles = [] } = useQuery({
     queryKey: ['student-profiles-wall', activeCourse],
     queryFn: () => base44.entities.StudentProfile.list('-updated_date', 5000),
-    enabled: on,
+    enabled: on && !customAccess,
     staleTime: 5 * 60000,
   });
 
   const profileMap = useMemo(() => buildProfileMap(studentProfiles), [studentProfiles]);
 
   const { data: messages = secureWallData?.messages || [] } = useQuery({
-    queryKey: ['overcoming-wall-messages', chatSessionId, activeCourse],
+    queryKey: ['overcoming-wall-messages', chatSessionId],
     queryFn: async () => {
-      try {
-        const res = await base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: chatSessionId });
-        if (Array.isArray(res?.data?.records) && res.data.records.length > 0) {
-          return res.data.records;
-        }
-      } catch {
-        // fallback
-      }
-      const allMsgs = await base44.entities.ChatMessage.list('-created_date', 1000);
-      return allMsgs.filter((m) => {
-        if (!m.session_id) return false;
-        if (m.session_id === chatSessionId || m.session_id === 'class_chat') return true;
-        if (m.session_id === `class_chat_${activeCourse}`) return true;
-        return false;
-      });
+      const res = await base44.functions.invoke('saveStudentRecord', { action: 'listChatMessages', session_id: chatSessionId });
+      return res.data?.records || [];
     },
     refetchInterval: 15000,
     staleTime: 10000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
   const { data: activityRecords = secureWallData?.activityRecords } = useQuery({
@@ -93,35 +80,29 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       return { lessonProgresses, taskSubmissions, examSubmissions, challengeResponses, forumPosts, pairings, lessons, tasks, exams };
     },
     staleTime: 5 * 60000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
   const { data: savedAchievements = secureWallData?.savedAchievements || [] } = useQuery({
     queryKey: ['overcoming-wall-achievements', activeCourse],
-    queryFn: async () => {
-      const all = await base44.entities.Achievement.list('-occurred_at', 2000);
-      return all.filter((a) => !a.course || a.course === activeCourse);
-    },
+    queryFn: () => base44.entities.Achievement.filter({ course: activeCourse }, '-occurred_at', 200),
     refetchInterval: 60000,
     staleTime: 30000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
   const { data: institutionalRecords = secureWallData?.institutionalRecords } = useQuery({
     queryKey: ['overcoming-wall-institutional', activeCourse],
     queryFn: async () => {
-      const allShared = await base44.entities.WallPublication.list('-published_at', 500);
-      const shared = allShared.filter((p) => !p.course || p.course === activeCourse);
-      const allNotices = await base44.entities.Announcement.list('-created_date', 500);
-      const notices = allNotices.filter((item) => !item.course || item.course === activeCourse);
-      const allLiveSessions = await base44.entities.LiveSession.list('-scheduled_at', 200);
-      const liveSessions = allLiveSessions.filter((item) => !item.course || item.course === activeCourse);
+      const shared = await base44.entities.WallPublication.filter({ course: activeCourse }, '-published_at', 100);
+      const notices = await base44.entities.Announcement.filter({ course: activeCourse }, '-created_date', 100);
+      const liveSessions = await base44.entities.LiveSession.filter({ course: activeCourse }, '-scheduled_at', 100);
       const calendarEvents = await base44.entities.CalendarEvent.list('-date', 200);
       return { shared, notices, liveSessions, calendarEvents };
     },
     refetchInterval: 120000,
     staleTime: 60000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
   const { data: reactions = secureWallData?.reactions || [] } = useQuery({
@@ -129,7 +110,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     queryFn: () => base44.entities.AchievementReaction.list('-created_date', 1500),
     refetchInterval: 30000,
     staleTime: 15000,
-    enabled: on,
+    enabled: on && !customAccess,
   });
 
   const { data: notifications = secureWallData?.notifications || [] } = useQuery({
@@ -138,7 +119,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       const records = await base44.entities.Notification.filter({ recipient_email: session.email }, '-created_date', 100);
       return records.filter((item) => item.type === 'wall_reaction' || item.type === 'wall_reply');
     },
-    enabled: on && !!session?.email,
+    enabled: on && !customAccess && !!session?.email,
   });
 
   const { data: personalPosts = secureWallData?.personalPosts || [] } = useQuery({
@@ -149,7 +130,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
       30
     ),
     refetchInterval: 60000,
-    enabled: on && session?.role !== 'admin' && !!session?.email,
+    enabled: on && !customAccess && session?.role !== 'admin' && !!session?.email,
   });
 
   const { data: readReceipts = secureWallData?.readReceipts || [] } = useQuery({
@@ -177,7 +158,7 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
   }, [on, chatSessionId, queryClient, session?.code, session?.codeId]);
 
   const courseEmails = useMemo(
-    () => new Set(accessCodes.filter((code) => code.student_email && (code.course === activeCourse || (activeCourse === 'tcc' && !code.course))).map((code) => String(code.student_email || '').trim().toLowerCase())),
+    () => new Set(accessCodes.filter((code) => code.student_email && (code.course === activeCourse || (activeCourse === 'tcc' && !code.course))).map((code) => code.student_email)),
     [accessCodes, activeCourse]
   );
 
@@ -191,38 +172,29 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
     const lessonById = Object.fromEntries(activityRecords.lessons.map((item) => [item.id, item]));
     const taskById = Object.fromEntries(activityRecords.tasks.map((item) => [item.id, item]));
     const examById = Object.fromEntries(activityRecords.exams.map((item) => [item.id, item]));
-    const make = (record, kind, content, occurredAt, email = record.student_email) => {
-      const normalizedEmail = String(email || '').trim().toLowerCase();
-      return {
-        id: `achievement-${kind}-${record.id}`,
-        dedupeKey: `act:${kind}:${normalizedEmail}:${record.id}`,
-        feedType: 'achievement',
-        studentEmail: normalizedEmail,
-        studentName: getStudentName(normalizedEmail),
-        mentionedEmails: [],
-        content,
-        occurredAt,
-      };
-    };
-
-    const persisted = savedAchievements.map((record) => {
-      const email = String(record.student_email || '').trim().toLowerCase();
-      return {
-        id: record.id,
-        dedupeKey: record.dedupe_key || record.id,
-        feedType: 'achievement',
-        studentEmail: email,
-        studentName: getStudentName(email),
-        mentionedEmails: record.mentioned_emails || [],
-        isCollective: record.kind === 'monitor',
-        kind: record.kind,
-        title: record.title || '',
-        content: record.message,
-        occurredAt: record.occurred_at || record.created_date,
-        studentFeatureUntil: record.student_feature_until,
-        wallHighlightUntil: record.wall_highlight_until,
-      };
+    const make = (record, kind, content, occurredAt, email = record.student_email) => ({
+      id: `achievement-${kind}-${record.id}`,
+      feedType: 'achievement',
+      studentEmail: email,
+      studentName: getStudentName(email),
+      mentionedEmails: [],
+      content,
+      occurredAt,
     });
+
+    const persisted = savedAchievements.map((record) => ({
+      id: record.id,
+      feedType: 'achievement',
+      studentEmail: record.student_email,
+      studentName: getStudentName(record.student_email),
+      mentionedEmails: record.mentioned_emails || [],
+      isCollective: record.kind === 'monitor',
+      kind: record.kind,
+      content: record.message,
+      occurredAt: record.occurred_at || record.created_date,
+      studentFeatureUntil: record.student_feature_until,
+      wallHighlightUntil: record.wall_highlight_until,
+    }));
 
     return [
       ...persisted,
@@ -245,18 +217,8 @@ export default function useOvercomingWall({ course, session, enabled = true }) {
         r.patient_submitted && make({ ...r, id: `${r.id}-patient` }, 'report', 'concluiu seu relato como paciente da semana.', r.updated_date || r.created_date, r.patient_email),
       ].filter(Boolean)),
     ]
-      .filter((post) => courseEmails.has(String(post.studentEmail || '').trim().toLowerCase()) && isSinceOvercomingWallCutoff(post.occurredAt))
-      .filter((post, index, posts) => {
-        return posts.findIndex((c) => {
-          if (c.id && post.id && c.id === post.id) return true;
-          if (c.dedupeKey && post.dedupeKey && c.dedupeKey === post.dedupeKey) return true;
-          if (String(c.studentEmail || '').toLowerCase() === String(post.studentEmail || '').toLowerCase() && c.content === post.content) {
-            const timeDiff = Math.abs(new Date(c.occurredAt || 0).getTime() - new Date(post.occurredAt || 0).getTime());
-            return Number.isFinite(timeDiff) && timeDiff < 60000;
-          }
-          return false;
-        }) === index;
-      });
+      .filter((post) => courseEmails.has(post.studentEmail) && isSinceOvercomingWallCutoff(post.occurredAt))
+      .filter((post, index, posts) => posts.findIndex((c) => c.studentEmail === post.studentEmail && c.content === post.content) === index);
   }, [activityRecords, savedAchievements, accessCodes, courseEmails, profileMap]);
 
   const institutionalPosts = useMemo(() => {

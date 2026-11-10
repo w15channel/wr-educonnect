@@ -8,7 +8,7 @@ import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 import CertificateFront from '@/components/certificates/CertificateFront';
 import CertificateBack from '@/components/certificates/CertificateBack';
-import { CERT_W, CERT_H, normalizeCode } from '@/pages/AdminCertificateGenerator';
+import { CERT_W, CERT_H, makeVerifUrl, normalizeCode } from '@/pages/AdminCertificateGenerator';
 
 const POSITIONS_KEY = 'wr_cert_front_positions_v2';
 

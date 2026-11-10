@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { generateCode, getSession, getMasterAdminKey, setMasterAdminKey, getAdminGoogleEmail, setAdminGoogleEmail } from '@/lib/customAuth';
-import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X, UserCog, Shield } from 'lucide-react';
+import { generateCode, getSession } from '@/lib/customAuth';
+import { Plus, Copy, Trash2, ToggleLeft, ToggleRight, RefreshCw, Pencil, Check, X, UserCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,26 +24,6 @@ export default function CodeManager({ course: lockedCourse }) {
   const [editingEmailValue, setEditingEmailValue] = useState('');
   const [editingProfileCode, setEditingProfileCode] = useState(null);
   const [sortBy, setSortBy] = useState('created');
-
-  const [adminKey, setAdminKey] = useState(getMasterAdminKey());
-  const [adminGoogleEmail, setAdminGoogleEmailState] = useState(getAdminGoogleEmail());
-  const [isEditingAdmin, setIsEditingAdmin] = useState(false);
-  const [tempAdminKey, setTempAdminKey] = useState(adminKey);
-  const [tempGoogleEmail, setTempGoogleEmail] = useState(adminGoogleEmail);
-
-  const handleSaveAdminCredentials = () => {
-    if (!tempAdminKey.trim()) {
-      toast.error('A chave de administrador não pode ser vazia.');
-      return;
-    }
-    const cleanKey = setMasterAdminKey(tempAdminKey);
-    const cleanEmail = setAdminGoogleEmail(tempGoogleEmail);
-    setAdminKey(cleanKey);
-    setAdminGoogleEmailState(cleanEmail);
-    setIsEditingAdmin(false);
-    queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-    toast.success('Chave de Administrador e conta Google atualizadas com sucesso!');
-  };
 
   const { data: allCodes = [], isLoading } = useQuery({
     queryKey: ['access-codes'],
@@ -169,11 +149,10 @@ export default function CodeManager({ course: lockedCourse }) {
   });
 
   const syncEduMutation = useMutation({
-    mutationFn: () => base44.functions.invoke('syncEduCodes', { force: true, admin_email: getSession()?.email || '' }),
+    mutationFn: () => base44.functions.invoke('syncEduCodes', { admin_email: getSession()?.email || '' }),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-      queryClient.invalidateQueries({ queryKey: ['student-profiles'] });
-      toast.success(`Base sincronizada com sucesso: ${response?.data?.count || 46} alunos carregados.`);
+      toast.success(response?.data?.message || 'Códigos da turma TC sincronizados.');
     },
   });
 
@@ -187,113 +166,15 @@ export default function CodeManager({ course: lockedCourse }) {
 
   return (
     <div className="space-y-6">
-      {/* Administrador Mestre & Vínculo com Google */}
-      <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-transparent p-5 rounded-2xl border border-amber-500/30 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 border border-amber-500/30">
-              <Shield size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-foreground">Chave Única de Administrador</h3>
-                <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px]">
-                  Acesso Total
-                </Badge>
-              </div>
-              <p className="text-muted-foreground text-xs mt-0.5">
-                Esta é a única chave de administrador da instituição. Ela concede acesso ilimitado a todas as áreas administrativas e vincula a conta Google para logins diretos.
-              </p>
-            </div>
-          </div>
-          {!isEditingAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setTempAdminKey(adminKey);
-                setTempGoogleEmail(adminGoogleEmail);
-                setIsEditingAdmin(true);
-              }}
-              className="gap-2 shrink-0 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-            >
-              <Pencil size={14} /> Alterar Chave / Google
-            </Button>
-          )}
-        </div>
-
-        {isEditingAdmin ? (
-          <div className="bg-card/80 p-4 rounded-xl border border-amber-500/30 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Chave Mestra de Administrador</label>
-                <Input
-                  value={tempAdminKey}
-                  onChange={(e) => setTempAdminKey(e.target.value.toUpperCase())}
-                  placeholder="Ex: ADM-MASTER-2026"
-                  className="font-mono text-sm uppercase"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Conta Google Vinculada</label>
-                <Input
-                  type="email"
-                  value={tempGoogleEmail}
-                  onChange={(e) => setTempGoogleEmail(e.target.value.toLowerCase())}
-                  placeholder="williamribadm@gmail.com"
-                  className="text-sm"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" size="sm" onClick={() => setIsEditingAdmin(false)}>
-                Cancelar
-              </Button>
-              <Button size="sm" onClick={handleSaveAdminCredentials} className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5">
-                <Check size={14} /> Salvar Chave & Google
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div className="bg-card/60 p-3 rounded-xl border border-border flex items-center justify-between gap-2">
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Chave de Administrador</span>
-                <span className="font-mono font-bold text-sm text-foreground tracking-wider">{adminKey}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  navigator.clipboard.writeText(adminKey);
-                  toast.success('Chave de administrador copiada!');
-                }}
-              >
-                <Copy size={14} />
-              </Button>
-            </div>
-
-            <div className="bg-card/60 p-3 rounded-xl border border-border flex items-center justify-between gap-2">
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Conta Google Vinculada</span>
-                <span className="text-sm text-foreground font-medium truncate">{adminGoogleEmail}</span>
-              </div>
-              <Badge variant="outline" className="text-emerald-500 border-emerald-500/30 text-[10px] gap-1 shrink-0">
-                <Check size={10} /> Vinculada
-              </Badge>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Generator */}
       <div className="bg-card p-5 rounded-2xl border border-border shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h3 className="font-semibold text-foreground">Gerar Novo Código</h3>
-          <Button variant="outline" size="sm" onClick={() => syncEduMutation.mutate()} disabled={syncEduMutation.isPending} className="gap-2">
-            <RefreshCw size={14} className={syncEduMutation.isPending ? 'animate-spin' : ''} /> Sincronizar Base de Alunos (CSV)
-          </Button>
+          {lockedCourse === 'tcc' && (
+            <Button variant="outline" size="sm" onClick={() => syncEduMutation.mutate()} disabled={syncEduMutation.isPending} className="gap-2">
+              <RefreshCw size={14} className={syncEduMutation.isPending ? 'animate-spin' : ''} /> Vincular TC
+            </Button>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
@@ -352,10 +233,10 @@ export default function CodeManager({ course: lockedCourse }) {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {codes.map((c, index) => {
+            {codes.map(c => {
               const accessDate = lastAccessDate(c);
               return (
-              <div key={`${c.id || c.code || index}-${index}`} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-secondary/30 transition-colors">
+              <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-secondary/30 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   <div>
                     <p className="font-medium text-foreground text-sm">{c.student_name || 'Sem nome'}</p>

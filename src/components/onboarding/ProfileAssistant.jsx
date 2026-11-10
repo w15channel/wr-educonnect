@@ -34,7 +34,7 @@ export default function ProfileAssistant({ session, profile, steps, initialValue
 
   useEffect(() => {
     if (script) voice.speak(script);
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [script]);
 
   const setValue = (value) => {

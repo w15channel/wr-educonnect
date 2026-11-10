@@ -15,81 +15,29 @@ const pickBestProfile = (profiles, session) => {
   return [...profiles].sort((a, b) => score(a) - score(b))[0];
 };
 
-/** Busca todos os cadastros do aluno: pelo vínculo do código, pelas entidades e pelo email/código. */
+/** Busca todos os cadastros do aluno: pelo vínculo do código e pelo email/código. */
 export async function findStudentProfiles(session) {
-  const emailNorm = (session?.email || '').toLowerCase().trim();
-  const codeNorm = (session?.code || '').toUpperCase().trim();
-  const codeId = session?.codeId;
-
+  if (session?.code || session?.codeId) {
+    const response = await base44.functions.invoke('manageOvercomingWall', {
+      action: 'profiles', actor_email: session?.email,
+      access_code: session?.code, access_code_id: session?.codeId,
+    });
+    return response.data?.records || [];
+  }
   const results = [];
-
-  // 1. Busca direta na entidade StudentProfile
-  try {
-    const allProfiles = await base44.entities.StudentProfile.list('-updated_date', 1000);
-    const matchedProfiles = allProfiles.filter((p) => {
-      if (codeId && (p.code_id === codeId || p.id === codeId)) return true;
-      const pEmail = (p.student_email || p.email || '').toLowerCase().trim();
-      if (emailNorm && pEmail === emailNorm) return true;
-      return false;
-    });
-    results.push(...matchedProfiles);
-  } catch {
-    // ignore
+  for (const id of [session?.email].filter(Boolean).map(normalize)) {
+    results.push(...await base44.entities.StudentProfile.filter({ student_email: id }, '-created_date', 20));
   }
-
-  // 2. Busca na entidade AccessCode como fonte do perfil
-  try {
-    const allCodes = await base44.entities.AccessCode.list('-created_date', 1000);
-    const matchedCode = allCodes.find((c) => {
-      if (codeId && c.id === codeId) return true;
-      if (codeNorm && String(c.code).toUpperCase().trim() === codeNorm) return true;
-      const cEmail = (c.student_email || '').toLowerCase().trim();
-      if (emailNorm && cEmail === emailNorm) return true;
-      return false;
-    });
-
-    if (matchedCode) {
-      results.push({
-        id: matchedCode.id,
-        code_id: matchedCode.id,
-        student_email: matchedCode.student_email || session?.email || '',
-        full_name: matchedCode.profile_name || matchedCode.student_name || session?.name || '',
-        nickname: (matchedCode.profile_name || matchedCode.student_name || session?.name || '').split(' ')[0],
-        birth_date: '1990-01-01',
-        whatsapp: '0000000000',
-        bio: matchedCode.profile_bio || session?.bio || 'Aluno(a) do curso de Terapia / Psicanálise.',
-        avatar_emoji: matchedCode.profile_avatar_emoji || 'a01',
-        avatar_color: matchedCode.profile_avatar_color || '#5b5ef4',
-      });
-    }
-  } catch {
-    // ignore
-  }
-
-  // 3. Função remota como fallback complementar
-  try {
-    if (results.length === 0 && (session?.code || session?.codeId)) {
-      const response = await base44.functions.invoke('manageOvercomingWall', {
-        action: 'profiles', actor_email: session?.email,
-        access_code: session?.code, access_code_id: session?.codeId,
-      });
-      if (Array.isArray(response?.data?.records)) {
-        results.push(...response.data.records);
-      }
-    }
-  } catch {
-    // ignore
-  }
-
   const unique = [];
-  results.forEach((item) => { if (item && !unique.some((p) => p.id === item.id)) unique.push(item); });
+  results.forEach((item) => { if (!unique.some((p) => p.id === item.id)) unique.push(item); });
   return unique;
 }
 
 /**
  * Descobre se o cadastro do aluno está completo (exceto a foto, que é opcional).
- * A busca considera o vínculo do código e também o email/código do aluno.
- * Alunos cadastrados ou com código ativo não são reinterrogados.
+ * A busca considera o vínculo do código e também o email/código do aluno, para
+ * que cadastros antigos não sejam pedidos de novo. Em caso de falha na consulta,
+ * nada é pedido — assim ninguém entra em loop de cadastro.
  */
 export default function useProfileCompletion(session) {
   const codeId = session?.codeId;
@@ -98,28 +46,23 @@ export default function useProfileCompletion(session) {
   const { data: profiles = [], isLoading, isSuccess } = useQuery({
     queryKey: ['profile-completion', codeId, session?.email, session?.code],
     queryFn: () => findStudentProfiles(session),
-    enabled: !!(codeId || session?.email) && isStudent,
+    enabled: !!codeId && isStudent,
     staleTime: 60000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    placeholderData: undefined,
   });
 
   const profile = useMemo(() => pickBestProfile(profiles, session), [profiles, session]);
   const values = useMemo(() => buildInitialValues(profile, session), [profile, session]);
   const missing = useMemo(() => missingSteps(values), [values]);
 
-  const codeDone = codeId ? localStorage.getItem(profileDoneKey(codeId)) === '1' : false;
-  const emailDone = session?.email ? localStorage.getItem(profileDoneKey(session.email)) === '1' : false;
-  const alreadyDone = codeDone || emailDone;
-
-  // Alunos já matriculados ou que já possuem perfil/código de acesso ativo
-  // não recebem o popup da Luna solicitando recadastro repetido.
-  const isExistingStudent = !!(profile?.id || session?.codeId || session?.code || (session?.name && session?.email));
+  const alreadyDone = !!codeId && localStorage.getItem(profileDoneKey(codeId)) === '1';
 
   return {
     profile,
     values,
     missing,
     isLoading,
-    needsCompletion: isStudent && isSuccess && !isLoading && !alreadyDone && missing.length > 0 && !isExistingStudent,
+    needsCompletion: isStudent && !!codeId && isSuccess && !isLoading && !alreadyDone && missing.length > 0,
   };
 }

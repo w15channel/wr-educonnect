@@ -7,7 +7,7 @@ import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import ScoreRow from '@/components/scores/ScoreRow';
 import ModuleUnlockPanel from '@/components/scores/ModuleUnlockPanel';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, HandHeart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers, RefreshCw, Loader2, CheckCircle2 } from 'lucide-react';
+import { Trophy, ChevronLeft, Clock, BookOpen, FileText, MessageSquare, Star, Users, Search, AlertCircle, Heart, HandHeart, ArrowUpDown, Activity, GraduationCap, Flame, Pencil, Check, X, Layers, RefreshCw, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -845,132 +845,18 @@ export default function ScoreControl() {
     if (firstPending) setSelectedCode(firstPending);
   }, [location.search, selectedCode, codes.length, submissions.length, scoreItems]);
 
-  const [fullSyncLoading, setFullSyncLoading] = useState(false);
-  const [batchSyncState, setBatchSyncState] = useState({
-    active: false,
-    step: 0,
-    stepName: '',
-    progressPercent: 0,
-    details: '',
-    metrics: null,
-    error: null,
-  });
-
   // Itens de pontuação do aluno que pertencem ao curso ativo. Com
   // applyModuleFilter=false devolve todos (usado para atribuir um módulo).
   const handleRetro = async () => {
     setRetroLoading(true);
     try {
-      const res = await base44.functions.invoke('recalculateScores', {
-        admin_email: session?.email || ''
-      });
+      const res = await base44.functions.invoke('recalculateScores', {});
       await queryClient.invalidateQueries();
       toast.success(`Pontuação recalculada! ${res.data?.createdScores || 0} itens criados e ${res.data?.updatedScores || 0} atualizados.`);
     } catch (e) {
       toast.error('Erro: ' + (e?.message || 'tente novamente'));
     } finally {
       setRetroLoading(false);
-    }
-  };
-
-  const handleFullSync = async () => {
-    setFullSyncLoading(true);
-    setBatchSyncState({
-      active: true,
-      step: 1,
-      stepName: 'Etapa 1/3: Auditando & Deduplicando Pontuações...',
-      progressPercent: 20,
-      details: 'Removendo lançamentos repetidos de ScoreItems...',
-      metrics: null,
-      error: null,
-    });
-    try {
-      toast.info('Iniciando sincronização em lote e deduplicação de entregas...');
-
-      let dedupCount = 0;
-      let dedupAffected = 0;
-      try {
-        const dedupRes = await base44.functions.invoke('deduplicateScoreItems', {
-          dry_run: false,
-          all_students: true,
-          admin_email: session?.email || ''
-        });
-        const dedupData = dedupRes.data || dedupRes;
-        dedupCount = dedupData?.totalDeleted || 0;
-        dedupAffected = dedupData?.affectedStudentsCount || 0;
-      } catch (err) {
-        console.warn('Aviso na deduplicação de pontuações:', err);
-      }
-
-      setBatchSyncState(prev => ({
-        ...prev,
-        step: 2,
-        stepName: 'Etapa 2/3: Reconciliando Checklists Acadêmicos...',
-        progressPercent: 60,
-        details: 'Conferindo tarefas, resumos, aulas e fóruns entregues...',
-      }));
-
-      let checklistSummary = null;
-      try {
-        const checkRes = await base44.functions.invoke('reconcileStudentChecklists', {
-          all_students: true,
-          admin_email: session?.email || ''
-        });
-        checklistSummary = checkRes.data || checkRes;
-      } catch (err) {
-        console.warn('Aviso na conferência de checklists:', err);
-      }
-
-      setBatchSyncState(prev => ({
-        ...prev,
-        step: 3,
-        stepName: 'Etapa 3/3: Recalculando Pontuações Canônicas & Totais...',
-        progressPercent: 88,
-        details: 'Sincronizando pontuação de estudos, rankings e perfis dos alunos...',
-      }));
-
-      const scoreRes = await base44.functions.invoke('recalculateScores', {
-        admin_email: session?.email || ''
-      });
-      const scoreData = scoreRes.data || scoreRes;
-
-      await queryClient.invalidateQueries();
-
-      const checkedCount = checklistSummary?.checked ?? codes.length;
-      const completedItems = checklistSummary?.completed_items ?? 0;
-      const createdScores = scoreData?.createdScores ?? 0;
-      const updatedScores = scoreData?.updatedScores ?? 0;
-
-      setBatchSyncState({
-        active: true,
-        step: 4,
-        stepName: 'Sincronização em Lote & Deduplicação Concluídas!',
-        progressPercent: 100,
-        details: 'Todos os registros foram auditados e deduplicados com sucesso.',
-        metrics: {
-          checkedCount,
-          dedupCount,
-          dedupAffected,
-          completedItems,
-          createdScores,
-          updatedScores,
-        },
-        error: null,
-      });
-
-      toast.success(
-        `Sincronização concluída com sucesso! ${checkedCount} aluno(s) conferidos, ${dedupCount} duplicata(s) removidas, ${completedItems} etapas de checklist validadas.`
-      );
-    } catch (e) {
-      console.error('Erro na sincronização em lote:', e);
-      setBatchSyncState(prev => ({
-        ...prev,
-        error: e?.message || 'Falha ao executar a sincronização em lote.',
-        stepName: 'Erro na Sincronização em Lote'
-      }));
-      toast.error('Erro na sincronização: ' + (e?.message || 'Tente novamente.'));
-    } finally {
-      setFullSyncLoading(false);
     }
   };
 
@@ -1355,125 +1241,27 @@ export default function ScoreControl() {
   return (
     <div className="w-full max-w-[860px] mx-auto app-page animate-fade-in-up overflow-x-hidden">
       <div className="mb-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shrink-0">
-              <Trophy size={20} className="text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl lg:text-2xl font-bold text-foreground">{isPontuacaoGeralRoute ? 'Pontuação Geral' : 'Controle de Pontuação'}</h2>
-              <p className="text-muted-foreground text-sm mt-0.5">{isTeacher ? 'Verifique e pontue as atividades de cada aluno' : 'Classificação dos alunos por posição'}</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+            <Trophy size={20} className="text-white" />
           </div>
-          {isTeacher && (
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                onClick={handleFullSync}
-                disabled={fullSyncLoading || retroLoading}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold gap-1.5 shadow-sm"
-                title="Sincronizar checklists e pontuações de todos os alunos com entregas registradas"
-              >
-                {fullSyncLoading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                {fullSyncLoading ? 'Sincronizando...' : 'Sincronizar Entregas'}
-              </Button>
-            </div>
-          )}
+          <div>
+            <h2 className="text-xl lg:text-2xl font-bold text-foreground">{isPontuacaoGeralRoute ? 'Pontuação Geral' : 'Controle de Pontuação'}</h2>
+            <p className="text-muted-foreground text-sm mt-0.5">{isTeacher ? 'Verifique e pontue as atividades de cada aluno' : 'Classificação dos alunos por posição'}</p>
+          </div>
         </div>
         {isTeacher && (courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0) > 0 &&
         <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-3 flex flex-wrap items-center gap-2">
             <Clock size={14} className="text-orange-500 shrink-0" />
             <p className="text-xs text-orange-800 font-semibold">{courseSubmissions?.filter((s) => s.status === 'submitted' && !scoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length || 0} atividade(s) aguardando verificação e pontuação</p>
-            <div className="flex items-center gap-2 ml-auto">
-              <Button size="sm" variant="outline" className="text-xs h-7" onClick={handleRetro} disabled={retroLoading || fullSyncLoading}
-              title="Força o agente de pontuação a rodar agora, caso a automação automática tenha falhado">
-                {retroLoading ? <Loader2 size={13} className="animate-spin mr-1" /> : <RefreshCw size={13} className="mr-1" />}
-                {retroLoading ? 'Recalculando...' : 'Recalcular pontuações'}
-              </Button>
-              <Button size="sm" className="text-xs h-7 bg-orange-600 hover:bg-orange-700 text-white font-semibold" onClick={handleFullSync} disabled={fullSyncLoading || retroLoading}
-              title="Sincroniza pontuações e checklists com base em todas as entregas">
-                {fullSyncLoading ? <Loader2 size={13} className="animate-spin mr-1" /> : <CheckCircle2 size={13} className="mr-1" />}
-                {fullSyncLoading ? 'Sincronizando...' : 'Sincronizar Tudo'}
-              </Button>
-            </div>
+            <Button size="sm" variant="outline" className="text-xs h-7 ml-auto" onClick={handleRetro} disabled={retroLoading}
+            title="Força o agente de pontuação a rodar agora, caso a automação automática tenha falhado">
+              {retroLoading ? <Loader2 size={13} className="animate-spin mr-1" /> : <RefreshCw size={13} className="mr-1" />}
+              {retroLoading ? 'Recalculando...' : 'Recalcular pontuações agora'}
+            </Button>
           </div>
         }
       </div>
-
-      {/* Visual Batch Synchronization & Deduplication Progress Card */}
-      {isTeacher && batchSyncState.active && (
-        <div className="mb-5 bg-card border border-border rounded-xl p-4 shadow-sm animate-fade-in space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {batchSyncState.step === 4 ? (
-                <div className="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                  <CheckCircle2 size={16} />
-                </div>
-              ) : batchSyncState.error ? (
-                <div className="w-7 h-7 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
-                  <AlertCircle size={16} />
-                </div>
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Loader2 size={16} className="animate-spin" />
-                </div>
-              )}
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-foreground truncate">{batchSyncState.stepName}</h3>
-                <p className="text-xs text-muted-foreground truncate">{batchSyncState.details}</p>
-              </div>
-            </div>
-            <span className="text-sm font-extrabold font-mono tabular-nums text-primary shrink-0">
-              {batchSyncState.progressPercent}%
-            </span>
-          </div>
-
-          {/* Smooth Progress Bar */}
-          <div className="w-full bg-secondary/80 rounded-full h-2.5 overflow-hidden">
-            <div
-              className={`h-full transition-all duration-500 rounded-full ${
-                batchSyncState.step === 4 ? 'bg-emerald-500' : batchSyncState.error ? 'bg-red-500' : 'bg-primary'
-              }`}
-              style={{ width: `${batchSyncState.progressPercent}%` }}
-            />
-          </div>
-
-          {/* Completion Metrics Summary */}
-          {batchSyncState.step === 4 && batchSyncState.metrics && (
-            <div className="pt-2 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div className="bg-secondary/40 rounded-lg p-2 text-center">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground block">Alunos Conferidos</span>
-                <span className="text-sm font-extrabold font-mono tabular-nums text-foreground">{batchSyncState.metrics.checkedCount}</span>
-              </div>
-              <div className="bg-secondary/40 rounded-lg p-2 text-center">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground block">Duplicatas Limpas</span>
-                <span className="text-sm font-extrabold font-mono tabular-nums text-emerald-600">+{batchSyncState.metrics.dedupCount}</span>
-              </div>
-              <div className="bg-secondary/40 rounded-lg p-2 text-center">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground block">Etapas Checklist</span>
-                <span className="text-sm font-extrabold font-mono tabular-nums text-primary">{batchSyncState.metrics.completedItems}</span>
-              </div>
-              <div className="bg-secondary/40 rounded-lg p-2 text-center">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground block">Pontuações Processadas</span>
-                <span className="text-sm font-extrabold font-mono tabular-nums text-foreground">{batchSyncState.metrics.createdScores + batchSyncState.metrics.updatedScores}</span>
-              </div>
-            </div>
-          )}
-
-          {(batchSyncState.step === 4 || batchSyncState.error) && (
-            <div className="flex justify-end pt-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-xs h-7 text-muted-foreground hover:text-foreground"
-                onClick={() => setBatchSyncState(prev => ({ ...prev, active: false }))}
-              >
-                Fechar Painel
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
 
       {isTeacher && <ModuleUnlockPanel course={activeCourse} adminEmail={session?.email || ''} />}
 
@@ -1543,7 +1331,7 @@ export default function ScoreControl() {
           const canEditManual = isTeacher && !activeModule;
           return (
             <div
-              key={code.id ? `${code.id}_${code.code || code.student_email || index}` : `score_row_${index}`}
+              key={code.id}
               draggable={isTeacher && !isEditingScoreRow && !isEditingParticipationsRow}
               onDragStart={() => setDraggedEmail(code.student_email)}
               onDragOver={(e) => e.preventDefault()}

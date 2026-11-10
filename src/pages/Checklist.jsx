@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { ClipboardCheck, Lock, Unlock, GraduationCap, ArrowRight, CheckCircle2, RefreshCw } from 'lucide-react';
+import { ClipboardCheck, Lock, Unlock, GraduationCap, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
@@ -44,28 +44,6 @@ export default function Checklist() {
 
   const focusItem = items[focusIndex];
   const [savingCompletion, setSavingCompletion] = useState(false);
-  const [syncingChecklist, setSyncingChecklist] = useState(false);
-
-  const handleAdminReconcile = async () => {
-    setSyncingChecklist(true);
-    try {
-      toast.info('Sincronizando checklists de todos os alunos com base nas entregas...');
-      const res = await base44.functions.invoke('reconcileStudentChecklists', {
-        all_students: true,
-        admin_email: session?.email || ''
-      });
-      const data = res.data || res;
-      await queryClient.invalidateQueries();
-      toast.success(
-        `Checklists sincronizados! ${data?.checked || 0} alunos conferidos e ${data?.completed_items || 0} etapas reconhecidas.`
-      );
-    } catch (err) {
-      toast.error('Erro ao sincronizar checklists: ' + (err?.message || 'Tente novamente.'));
-    } finally {
-      setSyncingChecklist(false);
-    }
-  };
-
   const script = useMemo(() => {
     if (isLoading || error || !module) return '';
     if (module.complete && module.examDone) return '';
@@ -77,7 +55,7 @@ export default function Checklist() {
   // A corujinha fala a etapa atual sempre que o aluno muda de marco.
   useEffect(() => {
     if (script) voice.speak(script);
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [script, voice.enabled]);
 
   // Ida: sai do checklist com checklist=<módulo>&checklistItem=<key>;
@@ -121,28 +99,14 @@ export default function Checklist() {
 
   return (
     <div className="app-page max-w-2xl mx-auto animate-fade-in-up space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shrink-0">
-            <ClipboardCheck size={22} className="text-white" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-xl lg:text-2xl font-bold text-foreground">Trilha do Módulo</h2>
-            <p className="text-sm text-muted-foreground">A Luna te guia passo a passo até liberar a prova</p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shrink-0">
+          <ClipboardCheck size={22} className="text-white" />
         </div>
-        {session?.role === 'admin' && (
-          <button
-            type="button"
-            disabled={syncingChecklist}
-            onClick={handleAdminReconcile}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 bg-white dark:bg-card text-indigo-700 text-xs font-bold shadow-sm hover:bg-indigo-50 transition-colors disabled:opacity-60 shrink-0"
-            title="Conferir e atualizar histórico de entregas e checklists de todos os alunos"
-          >
-            <RefreshCw size={12} className={syncingChecklist ? 'animate-spin' : ''} />
-            {syncingChecklist ? 'Sincronizando...' : 'Sincronizar'}
-          </button>
-        )}
+        <div className="min-w-0">
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground">Trilha do Módulo</h2>
+          <p className="text-sm text-muted-foreground">A Luna te guia passo a passo até liberar a prova</p>
+        </div>
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1">

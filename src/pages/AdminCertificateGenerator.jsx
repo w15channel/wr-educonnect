@@ -29,6 +29,7 @@ import { base44 } from '@/api/base44Client';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import CertificateFront from '@/components/certificates/CertificateFront';
 import CertificateBack from '@/components/certificates/CertificateBack';
+import AcademicItemSelector from '@/components/certificates/AcademicItemSelector';
 import { formatDuration, parseDurationToMinutes } from '@/lib/durationUtils';
 import {
   CERTIFICATE_STYLES,

@@ -73,7 +73,7 @@ export default function ChecklistReturnBar() {
     } Quando você terminar, toque em \"Já concluí\" aqui embaixo. Se ainda não fez, não tem problema — faça com calma e depois marque como concluído.`;
     voice.speak(script);
     return () => voice.stop();
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, itemKey]);
 
   const handleNotYet = useCallback(() => {

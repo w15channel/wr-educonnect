@@ -22,7 +22,7 @@ export default function TutorialModal({ onFinish, studentName }) {
 
   useEffect(() => {
     voice.speak(script);
-     
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [script]);
 
   const go = (next) => { voice.stop(); setIndex(next); };

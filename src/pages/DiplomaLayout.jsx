@@ -1,17 +1,14 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ChevronDown, Menu, X, ClipboardCheck, LayoutDashboard, CalendarDays, Users, Flame, BookOpen, Play } from 'lucide-react';
+import { User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ChevronDown, Menu, X, ClipboardCheck, LayoutDashboard, CalendarDays, Users } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 
 
 const DIPLOMA_GROUPS = [
   { label: 'Conteúdo', items: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', color: 'text-amber-400' },
-    { icon: Play, label: 'Aulas gravadas', path: '/lessons', color: 'text-purple-400' },
-    { icon: BookOpen, label: 'Apostila Digital', path: '/apostila', color: 'text-emerald-400' },
     { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-blue-400' },
-    { icon: Flame, label: 'Ofensiva Diária', path: '/ofensivas', color: 'text-orange-400' },
   ] },
   { label: 'Ferramentas', items: [
     { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },

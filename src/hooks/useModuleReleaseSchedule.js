@@ -10,7 +10,7 @@ export default function useModuleReleaseSchedule(enabled = true) {
     queryFn: () => base44.entities.ModuleReleaseSchedule.list('module_number', 20),
     staleTime: 60000,
     refetchInterval: 60000,
-    enabled: Boolean(enabled),
+    enabled,
   });
   // O calendário embarcado é a automação secundária: mesmo que a consulta ou
   // a automação principal falhe por falta de créditos, a data libera o módulo

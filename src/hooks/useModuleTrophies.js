@@ -14,28 +14,7 @@ export default function useModuleTrophies(course = 'tcc') {
     queryKey: ['module-trophy-submissions', course],
     queryFn: () => base44.entities.ExamSubmission.filter({ course }, '-submitted_at', 3000),
   });
-  const { data: moduleAchievements = [], isLoading: loadingAchievements } = useQuery({
-    queryKey: ['module-achievements-trophies', course],
-    queryFn: () => base44.entities.Achievement.filter({ course, kind: 'module' }, '-occurred_at', 500),
-  });
-
-  const completions = useMemo(() => {
-    const examCompletions = buildModuleCompletions(exams, submissions);
-    const achievementCompletions = moduleAchievements.map((ach) => {
-      let modNum = 1;
-      const match = (ach.source_id || ach.title || ach.dedupe_key || '').match(/(?:mod|m[óo]dulo|module)[^\d]*(\d+)/i);
-      if (match) modNum = parseInt(match[1], 10);
-      return {
-        id: ach.id,
-        student_email: ach.student_email,
-        moduleNumber: modNum,
-        submitted_at: ach.occurred_at || ach.created_date,
-      };
-    }).filter((item) => item.moduleNumber);
-
-    return [...examCompletions, ...achievementCompletions];
-  }, [exams, submissions, moduleAchievements]);
-
+  const completions = useMemo(() => buildModuleCompletions(exams, submissions), [exams, submissions]);
   const byEmail = useMemo(() => {
     const map = new Map();
     completions.forEach((item) => {
@@ -46,5 +25,5 @@ export default function useModuleTrophies(course = 'tcc') {
     map.forEach((items) => items.sort((a, b) => a.moduleNumber - b.moduleNumber));
     return map;
   }, [completions]);
-  return { completions, byEmail, isLoading: loadingExams || loadingSubmissions || loadingAchievements };
+  return { completions, byEmail, isLoading: loadingExams || loadingSubmissions };
 }

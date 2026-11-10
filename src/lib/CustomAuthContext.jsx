@@ -47,10 +47,6 @@ async function loginFromAccessLink() {
  * não afeta alunos que já estão logados via código de acesso.
  */
 async function checkGoogleAuth() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const hasToken = urlParams.get('access_token') || urlParams.get('token') || localStorage.getItem('base44_access_token') || localStorage.getItem('token');
-  if (!hasToken) return null;
-
   try {
     const user = await base44.auth.me();
     if (!user || !user.email) return null;

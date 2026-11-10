@@ -6,24 +6,9 @@ import { readAll, pause } from '../../shared/moduleReleasePlan.ts';
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const body = await req.json().catch(() => ({}));
-    const user = await base44.auth.me().catch(() => null);
-    let isAdmin = user?.role === 'admin';
-    if (!isAdmin && body?.admin_email) {
-      const normAdmin = String(body.admin_email).trim().toLowerCase();
-      const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
-      isAdmin = credentials.some((c) => String(c.email || '').trim().toLowerCase() === normAdmin);
-      if (!isAdmin) {
-        const codes = await base44.asServiceRole.entities.AccessCode.filter(
-          { student_email: normAdmin }, '-created_date', 10
-        );
-        isAdmin = codes.some((c) =>
-          c.is_active !== false &&
-          ['admin', 'management'].includes(c.profile_category)
-        );
-      }
-    }
-    if (!isAdmin) return Response.json({ error: 'Forbidden' }, { status: 403 });
+    const user = await base44.auth.me();
+    if (user?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+    const body = await req.json();
     const cursor = typeof body.cursor === 'string' ? body.cursor : '';
     const batchSize = Math.min(20, Math.max(1, Number(body.batch_size) || 20));
     const dryRun = body.dry_run === true;

@@ -3,13 +3,11 @@ import { useParams, useNavigate, useOutletContext, useLocation } from 'react-rou
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { ChevronLeft, CalendarDays, Phone, CheckCircle, XCircle, MessageCircle, Mail, BookOpen, Award } from 'lucide-react';
+import { ChevronLeft, CalendarDays, Phone, CheckCircle, XCircle, MessageCircle, Mail, BookOpen, Award, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 import { Button } from '@/components/ui/button';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
-import AchievementShowcase from '@/components/achievements/AchievementShowcase';
-import useModuleTrophies from '@/hooks/useModuleTrophies';
 
 const tuitionConfig = {
   paid:    { label: 'Em dia',       class: 'text-green-700 bg-green-100 border-green-200',   icon: CheckCircle },
@@ -62,21 +60,6 @@ export default function StudentDetail() {
     queryKey: ['tuitions'],
     queryFn: () => base44.entities.Tuition.list('-month_ref', 500),
   });
-
-  const { data: studentAchievements = [] } = useQuery({
-    queryKey: ['student-achievements', studentEmail],
-    queryFn: () => base44.entities.Achievement.filter({ student_email: studentEmail }, '-occurred_at', 200),
-    enabled: !!studentEmail,
-  });
-
-  const { data: monitorHistory = [] } = useQuery({
-    queryKey: ['monitor-history', studentEmail],
-    queryFn: () => base44.entities.MonitorHistory.filter({ student_email: studentEmail }, '-created_date', 50),
-    enabled: !!studentEmail,
-  });
-
-  const { completions: moduleTrophies = [] } = useModuleTrophies({ course: code?.course || 'tcc' });
-
 
   // Admin: always allow; student: restrict to own course
   const isAdmin = session?.role === 'admin';
@@ -224,15 +207,6 @@ export default function StudentDetail() {
             <div className="w-6 h-6 rounded-full border border-border shadow-sm" style={{ backgroundColor: avatarColor }} />
             <span className="text-xs font-mono text-muted-foreground">{avatarColor}</span>
           </div>
-
-          {/* Conquistas e Troféus do Aluno */}
-          <AchievementShowcase
-            trophies={moduleTrophies.filter(t => String(t.studentEmail || '').toLowerCase() === String(studentEmail || '').toLowerCase())}
-            monitorAwards={monitorHistory}
-            contributionAwards={studentAchievements.filter((a) => a.kind === 'tuition')}
-            beginnerAwards={studentAchievements.filter((a) => a.kind === 'beginner')}
-            achievements={studentAchievements}
-          />
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">

@@ -55,7 +55,7 @@ const OPTIONS = [
 export default function StudyProfile() {
   const session = getSession();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState(session?.study_mode || 'diploma');
+  const [selected, setSelected] = useState(session?.study_mode || 'interativa');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -70,7 +70,6 @@ export default function StudyProfile() {
     setSaving(true);
     try {
       if (session?.codeId) {
-        await base44.entities.AccessCode.update(session.codeId, { study_mode: selected }).catch(() => null);
         const existing = await base44.entities.StudentProfile.filter({ code_id: session.codeId }, '-created_date', 1);
         if (existing.length > 0) {
           await base44.entities.StudentProfile.update(existing[0].id, { study_mode: selected });
@@ -84,12 +83,6 @@ export default function StudyProfile() {
         }
       }
       setSession({ ...(getSession() || {}), study_mode: selected });
-      if (session?.codeId) {
-        localStorage.setItem(`wr_profile_done_${session.codeId}`, '1');
-      }
-      if (session?.email) {
-        localStorage.setItem(`wr_profile_done_${session.email}`, '1');
-      }
       toast.success('Perfil de estudos salvo! Seu novo modo já está ativo.');
       navigate(selected === 'interativa' ? '/student/dashboard' : '/degree/student/dashboard', { replace: true });
     } catch {

@@ -58,7 +58,6 @@ import AdminCertificateGenerator from './pages/AdminCertificateGenerator';
 import AtendimentoSocial from './pages/AtendimentoSocial';
 import Practice from './pages/Practice';
 import CertificateVerifier from './pages/CertificateVerifier';
-import NotebookStudio from './pages/adm/NotebookStudio';
 import { BRAND_LEGAL_NAME } from '@/lib/brand';
 
 // Guard: admin-only pages redirect non-admins (teacher/student) to their dashboard
@@ -95,8 +94,8 @@ function AppRoutesTree() {
         <Route path="chat" element={<ClassChat />} />
         <Route path="students" element={<Students />} />
         <Route path="students/:id" element={<StudentDetail />} />
-        <Route path="keys" element={<AdminOnly><Keys /></AdminOnly>} />
-        <Route path="announcements" element={<AdminOnly><Announcements /></AdminOnly>} />
+        <Route path="keys" element={<Keys />} />
+        <Route path="announcements" element={<Announcements />} />
         <Route path="profile" element={<Profile />} />
         <Route path="study-profile" element={<StudyProfile />} />
         <Route path="calendar" element={<Calendar />} />
@@ -119,7 +118,6 @@ function AppRoutesTree() {
         <Route path="classe" element={<Classe />} />
         <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="apostila" element={<Apostila />} />
-        <Route path="notebook-studio" element={<AdminOnly><NotebookStudio /></AdminOnly>} />
         <Route path="ring" element={<Notifications />} />
         <Route path="practice" element={<Practice />} />
       </Route>
@@ -165,12 +163,11 @@ const AuthenticatedApp = () => {
   if (pathname === '/lobby') return <CourseLobby />;
 
   const isAdmin = session.role === 'admin';
-  const isInteractiveStudent = !isAdmin && session?.study_mode === 'interativa';
-  const base = isAdmin ? '/adm' : (isInteractiveStudent ? '/student' : '/degree/student');
+  const base = isAdmin ? '/adm' : '/student';
 
   return (
     <Routes>
-      {/* Diploma / Simplified student shell */}
+      {/* Diploma isolated shell */}
       <Route path="/degree/student/*" element={<DiplomaLayout />}>
         <Route index element={<DiplomaDashboard />} />
         <Route path="dashboard" element={<DiplomaDashboard />} />
@@ -180,10 +177,7 @@ const AuthenticatedApp = () => {
         <Route path="exams" element={<Exams />} />
         <Route path="exams/quiz/:id" element={<ExamQuizView />} />
         <Route path="checklist" element={<Checklist />} />
-        <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="debates" element={<SalaDebates />} />
-        <Route path="forum" element={<Support />} />
-        <Route path="suporte" element={<Support />} />
         <Route path="chat" element={<ClassChat />} />
         <Route path="dm/:email" element={<DirectMessage />} />
         <Route path="practice" element={<Practice />} />
@@ -204,7 +198,7 @@ const AuthenticatedApp = () => {
       <Route path="/adm/*" element={<AppRoutesTree />} />
 
       {/* Root & legacy redirects → flat paths */}
-      <Route path="/" element={<Navigate to={`${base}/dashboard`} replace />} />
+      <Route path="/" element={<Navigate to={isAdmin ? '/adm/dashboard' : '/degree/student/dashboard'} replace />} />
       <Route path="/dashboard" element={<Navigate to={`${base}/dashboard`} replace />} />
       <Route path="/lessons" element={<Navigate to={`${base}/lessons`} replace />} />
       <Route path="/live" element={<Navigate to={`${base}/apostila`} replace />} />

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import useLunaVoice from '@/hooks/useLunaVoice';
 
 export default function LunaDashboardGreetingVoice({ text }) {

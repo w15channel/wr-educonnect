@@ -1,31 +1,23 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { GEMINI_READER_VOICE, normalizeSpeechText, requestBase44VoiceUrl } from './base44Voice';
+import { createBase44VoiceAudio, normalizeTextForSpeech } from './base44Voice';
 
-describe('Voz Gemini Eclipse para leitura', () => {
+describe('narração sem integração paga', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn());
+    vi.stubGlobal('localStorage', { getItem: vi.fn(() => null) });
+    vi.stubGlobal('fetch', vi.fn(() => { throw new Error('Rede não permitida'); }));
   });
   afterEach(() => vi.unstubAllGlobals());
-
-  it('configura a voz padrão como Eclipse do Gemini', () => {
-    expect(GEMINI_READER_VOICE).toBe('Eclipse');
+  it('delega texto novo à voz do dispositivo sem acessar a rede', async () => {
+    expect(await createBase44VoiceAudio('Olá, aluno!')).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
   });
-
-  it('normaliza o texto removendo HTML e espaços excessivos', () => {
-    expect(normalizeSpeechText('<p>Texto de <strong>aula</strong></p>')).toBe('Texto de aula');
+  it('force não habilita geração paga', async () => {
+    expect(await createBase44VoiceAudio('Aula completa', { force: true, useCache: false })).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
   });
-
-  it('chama /api/tts com a voz Eclipse', async () => {
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ audioBase64: 'UklGRg==', mimeType: 'audio/wav' }),
-    });
-
-    const url = await requestBase44VoiceUrl('Olá, aluno!');
-    expect(url).toContain('data:audio/wav;base64,UklGRg==');
-    expect(fetch).toHaveBeenCalledWith('/api/tts', expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify({ text: 'Olá, aluno!', voice: 'Eclipse' }),
-    }));
+  it('respeita o silêncio e normaliza o texto', async () => {
+    localStorage.getItem.mockReturnValue('off');
+    expect(await createBase44VoiceAudio('Olá')).toBeNull();
+    expect(normalizeTextForSpeech('Texto\n\n\n de aula')).toBe('Texto. de aula.');
   });
 });

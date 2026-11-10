@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { sortBySequence } from '@/lib/sequenceUtils';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
-import { Play, Plus, BookOpen, Video, FileText, Globe, GripVertical, Sparkles } from 'lucide-react';
+import { Play, Plus, BookOpen, Video, FileText, Globe, GripVertical } from 'lucide-react';
 import ModuleBlock from '@/components/lessons/ModuleBlock';
 import ModuleCompletionCelebration from '@/components/lessons/ModuleCompletionCelebration';
 import ParticipationCelebration from '@/components/shared/ParticipationCelebration';
@@ -414,14 +414,7 @@ export default function Lessons() {
         </div>
         {isTeacher && (
           <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              className="h-9 text-sm gap-1.5 border-purple-500/30 text-purple-300 hover:bg-purple-950/20"
-              onClick={() => navigate('/adm/notebook-studio')}
-            >
-              <Sparkles size={14} className="text-purple-400" />
-              Estúdio NotebookLM
-            </Button>
+
             <Button variant="outline" className="h-9 text-sm" onClick={openModuleEditor}>
               Organizar módulos
             </Button>

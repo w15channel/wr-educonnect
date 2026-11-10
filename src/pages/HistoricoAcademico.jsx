@@ -16,6 +16,7 @@ import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO, WR_SIGNATURE_IMAGE }
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
 import { buildStudentAcademicData } from '@/lib/buildStudentAcademicData';
 import { formatDuration } from '@/lib/durationUtils';
+import { resolveItemModule } from '@/lib/moduleAttribution';
 import useModuleAccess from '@/hooks/useModuleAccess';
 
 const HISTORY_MODULES = Array.from({ length: 10 }, (_, index) => index + 1);
@@ -486,25 +487,6 @@ export default function HistoricoAcademico() {
     return `${base}/pontuacao-geral`;
   })();
 
-  const filtered = useMemo(() => {
-    const list = codes.filter(c => {
-      if (activeCourse && !(c.course === activeCourse || (activeCourse === 'tcc' && !c.course))) return false;
-      if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
-      if (courseEmails && !courseEmails.has(c.student_email || '')) return false;
-      return !search ||
-        (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
-        (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
-        (c.student_email || '').toLowerCase().includes(search.toLowerCase());
-    });
-    const seen = new Set();
-    return list.filter(c => {
-      const key = c.id || c.code || c.student_email;
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [codes, activeCourse, codePrefix, courseEmails, search]);
-
   if (!isTeacher) {
     if (!selectedStudent) {
       return (
@@ -641,7 +623,15 @@ export default function HistoricoAcademico() {
     );
   }
 
-
+  const filtered = codes.filter(c => {
+    if (activeCourse && !(c.course === activeCourse || (activeCourse === 'tcc' && !c.course))) return false;
+    if (codePrefix && !(c.code || '').startsWith(codePrefix)) return false;
+    if (courseEmails && !courseEmails.has(c.student_email || '')) return false;
+    return !search ||
+      (c.student_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.profile_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.student_email || '').toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up">
@@ -661,12 +651,11 @@ export default function HistoricoAcademico() {
       </div>
 
       <div className="space-y-2">
-        {filtered.map((code, idx) => {
+        {filtered.map(code => {
           const email = code.student_email || '';
           const name = code.profile_name || code.student_name || 'Sem nome';
-          const itemKey = code.id ? `${code.id}_${code.code || idx}` : `code_${idx}`;
           return (
-            <div key={itemKey} onClick={() => openSelector({ name, email, code })} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
+            <div key={code.id} onClick={() => openSelector({ name, email, code })} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0" style={{ backgroundColor: code.profile_avatar_color || '#5b5ef4' }}>
                 {name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>

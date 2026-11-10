@@ -91,7 +91,6 @@ export default function Profile() {
           profile_photo_url: photoUrl,
           student_name: name,
           student_email: email,
-          study_mode: studyMode,
         });
       }
       const existing = await base44.entities.StudentProfile.filter({ code_id: session?.codeId }, '-created_date', 1);

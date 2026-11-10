@@ -281,7 +281,6 @@ export default function Ofensivas() {
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayLabel = format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });
-  const isDiplomaMode = typeof window !== 'undefined' && window.location.pathname.startsWith('/degree/student');
 
   const [submitting, setSubmitting] = useState({});
   const [activeQuestion, setActiveQuestion] = useState(null);
@@ -314,9 +313,7 @@ export default function Ofensivas() {
     enabled: !isTeacher && !!session?.email,
   });
   const currentModuleNumber = myModuleUnlocks.reduce((highest, item) => Math.max(highest, Number(item.module_number) || 1), 1);
-  const challenge = isTeacher
-    ? (challenges[0] || null)
-    : (challenges.find((item) => Number(item.module_number || 1) === currentModuleNumber) || challenges[0] || null);
+  const challenge = isTeacher ? (challenges[0] || null) : (challenges.find((item) => Number(item.module_number || 1) === currentModuleNumber) || null);
 
   const { data: myResponse } = useQuery({
     queryKey: ['daily-response', challenge?.id, session?.email],
@@ -501,11 +498,8 @@ export default function Ofensivas() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
+          <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             <Flame size={22} className="text-orange-500" /> Ofensivas Diárias
-            <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/15 border border-orange-400/30 px-2.5 py-0.5 text-[10px] font-bold text-orange-400">
-              <Zap size={10} /> Automação Diária Ativa (00:05 BRT)
-            </span>
           </h2>
           <p className="text-muted-foreground text-sm mt-0.5 capitalize">{todayLabel}</p>
         </div>
@@ -578,7 +572,7 @@ export default function Ofensivas() {
               <p className="text-xs text-muted-foreground mt-2">Volte amanhã para manter sua sequência!</p>
               <div className="mt-4 text-left">
                 <NextStepLink
-                  to={isDiplomaMode ? '/degree/student/tasks' : '/tasks'}
+                  to="/tasks"
                   icon={ClipboardList}
                   title="Agora vá para as Tarefas"
                   description="Você acabou de revisar o conteúdo na ofensiva — aproveite o embalo e entregue a tarefa do módulo agora."

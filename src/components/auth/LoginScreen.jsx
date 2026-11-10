@@ -45,16 +45,8 @@ export default function LoginScreen({ onLogin }) {
   }, []);
 
   const checkAdminSetup = async () => {
-    if (!import.meta.env.VITE_BASE44_APP_BASE_URL) {
-      setAdminConfigured(true);
-      return;
-    }
-    try {
-      const creds = await base44.entities.AdminCredential.list();
-      setAdminConfigured(creds.length > 0);
-    } catch {
-      setAdminConfigured(true);
-    }
+    const creds = await base44.entities.AdminCredential.list();
+    setAdminConfigured(creds.length > 0);
   };
 
   const handleCodeLogin = async (e) => {

@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import {
   ClipboardList, CheckCircle, Plus, Pencil, Trash2, Play, Send, GraduationCap, FileText, ChevronDown, ChevronUp,
-  Trophy, Eye, EyeOff, Award, Sparkles, Paperclip, Upload, X
+  Trophy, Eye, EyeOff, Award, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -225,49 +225,17 @@ export default function Tasks({ mode = 'tasks' }) {
     moduleGroups.find(g => !g.locked)?.module ?? null;
   const activeModule = openModule === undefined ? defaultOpenModule : openModule;
 
-  const [taskFiles, setTaskFiles] = useState({});
-
-  const handleFileChange = (taskId, file) => {
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('O arquivo deve ter no máximo 10MB.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setTaskFiles(prev => ({
-        ...prev,
-        [taskId]: {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          dataUrl: e.target.result,
-        }
-      }));
-    };
-    reader.readAsDataURL(file);
-  };
-
   const submitCommentMutation = useMutation({
-    mutationFn: async ({ taskId, comment, fileUrl, fileName }) => {
+    mutationFn: async ({ taskId, comment }) => {
       await base44.functions.invoke('saveStudentRecord', {
         action: 'create', entity: 'TaskSubmission',
         student_identifiers: [user?.email, user?.code],
-        data: {
-          task_id: taskId,
-          student_email: user?.email || user?.code || '',
-          student_name: user?.name || user?.full_name || '',
-          comment: comment || '',
-          file_url: fileUrl || '',
-          file_name: fileName || '',
-          status: 'submitted',
-          course: userCourse
-        },
+        data: { task_id: taskId, student_email: user?.email || user?.code || '', student_name: user?.name || user?.full_name || '', comment, status: 'submitted', course: userCourse },
       });
       const taskTitle = tasks.find(t => t.id === taskId)?.title || 'Trabalho';
       await base44.entities.Notification.create({
         recipient_email: 'admin', sender_email: user?.email || '', sender_name: user?.name || 'Aluno',
-        message: `${user?.name || 'Aluno'} enviou resposta para: "${taskTitle}"${fileName ? ` com anexo (${fileName})` : ''}`,
+        message: `${user?.name || 'Aluno'} enviou resposta para: "${taskTitle}"`,
         task_title: taskTitle, type: 'task_submission', is_read: false,
       });
     },
@@ -276,9 +244,8 @@ export default function Tasks({ mode = 'tasks' }) {
       queryClient.invalidateQueries({ queryKey: ['student-learning-records', 'TaskSubmission'] });
       queryClient.invalidateQueries({ queryKey: ['admin-progress-submissions'] });
       setCommentInputs(prev => ({ ...prev, [taskId]: '' }));
-      setTaskFiles(prev => ({ ...prev, [taskId]: null }));
       setExpandedId(null);
-      toast.success('Resposta e arquivo enviados com sucesso!');
+      toast.success('Resposta enviada!');
       setCelebrating(true);
     },
   });
@@ -496,85 +463,14 @@ export default function Tasks({ mode = 'tasks' }) {
                       </Button>
                     ) : (
                       <div>
-                        <p className="text-xs font-bold text-foreground mb-2 flex items-center justify-between">
-                          <span>💬 Sua Resposta</span>
-                          <span className="text-[10px] text-muted-foreground font-normal">Texto + Arquivo anexo (opcional)</span>
-                        </p>
+                        <p className="text-xs font-bold text-foreground mb-2">💬 Sua Resposta</p>
                         <div className="flex items-start gap-2">
                           <Textarea placeholder="Escreva sua resposta aqui (mínimo de 1000 caracteres)..." value={commentInputs[task.id] || ''} onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))} rows={5} className="text-xs" />
                           <VoiceDictationButton value={commentInputs[task.id] || ''} onChange={(text) => setCommentInputs(prev => ({ ...prev, [task.id]: text }))} className="mt-1" />
                         </div>
                         <MinLengthHint value={commentInputs[task.id] || ''} />
-
-                        {/* Anexo de Arquivo */}
-                        <div className="mt-3 p-3 border border-dashed border-border rounded-xl bg-background/50 flex flex-col gap-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Paperclip size={14} className="text-primary shrink-0" />
-                              {taskFiles[task.id] ? (
-                                <div className="min-w-0">
-                                  <p className="text-xs font-semibold text-foreground truncate">{taskFiles[task.id].name}</p>
-                                  <p className="text-[10px] text-muted-foreground">{(taskFiles[task.id].size / 1024).toFixed(0)} KB</p>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">Anexar arquivo (PDF, Word, Imagem, TXT, ZIP até 10MB)</span>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0">
-                              {taskFiles[task.id] ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 px-2 text-xs text-destructive hover:text-destructive"
-                                  onClick={() => setTaskFiles(prev => ({ ...prev, [task.id]: null }))}
-                                >
-                                  <X size={13} className="mr-1" /> Remover
-                                </Button>
-                              ) : (
-                                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border">
-                                  <Upload size={13} /> Escolher Arquivo
-                                  <input
-                                    type="file"
-                                    className="hidden"
-                                    accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.zip"
-                                    onChange={e => e.target.files?.[0] && handleFileChange(task.id, e.target.files[0])}
-                                  />
-                                </label>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <Button
-                          size="sm"
-                          className="w-full gap-1.5 mt-3"
-                          disabled={!isTextLongEnough(commentInputs[task.id]) || submitCommentMutation.isPending}
-                          onClick={() => {
-                            if (!isTextLongEnough(commentInputs[task.id])) {
-                              toast.error(insufficientTextMessage(commentInputs[task.id]));
-                              return;
-                            }
-                            const attached = taskFiles[task.id];
-                            submitCommentMutation.mutate({
-                              taskId: task.id,
-                              comment: commentInputs[task.id],
-                              fileUrl: attached?.dataUrl || '',
-                              fileName: attached?.name || '',
-                            });
-                          }}
-                        >
-                          {submitCommentMutation.isPending ? (
-                            <>
-                              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1" />
-                              Enviando...
-                            </>
-                          ) : (
-                            <>
-                              <Send size={13} /> Enviar Resposta {taskFiles[task.id] ? 'e Arquivo' : ''}
-                            </>
-                          )}
+                        <Button size="sm" className="w-full gap-1.5 mt-2" disabled={!isTextLongEnough(commentInputs[task.id]) || submitCommentMutation.isPending} onClick={() => { if (!isTextLongEnough(commentInputs[task.id])) { toast.error(insufficientTextMessage(commentInputs[task.id])); return; } submitCommentMutation.mutate({ taskId: task.id, comment: commentInputs[task.id] }); }}>
+                          <Send size={13} /> Enviar Resposta
                         </Button>
                       </div>
                     )}
