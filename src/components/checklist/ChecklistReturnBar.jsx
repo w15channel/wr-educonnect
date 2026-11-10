@@ -1,30 +1,49 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ClipboardCheck, ArrowLeft, CheckCircle2, X, Volume2, VolumeX } from 'lucide-react';
+import {
+  ClipboardCheck,
+  ArrowLeft,
+  CheckCircle2,
+  Circle,
+  X,
+  Volume2,
+  VolumeX,
+  Download,
+  ChevronUp,
+  ChevronDown,
+  ArrowRight,
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { toast } from 'sonner';
 import { getStepGuide } from '@/lib/checklistGuide';
 import useLunaVoice from '@/hooks/useLunaVoice';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
+import useModuleChecklist from '@/hooks/useModuleChecklist';
+import {
+  resolveChecklistPrefix,
+  saveActiveChecklistGuide,
+  loadActiveChecklistGuide,
+  clearActiveChecklistGuide,
+  markChecklistItemDone,
+  downloadCompletedChecklistPDF,
+} from '@/lib/checklistActions';
 
-/**
- * Caminho de volta do checklist: quando o aluno sai do checklist para cumprir um
- * requisito, a página recebe ?checklist=<módulo>&checklistItem=<key> e esta
- * barra o traz de volta.
- *
- * FLUXO DA LUNA:
- * 1. Ao chegar na atividade, a Luna aparece com um balão explicando o passo a
- *    passo de onde clicar e como concluir a etapa (com narração por voz).
- * 2. A Luna pergunta: "Você já conseguiu concluir esta etapa?"
- *    - "Ainda não terminei" → o balão fecha e a barra inferior oferece
- *      "Concluir" + "Voltar ao Checklist" para quando o aluno terminar.
- *    - "Já concluí" → dispara a comemoração (confete + jingle) e a barra
- *      passa a oferecer o retorno ao checklist.
- * 3. Após a comemoração, a barra mostra "Etapa concluída! Voltar ao Checklist".
- */
+const ACTIVITY_PATHS = [
+  '/apostila',
+  '/tasks',
+  '/debates',
+  '/ofensivas',
+  '/lessons',
+  '/exams',
+  '/tuitions',
+  '/terapeuta',
+];
+
 function celebrate() {
   confetti({ particleCount: 90, spread: 80, origin: { y: 0.65 }, startVelocity: 40 });
   setTimeout(() => confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 }, startVelocity: 30 }), 350);
-  // Jingle de conclusão (mesmo padrão do ModuleCompletionCard)
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) return;
   const ctx = new AudioCtx();
@@ -42,39 +61,130 @@ function celebrate() {
   });
 }
 
-const CELEBRATION_DURATION = 3200;
+const CELEBRATION_DURATION = 2600;
 
 export default function ChecklistReturnBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const params = new URLSearchParams(location.search);
-  const moduleNumber = params.get('checklist');
-  const itemKey = params.get('checklistItem');
+  const queryClient = useQueryClient();
+  const { session } = useCustomAuth();
   const voice = useLunaVoice();
 
-  // Fases: guiding → ready (ou celebrating) → celebrating → celebrated
+  const params = new URLSearchParams(location.search);
+  const urlModule = params.get('checklist');
+  const urlItemKey = params.get('checklistItem');
+
+  const [storedGuide, setStoredGuide] = useState(() => loadActiveChecklistGuide());
   const [phase, setPhase] = useState('guiding');
   const [bubbleOpen, setBubbleOpen] = useState(true);
+  const [menuExpanded, setMenuExpanded] = useState(false);
+  const [savingKey, setSavingKey] = useState(null);
+  const [downloading, setDownloading] = useState(false);
 
-  const guide = useMemo(() => (itemKey ? getStepGuide(itemKey) : null), [itemKey]);
+  const isChecklistPage = location.pathname.endsWith('/checklist');
+  const isActivityPage = ACTIVITY_PATHS.some((p) => location.pathname.includes(p));
 
-  // Resetar o estado sempre que o aluno muda de página ou item
+  // Sincroniza quando o aluno chega com ?checklist=<módulo>&checklistItem=<key>
   useEffect(() => {
-    setPhase('guiding');
-    setBubbleOpen(true);
-  }, [location.pathname, moduleNumber, itemKey]);
+    if (isChecklistPage) {
+      clearActiveChecklistGuide();
+      setStoredGuide(null);
+      return;
+    }
+    if (urlModule) {
+      const next = { moduleNumber: Number(urlModule), itemKey: urlItemKey || null };
+      saveActiveChecklistGuide(next);
+      setStoredGuide(next);
+      setPhase('guiding');
+      setBubbleOpen(true);
+    } else {
+      setStoredGuide(loadActiveChecklistGuide());
+    }
+  }, [location.pathname, urlModule, urlItemKey, isChecklistPage]);
+
+  const moduleNumber = urlModule || (isActivityPage ? storedGuide?.moduleNumber : null);
+  const itemKey = urlItemKey || (isActivityPage ? storedGuide?.itemKey : null);
+
+  const isDiplomaMode = location.pathname.startsWith('/degree');
+  const { modules } = useModuleChecklist({
+    course: session?.course || 'tcc',
+    session,
+    includeOfensiva: !isDiplomaMode,
+  });
+
+  const currentMod = useMemo(
+    () => modules.find((m) => m.moduleNumber === Number(moduleNumber)) || null,
+    [modules, moduleNumber]
+  );
+  const items = currentMod?.items || [];
+  const activeItem = useMemo(
+    () => items.find((i) => i.key === itemKey) || items.find((i) => !i.done) || items[0] || null,
+    [items, itemKey]
+  );
+  const effectiveKey = activeItem?.key || itemKey;
+  const guide = useMemo(() => (effectiveKey ? getStepGuide(effectiveKey) : null), [effectiveKey]);
 
   // Narração por voz da orientação ao entrar na fase de guia
   useEffect(() => {
-    if (phase !== 'guiding' || !guide || !itemKey) return;
+    if (!moduleNumber || isChecklistPage || phase !== 'guiding' || !guide || !effectiveKey) return;
     const stepsText = guide.steps?.length ? guide.steps.join('. ') : '';
     const script = `${guide.what}. ${
       stepsText ? `Vou te explicar o passo a passo. ${stepsText}.` : ''
-    } Quando você terminar, toque em \"Já concluí\" aqui embaixo. Se ainda não fez, não tem problema — faça com calma e depois marque como concluído.`;
+    } Quando você terminar, toque em "Concluir etapa" aqui no menu flutuante.`;
     voice.speak(script);
     return () => voice.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, itemKey]);
+  }, [phase, effectiveKey, moduleNumber, isChecklistPage]);
+
+  const handleSaveDone = useCallback(
+    async (targetKey) => {
+      const keyToMark = targetKey || effectiveKey;
+      if (!moduleNumber || !keyToMark || savingKey) return;
+      voice.stop();
+      setSavingKey(keyToMark);
+      try {
+        await markChecklistItemDone({
+          session,
+          moduleNumber: Number(moduleNumber),
+          itemKey: keyToMark,
+          queryClient,
+        });
+        toast.success('Opção marcada como concluída no checklist!');
+        setBubbleOpen(false);
+        setPhase('celebrating');
+        celebrate();
+        setTimeout(() => setPhase('celebrated'), CELEBRATION_DURATION);
+      } catch (err) {
+        toast.error(err?.message || 'Não foi possível salvar a conclusão.');
+      } finally {
+        setSavingKey(null);
+      }
+    },
+    [moduleNumber, effectiveKey, savingKey, voice, session, queryClient]
+  );
+
+  const handleDownloadCompleted = useCallback(async () => {
+    if (!currentMod || downloading) return;
+    const doneItems = (currentMod.items || []).filter((i) => i.done);
+    if (doneItems.length === 0) {
+      toast.info('Marque ao menos uma opção como concluída para baixar.');
+      return;
+    }
+    setDownloading(true);
+    try {
+      await downloadCompletedChecklistPDF({
+        session,
+        moduleNumber: currentMod.moduleNumber,
+        items: currentMod.items,
+        modules: [currentMod],
+      });
+      toast.success('Opções concluídas baixadas em PDF!');
+    } catch (err) {
+      toast.error(err?.message || 'Não foi possível baixar o arquivo.');
+    } finally {
+      setDownloading(false);
+    }
+  }, [currentMod, downloading, session]);
 
   const handleNotYet = useCallback(() => {
     voice.stop();
@@ -82,32 +192,28 @@ export default function ChecklistReturnBar() {
     setPhase('ready');
   }, [voice]);
 
-  const handleAlreadyDone = useCallback(() => {
+  const handleCloseCompanion = useCallback(() => {
     voice.stop();
-    setBubbleOpen(false);
-    setPhase('celebrating');
-    celebrate();
-    setTimeout(() => setPhase('celebrated'), CELEBRATION_DURATION);
+    clearActiveChecklistGuide();
+    setStoredGuide(null);
   }, [voice]);
 
-  const handleMarkComplete = useCallback(() => {
-    voice.stop();
-    setPhase('celebrating');
-    celebrate();
-    setTimeout(() => setPhase('celebrated'), CELEBRATION_DURATION);
-  }, [voice]);
+  if (!moduleNumber || isChecklistPage) return null;
 
-  const dismissBubble = useCallback(() => {
-    voice.stop();
-    setBubbleOpen(false);
-    setPhase('ready');
-  }, [voice]);
-
-  if (!moduleNumber || location.pathname.endsWith('/checklist')) return null;
-
-  const parts = location.pathname.split('/').filter(Boolean);
-  const prefix = parts[0] === 'student' || parts[0] === 'adm' ? `/${parts[0]}` : '';
+  const prefix = resolveChecklistPrefix(location.pathname);
   const returnTo = `${prefix}/checklist?module=${moduleNumber}`;
+  const doneCount = currentMod?.doneCount || 0;
+  const totalCount = items.length || 0;
+  const isCurrentDone = !!activeItem?.done || phase === 'celebrated';
+
+  const goToActivityItem = (item) => {
+    voice.stop();
+    saveActiveChecklistGuide({ moduleNumber: Number(moduleNumber), itemKey: item.key });
+    setStoredGuide({ moduleNumber: Number(moduleNumber), itemKey: item.key });
+    setMenuExpanded(false);
+    const sep = item.to.includes('?') ? '&' : '?';
+    navigate(`${prefix}${item.to}${sep}checklist=${moduleNumber}&checklistItem=${item.key}`);
+  };
 
   return (
     <>
@@ -119,15 +225,14 @@ export default function ChecklistReturnBar() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 30, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed bottom-40 lg:bottom-24 left-0 right-0 z-40 mx-auto w-full max-w-md px-3"
+            className="fixed bottom-36 lg:bottom-24 left-0 right-0 z-40 mx-auto w-full max-w-md px-3"
           >
-            <div className="rounded-3xl border-2 border-amber-300/70 bg-gradient-to-br from-amber-50 via-card to-orange-50/70 p-4 shadow-lg dark:border-amber-400/25 dark:from-amber-950/30 dark:via-card dark:to-orange-950/20">
-              {/* Cabeçalho */}
+            <div className="rounded-3xl border-2 border-amber-300/70 bg-gradient-to-br from-amber-50 via-card to-orange-50/70 p-4 shadow-xl dark:border-amber-400/25 dark:from-amber-950/30 dark:via-card dark:to-orange-950/20">
               <div className="flex items-start gap-3">
                 <div className="shrink-0 text-3xl" role="img" aria-label="Luna">🦉</div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-black uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                    Luna · Módulo {moduleNumber}
+                    Luna · Checklist Módulo {moduleNumber} ({doneCount}/{totalCount})
                   </p>
                   <p className="mt-1 text-sm font-black leading-snug text-foreground">
                     {guide.emoji} {guide.what}
@@ -146,16 +251,15 @@ export default function ChecklistReturnBar() {
                   </button>
                   <button
                     type="button"
-                    onClick={dismissBubble}
+                    onClick={handleNotYet}
                     className="rounded-full p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    aria-label="Fechar orientação"
+                    aria-label="Minimizar orientação"
                   >
                     <X size={15} />
                   </button>
                 </div>
               </div>
 
-              {/* Passo a passo */}
               {guide.steps?.length > 0 && (
                 <ol className="mt-3 space-y-2 rounded-2xl border border-border bg-background/70 p-3">
                   {guide.steps.map((step, i) => (
@@ -169,27 +273,137 @@ export default function ChecklistReturnBar() {
                 </ol>
               )}
 
-              {/* Pergunta da Luna */}
               <p className="mt-3 text-sm font-bold text-amber-800 dark:text-amber-200">
                 Você já conseguiu concluir esta etapa?
               </p>
 
-              {/* Botões de resposta */}
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
                   onClick={handleNotYet}
                   className="flex-1 rounded-2xl border border-border bg-background px-3 py-3 text-xs font-bold text-foreground hover:opacity-90 transition-opacity"
                 >
-                  Ainda não terminei
+                  Fazer agora
                 </button>
                 <button
                   type="button"
-                  onClick={handleAlreadyDone}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-green-500 px-3 py-3 text-xs font-bold text-white shadow-lg hover:bg-green-600 transition-colors"
+                  disabled={!!savingKey}
+                  onClick={() => handleSaveDone(effectiveKey)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-green-500 px-3 py-3 text-xs font-bold text-white shadow-lg hover:bg-green-600 transition-colors disabled:opacity-60"
                 >
                   <CheckCircle2 size={14} />
-                  Já concluí
+                  {savingKey === effectiveKey ? 'Salvando...' : isCurrentDone ? 'Já concluída' : 'Marcar concluído'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Painel expansível do Checklist Flutuante na atividade ───────── */}
+      <AnimatePresence>
+        {menuExpanded && (
+          <motion.div
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-36 lg:bottom-24 left-0 right-0 z-40 mx-auto w-full max-w-md px-3"
+          >
+            <div className="rounded-3xl border border-border bg-card p-4 shadow-2xl space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ClipboardCheck size={17} className="text-primary shrink-0" />
+                  <p className="text-xs font-black text-foreground truncate">
+                    Checklist · Módulo {moduleNumber} ({doneCount}/{totalCount} concluídas)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMenuExpanded(false)}
+                  className="rounded-full p-1 text-muted-foreground hover:text-foreground"
+                  aria-label="Fechar lista do checklist"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                {items.map((item) => {
+                  const isSavingThis = savingKey === item.key;
+                  return (
+                    <div
+                      key={item.key}
+                      className={`flex items-center gap-2 rounded-2xl border p-2.5 text-xs ${
+                        item.done
+                          ? 'border-green-300/70 bg-green-50/70 dark:border-green-600/30 dark:bg-green-950/25'
+                          : item.key === effectiveKey
+                          ? 'border-primary/50 bg-primary/5'
+                          : 'border-border bg-background/60'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        disabled={item.done || isSavingThis}
+                        onClick={() => handleSaveDone(item.key)}
+                        className="flex items-center gap-2 flex-1 min-w-0 text-left disabled:cursor-default"
+                        title={item.done ? 'Opção concluída' : 'Selecionar como concluído'}
+                      >
+                        {item.done ? (
+                          <CheckCircle2 size={16} className="shrink-0 text-green-600" />
+                        ) : (
+                          <Circle size={16} className="shrink-0 text-muted-foreground hover:text-green-600" />
+                        )}
+                        <span className={`truncate font-semibold ${item.done ? 'text-green-800 dark:text-green-300 line-through' : 'text-foreground'}`}>
+                          {item.label}
+                        </span>
+                      </button>
+
+                      {!item.done ? (
+                        <button
+                          type="button"
+                          disabled={isSavingThis}
+                          onClick={() => handleSaveDone(item.key)}
+                          className="shrink-0 rounded-xl bg-green-500 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-green-600 disabled:opacity-60"
+                        >
+                          {isSavingThis ? '...' : 'Concluir'}
+                        </button>
+                      ) : (
+                        <span className="shrink-0 rounded-xl bg-green-500/15 px-2 py-0.5 text-[10px] font-black text-green-700 dark:text-green-300">
+                          Concluído
+                        </span>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => goToActivityItem(item)}
+                        className="shrink-0 rounded-xl border border-border bg-secondary px-2 py-1 text-[11px] font-bold text-foreground hover:bg-secondary/80"
+                        title="Ir para esta atividade"
+                      >
+                        <ArrowRight size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleDownloadCompleted}
+                  disabled={downloading || doneCount === 0}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-indigo-300 bg-indigo-50 px-3 py-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
+                >
+                  <Download size={14} />
+                  {downloading ? 'Baixando...' : `Baixar concluídas (${doneCount})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(returnTo)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground"
+                >
+                  <ArrowLeft size={14} />
+                  Abrir Checklist
                 </button>
               </div>
             </div>
@@ -207,10 +421,7 @@ export default function ChecklistReturnBar() {
             transition={{ duration: 0.25 }}
             className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none px-6"
           >
-            {/* Fundo escurecido sutil */}
             <div className="absolute inset-0 bg-black/20" />
-
-            {/* Card de parabenização */}
             <motion.div
               initial={{ scale: 0.6, y: 30 }}
               animate={{ scale: 1, y: 0 }}
@@ -224,63 +435,83 @@ export default function ChecklistReturnBar() {
                 {guide ? guide.what : 'Etapa concluída'}
               </p>
               <p className="mt-3 text-xs text-muted-foreground">
-                Agora é só voltar ao checklist para continuar sua trilha.
+                Opção marcada como concluída no seu checklist!
               </p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Barra flutuante de retorno ─────────────────────────────────── */}
+      {/* ── Barra flutuante de acompanhamento ──────────────────────────── */}
       {phase !== 'celebrating' && (
         <div className="fixed bottom-20 lg:bottom-6 left-0 right-0 z-40 mx-auto w-full max-w-md px-3">
-          {phase === 'ready' && itemKey ? (
-            /* Antes de marcar: botão de concluir + botão de retorno lado a lado */
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="flex gap-2"
-            >
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-1.5 rounded-2xl border border-border bg-card/95 backdrop-blur p-1.5 shadow-xl"
+          >
+            {effectiveKey && (
               <button
                 type="button"
-                onClick={handleMarkComplete}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-2xl border border-green-300 bg-green-500 px-3 py-3 text-xs font-bold text-white shadow-lg hover:bg-green-600 transition-colors"
+                disabled={isCurrentDone || !!savingKey}
+                onClick={() => handleSaveDone(effectiveKey)}
+                className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-colors ${
+                  isCurrentDone
+                    ? 'bg-green-500/15 text-green-700 dark:text-green-300'
+                    : 'bg-green-500 text-white shadow hover:bg-green-600'
+                }`}
               >
                 <CheckCircle2 size={14} />
-                Concluir
+                {savingKey === effectiveKey ? 'Salvando...' : isCurrentDone ? 'Concluído' : 'Concluir'}
               </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setBubbleOpen(false);
+                setMenuExpanded((prev) => !prev);
+              }}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary px-2.5 py-2.5 text-xs font-bold text-foreground hover:bg-secondary/80"
+            >
+              <ClipboardCheck size={14} className="text-primary shrink-0" />
+              <span className="truncate">Checklist ({doneCount}/{totalCount})</span>
+              {menuExpanded ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+            </button>
+
+            {doneCount > 0 && (
               <button
                 type="button"
-                onClick={() => navigate(returnTo)}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary px-4 py-3 text-xs font-bold text-primary-foreground shadow-lg hover:opacity-90 transition-opacity"
+                onClick={handleDownloadCompleted}
+                disabled={downloading}
+                title="Baixar opções concluídas"
+                className="flex items-center justify-center rounded-xl border border-indigo-300 bg-indigo-50 p-2.5 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/40 dark:bg-indigo-950/40 dark:text-indigo-200"
               >
-                <ArrowLeft size={14} />
-                <ClipboardCheck size={14} />
-                Voltar ao Checklist
+                <Download size={14} />
               </button>
-            </motion.div>
-          ) : (
-            /* Durante orientação, após comemorar, ou sem itemKey: apenas retorno */
-            <motion.button
+            )}
+
+            <button
               type="button"
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.2 }}
               onClick={() => navigate(returnTo)}
-              className={`w-full flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-xs font-bold shadow-lg transition-opacity hover:opacity-90 ${
-                phase === 'celebrated'
-                  ? 'border-green-300 bg-green-500 text-white'
-                  : 'border-primary/30 bg-primary text-primary-foreground'
-              }`}
+              title="Voltar ao Checklist"
+              className="flex items-center justify-center gap-1 rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground hover:opacity-90"
             >
-              {phase === 'celebrated' ? <CheckCircle2 size={14} /> : <ArrowLeft size={14} />}
-              <ClipboardCheck size={14} />
-              {phase === 'celebrated'
-                ? 'Etapa concluída! Voltar ao Checklist'
-                : `Voltar ao Checklist do Módulo ${moduleNumber}`}
-            </motion.button>
-          )}
+              <ArrowLeft size={14} />
+              <span className="hidden sm:inline">Voltar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCloseCompanion}
+              title="Fechar menu flutuante"
+              aria-label="Fechar menu flutuante"
+              className="flex items-center justify-center rounded-xl p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X size={14} />
+            </button>
+          </motion.div>
         </div>
       )}
     </>

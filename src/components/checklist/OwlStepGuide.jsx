@@ -17,6 +17,8 @@ export default function OwlStepGuide({
   onGo,
   onSkip,
   onRepeat,
+  onMarkComplete,
+  savingCompletion = false,
 }) {
   const guide = item ? getStepGuide(item.key) : null;
   const falta = item ? Math.max(0, (item.target || 0) - (item.current || 0)) : 0;
@@ -61,13 +63,30 @@ export default function OwlStepGuide({
 
       <div className="mt-3.5 grid gap-2">
         {!complete && (
-          <button
-            type="button"
-            onClick={onGo}
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 text-sm font-black text-primary-foreground shadow hover:opacity-90"
-          >
-            Sim, me leve até lá <ArrowRight size={16} />
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onGo}
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 text-sm font-black text-primary-foreground shadow hover:opacity-90"
+            >
+              Ir até a atividade <ArrowRight size={16} />
+            </button>
+            {onMarkComplete && item && (
+              <button
+                type="button"
+                onClick={onMarkComplete}
+                disabled={item.done || savingCompletion}
+                className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-black shadow transition-colors disabled:cursor-not-allowed ${
+                  item.done
+                    ? 'border-green-300 bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950/40 dark:text-green-300'
+                    : 'border-green-400 bg-green-500 text-white hover:bg-green-600 disabled:opacity-60'
+                }`}
+              >
+                <CheckCircle2 size={16} />
+                {savingCompletion ? 'Salvando...' : item.done ? 'Concluído' : 'Marcar como concluído'}
+              </button>
+            )}
+          </div>
         )}
         <div className="grid grid-cols-3 gap-2">
           <button

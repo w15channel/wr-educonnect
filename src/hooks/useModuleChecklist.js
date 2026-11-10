@@ -98,7 +98,7 @@ export default function useModuleChecklist({ course = 'tcc', session, includeOfe
       const checklist = buildModuleChecklist({
         moduleNumber,
         email,
-        progresses,
+        progresses: progresses.map((p) => ({ ...p, student_email: email })),
         tasks,
         submissions,
         debatePosts: [...otherPosts, ...own.posts.map((p) => ({ ...p, author_email: email }))],

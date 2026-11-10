@@ -149,7 +149,7 @@ export function buildModuleChecklist({
     // Ela é usada apenas para a etapa correspondente e não altera outros módulos.
     const selfMarked = progresses.some((progress) => progress.watched
       && progress.lesson_id === `checklist:mod${moduleNumber}:${item.key}`
-      && normalizeIdentity(progress.student_email) === studentIdentity);
+      && (!studentIdentity || !progress.student_email || normalizeIdentity(progress.student_email) === studentIdentity));
     const current = selfMarked ? item.target : item.current;
     return { ...item, current, done: current >= item.target, selfMarked };
   });

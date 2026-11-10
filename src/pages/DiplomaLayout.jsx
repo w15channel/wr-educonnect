@@ -3,6 +3,7 @@ import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ChevronDown, Menu, X, ClipboardCheck, LayoutDashboard, CalendarDays, Users } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
+import ChecklistReturnBar from '@/components/checklist/ChecklistReturnBar';
 
 
 const DIPLOMA_GROUPS = [
@@ -139,6 +140,7 @@ export default function DiplomaLayout() {
       {/* Main content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden pt-0 md:pt-0 mt-[48px] md:mt-0">
         <Outlet context={{ user: session, course: session?.course, isDiplomaMode: true }} />
+        <ChecklistReturnBar />
       </main>
 
     </div>
