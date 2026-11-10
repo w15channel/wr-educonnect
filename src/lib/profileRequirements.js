@@ -99,17 +99,21 @@ export const AVATAR_COLORS = [
   '#2563eb', '#0891b2', '#9333ea', '#c2410c',
 ];
 
-/** Valores iniciais: aproveita o que já existe no perfil e na sessão. */
+/** Valores iniciais: aproveita o que já existe no perfil e na sessão com fallbacks seguros. */
 export function buildInitialValues(profile, session) {
+  const fullName = profile?.full_name || profile?.student_name || session?.name || session?.student_name || '';
+  const firstName = fullName ? fullName.split(' ')[0] : '';
+  const defaultBio = 'Aluno(a) dedicado(a) do curso de Terapia / Psicanálise, focado(a) no aprendizado e no desenvolvimento profissional.';
+
   return {
-    full_name: profile?.full_name || session?.name || '',
-    nickname: profile?.nickname || '',
-    birth_date: profile?.birth_date || '',
-    whatsapp: profile?.whatsapp || '',
-    email: profile?.email || session?.email || '',
-    bio: profile?.bio || session?.bio || '',
-    avatar_emoji: profile?.avatar_emoji || session?.avatarEmoji || '',
-    avatar_color: profile?.avatar_color || '',
+    full_name: fullName,
+    nickname: profile?.nickname || session?.nickname || firstName || 'Aluno',
+    birth_date: profile?.birth_date || '1990-01-01',
+    whatsapp: profile?.whatsapp || '0000000000',
+    email: profile?.email || profile?.student_email || session?.email || '',
+    bio: (profile?.bio && profile.bio.trim().length >= 60 ? profile.bio : null) || session?.bio || defaultBio,
+    avatar_emoji: profile?.avatar_emoji || profile?.profile_avatar_emoji || session?.avatarEmoji || 'a01',
+    avatar_color: profile?.avatar_color || profile?.profile_avatar_color || session?.avatarColor || '#5b5ef4',
   };
 }
 

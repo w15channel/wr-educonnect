@@ -14,6 +14,7 @@ import {
   Loader2,
   Captions,
   MonitorUp,
+  Sparkles,
 } from 'lucide-react';
 import { getVideoSource } from '@/lib/videoEmbed';
 import { loadYouTubeApi, loadVimeoApi } from '@/lib/videoProviderApi';
@@ -631,6 +632,31 @@ export default function VideoPlayer({
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             referrerPolicy="strict-origin-when-cross-origin"
           />
+        )}
+
+        {source.kind === 'notebooklm' && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#0c1124] to-[#161c38] p-6 text-center text-white z-[2]">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
+              <Sparkles size={24} />
+            </div>
+            <div className="max-w-md">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400">Google NotebookLM</span>
+              <h4 className="text-base font-bold text-white mt-0.5">{title || 'Material Interativo da Aula'}</h4>
+              <p className="text-xs text-[#a09a8a] mt-1.5 leading-relaxed">
+                Este material pedagógico foi catalogado no Google NotebookLM com notas, podcast e sínteses. Como o Google não permite incorporação em iframe externo, você pode acessar diretamente o caderno oficial abaixo:
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+              <a
+                href={source.originalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-lg shadow-purple-950/50 transition-all hover:scale-105"
+              >
+                <ExternalLink size={14} /> Abrir no Google NotebookLM
+              </a>
+            </div>
+          </div>
         )}
 
         {source.kind === 'unsupported' && (

@@ -58,16 +58,37 @@ export function getVideoSource(url) {
     }
   }
 
+  // Google NotebookLM
+  if (host === 'notebooklm.google.com' || host === 'notebook.google.com') {
+    return { ...base, kind: 'notebooklm', provider: 'Google NotebookLM', originalUrl };
+  }
+
   // Google Drive (file share / preview / open links)
   if (host === 'drive.google.com' || host === 'docs.google.com') {
     let fileId = '';
-    const dMatch = path.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    const dMatch = path.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (dMatch) fileId = dMatch[1];
-    else if (path.startsWith('/open')) fileId = parsed.searchParams.get('id') || '';
-    else fileId = parsed.searchParams.get('id') || '';
+    else {
+      const shortDMatch = path.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (shortDMatch) fileId = shortDMatch[1];
+      else fileId = parsed.searchParams.get('id') || '';
+    }
     if (fileId) {
       return { ...base, kind: 'iframe', provider: 'Google Drive', embedSrc: `https://drive.google.com/file/d/${fileId}/preview` };
     }
+  }
+
+  // Microsoft OneDrive (personal, live.com ou 1drv.ms)
+  if (host.includes('onedrive.live.com') || host.includes('1drv.ms') || host.includes('sharepoint.com')) {
+    let embedSrc = originalUrl;
+    if (parsed.searchParams.has('resid') && parsed.searchParams.has('authkey')) {
+      embedSrc = `https://onedrive.live.com/embed?resid=${encodeURIComponent(parsed.searchParams.get('resid') || '')}&authkey=${encodeURIComponent(parsed.searchParams.get('authkey') || '')}`;
+    } else if (path.includes('/embed')) {
+      embedSrc = originalUrl;
+    } else if (parsed.searchParams.has('resid')) {
+      embedSrc = `https://onedrive.live.com/embed?resid=${encodeURIComponent(parsed.searchParams.get('resid') || '')}`;
+    }
+    return { ...base, kind: 'iframe', provider: 'Microsoft OneDrive', embedSrc };
   }
 
   // Instagram (reels/posts/tv)

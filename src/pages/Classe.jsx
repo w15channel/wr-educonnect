@@ -315,9 +315,9 @@ export default function Classe() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filtered.map(({ code, profile }) => (
+              {filtered.map(({ code, profile }, idx) => (
                 <StudentCard
-                  key={code.id}
+                  key={`${code.id}_${code.student_email || ''}_${idx}`}
                   code={code}
                   profile={profile}
                   rank={rankPosition[code.student_email]}

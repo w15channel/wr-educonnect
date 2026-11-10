@@ -6,8 +6,8 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/adminApi';
 import {
-  Pencil, Plus, Trash2, Save, X, AlignLeft, List,
-  ChevronLeft, FileText, Sparkles
+  Pencil, Trash2, Save, X, AlignLeft, List,
+  ChevronLeft, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

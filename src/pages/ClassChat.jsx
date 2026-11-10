@@ -18,6 +18,7 @@ import ChatFeedNotice from '@/components/chat/ChatFeedNotice';
 import ChatReactions from '@/components/chat/ChatReactions';
 import ChatContacts from '@/components/chat/ChatContacts';
 import ChatComposer from '@/components/chat/ChatComposer';
+import OfficialAnnouncementModal from '@/components/chat/OfficialAnnouncementModal';
 import VoiceDictationButton from '@/components/shared/VoiceDictationButton';
 import { getDMSessionId, isLunaDistribution, LUNA_DM_EMAIL, LUNA_DM_NAME } from '@/lib/lunaDM';
 
@@ -501,6 +502,8 @@ export default function ClassChat() {
   const [replyTarget, setReplyTarget] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+  const [isSendingAnnouncement, setIsSendingAnnouncement] = useState(false);
   const lastAttentionRef = useRef(null);
 
   const { emails: courseEmails, course: routeCourse, codePrefix } = useCourseFilteredEmails(session);
@@ -586,6 +589,40 @@ export default function ClassChat() {
     setText('');
     setShowPicker(false);
     await wall.sendMessageMutation.mutateAsync(content);
+  };
+
+  const handleSendAnnouncement = async ({ category, title, message, pinToTop, pinDuration }) => {
+    try {
+      setIsSendingAnnouncement(true);
+      const prefix = `📢[COMUNICADO:${category}|${title}]\n${message}`;
+      let finalContent = prefix;
+      if (pinToTop) {
+        const duration = Math.min(365, Math.max(1, Number(pinDuration) || 3));
+        const expiry = new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        finalContent = `📌[PIN:${expiry}] ${prefix}`;
+      }
+      await wall.sendMessageMutation.mutateAsync(finalContent);
+
+      // Também sincroniza com a entidade Announcement para que apareça no sino da dashboard
+      try {
+        await base44.entities.Announcement.create({
+          title,
+          content: message,
+          type: category === 'prazos' ? 'warning' : 'info',
+          course: userCourse,
+        });
+        queryClient.invalidateQueries({ queryKey: ['announcements'] });
+      } catch (err) {
+        console.warn('Sincronização de Announcement secundária ignorada:', err?.message);
+      }
+
+      setIsAnnouncementModalOpen(false);
+      toast.success(pinToTop ? 'Comunicado oficial publicado e fixado no topo!' : 'Comunicado oficial publicado na turma!');
+    } catch (error) {
+      toast.error(error?.message || 'Não foi possível publicar o comunicado.');
+    } finally {
+      setIsSendingAnnouncement(false);
+    }
   };
 
   const startEditing = (message) => {
@@ -752,10 +789,10 @@ export default function ClassChat() {
                   const readButton = isPinned && !isAdmin ? <button type="button" onClick={() => wall.markHighlightReadMutation.mutate(highlightKey(msg))} disabled={wall.markHighlightReadMutation.isPending} className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-medium text-foreground hover:bg-primary/20 disabled:opacity-50" aria-label="Marcar lembrete como lido e desafixar"><CheckCheck size={14}/>Marcar como lido</button> : null;
                   if (['personal', 'notification', 'institutional', 'achievement'].includes(msg.feedType)) return <ChatFeedNotice key={msg.id} msg={msg} isPinned={isPinned} readButton={readButton} isAdmin={isAdmin} shared={sharedPublications.some((post) => post.source_type === 'achievement' && post.source_id === msg.id)} sharing={sharingMessageId === msg.id} onShare={shareToWall} monitorMention={monitorMention} reactions={msg.feedType === 'achievement' ? reactionButtons(msg, 'achievement', msg.studentEmail, msg.mentionedEmails) : null}/>;
                   const profile = getProfile(msg.author_email);
-                  return <ChatMessageItem key={msg.id} msg={msg} isMe={msg.author_email === session?.email} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} onShare={shareToWall} onShareExternal={shareMessageExternal} sharing={sharingMessageId === msg.id} shared={sharedPublications.some((post) => post.source_type === 'chat' && post.source_id === msg.id)} reactions={reactionButtons(msg, 'publication', msg.author_email)}/>;
+                  return <ChatMessageItem key={msg.id} msg={msg} isMe={msg.author_email === session?.email} isAdmin={isAdmin} name={getAvatarPrefixedName(profile.name || msg.author_name, profile.emoji)} email={msg.author_email} time={formatBRT(msg.created_date)} onEdit={startEditing} onDelete={deleteMessage} onShare={shareToWall} onShareExternal={shareMessageExternal} sharing={sharingMessageId === msg.id} shared={sharedPublications.some((post) => post.source_type === 'chat' && post.source_id === msg.id)} reactions={reactionButtons(msg, 'publication', msg.author_email)} isPinned={msg.isPinned} pinnedUntil={msg.pinnedUntil}/>;
                 })}
               </div>
-              <ChatComposer text={text} setText={setText} showPicker={showPicker} setShowPicker={setShowPicker} emojis={WALL_EMOJIS} onSend={sendMessage} sending={wall.sendMessageMutation.isPending} editingMessage={editingMessage} editText={editText} setEditText={setEditText} onSaveEdit={saveEdit} onCancelEdit={() => setEditingMessage(null)}/>
+              <ChatComposer text={text} setText={setText} showPicker={showPicker} setShowPicker={setShowPicker} emojis={WALL_EMOJIS} onSend={sendMessage} sending={wall.sendMessageMutation.isPending} editingMessage={editingMessage} editText={editText} setEditText={setEditText} onSaveEdit={saveEdit} onCancelEdit={() => setEditingMessage(null)} isAdmin={isAdmin} onOpenAnnouncement={isAdmin ? () => setIsAnnouncementModalOpen(true) : undefined}/>
             </section>
             <aside aria-label="Contatos da turma" className="hidden w-64 shrink-0 border-l border-border bg-card/50 lg:block"><ChatContacts {...contactProps} compact/></aside>
           </>}
@@ -763,6 +800,14 @@ export default function ClassChat() {
           {!isAdmin && (lunaOpened || activeTab === 'luna') && <section aria-label="Conversa com a Luna" className={activeTab === 'luna' ? 'flex min-h-0 min-w-0 flex-1 flex-col' : 'hidden'}><LunaChat session={session} isActive={activeTab === 'luna'} supportMode={supportMode} tuitionMode={tuitionMode}/></section>}
         </div>
       </div>
+      {isAdmin && (
+        <OfficialAnnouncementModal
+          open={isAnnouncementModalOpen}
+          onClose={() => setIsAnnouncementModalOpen(false)}
+          onSend={handleSendAnnouncement}
+          isSending={isSendingAnnouncement}
+        />
+      )}
     </div>
   );
 }

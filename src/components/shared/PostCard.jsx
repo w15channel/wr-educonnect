@@ -4,8 +4,8 @@
  * Shows author, topic, date, participation badge,
  * expand/collapse with replies panel.
  */
-import React, { useState } from 'react';
-import { MessageSquare, ChevronDown, ChevronUp, Trash2, Pencil, Star, BookOpen, Check, X, Send, SmilePlus } from 'lucide-react';
+import React from 'react';
+import { MessageSquare, ChevronDown, ChevronUp, Trash2, Pencil, BookOpen, Check, X, Send } from 'lucide-react';
 import { ClickableStudent } from '@/components/shared/StudentProfileCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

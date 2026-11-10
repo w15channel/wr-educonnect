@@ -1,0 +1,8 @@
+{
+  "name": "WR-EDU Instituto de Desenvolvimento Humano",
+  "description": "Plataforma acadêmica e de desenvolvimento humano WR-EDU Connect, com suporte a módulos, certificados, desafios diários e comunidade.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -45,13 +45,17 @@ export function buildVerifiedChecklist(student, data, now) {
       return explicit ? explicit === number : within(date);
     };
     const reads = progresses.filter(row => row.watched && String(row.lesson_id || '').startsWith(`apostila:mod${number}:`));
+    const autodeclaredApostila = progresses.some(row => row.watched && row.lesson_id === `checklist:mod${number}:apostila`);
     const moduleTasks = tasks.filter(row => Number(row.module_number) === number);
     const doneTasks = moduleTasks.filter(task => submissions.some(row => row.task_id === task.id && hasSubmission(row)));
+    const autodeclaredTasks = progresses.some(row => row.watched && row.lesson_id === `checklist:mod${number}:tasks`);
     const topics = posts.filter(row => owns(row.author_email) && matchesPost(row, row.created_date));
+    const autodeclaredTopic = progresses.some(row => row.watched && row.lesson_id === `checklist:mod${number}:debate_topic`);
     const replies = data.ForumReply.filter(row => {
       const parent = postById.get(row.post_id);
       return owns(row.author_email) && parent && !owns(parent.author_email) && matchesPost(parent, row.created_date);
     });
+    const autodeclaredReply = progresses.some(row => row.watched && row.lesson_id === `checklist:mod${number}:debate_comment`);
     const responses = mine('DailyChallengeResponse').filter(row => {
       if (courseOf(row) !== course || !row.date) return false;
       const challenge = challengeById.get(row.challenge_id);
@@ -61,12 +65,14 @@ export function buildVerifiedChecklist(student, data, now) {
     });
     const previous = exams.filter(row => moduleOf(row.module_ref) === number - 1);
     const currentExams = exams.filter(row => moduleOf(row.module_ref) === number);
+    const uniqueReadsCount = unique(reads.map(row => row.lesson_id)).length;
+    const taskTarget = moduleTasks.length || 5;
     const items = [
       ...(number > 1 ? [item('previous_exam', examSubs.filter(row => previous.some(e => e.id === row.exam_id)).map(row => row.id), 1, previous.length > 0 && previous.every(row => submittedIds.has(row.id)) ? 1 : 0)] : []),
-      item('apostila', reads.map(row => row.id), 5, unique(reads.map(row => row.lesson_id)).length),
-      item('tasks', submissions.filter(row => doneTasks.some(task => task.id === row.task_id) && hasSubmission(row)).map(row => row.id), moduleTasks.length || 5, doneTasks.length),
-      item('debate_topic', topics.map(row => row.id), 1, Math.min(topics.length, 1)),
-      item('debate_comment', replies.map(row => row.id), 1, Math.min(replies.length, 1)),
+      item('apostila', reads.map(row => row.id), 5, Math.max(uniqueReadsCount, autodeclaredApostila ? 5 : 0)),
+      item('tasks', submissions.filter(row => doneTasks.some(task => task.id === row.task_id) && hasSubmission(row)).map(row => row.id), taskTarget, Math.max(doneTasks.length, autodeclaredTasks ? taskTarget : 0)),
+      item('debate_topic', topics.map(row => row.id), 1, Math.min(Math.max(topics.length, autodeclaredTopic ? 1 : 0), 1)),
+      item('debate_comment', replies.map(row => row.id), 1, Math.min(Math.max(replies.length, autodeclaredReply ? 1 : 0), 1)),
       item('ofensiva', responses.map(row => row.id), 3, Math.min(unique(responses.map(row => row.date)).length, 3)),
     ];
     modules.push({ moduleNumber: number, items, complete: items.every(row => row.done), task_ids: moduleTasks.map(row => row.id).sort(), previous_exam_ids: previous.map(row => row.id).sort(), exam_ids: currentExams.map(row => row.id).sort(), examDone: currentExams.length > 0 && currentExams.every(row => submittedIds.has(row.id)) });

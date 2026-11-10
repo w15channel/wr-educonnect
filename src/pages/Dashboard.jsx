@@ -653,7 +653,7 @@ export default function Dashboard() {
               const nameWithAvatar = getAvatarPrefixedName(displayName, code?.profile_avatar_emoji);
               const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
               return (
-                <div key={r.email} className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/8 border border-primary/15' : 'hover:bg-secondary/50'}`}>
+                <div key={`${r.email || i}-${i}`} className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-colors ${isMe ? 'bg-primary/8 border border-primary/15' : 'hover:bg-secondary/50'}`}>
                       <span className="w-5 text-center text-sm shrink-0">
                         {medal || <span className="text-xs text-muted-foreground font-bold">{i + 1}</span>}
                       </span>
@@ -703,8 +703,8 @@ export default function Dashboard() {
                 <span className="text-[11px] font-semibold text-foreground">Online agora:</span>
                 {onlineClassmates.length === 0 ?
                 <span className="text-[11px] text-muted-foreground">sem colegas online no momento</span> :
-                onlineClassmates.slice(0, 8).map((student) =>
-                <span key={student.id} className="text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
+                onlineClassmates.slice(0, 8).map((student, idx) =>
+                <span key={`${student.id || student.student_email || idx}-${idx}`} className="text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
                       {getAvatarPrefixedName(getDisplayName(student.student_email), student.profile_avatar_emoji)}
                     </span>
                 )
@@ -735,21 +735,21 @@ export default function Dashboard() {
                 )}
                 {overcomingWallFeed.length === 0 && unreadDMCount === 0 ?
                 <p className="text-xs text-muted-foreground text-center py-8">Seja a primeira pessoa a deixar uma palavra de força para a turma.</p> :
-                overcomingWallFeed.map((msg) => {
+                overcomingWallFeed.map((msg, idx) => {
                   if (msg.feedType === 'personal') return (
-                    <div key={msg.id} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
+                    <div key={`${msg.id || idx}-${idx}`} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
                       <Bell size={14} className="mt-0.5 shrink-0 text-violet-600" />
                       <div className="min-w-0"><p className="font-bold">{msg.title || 'Aviso para você'}</p><p className="whitespace-pre-wrap break-words">{msg.message}</p>{msg.related_email && <p className="mt-1 font-semibold text-violet-700">Contato: {msg.related_name || msg.related_email} ({msg.related_email})</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>
                     </div>
                   );
                   if (msg.feedType === 'notification') return (
-                    <div key={msg.id} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
+                    <div key={`${msg.id || idx}-${idx}`} className="flex gap-2 rounded-lg border border-violet-200 bg-violet-50 p-2 text-[11px] leading-relaxed text-violet-950" role="status">
                       <Bell size={14} className="mt-0.5 shrink-0 text-violet-600" />
                       <div><span className="font-bold">{msg.type === 'wall_reply' ? 'Resposta privada' : 'Interação na sua conquista'}</span><p>{msg.message}</p>{msg.reply_text && <p className="mt-1 rounded-md bg-white/70 px-2 py-1 text-violet-950">“{msg.reply_text}”</p>}<span className="text-[10px] text-violet-700">Visível somente para você</span></div>
                     </div>
                   );
                   if (msg.feedType === 'institutional') return (
-                    <div key={msg.id} className="rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 to-indigo-50 p-2 text-[11px] leading-relaxed text-slate-900 dark:border-sky-800 dark:from-sky-950/50 dark:to-indigo-950/50 dark:text-white" role="status">
+                    <div key={`${msg.id || idx}-${idx}`} className="rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 to-indigo-50 p-2 text-[11px] leading-relaxed text-slate-900 dark:border-sky-800 dark:from-sky-950/50 dark:to-indigo-950/50 dark:text-white" role="status">
                       <div className="flex gap-2">
                         {msg.icon === 'event' ? <Bell size={14} className="mt-0.5 shrink-0 text-indigo-600" /> : msg.icon === 'content' ? <BookOpen size={14} className="mt-0.5 shrink-0 text-sky-600" /> : <Share2 size={14} className="mt-0.5 shrink-0 text-rose-600" />}
                         <div className="min-w-0"><p className="font-bold text-slate-900 dark:text-white">{msg.title || 'Destaque para a turma'}</p><p className="whitespace-pre-wrap break-words text-slate-700 dark:text-slate-200">{msg.content}</p>{msg.author_name && <span className="text-[10px] text-slate-500 dark:text-slate-400">Compartilhado por {msg.author_name}</span>}</div>
@@ -757,7 +757,7 @@ export default function Dashboard() {
                     </div>
                   );
                   if (msg.feedType === 'achievement') return (
-                    <div key={msg.id} className={`rounded-lg border p-2 text-[11px] leading-relaxed ${msg.kind === 'tuition' ? 'border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 dark:border-cyan-500/70 dark:from-cyan-950 dark:via-slate-950 dark:to-indigo-950 dark:text-cyan-50' : 'border-amber-200 bg-amber-50/80 dark:border-white dark:bg-white dark:text-black'}`}>
+                    <div key={`${msg.id || idx}-${idx}`} className={`rounded-lg border p-2 text-[11px] leading-relaxed ${msg.kind === 'tuition' ? 'border-cyan-300 bg-gradient-to-r from-cyan-50 via-sky-50 to-violet-50 dark:border-cyan-500/70 dark:from-cyan-950 dark:via-slate-950 dark:to-indigo-950 dark:text-cyan-50' : 'border-amber-200 bg-amber-50/80 dark:border-white dark:bg-white dark:text-black'}`}>
                       <div className="flex gap-2">
                       {msg.kind === 'tuition' ? <Gem size={14} className="mt-0.5 shrink-0 text-cyan-700 dark:text-cyan-300" /> : <Sparkles size={14} className="text-amber-500 shrink-0 mt-0.5" />}
                       {msg.isCollective
@@ -777,7 +777,7 @@ export default function Dashboard() {
                   const authorName = _authorResolved !== msg.author_email ? _authorResolved : (msg.author_name || 'Aluno');
                   const authorDisplayName = getAvatarPrefixedName(isMe ? 'Voce' : authorName, authorCode?.profile_avatar_emoji);
                   return (
-                    <div key={msg.id} className="rounded-lg border border-border/70 bg-background/85 p-2 text-[11px] leading-relaxed dark:border-white/20 dark:bg-black dark:text-white">
+                    <div key={`${msg.id || idx}-${idx}`} className="rounded-lg border border-border/70 bg-background/85 p-2 text-[11px] leading-relaxed dark:border-white/20 dark:bg-black dark:text-white">
                       <span className={`font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}>{authorDisplayName}</span>
                       <span className="ml-1 text-muted-foreground">compartilhou:</span>
                       <p className="mt-0.5 text-foreground dark:text-white">“{msg.content}”</p>
@@ -889,7 +889,7 @@ export default function Dashboard() {
               const nameWithAvatar = getAvatarPrefixedName(displayName, code?.profile_avatar_emoji);
               return (
                 <div
-                key={r.email}
+                key={`${r.email || i}-${i}`}
                 draggable={monitorSelectMode}
                 onDragStart={(e) => { if (monitorSelectMode) setDraggedEmail(r.email); }}
                 onDragOver={(e) => { if (monitorSelectMode && draggedEmail) e.preventDefault(); }}
@@ -1043,8 +1043,8 @@ export default function Dashboard() {
       {/* Lesson Comments Panel — teacher only */}
       {isTeacher && <LessonCommentsPanel />}
 
-      {/* Announcements */}
-      {announcements.length > 0 &&
+      {/* Announcements — admin only tool */}
+      {isTeacher && announcements.length > 0 &&
       <div className="bg-card rounded-2xl border border-border p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -1058,10 +1058,10 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="space-y-2">
-            {announcements.slice(0, 3).map((a) => {
+            {announcements.slice(0, 3).map((a, idx) => {
             const urgentClass = a.type === 'urgent' ? 'border-red-200 bg-red-50/50' : a.type === 'warning' ? 'border-yellow-200 bg-yellow-50/50' : 'border-border bg-secondary/30';
             return (
-              <div key={a.id} className={`p-3 rounded-xl border text-xs ${urgentClass}`}>
+              <div key={`${a.id || idx}-${idx}`} className={`p-3 rounded-xl border text-xs ${urgentClass}`}>
                   <div className="flex items-center gap-2">
                     {a.type === 'urgent' && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
                     <p className="font-semibold text-foreground truncate">{a.title || a.content}</p>

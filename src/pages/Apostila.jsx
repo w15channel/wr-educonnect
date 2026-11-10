@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useLocation } from 'react-router-dom';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipBack, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipBack, SkipForward, Volume2, Lock, Flame, Wand2, Headphones, Presentation, Video, ExternalLink } from 'lucide-react';
 import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import useStudentRecords from '@/hooks/useStudentRecords';
@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
 import ChapterRewriteModal from '@/components/apostila/ChapterRewriteModal';
 import { createBase44VoiceAudio, releaseBase44VoiceAudio } from '@/lib/base44Voice';
+import { selectBestGoogleVoice, setupMediaSession, updateMediaSessionState } from '@/lib/googleVoiceTTS';
+import { resolveAudioStreamUrl, isNotebookLmUrl } from '@/lib/mediaUrlResolver';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
 import { MOD3 } from '@/lib/apostila/mod3';
@@ -174,8 +176,11 @@ export default function Apostila() {
   const { moduleUnlocked, isLoading: loadingUnlocks } = useApostilaModuleUnlocks(session?.course || 'tcc', session);
 
   const targetModuleNumber = Number(new URLSearchParams(window.location.search).get('module')) || null;
-  const [openChapter, setOpenChapter] = useState(() => (targetModuleNumber ? DEFAULT_CHAPTERS[targetModuleNumber - 1]?.id ?? null : null));
-  const [openLesson, setOpenLesson] = useState(null);
+  const [openChapter, setOpenChapter] = useState(() => (targetModuleNumber ? DEFAULT_CHAPTERS[targetModuleNumber - 1]?.id ?? 'mod1' : 'mod1'));
+  const [openLesson, setOpenLesson] = useState(() => {
+    const ch = targetModuleNumber ? DEFAULT_CHAPTERS[targetModuleNumber - 1] : DEFAULT_CHAPTERS[0];
+    return ch && ch.lessons?.[0] ? `${ch.id}__${ch.lessons[0].id}` : null;
+  });
   const [editingLesson, setEditingLesson] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [printLesson, setPrintLesson] = useState(null);
@@ -183,8 +188,10 @@ export default function Apostila() {
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState('');
   const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, wordIndex: 0, rate: 1, isPlaying: false, nativeFallback: false });
+  const [podcastState, setPodcastState] = useState({ lessonKey: null, isPlaying: false, currentTime: 0, duration: 0, rate: 1 });
   const utteranceRef = useRef(null);
   const readerAudioRef = useRef(null);
+  const podcastAudioRef = useRef(null);
   const readerRef = useRef(reader);
   const readerSessionRef = useRef(0);
   const intentionalStopRef = useRef(false);
@@ -204,6 +211,10 @@ export default function Apostila() {
     if (readerAudioRef.current) {
       readerAudioRef.current.pause();
       releaseBase44VoiceAudio(readerAudioRef.current);
+    }
+    if (podcastAudioRef.current) {
+      podcastAudioRef.current.pause();
+      podcastAudioRef.current = null;
     }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -280,6 +291,21 @@ export default function Apostila() {
       });
   }, [defaultServerLessons, isAdmin, queryClient, savedLessons, savedLessonsFetched]);
 
+  const { data: recordedLessonsList = [] } = useQuery({
+    queryKey: ['apostila-recorded-lessons'],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: 'tcc' }, 'order', 300),
+  });
+
+  const recordedByChapterAndLesson = useMemo(() => {
+    const map = new Map();
+    (recordedLessonsList || []).forEach((rl) => {
+      if (rl.apostila_chapter_id && rl.apostila_lesson_id) {
+        map.set(`${rl.apostila_chapter_id}__${rl.apostila_lesson_id}`, rl);
+      }
+    });
+    return map;
+  }, [recordedLessonsList]);
+
   const savedLessonByKey = useMemo(() => {
     return new Map((savedLessons || []).map((lesson) => [`${lesson.chapter_id}__${lesson.lesson_id}`, lesson]));
   }, [savedLessons]);
@@ -288,14 +314,32 @@ export default function Apostila() {
     ...chapter,
     lessons: chapter.lessons.map((lesson) => {
       const savedLesson = savedLessonByKey.get(`${chapter.id}__${lesson.id}`);
+      const recLesson = recordedByChapterAndLesson.get(`${chapter.id}__${lesson.id}`);
       const rawContent = savedLesson?.content ?? lesson.content ?? '';
+      const podcastUrl = savedLesson?.podcast_url || recLesson?.podcast_url || '';
       return {
         ...lesson,
         title: savedLesson?.title || lesson.title,
         content: normalizeApostilaHeader(rawContent),
+        podcast_url: podcastUrl,
+        podcast_title: savedLesson?.podcast_title || recLesson?.podcast_title || `Podcast: ${lesson.title}`,
+        podcast_duration: savedLesson?.podcast_duration || recLesson?.duration || '',
+        podcast_synopsis: savedLesson?.podcast_synopsis || recLesson?.description || '',
+        video_url: recLesson?.video_url || '',
+        slides_url: recLesson?.material_links || '',
       };
     }),
-  })), [savedLessonByKey]);
+  })), [savedLessonByKey, recordedByChapterAndLesson]);
+
+  const lessonByKey = useMemo(() => {
+    const map = new Map();
+    chapters.forEach((chapter) => {
+      chapter.lessons.forEach((lesson) => {
+        map.set(`${chapter.id}__${lesson.id}`, lesson);
+      });
+    });
+    return map;
+  }, [chapters]);
 
   const paragraphsByLesson = useMemo(() => {
     const entries = [];
@@ -389,7 +433,25 @@ export default function Apostila() {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'pt-BR';
       utterance.rate = rate;
-      utterance.pitch = 1.15;
+      utterance.pitch = 1.05;
+
+      const bestVoice = selectBestGoogleVoice();
+      if (bestVoice) utterance.voice = bestVoice;
+
+      setupMediaSession({
+        title: openLesson ? openLesson.split('__')[1] || 'Aula da Apostila' : 'Apostila',
+        chapterTitle: 'Formação em Terapia Comportamental',
+        onPlay: () => {
+          if (window.speechSynthesis?.paused) window.speechSynthesis.resume();
+          setReader((s) => ({ ...s, isPlaying: true }));
+        },
+        onPause: () => {
+          window.speechSynthesis?.pause();
+          setReader((s) => ({ ...s, isPlaying: false }));
+        },
+        onNext: () => skipReaderParagraph(lessonKey),
+        onPrev: () => previousReaderParagraph(lessonKey),
+      });
 
       // Precompute word starts for each paragraph in the block
       const blockWordStarts = blockParagraphs.map((p) => [...p.matchAll(/\S+/g)].map((m) => m.index || 0));
@@ -427,7 +489,7 @@ export default function Apostila() {
 
     setReader((current) => ({ ...current, lessonKey, paragraphIndex, wordIndex: 0, rate, isPlaying: true, nativeFallback: false }));
 
-    // Reutiliza áudio existente; sem cache, lê no dispositivo sem geração paga.
+    // Reutiliza áudio existente ou usa voz Google pt-BR; em segundo plano no dispositivo
     try {
       const audio = await createBase44VoiceAudio(text, { force: true });
       if (!audio) {
@@ -442,6 +504,22 @@ export default function Apostila() {
       audio.playbackRate = rate;
       readerAudioRef.current = audio;
 
+      setupMediaSession({
+        title: openLesson ? openLesson.split('__')[1] || 'Aula da Apostila' : 'Apostila',
+        chapterTitle: 'Formação em Terapia Comportamental',
+        audioRef: readerAudioRef,
+        onPlay: () => {
+          if (readerAudioRef.current) readerAudioRef.current.play();
+          setReader((s) => ({ ...s, isPlaying: true }));
+        },
+        onPause: () => {
+          if (readerAudioRef.current) readerAudioRef.current.pause();
+          setReader((s) => ({ ...s, isPlaying: false }));
+        },
+        onNext: () => skipReaderParagraph(lessonKey),
+        onPrev: () => previousReaderParagraph(lessonKey),
+      });
+
       // Track which paragraph is being read based on audio progress
       audio.ontimeupdate = () => {
         if (readerSessionRef.current !== sessionId) return;
@@ -449,6 +527,8 @@ export default function Apostila() {
         const progress = audio.currentTime / audio.duration;
         const totalChars = text.length;
         const currentChar = Math.floor(progress * totalChars);
+
+        updateMediaSessionState(audio.currentTime, audio.duration, rate);
 
         let relParaIndex = 0;
         for (let i = paragraphOffsets.length - 1; i >= 0; i--) {
@@ -484,7 +564,114 @@ export default function Apostila() {
     }
   };
 
-  const toggleReaderPlayback = (lessonKey) => {
+  const formatAudioTime = (seconds = 0) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  const stopPodcastPlayback = () => {
+    if (podcastAudioRef.current) {
+      podcastAudioRef.current.pause();
+      podcastAudioRef.current.currentTime = 0;
+    }
+    setPodcastState((s) => ({ ...s, isPlaying: false, currentTime: 0 }));
+  };
+
+  const changePodcastRate = (rate) => {
+    setPodcastState((s) => ({ ...s, rate }));
+    if (podcastAudioRef.current) {
+      podcastAudioRef.current.playbackRate = rate;
+    }
+  };
+
+  const seekPodcastTime = (e) => {
+    const newTime = Number(e.target.value);
+    if (podcastAudioRef.current && Number.isFinite(newTime)) {
+      podcastAudioRef.current.currentTime = newTime;
+      setPodcastState((s) => ({ ...s, currentTime: newTime }));
+    }
+  };
+
+  const toggleReaderPlayback = (lessonKey, forceTts = false) => {
+    const lesson = lessonByKey.get(lessonKey);
+    const hasPodcast = Boolean(lesson?.podcast_url) && !forceTts;
+
+    if (hasPodcast) {
+      if (isNotebookLmUrl(lesson.podcast_url)) {
+        window.open(lesson.podcast_url, '_blank', 'noopener,noreferrer');
+        toast.info('Abrindo podcast diretamente no Google NotebookLM...');
+        return;
+      }
+
+      if (readerRef.current.isPlaying) {
+        stopReader(lessonKey);
+      }
+
+      if (podcastState.lessonKey === lessonKey && podcastState.isPlaying) {
+        podcastAudioRef.current?.pause();
+        setPodcastState((s) => ({ ...s, isPlaying: false }));
+        return;
+      }
+
+      if (podcastState.lessonKey === lessonKey && podcastAudioRef.current && !podcastState.isPlaying) {
+        podcastAudioRef.current.play();
+        setPodcastState((s) => ({ ...s, isPlaying: true }));
+        return;
+      }
+
+      // New playback session
+      if (podcastAudioRef.current) {
+        podcastAudioRef.current.pause();
+        podcastAudioRef.current = null;
+      }
+
+      const streamUrl = resolveAudioStreamUrl(lesson.podcast_url);
+      const audio = new Audio(streamUrl);
+      audio.playbackRate = podcastState.rate;
+      audio.ontimeupdate = () => {
+        setPodcastState((s) => ({
+          ...s,
+          currentTime: audio.currentTime,
+          duration: audio.duration || s.duration,
+        }));
+      };
+      audio.onloadedmetadata = () => {
+        setPodcastState((s) => ({ ...s, duration: audio.duration }));
+      };
+      audio.onended = () => {
+        setPodcastState((s) => ({ ...s, isPlaying: false, currentTime: 0 }));
+      };
+      audio.onerror = () => {
+        toast.error('Erro ao reproduzir o podcast do capítulo. Alternando para leitura por voz.');
+        setPodcastState((s) => ({ ...s, isPlaying: false }));
+        speakParagraph(lessonKey, 0, reader.rate);
+      };
+
+      podcastAudioRef.current = audio;
+      audio.play()
+        .then(() => {
+          setPodcastState((s) => ({
+            ...s,
+            lessonKey,
+            isPlaying: true,
+            currentTime: 0,
+            duration: audio.duration || 0,
+          }));
+        })
+        .catch((err) => {
+          console.warn('Erro ao iniciar podcast, fallback para TTS:', err);
+          speakParagraph(lessonKey, 0, reader.rate);
+        });
+      return;
+    }
+
+    // Normal TTS playback
+    if (podcastState.isPlaying) {
+      stopPodcastPlayback();
+    }
+
     const paragraphs = paragraphsByLesson[lessonKey] || [];
     if (!paragraphs.length) {
       toast.error('Esta aula não possui texto para leitura em voz alta.');
@@ -659,6 +846,7 @@ export default function Apostila() {
                     const isRead = readLessons.has(key);
                     const lessonParagraphs = paragraphsByLesson[key] || [];
                     const readerActive = reader.lessonKey === key;
+                    const podcastActive = podcastState.lessonKey === key;
                     const currentParagraph = readerActive ? reader.paragraphIndex + 1 : 1;
                     return (
                       <div key={lesson.id}>
@@ -669,6 +857,11 @@ export default function Apostila() {
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div className={`w-6 h-6 rounded-lg ${isRead ? 'bg-emerald-500/20' : background} flex items-center justify-center shrink-0`}>{isRead ? <CheckCircle size={11} className="text-emerald-500" /> : <BookOpen size={11} className={color} />}</div>
                             <span className={`text-sm font-medium leading-tight truncate ${isRead ? 'text-emerald-600' : 'text-foreground'}`}>{lesson.title}</span>
+                            {lesson.podcast_url && (
+                              <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2 py-0.5 rounded-full shrink-0 font-semibold">
+                                <Headphones size={10} /> Podcast
+                              </span>
+                            )}
                             {isRead && <span className="text-[10px] text-emerald-500 font-bold shrink-0">✓ Lida</span>}
                           </div>
                           {isOpen ? <ChevronDown size={14} className="text-muted-foreground shrink-0 ml-2" /> : <ChevronRight size={14} className="text-muted-foreground shrink-0 ml-2" />}
@@ -694,20 +887,164 @@ export default function Apostila() {
                               </div>
                             ) : (
                               <div className="space-y-3">
-                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
-                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Volume2 size={16} />Leitor da apostila <span className="text-xs font-normal text-muted-foreground">Parágrafo {Math.min(currentParagraph, lessonParagraphs.length || 1)}/{lessonParagraphs.length || 1}</span></div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <Button size="sm" variant="outline" onClick={() => toggleReaderPlayback(key)} disabled={!lessonParagraphs.length} className="gap-1.5">{readerActive && reader.isPlaying ? <Pause size={13} /> : <Play size={13} />}{readerActive && reader.isPlaying ? 'Pausar' : 'Play'}</Button>
-                                      <Button size="sm" variant="outline" onClick={() => stopReader(key)} disabled={!lessonParagraphs.length || !readerActive} className="gap-1.5"><Square size={13} /> Stop</Button>
-                                      <Button size="sm" variant="outline" onClick={() => previousReaderParagraph(key)} disabled={!lessonParagraphs.length || !readerActive || reader.paragraphIndex === 0} className="gap-1.5"><SkipBack size={13} /> Voltar parágrafo</Button>
-                                      <Button size="sm" variant="outline" onClick={() => skipReaderParagraph(key)} disabled={!lessonParagraphs.length} className="gap-1.5"><SkipForward size={13} /> Avançar parágrafo</Button>
-                                      <div className="flex items-center gap-1 rounded-lg border border-border bg-background/70 p-1" aria-label="Velocidade de leitura">
-                                        {READER_RATES.map((rate) => <button key={rate} type="button" onClick={() => changeReaderRate(key, rate)} className={`rounded-md px-2 py-1 text-xs font-bold transition-colors ${reader.rate === rate ? 'bg-emerald-500 text-white' : 'text-muted-foreground hover:bg-secondary'}`} aria-pressed={reader.rate === rate}>{rate.toFixed(1)}x</button>)}
+                                {lesson.podcast_url ? (
+                                  <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-3.5 space-y-3">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-purple-200">
+                                        <Headphones size={16} className="text-purple-400" />
+                                        <span>Podcast Oficial do Capítulo</span>
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/20 border border-purple-400/30 px-2.5 py-0.5 text-[11px] font-bold text-purple-200">
+                                          🎙️ NotebookLM · Audio Overview
+                                        </span>
+                                        {lesson.podcast_duration && (
+                                          <span className="text-xs font-normal text-purple-300/70">
+                                            • {lesson.podcast_duration}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        {isNotebookLmUrl(lesson.podcast_url) ? (
+                                          <>
+                                            <a
+                                              href={lesson.podcast_url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-md transition-all hover:scale-105"
+                                            >
+                                              <ExternalLink size={13} /> Abrir Podcast no NotebookLM
+                                            </a>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => toggleReaderPlayback(key, true)}
+                                              className="gap-1.5 border-purple-500/30 text-purple-200 text-xs"
+                                            >
+                                              <Volume2 size={13} /> Ouvir Leitura por Voz (Eclipse)
+                                            </Button>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Button
+                                              size="sm"
+                                              onClick={() => toggleReaderPlayback(key)}
+                                              className="gap-1.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold shadow-md shadow-purple-950/40"
+                                            >
+                                              {podcastActive && podcastState.isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                                              {podcastActive && podcastState.isPlaying ? 'Pausar Podcast' : '🎙️ Ouvir Podcast'}
+                                            </Button>
+
+                                            {podcastActive && (
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={stopPodcastPlayback}
+                                                className="gap-1.5 border-purple-500/30 text-purple-200"
+                                              >
+                                                <Square size={13} /> Parar
+                                              </Button>
+                                            )}
+                                          </>
+                                        )}
+
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => toggleReaderPlayback(key, true)}
+                                          className="gap-1.5 text-xs text-muted-foreground hover:text-white"
+                                        >
+                                          <Volume2 size={13} />
+                                          {readerActive && reader.isPlaying ? 'Pausar Leitura' : 'Leitura (Voz Eclipse)'}
+                                        </Button>
+
+                                        <div className="flex items-center gap-1 rounded-lg border border-purple-500/20 bg-background/70 p-1" aria-label="Velocidade do áudio">
+                                          {READER_RATES.map((rate) => (
+                                            <button
+                                              key={rate}
+                                              type="button"
+                                              onClick={() => changePodcastRate(rate)}
+                                              className={`rounded-md px-2 py-1 text-xs font-bold transition-colors ${
+                                                podcastState.rate === rate ? 'bg-purple-600 text-white' : 'text-muted-foreground hover:bg-secondary'
+                                              }`}
+                                              aria-pressed={podcastState.rate === rate}
+                                            >
+                                              {rate.toFixed(1)}x
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {podcastActive && (
+                                      <div className="pt-1.5 space-y-1.5 border-t border-purple-500/20">
+                                        <div className="flex items-center gap-3">
+                                          <span className="text-[11px] font-mono text-purple-300">
+                                            {formatAudioTime(podcastState.currentTime)}
+                                          </span>
+                                          <input
+                                            type="range"
+                                            min={0}
+                                            max={podcastState.duration || 100}
+                                            value={podcastState.currentTime}
+                                            onChange={seekPodcastTime}
+                                            className="flex-1 h-1.5 bg-purple-950/60 rounded-lg appearance-none cursor-pointer accent-purple-400"
+                                          />
+                                          <span className="text-[11px] font-mono text-purple-300">
+                                            {formatAudioTime(podcastState.duration)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {(lesson.slides_url || lesson.video_url) && (
+                                      <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-purple-500/10 text-xs">
+                                        <span className="text-muted-foreground text-[11px]">Materiais de apoio:</span>
+                                        {lesson.slides_url && (
+                                          <a
+                                            href={lesson.slides_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200 underline font-medium"
+                                          >
+                                            <Presentation size={12} /> Ver Slides PowerPoint
+                                          </a>
+                                        )}
+                                        {lesson.video_url && (
+                                          <a
+                                            href={lesson.video_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 text-[11px] text-blue-300 hover:text-blue-200 underline font-medium"
+                                          >
+                                            <Video size={12} /> Assistir Videoaula
+                                          </a>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-emerald-300">
+                                        <Volume2 size={16} />
+                                        <span>Leitor da apostila</span>
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-200">
+                                          Voz Eclipse · Gemini
+                                        </span>
+                                        <span className="text-xs font-normal text-muted-foreground">Parágrafo {Math.min(currentParagraph, lessonParagraphs.length || 1)}/{lessonParagraphs.length || 1}</span>
+                                      </div>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <Button size="sm" variant="outline" onClick={() => toggleReaderPlayback(key)} disabled={!lessonParagraphs.length} className="gap-1.5">{readerActive && reader.isPlaying ? <Pause size={13} /> : <Play size={13} />}{readerActive && reader.isPlaying ? 'Pausar' : 'Ouvir (Voz Eclipse)'}</Button>
+                                        <Button size="sm" variant="outline" onClick={() => stopReader(key)} disabled={!lessonParagraphs.length || !readerActive} className="gap-1.5"><Square size={13} /> Stop</Button>
+                                        <Button size="sm" variant="outline" onClick={() => previousReaderParagraph(key)} disabled={!lessonParagraphs.length || !readerActive || reader.paragraphIndex === 0} className="gap-1.5"><SkipBack size={13} /> Voltar parágrafo</Button>
+                                        <Button size="sm" variant="outline" onClick={() => skipReaderParagraph(key)} disabled={!lessonParagraphs.length} className="gap-1.5"><SkipForward size={13} /> Avançar parágrafo</Button>
+                                        <div className="flex items-center gap-1 rounded-lg border border-border bg-background/70 p-1" aria-label="Velocidade de leitura">
+                                          {READER_RATES.map((rate) => <button key={rate} type="button" onClick={() => changeReaderRate(key, rate)} className={`rounded-md px-2 py-1 text-xs font-bold transition-colors ${reader.rate === rate ? 'bg-emerald-500 text-white' : 'text-muted-foreground hover:bg-secondary'}`} aria-pressed={reader.rate === rate}>{rate.toFixed(1)}x</button>)}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
-                                </div>
+                                )}
                                 <div className={`rounded-xl border ${background} border-opacity-30 p-4`} style={{ borderColor: 'transparent', background: 'rgba(0,0,0,0.15)' }}>
                                   <ReadingViewport paragraphs={lessonParagraphs.length ? lessonParagraphs : ['Conteúdo ainda não adicionado.']} activeParagraph={readerActive ? reader.paragraphIndex : -1} activeWord={readerActive ? reader.wordIndex : -1} isPlaying={readerActive && reader.isPlaying} nativeFallback={readerActive && reader.nativeFallback} viewportRef={(node) => { if (node) readerViewportRefs.current.set(key, node); else readerViewportRefs.current.delete(key); }} />
                                 </div>
@@ -715,7 +1052,7 @@ export default function Apostila() {
                                   <Button size="sm" variant="outline" onClick={() => setPrintLesson({ lesson, chapterTitle: chapter.title })} className="gap-1.5"><FileText size={13} /> Baixar PDF</Button>
                                   {isAdmin && <Button size="sm" variant="outline" onClick={() => handleEditLesson(chapter.id, lesson.id, lesson.content)}><Edit2 size={13} /> Editar conteúdo</Button>}
                                   {!isAdmin && (isRead ? <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl"><CheckCircle size={13} /> Leitura concluída!</span> : <button disabled={!!savingReadKey || loadingReadProgress || !!readProgressError} onClick={() => markRead(chapter.id, lesson.id)} className="apostila-mark-read-button inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl hover:bg-primary/20 transition-all active:scale-95 disabled:opacity-50"><BookMarked size={13} /> {savingReadKey === key ? 'Salvando...' : 'Marcar como lida'}</button>)}
-                                  {!isAdmin && !isDiplomaMode && <NextStepLink to="/ofensivas" icon={Flame} tone="orange" size="sm" title="Usar o conhecimento na Ofensiva" />}
+                                  {!isAdmin && <NextStepLink to={isDiplomaMode ? '/degree/student/ofensivas' : '/ofensivas'} icon={Flame} tone="orange" size="sm" title="Usar o conhecimento na Ofensiva" />}
                                 </div>
                               </div>
                             )}

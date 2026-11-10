@@ -1,0 +1,6 @@
+{
+  "summary":  "Ajuste completo para links do Google NotebookLM tanto para o podcast da Apostila quanto para as aulas em vídeo. Adicionado tratamento de restrições de segurança do Google (x-frame-options), card interativo oficial do NotebookLM no player de vídeo, botão de acesso direto ao podcast com opção de leitura por voz, e upload de áudio direto para o servidor (/api/upload-media) para tocar nativamente no player.",
+  "updatedAt":  "2026-11-10T22:07:47.713862313Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

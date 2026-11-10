@@ -93,7 +93,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
   useEffect(() => {
     const selectedRows = rows.filter(r => selectedItems.has(r.key));
     onSelectionChange({ selectedItems, rows, selectedRows });
-  }, [selectedItems, rows]); // eslint-disable-line
+  }, [selectedItems, rows]);  
 
   const toggle = useCallback((key) => {
     setSelectedItems(prev => {

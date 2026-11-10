@@ -96,6 +96,7 @@ const adminGroups = [
   {
     label: 'Ferramentas',
     items: [
+      { icon: Sparkles,      label: 'Estúdio NotebookLM',     path: '/notebook-studio',   color: 'text-purple-400' },
       { icon: Brain,         label: 'Luna — Assistente IA',   path: '/tutor',             color: 'text-amber-400' },
       { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
       { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-yellow-400' },
@@ -104,16 +105,16 @@ const adminGroups = [
   },
 ];
 
-// ── Student nav groups (consolidated: 20 items, down from 24)
-// Alunos não veem o atalho de Aulas (gravação indisponível);
-// a Apostila já cobre o conteúdo de estudo.
+// ── Student nav groups (consolidated)
+// Aulas gravadas restauradas e alimentadas pelo estúdio pedagógico
 const studentGroups = [
   {
     label: 'Classe',
     items: [
       { icon: BarChart3,     label: 'Dashboard',              path: '/dashboard',         color: 'text-blue-400' },
-      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
+      { icon: Play,          label: 'Aulas gravadas',         path: '/lessons',           color: 'text-purple-400' },
       { icon: BookOpen,      label: 'Apostila',               path: '/apostila',          color: 'text-teal-400' },
+      { icon: Flame,         label: 'Ofensivas',              path: '/ofensivas',         color: 'text-orange-500' },
       { icon: FileText,      label: 'Tarefas',                path: '/tasks',             color: 'text-orange-400' },
       { icon: ClipboardList, label: 'Provas',                 path: '/exams',             color: 'text-violet-400' },
       { icon: HandHeart,     label: 'Mentorias',               path: '/practice',          color: 'text-rose-400' },
@@ -140,7 +141,6 @@ const studentGroups = [
   {
     label: 'Minha Área',
     items: [
-      { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
       { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
       { icon: CalendarDays,  label: 'Calendário',             path: '/calendar',          color: 'text-cyan-400' },
       { icon: User,          label: 'Meu Perfil',             path: '/profile',           color: 'text-indigo-400' },

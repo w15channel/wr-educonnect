@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { Bell, BookOpen, CalendarDays, Heart, Send, Sparkles } from 'lucide-react';
+import { Bell, BookOpen, CalendarDays, Flame, Heart, Send, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -89,13 +89,13 @@ export default function DiplomaDashboard() {
   const { firstName } = useSocialIdentity(session);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  const voiceText = `${greeting}, ${firstName}! Eu sou a Luna. Que bom ter você aqui! Antes de começar, confira as notificações no Mural de Superação logo abaixo. Depois, acesse o seu Checklist para dar sequência aos estudos do módulo.`;
+  const voiceText = `${greeting}, ${firstName}! Eu sou a Luna. Que bom ter você aqui! Antes de começar, confira as notificações no Mural de Superação logo abaixo. Depois, acesse o seu Checklist, a Apostila ou a Ofensiva Diária para dar sequência aos estudos do módulo.`;
 
   return (
     <div className="app-page max-w-7xl mx-auto space-y-5 animate-fade-in-up pb-20 md:pb-6">
       <header>
         <p className="text-xs text-muted-foreground font-medium mb-0.5">{greeting}, {firstName} 👋</p>
-        <h1 className="text-xl lg:text-2xl font-bold text-foreground">Meu Dashboard</h1>
+        <h1 className="text-xl lg:text-2xl font-bold text-foreground">Meu Dashboard (Formato Simplificado)</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}</p>
       </header>
 
@@ -106,10 +106,12 @@ export default function DiplomaDashboard() {
           <div className="flex-1 min-w-0 space-y-2">
             <div>
               <p className="text-sm font-bold text-foreground">{greeting}, {firstName}! Eu sou a Luna 🦉</p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">Que bom ter você aqui! Antes de começar, confira as notificações no <strong>Mural de Superação</strong> logo abaixo — pode haver recados importantes para você. Depois, acesse o seu <strong>Checklist</strong> para dar sequência aos estudos do módulo.</p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">Que bom ter você aqui! Antes de começar, confira as notificações no <strong>Mural de Superação</strong> logo abaixo — pode haver recados importantes para você. Depois, acesse o seu <strong>Checklist</strong>, a <strong>Apostila (Voz Eclipse)</strong> ou a <strong>Ofensiva Diária</strong> para dar sequência aos estudos do módulo.</p>
             </div>
             <div className="flex flex-wrap gap-2" aria-label="Atalhos de estudo">
               <button type="button" onClick={() => navigate(`${DIPLOMA_PREFIX}/checklist`)} className="inline-flex items-center gap-1 text-[11px] font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"><BookOpen size={12} aria-hidden="true" /> Abrir Checklist</button>
+              <button type="button" onClick={() => navigate(`${DIPLOMA_PREFIX}/apostila`)} className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"><BookOpen size={12} aria-hidden="true" /> Apostila (Voz Eclipse)</button>
+              <button type="button" onClick={() => navigate(`${DIPLOMA_PREFIX}/ofensivas`)} className="inline-flex items-center gap-1 text-[11px] font-bold bg-orange-500 text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"><Flame size={12} aria-hidden="true" /> Ofensiva Diária</button>
               <button type="button" onClick={() => navigate(`${DIPLOMA_PREFIX}/calendar`)} className="inline-flex items-center gap-1 text-[11px] font-bold border border-border bg-background px-3 py-1.5 rounded-lg text-foreground hover:bg-secondary transition-colors"><CalendarDays size={12} className="text-cyan-500" aria-hidden="true" /> Abrir Calendário</button>
             </div>
           </div>

@@ -11,10 +11,10 @@ export default function ChatContacts({ students, onlineStudents, awayStudents, i
     {groups.map((group, index) => <section key={index} className="mt-4">
       {group.label && <h3 className="mb-2 border-b border-rose-100 pb-2 text-xs font-medium text-muted-foreground">{group.label}</h3>}
       <div className={compact ? 'space-y-1' : 'grid gap-2 md:grid-cols-2'}>
-        {group.items.map((contact) => {
+        {group.items.map((contact, contactIdx) => {
           const online = isOnline(contact);
           const name = getAvatarPrefixedName(contact.profile_name || contact.student_name || contact.student_email, contact.profile_avatar_emoji);
-          return <button key={contact.id} type="button" onClick={() => onContact(contact.student_email)} className={`flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-3 text-left transition-colors hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 ${compact ? '' : 'border border-rose-100 bg-card'}`}>
+          return <button key={`${contact.id}_${contact.student_email || ''}_${contactIdx}`} type="button" onClick={() => onContact(contact.student_email)} className={`flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-3 text-left transition-colors hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 ${compact ? '' : 'border border-rose-100 bg-card'}`}>
             <span className={`h-2 w-2 shrink-0 rounded-full ${online ? 'bg-green-500' : 'bg-muted-foreground/40'}`} aria-label={online ? 'Online' : 'Ausente'} />
             <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-foreground">{name}</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{online ? 'Online agora' : `Última visita: ${formatLastSeen(contact.last_seen_at)}`}</span></span>
             {!compact && <MessageSquare size={15} className="shrink-0 text-muted-foreground"/>}
