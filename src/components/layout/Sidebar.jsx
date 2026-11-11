@@ -351,15 +351,15 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
       <Link
         to={base + item.path}
         onClick={handleClose}
-        className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 relative ${
+        className={`group relative flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-all duration-200 ${
           active
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
-            : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
+            ? 'border-sidebar-primary/25 bg-gradient-to-r from-sidebar-primary/18 via-sidebar-primary/6 to-transparent text-sidebar-accent-foreground'
+            : 'border-transparent text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
         }`}
       >
-        {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-r-full bg-primary" />}
-        <item.icon size={15} className={active ? 'text-sidebar-primary' : item.color} />
-        <span className="font-medium text-[12.5px] flex-1 leading-tight">{item.label}</span>
+        {active && <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-sidebar-primary" />}
+        <item.icon size={15} className={active ? 'text-sidebar-primary' : 'text-sidebar-foreground/40 transition-colors group-hover:text-sidebar-foreground/70'} />
+        <span className="flex-1 text-[12px] font-medium leading-tight">{item.label}</span>
         {badgeCount > 0 && (
           <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[9px] font-black leading-none flex items-center justify-center shadow-[0_0_0_2px_rgba(10,10,20,0.95)] animate-pulse">
             {capBadge(badgeCount)}
@@ -414,27 +414,25 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-56 flex flex-col
+        w-[17rem] lg:w-[16.5rem] flex flex-col
         sidebar-glass text-sidebar-foreground
         border-r border-sidebar-border
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Logo */}
-        <div className="px-4 py-4 flex items-center justify-between border-b border-sidebar-border">
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border-2 border-sidebar" />
+        {/* Marca */}
+        <div className="flex items-center justify-between gap-2 border-b border-sidebar-border px-3.5 py-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sidebar-primary/30 bg-gradient-to-br from-sidebar-primary/15 to-transparent">
+              <img src={WR_PRIMARY_LOGO} alt="WR" className="h-7 w-7 object-contain" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-sidebar-primary ring-2 ring-sidebar" />
             </div>
-            <div>
-              <h1 className="text-[14px] font-bold tracking-tight text-sidebar-foreground">{BRAND_SHORT_NAME}</h1>
-              <p className="text-[9px] text-sidebar-foreground/55 -mt-0.5 leading-tight">Instituto de Desenvolvimento Humano</p>
+            <div className="min-w-0">
+              <h1 className="text-[12.5px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground">{BRAND_SHORT_NAME}</h1>
+              <p className="mt-0.5 truncate text-[8px] uppercase leading-tight tracking-[0.14em] text-sidebar-foreground/45">Instituto de Desenvolvimento Humano</p>
             </div>
           </div>
-          <button onClick={handleClose} className="lg:hidden text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent p-1 rounded-lg transition-colors">
+          <button onClick={handleClose} aria-label="Fechar menu" className="rounded-lg p-1.5 text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground lg:hidden">
             <X size={16} />
           </button>
         </div>
@@ -450,11 +448,12 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
                 {/* Group header — clickable to expand/collapse */}
                 <button
                   onClick={() => toggleGroup(gi)}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors ${
-                    hasActiveItem ? 'text-sidebar-foreground/80' : 'text-sidebar-foreground/45 hover:text-sidebar-foreground/70'
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
+                    hasActiveItem ? 'text-sidebar-foreground/85' : 'text-sidebar-foreground/45 hover:text-sidebar-foreground/70'
                   }`}
                 >
-                  <span className="text-[9.5px] font-bold uppercase tracking-widest">
+                  <span className="flex items-center gap-2 text-[8.5px] font-semibold uppercase tracking-[0.22em]">
+                    <span className="h-1 w-1 rounded-full bg-sidebar-primary/70" />
                     {group.label}
                   </span>
                   {isGroupOpen
@@ -477,32 +476,29 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
         {/* Admin notifications */}
         {isAdmin && <NotificationsLink />}
 
-        {/* User footer */}
-        <div className="p-2.5 border-t border-sidebar-border">
-          <p className="px-2 pb-1.5 text-[8.5px] leading-snug text-sidebar-foreground/40">
-            {BRAND_LEGAL_NAME}<br />CNPJ {BRAND_CNPJ}
-          </p>
-          <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-sidebar-accent/55 transition-colors mb-0.5">
+        {/* Rodapé do usuário */}
+        <div className="border-t border-sidebar-border p-2.5">
+          <div className="mb-2 flex items-center gap-2.5 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/25 p-2">
             {session?.photoUrl ? (
-              <img src={session.photoUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
+              <img src={session.photoUrl} alt="Avatar" className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-sidebar-primary/30" />
             ) : (
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] text-white ring-2 ring-white/20 shrink-0"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ring-1 ring-sidebar-primary/30"
                 style={{ backgroundColor: avatarBg }}
               >
                 {initials}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-semibold text-sidebar-foreground truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-[9px] text-sidebar-foreground/50">{functionLabel(session?.profileCategory, session?.role)}</p>
+              <p className="truncate text-[12px] font-medium text-sidebar-foreground">{session?.name || 'Usuário'}</p>
+              <p className="truncate text-[8.5px] uppercase tracking-[0.12em] text-sidebar-foreground/45">{functionLabel(session?.profileCategory, session?.role)}</p>
             </div>
-            <Sparkles size={11} className="text-sidebar-primary/45 shrink-0" />
+            <Sparkles size={11} className="shrink-0 text-sidebar-primary/45" />
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={logout}
-              className="flex items-center gap-2 text-sidebar-foreground/55 hover:text-red-500 flex-1 px-3 py-1.5 rounded-xl transition-colors text-[11px] font-medium"
+              className="flex flex-1 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[10.5px] font-medium text-sidebar-foreground/50 transition-colors hover:bg-red-500/10 hover:text-red-400"
             >
               <LogOut size={13} />
               Sair da conta
@@ -510,6 +506,9 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <LunaLauncher />
           </div>
+          <p className="px-1.5 pt-1.5 text-[7.5px] leading-snug text-sidebar-foreground/30">
+            {BRAND_LEGAL_NAME} · CNPJ {BRAND_CNPJ}
+          </p>
         </div>
       </aside>
     </>

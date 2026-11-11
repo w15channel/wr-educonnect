@@ -33,7 +33,7 @@
     --secondary: 38 26% 91%; --secondary-foreground: 28 38% 22%; --muted: 39 22% 88%; --muted-foreground: 228 22% 36%;
     --accent: 42 32% 88%; --accent-foreground: 28 40% 20%; --destructive: 0 62% 48%; --destructive-foreground: 0 0% 98%;
     --border: 38 18% 76%; --input: 38 26% 91%; --ring: 42 58% 50%; --chart-1: 42 58% 50%; --chart-2: 200 50% 45%;
-    --chart-3: 30 70% 50%; --chart-4: 260 50% 55%; --chart-5: 340 60% 50%; --radius: .875rem;
+    --chart-3: 30 70% 50%; --chart-4: 260 50% 55%; --chart-5: 340 60% 50%; --radius: 1rem;
     --sidebar-background: 38 30% 92%; --sidebar-foreground: 230 38% 13%; --sidebar-primary: 42 58% 43%; --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 42 27% 84%; --sidebar-accent-foreground: 28 40% 14%; --sidebar-border: 42 22% 68%; --sidebar-ring: 42 58% 43%;
   }
@@ -60,7 +60,7 @@
   .font-jakarta { font-family: var(--font-jakarta); }
   .font-inter { font-family: var(--font-inter); }
   .glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-  .app-shell-bg { background-color: #080d18; background-image: radial-gradient(70rem 55rem at -12% -15%, rgba(80,111,220,.3), transparent 68%), radial-gradient(66rem 52rem at 108% 4%, rgba(43,166,139,.25), transparent 66%), radial-gradient(55rem 48rem at 50% 108%, rgba(24,108,107,.13), transparent 72%), linear-gradient(135deg,#080d18 0%,#0c1725 42%,#0b211f 100%); position: relative; isolation: isolate; transition: background-color .55s ease, background-image .55s ease; }
+  .app-shell-bg { background-color: #070a12; background-image: radial-gradient(72rem 56rem at -12% -15%, rgba(212,185,106,.14), transparent 68%), radial-gradient(66rem 52rem at 108% 2%, rgba(140,104,38,.18), transparent 66%), radial-gradient(55rem 48rem at 50% 108%, rgba(212,185,106,.08), transparent 72%), linear-gradient(135deg,#070a12 0%,#0b1018 44%,#0e0d0b 100%); position: relative; isolation: isolate; transition: background-color .55s ease, background-image .55s ease; }
   .app-shell-bg::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .16; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E"); mix-blend-mode: soft-light; }
   :root:not(.dark) .app-shell-bg:not(.lobby-shell) { background-color: #f5f0e8; background-image: radial-gradient(66rem 52rem at -8% -12%,rgba(226,189,104,.28),transparent 68%), radial-gradient(62rem 50rem at 106% 2%,rgba(212,185,106,.22),transparent 66%), radial-gradient(58rem 46rem at 52% 112%,rgba(226,189,104,.30),transparent 72%), linear-gradient(135deg,#f5f0e8 0%,#f0ebe0 44%,#f4e6c6 100%); }
   :root:not(.dark) .app-shell-bg:not(.lobby-shell)::before { opacity: .4; mix-blend-mode: multiply; }

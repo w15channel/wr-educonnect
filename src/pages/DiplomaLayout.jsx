@@ -8,25 +8,44 @@ import ChecklistReturnBar from '@/components/checklist/ChecklistReturnBar';
 
 const DIPLOMA_GROUPS = [
   { label: 'Conteúdo', items: [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', color: 'text-amber-400' },
-    { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-blue-400' },
-    { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
-    { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
-    { icon: ClipboardList, label: 'Provas', path: '/exams', color: 'text-violet-400' },
-    { icon: Headphones, label: 'Podcast', path: '/podcasts', color: 'text-fuchsia-400' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist' },
+    { icon: BookOpen, label: 'Apostila', path: '/apostila' },
+    { icon: FileText, label: 'Tarefas', path: '/tasks' },
+    { icon: ClipboardList, label: 'Provas', path: '/exams' },
+    { icon: Headphones, label: 'Podcast', path: '/podcasts' },
   ] },
   { label: 'Ferramentas', items: [
-    { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
-    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
-    { icon: History, label: 'Histórico acadêmico', path: '/historico', color: 'text-cyan-400' },
-    { icon: GraduationCap, label: 'Certificação', path: '/certificadora', color: 'text-yellow-400' },
+    { icon: CalendarDays, label: 'Calendário', path: '/calendar' },
+    { icon: DollarSign, label: 'Mensalidades', path: '/tuitions' },
+    { icon: History, label: 'Histórico acadêmico', path: '/historico' },
+    { icon: GraduationCap, label: 'Certificação', path: '/certificadora' },
   ] },
 ];
 const DIPLOMA_STANDALONE = [
-  { icon: Users, label: 'Classe', path: '/classe', color: 'text-sky-400' },
-  { icon: User, label: 'Meu Perfil', path: '/profile', color: 'text-indigo-400' },
+  { icon: Users, label: 'Classe', path: '/classe' },
+  { icon: User, label: 'Meu Perfil', path: '/profile' },
 ];
 const DIPLOMA_MENU = [...DIPLOMA_GROUPS.flatMap(group => group.items), ...DIPLOMA_STANDALONE];
+
+function NavItem({ item, active, prefix, onNavigate }) {
+  return (
+    <Link
+      to={prefix + item.path}
+      onClick={onNavigate}
+      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+        active
+          ? 'border border-[#d4b96a]/25 bg-gradient-to-r from-[#d4b96a]/14 via-[#d4b96a]/05 to-transparent text-[#f2e8d1]'
+          : 'border border-transparent text-white/45 hover:bg-white/[0.04] hover:text-white/80'
+      }`}
+    >
+      {active && <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-full bg-[#d4b96a]" />}
+      <item.icon size={16} className={active ? 'text-[#d4b96a]' : 'text-white/35 transition-colors group-hover:text-white/70'} />
+      <span className="flex-1 text-[12.5px] font-medium tracking-[0.01em]">{item.label}</span>
+      {active && <ChevronRight size={12} className="text-[#d4b96a]/70" />}
+    </Link>
+  );
+}
 
 export default function DiplomaLayout() {
   const location = useLocation();
@@ -47,102 +66,96 @@ export default function DiplomaLayout() {
     : '?';
   const avatarBg = session?.avatarColor || '#7c3aed';
   const currentPage = DIPLOMA_MENU.find((item) => isActive(item.path))?.label || BRAND_LEGAL_NAME;
+  const closeMobile = () => setMobileOpen(false);
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden app-shell-bg">
-      {/* Sidebar estreita — diploma only */}
-      {mobileOpen && <button type="button" aria-label="Fechar menu" className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setMobileOpen(false)} />}
-      <aside className={`${mobileOpen ? 'flex' : 'hidden'} fixed inset-y-0 left-0 z-50 md:static md:flex flex-col w-72 md:w-52 shrink-0 bg-[#07080f] border-r border-[#151c30] h-full`}>
-        {/* Logo */}
-        <div className="p-5 flex items-center gap-3 border-b border-[#151c30]">
-          <div className="w-8 h-8 flex items-center justify-center">
-            <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
+      {/* Sidebar — diploma */}
+      {mobileOpen && <button type="button" aria-label="Fechar menu" className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden" onClick={closeMobile} />}
+      <aside className={`${mobileOpen ? 'flex' : 'hidden'} fixed inset-y-0 left-0 z-50 md:relative md:flex w-[17rem] md:w-[15.5rem] shrink-0 flex-col h-full border-r border-white/[0.06] bg-[#06070c] md:bg-[#06070c]/95 md:backdrop-blur-xl`}>
+        <span className="pointer-events-none absolute inset-y-0 right-0 hidden w-px md:block" style={{ background: 'linear-gradient(180deg, transparent, rgba(212,185,106,0.28), transparent)' }} />
+
+        {/* Marca */}
+        <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center border border-[#d4b96a]/25 bg-gradient-to-br from-[#d4b96a]/12 to-transparent">
+            <img src={WR_PRIMARY_LOGO} alt="WR" className="h-7 w-7 object-contain" />
           </div>
-          <div>
-            <p className="text-[12px] font-light uppercase tracking-[0.2em] text-[#e8dfc8]">{BRAND_SHORT_NAME}</p>
-            <p className="text-[8px] text-[#c8bfa8]/45 font-light tracking-wide">Instituto de Desenvolvimento Humano</p>
+          <div className="min-w-0">
+            <p className="text-[12px] font-light uppercase tracking-[0.28em] text-[#f2e8d1]">{BRAND_SHORT_NAME}</p>
+            <p className="mt-0.5 truncate text-[8px] font-light uppercase tracking-[0.16em] text-[#c8bfa8]/40">Instituto de Desenvolvimento Humano</p>
           </div>
-          <button type="button" className="ml-auto p-2 text-white/50 md:hidden" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X size={18} /></button>
+          <button type="button" className="ml-auto rounded-lg p-2 text-white/40 transition-colors hover:bg-white/5 hover:text-white/80 md:hidden" onClick={closeMobile} aria-label="Fechar menu"><X size={18} /></button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto scrollbar-invisible">
-          {DIPLOMA_GROUPS.map((group) => <div key={group.label} className="mb-2">
-            <button type="button" onClick={() => setOpenGroups(current => ({ ...current, [group.label]: !current[group.label] }))} aria-expanded={openGroups[group.label]} className="flex w-full items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#c8bfa8]/45 hover:text-[#e8dfc8]">
-              {group.label}<ChevronDown size={13} className={`transition-transform ${openGroups[group.label] ? 'rotate-180' : ''}`} />
+        {/* Navegação */}
+        <nav className="scrollbar-invisible flex-1 overflow-y-auto px-3 py-4">
+          {DIPLOMA_GROUPS.map((group) => <div key={group.label} className="mb-4">
+            <button type="button" onClick={() => setOpenGroups(current => ({ ...current, [group.label]: !current[group.label] }))} aria-expanded={openGroups[group.label]} className="mb-1.5 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[8.5px] font-semibold uppercase tracking-[0.24em] text-white/30 transition-colors hover:text-[#d4b96a]/80">
+              <span className="flex items-center gap-2">
+                <span className="h-1 w-1 rounded-full bg-[#d4b96a]/70" />
+                {group.label}
+              </span>
+              <ChevronDown size={12} className={`transition-transform duration-300 ${openGroups[group.label] ? 'rotate-180' : ''}`} />
             </button>
-            {openGroups[group.label] && <div className="space-y-0.5">{group.items.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={prefix + item.path}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${
-                  active
-                    ? 'bg-[#161c32] text-[#e8dfc8]'
-                    : 'text-white/45 hover:bg-white/5 hover:text-white/75'
-                }`}
-              >
-                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#d4b96a]" />}
-                <item.icon size={16} className={active ? 'text-[#d4b96a]' : item.color} />
-                <span className="text-[13px] font-medium flex-1">{item.label}</span>
-                {active && <ChevronRight size={12} className="text-[#d4b96a] opacity-60" />}
-              </Link>
-            );
-            })}</div>}
+            {openGroups[group.label] && <div className="space-y-1">{group.items.map((item) => (
+              <NavItem key={item.path} item={item} active={isActive(item.path)} prefix={prefix} onNavigate={closeMobile} />
+            ))}</div>}
           </div>)}
-          <div className="my-2 border-t border-[#151c30]" />
-          {DIPLOMA_STANDALONE.map((item) => {
-            const active = isActive(item.path);
-            return <Link key={item.path} to={prefix + item.path} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${active ? 'bg-[#161c32] text-[#e8dfc8]' : 'text-white/45 hover:bg-white/5 hover:text-white/75'}`}>
-              {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#d4b96a]" />}
-              <item.icon size={16} className={active ? 'text-[#d4b96a]' : item.color} /><span className="text-[13px] font-medium flex-1">{item.label}</span>{active && <ChevronRight size={12} className="text-[#d4b96a] opacity-60" />}
-            </Link>;
-          })}
+
+          <div className="my-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+          <div className="space-y-1">
+            {DIPLOMA_STANDALONE.map((item) => (
+              <NavItem key={item.path} item={item} active={isActive(item.path)} prefix={prefix} onNavigate={closeMobile} />
+            ))}
+          </div>
         </nav>
 
-        {/* Footer */}
-        <div className="p-3 border-t border-[#151c30]">
-          <div className="flex items-center gap-3 p-2 mb-1">
+        {/* Rodapé do usuário */}
+        <div className="border-t border-white/[0.06] p-3">
+          <div className="mb-2 flex items-center gap-2.5 rounded-xl border border-white/[0.05] bg-white/[0.02] p-2.5">
             {session?.photoUrl ? (
-              <img src={session.photoUrl} alt="Avatar" className="w-8 h-8 object-cover rounded-full ring-1 ring-[#d4b96a]/20" />
+              <img src={session.photoUrl} alt="Avatar" className="h-9 w-9 rounded-full object-cover ring-1 ring-[#d4b96a]/30" />
             ) : (
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-light text-white ring-1 ring-[#d4b96a]/20"
-                style={{ backgroundColor: avatarBg }}>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-light text-white ring-1 ring-[#d4b96a]/30" style={{ backgroundColor: avatarBg }}>
                 {initials}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-light text-[#e8dfc8]/80 truncate">{session?.name || 'Usuário'}</p>
-              <p className="text-[9px] text-[#c8bfa8]/45 font-light">Estudante</p>
+              <p className="truncate text-[12px] font-medium text-[#f2e8d1]/85">{session?.name || 'Usuário'}</p>
+              <p className="text-[8.5px] font-light uppercase tracking-[0.16em] text-[#c8bfa8]/40">Estudante</p>
             </div>
           </div>
           <button
             onClick={logout}
-            className="flex items-center gap-2 text-[#c8bfa8]/25 hover:text-red-400/70 w-full px-3 py-2 transition-colors text-[11px] font-light"
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[10.5px] font-light text-[#c8bfa8]/35 transition-colors hover:bg-red-500/10 hover:text-red-300/80"
           >
             <LogOut size={13} /> Sair da conta
           </button>
         </div>
       </aside>
 
-      {/* Mobile top bar: a mesma navegacao lateral do desktop abre como drawer. */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 py-3 bg-[#07080f] border-b border-[#151c30]">
-        <div className="flex items-center gap-2">
-          <img src={WR_PRIMARY_LOGO} alt="WR" className="w-6 h-6 object-contain" />
-          <span className="text-sm font-bold text-[#e8dfc8]">{currentPage}</span>
+      {/* Barra superior mobile */}
+      <div className="fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-3 border-b border-white/[0.06] bg-[#06070c]/92 px-4 backdrop-blur-xl md:hidden" style={{ paddingTop: 'calc(0.65rem + env(safe-area-inset-top, 0px))', paddingBottom: '0.65rem' }}>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-[#d4b96a]/25">
+            <img src={WR_PRIMARY_LOGO} alt="WR" className="h-5 w-5 object-contain" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-medium leading-tight text-[#f2e8d1]">{currentPage}</p>
+            <p className="text-[8px] font-light uppercase tracking-[0.18em] text-[#c8bfa8]/40">{BRAND_SHORT_NAME}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden text-[9px] font-bold uppercase tracking-widest text-[#c8bfa8]/40 sm:inline">{BRAND_LEGAL_NAME}</span>
-          <button onClick={() => setMobileOpen(true)} className="text-white/70 hover:text-white transition-colors p-2" aria-label="Abrir menu lateral">
+        <div className="flex items-center gap-1">
+          <span className="hidden text-[8px] font-medium uppercase tracking-[0.16em] text-white/20 sm:inline">{BRAND_LEGAL_NAME}</span>
+          <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 text-white/60 transition-colors hover:bg-white/5 hover:text-white" aria-label="Abrir menu lateral">
             <Menu size={20} />
           </button>
         </div>
       </div>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-0 md:pt-0 mt-[48px] md:mt-0">
+      {/* Conteúdo */}
+      <main className="mt-[calc(58px_+_env(safe-area-inset-top,0px))] flex-1 overflow-y-auto overflow-x-hidden md:mt-0">
         <Outlet context={{ user: session, course: session?.course, isDiplomaMode: true }} />
         <ChecklistReturnBar />
       </main>

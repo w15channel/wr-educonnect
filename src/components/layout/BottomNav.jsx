@@ -64,23 +64,29 @@ export default function BottomNav({ onMenuOpen }) {
 
   return (
     <nav
-      className="shell-bar-glass shrink-0 border-t z-40 lg:hidden"
+      className="shell-bar-glass relative shrink-0 z-40 lg:hidden"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)',
-        height: 'calc(60px + env(safe-area-inset-bottom))',
+        height: 'calc(62px + env(safe-area-inset-bottom))',
       }}
     >
-      <div className="flex items-stretch h-[60px]">
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{ backgroundImage: 'linear-gradient(90deg, transparent, hsl(var(--sidebar-primary) / 0.45), transparent)' }}
+      />
+      <div className="flex h-[62px] items-stretch">
         {tabs.map(({ icon: Icon, label, root }) => {
           if (root === '__menu__') {
             return (
               <button
                 key="menu"
                 onClick={onMenuOpen}
-                className="nav-shortcut-muted flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors"
+                className="nav-shortcut-muted group flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors"
               >
-                <Icon size={20} />
-                <span className="text-[9px] font-semibold uppercase tracking-wide">{label}</span>
+                <span className="flex h-7 w-10 items-center justify-center rounded-lg transition-colors group-hover:bg-sidebar-accent/60">
+                  <Icon size={19} />
+                </span>
+                <span className="text-[8.5px] font-semibold uppercase tracking-[0.1em]">{label}</span>
               </button>
             );
           }
@@ -90,17 +96,23 @@ export default function BottomNav({ onMenuOpen }) {
             <button
               key={root}
               onClick={() => handleTabPress(root)}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors relative ${
+              className={`group relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
                 active ? 'text-sidebar-primary' : 'nav-shortcut-muted'
               }`}
             >
-              {active && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-primary" />
-              )}
-              <Icon size={20} className={active ? 'text-primary' : ''} />
-              <span className={`text-[9px] font-semibold uppercase tracking-wide ${active ? 'text-sidebar-primary' : ''}`}>
+              <span
+                className={`flex h-7 w-10 items-center justify-center rounded-lg transition-all duration-200 ${
+                  active ? 'bg-sidebar-primary/15' : 'group-hover:bg-sidebar-accent/60'
+                }`}
+              >
+                <Icon size={19} className={active ? 'text-sidebar-primary' : ''} />
+              </span>
+              <span className={`text-[8.5px] font-semibold uppercase tracking-[0.1em] ${active ? 'text-sidebar-primary' : ''}`}>
                 {label}
               </span>
+              {active && (
+                <span className="absolute top-0 left-1/2 h-[2px] w-8 -translate-x-1/2 rounded-b-full bg-sidebar-primary" />
+              )}
             </button>
           );
         })}
