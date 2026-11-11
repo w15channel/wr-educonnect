@@ -10,6 +10,7 @@ import MobileSplash from './MobileSplash';
 import ChecklistReturnBar from '../checklist/ChecklistReturnBar';
 import ProfileAssistant from '../onboarding/ProfileAssistant';
 import useProfileCompletion from '@/hooks/useProfileCompletion';
+import useNativeAutomations from '@/hooks/useNativeAutomations';
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -44,6 +45,8 @@ export default function AppLayout() {
   // por item os dados obrigatórios do perfil (a foto continua opcional).
   // O tutorial da plataforma acontece somente no lobby, sem duplicidade aqui.
   const { profile, values, missing, needsCompletion } = useProfileCompletion(session);
+  // Automações nativas (mensalidades e presença) rodam em código próprio do app.
+  useNativeAutomations(!!session);
   const [assistantDone, setAssistantDone] = useState(false);
   const showAssistant = isStudent && !assistantDone && needsCompletion;
 
