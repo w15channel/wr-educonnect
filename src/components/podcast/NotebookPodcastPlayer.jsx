@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Headphones, Radio, CheckCircle2 } from 'lucide-react';
 
 function extractDriveFileId(url = '') {
@@ -29,13 +29,35 @@ export default function NotebookPodcastPlayer({
   );
   const directAudio = !driveId ? podcast?.audio_url || podcast?.notebook_url : null;
 
-  // Animação contínua das barras (decorativa)
+  const iframeRef = useRef(null);
+  const [active, setActive] = useState(false);
+
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 260);
-    return () => clearInterval(interval);
+    setActive(false);
+    setTick(0);
+  }, [podcast?.id]);
+
+  // O toque dentro do player do Drive tira o foco da página: é o sinal de ativação
+  useEffect(() => {
+    const onBlur = () => {
+      if (document.activeElement === iframeRef.current) setActive(true);
+    };
+    window.addEventListener('blur', onBlur);
+    return () => window.removeEventListener('blur', onBlur);
   }, []);
 
+  useEffect(() => {
+    if (!active) return undefined;
+    const interval = setInterval(() => setTick((t) => t + 1), 260);
+    return () => clearInterval(interval);
+  }, [active]);
+
   if (!podcast) return null;
+
+  const totalSec = String(podcast.duration || '')
+    .split(':')
+    .reduce((acc, part) => acc * 60 + (Number(part) || 0), 0);
+  const progressPct = totalSec > 0 ? Math.min(100, ((tick * 0.26) / totalSec) * 100) : 100;
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-indigo-500/35 bg-gradient-to-br from-[#0b1022] via-[#121936] to-[#1d143b] text-white shadow-2xl">
@@ -78,8 +100,16 @@ export default function NotebookPodcastPlayer({
             {WAVE_BARS.map((height, idx) => (
               <div
                 key={idx}
-                className="flex-1 rounded-full bg-gradient-to-t from-indigo-400 via-fuchsia-400 to-emerald-300 transition-all duration-200"
-                style={{ height: `${Math.max(18, (height + ((tick * 11 + idx * 7) % 38)) % 96)}%` }}
+                className={`flex-1 rounded-full transition-all duration-200 ${
+                  (idx / WAVE_BARS.length) * 100 < progressPct
+                    ? 'bg-gradient-to-t from-indigo-400 via-fuchsia-400 to-emerald-300'
+                    : 'bg-white/15'
+                }`}
+                style={{
+                  height: active
+                    ? `${Math.max(18, (height + ((tick * 11 + idx * 7) % 38)) % 96)}%`
+                    : `${Math.max(16, Math.round(height * 0.45))}%`,
+                }}
               />
             ))}
           </div>
@@ -87,18 +117,26 @@ export default function NotebookPodcastPlayer({
 
         {/* Recorte: apenas a barra de controles nativa do Google Drive */}
         {driveId && (
-          <div className="mt-3 h-[60px] overflow-hidden rounded-2xl border border-indigo-400/30 bg-[#0d1226]">
+          <div className="mt-3 h-[150px] overflow-hidden rounded-2xl border border-indigo-400/30 bg-[#0d1226]">
             <iframe
+              ref={iframeRef}
               src={`https://drive.google.com/file/d/${driveId}/preview`}
               title={podcast.title}
               allow="autoplay; encrypted-media"
-              className="block w-full h-[240px] -mt-[180px] border-0"
+              className="block w-full h-[206px] -mt-[56px] border-0"
             />
           </div>
         )}
 
         {directAudio && (
-          <audio controls preload="metadata" src={directAudio} className="mt-3 w-full" />
+          <audio
+            controls
+            preload="metadata"
+            src={directAudio}
+            onPlay={() => setActive(true)}
+            onPause={() => setActive(false)}
+            className="mt-3 w-full"
+          />
         )}
 
         {onMarkCompleted && (
