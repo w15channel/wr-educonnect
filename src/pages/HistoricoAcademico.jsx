@@ -194,10 +194,10 @@ function AcademicRecord({ student, rows, totalScore, totalMaxScore, totalMinutes
         </table>
 
         <div style={{ marginTop: 20, border: '1px solid #dde4ec', background: '#f8fafc', borderRadius: 8, padding: '14px 18px', textAlign: 'center' }}>
-          <p style={{ fontSize: 10, letterSpacing: 4, color: '#7a6a3a', textTransform: 'uppercase', margin: 0, fontWeight: 'bold' }}>Pontuação</p>
-          <p style={{ margin: '6px 0 0', fontSize: 24, fontWeight: 'bold', color: '#1e3a5f' }}>{formatScore(totalScore)} pts</p>
+          <p style={{ fontSize: 10, letterSpacing: 4, color: '#7a6a3a', textTransform: 'uppercase', margin: 0, fontWeight: 'bold' }}>Resumo de Participações</p>
+          <p style={{ margin: '6px 0 0', fontSize: 24, fontWeight: 'bold', color: '#1e3a5f' }}>{rows.length} atividades concluídas</p>
           <p style={{ margin: '4px 0 0', fontSize: 9, color: '#888', letterSpacing: 1, textTransform: 'uppercase' }}>
-            Total somado das atividades entregues · Carga horária {formatDuration(totalMinutes)}
+            Carga horária certificada: {formatDuration(totalMinutes)} · Aproveitamento: {approvalRate}%
           </p>
         </div>
 
@@ -521,7 +521,7 @@ export default function HistoricoAcademico() {
               <GraduationCap size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Pontuação & Histórico</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Participações & Histórico</h2>
               <p className="text-muted-foreground text-sm mt-0.5">{selectedStudent.name}</p>
             </div>
           </div>
@@ -529,15 +529,14 @@ export default function HistoricoAcademico() {
             to={pontuacaoPath}
             className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 text-xs font-bold px-4 py-2.5 rounded-xl transition hover:bg-primary/20 shrink-0"
           >
-            <Trophy size={14} /> Ver Pontuação Detalhada
+            <Trophy size={14} /> Ver Ranking de Participações
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Itens selecionados', value: selectedRows.length },
             { label: 'Atividades realizadas', value: activitiesCount },
-            { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` },
             { label: 'Aproveitamento', value: `${approvalRate}%` },
             { label: 'Carga Horária', value: formatDuration(totalMinutes) },
           ].map(item => (
@@ -567,7 +566,7 @@ export default function HistoricoAcademico() {
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {items.map(r => (
-                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`Módulo ${r.module} · ${r.status} · ${formatDuration(r.minutes)} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />
+                <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`Módulo ${r.module} · Concluído · ${formatDuration(r.minutes)}${r.notes ? ` · ${r.notes}` : ''}`} />
               ))}
             </div>
           </div>
@@ -596,8 +595,8 @@ export default function HistoricoAcademico() {
             <p className="text-sm text-muted-foreground">Aluno: <span className="font-semibold text-foreground">{selectedStudent.name}</span></p>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[{ label: 'Itens selecionados', value: selectedRows.length }, { label: 'Atividades realizadas', value: activitiesCount }, { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/100` }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: formatDuration(totalMinutes) }].map(item => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[{ label: 'Itens selecionados', value: selectedRows.length }, { label: 'Atividades realizadas', value: activitiesCount }, { label: 'Aproveitamento', value: `${approvalRate}%` }, { label: 'Carga Horária', value: formatDuration(totalMinutes) }].map(item => (
             <div key={item.label} className="bg-card border border-border rounded-xl p-3 text-center">
               <p className="text-xs text-muted-foreground">{item.label}</p>
               <p className="text-base font-black text-primary">{item.value}</p>
@@ -614,7 +613,7 @@ export default function HistoricoAcademico() {
           <div key={cat}>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{cat}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`Módulo ${r.module} · ${r.status} · ${formatDuration(r.minutes)} · ${(r.score !== null && r.score !== '—') ? `${formatScore(r.score)}/${formatScore(r.max)} pts` : 'Sem nota'}${r.notes ? ` · ${r.notes}` : ''}`} />)}
+              {items.map(r => <ItemCheckbox key={r.key} checked={selectedItems.has(r.key)} onChange={() => toggleItem(r.key)} label={r.title} sublabel={`Módulo ${r.module} · Concluído · ${formatDuration(r.minutes)}${r.notes ? ` · ${r.notes}` : ''}`} />)}
             </div>
           </div>
         ))}

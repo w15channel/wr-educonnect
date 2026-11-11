@@ -59,7 +59,7 @@ export default function ModuleUnlockPanel({ course = 'tcc', adminEmail = '' }) {
         )}
       </div>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Todo aluno começa no Módulo 1. Ao liberar, a pontuação seguinte dele passa a contar no novo módulo.
+        Todo aluno começa no Módulo 1. Ao liberar, as próximas participações e atividades passam a ficar disponíveis no novo módulo.
       </p>
 
       {isLoading ? (

@@ -121,8 +121,10 @@ export default function ExamEditor({ exam, onBack, course }) {
             <Input type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1.5">Pontuação Total</label>
-            <Input type="number" min={1} value={maxGrade} onChange={e => setMaxGrade(e.target.value)} />
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1.5">Critério de Aprovação</label>
+            <div className="h-9 flex items-center rounded-md border border-input bg-secondary/40 px-3 text-xs font-semibold text-foreground">
+              Mínimo de 50% de acertos
+            </div>
           </div>
           <div className="flex items-end">
             <label className="flex items-center gap-2 cursor-pointer">

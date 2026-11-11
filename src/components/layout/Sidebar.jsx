@@ -90,7 +90,7 @@ const adminGroups = [
       { icon: Users,         label: 'Gestão de Alunos',       path: '/students',          color: 'text-indigo-400' },
       { icon: Key,           label: 'Códigos de Acesso',      path: '/keys',              color: 'text-emerald-400' },
       { icon: DollarSign,    label: 'Mensalidades',           path: '/tuitions',          color: 'text-teal-400' },
-      { icon: Trophy,        label: 'Controle de Pontuação',  path: '/scorecontrol',      color: 'text-yellow-400' },
+      { icon: Trophy,        label: 'Participações & Ranking', path: '/scorecontrol',      color: 'text-yellow-400' },
       { icon: ScrollText,    label: 'Histórico Acadêmico',    path: '/historico',         color: 'text-cyan-400' },
       { icon: Bell,          label: 'Avisos',                 path: '/announcements',     color: 'text-amber-400' },
     ],
@@ -136,7 +136,7 @@ const studentGroups = [
   {
     label: 'Acadêmico',
     items: [
-      { icon: Trophy,        label: 'Pontuação & Histórico',  path: '/historico',         color: 'text-yellow-400' },
+      { icon: Trophy,        label: 'Participações & Histórico', path: '/historico',       color: 'text-yellow-400' },
       { icon: Medal,         label: 'Certificação',           path: '/certificadora',     color: 'text-amber-400' },
       { icon: ScrollText,    label: 'Meu Best Seller',        path: '/bestseller',        color: 'text-emerald-400' },
     ],
@@ -291,7 +291,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
     if (isAdmin || !studentEmail) return {};
     const lessonDone = new Set(lessonProgress.filter(progress => progress?.watched && progress?.lesson_id).map(progress => progress.lesson_id));
     const submittedTasks = new Set(taskSubmissions.map(submission => submission?.task_id).filter(Boolean));
-    const submittedExams = new Set(examSubmissions.map(submission => submission?.exam_id).filter(Boolean));
+    const submittedExams = new Set(examSubmissions.filter(submission => submission?.passed !== false).map(submission => submission?.exam_id).filter(Boolean));
     const latestChallenge = challenges[0];
     const response = latestChallenge && challengeResponses.find(challengeResponse => challengeResponse?.challenge_id === latestChallenge.id);
     const challengeTotal = latestChallenge?.questions?.length || 8;

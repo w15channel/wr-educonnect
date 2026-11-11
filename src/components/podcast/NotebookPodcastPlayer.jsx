@@ -154,8 +154,8 @@ export default function NotebookPodcastPlayer({
             {savingCompletion
               ? 'Validando...'
               : isCompleted
-              ? 'Episódio Concluído (+2 pts)'
-              : 'Marcar Episódio Concluído (+2 pts)'}
+              ? 'Episódio Concluído'
+              : 'Marcar Episódio Concluído'}
           </button>
         )}
       </div>

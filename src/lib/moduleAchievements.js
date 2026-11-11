@@ -1,4 +1,5 @@
 import { parseModuleNumber } from '@/lib/examChecklistRules';
+import { isExamPassed } from '@/lib/autoCorrectionResponses';
 
 export const MODULE_TROPHIES = [
   { module: 1, color: 'text-amber-500', surface: 'bg-amber-500/15 border-amber-500/30' },
@@ -17,8 +18,11 @@ export const trophyForModule = (moduleNumber) => MODULE_TROPHIES[Number(moduleNu
 
 export function buildModuleCompletions(exams = [], submissions = []) {
   const examModules = new Map(exams.map((exam) => [exam.id, parseModuleNumber(exam.module_ref)]));
-  return submissions.map((submission) => ({
-    ...submission,
-    moduleNumber: examModules.get(submission.exam_id),
-  })).filter((item) => item.moduleNumber);
+  return submissions
+    .filter((submission) => isExamPassed(submission))
+    .map((submission) => ({
+      ...submission,
+      moduleNumber: examModules.get(submission.exam_id),
+    }))
+    .filter((item) => item.moduleNumber);
 }

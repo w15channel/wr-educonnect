@@ -4,15 +4,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import {
-  GraduationCap, CheckCircle, Star, Pencil, Trash2, Play,
-  ChevronDown, ChevronUp, Trophy, Eye, Award, Sparkles, AlertCircle, Edit, HelpCircle, EyeOff
+  GraduationCap, CheckCircle, Pencil, Trash2, Play, RotateCcw,
+  ChevronDown, ChevronUp, Trophy, Eye, Award, Sparkles, AlertCircle, Edit, EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { formatScore } from '@/lib/scoreUtils';
-import { pickAutoCorrectionResponse } from '@/lib/autoCorrectionResponses';
+import {
+  pickAutoCorrectionResponse,
+  isExamPassed,
+  resolveExamAccuracy,
+  EXAM_PASS_MIN_PERCENT,
+} from '@/lib/autoCorrectionResponses';
 import useModuleChecklist from '@/hooks/useModuleChecklist';
 import { parseModuleNumber } from '@/lib/examChecklistRules';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
@@ -28,26 +32,45 @@ function useScopedPrefix() {
   return '';
 }
 
-function SubmittedView({ submission }) {
+function SubmittedView({ submission, onRetake }) {
   const [open, setOpen] = useState(true);
-  const resolvedFeedback = submission.feedback || pickAutoCorrectionResponse(submission.exam_id || submission.id, 'exam');
-  const resolvedGrade = submission.grade != null ? submission.grade : 50;
+  const passed = isExamPassed(submission);
+  const accuracy = resolveExamAccuracy(submission);
+  const resolvedFeedback =
+    submission.feedback || pickAutoCorrectionResponse(submission.exam_id || submission.id, 'exam');
+
   return (
-    <div className="mt-3 space-y-2">
+    <div className="mt-3 space-y-2.5">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
-          <CheckCircle size={12} /> Corrigida automaticamente
-        </span>
-        <span className="text-sm font-black text-foreground bg-secondary px-3 py-1.5 rounded-xl border border-border">
-          Nota: {formatScore(resolvedGrade)}
-        </span>
-        <button onClick={() => setOpen(!open)} className="inline-flex items-center gap-1 text-xs text-primary border border-primary/20 px-2.5 py-1.5 rounded-xl hover:bg-primary/5 transition-colors">
-          <Eye size={11} /> {open ? 'Ocultar parecer' : 'Ver parecer de autocorreção'}
+        {passed ? (
+          <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold">
+            <CheckCircle size={12} /> Aprovado(a){accuracy !== null ? ` · ${accuracy}% de acerto` : ''}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold">
+            <AlertCircle size={12} /> Abaixo de {EXAM_PASS_MIN_PERCENT}%{accuracy !== null ? ` (${accuracy}%)` : ''} · Repetir prova
+          </span>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="inline-flex items-center gap-1 text-xs text-primary border border-primary/20 px-2.5 py-1.5 rounded-xl hover:bg-primary/5 transition-colors"
+        >
+          <Eye size={11} /> {open ? 'Ocultar resultado' : 'Ver resultado'}
         </button>
+
+        {!passed && onRetake && (
+          <Button size="sm" onClick={onRetake} className="gap-1.5 h-8 text-xs font-bold">
+            <RotateCcw size={12} /> Repetir Prova
+          </Button>
+        )}
       </div>
       {open && resolvedFeedback && (
         <div className="bg-secondary/40 border border-border rounded-xl p-3 text-xs">
-          <p className="font-bold text-foreground mb-1 flex items-center gap-1"><Award size={11} className="text-yellow-500" /> Parecer de Autocorreção:</p>
+          <p className="font-bold text-foreground mb-1 flex items-center gap-1">
+            <Award size={11} className={passed ? 'text-emerald-500' : 'text-amber-500'} /> Parecer Instantâneo:
+          </p>
           <p className="text-muted-foreground leading-relaxed">{resolvedFeedback}</p>
         </div>
       )}
@@ -70,10 +93,8 @@ export default function Exams() {
   const [gradingSubmission, setGradingSubmission] = useState(null);
   const [showAnnualGenerator, setShowAnnualGenerator] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState('all');
-  // Sequência de liberação: a prova do módulo só abre com o checklist cumprido.
   const { isModuleUnlockedForExam } = useModuleChecklist({ course: userCourse, session });
 
-  // Load all exams for this course
   const { data: exams = [], isLoading } = useQuery({
     queryKey: ['exams', userCourse],
     queryFn: () => {
@@ -86,55 +107,59 @@ export default function Exams() {
   const normalizeEmail = (v = '') => String(v || '').trim().toLowerCase();
   const studentEmails = [session?.email, session?.code].filter(Boolean).map(normalizeEmail);
 
-  // Load exam submissions from new dedicated entity
   const { data: submissions = [] } = useQuery({
     queryKey: ['exam-submissions', userCourse],
     queryFn: async () => {
       const records = await base44.entities.ExamSubmission.filter({ course: userCourse }, '-submitted_at', 3000);
-      return isTeacher ? records : records.filter(s => studentEmails.includes(normalizeEmail(s.student_email)));
+      return isTeacher ? records : records.filter((s) => studentEmails.includes(normalizeEmail(s.student_email)));
     },
     enabled: exams.length > 0,
   });
 
   useEffect(() => {
-    const hasPending = submissions.some((s) => s.status !== 'graded' || !s.feedback || s.grade == null);
+    const hasPending = submissions.some((s) => s.status !== 'graded' || !s.feedback);
     if (!hasPending) return;
-    base44.functions.invoke('saveStudentRecord', {
-      action: 'autoCorrectPending',
-      student_email: isTeacher ? undefined : (session?.email || session?.code || ''),
-      student_identifiers: isTeacher ? undefined : [session?.email, session?.code].filter(Boolean),
-    }).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['exam-submissions', userCourse] });
-    }).catch(() => null);
+    base44.functions
+      .invoke('saveStudentRecord', {
+        action: 'autoCorrectPending',
+        student_email: isTeacher ? undefined : session?.email || session?.code || '',
+        student_identifiers: isTeacher ? undefined : [session?.email, session?.code].filter(Boolean),
+      })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['exam-submissions', userCourse] });
+      })
+      .catch(() => null);
   }, [submissions.length, isTeacher, session?.email, session?.code, userCourse, queryClient]);
 
-  // Get unique students for filter
   const uniqueStudents = useMemo(() => {
     if (!isTeacher) return [];
     const map = new Map();
-    submissions.forEach(s => {
+    submissions.forEach((s) => {
       if (!map.has(s.student_email)) {
-        map.set(s.student_email, { email: s.student_email, name: s.student_name });
+        map.set(s.student_email, { email: s.student_email, name: s.student_name || s.student_email });
       }
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [submissions, isTeacher]);
 
-  // Filter submissions by selected student
-  const filteredSubmissions = selectedStudent === 'all'
-    ? submissions
-    : submissions.filter(s => normalizeEmail(s.student_email) === normalizeEmail(selectedStudent));
+  const filteredSubmissions =
+    selectedStudent === 'all'
+      ? submissions
+      : submissions.filter((s) => normalizeEmail(s.student_email) === normalizeEmail(selectedStudent));
 
   const submissionByExamId = {};
-  filteredSubmissions.forEach(s => { if (!submissionByExamId[s.exam_id]) submissionByExamId[s.exam_id] = s; });
+  filteredSubmissions.forEach((s) => {
+    if (!submissionByExamId[s.exam_id]) submissionByExamId[s.exam_id] = s;
+  });
 
   const deleteMutation = useMutation({
-    mutationFn: id => adminApi.delete('Exam', id),
+    mutationFn: (id) => adminApi.delete('Exam', id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exams'] });
       toast.success('Prova removida.');
     },
   });
+
   const toggleVisibilityMutation = useMutation({
     mutationFn: ({ id, isHidden }) => adminApi.update('Exam', id, { is_hidden: isHidden }),
     onSuccess: () => {
@@ -143,7 +168,7 @@ export default function Exams() {
     },
   });
 
-  const totalDone = visibleExams.filter(e => submissionByExamId[e.id]).length;
+  const totalApproved = visibleExams.filter((e) => isExamPassed(submissionByExamId[e.id])).length;
 
   if (showAIGenerator) {
     return <AIExamGenerator onBack={() => setShowAIGenerator(false)} course={userCourse} />;
@@ -159,13 +184,20 @@ export default function Exams() {
       />
     );
   }
-
   if (showEditor || editingExam) {
-    return <ExamEditor exam={editingExam} onBack={() => { setShowEditor(false); setEditingExam(null); }} course={userCourse} />;
+    return (
+      <ExamEditor
+        exam={editingExam}
+        onBack={() => {
+          setShowEditor(false);
+          setEditingExam(null);
+        }}
+        course={userCourse}
+      />
+    );
   }
-
   if (gradingSubmission && gradingSubmission.exam_id) {
-    const exam = exams.find(e => e.id === gradingSubmission.exam_id);
+    const exam = exams.find((e) => e.id === gradingSubmission.exam_id);
     if (exam) {
       return <ExamSubmissionGrader submission={gradingSubmission} exam={exam} onBack={() => setGradingSubmission(null)} />;
     }
@@ -182,9 +214,8 @@ export default function Exams() {
           </h2>
           <p className="text-muted-foreground text-sm mt-0.5">
             {isTeacher
-              ? `${exams.length} prova${exams.length !== 1 ? 's' : ''} cadastrada${exams.length !== 1 ? 's' : ''}`
-              : `${totalDone}/${visibleExams.length} realizada${totalDone !== 1 ? 's' : ''}`
-            }
+              ? `${exams.length} prova${exams.length !== 1 ? 's' : ''} cadastrada${exams.length !== 1 ? 's' : ''} · Aprovação mínima de ${EXAM_PASS_MIN_PERCENT}%`
+              : `${totalApproved}/${visibleExams.length} aprovada${totalApproved !== 1 ? 's' : ''} · Aprovação com ${EXAM_PASS_MIN_PERCENT}% de acertos`}
           </p>
         </div>
 
@@ -192,16 +223,21 @@ export default function Exams() {
           <div className="flex gap-2 flex-wrap">
             <select
               value={selectedStudent}
-              onChange={e => setSelectedStudent(e.target.value)}
+              onChange={(e) => setSelectedStudent(e.target.value)}
               className="h-9 text-sm shrink-0 border border-border rounded-lg bg-background px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option value="all">Todos os alunos</option>
-              {uniqueStudents.map(student => (
-                <option key={student.email} value={student.email}>{student.name}</option>
+              {uniqueStudents.map((student) => (
+                <option key={student.email} value={student.email}>
+                  {student.name}
+                </option>
               ))}
             </select>
             <Button
-              onClick={() => { setEditingExam(null); setShowEditor(true); }}
+              onClick={() => {
+                setEditingExam(null);
+                setShowEditor(true);
+              }}
               className="gap-2 h-9 text-sm shrink-0 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white font-bold"
             >
               <Pencil size={14} /> Criar Manual
@@ -226,11 +262,18 @@ export default function Exams() {
       {!isTeacher && visibleExams.length > 0 && (
         <div className="bg-card border border-border rounded-2xl p-4 mb-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-bold flex items-center gap-1.5"><GraduationCap size={14} /> Progresso Geral</span>
-            <span className="font-mono font-bold text-primary text-sm">{totalDone}/{visibleExams.length}</span>
+            <span className="text-sm font-bold flex items-center gap-1.5">
+              <GraduationCap size={14} /> Provas Aprovadas
+            </span>
+            <span className="font-mono font-bold text-primary text-sm">
+              {totalApproved}/{visibleExams.length}
+            </span>
           </div>
           <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${visibleExams.length > 0 ? (totalDone / visibleExams.length) * 100 : 0}%` }} />
+            <div
+              className="h-full bg-primary rounded-full transition-all"
+              style={{ width: `${visibleExams.length > 0 ? (totalApproved / visibleExams.length) * 100 : 0}%` }}
+            />
           </div>
         </div>
       )}
@@ -247,26 +290,45 @@ export default function Exams() {
         </div>
       ) : (
         <div className="space-y-3">
-          {visibleExams.map((exam, idx) => {
+          {visibleExams.map((exam) => {
             const submission = submissionByExamId[exam.id];
-            const isDone = !!submission;
+            const hasSubmission = !!submission;
+            const passed = isExamPassed(submission);
+            const accuracy = resolveExamAccuracy(submission);
             const isExpanded = expandedId === exam.id;
             const isPastDeadline = exam.deadline && new Date(exam.deadline) < new Date();
 
             return (
-              <div key={exam.id} className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${isDone ? 'border-green-200/50' : 'border-border hover:shadow-md'} ${isTeacher && exam.is_hidden ? 'opacity-60' : ''}`}>
+              <div
+                key={exam.id}
+                className={`bg-card rounded-2xl border shadow-sm overflow-hidden transition-all ${
+                  passed
+                    ? 'border-emerald-300/60'
+                    : hasSubmission
+                    ? 'border-amber-300/60'
+                    : 'border-border hover:shadow-md'
+                } ${isTeacher && exam.is_hidden ? 'opacity-60' : ''}`}
+              >
                 <div
                   className="flex items-center gap-3 p-4 cursor-pointer select-none"
                   onClick={() => setExpandedId(isExpanded ? null : exam.id)}
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${
-                    isDone
-                      ? submission?.status === 'graded'
-                        ? 'bg-green-500 border-green-400 text-white'
-                        : 'bg-amber-500 border-amber-400 text-white'
-                      : 'bg-secondary border-border text-foreground'
-                  }`}>
-                    {isDone ? (submission?.status === 'graded' ? <CheckCircle size={18} /> : <HelpCircle size={16} />) : <GraduationCap size={16} />}
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 ${
+                      passed
+                        ? 'bg-emerald-500 border-emerald-400 text-white'
+                        : hasSubmission
+                        ? 'bg-amber-500 border-amber-400 text-white'
+                        : 'bg-secondary border-border text-foreground'
+                    }`}
+                  >
+                    {passed ? (
+                      <CheckCircle size={18} />
+                    ) : hasSubmission ? (
+                      <RotateCcw size={16} />
+                    ) : (
+                      <GraduationCap size={16} />
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -279,54 +341,77 @@ export default function Exams() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {isDone && submission?.status === 'graded' && (
-                        <Badge className="text-[9px] bg-green-100 text-green-700 border-green-200 py-0 px-1.5">✓ Corrigida</Badge>
+                      {passed && (
+                        <Badge className="text-[9px] bg-emerald-100 text-emerald-700 border-emerald-200 py-0 px-1.5">
+                          ✓ Aprovado(a){accuracy !== null ? ` (${accuracy}%)` : ''}
+                        </Badge>
                       )}
-                      {isDone && submission?.status === 'submitted' && (
-                        <Badge className="text-[9px] bg-amber-100 text-amber-700 border-amber-200 py-0 px-1.5">⏳ Pendente</Badge>
-                      )}
-                      {isDone && submission?.grade != null && (
-                        <span className="text-[10px] text-yellow-600 font-bold flex items-center gap-0.5">
-                          <Star size={9} className="fill-yellow-500" /> {formatScore(submission.grade)}
-                        </span>
+                      {hasSubmission && !passed && (
+                        <Badge className="text-[9px] bg-amber-100 text-amber-700 border-amber-200 py-0 px-1.5">
+                          ↻ Repetir prova{accuracy !== null ? ` (${accuracy}%)` : ''}
+                        </Badge>
                       )}
                       {exam.quiz_questions?.length > 0 && (
-                        <span className="text-[10px] text-muted-foreground">{exam.quiz_questions.length} questões · {exam.max_grade} pts</span>
-                      )}
-                      {!isDone && exam.deadline && (
-                        <span className={`text-[10px] font-semibold ${isPastDeadline ? 'text-red-500' : 'text-muted-foreground'}`}>
-                          Prazo: {format(new Date(exam.deadline), 'dd/MM HH:mm')}{isPastDeadline ? ' · Expirou' : ''}
+                        <span className="text-[10px] text-muted-foreground">
+                          {exam.quiz_questions.length} questões · Mínimo {EXAM_PASS_MIN_PERCENT}% de acertos
                         </span>
                       )}
-                      {!isDone && !exam.deadline && <span className="text-[10px] text-muted-foreground">Sem prazo definido</span>}
+                      {!passed && exam.deadline && (
+                        <span className={`text-[10px] font-semibold ${isPastDeadline ? 'text-red-500' : 'text-muted-foreground'}`}>
+                          Prazo: {format(new Date(exam.deadline), 'dd/MM HH:mm')}
+                          {isPastDeadline ? ' · Expirou' : ''}
+                        </span>
+                      )}
+                      {!hasSubmission && !exam.deadline && (
+                        <span className="text-[10px] text-muted-foreground">Correção instantânea</span>
+                      )}
                       {isTeacher && exam.is_hidden && (
-                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Oculta para alunos</span>
+                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+                          Oculta para alunos
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  {!isTeacher && <div className="shrink-0 text-muted-foreground">{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>}
+                  {!isTeacher && (
+                    <div className="shrink-0 text-muted-foreground">
+                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
+                  )}
 
                   {isTeacher && (
                     <div className="flex gap-1 shrink-0 items-center">
                       <span className="text-xs text-muted-foreground px-2 py-1 border border-border rounded-lg shrink-0">
-                        {submissions.filter(s => s.exam_id === exam.id).length} entregas
+                        {submissions.filter((s) => s.exam_id === exam.id).length} entregas
                       </span>
                       <button
-                        onClick={e => { e.stopPropagation(); setEditingExam(exam); setShowEditor(true); }}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingExam(exam);
+                          setShowEditor(true);
+                        }}
                         className="p-2 text-muted-foreground hover:text-primary rounded-lg"
                       >
                         <Edit size={13} />
                       </button>
                       <button
-                        onClick={e => { e.stopPropagation(); toggleVisibilityMutation.mutate({ id: exam.id, isHidden: !exam.is_hidden }); }}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleVisibilityMutation.mutate({ id: exam.id, isHidden: !exam.is_hidden });
+                        }}
                         className={`p-2 rounded-lg ${exam.is_hidden ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
                         title={exam.is_hidden ? 'Mostrar para alunos' : 'Ocultar para alunos'}
                       >
                         {exam.is_hidden ? <EyeOff size={13} /> : <Eye size={13} />}
                       </button>
                       <button
-                        onClick={e => { e.stopPropagation(); deleteMutation.mutate(exam.id); }}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteMutation.mutate(exam.id);
+                        }}
                         className="p-2 text-muted-foreground hover:text-destructive rounded-lg"
                       >
                         <Trash2 size={13} />
@@ -336,69 +421,72 @@ export default function Exams() {
                 </div>
 
                 {isExpanded && (
-                <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 bg-secondary/10">
-                {exam.description && <p className="text-sm text-muted-foreground leading-relaxed">{exam.description}</p>}
+                  <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 bg-secondary/10">
+                    {exam.description && <p className="text-sm text-muted-foreground leading-relaxed">{exam.description}</p>}
 
-                {isPastDeadline && !isDone ? (
-                  <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                    <AlertCircle size={15} /> Prazo encerrado para esta prova.
-                  </div>
-                ) : isDone ? (
-                  isTeacher ? (
-                    <div className="flex items-center gap-3">
-                      <Button
-                        size="sm"
-                        className="gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold"
-                        onClick={() => setGradingSubmission(submission)}
-                      >
-                        <Award size={13} /> Corrigir Prova
-                      </Button>
-                      <SubmittedView submission={submission} />
-                    </div>
-                  ) : (
-                    <SubmittedView submission={submission} />
-                  )
-                ) : (() => {
-                  const examModule = parseModuleNumber(exam.module_ref);
-                  const checklistComplete = !examModule || isModuleUnlockedForExam(examModule);
-                  const checklistLocked = !isTeacher && !!examModule && !checklistComplete;
-                  if (checklistLocked) {
-                    return (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3">
-                          <AlertCircle size={15} /> {`Prova bloqueada: conclua a trilha do Módulo ${examModule}.`}
+                    {isPastDeadline && !passed ? (
+                      <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                        <AlertCircle size={15} /> Prazo encerrado para esta prova.
+                      </div>
+                    ) : hasSubmission ? (
+                      isTeacher ? (
+                        <div className="space-y-2">
+                          <Button
+                            size="sm"
+                            className="gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold"
+                            onClick={() => setGradingSubmission(submission)}
+                          >
+                            <Award size={13} /> Revisar Prova
+                          </Button>
+                          <SubmittedView submission={submission} />
                         </div>
+                      ) : (
+                        <SubmittedView
+                          submission={submission}
+                          onRetake={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
+                        />
+                      )
+                    ) : (() => {
+                      const examModule = parseModuleNumber(exam.module_ref);
+                      const checklistComplete = !examModule || isModuleUnlockedForExam(examModule);
+                      const checklistLocked = !isTeacher && !!examModule && !checklistComplete;
+                      if (checklistLocked) {
+                        return (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3">
+                              <AlertCircle size={15} /> {`Prova bloqueada: conclua a trilha do Módulo ${examModule}.`}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5 font-bold"
+                              onClick={() => navigate(`${prefix}/checklist?module=${examModule}`)}
+                            >
+                              {`Ver trilha do Módulo ${examModule}`}
+                            </Button>
+                          </div>
+                        );
+                      }
+                      return (
                         <Button
                           size="sm"
-                          variant="outline"
-                          className="gap-1.5 font-bold"
-                          onClick={() => navigate(`${prefix}/checklist?module=${examModule}`)}
+                          className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
+                          onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
                         >
-                          {`Ver trilha do Módulo ${examModule}`}
+                          <Play size={13} /> Iniciar Prova
                         </Button>
-                      </div>
-                    );
-                  }
-                  return (
-                    <Button
-                      size="sm"
-                      className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
-                      onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
-                    >
-                      <Play size={13} /> Iniciar Prova
-                    </Button>
-                  );
-                })()}
-                </div>
+                      );
+                    })()}
+                  </div>
                 )}
               </div>
             );
           })}
 
-          {!isTeacher && totalDone >= visibleExams.length && visibleExams.length > 0 && (
+          {!isTeacher && totalApproved >= visibleExams.length && visibleExams.length > 0 && (
             <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5 text-center">
               <Trophy size={30} className="mx-auto mb-2 text-green-500" />
-              <p className="font-black text-base text-foreground">Todas as provas realizadas! 🎉</p>
+              <p className="font-black text-base text-foreground">Todas as provas concluídas com aprovação! 🎉</p>
             </div>
           )}
         </div>

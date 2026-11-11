@@ -31,6 +31,7 @@
 import { ACTIVITY_MINUTES, parseDurationToMinutes } from '@/lib/durationUtils';
 import { resolveActivityModule, parseModuleNumber } from '@/lib/academicModules';
 import { resolveItemModule } from '@/lib/moduleAttribution';
+import { isExamPassed } from '@/lib/autoCorrectionResponses';
 
 // A carga horária é contada em MINUTOS e exibida como tempo (HH:MM:SS).
 export const MINUTES_MAP = ACTIVITY_MINUTES;
@@ -172,23 +173,21 @@ export function buildStudentAcademicData({
     });
   });
 
-  // ── Provas (Exam entity via ExamSubmission) ──
+  // ── Provas aprovadas (>= 50% de acerto) ──
   examSubs.forEach((sub) => {
-    if (sub.status !== 'graded' || normEmail(sub.student_email) !== email) return;
+    if (!isExamPassed(sub) || normEmail(sub.student_email) !== email) return;
     const exam = exams.find((e) => e.id === sub.exam_id);
     if (!exam) return;
-    const si = findScore('exam', `exam:${exam.id}`) || findScore('exam', exam.id);
-    const grade = roundScore(Math.min(Number(si?.score ?? sub.grade ?? STUDY_SCORE_RULES.exam) || 0, STUDY_SCORE_RULES.exam));
     rows.push({
       key: `exam_${exam.id}`,
       category: 'Prova',
       title: exam.title,
-      score: grade,
-      max: STUDY_SCORE_RULES.exam,
+      score: 1,
+      max: 1,
       minutes: ACTIVITY_MINUTES.exam,
       hours: toHours(ACTIVITY_MINUTES.exam),
       status: 'Avaliado',
-      notes: sub.feedback || si?.notes || '',
+      notes: sub.feedback || '',
       module: Number(String(exam.module_ref || '').match(/\d+/)?.[0]) || null,
     });
   });
@@ -286,9 +285,9 @@ export function buildStudentAcademicData({
       });
     });
 
-  // Ofensivas Diárias — respostas com pontos ganhos
+  // Ofensivas Diárias — participações realizadas (sem pontos)
   challengeResponses
-    .filter((r) => normEmail(r.student_email) === email && roundScore(r.points_earned) > 0)
+    .filter((r) => normEmail(r.student_email) === email && ((Number(r.questions_answered) || (r.answers || []).length) > 0))
     .forEach((r) => {
       const refId = `ofensiva:${r.challenge_id}:${r.student_email}`;
       const si = findScore('forum', refId) || findScore('ofensiva', refId);
@@ -348,8 +347,8 @@ export function buildStudentAcademicData({
       ? String(Math.round((coreEvaluated.length / coreRows.length) * 1000) / 10)
       : '0';
 
-  // averageGrade = nota total (soma dos pontos obtidos, não uma média)
-  const averageGrade = String(Math.round(totalScore * 10) / 10).replace('.', ',');
+  // averageGrade exibe total de atividades concluídas (sem pontos)
+  const averageGrade = `${completedActivities} ativ.`;
 
   // ── classes para verso do certificado ──
   // Aulas Gravadas: listadas individualmente
@@ -407,8 +406,7 @@ export function buildStudentAcademicData({
     title: c.title,
     minutes: c.minutes,
     hours: c.hours,
-    // Nota total = soma dos pontos (não média)
-    grade: String(Math.round(c.scoreSum * 10) / 10).replace('.', ','),
+    grade: 'Concluído',
   }));
 
   return { rows, totalMinutes, totalHours, totalScore, totalMaxScore, approvalRate, averageGrade, classes };

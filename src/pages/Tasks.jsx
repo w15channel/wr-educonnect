@@ -55,13 +55,12 @@ function SubmittedView({ submission, onSaveEdit, isSaving }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(submission.comment || '');
   const resolvedFeedback = submission.feedback || pickAutoCorrectionResponse(submission.task_id || submission.id, 'task');
-  const resolvedGrade = submission.grade != null ? submission.grade : 5;
 
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold">
-          <CheckCircle size={12} /> Corrigido (+{resolvedGrade} pts)
+          <CheckCircle size={12} /> Participação concluída e validada
         </span>
 
         <button
@@ -332,7 +331,6 @@ export default function Tasks({ mode = 'tasks' }) {
                   </SelectContent>
                 </Select>
                 <Input type="datetime-local" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} />
-                <Input type="number" placeholder="Nota máxima" value={form.max_grade} onChange={e => setForm({ ...form, max_grade: Number(e.target.value) })} />
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Módulo da Apostila (opcional)</label>
                   <Select value={form.module_number ? String(form.module_number) : 'none'} onValueChange={v => setForm({ ...form, module_number: v === 'none' ? '' : Number(v) })}>

@@ -4,6 +4,7 @@ import useModuleAccess from '@/hooks/useModuleAccess';
 import useStudentRecords from '@/hooks/useStudentRecords';
 import { base44 } from '@/api/base44Client';
 import { buildModuleChecklist, parseModuleNumber } from '@/lib/examChecklistRules';
+import { isExamPassed } from '@/lib/autoCorrectionResponses';
 import { applyChecklistVerification } from '@/lib/verifiedChecklist';
 import { allocateWindowActivities } from '@/lib/checklistAllocation';
 
@@ -84,7 +85,7 @@ export default function useModuleChecklist({ course = 'tcc', session, includeOfe
     return map;
   }, [moduleUnlocks, course]);
 
-  const submittedExamIds = useMemo(() => new Set(examSubmissions.map((s) => s.exam_id)), [examSubmissions]);
+  const submittedExamIds = useMemo(() => new Set(examSubmissions.filter((s) => isExamPassed(s)).map((s) => s.exam_id)), [examSubmissions]);
 
   const identities = useMemo(() => new Set([session?.email, session?.code].filter(Boolean).map((v) => String(v).trim().toLowerCase())), [session?.email, session?.code]);
 

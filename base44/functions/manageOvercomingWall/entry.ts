@@ -110,8 +110,30 @@ async function syncAchievements(base44, user, requestedCourse) {
     if (initial) add(`beginner:${course}:${email}`, { ...initial, student_email: email }, 'beginner', 'concluiu a atividade inicial e conquistou a Coroa Bronze do Iniciante. 👑', 'Coroa Bronze do Iniciante');
   }
   for (const record of submissions) { const item = taskMap.get(record.task_id); if (item) add(`task:${record.id}`, record, 'task', `respondeu a tarefa “${item.title || 'Nova tarefa'}”.`, item.title); }
-  for (const record of examSubs) { const item = examMap.get(record.exam_id); if (item) add(`exam:${record.id}`, record, 'exam', `concluiu “${item.title || 'uma avaliação'}”.`, item.title); }
+  for (const record of examSubs.filter((r) => r.passed !== false)) { const item = examMap.get(record.exam_id); if (item) add(`exam:${record.id}`, record, 'exam', `foi aprovado(a) em “${item.title || 'uma avaliação'}”.`, item.title); }
   for (const record of challenges) add(`challenge:${record.id}`, record, 'challenge', 'venceu mais uma etapa da ofensiva diária.');
+  const emailsWithDiamond = new Set(existing.filter((x) => x.kind === 'tuition').map((x) => norm(x.student_email)));
+  for (const email of students) {
+    if (emailsWithDiamond.has(email)) continue;
+    const key = `diamond:all-students:${course}:${email}`;
+    if (known.has(key)) continue;
+    known.add(key);
+    emailsWithDiamond.add(email);
+    const nowIso = new Date().toISOString();
+    candidates.push({
+      dedupe_key: key,
+      student_email: email,
+      course,
+      kind: 'tuition',
+      title: 'Diamante da Contribuição',
+      message: 'conquistou o Diamante da Contribuição por fazer parte e fortalecer nossa comunidade. 💎',
+      mentioned_emails: [email],
+      source_id: `diamond-all-${email}`,
+      occurred_at: nowIso,
+      student_feature_until: new Date(Date.now() + 15 * DAY_MS).toISOString(),
+      wall_highlight_until: new Date(Date.now() + 7 * DAY_MS).toISOString(),
+    });
+  }
   const modules = new Map();
   for (const book of books) { if (!modules.has(book.chapter_id)) modules.set(book.chapter_id, []); modules.get(book.chapter_id).push(book); }
   for (const email of students) for (const [moduleId, moduleLessons] of modules) {

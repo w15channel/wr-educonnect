@@ -1,16 +1,13 @@
 /**
  * scoreMessages & Banco Oficial de 30 Respostas Próprias de Autocorreção
  * ──────────────────────────────────────────────────────────────────────
- * Sistema 100% em código (sem automações externas e sem consumo de créditos)
- * para autocorreção imediata de provas, trabalhos e todas as participações.
- *
- * A escolha é DETERMINÍSTICA (hash do identificador), garantindo estabilidade
- * e variedade pedagógica entre as 30 respostas autorais.
+ * Sistema 100% em código (sem pontos e sem consumo de créditos) para
+ * autocorreção imediata de provas, trabalhos e participações.
  */
 
 export const AUTO_CORRECTION_RESPONSES: string[] = [
   // 1 a 10 — Provas e Avaliações Clínicas
-  '1. Autocorreção concluída: Excelente domínio conceitual! Você articulou os fundamentos teóricos com clareza e precisão clínica. Avaliação aprovada com nota máxima.',
+  '1. Autocorreção concluída: Excelente domínio conceitual! Você articulou os fundamentos teóricos com clareza e precisão clínica. Avaliação aprovada.',
   '2. Autocorreção concluída: Parabéns pelo raciocínio clínico demonstrado nesta prova. Suas respostas revelam maturidade técnica e leitura atenta do conteúdo.',
   '3. Autocorreção concluída: Avaliação validada com sucesso! Você compreendeu a estrutura diagnóstica e aplicou os conceitos de forma coerente e ética.',
   '4. Autocorreção concluída: Ótimo desempenho! Sua capacidade de relacionar teoria e manejo terapêutico mostra evolução consistente no módulo.',
@@ -28,9 +25,9 @@ export const AUTO_CORRECTION_RESPONSES: string[] = [
   '14. Autocorreção do trabalho: Muito bem! Você transformou o estudo teórico em raciocínio aplicado ao setting terapêutico com maturidade.',
   '15. Autocorreção do trabalho: Entrega aprovada com louvor! O cuidado na construção dos argumentos reflete seu compromisso com a profissão.',
   '16. Autocorreção do trabalho: Excelente produção acadêmica! Você abordou o tema proposto de forma estruturada, crítica e acolhedora.',
-  '17. Autocorreção do trabalho: Tarefa avaliada e creditada! Seu texto evidencia leitura atenta e compreensão sólida das intervenções clínicas.',
+  '17. Autocorreção do trabalho: Tarefa avaliada e registrada! Seu texto evidencia leitura atenta e compreensão sólida das intervenções clínicas.',
   '18. Autocorreção do trabalho: Parabéns pelo empenho! Sua escrita mostra evolução constante na linguagem técnica e no olhar terapêutico.',
-  '19. Autocorreção do trabalho: Trabalho validado com nota máxima! Você conectou os princípios comportamentais à prática com muita clareza.',
+  '19. Autocorreção do trabalho: Trabalho concluído e aprovado! Você conectou os princípios comportamentais à prática com muita clareza.',
   '20. Autocorreção do trabalho: Ótima entrega! Sua capacidade de observar o comportamento humano sem julgamentos aparece em cada parágrafo.',
 
   // 21 a 30 — Participações (Debates, Aulas, Relatos Terapêuticos e Ofensivas)
@@ -38,11 +35,11 @@ export const AUTO_CORRECTION_RESPONSES: string[] = [
   '22. Autocorreção de participação: Excelente intervenção! Compartilhar sua perspectiva clínica exercita a escuta ativa e o diálogo profissional.',
   '23. Autocorreção de participação: Participação validada! Sua presença reflexiva demonstra constância, generosidade acadêmica e espírito colaborativo.',
   '24. Autocorreção de participação: Muito bem! O diálogo que você construiu ajuda a fixar os conceitos do módulo de forma viva e prática.',
-  '25. Autocorreção de participação: Etapa de estudo concluída e pontuada! Cada aula e leitura assimilada constrói a base do seu atendimento clínico.',
+  '25. Autocorreção de participação: Etapa de estudo concluída e registrada! Cada aula e leitura assimilada constrói a base do seu atendimento clínico.',
   '26. Autocorreção de participação: Progresso validado com sucesso! Sua disciplina diária nos estudos está lapidando um(a) profissional de excelência.',
   '27. Autocorreção de participação: Relato clínico avaliado! Vivenciar a prática entre pares desenvolve empatia, ética e segurança no manejo.',
   '28. Autocorreção de participação: Excelente constância na Ofensiva! O treino diário mantém o raciocínio clínico ágil e sempre atualizado.',
-  '29. Autocorreção de participação: Interação creditada com mérito! Acolher a visão do colega com respeito e técnica é a essência da terapia.',
+  '29. Autocorreção de participação: Interação registrada com mérito! Acolher a visão do colega com respeito e técnica é a essência da terapia.',
   '30. Autocorreção de participação: Participação registrada e aprovada! Sua dedicação contínua inspira a turma e eleva o nível da nossa formação.',
 ];
 
@@ -59,7 +56,6 @@ function pick(list: string[], seed: string): string {
   return list[hashSeed(seed) % list.length];
 }
 
-/** Seleciona deterministicamente uma das 30 respostas próprias de autocorreção. */
 export function pickAutoCorrectionResponse(
   seed = '',
   category: 'exam' | 'quiz' | 'task' | 'participation' | 'all' = 'all',
@@ -76,9 +72,6 @@ export function pickAutoCorrectionResponse(
   return pick(AUTO_CORRECTION_RESPONSES, `all:${seed}`);
 }
 
-const fmt = (value: number) => String(Math.round((Number(value) + Number.EPSILON) * 1000) / 1000).replace('.', ',');
-
-/** Keeps human-authored feedback and only falls back to code auto-correction when blank. */
 export function preserveOrGenerateFeedback(
   submissionFeedback: unknown,
   scoreNotes: unknown,
@@ -88,35 +81,30 @@ export function preserveOrGenerateFeedback(
 }
 
 export function lessonScoreNote(refId = '') {
-  return `${pickAutoCorrectionResponse(`lesson:${refId}`, 'participation')} (+2 pontos 💚)`;
+  return pickAutoCorrectionResponse(`lesson:${refId}`, 'participation');
 }
 
-export function taskScoreNote(refId = '', points = 5, isQuiz = false) {
-  const base = pickAutoCorrectionResponse(
+export function taskScoreNote(refId = '', _points = 0, isQuiz = false) {
+  return pickAutoCorrectionResponse(
     `${isQuiz ? 'quiz' : 'task'}:${refId}`,
     isQuiz ? 'quiz' : 'task',
   );
-  return `${base} (+${fmt(points)} pontos 🌟)`;
 }
 
-export function examScoreNote(refId = '', points = 50) {
-  const base = pickAutoCorrectionResponse(`exam:${refId}`, 'exam');
-  return `${base} (${fmt(points)} pontos 📘)`;
+export function examScoreNote(refId = '', _points = 0) {
+  return pickAutoCorrectionResponse(`exam:${refId}`, 'exam');
 }
 
-export function forumScoreNote(refId = '', points = 0.01, space = 'Sala de Debates', isReply = false) {
-  const base = pickAutoCorrectionResponse(`${isReply ? 'reply' : 'post'}:${refId}`, 'participation');
-  return `${base} (${space}: +${fmt(points)} ponto 💬)`;
+export function forumScoreNote(refId = '', _points = 0, _space = 'Sala de Debates', isReply = false) {
+  return pickAutoCorrectionResponse(`${isReply ? 'reply' : 'post'}:${refId}`, 'participation');
 }
 
-export function ofensivaScoreNote(refId = '', points = 0, answered = 0) {
-  const base = pickAutoCorrectionResponse(`ofensiva:${refId}`, 'participation');
-  return `${base} (Ofensiva ${answered}/8: +${fmt(points)} ponto(s) 🔥)`;
+export function ofensivaScoreNote(refId = '', _points = 0, _answered = 0) {
+  return pickAutoCorrectionResponse(`ofensiva:${refId}`, 'participation');
 }
 
 export function therapistScoreNote(refId = '', role = 'terapeuta') {
-  const base = pickAutoCorrectionResponse(`therapist:${refId}:${role}`, 'participation');
-  return `${base} (Papel de ${role}: +10 pontos 💎)`;
+  return `${pickAutoCorrectionResponse(`therapist:${refId}:${role}`, 'participation')} (Papel de ${role} concluído)`;
 }
 
-export const LIVE_ATTENDANCE_NOTE = 'Presença registrada na live — obrigado por estar com a gente! (encontros ao vivo não somam pontos) 🎥';
+export const LIVE_ATTENDANCE_NOTE = 'Presença registrada na live — obrigado por estar com a gente!';

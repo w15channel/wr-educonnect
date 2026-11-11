@@ -11,41 +11,20 @@ import { toast } from 'sonner';
 import { formatScore, roundScore } from '@/lib/scoreUtils';
 
 // Componente isolado por submissão — evita re-render geral e bug de perda de foco
-function SubmissionRow({ sub, task }) {
+function SubmissionRow({ sub }) {
   const queryClient = useQueryClient();
-  const [grade, setGrade] = useState(sub.grade !== undefined && sub.grade !== null ? formatScore(sub.grade) : '');
   const [feedback, setFeedback] = useState(sub.feedback || '');
 
   const gradeMutation = useMutation({
     mutationFn: async () => {
-      const normalizedGrade = roundScore(String(grade).replace(',', '.'));
-      const updated = await base44.entities.TaskSubmission.update(sub.id, {
-        grade: normalizedGrade,
+      return await base44.entities.TaskSubmission.update(sub.id, {
         feedback,
         status: 'graded',
       });
-      const category = task.type === 'quiz' ? 'quiz' : 'task';
-      const fixedScore = task.type === 'quiz' ? 50 : 5;
-      const existing = await base44.entities.ScoreItem.filter({ student_email: sub.student_email, category, ref_id: sub.task_id }, '-created_date', 1);
-      const scorePayload = {
-        student_email: sub.student_email,
-        category,
-        ref_id: sub.task_id,
-        ref_title: task.title,
-        score: fixedScore,
-        max_score: fixedScore,
-        verified: true,
-        notes: feedback || `${task.type === 'quiz' ? 'Prova' : 'Trabalho'} entregue/corrigido conforme a regra atual: +${formatScore(fixedScore)} pontos de estudo.`,
-      };
-      if (existing[0]) await base44.entities.ScoreItem.update(existing[0].id, scorePayload);
-      else await base44.entities.ScoreItem.create(scorePayload);
-      await base44.functions.invoke('populateScoreCache', { student_email: sub.student_email });
-      return updated;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-submissions', sub.task_id] });
-      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
-      toast.success('Nota atribuída e cache atualizado!');
+      toast.success('Devolutiva salva com sucesso!');
     },
   });
 
@@ -61,7 +40,7 @@ function SubmissionRow({ sub, task }) {
         </div>
         {isGraded && (
           <Badge className="bg-green-100 text-green-700 gap-1 shrink-0">
-            <CheckCircle size={12} /> Corrigido · {formatScore(sub.grade)} pts
+            <CheckCircle size={12} /> Participação validada
           </Badge>
         )}
       </div>
@@ -99,22 +78,9 @@ function SubmissionRow({ sub, task }) {
         </div>
       )}
 
-      {/* Grading form */}
+      {/* Feedback form */}
       <div className="space-y-2 pt-3 border-t border-border">
-        <p className="text-xs font-bold text-foreground mb-2">{isGraded ? 'Atualizar avaliação' : 'Avaliar entrega'}</p>
-        <div className="flex items-center gap-2">
-          <div className="shrink-0">
-            <label className="text-[10px] text-muted-foreground font-semibold block mb-1">Nota pedagógica {task?.max_grade ? `(máx. ${formatScore(task.max_grade)})` : ''}</label>
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder="0"
-              className="w-24 h-9"
-              value={grade}
-              onChange={e => setGrade(e.target.value)}
-            />
-          </div>
-        </div>
+        <p className="text-xs font-bold text-foreground mb-2">{isGraded ? 'Atualizar devolutiva' : 'Registrar devolutiva'}</p>
         <div>
           <label className="text-[10px] text-muted-foreground font-semibold block mb-1">Devolutiva / Feedback</label>
           <Textarea
@@ -129,9 +95,9 @@ function SubmissionRow({ sub, task }) {
           size="sm"
           className="w-full h-9 text-xs"
           onClick={() => gradeMutation.mutate()}
-          disabled={!grade || gradeMutation.isPending}
+          disabled={gradeMutation.isPending}
         >
-          {gradeMutation.isPending ? 'Salvando...' : isGraded ? 'Atualizar Avaliação' : 'Confirmar Avaliação'}
+          {gradeMutation.isPending ? 'Salvando...' : isGraded ? 'Atualizar Devolutiva' : 'Salvar Devolutiva'}
         </Button>
       </div>
     </div>

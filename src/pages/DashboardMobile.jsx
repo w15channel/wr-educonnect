@@ -13,11 +13,11 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  FileText, Users, Trophy, Star, Bell, BookOpen, TrendingUp, RefreshCw
+  FileText, Users, Trophy, Activity, Bell, BookOpen, TrendingUp, RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { capScore, formatScore } from '@/lib/scoreUtils';
+import { buildParticipationRanking } from '@/lib/participationUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji, buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
 import { toast } from 'sonner';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
@@ -63,9 +63,51 @@ export default function DashboardMobile() {
     enabled: !!session,
   });
 
-  const { data: allScoreItems = [] } = useQuery({
-    queryKey: ['all-score-items-rank'],
-    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
+  const { data: allTaskSubmissions = [] } = useQuery({
+    queryKey: ['mobile-all-task-subs'],
+    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 2000),
+  });
+  const { data: allLessonProgresses = [] } = useQuery({
+    queryKey: ['mobile-all-lesson-progress'],
+    queryFn: () => base44.entities.LessonProgress.list('-created_date', 3000),
+  });
+  const { data: allExams = [] } = useQuery({
+    queryKey: ['mobile-all-exams', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.Exam.filter({ course: userCourse }, '-created_date', 300)
+      : base44.entities.Exam.list('-created_date', 300),
+  });
+  const { data: allExamSubmissions = [] } = useQuery({
+    queryKey: ['mobile-all-exam-subs', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.ExamSubmission.filter({ course: userCourse }, '-submitted_at', 2000)
+      : base44.entities.ExamSubmission.list('-submitted_at', 2000),
+  });
+  const { data: allForumPosts = [] } = useQuery({
+    queryKey: ['mobile-all-forum-posts', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.ForumPost.filter({ course: userCourse }, '-created_date', 1500)
+      : base44.entities.ForumPost.list('-created_date', 1500),
+  });
+  const { data: allForumReplies = [] } = useQuery({
+    queryKey: ['mobile-all-forum-replies'],
+    queryFn: () => base44.entities.ForumReply.list('-created_date', 2000),
+  });
+  const { data: allMentorships = [] } = useQuery({
+    queryKey: ['mobile-all-mentorships', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.Mentorship.filter({ course: userCourse }, '-date', 500)
+      : base44.entities.Mentorship.list('-date', 500),
+  });
+  const { data: allPairings = [] } = useQuery({
+    queryKey: ['mobile-all-pairings'],
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500),
+  });
+  const { data: allChallenges = [] } = useQuery({
+    queryKey: ['mobile-all-challenges', userCourse],
+    queryFn: () => userCourse
+      ? base44.entities.DailyChallengeResponse.filter({ course: userCourse }, '-date', 3000)
+      : base44.entities.DailyChallengeResponse.list('-date', 3000),
   });
 
   const { data: publishedScores = [] } = useQuery({
@@ -104,7 +146,7 @@ export default function DashboardMobile() {
   const visibleLessons = isTeacher ? lessons : lessons.filter((lesson) => !lesson.is_hidden);
 
   const pendingTasks = isTeacher
-    ? submissions.filter(s => s.status === 'submitted' && !allScoreItems.find(si => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)).length
+    ? submissions.filter(s => s.status === 'submitted').length
     : visibleTasks.filter(t => isTaskAvailable(t, moduleUnlocked) && !submissions.find(s => s.task_id === t.id)).length;
 
   const studentCount = accessCodes.filter(c => {
@@ -113,61 +155,51 @@ export default function DashboardMobile() {
     return c.course === userCourse || (userCourse === 'tcc' && !c.course);
   }).length;
 
-  const publishedScoreMap = {};
-  publishedScores.forEach(p => {
-    if (!p.student_email) return;
-    if (typeof p.points === 'number' && publishedScoreMap[p.student_email] === undefined) {
-      publishedScoreMap[p.student_email] = p.points;
-    }
-  });
-
-  const currentAccessCode = accessCodes.find(c => c.student_email === session?.email);
-  const totalPoints = capScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
   const watchedCount = progresses.filter(p => p.watched && visibleLessons.some((lesson) => lesson.id === p.lesson_id)).length;
   const progressPct = visibleLessons.length > 0 ? Math.round(watchedCount / visibleLessons.length * 100) : 0;
 
-  // Ranking
   const COURSE_PREFIX = { tcc: 'EDU-', psicanalise: 'PSI-', sexologia: 'SEX-' };
   const expectedPrefix = COURSE_PREFIX[userCourse];
-  const courseCodes = accessCodes.filter(c => {
-    if (!c.student_email) return false;
-    if (userCourse && c.course !== userCourse && !(userCourse === 'tcc' && !c.course)) return false;
-    if (expectedPrefix && !(c.code || '').startsWith(expectedPrefix)) return false;
-    return true;
-  });
-
-  const publishedRankMap = {};
-  publishedScores.forEach(p => {
-    if (typeof p.dashboard_rank === 'number' && publishedRankMap[p.student_email] === undefined) {
-      publishedRankMap[p.student_email] = p.dashboard_rank;
-    }
-  });
-
-  const participationMap = {};
-  allScoreItems.forEach((s) => {
-    if (!s.student_email) return;
-    participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
-  });
-
-  const rankingFull = courseCodes.map(c => ({
-    email: c.student_email,
-    total: capScore(c.pontuacao_total ?? publishedScoreMap[c.student_email] ?? 0),
-    publishedRank: publishedRankMap[c.student_email] || Number.MAX_SAFE_INTEGER,
-    count: participationMap[c.student_email] || 0,
-    name: resolveDisplayNameFromMaps(c.student_email, profileMap, accessCodes) || (c.profile_name || c.student_name || c.student_email || ''),
-    avatarColor: c.profile_avatar_color || '#5b5ef4',
-    photoUrl: c.profile_photo_url || '',
-    avatarEmoji: resolveAvatarEmoji(c.profile_avatar_emoji),
-  })).sort((a, b) => {
-    if (a.total >= 100 && b.total >= 100 && b.count !== a.count) return b.count - a.count;
-    if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
-    return b.total - a.total;
-  });
-
-  const studentPublishedRanking = rankingFull.filter(r => Number.isFinite(r.publishedRank) && r.publishedRank !== Number.MAX_SAFE_INTEGER);
-  const visibleRanking = studentPublishedRanking.length > 0 ? studentPublishedRanking : rankingFull;
-  const myRank = visibleRanking.findIndex(r => r.email === session?.email) + 1;
-  const myGrades = submissions.filter(s => s.grade !== undefined && s.grade !== null);
+  const visibleRanking = useMemo(
+    () =>
+      buildParticipationRanking(
+        accessCodes,
+        publishedScores,
+        {
+          lessons,
+          lessonProgresses: allLessonProgresses,
+          tasks,
+          taskSubmissions: allTaskSubmissions,
+          exams: allExams,
+          examSubmissions: allExamSubmissions,
+          forumPosts: allForumPosts,
+          forumReplies: allForumReplies,
+          mentorships: allMentorships,
+          therapistPairings: allPairings,
+          challengeResponses: allChallenges,
+        },
+        { course: userCourse || 'tcc', codePrefix: expectedPrefix }
+      ),
+    [
+      accessCodes,
+      publishedScores,
+      lessons,
+      allLessonProgresses,
+      tasks,
+      allTaskSubmissions,
+      allExams,
+      allExamSubmissions,
+      allForumPosts,
+      allForumReplies,
+      allMentorships,
+      allPairings,
+      allChallenges,
+      userCourse,
+      expectedPrefix,
+    ]
+  );
+  const myRank = visibleRanking.findIndex(r => String(r.email || '').toLowerCase() === String(session?.email || '').toLowerCase()) + 1;
+  const myParticipations = myRank > 0 ? visibleRanking[myRank - 1]?.total || 0 : 0;
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -203,12 +235,12 @@ export default function DashboardMobile() {
             path: isTeacher ? '/scorecontrol' : '/tasks',
           },
           {
-            label: isTeacher ? 'Alunos' : 'Pontos',
-            value: isTeacher ? studentCount : formatScore(totalPoints),
-            icon: isTeacher ? Users : Star,
-            color: isTeacher ? 'bg-emerald-500/15' : 'bg-yellow-500/15',
-            iconColor: isTeacher ? 'text-emerald-400' : 'text-yellow-400',
-            path: isTeacher ? '/students' : '/dashboard',
+            label: isTeacher ? 'Alunos' : 'Participações',
+            value: isTeacher ? studentCount : myParticipations,
+            icon: isTeacher ? Users : Activity,
+            color: isTeacher ? 'bg-emerald-500/15' : 'bg-indigo-500/15',
+            iconColor: isTeacher ? 'text-emerald-400' : 'text-indigo-400',
+            path: isTeacher ? '/students' : '/pontuacao-geral',
           },
           {
             label: isTeacher ? 'Aulas' : 'Aulas Assistidas',
@@ -268,13 +300,13 @@ export default function DashboardMobile() {
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          {myGrades.length > 0 && (
+          {submissions.length > 0 && (
             <div className="grid grid-cols-3 gap-2 mt-3">
-              {myGrades.slice(0, 3).map((s, i) => {
+              {submissions.slice(0, 3).map((s, i) => {
                 const task = tasks.find(t => t.id === s.task_id);
                 return (
                   <div key={i} className="bg-[#161c32] rounded-xl p-2 text-center">
-                    <p className="text-base font-light text-[#e8dfc8]">{formatScore(s.grade)}</p>
+                    <p className="text-xs font-semibold text-emerald-400">✓ Entregue</p>
                     <p className="text-[9px] text-[#c8bfa8]/30 truncate mt-0.5">{task?.title || 'Tarefa'}</p>
                   </div>
                 );
@@ -316,8 +348,8 @@ export default function DashboardMobile() {
                   }
                   <span className={`flex-1 text-[12px] font-light truncate ${isMe ? 'text-[#d4b96a]' : 'text-[#e8dfc8]/70'}`}>{nameWithAvatar}</span>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                    <span className="text-[11px] font-light text-[#e8dfc8]/60">{formatScore(r.total)}</span>
+                    <Activity size={10} className="text-[#d4b96a]" />
+                    <span className="text-[11px] font-light text-[#e8dfc8]/75">{r.total} ativ.</span>
                   </div>
                 </div>
               );

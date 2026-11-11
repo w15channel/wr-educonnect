@@ -22,9 +22,6 @@ const CATEGORY_ICONS = {
 };
 
 function ItemRow({ row, checked, onToggle }) {
-  const scoreLabel = row.score !== null
-    ? `${formatScore(row.score)} / ${formatScore(row.max)} pts`
-    : 'Sem nota ainda';
   const hoursLabel = formatDuration(row.minutes);
   return (
     <div
@@ -41,7 +38,7 @@ function ItemRow({ row, checked, onToggle }) {
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold text-foreground leading-tight">{row.title}</p>
         <p className={`text-[10px] mt-0.5 ${row.status === 'Avaliado' ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-          Módulo {row.module} · {row.status} · {hoursLabel} · {scoreLabel}
+          Módulo {row.module} · {row.status === 'Avaliado' ? 'Concluído' : 'Pendente'} · {hoursLabel}
         </p>
         {row.notes && (
           <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{row.notes}</p>
@@ -144,11 +141,10 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
   return (
     <div className="space-y-3">
       {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
         {[
           { label: 'Selecionados', value: selectedItems.size },
-          { label: 'Pontuação de Estudos', value: `${formatScore(totalScore)}/${formatScore(totalMax)}` },
-          { label: 'Aproveitamento', value: `${approvalRate}%` },
+          { label: 'Concluídos', value: evalSelected.length },
           { label: 'Carga Horária', value: formatDuration(totalMinutes) },
         ].map(item => (
           <div key={item.label} className="bg-secondary/50 border border-border rounded-lg p-1.5 text-center">
@@ -161,7 +157,7 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
       {/* Quick-select buttons */}
       <div className="flex gap-1.5 flex-wrap">
         <button onClick={selectEvaluated} className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-600 hover:bg-emerald-500/20 transition">
-          <CheckSquare size={10} /> Só avaliados
+          <CheckSquare size={10} /> Só concluídos
         </button>
         <button onClick={selectAll} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[10px] font-bold hover:bg-secondary transition">
           <CheckSquare size={10} /> Todos
@@ -169,9 +165,6 @@ export default function AcademicItemSelector({ studentEmail, course, onSelection
         <button onClick={clearAll} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[10px] font-bold hover:bg-secondary transition">
           <Square size={10} /> Limpar
         </button>
-        <div className="ml-auto text-[10px] text-muted-foreground self-center">
-          Pontuação de Estudos: <span className="font-black text-primary">{averageGrade}</span>
-        </div>
       </div>
 
       {/* Grouped items */}

@@ -19,8 +19,8 @@ export default function GameModal({ gameType, idx, points, answered, open, onClo
           <DialogTitle className="flex items-center gap-2 text-base">
             <span className="text-xl">{meta.emoji}</span>
             {meta.title}
-            <span className="ml-auto text-xs font-bold text-yellow-500 flex items-center gap-0.5">
-              <Star size={11} className="fill-yellow-400" /> +{points} pts
+            <span className="ml-auto text-xs font-bold text-primary">
+              Desafio {idx + 1}
             </span>
           </DialogTitle>
         </DialogHeader>

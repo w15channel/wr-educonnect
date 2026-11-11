@@ -75,10 +75,7 @@ export default function StudentDetail() {
   }
 
   const profile = studentProfiles.find(p => p.student_email === code.student_email);
-  const subs = allSubmissions; // already filtered by student_email in the query
-  const graded = subs.filter(s => s.grade !== undefined && s.grade !== null);
-  const total = graded.reduce((sum, item) => roundScore(sum + roundScore(item.grade)), 0);
-  const avg = graded.length > 0 ? formatScore(total / graded.length) : '—';
+  const subs = allSubmissions;
   const studentTuitions = tuitions.filter(t => t.student_email === code.student_email);
 
   const displayName = code.profile_name || code.student_name || 'Sem nome';
@@ -209,18 +206,14 @@ export default function StudentDetail() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-primary/5 rounded-xl p-3 text-center border border-primary/10">
               <p className="text-2xl font-black text-primary">{subs.length}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold">Entregas</p>
+              <p className="text-[10px] text-muted-foreground font-semibold">Tarefas Entregues</p>
             </div>
-            <div className="bg-primary/5 rounded-xl p-3 text-center border border-primary/10">
-              <p className="text-2xl font-black text-primary">{avg}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold">Nota Total</p>
-            </div>
-            <div className="bg-yellow-500/10 rounded-xl p-3 text-center border border-yellow-500/20">
-              <p className="text-2xl font-black text-yellow-500">{formatScore(total)}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold">Pontos</p>
+            <div className="bg-emerald-500/10 rounded-xl p-3 text-center border border-emerald-500/20">
+              <p className="text-lg font-black text-emerald-600">💎 Ativo</p>
+              <p className="text-[10px] text-muted-foreground font-semibold">Diamante da Contribuição</p>
             </div>
           </div>
 

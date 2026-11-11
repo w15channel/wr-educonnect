@@ -94,32 +94,15 @@ export default function TerapeutaDaSemana() {
   });
 
   const updatePairingMutation = useMutation({
-    mutationFn: async ({ id, data, pairing, role }) => {
-      const updated = await base44.entities.TherapistPairing.update(id, data);
-      if (!pairing || !role) return updated;
-      const studentEmail = role === 'therapist' ? pairing.therapist_email : pairing.patient_email;
-      const refId = `therapist_pairing:${pairing.id}:${role}`;
-      const existing = await adminApi.list('ScoreItem', { filter: { student_email: studentEmail, ref_id: refId }, limit: 10 });
-      const autoFeedback = pickAutoCorrectionResponse(refId, 'participation');
-      const scoreData = {
-        student_email: studentEmail, category: 'task', ref_id: refId,
-        ref_title: role === 'therapist' ? `Relato Terapeuta da Semana (${pairing.pairing_date})` : `Relato Terapeuta da Semana — Paciente (${pairing.pairing_date})`,
-        score: 10, max_score: 10, verified: true, module_number: Number(pairing.module_number) || Number(selectedModule),
-        notes: `${autoFeedback} (Papel de ${role === 'therapist' ? 'terapeuta' : 'paciente'}: +10 pontos 💎)`,
-      };
-      if (existing[0]) await adminApi.update('ScoreItem', existing[0].id, scoreData);
-      else await adminApi.create('ScoreItem', scoreData);
-      await base44.functions.invoke('populateScoreCache', { student_email: studentEmail });
-      return updated;
+    mutationFn: async ({ id, data }) => {
+      return await base44.entities.TherapistPairing.update(id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] });
-      queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
-      queryClient.invalidateQueries({ queryKey: ['access-codes'] });
       setEvalDialog(null);
       setComment('');
-      setScore([7]);
-      toast.success('Avaliação enviada!');
+      setScore([10]);
+      toast.success('Relato enviado! Sua participação foi registrada.');
       setCelebrating(true);
     },
   });
@@ -420,15 +403,8 @@ export default function TerapeutaDaSemana() {
   const updatePairingModule = async (pairing, moduleNumber) => {
     try {
       await adminApi.update('TherapistPairing', pairing.id, { module_number: moduleNumber });
-      const refIds = [`therapist_pairing:${pairing.id}:therapist`, `therapist_pairing:${pairing.id}:patient`];
-      const scoreLists = await Promise.all(refIds.map(refId => adminApi.list('ScoreItem', { filter: { ref_id: refId }, limit: 20 })));
-      const scores = scoreLists.flat();
-      await Promise.all(scores.map(item => adminApi.update('ScoreItem', item.id, { module_number: moduleNumber })));
-      const affectedEmails = [...new Set(scores.map(item => item.student_email).filter(Boolean))];
-      await Promise.all(affectedEmails.map(studentEmail => base44.functions.invoke('populateScoreCache', { student_email: studentEmail })));
       queryClient.invalidateQueries({ queryKey: ['therapist-pairings'] });
-      queryClient.invalidateQueries({ queryKey: ['score-items-all'] });
-      toast.success(`Pontuação destinada ao Módulo ${moduleNumber}.`);
+      toast.success(`Participação vinculada ao Módulo ${moduleNumber}.`);
     } catch (error) {
       toast.error(error.message || 'Não foi possível alterar o módulo.');
     }
@@ -450,7 +426,7 @@ export default function TerapeutaDaSemana() {
           <h2 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             <Heart size={22} className="text-pink-500" /> Terapeuta da Semana
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Maior pontuação com a menor pontuação compatível, sem sobrenomes similares</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Pareamento semanal de prática clínica entre colegas da turma</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2 flex-wrap">
@@ -474,12 +450,12 @@ export default function TerapeutaDaSemana() {
       {isTeacher && (
         <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
           <div className="rounded-xl border border-violet-200 bg-violet-500/5 p-3">
-            <label className="mb-1 block text-sm font-bold text-foreground">Módulo de destino da pontuação</label>
+            <label className="mb-1 block text-sm font-bold text-foreground">Módulo da atividade</label>
             <Select value={selectedModule} onValueChange={setSelectedModule}>
               <SelectTrigger className="max-w-xs"><SelectValue /></SelectTrigger>
               <SelectContent>{Array.from({ length: 10 }, (_, index) => index + 1).map(module => <SelectItem key={module} value={String(module)}>Módulo {module}</SelectItem>)}</SelectContent>
             </Select>
-            <p className="mt-1 text-xs text-muted-foreground">Novos pareamentos e seus 10,0 pontos serão enquadrados no módulo selecionado.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Novos pareamentos e participações serão vinculados ao módulo selecionado.</p>
           </div>
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -528,7 +504,6 @@ export default function TerapeutaDaSemana() {
                     ) : (
                       <Badge className="text-[9px] bg-secondary text-muted-foreground border-border">Disponível</Badge>
                     )}
-                    <span className="text-[10px] font-bold text-muted-foreground">{formatScore(getStudentTotalScore(student.student_email))} pts</span>
                   </div>
                 </button>
               );
@@ -688,12 +663,8 @@ export default function TerapeutaDaSemana() {
                 onChange={e => setComment(e.target.value)}
               />
             </div>
-            <div>
-              <label className="text-sm font-semibold text-foreground block mb-3">
-                Nota: <span className="text-primary font-bold text-lg">{formatScore(score[0])}</span>/10,000
-              </label>
-              <Slider min={0} max={10} step={0.5} value={score} onValueChange={setScore} className="w-full" />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1"><span>0,000</span><span>10,000</span></div>
+            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+              Ao enviar o relato, sua participação é contabilizada automaticamente na trilha e no ranking.
             </div>
             <Button
               className="w-full"
@@ -786,27 +757,19 @@ function PairingCard({ pairing, getStudentInfo, showScores, onDelete, onArchive,
           )}
         </div>
       </div>
-      {showScores && onModuleChange && <div className="flex items-center gap-2 border-t border-border pt-3"><span className="text-xs font-semibold text-muted-foreground">Pontuação no</span><Select value={String(pairing.module_number || 1)} onValueChange={value => onModuleChange(Number(value))}><SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger><SelectContent>{Array.from({ length: 10 }, (_, index) => index + 1).map(module => <SelectItem key={module} value={String(module)}>Módulo {module}</SelectItem>)}</SelectContent></Select></div>}
+      {showScores && onModuleChange && <div className="flex items-center gap-2 border-t border-border pt-3"><span className="text-xs font-semibold text-muted-foreground">Módulo da participação</span><Select value={String(pairing.module_number || 1)} onValueChange={value => onModuleChange(Number(value))}><SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger><SelectContent>{Array.from({ length: 10 }, (_, index) => index + 1).map(module => <SelectItem key={module} value={String(module)}>Módulo {module}</SelectItem>)}</SelectContent></Select></div>}
       {showScores && (pairing.therapist_submitted || pairing.patient_submitted) && (
         <div className="border-t border-border pt-3 space-y-2">
           {pairing.therapist_submitted && (
             <div className="border border-pink-200 rounded-xl p-3 bg-transparent">
-              <p className="text-xs font-bold text-pink-600 mb-1">Avaliação do Terapeuta → Paciente</p>
+              <p className="text-xs font-bold text-pink-600 mb-1">Relato do Terapeuta → Paciente</p>
               <p className="text-xs text-foreground">{pairing.therapist_comment}</p>
-              <div className="flex items-center gap-1 mt-1.5">
-                <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                <span className="text-xs font-bold">{formatScore(pairing.therapist_score)}/10,000</span>
-              </div>
             </div>
           )}
           {pairing.patient_submitted && (
             <div className="border border-blue-200 rounded-xl p-3 bg-transparent">
-              <p className="text-xs font-bold text-blue-600 mb-1">Avaliação do Paciente → Terapeuta</p>
+              <p className="text-xs font-bold text-blue-600 mb-1">Relato do Paciente → Terapeuta</p>
               <p className="text-xs text-foreground">{pairing.patient_comment}</p>
-              <div className="flex items-center gap-1 mt-1.5">
-                <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                <span className="text-xs font-bold">{formatScore(pairing.patient_score)}/10,000</span>
-              </div>
             </div>
           )}
         </div>

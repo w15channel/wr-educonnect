@@ -61,8 +61,8 @@ export default function CertificateBack({ cert, certRef }) {
           <div style={{ fontFamily: "'Cinzel', serif", fontSize: 10, color: GOLD, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 }}>Grade Curricular</div>
 
           {/* Table header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 60px', gap: 6, borderBottom: `1px solid ${GOLD}`, paddingBottom: 5, marginBottom: 4 }}>
-            {['Aula / Módulo', 'Carga (h)', 'Pontos'].map(h => (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 65px 65px', gap: 6, borderBottom: `1px solid ${GOLD}`, paddingBottom: 5, marginBottom: 4 }}>
+            {['Aula / Módulo', 'Carga (h)', 'Situação'].map(h => (
               <span key={h} style={{ fontFamily: "'Cinzel', serif", fontSize: 8.5, fontWeight: 900, color: NAVY, letterSpacing: 1, textTransform: 'uppercase' }}>{h}</span>
             ))}
           </div>
@@ -89,8 +89,8 @@ export default function CertificateBack({ cert, certRef }) {
               <div style={{ fontSize: 15, fontWeight: 900, color: WHITE, fontFamily: 'Arial, sans-serif' }}>{formatDuration(totalClassMinutes)}</div>
             </div>
             <div style={{ flex: 1, textAlign: 'center', background: NAVY, borderRadius: 6, padding: '6px 4px' }}>
-              <div style={{ fontSize: 7.5, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>Nota Total</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: WHITE, fontFamily: 'Arial, sans-serif' }}>{cert.averageGrade}</div>
+              <div style={{ fontSize: 7.5, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>Atividades</div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: WHITE, fontFamily: 'Arial, sans-serif' }}>{cert.averageGrade || `${(cert.classes || []).length} concl.`}</div>
             </div>
           </div>
         </div>

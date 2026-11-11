@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { MessageCircle, Trophy, Crown, Star, Search, Phone, X, Users, Award } from 'lucide-react';
+import { MessageCircle, Trophy, Crown, Star, Activity, Search, Phone, X, Users, Award } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { startOfWeek, format } from 'date-fns';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { buildParticipationRanking } from '@/lib/participationUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji, resolveDisplayName } from '@/lib/avatarUtils';
 import Monitores from './Monitores';
 import useModuleTrophies from '@/hooks/useModuleTrophies';
@@ -44,7 +44,7 @@ function StudentAvatar({ name, photoUrl, avatarColor, avatarEmoji, size = 56 }) 
   );
 }
 
-function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, trophies, contributionAwards = [], beginnerAwards = [], session, navigate, onOpenDetails }) {
+function StudentCard({ profile, code, rank, participations = 0, isMonitor, monitorRank, isTopTask, trophies, contributionAwards = [], beginnerAwards = [], session, navigate, onOpenDetails }) {
   const name = resolveDisplayName({ email: code?.student_email, code, profile });
   const nickname = profile?.nickname || '';
   const photoUrl = profile?.photo_url || code?.profile_photo_url || '';
@@ -53,7 +53,6 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, t
   const bio = profile?.bio || '';
   const whatsapp = profile?.whatsapp || '';
   const email = code?.student_email || '';
-  const points = roundScore(code?.pontuacao_total ?? profile?.pontuacao_total ?? profile?.points ?? 0);
   const publicName = getAvatarPrefixedName(name, profile?.avatar_emoji || code?.profile_avatar_emoji);
 
   const isMe = session?.email === email;
@@ -82,7 +81,7 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, t
         )}
         {isTopTask && (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-400 border border-emerald-400/30">
-            <Star size={9} /> Top Tarefas
+            <Star size={9} /> Top Participação
           </span>
         )}
       </div>
@@ -104,12 +103,10 @@ function StudentCard({ profile, code, rank, isMonitor, monitorRank, isTopTask, t
         <div className="flex items-center justify-center gap-1"><p className="min-w-0 truncate font-bold text-foreground text-sm leading-tight">{publicName}</p><ModuleTrophies completions={trophies} compact />{beginnerAwards.length > 0 && <span title="Coroa Bronze do Iniciante" aria-label="Coroa Bronze do Iniciante" className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-amber-700/40 bg-amber-800/15 text-amber-700"><Crown size={12} /></span>}{contributionAwards.length > 0 && <span title="Diamante da Contribuição" aria-label="Diamante da Contribuição" className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-cyan-300 bg-cyan-100 text-[11px] shadow-sm dark:border-cyan-400/60 dark:bg-cyan-950 dark:text-cyan-100">💎</span>}</div>
         {nickname && nickname !== name && <p className="text-xs text-muted-foreground truncate">"{nickname}"</p>}
         {bio && <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{bio}</p>}
-        {points > 0 && (
-          <div className="flex items-center justify-center gap-1 mt-1.5">
-            <Trophy size={11} className="text-yellow-500" />
-            <span className="text-[11px] font-bold text-yellow-600">{formatScore(points)} pts</span>
-          </div>
-        )}
+        <div className="flex items-center justify-center gap-1 mt-1.5">
+          <Activity size={11} className="text-primary" />
+          <span className="text-[11px] font-bold text-primary">{participations} participações</span>
+        </div>
       </div>
       {!isMe && (
         <div className="flex gap-2 w-full mt-1">
@@ -167,9 +164,49 @@ export default function Classe() {
     queryFn: () => base44.entities.StudentProfile.list('-created_date', 10000),
   });
 
-  const { data: scoreItems = [] } = useQuery({
-    queryKey: ['score-items-classe'],
-    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['classe-lessons', activeCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 300),
+  });
+  const { data: lessonProgresses = [] } = useQuery({
+    queryKey: ['classe-lesson-progress'],
+    queryFn: () => base44.entities.LessonProgress.list('-created_date', 3000),
+  });
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['classe-tasks', activeCourse],
+    queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 300),
+  });
+  const { data: taskSubmissions = [] } = useQuery({
+    queryKey: ['classe-task-subs'],
+    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 2000),
+  });
+  const { data: exams = [] } = useQuery({
+    queryKey: ['classe-exams', activeCourse],
+    queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 300),
+  });
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['classe-exam-subs', activeCourse],
+    queryFn: () => base44.entities.ExamSubmission.filter({ course: activeCourse }, '-submitted_at', 2000),
+  });
+  const { data: forumPosts = [] } = useQuery({
+    queryKey: ['classe-forum-posts', activeCourse],
+    queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 1500),
+  });
+  const { data: forumReplies = [] } = useQuery({
+    queryKey: ['classe-forum-replies'],
+    queryFn: () => base44.entities.ForumReply.list('-created_date', 2000),
+  });
+  const { data: mentorships = [] } = useQuery({
+    queryKey: ['classe-mentorships', activeCourse],
+    queryFn: () => base44.entities.Mentorship.filter({ course: activeCourse }, '-date', 500),
+  });
+  const { data: therapistPairings = [] } = useQuery({
+    queryKey: ['classe-pairings'],
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500),
+  });
+  const { data: challengeResponses = [] } = useQuery({
+    queryKey: ['classe-challenges', activeCourse],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourse }, '-date', 3000),
   });
 
   const { data: monitorHistory = [] } = useQuery({
@@ -201,21 +238,32 @@ export default function Classe() {
       .map(c => c.student_email)
   );
 
-  const rankMap = {};
-  scoreItems.filter(s => s.verified).forEach(s => {
-    if (!s.student_email) return;
-    if (courseEmailSet && !courseEmailSet.has(s.student_email)) return;
-    if (!rankMap[s.student_email]) rankMap[s.student_email] = { total: 0, taskTotal: 0 };
-    rankMap[s.student_email].total += (s.score || 0);
-    if (s.category === 'task' || s.category === 'quiz') {
-      rankMap[s.student_email].taskTotal += (s.score || 0);
-    }
-  });
-  const rankingList = Object.entries(rankMap).sort((a, b) => b[1].total - a[1].total);
+  const participationRanking = buildParticipationRanking(
+    codes,
+    profiles,
+    {
+      lessons,
+      lessonProgresses,
+      tasks,
+      taskSubmissions,
+      exams,
+      examSubmissions,
+      forumPosts,
+      forumReplies,
+      mentorships,
+      therapistPairings,
+      challengeResponses,
+    },
+    { course: activeCourse, codePrefix }
+  );
   const rankPosition = {};
-  rankingList.forEach(([email], idx) => { rankPosition[email] = idx + 1; });
+  const participationsByEmail = {};
+  participationRanking.forEach((entry, idx) => {
+    rankPosition[entry.email] = idx + 1;
+    participationsByEmail[entry.email] = entry.total;
+  });
 
-  const weeklyTopEmail = rankingList[0]?.[0];
+  const weeklyTopEmail = participationRanking[0]?.total > 0 ? participationRanking[0].email : null;
 
   const activeStudents = codes.filter(c =>
     c.is_active !== false &&
@@ -276,7 +324,7 @@ export default function Classe() {
                 <div className="bg-emerald-500/5 backdrop-blur-md border border-emerald-400/20 rounded-2xl p-4 flex items-center gap-3">
                   <Star size={28} className="text-emerald-400 shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Maior Pontuador da Semana</p>
+                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Líder em Participações</p>
                     <p className="text-sm font-bold text-foreground mt-0.5">
                       {(() => {
                         const c = codes.find(c => c.student_email === weeklyTopEmail);
@@ -284,7 +332,7 @@ export default function Classe() {
                         return resolveDisplayName({ email: weeklyTopEmail, code: c, profile: p });
                       })()}
                     </p>
-                    <p className="text-xs text-muted-foreground">1º lugar no ranking geral da turma</p>
+                    <p className="text-xs text-muted-foreground">1º lugar no ranking de atividades realizadas ({participationsByEmail[weeklyTopEmail] || 0} atividades)</p>
                   </div>
                 </div>
               )}
@@ -321,12 +369,16 @@ export default function Classe() {
                   code={code}
                   profile={profile}
                   rank={rankPosition[code.student_email]}
+                  participations={participationsByEmail[code.student_email] || 0}
                   isMonitor={monitorEmails.has(code.student_email)}
                   monitorRank={currentMonitors.find(m => m.student_email === code.student_email)?.rank_position}
                   isTopTask={code.student_email === weeklyTopEmail}
                   trophies={moduleTrophiesByEmail.get(String(code.student_email).toLowerCase()) || []}
                   beginnerAwards={beginnerAwards.filter((item) => String(item.student_email).toLowerCase() === String(code.student_email).toLowerCase())}
-                  contributionAwards={contributionAwards.filter((item) => String(item.student_email).toLowerCase() === String(code.student_email).toLowerCase())}
+                  contributionAwards={(() => {
+                    const matched = contributionAwards.filter((item) => String(item.student_email).toLowerCase() === String(code.student_email).toLowerCase());
+                    return matched.length > 0 ? matched : [{ id: `default-diamond-${code.id}`, kind: 'tuition' }];
+                  })()}
                   onOpenDetails={setSelectedStudent}
                   session={session}
                   navigate={navigate}
@@ -386,7 +438,7 @@ export default function Classe() {
                     <p className="text-xs text-white/60 mb-1">Apresentação pessoal / descrição completa</p>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{bio || 'Este colega ainda não adicionou descrição no perfil.'}</p>
                   </div>
-                  <AchievementShowcase dark trophies={moduleTrophiesByEmail.get(String(code?.student_email || '').toLowerCase()) || []} monitorAwards={monitorHistory.filter((item) => item.student_email === code?.student_email)} contributionAwards={contributionAwards.filter((item) => String(item.student_email).toLowerCase() === String(code?.student_email).toLowerCase())} beginnerAwards={beginnerAwards.filter((item) => String(item.student_email).toLowerCase() === String(code?.student_email).toLowerCase())} />
+                  <AchievementShowcase dark trophies={moduleTrophiesByEmail.get(String(code?.student_email || '').toLowerCase()) || []} monitorAwards={monitorHistory.filter((item) => item.student_email === code?.student_email)} contributionAwards={(() => { const matched = contributionAwards.filter((item) => String(item.student_email).toLowerCase() === String(code?.student_email).toLowerCase()); return matched.length > 0 ? matched : [{ id: `default-diamond-${code?.id || code?.student_email}`, kind: 'tuition' }]; })()} beginnerAwards={beginnerAwards.filter((item) => String(item.student_email).toLowerCase() === String(code?.student_email).toLowerCase())} />
                 </div>
               );
             })()}

@@ -49,7 +49,7 @@ const adminGroups = [
     { icon: Users, label: 'Alunos', path: '/students', color: 'text-indigo-400' },
     { icon: Key, label: 'Acessos', path: '/keys', color: 'text-emerald-400' },
     { icon: DollarSign, label: 'Mensalidades', path: '/tuitions', color: 'text-teal-400' },
-    { icon: Trophy, label: 'Pontuação', path: '/scorecontrol', color: 'text-yellow-400' },
+    { icon: Trophy, label: 'Participações', path: '/scorecontrol', color: 'text-yellow-400' },
     { icon: GraduationCap, label: 'Histórico', path: '/historico', color: 'text-cyan-400' },
     { icon: Bell, label: 'Avisos', path: '/announcements', color: 'text-yellow-400' },
   ]},
@@ -73,7 +73,7 @@ const studentGroups = [
     { icon: Headphones, label: 'Podcast', path: '/podcasts', color: 'text-fuchsia-400' },
   ]},
   { label: 'Comunidade', items: [
-    { icon: Trophy, label: 'Pontuação Geral', path: '/pontuacao-geral', color: 'text-yellow-400' },
+    { icon: Trophy, label: 'Ranking de Participações', path: '/pontuacao-geral', color: 'text-yellow-400' },
     { icon: Hash, label: 'Mural de Superação', path: '/chat', color: 'text-blue-400' },
     { icon: MessageSquare, label: 'Fórum', path: '/forum', color: 'text-green-400' },
     { icon: Hash, label: 'Debates', path: '/debates', color: 'text-fuchsia-400' },

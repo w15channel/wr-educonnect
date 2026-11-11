@@ -4,12 +4,12 @@ import { useOutletContext, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
-import { FileText, Users, Trophy, Star, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, Crown, Heart, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2, Gem, Pin } from 'lucide-react';
+import { FileText, Users, Trophy, Activity, Bell, BookOpen, ArrowRight, AlertTriangle, RefreshCw, Crown, Heart, Send, Smile, Sparkles, PartyPopper, Hand, MessageCircle, Share2, Gem, Pin } from 'lucide-react';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LessonCommentsPanel from '@/components/dashboard/LessonCommentsPanel';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { capScore, formatScore } from '@/lib/scoreUtils';
+import { buildParticipationRanking } from '@/lib/participationUtils';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji, buildProfileMap, resolveDisplayNameFromMaps } from '@/lib/avatarUtils';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
 import { format, addDays } from 'date-fns';
@@ -94,26 +94,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  const getAssignedPoints = React.useCallback((email, fallback = 0) => {
-    if (!manualScoreEmails.has(email)) return capScore(fallback || 0);
-    const draft = scoreDrafts[email];
-    const numeric = Number(String(draft ?? '').replace(',', '.'));
-    return Number.isFinite(numeric) ? capScore(numeric) : capScore(fallback || 0);
-  }, [manualScoreEmails, scoreDrafts]);
-
-  const toggleManualScoreEmail = (email, suggestedPoints) => {
-    setManualScoreEmails((prev) => {
-      const next = new Set(prev);
-      if (next.has(email)) next.delete(email);
-      else next.add(email);
-      return next;
-    });
-    setScoreDrafts((prev) => ({ ...prev, [email]: prev[email] ?? formatScore(suggestedPoints || 0) }));
-  };
-
-  const handleScoreDraftChange = (email, value) => {
-    setScoreDrafts((prev) => ({ ...prev, [email]: value }));
-  };
+  // Ranking definido exclusivamente pela soma total de atividades realizadas
 
   const toggleMonitorEmail = (email) => {
     setSelectedMonitorEmails((prev) => {
@@ -142,9 +123,54 @@ export default function Dashboard() {
     enabled: !!session
   });
 
-  const { data: allScoreItems = [] } = useQuery({
-    queryKey: ['all-score-items-rank'],
-    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000)
+  const { data: allTaskSubmissions = [] } = useQuery({
+    queryKey: ['dashboard-all-task-subs', userCourse || 'all'],
+    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 2000),
+  });
+
+  const { data: allLessonProgresses = [] } = useQuery({
+    queryKey: ['dashboard-all-lesson-progress'],
+    queryFn: () => base44.entities.LessonProgress.list('-created_date', 3000),
+  });
+
+  const { data: allExams = [] } = useQuery({
+    queryKey: ['dashboard-all-exams', userCourse || 'all'],
+    queryFn: () => userCourse
+      ? base44.entities.Exam.filter({ course: userCourse }, '-created_date', 300)
+      : base44.entities.Exam.list('-created_date', 300),
+  });
+
+  const { data: allExamSubmissions = [] } = useQuery({
+    queryKey: ['dashboard-all-exam-subs', userCourse || 'all'],
+    queryFn: () => userCourse
+      ? base44.entities.ExamSubmission.filter({ course: userCourse }, '-submitted_at', 2000)
+      : base44.entities.ExamSubmission.list('-submitted_at', 2000),
+  });
+
+  const { data: allForumPosts = [] } = useQuery({
+    queryKey: ['dashboard-all-forum-posts', userCourse || 'all'],
+    queryFn: () => userCourse
+      ? base44.entities.ForumPost.filter({ course: userCourse }, '-created_date', 1500)
+      : base44.entities.ForumPost.list('-created_date', 1500),
+  });
+
+  const { data: allForumReplies = [] } = useQuery({
+    queryKey: ['dashboard-all-forum-replies'],
+    queryFn: () => base44.entities.ForumReply.list('-created_date', 2000),
+  });
+
+  const { data: allMentorships = [] } = useQuery({
+    queryKey: ['dashboard-all-mentorships', userCourse || 'all'],
+    queryFn: () => userCourse
+      ? base44.entities.Mentorship.filter({ course: userCourse }, '-date', 500)
+      : base44.entities.Mentorship.list('-date', 500),
+  });
+
+  const { data: allChallengeResponses = [] } = useQuery({
+    queryKey: ['dashboard-all-challenge-responses', userCourse || 'all'],
+    queryFn: () => userCourse
+      ? base44.entities.DailyChallengeResponse.filter({ course: userCourse }, '-date', 3000)
+      : base44.entities.DailyChallengeResponse.list('-date', 3000),
   });
 
   const { data: publishedScores = [] } = useQuery({
@@ -154,8 +180,7 @@ export default function Dashboard() {
 
   const { data: therapistPairings = [] } = useQuery({
     queryKey: ['therapist-pairings-dashboard'],
-    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 300),
-    enabled: !isTeacher
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500)
   });
 
   const { data: accessCodes = [] } = useQuery({
@@ -239,10 +264,7 @@ export default function Dashboard() {
   const visibleLessons = isTeacher ? lessons : lessons.filter((lesson) => !lesson.is_hidden);
 
   const pendingTasks = isTeacher ?
-  submissions.filter((s) =>
-  s.status === 'submitted' &&
-  !allScoreItems.find((si) => si.ref_id === s.task_id && si.student_email === s.student_email && si.verified)
-  ).length :
+  submissions.filter((s) => s.status === 'submitted').length :
   visibleTasks.filter((t) => isTaskAvailable(t, moduleUnlocked) && !submissions.find((s) => s.task_id === t.id)).length;
 
   const studentCount = accessCodes.filter((c) => {
@@ -250,22 +272,6 @@ export default function Dashboard() {
     if (!userCourse) return true;
     return c.course === userCourse || userCourse === 'tcc' && !c.course;
   }).length;
-
-  const publishedScoreMap = {};
-  const publishedRankMap = {};
-  publishedScores.forEach((p) => {
-    const isSameCourse = !p.dashboard_course || p.dashboard_course === userCourse;
-    if (!isSameCourse || !p.student_email) return;
-    if (typeof p.points === 'number' && publishedScoreMap[p.student_email] === undefined) {
-      publishedScoreMap[p.student_email] = p.points;
-    }
-    if (typeof p.dashboard_rank === 'number' && publishedRankMap[p.student_email] === undefined) {
-      publishedRankMap[p.student_email] = p.dashboard_rank;
-    }
-  });
-  const myGrades = submissions.filter((s) => s.grade !== undefined && s.grade !== null);
-  const currentAccessCode = accessCodes.find((code) => code.student_email === session?.email);
-  const totalPoints = capScore(currentAccessCode?.pontuacao_total ?? publishedScoreMap[session?.email] ?? 0);
   const getTherapistContact = (email) => {
     const profile = publishedScores.find((p) => p.student_email === email);
     return profile?.whatsapp || profile?.email || email || 'contato não informado';
@@ -317,58 +323,46 @@ export default function Dashboard() {
   const watchedCount = progresses.filter((p) => p.watched && lessonIds.has(p.lesson_id)).length;
   const progressPct = visibleLessons.length > 0 ? Math.round(watchedCount / visibleLessons.length * 100) : 0;
 
-  const courseCodes = accessCodes.filter((c) => {
-    if (!c.student_email) return false;
-    if (userCourse && c.course !== userCourse && !(userCourse === 'tcc' && !c.course)) return false;
-    return true;
-  });
-  const scoreMap = Object.fromEntries(courseCodes.map((code) => [code.student_email, capScore(code.pontuacao_total ?? publishedScoreMap[code.student_email] ?? 0)]));
-  const taskIds = new Set(visibleTasks.map((t) => t.id));
-  const courseSubmissions = submissions.filter((s) => taskIds.has(s.task_id));
-  const participationMap = {};
-  allScoreItems.forEach((s) => {
-    if (!s.student_email) return;
-    participationMap[s.student_email] = (participationMap[s.student_email] || 0) + 1;
-  });
-  const rankingFull = courseCodes.map((c) => {
-    const hasPending = courseSubmissions.some((s) =>
-      s.status === 'submitted' &&
-      s.student_email === c.student_email &&
-      !allScoreItems.find((si) => si.ref_id === s.task_id && si.student_email === c.student_email && si.verified)
-    );
-    return {
-      email: c.student_email,
-      total: scoreMap[c.student_email] || 0,
-      publishedRank: publishedRankMap[c.student_email] || Number.MAX_SAFE_INTEGER,
-      count: participationMap[c.student_email] || 0,
-      enrolledAt: c.created_date ? new Date(c.created_date).getTime() : Number.MAX_SAFE_INTEGER,
-      name: (c.profile_name || c.student_name || c.student_email || '').toLowerCase(),
-      hasPending
-    };
-  }).sort((a, b) => {
-    if (a.total >= 100 && b.total >= 100 && b.count !== a.count) return b.count - a.count;
-    if (a.publishedRank !== b.publishedRank) return a.publishedRank - b.publishedRank;
-    if (b.total !== a.total) return b.total - a.total;
-    if (a.count > 0 || b.count > 0) {
-      if (b.count !== a.count) return b.count - a.count;
-    }
-    if (a.enrolledAt !== b.enrolledAt) return a.enrolledAt - b.enrolledAt;
-    return a.name.localeCompare(b.name);
-  });
-  const publishedRanking = rankingFull
-    .filter((item) => Number.isFinite(item.publishedRank) && item.publishedRank !== Number.MAX_SAFE_INTEGER)
-    .sort((a, b) => a.publishedRank - b.publishedRank);
-  const ranking = publishedRanking.length > 0 ? publishedRanking : rankingFull;
-  React.useEffect(() => {
-    setCustomRanking(ranking);
-    setScoreDrafts((prev) => {
-      const next = { ...prev };
-      ranking.forEach((r) => {
-        if (next[r.email] === undefined) next[r.email] = formatScore(r.total || 0);
-      });
-      return next;
-    });
-  }, [ranking.map((r) => r.email).join('|')]);
+  const ranking = React.useMemo(
+    () =>
+      buildParticipationRanking(
+        accessCodes,
+        publishedScores,
+        {
+          lessons,
+          lessonProgresses: allLessonProgresses,
+          tasks,
+          taskSubmissions: allTaskSubmissions,
+          exams: allExams,
+          examSubmissions: allExamSubmissions,
+          forumPosts: allForumPosts,
+          forumReplies: allForumReplies,
+          mentorships: allMentorships,
+          therapistPairings,
+          challengeResponses: allChallengeResponses,
+        },
+        { course: userCourse || 'tcc' }
+      ),
+    [
+      accessCodes,
+      publishedScores,
+      lessons,
+      allLessonProgresses,
+      tasks,
+      allTaskSubmissions,
+      allExams,
+      allExamSubmissions,
+      allForumPosts,
+      allForumReplies,
+      allMentorships,
+      therapistPairings,
+      allChallengeResponses,
+      userCourse,
+    ]
+  );
+
+  const myRankingEntry = ranking.find((r) => String(r.email || '').toLowerCase() === studentEmailLower);
+  const myParticipations = myRankingEntry?.total || 0;
 
   const handleSaveMonitors = async () => {
     if (selectedMonitorEmails.size === 0) return;
@@ -439,54 +433,20 @@ export default function Dashboard() {
     }, 800);
   };
 
-  const handleImportScoreControlPoints = async () => {
-    setImportingPoints(true);
-    await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
-    setTimeout(() => {
-      setImportingPoints(false);
-      toast.success('Sequência exata do ScoreControl importada!');
-    }, 600);
-  };
-
-  const saveDashboardOrderMutation = useMutation({
-    mutationFn: async () => {
-      for (const [index, item] of customRanking.entries()) {
-        const profile = publishedScores.find((p) => p.student_email === item.email && (!p.dashboard_course || p.dashboard_course === userCourse));
-        const code = accessCodes.find((c) => c.student_email === item.email);
-        const assignedPoints = getAssignedPoints(item.email, item.total);
-        const payload = {
-          student_email: item.email,
-          full_name: getDisplayName(item.email),
-          points: assignedPoints,
-          pontuacao_total: assignedPoints,
-          dashboard_rank: index + 1,
-          dashboard_course: userCourse,
-        };
-        if (profile) await adminApi.update('StudentProfile', profile.id, payload);
-        else await adminApi.create('StudentProfile', payload);
-        if (code?.id) await adminApi.update('AccessCode', code.id, { pontuacao_total: assignedPoints });
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['student-profiles-score-overview'] });
-      toast.success('Sequência do ranking salva com sucesso!');
-    },
-  });
-
   const visibleStudentRanking = ranking;
-  const myRank = ranking.findIndex((r) => r.email === session?.email) + 1;
+  const myRank = ranking.findIndex((r) => String(r.email || '').toLowerCase() === studentEmailLower) + 1;
 
-  // ── Mensagem da Luna sobre pontuação e colocação no ranking ──
+  // ── Mensagem da Luna sobre participações e colocação no ranking ──
   const lunaRankMessage = React.useMemo(() => {
     if (!myRank || myRank <= 0) return null;
     if (myRank <= 5) {
-      return `Parabéns! Você está em ${myRank}º lugar no ranking da turma, com ${formatScore(totalPoints)} pontos. Seu desempenho está excelente — continue assim! 🌟`;
+      return `Parabéns! Você está em ${myRank}º lugar no ranking da turma, com ${myParticipations} atividade(s) concluída(s). Sua participação está excelente — continue assim! 🌟`;
     }
     if (myRank <= 10) {
-      return `Você está em ${myRank}º lugar no ranking, com ${formatScore(totalPoints)} pontos. Está indo bem, mas tem potencial para chegar ainda mais longe. Não desista! 💪`;
+      return `Você está em ${myRank}º lugar no ranking, com ${myParticipations} atividade(s) concluída(s). Está indo muito bem e cada nova atividade leva você ainda mais longe! 💪`;
     }
-    return `Você está em ${myRank}º lugar no ranking, com ${formatScore(totalPoints)} pontos. Sei que está abaixo da meta, mas acredito que seu potencial é incalculável. Cada passo conta — mantenha a regularidade e os resultados virão! 🦉✨`;
-  }, [myRank, totalPoints]);
+    return `Você está em ${myRank}º lugar no ranking, com ${myParticipations} atividade(s) concluída(s). Cada participação conta na soma total — mantenha a regularidade nos estudos! 🦉✨`;
+  }, [myRank, myParticipations]);
 
   const isStudentOnline = (student) => student.is_online && student.last_seen_at && Date.now() - new Date(student.last_seen_at).getTime() < 90000;
   const onlineClassmates = accessCodes
@@ -592,7 +552,7 @@ export default function Dashboard() {
               </div>
               {lunaRankMessage && (
                 <div className="flex items-start gap-2 rounded-xl bg-amber-50/70 border border-amber-200/50 px-3 py-2">
-                  <Star size={13} className="text-amber-500 shrink-0 mt-0.5 fill-amber-400" />
+                  <Trophy size={13} className="text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-[11px] leading-relaxed text-amber-900">{lunaRankMessage}</p>
                 </div>
               )}
@@ -629,8 +589,8 @@ export default function Dashboard() {
                   <Trophy size={16} className="text-yellow-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-foreground">Ranking Geral</h3>
-                  <p className="text-xs text-muted-foreground">Pontuação publicada manualmente pelo administrador</p>
+                  <h3 className="font-bold text-sm text-foreground">Ranking Geral de Participações</h3>
+                  <p className="text-xs text-muted-foreground">Classificação definida pelo total de atividades realizadas</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -640,7 +600,7 @@ export default function Dashboard() {
               </div>
             </div>
             {visibleStudentRanking.length === 0 ?
-          <p className="text-sm text-muted-foreground text-center py-6">O ranking será exibido após as primeiras notas</p> :
+          <p className="text-sm text-muted-foreground text-center py-6">O ranking será exibido após as primeiras participações</p> :
 
           <div className="max-h-72 overflow-y-auto pr-1 space-y-1.5">
                 {visibleStudentRanking.map((r, i) => {
@@ -669,9 +629,9 @@ export default function Dashboard() {
                         </div>
                   }
                       <span className={`flex min-w-0 flex-1 items-center gap-1 text-xs font-semibold ${isMe ? 'text-primary' : 'text-foreground'}`}><span className="truncate">{nameWithAvatar}</span><ModuleTrophies completions={moduleTrophiesByEmail.get(String(r.email).toLowerCase()) || []} compact /></span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                        <span className="text-xs font-bold text-foreground">{formatScore(r.total)}</span>
+                      <div className="flex items-center gap-1 shrink-0 bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                        <Activity size={11} className="text-primary" />
+                        <span className="text-xs font-bold text-primary">{r.total} ativ.</span>
                       </div>
                     </div>);
 
@@ -839,17 +799,17 @@ export default function Dashboard() {
         </div>
       }
 
-      {/* Admin ranking */}
+      {/* Admin ranking por participações */}
       {isTeacher &&
       <div className="bg-card rounded-2xl border border-border p-5">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-yellow-100 flex items-center justify-center">
                 <Trophy size={16} className="text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-foreground">Ranking Geral Manual</h3>
-                <p className="text-xs text-muted-foreground">Publique pontos como um post e escolha os 3 monitores no mesmo campo</p>
+                <h3 className="font-bold text-sm text-foreground">Ranking Geral por Participações</h3>
+                <p className="text-xs text-muted-foreground">Ordenado pela somatória total de atividades realizadas · Selecione até 3 monitores</p>
               </div>
             </div>
             {!monitorSelectMode ?
@@ -857,11 +817,9 @@ export default function Dashboard() {
                 <button
                   onClick={() => setMonitorSelectMode(true)}
                   className="flex items-center gap-1.5 text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-xl hover:bg-yellow-200 transition-colors">
-              
                   <Crown size={12} /> Selecionar Monitores
                 </button>
               </div> :
-
           <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">{selectedMonitorEmails.size}/3 selecionados</span>
                 <button onClick={() => {setMonitorSelectMode(false);setSelectedMonitorEmails(new Set());}} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg border border-border">
@@ -871,7 +829,6 @@ export default function Dashboard() {
               onClick={handleSaveMonitors}
               disabled={selectedMonitorEmails.size === 0 || savingMonitors}
               className="flex items-center gap-1.5 text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-xl disabled:opacity-50 hover:opacity-90 transition-opacity">
-              
                   <Crown size={12} /> {savingMonitors ? 'Salvando...' : 'Salvar Monitores'}
                 </button>
               </div>
@@ -879,92 +836,44 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {visibleStudentRanking.map((r, i) => {
-              const isMe = r.email === session?.email;
               const code = accessCodes.find((c) => c.student_email === r.email);
               const displayName = getDisplayName(r.email);
               const avatarColor = code?.profile_avatar_color || '#5b5ef4';
               const photoUrl = code?.profile_photo_url || '';
-              const avatarEmoji = resolveAvatarEmoji(code?.profile_avatar_emoji);
               const isSelected = selectedMonitorEmails.has(r.email);
-              const nameWithAvatar = getAvatarPrefixedName(displayName, code?.profile_avatar_emoji);
               return (
                 <div
-                key={r.email}
-                draggable={monitorSelectMode}
-                onDragStart={(e) => { if (monitorSelectMode) setDraggedEmail(r.email); }}
-                onDragOver={(e) => { if (monitorSelectMode && draggedEmail) e.preventDefault(); }}
-                onDrop={(e) => {
-                  if (!monitorSelectMode || !draggedEmail || draggedEmail === r.email) return;
-                  e.preventDefault();
-                  setCustomRanking((prev) => {
-                    const next = [...prev];
-                    const fromIdx = next.findIndex((x) => x.email === draggedEmail);
-                    const toIdx = next.findIndex((x) => x.email === r.email);
-                    if (fromIdx === -1 || toIdx === -1) return prev;
-                    const [moved] = next.splice(fromIdx, 1);
-                    next.splice(toIdx, 0, moved);
-                    return next;
-                  });
-                  setDraggedEmail(null);
-                }}
-                onClick={() => { if (monitorSelectMode) toggleMonitorEmail(r.email); }}
-                className={`relative flex flex-col items-center text-center gap-1.5 p-3 rounded-xl border transition-colors ${
-                monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''} ${
-
-                isSelected ? 'bg-yellow-100 border-yellow-300' : 'border-border hover:bg-secondary/50'}`
-                }>
-                
-                    {monitorSelectMode &&
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                isSelected ? 'bg-yellow-500 border-yellow-500' : 'border-muted-foreground/40'}`
-                }>
-                        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                      </div>
-                }
-                    <span className="absolute top-2 left-2 text-sm font-black">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground">#{i + 1}</span>}</span>
-                    {photoUrl ?
-                <img src={photoUrl} alt={displayName} className="w-12 h-12 rounded-full object-cover shrink-0" /> :
-
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
-                        {displayName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
-                      </div>
-                }
-                    <div className="w-full min-w-0">
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="text-xs font-bold text-foreground truncate max-w-full">{displayName}</span>
-                        {r.hasPending && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
-                      </div>
+                  key={r.email}
+                  onClick={() => { if (monitorSelectMode) toggleMonitorEmail(r.email); }}
+                  className={`relative flex flex-col items-center text-center gap-2 p-3 rounded-xl border transition-colors ${
+                    monitorSelectMode ? 'cursor-pointer hover:bg-yellow-50' : ''
+                  } ${isSelected ? 'bg-yellow-100 border-yellow-300' : 'border-border hover:bg-secondary/50'}`}
+                >
+                  {monitorSelectMode && (
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                      isSelected ? 'bg-yellow-500 border-yellow-500' : 'border-muted-foreground/40'
+                    }`}>
+                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
-                    <div className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 px-2.5 py-1 rounded-xl">
-                      <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-xs font-black text-yellow-700">{formatScore(getAssignedPoints(r.email, r.total))}</span>
+                  )}
+                  <span className="absolute top-2 left-2 text-sm font-black">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="text-xs text-muted-foreground">#{i + 1}</span>}</span>
+                  {photoUrl ? (
+                    <img src={photoUrl} alt={displayName} className="w-12 h-12 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: avatarColor }}>
+                      {displayName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
-                    <div className="w-full space-y-1.5 mt-1">
-                      <div className="text-[10px] text-muted-foreground">Sugestão: {formatScore(r.total)} pts</div>
-                      <input
-                        type="text"
-                        value={manualScoreEmails.has(r.email) ? (scoreDrafts[r.email] ?? formatScore(r.total)) : formatScore(r.total)}
-                        onChange={(e) => handleScoreDraftChange(r.email, e.target.value)}
-                        disabled={!manualScoreEmails.has(r.email)}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2 text-center text-xs font-bold disabled:bg-secondary/60"
-                        aria-label={`Pontuação de ${displayName}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleManualScoreEmail(r.email, r.total); }}
-                        className="w-full text-[10px] font-bold text-primary hover:underline"
-                      >
-                        {manualScoreEmails.has(r.email) ? 'Usar sugestão automática' : 'Pontuar manualmente'}
-                      </button>
-                    </div>
-              </div>);
-
-          })}
-            </div>
-          <div className="mt-3 flex justify-end">
-            <Button size="sm" variant="outline" onClick={() => saveDashboardOrderMutation.mutate()} disabled={saveDashboardOrderMutation.isPending || customRanking.length === 0}>
-              {saveDashboardOrderMutation.isPending ? 'Publicando ranking...' : 'Publicar ranking manual'}
-            </Button>
+                  )}
+                  <div className="w-full min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate block">{displayName}</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-xl">
+                    <Activity size={11} className="text-primary" />
+                    <span className="text-xs font-black text-primary">{r.total} ativ.</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       }
@@ -988,12 +897,12 @@ export default function Dashboard() {
           subtitle={isTeacher ? 'Ver pontuações pendentes' : 'Ir para Tarefas'} />
         
         <StatCard
-          title={isTeacher ? 'Alunos Ativos' : 'Meus Pontos'}
-          value={isTeacher ? studentCount : formatScore(totalPoints)}
-          icon={isTeacher ? Users : Star}
-          iconBg={isTeacher ? 'bg-emerald-500' : 'bg-yellow-500'}
-          to={isTeacher ? '/students' : '/dashboard'}
-          subtitle={isTeacher ? 'Ver alunos' : 'Pontuação publicada pelo administrador'} />
+          title={isTeacher ? 'Alunos Ativos' : 'Participações'}
+          value={isTeacher ? studentCount : myParticipations}
+          icon={isTeacher ? Users : Activity}
+          iconBg={isTeacher ? 'bg-emerald-500' : 'bg-indigo-500'}
+          to={isTeacher ? '/students' : '/pontuacao-geral'}
+          subtitle={isTeacher ? 'Ver alunos' : 'Total de atividades realizadas'} />
         
         <StatCard
           title={isTeacher ? 'Total de Aulas' : 'Aulas Assistidas'}
@@ -1026,8 +935,8 @@ export default function Dashboard() {
                   <p className="font-black text-base text-foreground">Ofensiva do Dia</p>
                   <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full animate-pulse">NOVO</span>
                 </div>
-                <p className="text-xs text-muted-foreground">8 perguntas · até <span className="font-bold text-orange-400">+1,0 pt</span> hoje</p>
-                <p className="text-[11px] text-orange-500/80 mt-1 font-semibold">Sequências de 5, 10 e 20 dias ganham bônus! 🏆</p>
+                <p className="text-xs text-muted-foreground">8 desafios de revisão · Conta como participação no ranking</p>
+                <p className="text-[11px] text-orange-500/80 mt-1 font-semibold">Mantenha sua sequência diária de estudos ativa! 🔥</p>
               </div>
               <div className="flex items-center gap-1 text-xs font-bold bg-orange-500 text-white px-3 py-1.5 rounded-xl shrink-0 group-hover:bg-orange-600 transition-colors">
                 Jogar <ArrowRight size={12} />

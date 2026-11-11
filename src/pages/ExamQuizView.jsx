@@ -26,7 +26,9 @@ export default function ExamQuizView() {
   const isHiddenForStudent = exam?.is_hidden && !isAdmin;
 
   const handleBack = () => {
-    queryClient.invalidateQueries({ queryKey: ['exam-submissions-mine'] });
+    queryClient.invalidateQueries({ queryKey: ['exam-submissions'] });
+    queryClient.invalidateQueries({ queryKey: ['student-learning-records', 'ExamSubmission'] });
+    queryClient.invalidateQueries({ queryKey: ['module-trophy-submissions'] });
     navigate(-1);
   };
 

@@ -1,7 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import {
   examScoreNote,
-  forumScoreNote,
   pickAutoCorrectionResponse,
   preserveOrGenerateFeedback,
   taskScoreNote,
@@ -21,112 +20,68 @@ function norm(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-function parseModNum(value) {
-  const m = String(value || '').match(/(\d+)/);
-  return m ? Number(m[1]) : null;
+function isSubstantiveText(rawText = '') {
+  const cleaned = String(rawText || '').trim();
+  if (cleaned.length < 25) return false;
+  const words = cleaned.split(/\s+/).filter((w) => w.replace(/[^a-zA-ZÀ-ÿ0-9]/g, '').length >= 2);
+  if (words.length < 5) return false;
+  return new Set(words.map((w) => w.toLowerCase())).size >= 4;
 }
 
-// Pontuação direta por código: chamada logo após salvar, sem depender de automação.
-async function creditScore(base44, functionName, record) {
-  if (!record?.id) return;
-  await base44.asServiceRole.functions.invoke(functionName, {
-    automation: { type: 'entity' }, event: { entity_id: record.id }, data: record,
-  }).catch((error) => console.error(`Pontuação ${functionName}:`, error?.message));
-}
-
-async function refreshStudentScoreCache(base44, studentEmail) {
-  const email = norm(studentEmail);
-  if (!email) return;
-  await base44.asServiceRole.functions.invoke('populateScoreCache', {
-    automation: { type: 'scheduled' },
-    student_email: email,
-  }).catch((error) => console.error('populateScoreCache:', error?.message));
-}
-
-async function autoGradeExamSubmission(base44, record) {
+async function evaluateAndSaveExamSubmission(base44, record) {
   if (!record?.id || !record?.exam_id) return record;
-  const studentEmail = norm(record.student_email);
   const exam = await base44.asServiceRole.entities.Exam.get(record.exam_id).catch(() => null);
-  const maxPoints = 50;
-  const grade = Number.isFinite(Number(record.grade)) && Number(record.grade) > 0
-    ? Number(record.grade)
-    : maxPoints;
-  const feedback = preserveOrGenerateFeedback(
-    record.feedback,
-    null,
-    examScoreNote(record.exam_id, grade),
-  );
-  const moduleNum = parseModNum(exam?.module_ref);
+  const questions = Array.isArray(exam?.quiz_questions) ? exam.quiz_questions : [];
+  const answers = Array.isArray(record.quiz_answers) ? record.quiz_answers : [];
 
-  const updated = await base44.asServiceRole.entities.ExamSubmission.update(record.id, {
-    grade,
+  let correctCount = typeof record.correct_count === 'number' ? record.correct_count : 0;
+  const totalQuestions = questions.length || Number(record.total_questions) || 0;
+
+  if (questions.length > 0 && typeof record.correct_count !== 'number') {
+    correctCount = 0;
+    questions.forEach((q, idx) => {
+      const rawAns = answers[idx];
+      if (q.answer_type === 'text') {
+        const text = typeof rawAns === 'object' ? rawAns?.text : rawAns;
+        if (isSubstantiveText(text)) correctCount += 1;
+      } else {
+        const hasSelection = rawAns !== undefined && rawAns !== null && rawAns !== '';
+        const selectedIdx = hasSelection ? Number(rawAns) : -1;
+        const expectedIdx = q.correct_index !== undefined && q.correct_index !== null ? Number(q.correct_index) : 0;
+        if (hasSelection && selectedIdx === expectedIdx) correctCount += 1;
+      }
+    });
+  }
+
+  const accuracyPercent = totalQuestions > 0
+    ? Math.round((correctCount / totalQuestions) * 100)
+    : (typeof record.accuracy_percent === 'number' ? record.accuracy_percent : 100);
+  const passed = typeof record.passed === 'boolean'
+    ? record.passed
+    : (totalQuestions > 0 ? correctCount / totalQuestions >= 0.5 : true);
+
+  const defaultFeedback = passed
+    ? `${examScoreNote(record.exam_id)} Resultado: ${correctCount} de ${totalQuestions} questões corretas (${accuracyPercent}%).`
+    : `Você acertou ${correctCount} de ${totalQuestions} questões (${accuracyPercent}%). Como o mínimo para aprovação é 50%, revise os conteúdos do módulo e refaça a prova.`;
+
+  const feedback = preserveOrGenerateFeedback(record.feedback, null, defaultFeedback);
+
+  return await base44.asServiceRole.entities.ExamSubmission.update(record.id, {
+    passed,
+    correct_count: correctCount,
+    total_questions: totalQuestions,
+    accuracy_percent: accuracyPercent,
+    grade: accuracyPercent,
     feedback,
     status: 'graded',
+    graded_at: record.graded_at || new Date().toISOString(),
   });
-
-  if (studentEmail) {
-    const existingScores = await base44.asServiceRole.entities.ScoreItem.filter(
-      { student_email: studentEmail, category: 'exam' },
-      '-created_date',
-      50,
-    );
-    const matching = existingScores?.find(
-      (item) => item.ref_id === `exam:${record.exam_id}` || item.ref_id === record.exam_id,
-    );
-    const scoreData = {
-      student_email: studentEmail,
-      category: 'exam',
-      ref_id: `exam:${record.exam_id}`,
-      ref_title: exam?.title || 'Prova do Módulo',
-      score: maxPoints,
-      max_score: maxPoints,
-      verified: true,
-      notes: feedback,
-      ...(moduleNum ? { module_number: moduleNum } : {}),
-    };
-    if (matching) {
-      await base44.asServiceRole.entities.ScoreItem.update(matching.id, scoreData);
-    } else {
-      await base44.asServiceRole.entities.ScoreItem.create(scoreData);
-    }
-    await refreshStudentScoreCache(base44, studentEmail);
-  }
-
-  return updated;
 }
 
-async function autoCreditForumParticipation(base44, entity, record) {
+async function autoReplyForumParticipation(base44, entity, record) {
   if (!record?.id) return;
-  const studentEmail = norm(record.author_email);
   const isReply = entity === 'ForumReply';
-  const spaceLabel = record.space === 'forum' ? 'Fórum' : 'Sala de Debates';
-  const note = forumScoreNote(record.id, 0.01, spaceLabel, isReply);
 
-  if (studentEmail && record.author_role !== 'teacher') {
-    const existing = await base44.asServiceRole.entities.ScoreItem.filter(
-      { student_email: studentEmail, category: 'forum', ref_id: record.id },
-      '-created_date',
-      5,
-    );
-    const scoreData = {
-      student_email: studentEmail,
-      category: 'forum',
-      ref_id: record.id,
-      ref_title: isReply ? `Comentário na ${spaceLabel}` : `Tópico criado na ${spaceLabel}`,
-      score: 0.01,
-      max_score: 0.01,
-      verified: true,
-      notes: note,
-    };
-    if (existing?.[0]) {
-      await base44.asServiceRole.entities.ScoreItem.update(existing[0].id, scoreData);
-    } else {
-      await base44.asServiceRole.entities.ScoreItem.create(scoreData);
-    }
-    await refreshStudentScoreCache(base44, studentEmail);
-  }
-
-  // Autocorreção imediata do tópico aberto pelo aluno com uma das 30 respostas próprias em código
   if (!isReply && record.author_role !== 'teacher' && !record.bot_replied) {
     const autoReplyText = pickAutoCorrectionResponse(record.id, 'participation');
     await base44.asServiceRole.entities.ForumReply.create({
@@ -227,7 +182,7 @@ function getDMSessionId(emailA, emailB) {
   return `dm_${sorted[0]}_${sorted[1]}`;
 }
 
-Deno.serve(async (req) => {
+export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json().catch(() => ({}));
@@ -337,7 +292,6 @@ Deno.serve(async (req) => {
         ? await base44.asServiceRole.entities.LessonProgress.update(existing.id, data)
         : await base44.asServiceRole.entities.LessonProgress.create(data);
 
-      await creditScore(base44, 'updateLessonScore', record);
       return Response.json({ success: true, record });
     }
 
@@ -410,7 +364,7 @@ Deno.serve(async (req) => {
         const autoFeedback = preserveOrGenerateFeedback(
           data.feedback,
           null,
-          taskScoreNote(taskId, data.grade || 5, Boolean(data.quiz_answers?.length)),
+          taskScoreNote(taskId, 0, Boolean(data.quiz_answers?.length)),
         );
         const enrichedData = cleanObject({
           ...data,
@@ -428,13 +382,11 @@ Deno.serve(async (req) => {
               student_email: norm(data.student_email) || norm(existing.student_email),
             });
             const record = await base44.asServiceRole.entities.TaskSubmission.update(existing.id, merged);
-            await creditScore(base44, 'gradeTaskSubmission', record);
             return Response.json({ success: true, record, restored: true });
           }
         }
 
         const record = await base44.asServiceRole.entities.TaskSubmission.create(enrichedData);
-        await creditScore(base44, 'gradeTaskSubmission', record);
         return Response.json({ success: true, record });
       }
 
@@ -458,13 +410,13 @@ Deno.serve(async (req) => {
         if (!record) {
           record = await base44.asServiceRole.entities.ExamSubmission.create(data);
         }
-        const gradedRecord = await autoGradeExamSubmission(base44, record);
+        const gradedRecord = await evaluateAndSaveExamSubmission(base44, record);
         return Response.json({ success: true, record: gradedRecord });
       }
 
       const record = await base44.asServiceRole.entities[entity].create(data);
       if (entity === 'ForumPost' || entity === 'ForumReply') {
-        await autoCreditForumParticipation(base44, entity, record);
+        await autoReplyForumParticipation(base44, entity, record);
       }
       return Response.json({ success: true, record });
     }
@@ -484,15 +436,16 @@ Deno.serve(async (req) => {
       for (const sub of taskSubs) {
         if (filterByStudent && !identifiers.includes(norm(sub.student_email))) continue;
         if (sub.status !== 'graded' || !sub.feedback) {
-          await creditScore(base44, 'gradeTaskSubmission', sub);
+          const feedback = preserveOrGenerateFeedback(sub.feedback, null, taskScoreNote(sub.task_id, 0, Boolean(sub.quiz_answers?.length)));
+          await base44.asServiceRole.entities.TaskSubmission.update(sub.id, { status: 'graded', feedback });
           correctedTasks++;
         }
       }
 
       for (const exSub of examSubs) {
         if (filterByStudent && !identifiers.includes(norm(exSub.student_email))) continue;
-        if (exSub.status !== 'graded' || !exSub.feedback || exSub.grade == null) {
-          await autoGradeExamSubmission(base44, exSub);
+        if (exSub.status !== 'graded' || !exSub.feedback) {
+          await evaluateAndSaveExamSubmission(base44, exSub);
           correctedExams++;
         }
       }
@@ -505,10 +458,6 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'creditOfensiva') {
-      // Carrega o registro no servidor: o cliente não informa pontos.
-      const record = await base44.asServiceRole.entities.DailyChallengeResponse.get(payload.response_id).catch(() => null);
-      if (!record) return Response.json({ error: 'Resposta não encontrada.' }, { status: 404 });
-      await creditScore(base44, 'syncOfensivaScore', record);
       return Response.json({ success: true });
     }
 
@@ -524,4 +473,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}

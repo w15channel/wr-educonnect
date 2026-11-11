@@ -26,16 +26,32 @@
     },
     "quiz_answers": {
       "type": "array",
-      "description": "Respostas do aluno — cada item é índice (escolha) ou {text: string} (escrita)",
+      "description": "Respostas do aluno \u2014 cada item \u00e9 \u00edndice (escolha) ou texto (escrita)",
       "items": {}
     },
     "grade": {
       "type": "number",
-      "description": "Nota atribuída pelo professor (0-10)"
+      "description": "Percentual de acerto obtido (0-100)"
+    },
+    "passed": {
+      "type": "boolean",
+      "description": "Verdadeiro quando o aluno atingiu ao menos 50% de acertos"
+    },
+    "correct_count": {
+      "type": "number",
+      "description": "Quantidade de quest\u00f5es respondidas corretamente"
+    },
+    "total_questions": {
+      "type": "number",
+      "description": "Total de quest\u00f5es da prova"
+    },
+    "accuracy_percent": {
+      "type": "number",
+      "description": "Percentual de acerto (0-100)"
     },
     "feedback": {
       "type": "string",
-      "description": "Feedback do professor"
+      "description": "Parecer instant\u00e2neo da corre\u00e7\u00e3o"
     },
     "status": {
       "type": "string",
@@ -43,8 +59,8 @@
         "submitted",
         "graded"
       ],
-      "default": "submitted",
-      "description": "Status da correção"
+      "default": "graded",
+      "description": "Status da corre\u00e7\u00e3o"
     },
     "submitted_at": {
       "type": "string",
@@ -54,7 +70,7 @@
     "graded_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Data da correção"
+      "description": "Data da corre\u00e7\u00e3o"
     },
     "graded_by": {
       "type": "string",

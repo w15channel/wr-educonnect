@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 import { useDisplayNameResolver } from '@/hooks/useOvercomingWall';
-import { Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Star, Send } from 'lucide-react';
+import { Crown, Download, Calendar, RotateCcw, UserPlus, MessageCircle, BarChart3, Trash2, Activity, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -13,11 +13,9 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { formatScore, roundScore } from '@/lib/scoreUtils';
+import { buildParticipationRanking } from '@/lib/participationUtils';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, WR_CERTIFICATE_LOGO } from '@/lib/brand';
 import { saveBlobWithPicker, shareBlob } from '@/lib/fileExport';
-
-const MONITOR_BONUSES = { 1: 0.5, 2: 0.3, 3: 0.2 };
 
 function MonitorBadge({ rank }) {
   const colors = { 1: 'bg-yellow-400 text-yellow-900', 2: 'bg-slate-300 text-slate-800', 3: 'bg-amber-600 text-amber-100' };
@@ -42,14 +40,59 @@ export default function Monitores() {
   const { emails: courseEmails, course: routeCourse } = useCourseFilteredEmails();
   const activeCourse = routeCourse || session?.course || 'tcc';
 
-  const { data: scoreItems = [] } = useQuery({
-    queryKey: ['score-items-monitores'],
-    queryFn: () => base44.entities.ScoreItem.list('-created_date', 2000),
-  });
-
   const { data: accessCodes = [] } = useQuery({
     queryKey: ['access-codes'],
-    queryFn: () => base44.entities.AccessCode.list('-created_date', 200),
+    queryFn: () => base44.entities.AccessCode.list('-created_date', 2000),
+  });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['monitors-profiles'],
+    queryFn: () => base44.entities.StudentProfile.list('-updated_date', 5000),
+  });
+
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['monitors-lessons', activeCourse],
+    queryFn: () => base44.entities.RecordedLesson.filter({ course: activeCourse }, 'order', 300),
+  });
+  const { data: lessonProgresses = [] } = useQuery({
+    queryKey: ['monitors-lesson-progress'],
+    queryFn: () => base44.entities.LessonProgress.list('-created_date', 3000),
+  });
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['monitors-tasks', activeCourse],
+    queryFn: () => base44.entities.Task.filter({ course: activeCourse }, '-created_date', 300),
+  });
+  const { data: taskSubmissions = [] } = useQuery({
+    queryKey: ['monitors-task-subs'],
+    queryFn: () => base44.entities.TaskSubmission.list('-created_date', 2000),
+  });
+  const { data: exams = [] } = useQuery({
+    queryKey: ['monitors-exams', activeCourse],
+    queryFn: () => base44.entities.Exam.filter({ course: activeCourse }, '-created_date', 300),
+  });
+  const { data: examSubmissions = [] } = useQuery({
+    queryKey: ['monitors-exam-subs', activeCourse],
+    queryFn: () => base44.entities.ExamSubmission.filter({ course: activeCourse }, '-submitted_at', 2000),
+  });
+  const { data: forumPosts = [] } = useQuery({
+    queryKey: ['monitors-forum-posts', activeCourse],
+    queryFn: () => base44.entities.ForumPost.filter({ course: activeCourse }, '-created_date', 1500),
+  });
+  const { data: forumReplies = [] } = useQuery({
+    queryKey: ['monitors-forum-replies'],
+    queryFn: () => base44.entities.ForumReply.list('-created_date', 2000),
+  });
+  const { data: mentorships = [] } = useQuery({
+    queryKey: ['monitors-mentorships', activeCourse],
+    queryFn: () => base44.entities.Mentorship.filter({ course: activeCourse }, '-date', 500),
+  });
+  const { data: therapistPairings = [] } = useQuery({
+    queryKey: ['monitors-pairings'],
+    queryFn: () => base44.entities.TherapistPairing.list('-pairing_date', 500),
+  });
+  const { data: challengeResponses = [] } = useQuery({
+    queryKey: ['monitors-challenges', activeCourse],
+    queryFn: () => base44.entities.DailyChallengeResponse.filter({ course: activeCourse }, '-date', 3000),
   });
 
 
@@ -85,36 +128,54 @@ export default function Monitores() {
   const periodStart = latestPeriodStart || format(new Date(), 'yyyy-MM-dd');
   const periodEnd = currentMonitors[0]?.period_end || periodStart;
 
-  // Course students
-  const courseStudents = accessCodes.filter(
-    c => c.is_active !== false && c.course === activeCourse && c.student_email && (!courseEmails || courseEmails.has(c.student_email))
+  const ranking = useMemo(
+    () =>
+      buildParticipationRanking(
+        accessCodes,
+        profiles,
+        {
+          lessons,
+          lessonProgresses,
+          tasks,
+          taskSubmissions,
+          exams,
+          examSubmissions,
+          forumPosts,
+          forumReplies,
+          mentorships,
+          therapistPairings,
+          challengeResponses,
+        },
+        { course: activeCourse }
+      ),
+    [
+      accessCodes,
+      profiles,
+      lessons,
+      lessonProgresses,
+      tasks,
+      taskSubmissions,
+      exams,
+      examSubmissions,
+      forumPosts,
+      forumReplies,
+      mentorships,
+      therapistPairings,
+      challengeResponses,
+      activeCourse,
+    ]
   );
-
-  // Ranking instantâneo: usa exclusivamente o cache AccessCode.pontuacao_total.
-  const ranking = courseStudents
-    .map((code) => ({
-      email: code.student_email,
-      total: roundScore(code.pontuacao_total || 0),
-      name: (getDisplayName(code.student_email) || code.profile_name || code.student_name || code.student_email || '').toLowerCase(),
-      createdAt: code.created_date ? new Date(code.created_date).getTime() : Number.MAX_SAFE_INTEGER,
-    }))
-    .sort((a, b) => {
-      if (b.total !== a.total) return b.total - a.total;
-      if (a.createdAt !== b.createdAt) return a.createdAt - b.createdAt;
-      return a.name.localeCompare(b.name, 'pt-BR');
-    });
   const topMonitors = ranking.slice(0, 3);
 
   const currentMonitorEmails = new Set(currentMonitors.map(m => m.student_email));
   const canUseMonitorChat = isTeacher || currentMonitorEmails.has(session?.email);
 
   const weeklyReport = useMemo(() => {
-    const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
     return currentMonitors.map(m => {
-      const interactions = scoreItems.filter(s => s.student_email === m.student_email && new Date(s.created_date || 0).getTime() >= weekAgo).length;
-      return { ...m, interactions };
+      const entry = ranking.find(r => String(r.email || '').toLowerCase() === String(m.student_email || '').toLowerCase());
+      return { ...m, interactions: entry?.total || 0 };
     });
-  }, [currentMonitors, scoreItems]);
+  }, [currentMonitors, ranking]);
 
   const getCodeByEmail = (email) => accessCodes.find(c => c.student_email === email);
 
@@ -278,8 +339,8 @@ export default function Monitores() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
           <p className="font-bold mb-1">Critérios de seleção dos Monitores:</p>
           <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
-            <li>Ranking lido diretamente do cache pontuacao_total, sem recalcular a cada acesso</li>
-            <li>1º Monitor: +0,500pts / 2º Monitor: +0,300pts / 3º Monitor: +0,200pts em entregas de atividades e trabalhos</li>
+            <li>Ranking definido pela somatória total de participações e atividades realizadas na turma</li>
+            <li>Os 3 alunos mais participativos ocupam os postos de 1º, 2º e 3º Monitor</li>
           </ol>
         </div>
       )}
@@ -311,8 +372,8 @@ export default function Monitores() {
                   <p className="font-bold text-sm text-foreground">{info.name}</p>
                   <MonitorBadge rank={m.rank_position} />
                   <p className="text-xs text-muted-foreground mt-1.5 flex items-center justify-center gap-1">
-                    <Star size={11} className="text-yellow-400 fill-yellow-400" />
-                    Bônus: +{formatScore(MONITOR_BONUSES[m.rank_position] || 0.2)} por atividade
+                    <Activity size={11} className="text-primary" />
+                    Destaque em participações na turma
                   </p>
                 </div>
                 {(isMe || isTeacher) && (
@@ -372,7 +433,7 @@ export default function Monitores() {
             {weeklyReport.map(item => (
               <div key={item.student_email} className="rounded-xl border border-border p-3 bg-secondary/20">
                 <p className="text-sm font-semibold">{getDisplayName(item.student_email) || item.student_name}</p>
-                <p className="text-xs text-muted-foreground">Frequência de interações (7 dias): {item.interactions}</p>
+                <p className="text-xs text-muted-foreground">Total de atividades realizadas: {item.interactions}</p>
               </div>
             ))}
           </div>

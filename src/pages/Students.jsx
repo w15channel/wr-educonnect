@@ -79,55 +79,19 @@ export default function Students() {
     onError: () => toast.error('Erro ao remover aluno.'),
   });
 
-  const [syncing, setSyncing] = useState(false);
-
-  const syncStudents = async () => {
-    setSyncing(true);
-    try {
-      const [lessons, tasks, scoreItems] = await Promise.all([
-        base44.entities.RecordedLesson.list('order', 200),
-        base44.entities.Task.list('-created_date', 200),
-        base44.entities.ScoreItem.list('-created_date', 5000),
-      ]);
-      let created = 0;
-      for (const code of codes) {
-        if (!code.student_email || !code.is_active) continue;
-        if (codePrefix && !(code.code || '').startsWith(codePrefix)) continue;
-        if (courseEmails && !courseEmails.has(code.student_email)) continue;
-        const email = code.student_email;
-        const existingScores = scoreItems.filter(s => s.student_email === email);
-        const toCreate = [];
-        for (const lesson of lessons) {
-          if (!existingScores.find(s => s.category === 'lesson' && s.ref_id === lesson.id)) {
-            toCreate.push({ student_email: email, category: 'lesson', ref_id: lesson.id, ref_title: lesson.title, score: 0, max_score: 2, verified: false });
-          }
-        }
-        for (const task of tasks) {
-          const cat = task.type === 'quiz' ? 'quiz' : 'task';
-          if (!existingScores.find(s => s.category === cat && s.ref_id === task.id)) {
-            toCreate.push({ student_email: email, category: cat, ref_id: task.id, ref_title: task.title, score: 0, max_score: task.type === 'quiz' ? 50 : 5, verified: false });
-          }
-        }
-        if (toCreate.length > 0) {
-          await base44.entities.ScoreItem.bulkCreate(toCreate);
-          created += toCreate.length;
-        }
-      }
-      queryClient.invalidateQueries();
-      toast.success(`Sincronização concluída! ${created} registros criados.`);
-    } catch (err) {
-      toast.error('Erro na sincronização.');
-    }
-    setSyncing(false);
-  };
+  const { data: allLessonProgresses = [] } = useQuery({
+    queryKey: ['students-lesson-progress'],
+    queryFn: () => base44.entities.LessonProgress.list('-created_date', 3000),
+  });
 
   const getStudentProfile = (code) => studentProfiles.find(p => p.student_email === code.student_email);
 
   const getStudentStats = (code) => {
-    const subs = allSubmissions.filter(s => s.student_email === code.student_email);
-    const profile = studentProfiles.find(p => p.student_email === code.student_email && (p.dashboard_course === activeCourse || (!p.dashboard_course && activeCourse === 'tcc')));
-    const moduleScore = roundScore(code.pontuacao_total ?? profile?.pontuacao_total ?? profile?.points ?? 0);
-    return { moduleScore, moduleScoreDisplay: formatScore(moduleScore), submissions: subs.length };
+    const email = String(code.student_email || '').trim().toLowerCase();
+    const subs = allSubmissions.filter(s => String(s.student_email || '').trim().toLowerCase() === email);
+    const watched = allLessonProgresses.filter(p => p.watched && String(p.student_email || '').trim().toLowerCase() === email && !String(p.lesson_id || '').startsWith('checklist:')).length;
+    const participations = subs.length + watched;
+    return { moduleScore: participations, moduleScoreDisplay: `${participations} ativ.`, submissions: subs.length };
   };
 
   const getStudentTuitionStatus = (code) => {
@@ -263,8 +227,8 @@ export default function Students() {
                   <SelectItem value="tuition_overdue">Inadimplentes primeiro</SelectItem>
                   <SelectItem value="submissions_desc">Mais entregas primeiro</SelectItem>
                   <SelectItem value="submissions_asc">Menos entregas primeiro</SelectItem>
-                  <SelectItem value="avg_desc">Maior pontuação primeiro</SelectItem>
-                  <SelectItem value="avg_asc">Menor pontuação primeiro</SelectItem>
+                  <SelectItem value="avg_desc">Mais participações primeiro</SelectItem>
+                  <SelectItem value="avg_asc">Menos participações primeiro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -275,15 +239,6 @@ export default function Students() {
               onClick={() => queryClient.invalidateQueries()}
             >
               <RefreshCw size={13} /> Atualizar Dados
-            </Button>
-            <Button
-              size="sm"
-              className="gap-1.5 h-10 text-xs w-full sm:w-auto bg-gradient-to-r from-[#5b5ef4] to-[#1db89e] text-white border-0"
-              onClick={syncStudents}
-              disabled={syncing}
-            >
-              <Zap size={13} className={syncing ? 'animate-spin' : ''} />
-              {syncing ? 'Sincronizando...' : 'Sincronizar Alunos'}
             </Button>
           </div>
 
@@ -342,7 +297,7 @@ export default function Students() {
                           <p className="font-semibold text-foreground">{stats.submissions}</p>
                         </div>
                         <div className="rounded-xl border border-border px-2.5 py-2 bg-secondary/30">
-                          <p className="text-muted-foreground truncate">Pontuação total</p>
+                          <p className="text-muted-foreground truncate">Participações</p>
                           <p className="font-semibold text-foreground">{stats.moduleScoreDisplay}</p>
                         </div>
                       </div>
@@ -381,7 +336,7 @@ export default function Students() {
                         <th className="p-4">Aluno</th>
                         <th className="p-4">Código</th>
                         <th className="p-4">Entregas</th>
-                        <th className="p-4">Pontuação total</th>
+                        <th className="p-4">Participações</th>
                         <th className="p-4">Mensalidade</th>
                         <th className="p-4">Função</th>
                         <th className="p-4">Status</th>

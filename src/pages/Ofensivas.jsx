@@ -142,12 +142,9 @@ function TrailNode({ question, idx, answered, locked, isChest, onPress, points, 
         }`}>
           <TreasureChest state={answered ? 'done' : locked ? 'locked' : 'open'} />
         </div>
-        {!locked && !answered && (
-          <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-amber-300 shadow-lg">+{points}</div>
-        )}
         {answered && <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-green-300">✓</div>}
         <span className={`mt-1.5 text-[11px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-amber-400'}`}>Baú do Saber</span>
-        <span className="text-[10px] text-muted-foreground/60">+{points} pts</span>
+        <span className="text-[10px] text-muted-foreground/60">Desafio especial</span>
       </button>
     );
   }
@@ -168,14 +165,11 @@ function TrailNode({ question, idx, answered, locked, isChest, onPress, points, 
          : locked ? <Lock size={18} className="text-muted-foreground" />
          : <Flame size={22} className="text-white" />}
       </div>
-      {!locked && !answered && (
-        <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-primary/50 shadow">+{points}</div>
-      )}
       {answered && <div className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">✓</div>}
       <span className={`mt-1 text-[10px] font-bold ${answered ? 'text-green-400' : locked ? 'text-muted-foreground' : 'text-foreground/60'}`}>
       {answered ? 'Feita' : locked ? 'Bloqueada' : game === 'memory' ? '🧠 Memória' : game === 'colors' ? '🎨 Cores' : `Nº ${idx + 1}`}
       </span>
-      <span className="text-[10px] text-muted-foreground/50">+{points}</span>
+      <span className="text-[10px] text-muted-foreground/50">Etapa {idx + 1}</span>
     </button>
   );
 }
@@ -200,15 +194,15 @@ function QuestionModal({ question, idx, isChest, points, answered, savedAnswer, 
           <DialogTitle className="flex items-center gap-2 text-base">
             {isChest ? <span className="text-xl">🗝️</span> : <Flame size={16} className="text-orange-500" />}
             {isChest ? 'Baú do Saber' : `Pergunta ${idx + 1}`}
-            <span className="ml-auto text-xs font-bold text-yellow-500 flex items-center gap-0.5">
-              <Star size={11} className="fill-yellow-400" /> +{points} pts
+            <span className="ml-auto text-xs font-bold text-primary">
+              Etapa {idx + 1}/8
             </span>
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-1">
           {isChest && (
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-xs text-amber-500 font-semibold flex items-center gap-1.5">
-              🗝️ Pergunta desafio! Reflita com cuidado — vale mais pontos.
+              🗝️ Pergunta desafio! Reflita com cuidado sobre o tema.
             </div>
           )}
           <p className="text-sm font-semibold text-foreground leading-relaxed">{question?.text}</p>
@@ -237,7 +231,7 @@ function QuestionModal({ question, idx, isChest, points, answered, savedAnswer, 
               </div>
               <Button className="w-full gap-2" disabled={!answer.trim() || isPending} onClick={() => onSubmit(answer)}>
                 {isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                Registrar · +{points} pts
+                Registrar resposta
               </Button>
             </>
           )}
@@ -259,8 +253,8 @@ function StreakBadge({ streak }) {
       <div className="flex-1 min-w-0">
         {nextBonus ? (
           <p className="text-xs text-muted-foreground">
-            Mais {nextBonus.days - streak} dia{nextBonus.days - streak !== 1 ? 's' : ''} para ganhar
-            <span className="font-bold text-yellow-500"> +{nextBonus.bonus} pts {nextBonus.emoji}</span>
+            Mais {nextBonus.days - streak} dia{nextBonus.days - streak !== 1 ? 's' : ''} para a marca de
+            <span className="font-bold text-orange-500"> {nextBonus.label} {nextBonus.emoji}</span>
           </p>
         ) : (
           <p className="text-xs text-muted-foreground">Sequência máxima desbloqueada! 👑</p>
@@ -385,22 +379,20 @@ export default function Ofensivas() {
       });
       pts = Math.round(pts * 1000) / 1000;
 
-      const saved = myResponseRecord
-        ? await base44.entities.DailyChallengeResponse.update(myResponseRecord.id, { answers: updatedAnswers, questions_answered: newCount, points_earned: pts })
-        : await base44.entities.DailyChallengeResponse.create({
+      if (myResponseRecord) {
+        await base44.entities.DailyChallengeResponse.update(myResponseRecord.id, { answers: updatedAnswers, questions_answered: newCount, points_earned: 0 });
+      } else {
+        await base44.entities.DailyChallengeResponse.create({
           challenge_id: challenge.id, date: today, course: userCourse,
           student_email: session?.email || '', student_name: session?.name || session?.full_name || '',
-          answers: updatedAnswers, questions_answered: newCount, points_earned: pts,
+          answers: updatedAnswers, questions_answered: newCount, points_earned: 0,
         });
-      // Credita a pontuação diretamente, sem automação.
-      base44.functions.invoke('saveStudentRecord', { action: 'creditOfensiva', response_id: saved?.id || myResponseRecord?.id }).catch(() => null);
+      }
 
       await queryClient.invalidateQueries({ queryKey: ['daily-response'] });
       await queryClient.invalidateQueries({ queryKey: ['all-my-responses'] });
 
-      const qIdx = questions.findIndex(q => q.id === questionId);
-      const pointsEarned = QUESTION_SCHEMA[qIdx]?.points ?? 0.1;
-      toast.success(`🔥 +${pointsEarned} pts!`);
+      toast.success(`🔥 Etapa ${newCount}/8 concluída!`);
       setActiveQuestion(null);
 
       if (newCount >= 8) {
@@ -408,7 +400,7 @@ export default function Ofensivas() {
         setShowFireworks(true);
         const newStreak = streak + 1;
         const bonus = STREAK_BONUSES.slice().reverse().find(b => newStreak === b.days);
-        if (bonus) { setBonusEarned(bonus); toast.success(`${bonus.emoji} Bônus de sequência: +${bonus.bonus} pts!`); }
+        if (bonus) { setBonusEarned(bonus); toast.success(`${bonus.emoji} Marca de sequência alcançada: ${bonus.label}!`); }
       }
     } catch (err) {
       toast.error('Erro: ' + (err.message || 'tente novamente'));
@@ -545,8 +537,8 @@ export default function Ofensivas() {
               <div key={b.days} className={`shrink-0 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border text-center transition-all ${streak >= b.days ? 'bg-yellow-500/15 border-yellow-400/30' : 'bg-card border-border opacity-50'}`}>
                 <span className="text-lg">{b.emoji}</span>
                 <span className="text-[10px] font-bold text-foreground">{b.label}</span>
-                <span className="text-[10px] text-yellow-500 font-bold">+{b.bonus} pts</span>
-                {streak >= b.days && <span className="text-[9px] text-green-500">Ganho ✓</span>}
+                <span className="text-[10px] text-orange-500 font-bold">Constância</span>
+                {streak >= b.days && <span className="text-[9px] text-green-500">Alcançada ✓</span>}
               </div>
             ))}
           </div>
@@ -563,10 +555,10 @@ export default function Ofensivas() {
             <div className="bg-gradient-to-br from-yellow-500/15 to-amber-500/10 border border-yellow-400/30 rounded-2xl p-5 text-center mb-4">
               <div className="text-4xl mb-2">🏆</div>
               <p className="font-black text-xl text-foreground">{justCompleted ? 'Parabéns! Ofensiva Completa! 🔥' : 'Ofensiva do Dia Concluída! ✅'}</p>
-              <p className="text-sm text-muted-foreground mt-1">+{TOTAL_POINTS.toFixed(1)} pts ganhos · Sequência: <span className="font-bold text-orange-500">{streak} dia{streak !== 1 ? 's' : ''} 🔥</span></p>
+              <p className="text-sm text-muted-foreground mt-1">Participação somada no ranking · Sequência: <span className="font-bold text-orange-500">{streak} dia{streak !== 1 ? 's' : ''} 🔥</span></p>
               {bonusEarned && (
                 <div className="mt-3 bg-yellow-500/20 border border-yellow-400/40 rounded-xl px-4 py-2 inline-block">
-                  <p className="font-black text-yellow-500 text-sm">{bonusEarned.emoji} Bônus: +{bonusEarned.bonus} pts!</p>
+                  <p className="font-black text-yellow-500 text-sm">{bonusEarned.emoji} Marca de sequência: {bonusEarned.label}!</p>
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-2">Volte amanhã para manter sua sequência!</p>
@@ -691,7 +683,6 @@ export default function Ofensivas() {
                     <span className={`font-black shrink-0 ${isChest ? 'text-amber-400' : 'text-primary'}`}>{isChest ? '🗝️' : `${i + 1}.`}</span>
                     <div className="flex-1">
                       <span className="text-foreground">{q.text}</span>
-                      <span className={`ml-1 font-bold text-[10px] ${isChest ? 'text-amber-400' : 'text-muted-foreground'}`}>(+{schema?.points ?? 0.1}pts)</span>
                     </div>
                   </div>
                 );
@@ -713,10 +704,7 @@ export default function Ofensivas() {
                   <div key={r.id} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-xl text-xs">
                     <span className="font-semibold text-foreground truncate">{r.student_name || r.student_email}</span>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-muted-foreground">{r.questions_answered || 0}/8</span>
-                      <span className="text-yellow-500 font-bold flex items-center gap-0.5">
-                        <Star size={9} className="fill-yellow-400" /> +{(r.points_earned || 0).toFixed(2)}
-                      </span>
+                      <span className="text-primary font-bold">{r.questions_answered || 0}/8 etapas</span>
                     </div>
                   </div>
                 ))}

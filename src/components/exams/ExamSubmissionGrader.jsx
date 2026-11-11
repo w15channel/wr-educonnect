@@ -59,15 +59,15 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      await base44.functions.invoke('saveExamGrade', {
-        exam_id: exam.id,
-        student_email: submission.student_email,
-        grade: totalGrade,
-        feedback,
-      });
-
+      const totalHits = correctCount + approvedDiscursive;
+      const pct = questions.length > 0 ? Math.round((totalHits / questions.length) * 100) : 100;
+      const isPassed = pct >= 50;
       await base44.entities.ExamSubmission.update(submission.id, {
-        grade: totalGrade,
+        passed: isPassed,
+        correct_count: totalHits,
+        total_questions: questions.length,
+        accuracy_percent: pct,
+        grade: pct,
         feedback,
         status: 'graded',
         graded_at: new Date().toISOString(),
@@ -77,7 +77,7 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exam-submissions'] });
       queryClient.invalidateQueries({ queryKey: ['exams'] });
-      toast.success('Correção salva com sucesso! Nota e pontuação atualizadas.');
+      toast.success('Revisão da prova salva com sucesso!');
       onBack();
     },
     onError: (err) => {
@@ -122,32 +122,30 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
         )}
       </div>
 
-      {/* Score Summary */}
+      {/* Resumo de Aproveitamento */}
       <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl p-5 mb-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-black text-emerald-700 flex items-center gap-2">
-            <Award size={16} /> Resumo da Correção
+            <Award size={16} /> Resumo de Acertos
           </h3>
           <div className="text-right">
-            <p className="text-xs text-emerald-600 font-bold">Nota Parcial</p>
-            <p className="font-mono font-black text-3xl text-emerald-700">{formatScore(totalGrade)} / {formatScore(50)}</p>
+            <p className="text-xs text-emerald-600 font-bold">Aproveitamento</p>
+            <p className="font-mono font-black text-2xl text-emerald-700">
+              {questions.length > 0 ? Math.round(((correctCount + approvedDiscursive) / questions.length) * 100) : 100}%
+            </p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div className="bg-white/50 rounded-xl p-3">
             <p className="text-muted-foreground mb-1">Questões Objetivas</p>
             <p className="font-bold text-foreground">
-              {objectiveQuestions.length} questões · 
-              <span className="text-emerald-600 ml-1">{formatScore(objectiveScore)} pts</span>
+              {correctCount}/{objectiveQuestions.length} corretas
             </p>
           </div>
           <div className="bg-white/50 rounded-xl p-3">
             <p className="text-muted-foreground mb-1">Questões Discursivas</p>
             <p className="font-bold text-foreground">
-              {discursiveCount} questões · 
-              <span className="text-blue-600 ml-1">
-                {approvedDiscursive}/{discursiveCount} aprovadas ({formatScore(discursiveScore)} pts)
-              </span>
+              {approvedDiscursive}/{discursiveCount} validadas
             </p>
           </div>
         </div>
@@ -264,7 +262,7 @@ export default function ExamSubmissionGrader({ submission, exam, onBack }) {
           className="flex-1 gap-2 h-12 font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg"
         >
           <CheckCircle size={18} /> 
-          {saveMutation.isPending ? 'Salvando...' : `Salvar Correção (${formatScore(totalGrade)}/${50} pts)`}
+          {saveMutation.isPending ? 'Salvando...' : 'Salvar Revisão da Prova'}
         </Button>
       </div>
     </div>
