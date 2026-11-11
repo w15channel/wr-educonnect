@@ -6,6 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import ServicosCard from '@/components/dashboard/ServicosCard';
 import LunaDashboardGreetingVoice from '@/components/dashboard/LunaDashboardGreetingVoice';
+import TuitionPlanCard from '@/components/tuitions/TuitionPlanCard';
 import useOvercomingWall from '@/hooks/useOvercomingWall';
 import useSocialIdentity from '@/hooks/useSocialIdentity';
 
@@ -115,6 +116,8 @@ export default function DiplomaDashboard() {
           </div>
         </div>
       </section>
+
+      <TuitionPlanCard session={session} />
 
       <DiplomaWall course={course} session={session} onOpenWall={() => navigate(`${DIPLOMA_PREFIX}/chat`)} />
       <ServicosCard />

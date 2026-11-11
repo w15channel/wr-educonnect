@@ -19,6 +19,7 @@ import { publishToStudentWallBatch } from '@/lib/studentWallPost';
 import useModuleTrophies from '@/hooks/useModuleTrophies';
 import ModuleTrophies from '@/components/achievements/ModuleTrophies';
 import LunaDashboardGreetingVoice from '@/components/dashboard/LunaDashboardGreetingVoice';
+import TuitionPlanCard from '@/components/tuitions/TuitionPlanCard';
 import { isContributionAwardFeatured, isContributionWallHighlight } from '@/lib/contributionAwards';
 import useSocialIdentity from '@/hooks/useSocialIdentity';
 
@@ -533,6 +534,8 @@ export default function Dashboard() {
           text={`${greeting}, ${firstName}! Eu sou a Luna. Que bom ter você aqui! Antes de começar, confira as notificações no Mural de Superação logo abaixo. Depois, acesse o seu Checklist para dar sequência aos estudos do módulo.`}
         />
       )}
+
+      {!isTeacher && <TuitionPlanCard session={session} />}
 
       {/* Luna Welcome Banner — saudação, orientações e mensagem de pontuação */}
       {!isTeacher && (

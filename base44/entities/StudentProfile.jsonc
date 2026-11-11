@@ -4,7 +4,7 @@
   "properties": {
     "code_id": {
       "type": "string",
-      "description": "ID do código de acesso vinculado"
+      "description": "ID do c\u00f3digo de acesso vinculado"
     },
     "student_email": {
       "type": "string",
@@ -45,44 +45,44 @@
     },
     "bio": {
       "type": "string",
-      "description": "Apresentação pessoal"
+      "description": "Apresenta\u00e7\u00e3o pessoal"
     },
     "points": {
       "type": "number",
       "default": 0,
-      "description": "Pontuação total gamificada"
+      "description": "Pontua\u00e7\u00e3o total gamificada"
     },
     "pontuacao_total": {
       "type": "number",
       "default": 0,
-      "description": "Pontuação total sincronizada para ranking geral"
+      "description": "Pontua\u00e7\u00e3o total sincronizada para ranking geral"
     },
     "pontuacao_estudos": {
       "type": "number",
       "default": 0,
-      "description": "Pontuação acadêmica/estudos: aulas assistidas, trabalhos entregues e provas"
+      "description": "Pontua\u00e7\u00e3o acad\u00eamica/estudos: aulas assistidas, trabalhos entregues e provas"
     },
     "pontuacao_total_manual": {
       "type": "number",
-      "description": "Pontuação total definida manualmente pelo admin (sobrescreve o cálculo automático)"
+      "description": "Pontua\u00e7\u00e3o total definida manualmente pelo admin (sobrescreve o c\u00e1lculo autom\u00e1tico)"
     },
     "pontuacao_total_manual_ativa": {
       "type": "boolean",
       "default": false,
-      "description": "Quando true, a pontuação total manual substitui a calculada automaticamente"
+      "description": "Quando true, a pontua\u00e7\u00e3o total manual substitui a calculada automaticamente"
     },
     "participacoes_manual": {
       "type": "number",
-      "description": "Número de participações definido manualmente pelo admin"
+      "description": "N\u00famero de participa\u00e7\u00f5es definido manualmente pelo admin"
     },
     "participacoes_manual_ativa": {
       "type": "boolean",
       "default": false,
-      "description": "Quando true, o número de participações manual substitui o calculado automaticamente"
+      "description": "Quando true, o n\u00famero de participa\u00e7\u00f5es manual substitui o calculado automaticamente"
     },
     "dashboard_rank": {
       "type": "number",
-      "description": "Posição publicada para o ranking da Dashboard"
+      "description": "Posi\u00e7\u00e3o publicada para o ranking da Dashboard"
     },
     "dashboard_course": {
       "type": "string",
@@ -91,7 +91,20 @@
         "psicanalise",
         "sexologia"
       ],
-      "description": "Curso da posição publicada na Dashboard"
+      "description": "Curso da posi\u00e7\u00e3o publicada na Dashboard"
+    },
+    "tuition_amount": {
+      "type": "number",
+      "description": "Valor de contribui\u00e7\u00e3o mensal escolhido pelo pr\u00f3prio aluno"
+    },
+    "tuition_due_day": {
+      "type": "number",
+      "description": "Dia do vencimento escolhido pelo aluno (1 a 28)"
+    },
+    "tuition_setup_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento em que o aluno definiu valor e vencimento da mensalidade"
     }
   },
   "required": [

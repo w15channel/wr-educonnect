@@ -7,6 +7,7 @@
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { stalePresenceIds, tuitionStatusChanges, referenceDay } from '../../shared/nativeAutomations.ts';
+import { dueDateInCurrentMonth, monthKey, monthRefFor } from '../../shared/tuitionPlan.ts';
 
 const PAGE_SIZE = 500;
 const WRITE_BATCH = 40;
@@ -38,6 +39,49 @@ const RULES = [
       const changes = tuitionStatusChanges(tuitions, day);
       if (dryRun) return { checked: tuitions.length, updated: 0, pending_changes: changes.length };
       return { checked: tuitions.length, updated: await writeBatches(store.Tuition, changes) };
+    },
+  },
+  {
+    key: 'tuition_plan_months',
+    label: 'Mensalidades conforme o plano do aluno',
+    admin_only: false,
+    run: async ({ store, dryRun }) => {
+      const [profiles, tuitions] = await Promise.all([readAll(store.StudentProfile), readAll(store.Tuition)]);
+      const currentRef = monthRefFor();
+      const currentKey = monthKey();
+      const alreadyCreated = new Set(
+        tuitions
+          .filter((tuition) => tuition.month_ref === currentRef)
+          .map((tuition) => String(tuition.student_email || '').trim().toLowerCase()),
+      );
+      const creations = [];
+      for (const profile of profiles) {
+        const email = String(profile?.student_email || '').trim().toLowerCase();
+        const day = Number(profile?.tuition_due_day);
+        const amount = Number(profile?.tuition_amount);
+        if (!email || !Number.isInteger(day) || day < 1 || day > 28) continue;
+        if (!Number.isFinite(amount) || amount <= 0) continue;
+        if (alreadyCreated.has(email)) continue;
+        const setupDate = new Date(profile?.tuition_setup_at || profile?.created_date || 0);
+        if (!Number.isFinite(setupDate.getTime())) continue;
+        // O mês em que o aluno definiu o plano já é lançado no ato do cadastro.
+        if (monthKey(setupDate) === currentKey) continue;
+        creations.push({
+          student_email: email,
+          student_name: profile.full_name || '',
+          month_ref: currentRef,
+          amount,
+          due_date: dueDateInCurrentMonth(day),
+          status: 'pending',
+        });
+      }
+      if (dryRun) return { checked: profiles.length, updated: 0, pending_changes: creations.length };
+      let created = 0;
+      for (let offset = 0; offset < creations.length; offset += WRITE_BATCH) {
+        await store.Tuition.bulkCreate(creations.slice(offset, offset + WRITE_BATCH));
+        created += Math.min(WRITE_BATCH, creations.length - offset);
+      }
+      return { checked: profiles.length, updated: created };
     },
   },
   {

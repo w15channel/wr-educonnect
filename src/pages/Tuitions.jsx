@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateReceiptCode, generateReceiptImage, downloadReceiptImage, getDefaultReceiptTemplate, setDefaultReceiptTemplate } from '@/lib/generateReceiptImage';
 import ReceiptImageDialog from '@/components/tuitions/ReceiptImageDialog';
+import TuitionPlanCard from '@/components/tuitions/TuitionPlanCard';
 import { hasPositiveContribution } from '@/lib/contributionAwards';
 import { sortTuitionsByStudents, sortTuitionStudents } from '@/lib/tuitionAdmin';
 
@@ -340,6 +341,8 @@ export default function Tuitions() {
           <p className="text-xs text-muted-foreground text-center">Alunos que já possuem mensalidade para este mês serão ignorados automaticamente.</p>
         </div>
       )}
+
+      {!isAdmin && <TuitionPlanCard session={session} mode="settings" />}
 
       {/* Student status banner */}
       {!isAdmin && overallStatus && (
