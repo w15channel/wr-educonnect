@@ -488,8 +488,8 @@ ${sourceContent}`;
               <p className="text-[11px] text-emerald-300/70">Revise, edite se necessário e publique a prova.</p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-xs text-muted-foreground">Pontuação</p>
-              <p className="text-sm font-black text-foreground">{maxGrade} pts</p>
+              <p className="text-xs text-muted-foreground">Aprovação</p>
+              <p className="text-sm font-black text-foreground">Mín. 50%</p>
             </div>
           </div>
 
@@ -562,7 +562,7 @@ ${sourceContent}`;
               className="flex-1 gap-2 h-11 font-black bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
             >
               <GraduationCap size={16} />
-              {saveMutation.isPending ? 'Publicando...' : `Publicar Prova (${generatedQuestions.length} questões · ${maxGrade} pts)`}
+              {saveMutation.isPending ? 'Publicando...' : `Publicar Prova (${generatedQuestions.length} questões · mín. 50%)`}
             </Button>
           </div>
         </div>

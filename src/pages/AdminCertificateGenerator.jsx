@@ -1039,7 +1039,7 @@ export default function AdminCertificateGenerator() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-xs text-foreground truncate">{name}</p>
-                      <p className="text-[10px] text-muted-foreground">{student.student_email} · {pontuacao} pts</p>
+                      <p className="text-[10px] text-muted-foreground">{student.student_email}</p>
                     </div>
                     {hasCertificate ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full"><CheckCircle2 size={10} /> Emitido</span>

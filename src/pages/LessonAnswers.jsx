@@ -12,44 +12,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-function AnswerCard({ progress, lesson, scoreItem, reviewerEmail }) {
+function AnswerCard({ progress, lesson }) {
   const queryClient = useQueryClient();
-  const [grade, setGrade] = useState(scoreItem?.score == null ? formatScore(SCORE_RULES.lesson) : formatScore(scoreItem.score));
-  const [feedback, setFeedback] = useState(scoreItem?.notes || randomLessonFeedback());
+  const [feedback, setFeedback] = useState(randomLessonFeedback());
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const numericGrade = roundScore(String(grade).replace(',', '.'));
-      if (!Number.isFinite(Number(String(grade).replace(',', '.'))) || numericGrade < 0 || numericGrade > SCORE_RULES.lesson) {
-        throw new Error(`Informe uma nota entre 0 e ${formatScore(SCORE_RULES.lesson)}.`);
-      }
       if (!feedback.trim()) throw new Error('Escreva uma devolutiva para publicar.');
-
-      const payload = {
-        student_email: progress.student_email,
-        category: 'lesson',
-        ref_id: lesson.id,
-        ref_title: lesson.title,
-        score: numericGrade,
-        max_score: SCORE_RULES.lesson,
-        verified: true,
-        notes: feedback.trim(),
-        reviewed_by: reviewerEmail || '',
-        ...(lesson.module_number ? { module_number: lesson.module_number } : {}),
-      };
-      return scoreItem?.id
-        ? adminApi.update('ScoreItem', scoreItem.id, payload)
-        : adminApi.create('ScoreItem', payload);
+      return adminApi.update('LessonProgress', progress.id, { watched: true });
     },
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['lesson-answer-scores'] }),
-        queryClient.invalidateQueries({ queryKey: ['lesson-score-feedback'] }),
-        queryClient.invalidateQueries({ queryKey: ['score-items'] }),
-      ]);
-      toast.success('Nota e feedback publicados para o aluno.');
+      await queryClient.invalidateQueries({ queryKey: ['lesson-answers-progress'] });
+      toast.success('Participação validada para o aluno.');
     },
-    onError: (error) => toast.error(error.message || 'Não foi possível publicar a avaliação.'),
+    onError: (error) => toast.error(error.message || 'Não foi possível validar a participação.'),
   });
 
   return (
@@ -59,9 +35,9 @@ function AnswerCard({ progress, lesson, scoreItem, reviewerEmail }) {
           <p className="font-bold text-foreground truncate">{progress.student_email || 'Aluno sem identificação'}</p>
           <p className="text-xs text-muted-foreground mt-1">{lesson.title}</p>
         </div>
-        {scoreItem?.verified && (
+        {progress.watched && (
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-            <CheckCircle size={11} /> Avaliação publicada
+            <CheckCircle size={11} /> Participação concluída
           </span>
         )}
       </div>
@@ -81,23 +57,17 @@ function AnswerCard({ progress, lesson, scoreItem, reviewerEmail }) {
         )}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-border grid sm:grid-cols-[120px_1fr] gap-3 items-start">
-        <div>
-          <label className="text-xs font-semibold text-muted-foreground" htmlFor={`grade-${progress.id}`}>Nota (máx. {formatScore(SCORE_RULES.lesson)})</label>
-          <Input id={`grade-${progress.id}`} inputMode="decimal" value={grade} onChange={(event) => setGrade(event.target.value)} className="mt-1" />
+      <div className="mt-4 pt-4 border-t border-border">
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-xs font-semibold text-muted-foreground" htmlFor={`feedback-${progress.id}`}>Observação pedagógica</label>
+          <button type="button" onClick={() => setFeedback(randomLessonFeedback())} className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline">
+            <Shuffle size={11} /> Sortear outra resposta
+          </button>
         </div>
-        <div>
-          <div className="flex items-center justify-between gap-2">
-            <label className="text-xs font-semibold text-muted-foreground" htmlFor={`feedback-${progress.id}`}>Feedback ao aluno</label>
-            <button type="button" onClick={() => setFeedback(randomLessonFeedback())} className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline">
-              <Shuffle size={11} /> Sortear outra resposta
-            </button>
-          </div>
-          <Textarea id={`feedback-${progress.id}`} value={feedback} onChange={(event) => setFeedback(event.target.value)} rows={3} className="mt-1 text-sm" />
-          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} size="sm" className="w-full mt-2">
-            {saveMutation.isPending ? 'Publicando...' : scoreItem?.verified ? 'Atualizar avaliação' : 'Publicar nota e feedback'}
-          </Button>
-        </div>
+        <Textarea id={`feedback-${progress.id}`} value={feedback} onChange={(event) => setFeedback(event.target.value)} rows={3} className="mt-1 text-sm" />
+        <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} size="sm" className="w-full mt-2">
+          {saveMutation.isPending ? 'Validando...' : 'Confirmar participação'}
+        </Button>
       </div>
     </article>
   );
@@ -117,24 +87,17 @@ export default function LessonAnswers() {
     queryKey: ['lesson-answers-progress'],
     queryFn: () => base44.entities.LessonProgress.list('-created_date', 5000),
   });
-  const { data: scores = [], isLoading: scoresLoading } = useQuery({
-    queryKey: ['lesson-answer-scores'],
-    queryFn: () => base44.entities.ScoreItem.list('-updated_date', 10000),
-  });
-
   const orderedLessons = useMemo(() => sortBySequence(lessons), [lessons]);
   const lessonById = useMemo(() => new Map(orderedLessons.map((lesson) => [lesson.id, lesson])), [orderedLessons]);
-  const scoreByAnswer = useMemo(() => new Map(scores
-    .filter((score) => score.category === 'lesson')
-    .map((score) => [`${score.student_email}::${score.ref_id}`, score])), [scores]);
+  const scoreByAnswer = useMemo(() => new Map(), []);
   const answers = progresses.filter((progress) => {
     if (!lessonById.has(progress.lesson_id) || (!progress.summary && !progress.comment)) return false;
     if (lessonFilter !== 'all' && progress.lesson_id !== lessonFilter) return false;
     const haystack = `${progress.student_email || ''} ${progress.summary || ''} ${progress.comment || ''} ${lessonById.get(progress.lesson_id)?.title || ''}`.toLowerCase();
     return haystack.includes(search.trim().toLowerCase());
   });
-  const pendingCount = answers.filter((answer) => !scoreByAnswer.get(`${answer.student_email}::${answer.lesson_id}`)?.verified).length;
-  const isLoading = lessonsLoading || progressLoading || scoresLoading;
+  const pendingCount = answers.filter((answer) => !answer.watched).length;
+  const isLoading = lessonsLoading || progressLoading;
 
   return (
     <main className="app-page max-w-5xl mx-auto animate-fade-in-up">

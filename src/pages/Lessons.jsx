@@ -139,11 +139,7 @@ export default function Lessons() {
     },
     enabled: isTeacher || studentIdentifiers.length > 0,
   });
-  const { data: lessonScores = [] } = useQuery({
-    queryKey: ['lesson-score-feedback', studentIdentifiers.join('|')],
-    queryFn: () => base44.entities.ScoreItem.filter({ student_email: session?.email || session?.code || '' }, '-updated_date', 500),
-    enabled: !isTeacher && studentIdentifiers.length > 0,
-  });
+  const lessonScores = [];
 
   const createMutation = useMutation({
     mutationFn: (data) => adminApi.create('RecordedLesson', data),

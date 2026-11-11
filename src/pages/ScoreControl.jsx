@@ -9,7 +9,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ACADEMIC_MODULES } from '@/lib/academicModules';
 import { buildParticipationRanking } from '@/lib/participationUtils';
 import { isExamPassed, resolveExamAccuracy } from '@/lib/autoCorrectionResponses';
 import { getAvatarPrefixedName, getInitials, resolveAvatarEmoji } from '@/lib/avatarUtils';
@@ -449,9 +448,9 @@ export default function ScoreControl() {
           className="h-9 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground"
         >
           <option value="all">Somatória Geral (Todos os módulos)</option>
-          {ACADEMIC_MODULES.map((mod) => (
-            <option key={mod.number} value={String(mod.number)}>
-              Apenas Módulo {mod.number} — {mod.shortTitle || mod.title}
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((modNum) => (
+            <option key={modNum} value={String(modNum)}>
+              Apenas Módulo {modNum}
             </option>
           ))}
         </select>

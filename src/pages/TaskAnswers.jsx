@@ -15,36 +15,19 @@ function feedbackFor(index) {
   return LESSON_FEEDBACK_OPTIONS[index % LESSON_FEEDBACK_OPTIONS.length];
 }
 
-async function publishReview({ submission, task, feedback, reviewerEmail, scoreItem }) {
-  const points = task.type === 'quiz' ? SCORE_RULES.quiz : SCORE_RULES.task;
-  const category = task.type === 'quiz' ? 'quiz' : 'task';
+async function publishReview({ submission, feedback }) {
   const notes = feedback.trim();
-  const scorePayload = {
-    student_email: submission.student_email,
-    category,
-    ref_id: task.id,
-    ref_title: task.title,
-    score: points,
-    max_score: points,
-    verified: true,
-    notes,
-    reviewed_by: reviewerEmail || '',
-    ...(Number(task.module_number) ? { module_number: Number(task.module_number) } : {}),
-  };
-
-  await adminApi.update('TaskSubmission', submission.id, { grade: points, feedback: notes, status: 'graded' });
-  if (scoreItem?.id) await adminApi.update('ScoreItem', scoreItem.id, scorePayload);
-  else await adminApi.create('ScoreItem', scorePayload);
+  await adminApi.update('TaskSubmission', submission.id, { feedback: notes, status: 'graded' });
 }
 
-function SubmissionCard({ submission, task, scoreItem, reviewerEmail }) {
+function SubmissionCard({ submission, task }) {
   const queryClient = useQueryClient();
-  const [feedback, setFeedback] = useState(submission.feedback || scoreItem?.notes || randomLessonFeedback());
+  const [feedback, setFeedback] = useState(submission.feedback || randomLessonFeedback());
   const mutation = useMutation({
-    mutationFn: () => publishReview({ submission, task, feedback, reviewerEmail, scoreItem }),
+    mutationFn: () => publishReview({ submission, feedback }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['task-answer-data'] });
-      toast.success('Pontuação e resposta publicadas.');
+      toast.success('Resposta e validação publicadas.');
     },
     onError: (error) => toast.error(error?.message || 'Não foi possível avaliar a entrega.'),
   });
@@ -60,7 +43,7 @@ function SubmissionCard({ submission, task, scoreItem, reviewerEmail }) {
           </div>
           <div className="flex items-center gap-2">
             <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold ${graded ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
-              {graded ? <><CheckCircle2 size={11} /> Corrigido · {formatScore(submission.grade ?? SCORE_RULES.task)} pts</> : 'Aguardando correção'}
+              {graded ? <><CheckCircle2 size={11} /> Participação validada</> : 'Aguardando revisão'}
             </span>
             <ChevronDown size={18} aria-hidden="true" className="text-muted-foreground transition-transform group-open:rotate-180" />
             <span className="sr-only">Expandir resposta do aluno</span>
@@ -76,12 +59,12 @@ function SubmissionCard({ submission, task, scoreItem, reviewerEmail }) {
 
           <div className="mt-4 pt-4 border-t border-border">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-              <label className="text-xs font-semibold text-muted-foreground" htmlFor={`feedback-${submission.id}`}>Resposta de parabenização · {formatScore(task.type === 'quiz' ? SCORE_RULES.quiz : SCORE_RULES.task)} pontos</label>
+              <label className="text-xs font-semibold text-muted-foreground" htmlFor={`feedback-${submission.id}`}>Resposta de parabenização</label>
               <button type="button" onClick={() => setFeedback(randomLessonFeedback())} className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"><Shuffle size={11} /> Sortear outra resposta</button>
             </div>
             <Textarea id={`feedback-${submission.id}`} value={feedback} onChange={(event) => setFeedback(event.target.value)} rows={3} className="text-sm" />
             <Button onClick={() => mutation.mutate()} disabled={!feedback.trim() || mutation.isPending} size="sm" className="w-full mt-2 gap-1.5">
-              <Sparkles size={13} /> {mutation.isPending ? 'Publicando...' : graded ? 'Atualizar resposta e pontuação' : 'Responder e pontuar'}
+              <Sparkles size={13} /> {mutation.isPending ? 'Publicando...' : graded ? 'Atualizar devolutiva' : 'Publicar devolutiva'}
             </Button>
           </div>
         </div>
@@ -102,20 +85,18 @@ export default function TaskAnswers() {
   const { data = {}, isLoading } = useQuery({
     queryKey: ['task-answer-data', course],
     queryFn: async () => {
-      const [tasks, submissions, scores] = await Promise.all([
+      const [tasks, submissions] = await Promise.all([
         base44.entities.Task.filter({ course }, '-created_date', 500),
         base44.entities.TaskSubmission.list('-created_date', 5000),
-        base44.entities.ScoreItem.list('-created_date', 10000),
       ]);
       const ids = new Set(tasks.map((task) => task.id));
-      return { tasks: tasks.filter((task) => task.type === 'upload'), submissions: submissions.filter((item) => ids.has(item.task_id)), scores };
+      return { tasks: tasks.filter((task) => task.type === 'upload'), submissions: submissions.filter((item) => ids.has(item.task_id)) };
     },
   });
   const tasks = data.tasks || [];
   const submissions = data.submissions || [];
-  const scores = data.scores || [];
   const taskById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
-  const scoreBySubmission = useMemo(() => new Map(scores.filter((score) => score.category === 'task').map((score) => [`${score.student_email}::${score.ref_id}`, score])), [scores]);
+  const scoreBySubmission = useMemo(() => new Map(), []);
   const pendingCount = submissions.filter((item) => item.status !== 'graded').length;
   const gradedCount = submissions.length - pendingCount;
   const visible = submissions.filter((item) => {
@@ -153,10 +134,10 @@ export default function TaskAnswers() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div className="flex items-start gap-3">
             <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0"><ClipboardCheck size={20} /></div>
-            <div><p className="text-xs uppercase tracking-[0.18em] font-black text-blue-600">Central de correções</p><h1 className="text-2xl font-black text-foreground mt-1">Entregas dos trabalhos</h1><p className="text-sm text-muted-foreground mt-1">Revise, parabenize e pontue todas as entregas sem sair desta tela.</p></div>
+            <div><p className="text-xs uppercase tracking-[0.18em] font-black text-blue-600">Central de devolutivas</p><h1 className="text-2xl font-black text-foreground mt-1">Entregas dos trabalhos</h1><p className="text-sm text-muted-foreground mt-1">Revise e parabenize todas as entregas sem sair desta tela.</p></div>
           </div>
           <div className="sm:text-right">
-            <Button onClick={() => bulkMutation.mutate()} disabled={!visible.length || bulkMutation.isPending} className="gap-2 sm:min-w-52 shadow-lg shadow-primary/15"><WandSparkles size={16} /> {bulkMutation.isPending ? 'Avaliando entregas...' : `Responder e pontuar todos (${visible.length})`}</Button>
+            <Button onClick={() => bulkMutation.mutate()} disabled={!visible.length || bulkMutation.isPending} className="gap-2 sm:min-w-52 shadow-lg shadow-primary/15"><WandSparkles size={16} /> {bulkMutation.isPending ? 'Enviando devolutivas...' : `Responder a todos (${visible.length})`}</Button>
             <p className="mt-1.5 text-[11px] text-muted-foreground">Inclui entregas já corrigidas exibidas no filtro.</p>
           </div>
         </div>
