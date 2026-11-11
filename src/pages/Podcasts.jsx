@@ -249,27 +249,22 @@ export default function Podcasts() {
 
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                    Link do Google NotebookLM *
+                    Link do Áudio Publicado no Google Drive *
                   </label>
                   <Input
-                    placeholder="https://notebooklm.google.com/notebook/..."
+                    placeholder="https://drive.google.com/file/d/.../view?usp=drivesdk"
                     value={form.notebook_url}
-                    onChange={(e) => setForm({ ...form, notebook_url: e.target.value })}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        notebook_url: e.target.value,
+                        audio_url: e.target.value,
+                      })
+                    }
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Cole o link compartilhado do Google NotebookLM para este episódio.
+                    Cole o link compartilhado do áudio no Google Drive (permissão: Qualquer pessoa com o link). O player WR encobre o Drive e reproduz o áudio diretamente.
                   </p>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                    Link de Áudio Direto / Drive (opcional)
-                  </label>
-                  <Input
-                    placeholder="Opcional: URL .mp3/.wav ou link do Google Drive para tocar na onda sonora"
-                    value={form.audio_url}
-                    onChange={(e) => setForm({ ...form, audio_url: e.target.value })}
-                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -446,19 +441,6 @@ export default function Podcasts() {
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {ep.notebook_url && (
-                      <a
-                        href={ep.notebook_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 rounded-xl border border-indigo-400/30 bg-indigo-500/10 px-2.5 py-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20"
-                        title="Abrir no Google NotebookLM"
-                      >
-                        <Sparkles size={11} /> NotebookLM <ExternalLink size={10} />
-                      </a>
-                    )}
-
                     {isTeacher && (
                       <>
                         <button
