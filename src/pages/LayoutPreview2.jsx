@@ -359,10 +359,11 @@ export default function LandingPage({ onLogin }) {
 
   // ── Shared sub-components ──────────────────────────────────────────────────
   const GoldDivider = () => <div className="h-px bg-[#c9a227]/12 my-0" />;
-  const SectionLabel = ({ children }) => (
-    <div className="flex items-center gap-3 mb-8">
-      <div className="h-px w-8" style={{ background: `${G}50` }} />
-      <span className="text-[10px] uppercase tracking-[0.32em] font-light" style={{ color: `${G}80` }}>{children}</span>
+  const SectionLabel = ({ children, center = false }) => (
+    <div className={`mb-7 flex items-center gap-3 ${center ? 'justify-center' : ''}`}>
+      <span className="h-px w-8" style={{ background: `linear-gradient(to right, transparent, ${G}70)` }} />
+      <span className="text-[9.5px] uppercase tracking-[0.34em] font-light" style={{ color: `${G}95` }}>{children}</span>
+      <span className="h-px w-8" style={{ background: `linear-gradient(to left, transparent, ${G}70)` }} />
     </div>
   );
 
@@ -370,139 +371,157 @@ export default function LandingPage({ onLogin }) {
     <div className="site-page scrollbar-invisible text-white" style={{ background: BG }}>
 
       {/* NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${navScrolled ? 'border-b backdrop-blur-xl' : ''}`}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${navScrolled ? 'backdrop-blur-xl' : ''}`}
         style={{
-          paddingTop: `calc(${navScrolled ? '0.75rem' : '1.25rem'} + env(safe-area-inset-top, 0px))`,
-          paddingBottom: navScrolled ? '0.75rem' : '1.25rem',
-          ...(navScrolled ? { background: `${BG}f2`, borderColor: `${G}18` } : {}),
+          paddingTop: `calc(${navScrolled ? '0.6rem' : '1.1rem'} + env(safe-area-inset-top, 0px))`,
+          paddingBottom: navScrolled ? '0.6rem' : '1.1rem',
+          ...(navScrolled ? { background: 'rgba(10,10,12,0.82)', borderBottom: `1px solid ${G}22`, boxShadow: '0 18px 50px -36px rgba(0,0,0,0.9)' } : {}),
         }}>
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between">
+        <div className="site-container flex items-center justify-between gap-4">
           <a href="#top" className="flex items-center gap-3 min-w-0 group">
-            <div className="w-9 h-9 border flex items-center justify-center group-hover:border-[#c9a227]/60 transition-colors" style={{ borderColor: `${G}30` }}>
+            <div className="relative flex h-10 w-10 items-center justify-center border transition-colors duration-300 group-hover:border-[#d4b96a]/60" style={{ borderColor: `${G}33`, background: `linear-gradient(160deg, ${G}14, transparent)` }}>
               <img src={WR_PRIMARY_LOGO} alt="WR" className="w-7 h-7 object-contain" />
             </div>
             <div className="min-w-0">
-              <span className="block text-sm font-light tracking-[0.28em] uppercase text-white">{BRAND_SHORT_NAME}</span>
-              <span className="hidden sm:block text-[9px] uppercase tracking-[0.25em] font-light" style={{ color: `${G}60` }}>Instituto de Desenvolvimento Humano</span>
+              <span className="block text-[13px] font-light tracking-[0.34em] uppercase text-white">{BRAND_SHORT_NAME}</span>
+              <span className="hidden sm:block text-[8.5px] uppercase tracking-[0.26em] font-light mt-0.5" style={{ color: `${G}70` }}>Instituto de Desenvolvimento Humano</span>
             </div>
           </a>
 
-          <div className="hidden md:flex items-center gap-7 text-[11px] text-white/35 uppercase tracking-[0.18em] font-light">
+          <div className="hidden md:flex items-center gap-8 text-[10.5px] text-white/40 uppercase tracking-[0.2em] font-light">
             {[['Metodologia', '#metodologia'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos'], ['FAQ', '#faq'], ['Atendimento Social', '/atendimento-social']].map(([label, href]) =>
-              <a key={label} href={href} className="hover:text-white/70 transition-colors"
-                onMouseEnter={e => { e.currentTarget.style.color = G; }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
-              >{label}</a>
+              <a key={label} href={href} className="site-link hover:text-[#e9d9a6]">{label}</a>
             )}
           </div>
 
-          <div className="flex items-center gap-4">
-            <button onClick={() => setShowLoginModal(true)} className="hidden md:flex text-[10px] uppercase tracking-[0.22em] font-light text-white/35 hover:text-white/60 transition-colors">
-              Área do Aluno
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button onClick={() => setShowLoginModal(true)} className="hidden md:inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-light text-white/40 hover:text-white/75 transition-colors">
+              <Key size={11} style={{ color: `${G}90` }} /> Área do Aluno
             </button>
-            <div className="hidden md:block w-px h-3 bg-white/10" />
-            <a href="#cursos" className="hidden md:block text-[10px] uppercase tracking-[0.22em] font-medium px-5 py-2.5 border transition-all hover:text-black"
-              style={{ borderColor: `${G}60`, color: G }}
-              onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+            <span className="hidden md:block w-px h-4" style={{ background: `${G}25` }} />
+            <a href="#cursos" className="site-btn hidden md:inline-flex !min-h-0 !px-5 !py-2.5 !text-[10px]">
               Inscreva-se
             </a>
-            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden w-9 h-9 border border-white/10 text-white/50 hover:text-white flex items-center justify-center">
-              {mobileMenu ? <X size={15} /> : <Menu size={15} />}
+            <button onClick={() => setMobileMenu(!mobileMenu)} aria-label="Abrir menu" className="md:hidden flex h-10 w-10 items-center justify-center border text-white/60 hover:text-white transition-colors" style={{ borderColor: `${G}25`, background: 'rgba(255,255,255,0.03)' }}>
+              {mobileMenu ? <X size={16} /> : <Menu size={16} />}
             </button>
           </div>
         </div>
 
         {mobileMenu && (
-          <div className="md:hidden mx-5 mt-2 border px-5 py-5 space-y-3" style={{ background: BG3, borderColor: `${G}18` }}>
-            {[['Metodologia', '#metodologia'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos'], ['FAQ', '#faq'], ['Atendimento Social', '/atendimento-social'], ['Validar Certificado', '/validar-certificado']].map(([label, href]) =>
-              <a key={label} href={href} onClick={() => setMobileMenu(false)} className="block text-white/40 hover:text-white/70 py-2 text-[11px] uppercase tracking-[0.2em] transition-all">{label}</a>
-            )}
-            <div className="h-px" style={{ background: `${G}15` }} />
-            <button onClick={() => { setShowLoginModal(true); setMobileMenu(false); }} className="w-full text-center text-white/35 text-[11px] uppercase tracking-[0.2em] py-2">Área do Aluno</button>
-            <a href="#cursos" onClick={() => setMobileMenu(false)} className="block w-full text-center border text-[11px] uppercase tracking-[0.2em] py-3" style={{ borderColor: `${G}60`, color: G }}>Inscreva-se</a>
+          <div className="site-container md:hidden">
+            <div className="mt-3 overflow-hidden border backdrop-blur-xl" style={{ background: 'rgba(20,20,24,0.96)', borderColor: `${G}22` }}>
+              <div className="site-hairline" />
+              <div className="px-5 py-4 space-y-1">
+                {[['Metodologia', '#metodologia'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos'], ['FAQ', '#faq'], ['Atendimento Social', '/atendimento-social'], ['Validar Certificado', '/validar-certificado']].map(([label, href]) =>
+                  <a key={label} href={href} onClick={() => setMobileMenu(false)} className="flex items-center justify-between border-b py-3 text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors last:border-0 hover:text-[#e9d9a6]" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                    {label} <ChevronRight size={12} style={{ color: `${G}60` }} />
+                  </a>
+                )}
+                <button onClick={() => { setShowLoginModal(true); setMobileMenu(false); }} className="flex w-full items-center gap-2 py-3 text-[11px] uppercase tracking-[0.2em] text-white/45">
+                  <Key size={12} style={{ color: `${G}90` }} /> Área do Aluno
+                </button>
+                <a href="#cursos" onClick={() => setMobileMenu(false)} className="site-btn mt-2 w-full">Inscreva-se</a>
+              </div>
+            </div>
           </div>
         )}
       </nav>
 
       {/* HERO */}
-      <div id="top" className="site-hero relative flex items-center justify-center overflow-hidden">
+      <div id="top" className="site-hero">
         {HERO_IMAGES.map((src, i) =>
-          <div key={src} className={`absolute inset-0 transition-opacity duration-[2000ms] ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
-            <img src={src} alt="" className="w-full h-full object-cover" style={{ objectPosition: '50% 35%' }} />
+          <div key={src} className={`absolute inset-0 transition-opacity [transition-duration:2.2s] ${i === heroImg ? 'opacity-100' : 'opacity-0'}`}>
+            <img
+              src={src}
+              alt=""
+              className="h-full w-full object-cover"
+              style={{
+                objectPosition: '50% 32%',
+                transform: i === heroImg ? 'scale(1.04)' : 'scale(1)',
+                transition: 'transform 9s ease-out',
+              }}
+            />
           </div>
         )}
-        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${BG}e0 0%, #0d0d11cc 50%, ${BG}d8 100%)` }} />
-        <div className="absolute inset-x-0 bottom-0 h-56" style={{ background: `linear-gradient(to top, ${BG}, transparent)` }} />
+        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${BG}f2 0%, #0d0d11d6 46%, ${BG}e6 100%)` }} />
+        <div className="site-hero-glow pointer-events-none absolute inset-0" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64" style={{ background: `linear-gradient(to top, ${BG}, transparent)` }} />
 
-        <div className="site-container relative z-10 text-center" style={{ paddingTop: 'calc(7rem + env(safe-area-inset-top, 0px))' }}>
-          <div className="inline-flex items-center gap-3 mb-8">
-            <div className="h-px w-10" style={{ background: `${G}50` }} />
-            <span className="text-[10px] uppercase tracking-[0.35em] font-light" style={{ color: `${G}70` }}>Instituto de Desenvolvimento Humano</span>
-            <div className="h-px w-10" style={{ background: `${G}50` }} />
+        <div className="site-container relative z-10 text-center" style={{ paddingTop: 'calc(6.5rem + env(safe-area-inset-top, 0px))', paddingBottom: '4rem' }}>
+          <div className="mx-auto mb-9 inline-flex items-center gap-3">
+            <span className="h-px w-10 sm:w-14" style={{ background: `linear-gradient(to right, transparent, ${G}70)` }} />
+            <span className="text-[9px] uppercase tracking-[0.38em] font-light sm:text-[10px]" style={{ color: `${G}90` }}>Instituto de Desenvolvimento Humano</span>
+            <span className="h-px w-10 sm:w-14" style={{ background: `linear-gradient(to left, transparent, ${G}70)` }} />
           </div>
 
-          <h1 className="font-thin leading-[0.9] mb-6 tracking-[-0.02em] text-white" style={{ fontSize: 'clamp(3rem,11vw,6.5rem)' }}>
+          <h1 className="font-thin leading-[0.92] mb-7 tracking-[-0.025em] text-white" style={{ fontSize: 'clamp(2.7rem,10vw,6.2rem)' }}>
             Transforme vidas
-            <span className="block font-light italic" style={{ color: G }}>através da cura.</span>
+            <span className="mt-1 block font-light italic" style={{ color: G }}>através da cura.</span>
           </h1>
 
-          <p className="text-base lg:text-lg leading-relaxed max-w-xl mx-auto mb-4 font-light tracking-wide text-white/40">
+          <p className="mx-auto mb-9 max-w-xl text-[15px] leading-relaxed font-light tracking-wide text-white/45 sm:text-base lg:text-lg">
             Torne-se terapeuta com formação profissionalizante reconhecida nacional e internacionalmente. Prática clínica desde a primeira semana.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
+          <div className="mb-11 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
             {[
               { icon: '🎓', label: 'Certificado verificável' },
               { icon: '⚡', label: 'Prática desde a aula 1' },
               { icon: '🏆', label: 'Associado ABED' },
             ].map((b) => (
-              <div key={b.label} className="flex items-center gap-1.5 border px-3 py-1.5 text-[10px] font-light uppercase tracking-[0.15em] text-white/35"
-                style={{ borderColor: `${G}15` }}>
+              <div key={b.label} className="site-pill flex items-center gap-2 px-3.5 py-2 text-[9px] font-light uppercase tracking-[0.16em] text-white/50 sm:text-[10px]">
                 <span>{b.icon}</span> {b.label}
               </div>
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="#cursos" className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] px-8 py-4 border font-medium transition-all"
-              style={{ borderColor: `${G}70`, color: G, background: `${G}12` }}
-              onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = `${G}12`; e.currentTarget.style.color = G; }}>
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+            <a href="#cursos" className="site-btn w-full sm:w-auto">
               Garantir Minha Vaga <ChevronRight size={13} />
             </a>
-            <a href="#metodologia" className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] px-8 py-4 border border-white/10 text-white/35 hover:border-white/25 hover:text-white/55 transition-all font-light">
+            <a href="#metodologia" className="site-btn site-btn--ghost w-full sm:w-auto">
               <Play size={11} className="fill-current" /> Nossa Metodologia
             </a>
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/20 animate-bounce">
+        <div className="absolute bottom-9 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-white/20 animate-bounce sm:flex">
+          <span className="text-[8px] uppercase tracking-[0.3em]">Explore</span>
           <ArrowDown size={13} />
         </div>
-        <div className="absolute bottom-8 right-8 flex gap-2 items-center">
+        <div className="absolute bottom-9 right-6 flex items-center gap-2.5 sm:right-10">
           {HERO_IMAGES.map((_, i) =>
-            <button key={i} onClick={() => setHeroImg(i)} className="h-px transition-all" style={{ width: i === heroImg ? '2rem' : '1rem', background: i === heroImg ? G : 'rgba(255,255,255,0.2)' }} />
+            <button
+              key={i}
+              onClick={() => setHeroImg(i)}
+              aria-label={`Imagem ${i + 1}`}
+              className="h-[2px] transition-all duration-500"
+              style={{ width: i === heroImg ? '2.25rem' : '1rem', background: i === heroImg ? G : 'rgba(255,255,255,0.22)' }}
+            />
           )}
         </div>
       </div>
 
       {/* STATS BAR */}
-      <div className="border-y py-10 px-6" style={{ background: BG2, borderColor: `${G}12` }}>
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-center">
-          {[
-            { value: '4.9★', label: 'Avaliação dos Alunos' },
-            { value: '80h+', label: 'Carga Horária Total' },
-            { value: '4 Meses', label: 'Duração do Curso' },
-            { value: '100%', label: 'Prática desde a Aula 1' },
-            { value: '3', label: 'Formações Disponíveis' },
-            { value: 'ABED', label: 'Associado Oficial' }
-          ].map((s, i) =>
-            <div key={i} className="flex flex-col items-center">
-              <p className="text-2xl lg:text-3xl font-thin tracking-wider" style={{ color: G }}>{s.value}</p>
-              <p className="text-white/30 text-[10px] mt-2 uppercase tracking-[0.22em] font-light leading-tight">{s.label}</p>
-            </div>
-          )}
+      <div className="relative border-y" style={{ background: `linear-gradient(180deg, ${BG2}, #0b0b0e)`, borderColor: `${G}18` }}>
+        <div className="site-container py-9 sm:py-11">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-9 text-center sm:grid-cols-3 lg:grid-cols-6 lg:gap-0">
+            {[
+              { value: '4.9★', label: 'Avaliação dos Alunos' },
+              { value: '80h+', label: 'Carga Horária Total' },
+              { value: '4 Meses', label: 'Duração do Curso' },
+              { value: '100%', label: 'Prática desde a Aula 1' },
+              { value: '3', label: 'Formações Disponíveis' },
+              { value: 'ABED', label: 'Associado Oficial' }
+            ].map((s, i) =>
+              <div key={i} className={`group flex flex-col items-center lg:px-4 ${i > 0 ? 'lg:border-l' : ''}`} style={{ borderColor: `${G}18` }}>
+                <p className="text-[26px] font-thin leading-none tracking-[0.02em] transition-colors duration-300 sm:text-3xl" style={{ color: G }}>{s.value}</p>
+                <span className="mt-2.5 h-px w-6 transition-all duration-300 group-hover:w-10" style={{ background: `${G}60` }} />
+                <p className="mt-2 text-[9px] font-light uppercase leading-snug tracking-[0.22em] text-white/35">{s.label}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -569,7 +588,7 @@ export default function LandingPage({ onLogin }) {
       <section id="professor" className="site-section" style={{ background: BG2 }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <SectionLabel>Seu Mentor</SectionLabel>
+            <SectionLabel center>Seu Mentor</SectionLabel>
             <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Prof. William Ribeiro</h2>
             <p className="text-white/35 mt-2 text-sm font-light uppercase tracking-[0.2em]">Psicoterapeuta · Psicanalista · Sexólogo · Educador</p>
           </div>
@@ -708,24 +727,25 @@ export default function LandingPage({ onLogin }) {
       <section id="cursos" className="site-section" style={{ background: BG }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <SectionLabel>Formações</SectionLabel>
+            <SectionLabel center>Formações</SectionLabel>
             <h2 className="text-4xl lg:text-5xl font-thin text-white tracking-[-0.01em]">Oferta de Matrícula<span className="block font-light italic" style={{ color: G }}>Antecipada</span></h2>
             <p className="text-white/35 mt-3 max-w-2xl mx-auto text-sm font-light">Entre na primeira turma com condição exclusiva: 50% de desconto na primeira mensalidade e 40% de desconto mantido até o final do curso.</p>
             <SocialInitiativeNotice className="mx-auto mt-6 max-w-3xl text-left" />
 
             {/* Timer oferta */}
-            <div className="mt-8 mx-auto max-w-2xl border p-6" style={{ borderColor: `${G}20`, background: BG3 }}>
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-5">
+            <div className="site-card relative mx-auto mt-9 max-w-2xl overflow-hidden p-6 sm:p-7">
+              <span className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${G}90, transparent)` }} />
+              <div className="flex flex-col items-center justify-between gap-6 lg:flex-row">
                 <div className="text-center lg:text-left">
-                  <p className="text-[10px] uppercase tracking-[0.28em] font-light mb-2" style={{ color: `${G}80` }}>Janela especial de 48 horas</p>
-                  <p className="text-white/70 font-light text-base">Garanta 50% na 1ª mensalidade + 40% vitalício até o fim do curso</p>
-                  <p className="text-white/30 text-xs mt-1 font-light">A condição vitalícia vale para inscritos até a abertura da primeira turma.</p>
+                  <p className="mb-2 text-[9px] font-light uppercase tracking-[0.3em]" style={{ color: `${G}90` }}>Janela especial de 48 horas</p>
+                  <p className="text-[15px] font-light leading-snug text-white/80">Garanta 50% na 1ª mensalidade + 40% vitalício até o fim do curso</p>
+                  <p className="mt-1.5 text-[11px] font-light leading-relaxed text-white/35">A condição vitalícia vale para inscritos até a abertura da primeira turma.</p>
                 </div>
-                <div className="shrink-0 grid grid-cols-3 gap-2 text-center">
+                <div className="grid shrink-0 grid-cols-3 gap-2 text-center">
                   {[['Horas', offerHours], ['Min', offerMinutes], ['Seg', offerSeconds]].map(([label, value]) => (
-                    <div key={label} className="min-w-[68px] border px-3 py-2.5" style={{ borderColor: `${G}20`, background: BG }}>
-                      <p className="text-xl font-light text-white font-mono" style={{ color: G }}>{value}</p>
-                      <p className="text-[9px] text-white/25 uppercase tracking-[0.2em] mt-0.5">{label}</p>
+                    <div key={label} className="min-w-[66px] border px-2.5 py-2.5" style={{ borderColor: `${G}22`, background: 'rgba(255,255,255,0.02)' }}>
+                      <p className="font-mono text-xl font-light tabular-nums" style={{ color: G }}>{value}</p>
+                      <p className="mt-1 text-[8px] uppercase tracking-[0.22em] text-white/30">{label}</p>
                     </div>
                   ))}
                 </div>
@@ -760,54 +780,53 @@ export default function LandingPage({ onLogin }) {
           </div>
 
           {/* Cards dos Cursos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {COURSES.map((c, i) =>
-              <div key={i} className="border flex flex-col transition-all overflow-hidden" style={{ borderColor: i === 0 ? `${G}35` : `${G}12` }}>
-                <div className="relative h-44 overflow-hidden">
+              <div key={i} className="site-card group relative flex flex-col overflow-hidden" style={{ borderColor: i === 0 ? `${G}42` : undefined }}>
+                {i === 0 && <span className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px" style={{ background: `linear-gradient(90deg, transparent, ${G}, transparent)` }} />}
+                <div className="relative h-48 overflow-hidden">
                   {c.imgs.map((img, j) =>
-                    <img key={j} src={img} alt={c.title} className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
+                    <img key={j} src={img} alt={c.title} className={`absolute inset-0 h-full w-full object-cover object-center transition-all duration-700 group-hover:scale-105 ${j === courseImgs[i] ? 'opacity-100' : 'opacity-0'}`} />
                   )}
-                  <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG3}, ${BG3}10)` }} />
-                  <div className="absolute top-3 left-3 border px-2.5 py-1 text-[9px] font-light uppercase tracking-[0.2em]" style={{ borderColor: `${G}50`, color: G, background: `${BG}cc` }}>
+                  <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${BG3}, ${BG3}18 55%, transparent)` }} />
+                  <div className="absolute left-4 top-4 site-pill px-2.5 py-1 text-[8.5px] font-medium uppercase tracking-[0.22em]" style={{ borderColor: `${G}55`, color: G, background: 'rgba(10,10,12,0.72)' }}>
                     {c.tag}
                   </div>
-                  <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-2 items-center">
+                  <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-2">
                     {c.imgs.map((_, j) =>
                       <button key={j} onClick={() => setCourseImgs((prev) => prev.map((v, idx) => idx === i ? j : v))}
-                        className="h-px transition-all" style={{ width: j === courseImgs[i] ? '1.5rem' : '0.75rem', background: j === courseImgs[i] ? G : 'rgba(255,255,255,0.25)' }} />
+                        aria-label={`Imagem ${j + 1}`}
+                        className="h-[2px] transition-all duration-500" style={{ width: j === courseImgs[i] ? '1.6rem' : '0.8rem', background: j === courseImgs[i] ? G : 'rgba(255,255,255,0.28)' }} />
                     )}
                   </div>
                 </div>
 
-                <div className="p-5 flex flex-col flex-1" style={{ background: BG3 }}>
-                  <h3 className="font-light text-white text-sm uppercase tracking-[0.18em] mb-1">{c.title}</h3>
-                  <p className="text-white/30 text-xs leading-relaxed mb-4 font-light">{c.subtitle}</p>
-                  <div className="space-y-1.5 mb-5 flex-1">
+                <div className="flex flex-1 flex-col p-5 sm:p-6" style={{ background: `linear-gradient(180deg, ${BG3}, #101014)` }}>
+                  <h3 className="mb-1.5 text-[13px] font-light uppercase tracking-[0.2em] text-white">{c.title}</h3>
+                  <p className="mb-5 text-[11.5px] font-light leading-relaxed text-white/35">{c.subtitle}</p>
+                  <div className="mb-5 flex-1 space-y-2">
                     {c.highlights.map((h, j) =>
-                      <div key={j} className="flex items-center gap-2 text-xs text-white/35 font-light">
-                        <div className="w-1 h-1 shrink-0" style={{ background: `${G}80` }} />
+                      <div key={j} className="flex items-start gap-2.5 text-[11.5px] font-light leading-snug text-white/45">
+                        <span className="mt-[6px] h-px w-2.5 shrink-0" style={{ background: `${G}90` }} />
                         {h}
                       </div>
                     )}
                   </div>
-                  <div className="pt-4 border-t" style={{ borderColor: `${G}10` }}>
-                    <div className="mb-4">
-                      <p className="text-[10px] text-white/30 mb-0.5 font-light uppercase tracking-[0.15em]">Oferta ativa por 48h</p>
-                      <p className="text-xs text-white/25 mb-0.5 font-light">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
-                      <p className="text-[11px] font-light mb-0.5" style={{ color: `${G}80` }}>Primeira mensalidade com 50%:</p>
-                      <p className="text-2xl font-thin text-white">{c.firstMonthPrice}</p>
-                      <p className="text-[11px] text-white/30 mt-2 font-light">Depois, 40% de desconto vitalício:</p>
-                      <p className="text-xl font-thin text-white">{c.price} <span className="text-xs font-light text-white/30">{c.period}</span></p>
-                      <SocialInitiativeNotice compact className="mt-4 rounded-none" />
+                  <div className="border-t pt-4" style={{ borderColor: `${G}18` }}>
+                    <div className="mb-4 border p-4" style={{ borderColor: `${G}14`, background: 'rgba(255,255,255,0.02)' }}>
+                      <p className="mb-1 text-[8.5px] font-light uppercase tracking-[0.22em] text-white/35">Oferta ativa por 48h</p>
+                      <p className="mb-2.5 text-[11px] font-light text-white/30">Valor cheio: <span className="line-through">{c.originalPrice}</span></p>
+                      <p className="mb-0.5 text-[10px] font-light uppercase tracking-[0.12em]" style={{ color: `${G}90` }}>Primeira mensalidade com 50%</p>
+                      <p className="text-[26px] font-thin leading-tight text-white">{c.firstMonthPrice}</p>
+                      <div className="my-3 h-px" style={{ background: `${G}14` }} />
+                      <p className="text-[10px] font-light uppercase tracking-[0.12em] text-white/35">Depois, 40% vitalício</p>
+                      <p className="text-lg font-thin text-white">{c.price} <span className="text-[11px] font-light text-white/30">{c.period}</span></p>
+                      <SocialInitiativeNotice compact className="mt-3.5 rounded-none" />
                     </div>
-                    <a href={`/ementa-cursos#${c.slug}`} className="w-full mb-2 px-4 py-2.5 border text-[11px] text-white/40 font-light uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:text-white/60 transition-all" style={{ borderColor: `${G}12` }}>
+                    <a href={`/ementa-cursos#${c.slug}`} className="mb-2 flex w-full items-center justify-center gap-2 border py-2.5 text-[10px] font-light uppercase tracking-[0.18em] text-white/45 transition-colors hover:border-[#d4b96a]/40 hover:text-white/75" style={{ borderColor: `${G}18` }}>
                       <BookOpen size={11} /> Ver ementa do curso
                     </a>
-                    <button onClick={() => openCourseReservation(c)}
-                      className="w-full px-4 py-3 border text-[11px] font-medium uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
-                      style={{ borderColor: `${G}60`, color: G }}
-                      onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                    <button onClick={() => openCourseReservation(c)} className="site-btn w-full">
                       <MessageCircle size={11} /> Quero Me Inscrever
                     </button>
                   </div>
@@ -933,7 +952,7 @@ export default function LandingPage({ onLogin }) {
       <section id="depoimentos" className="site-section" style={{ background: BG2 }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <SectionLabel>Depoimentos Verificados</SectionLabel>
+            <SectionLabel center>Depoimentos Verificados</SectionLabel>
             <h2 className="text-3xl font-thin text-white tracking-[-0.01em]">O que dizem nossos alunos</h2>
             <p className="text-white/30 text-xs mt-2 font-light uppercase tracking-[0.2em]">Relatos reais · nomes e identidades preservados pelos próprios alunos</p>
           </div>
@@ -942,18 +961,18 @@ export default function LandingPage({ onLogin }) {
               const avatarColors = ['#8b5cf6','#059669','#2563eb','#dc2626','#d97706','#0891b2'];
               const color = avatarColors[i % avatarColors.length];
               return (
-                <div key={i} className="border p-6 flex flex-col transition-all h-full group" style={{ borderColor: `${G}10` }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = `${G}22`}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = `${G}10`}>
-                  <div className="flex gap-0.5 mb-4">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={11} style={{ color: G, fill: G }} />)}</div>
-                  <Quote size={16} className="mb-2 shrink-0" style={{ color: `${G}20` }} />
-                  <p className="text-white/45 leading-relaxed mb-5 flex-1 text-sm font-light italic">"{t.text}"</p>
-                  <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: `${G}08` }}>
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium shrink-0 text-white"
+                <div key={i} className="site-card group flex h-full flex-col p-6 sm:p-7">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex gap-1">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} size={11} style={{ color: G, fill: G }} />)}</div>
+                    <Quote size={18} className="shrink-0" style={{ color: `${G}28` }} />
+                  </div>
+                  <p className="mb-6 flex-1 text-[13.5px] font-light italic leading-relaxed text-white/50">"{t.text}"</p>
+                  <div className="mt-auto flex items-center gap-3 border-t pt-4" style={{ borderColor: `${G}12` }}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-medium text-white ring-1 ring-white/10"
                       style={{ background: color }}>{t.name[0]}</div>
-                    <div>
-                      <p className="text-white/65 text-xs font-medium uppercase tracking-[0.12em]">{t.name}</p>
-                      <p className="text-white/25 text-[10px] font-light mt-0.5">Aluno(a) verificado(a)</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-white/70">{t.name}</p>
+                      <p className="mt-0.5 text-[9.5px] font-light uppercase tracking-[0.12em] text-white/25">Aluno(a) verificado(a)</p>
                     </div>
                   </div>
                 </div>
@@ -967,7 +986,7 @@ export default function LandingPage({ onLogin }) {
       <section id="faq" className="site-section" style={{ background: BG }}>
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <SectionLabel>Perguntas Frequentes</SectionLabel>
+            <SectionLabel center>Perguntas Frequentes</SectionLabel>
             <h2 className="text-3xl font-thin text-white tracking-[-0.01em]">Dúvidas comuns</h2>
           </div>
           <FaqSection />
@@ -978,55 +997,75 @@ export default function LandingPage({ onLogin }) {
       <section className="site-section relative overflow-hidden" style={{ background: BG }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at center, ${G}08, transparent 65%)` }} />
         <div className="max-w-2xl mx-auto text-center relative z-10">
-          <div className="h-px w-20 mx-auto mb-10" style={{ background: `${G}40` }} />
-          <h2 className="text-4xl lg:text-5xl font-thin text-white mb-4 tracking-[-0.01em]">Pronto para começar<span className="block font-light italic" style={{ color: G }}>sua jornada?</span></h2>
-          <p className="text-white/35 text-sm mb-10 font-light">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#cursos" className="inline-flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.25em] border px-10 py-4 font-medium transition-all"
-              style={{ borderColor: `${G}60`, color: G }}
-              onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+          <div className="mx-auto mb-10 h-px w-24" style={{ background: `linear-gradient(90deg, transparent, ${G}80, transparent)` }} />
+          <h2 className="mb-4 text-4xl font-thin tracking-[-0.015em] text-white lg:text-5xl">Pronto para começar<span className="block font-light italic" style={{ color: G }}>sua jornada?</span></h2>
+          <p className="mx-auto mb-10 max-w-md text-sm font-light leading-relaxed text-white/40">Vagas limitadas para a turma 2026. Inscreva-se agora e garanta sua transformação.</p>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+            <a href="#cursos" className="site-btn site-btn--solid w-full sm:w-auto">
               Garantir Minha Vaga <ChevronRight size={13} />
             </a>
-            <button onClick={() => setShowLoginModal(true)} className="inline-flex items-center justify-center gap-2 border border-white/10 text-white/30 text-[11px] uppercase tracking-[0.25em] px-8 py-4 hover:border-white/20 hover:text-white/50 transition-all font-light">
+            <button onClick={() => setShowLoginModal(true)} className="site-btn site-btn--ghost w-full sm:w-auto">
               Já sou aluno
             </button>
           </div>
-          <div className="h-px w-20 mx-auto mt-10" style={{ background: `${G}25` }} />
+          <div className="mx-auto mt-10 h-px w-24" style={{ background: `linear-gradient(90deg, transparent, ${G}40, transparent)` }} />
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t py-12 px-5 sm:px-8" style={{ background: BG2, borderColor: `${G}12` }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 border flex items-center justify-center" style={{ borderColor: `${G}25` }}>
-                <img src={WR_PRIMARY_LOGO} alt="WR" className="w-6 h-6 object-contain" />
+      <footer className="relative" style={{ background: '#08080a' }}>
+        <div className="site-hairline" />
+        <div className="site-container py-14">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-8">
+            <div className="md:col-span-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center border" style={{ borderColor: `${G}30`, background: `linear-gradient(160deg, ${G}12, transparent)` }}>
+                  <img src={WR_PRIMARY_LOGO} alt="WR" className="h-7 w-7 object-contain" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-light uppercase tracking-[0.28em] text-white/85">{BRAND_SHORT_NAME}</p>
+                  <p className="mt-1 text-[8.5px] font-light uppercase tracking-[0.2em]" style={{ color: `${G}70` }}>Instituto de Desenvolvimento Humano</p>
+                </div>
               </div>
-              <div>
-                <p className="text-white/70 font-light text-sm uppercase tracking-[0.2em]">{BRAND_LEGAL_NAME}</p>
-                <p className="text-white/25 text-[10px] font-light mt-0.5">CNPJ {BRAND_CNPJ}</p>
+              <p className="mt-5 max-w-xs text-[11.5px] font-light leading-relaxed text-white/30">
+                {BRAND_LEGAL_NAME} · CNPJ {BRAND_CNPJ}
+              </p>
+              <button onClick={() => setShowLoginModal(true)} className="mt-6 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-white/40 transition-colors hover:text-[#e9d9a6]">
+                <Key size={11} style={{ color: `${G}90` }} /> Área do Aluno
+              </button>
+            </div>
+
+            <div className="md:col-span-3">
+              <p className="mb-4 text-[8.5px] font-semibold uppercase tracking-[0.28em] text-white/35">Navegação</p>
+              <div className="flex flex-col gap-2.5">
+                {[['Metodologia', '#metodologia'], ['Cursos', '#cursos'], ['Depoimentos', '#depoimentos'], ['FAQ', '#faq'], ['Atendimento Social', '/atendimento-social']].map(([label, href]) =>
+                  <a key={label} href={href} className="text-[11.5px] font-light text-white/40 transition-colors hover:text-white/80">{label}</a>
+                )}
               </div>
             </div>
-            <div className="flex flex-wrap gap-6 text-white/25 text-[11px] font-light uppercase tracking-[0.15em]">
-              {[{ label: 'Política de Trabalho', href: '/politica' }, { label: 'Termos de Uso', href: '/termos' }, { label: 'Privacidade', href: '/privacidade' }].map((l) =>
-                <a key={l.label} href={l.href} className="hover:text-white/50 transition-colors">{l.label}</a>
-              )}
+
+            <div className="md:col-span-4">
+              <p className="mb-4 text-[8.5px] font-semibold uppercase tracking-[0.28em] text-white/35">Institucional</p>
+              <div className="flex flex-col gap-2.5">
+                {[{ label: 'Política de Trabalho', href: '/politica' }, { label: 'Termos de Uso', href: '/termos' }, { label: 'Privacidade', href: '/privacidade' }, { label: 'Validar Certificado', href: '/validar-certificado' }].map((l) =>
+                  <a key={l.label} href={l.href} className="text-[11.5px] font-light text-white/40 transition-colors hover:text-white/80">{l.label}</a>
+                )}
+              </div>
             </div>
           </div>
-          <div className="border-t pt-6 flex flex-col md:flex-row items-center justify-between gap-3" style={{ borderColor: `${G}08` }}>
-            <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3">
-              <p className="text-white/20 text-[10px] font-light">{BRAND_LEGAL_NAME} © 2026 · CNPJ {BRAND_CNPJ}</p>
-              <span className="text-white/10 hidden sm:inline">·</span>
-              <p className="text-white/20 text-[10px] font-light">Feito com <span className="text-red-400/60">♥</span> pela <a href="/wr-tec" className="hover:text-white/40 transition-colors" style={{ color: `${G}60` }}>WR-TEC®</a> © 2026</p>
+
+          <div className="mt-12 flex flex-col items-center justify-between gap-5 border-t pt-7 md:flex-row" style={{ borderColor: `${G}14` }}>
+            <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-3">
+              <p className="text-[10px] font-light text-white/25">{BRAND_LEGAL_NAME} © 2026 · CNPJ {BRAND_CNPJ}</p>
+              <span className="hidden text-white/10 sm:inline">·</span>
+              <p className="text-[10px] font-light text-white/25">Feito com <span className="text-red-400/60">♥</span> pela <a href="/wr-tec" className="transition-colors hover:text-white/50" style={{ color: `${G}70` }}>WR-TEC®</a> © 2026</p>
             </div>
             <div className="flex items-center gap-4">
               <img src="https://media.base44.com/images/public/69f55577840a3c93cee191be/fb3aaf448_LogotipoSOMOSASSOCIADOSABED-Branco.png"
-                alt="ABED" className="h-7 object-contain opacity-20 hover:opacity-50 transition-opacity" />
-              <div className="flex items-center gap-1.5 border px-3 py-1" style={{ borderColor: `${G}12` }}>
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: G }} />
-                <span className="text-white/20 text-[10px] font-mono font-light tracking-widest">V-003-00</span>
+                alt="ABED" className="h-7 object-contain opacity-25 transition-opacity hover:opacity-60" />
+              <div className="flex items-center gap-1.5 border px-3 py-1" style={{ borderColor: `${G}18` }}>
+                <div className="h-1.5 w-1.5 rounded-full" style={{ background: G }} />
+                <span className="font-mono text-[10px] font-light tracking-widest text-white/25">V-003-00</span>
               </div>
             </div>
           </div>
@@ -1164,62 +1203,60 @@ export default function LandingPage({ onLogin }) {
 
       {/* LOGIN MODAL */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowLoginModal(false)}>
-          <div className="border p-8 w-full max-w-sm shadow-2xl" style={{ background: BG3, borderColor: `${G}20` }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-7">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm" onClick={() => setShowLoginModal(false)}>
+          <div className="relative w-full max-w-sm overflow-hidden border p-7 shadow-2xl sm:p-8" style={{ background: 'linear-gradient(180deg, #17171b, #101014)', borderColor: `${G}28` }} onClick={(e) => e.stopPropagation()}>
+            <span className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${G}, transparent)` }} />
+            <div className="mb-7 flex items-start justify-between">
               <div>
-                <h3 className="text-white/80 font-light text-sm uppercase tracking-[0.25em]">Área do Aluno</h3>
-                <p className="text-white/25 text-[10px] mt-0.5 font-light uppercase tracking-[0.15em]">Acesso seguro à plataforma</p>
+                <div className="mb-3 flex h-10 w-10 items-center justify-center border" style={{ borderColor: `${G}30`, background: `linear-gradient(160deg, ${G}14, transparent)` }}>
+                  <img src={WR_PRIMARY_LOGO} alt="WR" className="h-6 w-6 object-contain" />
+                </div>
+                <h3 className="text-[12px] font-light uppercase tracking-[0.28em] text-white/85">Área do Aluno</h3>
+                <p className="mt-1 text-[9px] font-light uppercase tracking-[0.18em]" style={{ color: `${G}70` }}>Acesso seguro à plataforma</p>
               </div>
-              <button onClick={() => { setShowLoginModal(false); setError(''); }} className="text-white/25 hover:text-white/60 transition-colors"><X size={15} /></button>
+              <button onClick={() => { setShowLoginModal(false); setError(''); }} aria-label="Fechar" className="text-white/30 transition-colors hover:text-white/70"><X size={16} /></button>
             </div>
 
-            <div className="flex gap-2 border p-1.5 mb-5" style={{ borderColor: `${G}15` }}>
+            <div className="mb-5 flex gap-1.5 border p-1.5" style={{ borderColor: `${G}18`, background: 'rgba(255,255,255,0.02)' }}>
               {['code', 'admin'].map((m) =>
                 <button key={m} onClick={() => { setMode(m); setError(''); }}
-                  className="flex-1 py-2.5 text-[10px] font-light transition-all flex items-center justify-center gap-1.5 uppercase tracking-[0.18em]"
-                  style={mode === m ? { background: G, color: '#000' } : { color: 'rgba(255,255,255,0.25)' }}>
+                  className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[9.5px] font-light uppercase tracking-[0.2em] transition-all"
+                  style={mode === m ? { background: G, color: '#0a0a0c' } : { color: 'rgba(255,255,255,0.35)' }}>
                   {m === 'code' ? <><Key size={10} /> Código</> : <><Shield size={10} /> Admin</>}
                 </button>
               )}
             </div>
 
             {error && (
-              <div className="flex items-center gap-2.5 border text-white/50 text-xs p-3 mb-4 font-light" style={{ borderColor: 'rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.06)' }}>
-                <AlertCircle size={11} className="text-red-400/70 shrink-0" /> {error}
+              <div className="mb-4 flex items-center gap-2.5 border p-3 text-[11px] font-light text-white/60" style={{ borderColor: 'rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.07)' }}>
+                <AlertCircle size={11} className="shrink-0 text-red-400/70" /> {error}
               </div>
             )}
 
             {mode === 'code' ? (
               <form onSubmit={handleCodeLogin} className="space-y-4">
+                <label className="block text-[9px] font-light uppercase tracking-[0.22em] text-white/35">Código de acesso</label>
                 <input placeholder="EDU-XXXX-XXXX" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="w-full border text-white placeholder:text-white/20 h-12 text-center text-base tracking-[0.3em] font-mono focus:outline-none"
-                  style={{ background: BG, borderColor: `${G}20` }} autoCapitalize="characters" />
+                  className="h-12 w-full border text-center font-mono text-[15px] tracking-[0.3em] text-white placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-[#d4b96a]/40"
+                  style={{ background: 'rgba(10,10,12,0.85)', borderColor: `${G}25` }} autoCapitalize="characters" />
                 <button type="submit" disabled={code.length < 3 || loading}
-                  className="w-full h-12 border text-xs uppercase tracking-[0.22em] font-medium flex items-center justify-center gap-2 disabled:opacity-40 transition-all"
-                  style={{ borderColor: `${G}60`, color: G }}
-                  onMouseEnter={e => { if (!loading && code.length >= 3) { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; } }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
-                  {loading ? <><div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" /> Verificando...</> : <>Entrar na Plataforma <ChevronRight size={12} /></>}
+                  className="site-btn w-full disabled:opacity-40">
+                  {loading ? <><div className="h-4 w-4 animate-spin rounded-full border border-current border-t-transparent" /> Verificando...</> : <>Entrar na Plataforma <ChevronRight size={12} /></>}
                 </button>
-                <label className="flex items-center justify-center gap-2 text-[11px] text-white/40 font-light cursor-pointer">
+                <label className="flex cursor-pointer items-center justify-center gap-2 text-[10.5px] font-light text-white/40">
                   <input type="checkbox" checked={rememberCode} onChange={(e) => setRememberCode(e.target.checked)} className="accent-[#d4b96a]" />
                   Lembrar acesso neste dispositivo
                 </label>
               </form>
             ) : (
               <div className="space-y-4">
-                <div className="text-center space-y-2">
-                  <div className="w-12 h-12 mx-auto border flex items-center justify-center" style={{ borderColor: `${G}25` }}>
+                <div className="space-y-2 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center border" style={{ borderColor: `${G}28` }}>
                     <Shield size={20} style={{ color: G }} />
                   </div>
-                  <p className="text-white/40 text-xs font-light leading-relaxed">Acesso restrito ao administrador.<br/>Autenticação obrigatória via conta Google.</p>
+                  <p className="text-[11.5px] font-light leading-relaxed text-white/45">Acesso restrito ao administrador.<br/>Autenticação obrigatória via conta Google.</p>
                 </div>
-                <button onClick={handleGoogleLogin}
-                  className="w-full h-11 border text-xs uppercase tracking-[0.2em] font-medium flex items-center justify-center gap-2.5 transition-all"
-                  style={{ borderColor: `${G}60`, color: G }}
-                  onMouseEnter={e => { e.currentTarget.style.background = G; e.currentTarget.style.color = '#000'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = G; }}>
+                <button onClick={handleGoogleLogin} className="site-btn w-full">
                   <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                   Entrar com Google
                 </button>

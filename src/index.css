@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import './styles/wr-edu-theme.css';
+@import './styles/wr-site.css';
 
 @tailwind base;
 @tailwind components;
@@ -128,8 +129,9 @@ textarea::placeholder {
   width: 100%;
   max-width: 100%;
   margin-inline: auto;
-  padding-inline: 0.75rem;
-  padding-block: 0.75rem;
+  padding-inline: 0.95rem;
+  padding-block: 1rem;
+  padding-bottom: 1.75rem;
 }
 
 .app-page--wide,

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { BRAND_LEGAL_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
+import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 
 // ── Shared theme util (used by MobileHeader + Sidebar)
@@ -85,15 +85,26 @@ export default function MobileHeader() {
   const toggleTheme = () => setTheme((prev) => prev === 'dark' ? 'light' : 'dark');
 
   return (
-    <header className="lg:hidden flex items-center gap-3 px-4 bg-sidebar border-b border-sidebar-border shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))', paddingBottom: '0.75rem' }}>
-      <div className="w-7 h-7 flex items-center justify-center">
-        <img src={WR_PRIMARY_LOGO} alt="WR" className="w-full h-full object-contain" />
+    <header
+      className="relative lg:hidden flex items-center gap-3 px-4 bg-sidebar shrink-0"
+      style={{ paddingTop: 'calc(0.7rem + env(safe-area-inset-top, 0px))', paddingBottom: '0.7rem' }}
+    >
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sidebar-primary/30 bg-gradient-to-br from-sidebar-primary/15 to-transparent">
+        <img src={WR_PRIMARY_LOGO} alt="WR" className="h-6 w-6 object-contain" />
       </div>
-      <h1 className="text-sm font-bold text-sidebar-foreground tracking-tight">{label}</h1>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-semibold leading-tight text-sidebar-foreground">{label}</p>
+        <p className="mt-0.5 truncate text-[8px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/40">
+          {BRAND_SHORT_NAME} · Instituto de Desenvolvimento Humano
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
-        <span className="hidden sm:inline text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">{BRAND_LEGAL_NAME}</span>
       </div>
+      <span
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+        style={{ backgroundImage: 'linear-gradient(90deg, transparent, hsl(var(--sidebar-primary) / 0.35), transparent)' }}
+      />
     </header>
   );
 }
