@@ -1,4 +1,5 @@
 const APOSTILA_PREFIX = 'apostila:';
+const PODCAST_PREFIX = 'podcast:';
 
 /**
  * Converts a LessonProgress reference into the entity query needed to resolve
@@ -7,6 +8,10 @@ const APOSTILA_PREFIX = 'apostila:';
  */
 export function parseLessonReference(value = '') {
   const lessonId = String(value || '').trim();
+  if (lessonId.startsWith(PODCAST_PREFIX)) {
+    const podcastId = lessonId.slice(PODCAST_PREFIX.length).trim();
+    return podcastId ? { kind: 'podcast', lessonId, podcastId } : null;
+  }
   if (!lessonId.startsWith(APOSTILA_PREFIX)) {
     return lessonId ? { kind: 'recorded', lessonId } : null;
   }
@@ -25,6 +30,9 @@ export function parseLessonReference(value = '') {
 export function lessonReferenceTitle(reference, record) {
   if (reference?.kind === 'apostila') {
     return record?.lesson_title || record?.title || 'Aula da apostila';
+  }
+  if (reference?.kind === 'podcast') {
+    return record?.title ? `Podcast: ${record.title}` : 'Episódio de Podcast';
   }
   return record?.title || 'Aula assistida';
 }

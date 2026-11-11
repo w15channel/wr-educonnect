@@ -15,7 +15,7 @@ import {
   MessageSquare, FileText,
   BarChart3, Users, LogOut, Play, X, Bell, User, Key,
   CalendarDays, DollarSign, GraduationCap, Brain,
-  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound
+  ChevronRight, Trophy, Award, Crown, Heart, BookOpen, Hash, UsersRound, Headphones, ClipboardCheck
 } from 'lucide-react';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -29,12 +29,14 @@ const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 const COURSE_LABELS = { tcc: '🧠 TC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
 
 const adminGroups = [
-  { label: 'Classe', items: [
+  { label: 'Conteúdo', items: [
     { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
+    { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-indigo-400' },
     { icon: Play, label: 'Aulas', path: '/lessons', color: 'text-purple-400' },
     { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
     { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
-    { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
+    { icon: GraduationCap, label: 'Provas', path: '/exams', color: 'text-violet-400' },
+    { icon: Headphones, label: 'Podcast', path: '/podcasts', color: 'text-fuchsia-400' },
   ]},
   { label: 'Comunidade', items: [
     { icon: Hash, label: 'Mural de Superação', path: '/chat', color: 'text-blue-400' },
@@ -62,11 +64,13 @@ const adminGroups = [
 // Alunos não veem o atalho de Aulas (gravação indisponível);
 // a Apostila já cobre o conteúdo de estudo.
 const studentGroups = [
-  { label: 'Classe', items: [
+  { label: 'Conteúdo', items: [
     { icon: BarChart3, label: 'Dashboard', path: '/', color: 'text-blue-400' },
+    { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-indigo-400' },
     { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
     { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
-    { icon: GraduationCap, label: 'Provas', path: '/tests', color: 'text-violet-400' },
+    { icon: GraduationCap, label: 'Provas', path: '/exams', color: 'text-violet-400' },
+    { icon: Headphones, label: 'Podcast', path: '/podcasts', color: 'text-fuchsia-400' },
   ]},
   { label: 'Comunidade', items: [
     { icon: Trophy, label: 'Pontuação Geral', path: '/pontuacao-geral', color: 'text-yellow-400' },

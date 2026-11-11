@@ -10,14 +10,14 @@ const ADMIN_ENTITIES = new Set([
   'Notification', 'DailyChallenge', 'AdminCredential',
   'DailyChallengeResponse', 'ForumPost', 'ForumReply', 'LessonProgress',
   'LiveAttendance', 'ChatMessage', 'Exam', 'Mentorship', 'MentorshipReflection',
-  'WallPublication',
+  'WallPublication', 'Podcast',
 ]);
 
 // Entidades que teacher/suporte podem criar e atualizar (sem excluir)
-// Restritas a conteúdo acadêmico: aulas, tarefas, provas, avisos, calendário
+// Restritas a conteúdo acadêmico: aulas, tarefas, provas, avisos, calendário, podcasts
 const TEACHER_ENTITIES = new Set([
   'RecordedLesson', 'Task', 'LiveSession', 'Announcement',
-  'Exam', 'BookChapter', 'CalendarEvent',
+  'Exam', 'BookChapter', 'CalendarEvent', 'Podcast',
 ]);
 
 function cleanObject(obj = {}) {

@@ -41,6 +41,7 @@ import Apostila from './pages/Apostila';
 import Exams from './pages/Exams';
 import Checklist from './pages/Checklist';
 import ExamQuizView from './pages/ExamQuizView';
+import Podcasts from './pages/Podcasts';
 
 import MeuBestSeller from './pages/MeuBestSeller';
 import ClassChat from './pages/ClassChat';
@@ -118,6 +119,7 @@ function AppRoutesTree() {
         <Route path="classe" element={<Classe />} />
         <Route path="ofensivas" element={<Ofensivas />} />
         <Route path="apostila" element={<Apostila />} />
+        <Route path="podcasts" element={<Podcasts />} />
         <Route path="ring" element={<Notifications />} />
         <Route path="practice" element={<Practice />} />
       </Route>
@@ -186,6 +188,7 @@ const AuthenticatedApp = () => {
         <Route path="historico" element={<HistoricoAcademico />} />
         <Route path="certificadora" element={<Certificadora />} />
         <Route path="apostila" element={<Apostila />} />
+        <Route path="podcasts" element={<Podcasts />} />
         <Route path="profile" element={<Profile />} />
         <Route path="study-profile" element={<StudyProfile />} />
         <Route path="classe" element={<Classe />} />
@@ -228,6 +231,7 @@ const AuthenticatedApp = () => {
       <Route path="/classe" element={<Navigate to={`${base}/classe`} replace />} />
       <Route path="/ofensivas" element={<Navigate to={`${base}/ofensivas`} replace />} />
       <Route path="/apostila" element={<Navigate to={`${base}/apostila`} replace />} />
+      <Route path="/podcasts" element={<Navigate to={`${base}/podcasts`} replace />} />
       <Route path="/practice" element={<Navigate to={`${base}/practice`} replace />} />
 
       {/* Old scoped paths with courseSlug → strip slug */}

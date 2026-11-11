@@ -1,0 +1,83 @@
+{
+  "name": "Podcast",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do epis\u00f3dio do podcast"
+    },
+    "description": {
+      "type": "string",
+      "description": "Resumo, pauta ou notas de estudo do epis\u00f3dio"
+    },
+    "notebook_url": {
+      "type": "string",
+      "description": "Link do Google NotebookLM (ou link compartilhado do epis\u00f3dio)"
+    },
+    "audio_url": {
+      "type": "string",
+      "description": "Link opcional de \u00e1udio direto (MP3/WAV/Drive) para reprodu\u00e7\u00e3o nativa no player"
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "pink"
+      ],
+      "default": "tcc",
+      "description": "Curso ao qual o podcast pertence"
+    },
+    "module_number": {
+      "type": "number",
+      "default": 1,
+      "description": "M\u00f3dulo acad\u00eamico (1 a 10)"
+    },
+    "duration": {
+      "type": "string",
+      "description": "Dura\u00e7\u00e3o estimada do epis\u00f3dio (ex: 14:30)"
+    },
+    "hosts": {
+      "type": "string",
+      "default": "Google NotebookLM \u00b7 Deep Dive",
+      "description": "Apresentadores ou formato do epis\u00f3dio"
+    },
+    "order": {
+      "type": "number",
+      "default": 1,
+      "description": "Ordem de exibi\u00e7\u00e3o do epis\u00f3dio"
+    },
+    "is_published": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o epis\u00f3dio est\u00e1 vis\u00edvel para os alunos"
+    }
+  },
+  "required": [
+    "title",
+    "notebook_url"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

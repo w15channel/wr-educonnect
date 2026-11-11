@@ -65,6 +65,8 @@ Deno.serve(async (req) => {
           chapter_id: lessonReference.chapterId,
           lesson_id: lessonReference.apostilaLessonId,
         })
+      : lessonReference.kind === 'podcast'
+      ? base44.asServiceRole.entities.Podcast.filter({ id: lessonReference.podcastId })
       : base44.asServiceRole.entities.RecordedLesson.filter({ id: lessonReference.lessonId });
 
     const [lessons, codes, existingScores] = await Promise.all([

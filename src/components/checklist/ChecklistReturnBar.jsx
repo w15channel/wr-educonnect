@@ -37,6 +37,7 @@ const ACTIVITY_PATHS = [
   '/ofensivas',
   '/lessons',
   '/exams',
+  '/podcasts',
   '/tuitions',
   '/terapeuta',
 ];

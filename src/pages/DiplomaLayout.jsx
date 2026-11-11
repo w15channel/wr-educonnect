@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
-import { User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ChevronDown, Menu, X, ClipboardCheck, LayoutDashboard, CalendarDays, Users } from 'lucide-react';
+import { User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ChevronDown, Menu, X, ClipboardCheck, LayoutDashboard, CalendarDays, Users, BookOpen, FileText, ClipboardList, Headphones } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 import ChecklistReturnBar from '@/components/checklist/ChecklistReturnBar';
 
@@ -10,6 +10,10 @@ const DIPLOMA_GROUPS = [
   { label: 'Conteúdo', items: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', color: 'text-amber-400' },
     { icon: ClipboardCheck, label: 'Trilha do módulo', path: '/checklist', color: 'text-blue-400' },
+    { icon: BookOpen, label: 'Apostila', path: '/apostila', color: 'text-emerald-400' },
+    { icon: FileText, label: 'Tarefas', path: '/tasks', color: 'text-orange-400' },
+    { icon: ClipboardList, label: 'Provas', path: '/exams', color: 'text-violet-400' },
+    { icon: Headphones, label: 'Podcast', path: '/podcasts', color: 'text-fuchsia-400' },
   ] },
   { label: 'Ferramentas', items: [
     { icon: CalendarDays, label: 'Calendário', path: '/calendar', color: 'text-cyan-400' },
