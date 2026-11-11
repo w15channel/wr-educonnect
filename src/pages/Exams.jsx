@@ -17,7 +17,6 @@ import {
   resolveExamAccuracy,
   EXAM_PASS_MIN_PERCENT,
 } from '@/lib/autoCorrectionResponses';
-import useModuleChecklist from '@/hooks/useModuleChecklist';
 import { parseModuleNumber } from '@/lib/examChecklistRules';
 import AIExamGenerator from '../components/tasks/AIExamGenerator';
 import ExamEditor from '../components/exams/ExamEditor';
@@ -93,7 +92,6 @@ export default function Exams() {
   const [gradingSubmission, setGradingSubmission] = useState(null);
   const [showAnnualGenerator, setShowAnnualGenerator] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState('all');
-  const { isModuleUnlockedForExam } = useModuleChecklist({ course: userCourse, session });
 
   const { data: exams = [], isLoading } = useQuery({
     queryKey: ['exams', userCourse],
@@ -296,7 +294,6 @@ export default function Exams() {
             const passed = isExamPassed(submission);
             const accuracy = resolveExamAccuracy(submission);
             const isExpanded = expandedId === exam.id;
-            const isPastDeadline = exam.deadline && new Date(exam.deadline) < new Date();
 
             return (
               <div
@@ -357,9 +354,8 @@ export default function Exams() {
                         </span>
                       )}
                       {!passed && exam.deadline && (
-                        <span className={`text-[10px] font-semibold ${isPastDeadline ? 'text-red-500' : 'text-muted-foreground'}`}>
-                          Prazo: {format(new Date(exam.deadline), 'dd/MM HH:mm')}
-                          {isPastDeadline ? ' · Expirou' : ''}
+                        <span className="text-[10px] font-semibold text-muted-foreground">
+                          Prazo sugerido: {format(new Date(exam.deadline), 'dd/MM HH:mm')}
                         </span>
                       )}
                       {!hasSubmission && !exam.deadline && (
@@ -424,11 +420,7 @@ export default function Exams() {
                   <div className="px-4 pb-4 border-t border-border pt-3 space-y-3 bg-secondary/10">
                     {exam.description && <p className="text-sm text-muted-foreground leading-relaxed">{exam.description}</p>}
 
-                    {isPastDeadline && !passed ? (
-                      <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                        <AlertCircle size={15} /> Prazo encerrado para esta prova.
-                      </div>
-                    ) : hasSubmission ? (
+                    {hasSubmission ? (
                       isTeacher ? (
                         <div className="space-y-2">
                           <Button
@@ -446,37 +438,15 @@ export default function Exams() {
                           onRetake={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
                         />
                       )
-                    ) : (() => {
-                      const examModule = parseModuleNumber(exam.module_ref);
-                      const checklistComplete = !examModule || isModuleUnlockedForExam(examModule);
-                      const checklistLocked = !isTeacher && !!examModule && !checklistComplete;
-                      if (checklistLocked) {
-                        return (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3">
-                              <AlertCircle size={15} /> {`Prova bloqueada: conclua a trilha do Módulo ${examModule}.`}
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="gap-1.5 font-bold"
-                              onClick={() => navigate(`${prefix}/checklist?module=${examModule}`)}
-                            >
-                              {`Ver trilha do Módulo ${examModule}`}
-                            </Button>
-                          </div>
-                        );
-                      }
-                      return (
-                        <Button
-                          size="sm"
-                          className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
-                          onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
-                        >
-                          <Play size={13} /> Iniciar Prova
-                        </Button>
-                      );
-                    })()}
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="gap-1.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 text-white font-bold"
+                        onClick={() => navigate(`${prefix}/exams/quiz/${exam.id}`)}
+                      >
+                        <Play size={13} /> Iniciar Prova
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
