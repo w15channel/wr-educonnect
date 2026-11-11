@@ -9,6 +9,13 @@ export default {
         jakarta: ['var(--font-jakarta)'],
       },
       colors: {
+        portal: {
+          background: "hsl(var(--portal-background))",
+          surface: "hsl(var(--portal-surface))",
+          text: "hsl(var(--portal-text))",
+          muted: "hsl(var(--portal-muted))",
+        },
+        course: "hsl(var(--course-accent))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },

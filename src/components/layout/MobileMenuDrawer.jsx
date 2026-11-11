@@ -24,6 +24,7 @@ import { BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand
 import { setSession, getSession } from '@/lib/customAuth';
 import { applyTheme, getStoredTheme } from './MobileHeader';
 import ThemeToggle from './ThemeToggle';
+import MyCoursesLink from '@/components/courses/MyCoursesLink';
 
 const COURSE_TO_SLUG = { tcc: 'tcc', psicanalise: 'psi', sexologia: 'sex' };
 const COURSE_LABELS = { tcc: '🧠 TC', psicanalise: '🪞 Psicanálise', sexologia: '💜 Sexologia' };
@@ -206,6 +207,7 @@ export default function MobileMenuDrawer({ open, onClose, session }) {
 
             {/* Nav scrollável */}
             <nav className="flex-1 overflow-y-auto scrollbar-invisible px-3 py-3">
+              <MyCoursesLink onClick={onClose} />
               {groups.map((group, gi) => (
                 <div key={gi} className={gi > 0 ? 'mt-4' : ''}>
                   <p className="text-[9px] font-light text-sidebar-foreground/45 uppercase tracking-[0.3em] mb-1.5 px-2">

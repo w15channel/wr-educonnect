@@ -6,6 +6,22 @@
 @tailwind components;
 @tailwind utilities;
 
+:root, .dark {
+  --portal-background: 230 37% 5%;
+  --portal-surface: 230 32% 10%;
+  --portal-text: 42 35% 94%;
+  --portal-muted: 223 15% 70%;
+  --course-tcc: 45 55% 62%;
+  --course-family: 158 48% 62%;
+  --course-analysis: 265 72% 78%;
+  --course-sexology: 340 70% 77%;
+}
+.portal-shell { --course-accent: var(--course-tcc); }
+.course-tcc { --course-accent: var(--course-tcc); }
+.course-family { --course-accent: var(--course-family); }
+.course-analysis { --course-accent: var(--course-analysis); }
+.course-sexology { --course-accent: var(--course-sexology); }
+
 @layer components {
   .theme-lamp {
     position: relative;

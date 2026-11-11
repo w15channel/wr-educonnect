@@ -11,6 +11,7 @@ import LandingPage from './pages/LayoutPreview2';
 import CourseSyllabus from './pages/CourseSyllabus';
 import WRTec from './pages/WRTec';
 import CourseLobby from './pages/CourseLobby';
+import CoursePreview from '@/pages/CoursePreview';
 import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import TermosDeUso from './pages/TermosDeUso';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade';
@@ -194,6 +195,8 @@ const AuthenticatedApp = () => {
         <Route path="classe" element={<Classe />} />
       </Route>
 
+      <Route path="/courses/:courseId" element={<CoursePreview />} />
+
       {/* Main student routes */}
       <Route path="/student/*" element={<AppRoutesTree />} />
 
@@ -201,7 +204,7 @@ const AuthenticatedApp = () => {
       <Route path="/adm/*" element={<AppRoutesTree />} />
 
       {/* Root & legacy redirects → flat paths */}
-      <Route path="/" element={<Navigate to={isAdmin ? '/adm/dashboard' : '/degree/student/dashboard'} replace />} />
+      <Route path="/" element={<Navigate to={isAdmin ? '/adm/dashboard' : '/lobby'} replace />} />
       <Route path="/dashboard" element={<Navigate to={`${base}/dashboard`} replace />} />
       <Route path="/lessons" element={<Navigate to={`${base}/lessons`} replace />} />
       <Route path="/live" element={<Navigate to={`${base}/apostila`} replace />} />

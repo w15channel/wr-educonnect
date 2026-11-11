@@ -4,6 +4,7 @@ import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { User, DollarSign, GraduationCap, History, LogOut, ChevronRight, ChevronDown, Menu, X, ClipboardCheck, LayoutDashboard, CalendarDays, Users, BookOpen, FileText, ClipboardList, Headphones } from 'lucide-react';
 import { WR_PRIMARY_LOGO, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 import ChecklistReturnBar from '@/components/checklist/ChecklistReturnBar';
+import MyCoursesLink from '@/components/courses/MyCoursesLink';
 
 
 const DIPLOMA_GROUPS = [
@@ -89,6 +90,7 @@ export default function DiplomaLayout() {
 
         {/* Navegação */}
         <nav className="scrollbar-invisible flex-1 overflow-y-auto px-3 py-4">
+          <MyCoursesLink onClick={closeMobile} />
           {DIPLOMA_GROUPS.map((group) => <div key={group.label} className="mb-4">
             <button type="button" onClick={() => setOpenGroups(current => ({ ...current, [group.label]: !current[group.label] }))} aria-expanded={openGroups[group.label]} className="mb-1.5 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[8.5px] font-semibold uppercase tracking-[0.24em] text-white/30 transition-colors hover:text-[#d4b96a]/80">
               <span className="flex items-center gap-2">

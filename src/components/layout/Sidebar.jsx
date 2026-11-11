@@ -17,6 +17,7 @@ import { base44 } from '@/api/base44Client';
 import { BRAND_CNPJ, BRAND_LEGAL_NAME, BRAND_SHORT_NAME, WR_PRIMARY_LOGO } from '@/lib/brand';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import { functionLabel } from '@/lib/profileRoles';
+import MyCoursesLink from '@/components/courses/MyCoursesLink';
 
 
 const STUDENT_BADGE_PATHS = new Set(['/ofensivas', '/lessons', '/tasks', '/exams', '/chat', '/forum', '/debates', '/terapeuta', '/announcements', '/tuitions']);
@@ -439,6 +440,7 @@ export default function Sidebar({ session, mobileOpen: mobileOpenProp, onMobileC
 
         {/* Nav — collapsible groups */}
         <nav className="px-2 py-2 flex flex-col gap-0 flex-grow overflow-y-auto scrollbar-thin">
+          <MyCoursesLink onClick={handleClose} />
           {groups.map((group, gi) => {
             const isGroupOpen = openGroups[gi] ?? false;
             const hasActiveItem = group.items.some(item => isActive(item.path));
