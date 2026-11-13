@@ -25,8 +25,7 @@ const marriagePreparationCurriculum = [
     ['Divisão de responsabilidades domésticas', 'As tarefas domésticas e de cuidado podem ser distribuídas de forma explícita, justa e revisável, levando em conta tempo, saúde, trabalho e preferências de cada pessoa.'],
     ['Trabalho, carreira e prioridades familiares', 'Planos profissionais, mudanças de carreira, estudos, jornadas de trabalho e necessidades familiares são discutidos sem presumir que a trajetória de uma pessoa deva sempre ceder à da outra.'],
     ['Moradia e organização da rotina', 'O casal considera local de moradia, custo, deslocamentos, segurança, proximidade das redes de apoio e rotina diária, incluindo possíveis mudanças de cidade ou residência.'],
-    ['Planejamento de filhos e decisões sobre parentalidade', 'O casal conversa livremente sobre desejar ou não ter filhos, momento, responsabilidades de cuidado e possibilidades diante de diferentes circunstâncias, sem pressão ou promessa de resultados.'],
-    ['Conversa estruturada sobre filhos, carreira e local de moradia', 'Um roteiro de diálogo ajuda os parceiros a comparar planos de parentalidade, objetivos profissionais e preferências de residência, registrar acordos provisórios e identificar diferenças que exigem mais tempo ou apoio.'],
+    ['Conversa do casal sobre filhos, carreira e local de moradia', 'Um roteiro de diálogo ajuda os parceiros a conversar sobre desejar ou não ter filhos, quando e como assumir responsabilidades parentais, objetivos profissionais e onde construir a vida em comum. O exercício registra acordos provisórios e diferenças que exigem mais tempo, sem pressão ou promessa de resultados.'],
   ]],
   ['Preparação para o casamento', [
     ['Expectativas sobre a cerimônia e a vida matrimonial', 'O casal distingue a organização da cerimônia da construção cotidiana da vida conjugal e conversa sobre orçamento, tradições, participação das famílias e expectativas para depois da celebração.'],
