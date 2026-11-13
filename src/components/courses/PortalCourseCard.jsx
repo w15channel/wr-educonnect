@@ -14,7 +14,7 @@ export default function PortalCourseCard({ course, isAdmin, staffAccess = false,
       <p className="text-xs text-course">{course.qualification}</p>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-portal-text">{course.title}</h2>
       <p className="mb-6 mt-3 flex-1 text-sm leading-relaxed text-portal-muted">{course.description}</p>
-      {course.available || staffAccess ? <button onClick={() => onEnter(course.id)} className={actionClass}>{isAdmin ? 'Gerenciar curso' : staffAccess ? 'Ver versão do aluno' : 'Entrar no curso'}<ArrowUpRight size={18} /></button> : <Link to={`/courses/${course.id}`} className={actionClass}>Conhecer a formação<ArrowUpRight size={18} /></Link>}
+      {course.available || staffAccess ? <button onClick={() => onEnter(course.id)} className={actionClass} title={isAdmin ? 'Entrar no curso para editar os conteúdos' : 'Entrar no curso'}>Entrar no curso<ArrowUpRight size={18} /></button> : <Link to={`/courses/${course.id}`} className={actionClass}>Conhecer a formação<ArrowUpRight size={18} /></Link>}
     </div>
   </article>;
 }
