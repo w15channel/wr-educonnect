@@ -24,13 +24,15 @@
         "tcc",
         "psicanalise",
         "sexologia",
-        "aconselhamento-familiar"
+        "aconselhamento-familiar",
+        "preparacao-casamento"
       ],
       "enumColors": [
         "blue",
         "purple",
         "pink",
-        "green"
+        "green",
+        "yellow"
       ],
       "default": "tcc",
       "description": "Curso ao qual a tarefa pertence"
