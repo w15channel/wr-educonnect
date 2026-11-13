@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { adminApi } from '@/lib/adminApi';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { useLocation } from 'react-router-dom';
-import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipBack, SkipForward, Volume2, Lock, Flame, Wand2 } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Edit2, Save, X, GraduationCap, Award, FileText, CheckCircle, BookMarked, Type, AlignLeft, Play, Pause, Square, SkipBack, SkipForward, Volume2, Lock, Flame, Wand2, Sparkles } from 'lucide-react';
 import NextStepLink from '@/components/shared/NextStepLink';
 import useApostilaModuleUnlocks from '@/hooks/useApostilaModuleUnlocks';
 import useStudentRecords from '@/hooks/useStudentRecords';
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import ApostilaPrintModal from '@/components/apostila/ApostilaPrintModal';
 import ChapterRewriteModal from '@/components/apostila/ChapterRewriteModal';
+import ModuleBatchGenerator from '@/components/apostila/ModuleBatchGenerator';
 import { createBase44VoiceAudio, releaseBase44VoiceAudio } from '@/lib/base44Voice';
 import { MOD1 } from '@/lib/apostila/mod1';
 import { MOD2 } from '@/lib/apostila/mod2';
@@ -186,6 +187,7 @@ export default function Apostila() {
   const [editContent, setEditContent] = useState('');
   const [printLesson, setPrintLesson] = useState(null);
   const [rewriteOpen, setRewriteOpen] = useState(false);
+  const [batchGeneratorOpen, setBatchGeneratorOpen] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMsg, setCelebrationMsg] = useState('');
   const [reader, setReader] = useState({ lessonKey: null, paragraphIndex: 0, wordIndex: 0, rate: 1, isPlaying: false, nativeFallback: false });
@@ -548,7 +550,8 @@ export default function Apostila() {
       const chapter = DEFAULT_CHAPTERS[chapterIndex];
       const lessonIndex = chapter?.lessons.findIndex((lesson) => lesson.id === lessonId) ?? -1;
       const defaultLesson = lessonIndex >= 0 ? chapter.lessons[lessonIndex] : null;
-      const existingLesson = savedLessonByKey.get(`${chapterId}__${lessonId}`);
+      const existingLesson = savedLessonByKey.get(`${chapterId}__${lessonId}`)
+        || (await base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID, chapter_id: chapterId, lesson_id: lessonId }, 'order', 1))?.[0];
       const storedContent = existingLesson?.content === content && existingLesson?.content_url
         ? { content: existingLesson.content_storage === 'file' ? '' : content, content_url: existingLesson.content_url, content_storage: existingLesson.content_storage }
         : await buildStoredContentPayload(chapterId, lessonId, content);
@@ -590,6 +593,13 @@ export default function Apostila() {
     saveMutation.mutate({ chapterId, lessonId, content }, { onSuccess: () => setRewriteOpen(false) });
   };
 
+  const handleBatchPublish = async (lessons) => {
+    const results = [];
+    for (const lesson of lessons) results.push(await saveMutation.mutateAsync(lesson));
+    await queryClient.invalidateQueries({ queryKey: ['apostila-lessons', APOSTILA_BOOK_ID] });
+    return results;
+  };
+
   const totalLessons = chapters.reduce((total, chapter) => total + chapter.lessons.length, 0);
   const totalRead = readLessons.size;
 
@@ -597,6 +607,7 @@ export default function Apostila() {
     <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-24">
       {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'book_lesson', message: 'concluiu uma aula na apostila.' }} message={celebrationMsg} onClose={() => setCelebrating(false)} />}
       {printLesson && <ApostilaPrintModal lesson={printLesson.lesson} chapterTitle={printLesson.chapterTitle} onClose={() => setPrintLesson(null)} />}
+      {batchGeneratorOpen && isAdmin && <ModuleBatchGenerator chapters={chapters} courseTitle={course === 'tcc' ? null : courseInfo?.qualification} onClose={() => setBatchGeneratorOpen(false)} onPublish={handleBatchPublish} saving={saveMutation.isPending} />}
       {rewriteOpen && isAdmin && <ChapterRewriteModal chapters={chapters} courseTitle={course === 'tcc' ? null : courseInfo?.qualification} onClose={() => setRewriteOpen(false)} onSave={handleRewriteSave} saving={saveMutation.isPending} />}
 
       <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 p-6">
@@ -614,7 +625,7 @@ export default function Apostila() {
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full"><Award size={12} className="text-amber-400" />Formação Profissional</div>
               {!isAdmin && <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full"><BookMarked size={12} className="text-emerald-400" />{totalRead}/{totalLessons} lidas</div>}
             </div>
-            {isAdmin && <div className="mt-3"><Button size="sm" onClick={() => setRewriteOpen(true)} className="gap-1.5 bg-gradient-to-r from-violet-500 to-purple-700 text-white hover:opacity-90"><Wand2 size={13} /> Reescrever capítulo</Button></div>}
+            {isAdmin && <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" onClick={() => setRewriteOpen(true)} className="gap-1.5 bg-gradient-to-r from-violet-500 to-purple-700 text-white hover:opacity-90"><Wand2 size={13} /> Reescrever capítulo</Button><Button size="sm" variant="outline" onClick={() => setBatchGeneratorOpen(true)} className="gap-1.5"><Sparkles size={13} /> Gerar módulo completo (5 aulas)</Button></div>}
           </div>
         </div>
         {course === 'tcc' && <div className="mt-5 pt-5 border-t border-emerald-500/15">
