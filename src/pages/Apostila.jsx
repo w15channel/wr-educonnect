@@ -550,7 +550,8 @@ export default function Apostila() {
       const chapter = DEFAULT_CHAPTERS[chapterIndex];
       const lessonIndex = chapter?.lessons.findIndex((lesson) => lesson.id === lessonId) ?? -1;
       const defaultLesson = lessonIndex >= 0 ? chapter.lessons[lessonIndex] : null;
-      const existingLesson = savedLessonByKey.get(`${chapterId}__${lessonId}`);
+      const existingLesson = savedLessonByKey.get(`${chapterId}__${lessonId}`)
+        || (await base44.entities.BookChapter.filter({ book_id: APOSTILA_BOOK_ID, chapter_id: chapterId, lesson_id: lessonId }, 'order', 1))?.[0];
       const storedContent = existingLesson?.content === content && existingLesson?.content_url
         ? { content: existingLesson.content_storage === 'file' ? '' : content, content_url: existingLesson.content_url, content_storage: existingLesson.content_storage }
         : await buildStoredContentPayload(chapterId, lessonId, content);
