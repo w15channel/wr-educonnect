@@ -38,7 +38,7 @@ export function buildLessonText(lessonTitle, topics) {
 
 export function analyzeLesson(topics) {
   const issues = [];
-  if (topics.length !== TOPIC_COUNT) issues.push(`A aula tem ${topics.length} tópicos (devem ser ${TOPIC_COUNT}). Gere outra versão.`);
+  if (topics.length !== TOPIC_COUNT) issues.push(`A aula tem ${topics.length} tópicos (devem ser ${TOPIC_COUNT}).`);
   let outOfRange = 0;
   topics.forEach((topic, index) => {
     if (topic.paragraphs.length !== PARAGRAPHS_PER_TOPIC) {
