@@ -1,0 +1,71 @@
+{
+  "name": "FamilyBookChapter",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID da apostila de Aconselhamento Familiar"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email do autor"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da aula"
+    },
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado HTML ou texto da aula"
+    },
+    "content_url": {
+      "type": "string",
+      "description": "URL do arquivo quando o conte\u00fado exceder o limite inline"
+    },
+    "content_storage": {
+      "type": "string",
+      "enum": [
+        "inline",
+        "file"
+      ],
+      "default": "inline",
+      "description": "Armazenamento do conte\u00fado"
+    },
+    "chapter_id": {
+      "type": "string",
+      "description": "Identificador est\u00e1vel do m\u00f3dulo"
+    },
+    "chapter_title": {
+      "type": "string",
+      "description": "T\u00edtulo do m\u00f3dulo"
+    },
+    "lesson_id": {
+      "type": "string",
+      "description": "Identificador est\u00e1vel da aula"
+    },
+    "lesson_title": {
+      "type": "string",
+      "description": "T\u00edtulo original da aula"
+    },
+    "order": {
+      "type": "number",
+      "default": 1,
+      "description": "Ordem na apostila"
+    },
+    "book_title": {
+      "type": "string",
+      "description": "T\u00edtulo da apostila"
+    }
+  },
+  "required": [
+    "book_id",
+    "author_email",
+    "title"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
+}
