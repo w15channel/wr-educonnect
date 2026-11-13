@@ -36,7 +36,7 @@ export function normalizeCodePath(rawPath, options = {}) {
 
 export async function callCodeApi(endpoint, payload, options = {}) {
   const appId = secrets.get('BASE44_APP_ID');
-  const apiKey = secrets.get('BASE44_PERSONAL_API_KEY');
+  const apiKey = secrets.get('BASE44_PERSONAL_ACCESS_TOKEN');
   if (!appId || !apiKey) throw Object.assign(new Error('Code-management connection is not configured'), { status: 503 });
   const route = options.appEndpoint ? endpoint : `sandbox-bridge/${endpoint}`;
   const response = await fetch(`https://app.base44.com/api/apps/${encodeURIComponent(appId)}/${route}`, {
@@ -57,7 +57,7 @@ export async function callCodeApi(endpoint, payload, options = {}) {
 
 export async function syncCodeToGitHub() {
   const appId = secrets.get('BASE44_APP_ID');
-  const apiKey = secrets.get('BASE44_PERSONAL_API_KEY');
+  const apiKey = secrets.get('BASE44_PERSONAL_ACCESS_TOKEN');
   if (!appId || !apiKey) {
     return { synced_to_github: false, github_error: 'GitHub sync connection is not configured' };
   }
