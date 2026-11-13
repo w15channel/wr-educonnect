@@ -7,7 +7,8 @@
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "preparacao-casamento"
       ],
       "default": "tcc",
       "description": "Curso ao qual o encerramento pertence"
