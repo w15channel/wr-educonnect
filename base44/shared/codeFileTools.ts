@@ -19,15 +19,15 @@ export async function requireAdmin(req) {
 
 export function normalizeCodePath(rawPath, options = {}) {
   if (typeof rawPath !== 'string' || !rawPath.trim()) throw Object.assign(new Error('path is required'), { status: 400 });
-  let path = rawPath.trim().replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/+$/, '');
-  if (path.startsWith('pages/')) path = `src/${path}`;
-  if (path.startsWith('components/')) path = `src/${path}`;
-  if (path.startsWith('functions/')) path = `base44/${path}`;
-  if (path.includes('\0') || path.split('/').includes('..')) throw Object.assign(new Error('Invalid path'), { status: 400 });
-
-  const listRoot = options.directory && ['src', 'base44/functions'].includes(path);
-  const inAllowedRoot = path.startsWith('src/') || path.startsWith('base44/functions/');
-  if (!listRoot && !inAllowedRoot) throw Object.assign(new Error('Only src and base44/functions code paths are allowed'), { status: 403 });
+  let path = rawPath.trim().replaceAll('\\', '/').replace(/^\.\//, '').replace(/^\/+|\/+$/g, '');
+  if (options.directory && ['', '.'].includes(path)) return '.';
+  if (/^(pages|components|lib|hooks|styles)\//.test(path)) path = `src/${path}`;
+  if (/^(functions|entities|agents|shared|workflows|emails)\//.test(path)) path = `base44/${path}`;
+  const segments = path.split('/');
+  // Todo o projeto é editável; ficam de fora apenas arquivos ocultos (credenciais, git) e dependências instaladas.
+  if (!path || path.includes('\0') || segments.some((part) => part.startsWith('.') || part === 'node_modules')) {
+    throw Object.assign(new Error('Invalid path'), { status: 400 });
+  }
   if (!options.directory && protectedPaths.some((item) => path === item || path.startsWith(item))) {
     throw Object.assign(new Error('Code-management tools cannot modify or expose their own credentials layer'), { status: 403 });
   }
@@ -41,7 +41,8 @@ export async function callCodeApi(endpoint, payload, options = {}) {
   const route = options.appEndpoint ? endpoint : `sandbox-bridge/${endpoint}`;
   const response = await fetch(`https://app.base44.com/api/apps/${encodeURIComponent(appId)}/${route}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', api_key: apiKey },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    signal: AbortSignal.timeout(60000),
     body: JSON.stringify(payload),
   });
   const text = await response.text();
@@ -64,7 +65,8 @@ export async function syncCodeToGitHub() {
   try {
     const response = await fetch(`https://app.base44.com/api/apps/${encodeURIComponent(appId)}/github/sync/manual`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', api_key: apiKey },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(60000),
     });
     const text = await response.text();
     let data;
