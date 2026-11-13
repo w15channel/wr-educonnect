@@ -1,14 +1,5 @@
-const POLLINATIONS_ENDPOINT = import.meta.env.VITE_POLLINATIONS_TEXT_URL
-  || 'https://text.pollinations.ai/openai';
-const POLLINATIONS_MODEL = import.meta.env.VITE_POLLINATIONS_TEXT_MODEL || 'openai';
-const DEFAULT_TIMEOUT_MS = 45_000;
-
-function extractText(payload) {
-  const content = payload?.choices?.[0]?.message?.content;
-  if (typeof content === 'string') return content.trim();
-  if (Array.isArray(content)) return content.map((part) => part?.text || '').join('').trim();
-  return typeof payload === 'string' ? payload.trim() : '';
-}
+import { base44 } from '@/api/base44Client';
+import { getSession } from '@/lib/customAuth';
 
 export function parsePollinationsJson(value) {
   if (value && typeof value === 'object') return value;
@@ -32,35 +23,25 @@ function formattedPrompt(prompt, schema) {
   return `${prompt}\n\nFORMATO OBRIGATÓRIO: responda somente com JSON válido, sem markdown ou comentários, seguindo este JSON Schema:\n${JSON.stringify(schema)}`;
 }
 
-/** Provedor temporário comum para todas as experiências generativas do portal. */
-export async function invokePollinations({ prompt, response_json_schema: schema, temperature = 0.35, timeoutMs = DEFAULT_TIMEOUT_MS }) {
+/**
+ * Geração de textos de todo o portal pela IA da Grok. A chave fica guardada no
+ * servidor; o nome histórico da função foi mantido para os pontos que a utilizam.
+ */
+export async function invokePollinations({ prompt, response_json_schema: schema, temperature = 0.35 }) {
   if (!prompt?.trim()) throw new Error('O prompt da IA não pode estar vazio.');
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const headers = { 'Content-Type': 'application/json' };
-  const apiKey = import.meta.env.VITE_POLLINATIONS_API_KEY;
-  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-
+  let data;
   try {
-    const response = await fetch(POLLINATIONS_ENDPOINT, {
-      method: 'POST', headers, signal: controller.signal,
-      body: JSON.stringify({
-        model: POLLINATIONS_MODEL,
-        messages: [{ role: 'user', content: formattedPrompt(prompt, schema) }],
-        temperature,
-        stream: false,
-      }),
-    });
-    if (!response.ok) throw new Error(`Pollinations indisponível (${response.status}).`);
-    const text = extractText(await response.json());
-    if (!text) throw new Error('A IA retornou uma resposta vazia.');
-    return schema ? parsePollinationsJson(text) : text;
+    ({ data } = await base44.functions.invoke('generateText', {
+      prompt: formattedPrompt(prompt, schema),
+      temperature,
+      access_code_id: getSession()?.codeId,
+    }));
   } catch (error) {
-    if (error?.name === 'AbortError') throw new Error('O Pollinations demorou além do limite. Tente novamente.');
-    throw error;
-  } finally {
-    clearTimeout(timeout);
+    throw new Error(error?.response?.data?.error || error?.message || 'A IA da Grok está indisponível.');
   }
+  const text = String(data?.text || '').trim();
+  if (!text) throw new Error('A IA retornou uma resposta vazia.');
+  return schema ? parsePollinationsJson(text) : text;
 }
 
-export const POLLINATIONS_TEXT_MODEL = POLLINATIONS_MODEL;
+export const POLLINATIONS_TEXT_MODEL = 'grok';

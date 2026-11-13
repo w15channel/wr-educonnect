@@ -1,50 +1,35 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { invokeLunaAI, LUNA_POLLINATIONS_MODEL } from './lunaAI';
+import { base44 } from '@/api/base44Client';
+import { invokeLunaAI } from './lunaAI';
+
+vi.mock('@/api/base44Client', () => ({ base44: { functions: { invoke: vi.fn() } } }));
 
 const schema = { type: 'object', properties: { answer: { type: 'string' } } };
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
+afterEach(() => { vi.clearAllMocks(); });
 
 describe('invokeLunaAI', () => {
-  it('gera o diálogo pela API do Pollinations sem consumir a integração Base44', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: '```json\n{"answer":"Olá da Luna"}\n```' } }] }),
-    });
-    vi.stubGlobal('fetch', fetchMock);
+  it('gera o diálogo pela IA da Grok através do servidor', async () => {
+    base44.functions.invoke.mockResolvedValue({ data: { text: '```json\n{"answer":"Olá da Luna"}\n```' } });
 
     const result = await invokeLunaAI({ prompt: 'Olá', responseJsonSchema: schema });
 
-    expect(result).toEqual({
-      answer: { answer: 'Olá da Luna' },
-      provider: `pollinations:${LUNA_POLLINATIONS_MODEL}`,
-    });
-    expect(fetchMock).toHaveBeenCalledOnce();
-    const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://text.pollinations.ai/openai');
-    expect(options.method).toBe('POST');
-    expect(JSON.parse(options.body)).toMatchObject({
-      model: LUNA_POLLINATIONS_MODEL,
-      stream: false,
-      messages: [{ role: 'user' }],
-    });
+    expect(result).toEqual({ answer: { answer: 'Olá da Luna' }, provider: 'grok' });
+    expect(base44.functions.invoke).toHaveBeenCalledOnce();
+    const [name, payload] = base44.functions.invoke.mock.calls[0];
+    expect(name).toBe('generateText');
+    expect(payload.prompt).toContain('Olá');
   });
 
-  it('informa a indisponibilidade do Pollinations sem tentar outro provedor', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429 }));
+  it('informa a indisponibilidade da Grok sem tentar outro provedor', async () => {
+    base44.functions.invoke.mockRejectedValue({ response: { data: { error: 'A IA da Grok está indisponível (429).' } } });
 
     await expect(invokeLunaAI({ prompt: 'Olá', responseJsonSchema: schema }))
-      .rejects.toThrow('Pollinations indisponível (429)');
+      .rejects.toThrow('A IA da Grok está indisponível (429)');
   });
 
   it('rejeita uma resposta sem o campo obrigatório', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ choices: [{ message: { content: '{"links":[]}' } }] }),
-    }));
+    base44.functions.invoke.mockResolvedValue({ data: { text: '{"links":[]}' } });
 
     await expect(invokeLunaAI({ prompt: 'Olá', responseJsonSchema: schema }))
       .rejects.toThrow('Resposta sem o campo obrigatório');
