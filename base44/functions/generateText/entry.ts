@@ -2,7 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { secrets } from 'base44:runtime';
 
 const GROK_URL = 'https://api.x.ai/v1/chat/completions';
-const GROK_MODEL = 'grok-4.7';
+// Modelo de escrita direta da Grok: o modelo com raciocínio estourava o tempo em textos longos.
+const GROK_MODEL = 'grok-4.20-0309-non-reasoning';
 // Visitantes do site público usam apenas conversas curtas; alunos e equipe têm o limite completo.
 const LIMITS = {
   visitor: { promptChars: 6000, maxTokens: 500 },

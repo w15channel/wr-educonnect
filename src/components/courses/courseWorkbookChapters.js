@@ -17,7 +17,7 @@ export default function courseWorkbookChapters(course) {
     bgLight: 'bg-course/10',
     lessons: lessons.map(([title, content], lessonIndex) => ({
       id: lessonIndex === 0 ? `${course}-aula${index + 1}` : `${course}-mod${index + 1}-aula${lessonIndex + 1}`,
-      title,
+      title: `Aula ${lessonIndex + 1} — ${title}`,
       content,
     })),
   }));

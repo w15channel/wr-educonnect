@@ -109,7 +109,6 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
       }
       const result = await invokePollinations({
         prompt: buildRewritePrompt(lesson.title || 'Aula da apostila', sourceText, courseTitle),
-        model: 'claude_sonnet_4_6',
       });
       const text = extractLlmText(result).trim();
       if (!text) {
