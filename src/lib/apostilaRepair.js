@@ -45,7 +45,7 @@ const changesSchema = {
 
 const validParagraphs = (paragraphs) => Array.isArray(paragraphs)
   && paragraphs.length === PARAGRAPHS_PER_TOPIC
-  && paragraphs.every(isInRange);
+  && paragraphs.every((paragraph) => typeof paragraph === 'string' && isInRange(paragraph));
 
 /** Faz no máximo uma chamada de ajuste, apenas para os trechos que falharam na validação. */
 export async function repairLesson(topics, lessonTitle, onStage, originalText = '') {
@@ -63,7 +63,7 @@ export async function repairLesson(topics, lessonTitle, onStage, originalText = 
     if (repaired.length !== TOPIC_COUNT || repaired.some((topic) => !validParagraphs(topic?.paragraphs))) return topics;
     return repaired.map((topic) => ({
       title: String(topic.title || '').toUpperCase(),
-      paragraphs: topic.paragraphs.map((paragraph) => String(paragraph).trim()),
+      paragraphs: topic.paragraphs.map((paragraph) => paragraph.trim()),
     }));
   }
 
