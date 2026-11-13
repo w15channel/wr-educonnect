@@ -64,19 +64,21 @@ function unwrapLunaResult(value, schema) {
   throw new Error('A IA retornou uma resposta vazia.');
 }
 
-/** Usa o mesmo modelo Base44 configurado para a agente Luna. */
+/** Executa o modelo GPT Luna 6 no backend, evitando chamadas bloqueadas no navegador. */
 export async function invokeLunaAI({ prompt, response_json_schema: schema }) {
   if (!prompt?.trim()) throw new Error('O prompt da IA não pode estar vazio.');
+  const session = getSession();
+  let data;
   try {
-    const result = await base44.integrations.Core.InvokeLLM({
+    ({ data } = await base44.functions.invoke('generateChapterText', {
       prompt,
-      model: LUNA_MODEL_ID,
-      ...(schema ? { response_json_schema: schema } : {}),
-    });
-    return unwrapLunaResult(result, schema);
+      response_json_schema: schema,
+      admin_email: session?.email,
+    }));
   } catch (error) {
-    throw new Error(error?.message || 'Não foi possível gerar o conteúdo com GPT Luna 6.');
+    throw new Error(error?.response?.data?.error || error?.message || 'Não foi possível gerar o conteúdo com GPT Luna 6.');
   }
+  return unwrapLunaResult(data?.result ?? data, schema);
 }
 
 /**
