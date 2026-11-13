@@ -4,7 +4,12 @@ import { Key } from 'lucide-react';
 import CodeManager from '@/components/admin/CodeManager';
 import useCourseFilteredEmails from '@/hooks/useCourseFilteredEmails';
 
-const COURSE_LABEL = { tcc: 'TC', psicanalise: 'Psicanalista Freudiano', sexologia: 'Sexólogo(a)' };
+const COURSE_LABEL = {
+  tcc: 'TC',
+  psicanalise: 'Psicanalista Freudiano',
+  sexologia: 'Sexólogo(a)',
+  'preparacao-casamento': 'Preparação para o Casamento',
+};
 
 export default function Keys() {
   const { user: session } = useOutletContext() || {};
