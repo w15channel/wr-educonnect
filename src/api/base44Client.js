@@ -17,6 +17,7 @@ const COURSE_CHAPTER_ENTITIES = {
   'aconselhamento-familiar': 'FamilyBookChapter',
   psicanalise: 'PsychoanalysisBookChapter',
   sexologia: 'SexologyBookChapter',
+  'preparacao-casamento': 'MarriagePreparationBookChapter',
 };
 
 function chapterEntityFor(query = {}) {
