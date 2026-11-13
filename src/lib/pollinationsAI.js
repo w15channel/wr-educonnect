@@ -23,18 +23,57 @@ function formattedPrompt(prompt, schema) {
   return `${prompt}\n\nFORMATO OBRIGATÓRIO: responda somente com JSON válido, sem markdown ou comentários, seguindo este JSON Schema:\n${JSON.stringify(schema)}`;
 }
 
+const LUNA_TEXT_MODEL = 'gpt_6_luna';
+const LLM_WRAPPER_KEYS = ['response', 'result', 'data', 'output', 'content', 'text'];
+
+function unwrapLunaResult(value, schema) {
+  const expectedKeys = Object.keys(schema?.properties || {});
+  const queue = [value];
+  const visited = new Set();
+
+  while (queue.length) {
+    const candidate = queue.shift();
+    if (candidate === null || candidate === undefined || visited.has(candidate)) continue;
+    if (typeof candidate === 'string') {
+      const text = candidate.trim();
+      if (!text) continue;
+      try {
+        queue.unshift(parsePollinationsJson(text));
+        continue;
+      } catch {
+        if (!schema) return text;
+        continue;
+      }
+    }
+    if (typeof candidate !== 'object') continue;
+    visited.add(candidate);
+
+    if (Array.isArray(candidate.choices)) {
+      const message = candidate.choices[0]?.message?.content;
+      if (message !== undefined) queue.unshift(message);
+    }
+    if (!schema || expectedKeys.some((key) => Object.prototype.hasOwnProperty.call(candidate, key))) {
+      return candidate;
+    }
+    for (const key of LLM_WRAPPER_KEYS) {
+      if (candidate[key] !== undefined) queue.push(candidate[key]);
+    }
+  }
+
+  if (schema) throw new Error(`A resposta do GPT Luna 6 não contém os campos esperados: ${expectedKeys.join(', ')}.`);
+  throw new Error('A IA retornou uma resposta vazia.');
+}
+
 /** Usa o mesmo modelo Base44 configurado para a agente Luna. */
 export async function invokeLunaAI({ prompt, response_json_schema: schema }) {
   if (!prompt?.trim()) throw new Error('O prompt da IA não pode estar vazio.');
   try {
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
-      model: 'gpt_6_luna',
+      model: LUNA_TEXT_MODEL,
       ...(schema ? { response_json_schema: schema } : {}),
     });
-    if (schema && typeof result === 'string') return parsePollinationsJson(result);
-    if (result === undefined || result === null || result === '') throw new Error('A IA retornou uma resposta vazia.');
-    return result;
+    return unwrapLunaResult(result, schema);
   } catch (error) {
     throw new Error(error?.message || 'Não foi possível gerar o conteúdo com GPT Luna 6.');
   }
@@ -62,4 +101,4 @@ export async function invokePollinations({ prompt, response_json_schema: schema,
 }
 
 export const POLLINATIONS_TEXT_MODEL = 'grok';
-export const LUNA_TEXT_MODEL = 'gpt_6_luna';
+export const LUNA_TEXT_MODEL = LUNA_TEXT_MODEL;
