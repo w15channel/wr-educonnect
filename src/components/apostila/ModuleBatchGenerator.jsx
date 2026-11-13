@@ -64,11 +64,6 @@ function validateGeneratedTopics(topics) {
   return issues;
 }
 
-function stripHeader(content = '') {
-  const lines = String(content).split(/\r?\n/);
-  const authorIndex = lines.findIndex((line) => line.includes('Prof. William Ribeiro | WR-EDU®'));
-  return (authorIndex >= 0 ? lines.slice(authorIndex + 1) : lines).join('\n').trim();
-}
 
 export default function ModuleBatchGenerator({ chapters, courseTitle, onClose, onPublish, saving = false }) {
   const eligibleModules = useMemo(() => chapters.filter((chapter) => chapter.lessons?.length === MODULE_SIZE), [chapters]);
