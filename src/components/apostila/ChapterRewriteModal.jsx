@@ -3,7 +3,7 @@
  * Divide o trabalho por tópico para evitar truncamento e aplica correção
  * determinística local antes do salvamento, sem bloquear por contagem.
  */
-import { invokePollinations } from '@/lib/pollinationsAI';
+import { invokeLunaAI as invokePollinations } from '@/lib/pollinationsAI';
 import React, { useMemo, useState } from 'react';
 import { Sparkles, Loader2, X, Wand2, Save, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
