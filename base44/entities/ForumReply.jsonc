@@ -31,7 +31,14 @@
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "aconselhamento-familiar"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "pink",
+        "green"
       ],
       "default": "tcc",
       "description": "Curso/turma da resposta"
@@ -43,7 +50,7 @@
         "debates"
       ],
       "default": "forum",
-      "description": "Área onde a resposta deve aparecer"
+      "description": "\u00c1rea onde a resposta deve aparecer"
     }
   },
   "required": [

@@ -15,7 +15,14 @@
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "aconselhamento-familiar"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "pink",
+        "green"
       ],
       "default": "tcc"
     },
@@ -43,7 +50,7 @@
     "questions_answered": {
       "type": "number",
       "default": 0,
-      "description": "Quantas perguntas respondidas (máx 8)"
+      "description": "Quantas perguntas respondidas (m\u00e1x 8)"
     },
     "points_earned": {
       "type": "number",

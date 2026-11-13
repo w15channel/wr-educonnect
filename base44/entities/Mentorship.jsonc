@@ -2,19 +2,87 @@
   "name": "Mentorship",
   "type": "object",
   "properties": {
-    "date": { "type": "string", "description": "Data em que a mentoria foi realizada" },
-    "theme": { "type": "string", "description": "Tema central da abordagem" },
-    "objective": { "type": "string", "description": "Objetivo terapêutico e pedagógico" },
-    "practices": { "type": "string", "description": "Práticas, técnicas e dinâmica utilizadas" },
-    "facilitator": { "type": "string", "description": "Nome do mentor ou facilitador" },
-    "duration_minutes": { "type": "number", "default": 60, "minimum": 1 },
-    "course": { "type": "string", "enum": ["tcc", "psicanalise", "sexologia"], "default": "tcc" },
-    "module_number": { "type": "number", "minimum": 1, "maximum": 10, "description": "Módulo que recebe a pontuação da mentoria" },
-    "participant_emails": { "type": "array", "items": { "type": "string" } },
-    "participant_names": { "type": "array", "items": { "type": "string" } },
-    "status": { "type": "string", "enum": ["realizada", "cancelada"], "default": "realizada" },
-    "admin_notes": { "type": "string", "description": "Registro reservado da condução e dos resultados observados" }
+    "date": {
+      "type": "string",
+      "description": "Data em que a mentoria foi realizada"
+    },
+    "theme": {
+      "type": "string",
+      "description": "Tema central da abordagem"
+    },
+    "objective": {
+      "type": "string",
+      "description": "Objetivo terap\u00eautico e pedag\u00f3gico"
+    },
+    "practices": {
+      "type": "string",
+      "description": "Pr\u00e1ticas, t\u00e9cnicas e din\u00e2mica utilizadas"
+    },
+    "facilitator": {
+      "type": "string",
+      "description": "Nome do mentor ou facilitador"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "default": 60,
+      "minimum": 1
+    },
+    "course": {
+      "type": "string",
+      "enum": [
+        "tcc",
+        "psicanalise",
+        "sexologia",
+        "aconselhamento-familiar"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "pink",
+        "green"
+      ],
+      "default": "tcc"
+    },
+    "module_number": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "M\u00f3dulo que recebe a pontua\u00e7\u00e3o da mentoria"
+    },
+    "participant_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "participant_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "realizada",
+        "cancelada"
+      ],
+      "default": "realizada"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Registro reservado da condu\u00e7\u00e3o e dos resultados observados"
+    }
   },
-  "required": ["date", "theme", "participant_emails"],
-  "rls": { "create": true, "read": true, "update": true, "delete": true }
+  "required": [
+    "date",
+    "theme",
+    "participant_emails"
+  ],
+  "rls": {
+    "create": true,
+    "read": true,
+    "update": true,
+    "delete": true
+  }
 }

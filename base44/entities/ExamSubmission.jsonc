@@ -19,7 +19,14 @@
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "aconselhamento-familiar"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "pink",
+        "green"
       ],
       "default": "tcc",
       "description": "Curso da prova"

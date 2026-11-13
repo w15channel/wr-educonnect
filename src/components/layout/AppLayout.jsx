@@ -11,6 +11,8 @@ import ChecklistReturnBar from '../checklist/ChecklistReturnBar';
 import ProfileAssistant from '../onboarding/ProfileAssistant';
 import useProfileCompletion from '@/hooks/useProfileCompletion';
 import useNativeAutomations from '@/hooks/useNativeAutomations';
+import CourseWorkspaceNotice from '@/components/courses/CourseWorkspaceNotice';
+import { PORTAL_COURSES } from '@/components/courses/portalCourses';
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -87,7 +89,7 @@ export default function AppLayout() {
 
   const showIndicator = pullY > 8;
   return (
-    <div className="app-shell-bg flex overflow-hidden lg:pt-0" style={{ height: '100dvh' }}>
+    <div className={`course-workspace ${PORTAL_COURSES.find(c => c.id === session?.course)?.theme || 'course-tcc'} app-shell-bg flex overflow-hidden lg:pt-0`} style={{ height: '100dvh' }}>
       <MobileSplash />
       {showAssistant && (
         <ProfileAssistant
@@ -148,6 +150,7 @@ export default function AppLayout() {
             >
               {/* Largura padrão de todas as páginas internas — a mesma da tela de Aulas. */}
               <div className="w-full max-w-[70rem] mx-auto flex-1 flex flex-col min-h-0">
+                <CourseWorkspaceNotice session={session} />
                 <Outlet context={{ user: session, isAdmin: session?.role === 'admin', isStudent: session?.role !== 'admin' }} />
               </div>
             </motion.div>

@@ -5,6 +5,8 @@ import { User, DollarSign, GraduationCap, History, LogOut, ChevronRight, Chevron
 import { WR_PRIMARY_LOGO, BRAND_LEGAL_NAME, BRAND_SHORT_NAME } from '@/lib/brand';
 import ChecklistReturnBar from '@/components/checklist/ChecklistReturnBar';
 import MyCoursesLink from '@/components/courses/MyCoursesLink';
+import CourseWorkspaceNotice from '@/components/courses/CourseWorkspaceNotice';
+import { PORTAL_COURSES } from '@/components/courses/portalCourses';
 
 
 const DIPLOMA_GROUPS = [
@@ -70,7 +72,7 @@ export default function DiplomaLayout() {
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden app-shell-bg">
+    <div className={`course-workspace ${PORTAL_COURSES.find(c => c.id === session?.course)?.theme || 'course-tcc'} flex h-[100dvh] w-full overflow-hidden app-shell-bg`}>
       {/* Sidebar — diploma */}
       {mobileOpen && <button type="button" aria-label="Fechar menu" className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm md:hidden" onClick={closeMobile} />}
       <aside className={`${mobileOpen ? 'flex' : 'hidden'} fixed inset-y-0 left-0 z-50 md:relative md:flex w-[17rem] md:w-[15.5rem] shrink-0 flex-col h-full border-r border-white/[0.06] bg-[#06070c] md:bg-[#06070c]/95 md:backdrop-blur-xl`}>
@@ -158,6 +160,7 @@ export default function DiplomaLayout() {
 
       {/* Conteúdo */}
       <main className="mt-[calc(58px_+_env(safe-area-inset-top,0px))] flex-1 overflow-y-auto overflow-x-hidden md:mt-0">
+        <CourseWorkspaceNotice session={session} />
         <Outlet context={{ user: session, course: session?.course, isDiplomaMode: true }} />
         <ChecklistReturnBar />
       </main>

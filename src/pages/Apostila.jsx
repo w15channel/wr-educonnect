@@ -27,8 +27,10 @@ import { MOD8 } from '@/lib/apostila/mod8';
 import { MOD9 } from '@/lib/apostila/mod9';
 import { MOD10 } from '@/lib/apostila/mod10';
 
-const DEFAULT_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
-const APOSTILA_BOOK_ID = 'apostila-tcc';
+import courseWorkbookChapters from '@/components/courses/courseWorkbookChapters';
+import { PORTAL_COURSES } from '@/components/courses/portalCourses';
+
+const TCC_CHAPTERS = [MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, MOD9, MOD10];
 const APOSTILA_BOOK_TITLE = 'Apostila';
 
 const APOSTILA_AUTHOR_EMAIL = 'apostila@wr-edu.local';
@@ -168,6 +170,10 @@ function ReadingViewport({ paragraphs, activeParagraph, activeWord, isPlaying, n
 
 export default function Apostila() {
   const { session } = useCustomAuth();
+  const course = session?.course || 'tcc';
+  const courseInfo = PORTAL_COURSES.find(item => item.id === course);
+  const APOSTILA_BOOK_ID = `apostila-${course}`;
+  const DEFAULT_CHAPTERS = useMemo(() => course === 'tcc' ? TCC_CHAPTERS : courseWorkbookChapters(course), [course]);
   const isAdmin = session?.role === 'admin';
   const isDiplomaMode = useLocation().pathname.startsWith('/degree/student');
   const queryClient = useQueryClient();
@@ -212,11 +218,13 @@ export default function Apostila() {
 
   const { data: savedProgress = [], isLoading: loadingReadProgress, error: readProgressError, refetch: reloadReadProgress } = useStudentRecords('LessonProgress', session);
   const readLessons = useMemo(() => new Set(savedProgress
-    .filter(progress => progress.watched && String(progress.lesson_id).startsWith('apostila:'))
-    .map(progress => String(progress.lesson_id).slice('apostila:'.length).replace(':', '__'))), [savedProgress]);
+    .filter(progress => progress.watched && DEFAULT_CHAPTERS.some(chapter => String(progress.lesson_id).startsWith(`apostila:${chapter.id}:`)))
+    .map(progress => String(progress.lesson_id).slice('apostila:'.length).replace(':', '__'))), [savedProgress, DEFAULT_CHAPTERS]);
   const [savingReadKey, setSavingReadKey] = useState(null);
 
   const markRead = async (chapterId, lessonId) => {
+    const lesson = chapters.find(chapter => chapter.id === chapterId)?.lessons.find(item => item.id === lessonId);
+    if (!lesson?.content?.replace(/<[^>]*>/g, '').trim()) { toast.info('Este conteúdo ainda está em preparação.'); return; }
     const readKey = `${chapterId}__${lessonId}`;
     if (readLessons.has(readKey) || savingReadKey || loadingReadProgress || readProgressError) return;
     setSavingReadKey(readKey);
@@ -259,10 +267,10 @@ export default function Apostila() {
       title: lesson.title || 'Aula da apostila',
       content: getLessonHtml(normalizeApostilaHeader(lesson.content || '')),
       order: (chapterIndex * 100) + lessonIndex + 1,
-    }))), [session?.email]);
+    }))), [session?.email, DEFAULT_CHAPTERS, APOSTILA_BOOK_ID]);
 
   useEffect(() => {
-    if (!isAdmin || !savedLessonsFetched || !defaultServerLessons.length) return;
+    if (course !== 'tcc' || !isAdmin || !savedLessonsFetched || !defaultServerLessons.length) return;
     const savedKeys = new Set((savedLessons || []).map((lesson) => `${lesson.chapter_id}__${lesson.lesson_id}`));
     const missingLessons = defaultServerLessons.filter((lesson) => !savedKeys.has(`${lesson.chapter_id}__${lesson.lesson_id}`));
     if (!missingLessons.length) return;
@@ -292,10 +300,10 @@ export default function Apostila() {
       return {
         ...lesson,
         title: savedLesson?.title || lesson.title,
-        content: normalizeApostilaHeader(rawContent),
+        content: course === 'tcc' ? normalizeApostilaHeader(rawContent) : rawContent,
       };
     }),
-  })), [savedLessonByKey]);
+  })), [savedLessonByKey, DEFAULT_CHAPTERS, course]);
 
   const paragraphsByLesson = useMemo(() => {
     const entries = [];
@@ -546,6 +554,7 @@ export default function Apostila() {
         : await buildStoredContentPayload(chapterId, lessonId, content);
       const payload = {
         book_id: APOSTILA_BOOK_ID,
+        course,
         book_title: APOSTILA_BOOK_TITLE,
         author_email: session?.email || APOSTILA_AUTHOR_EMAIL,
         chapter_id: chapterId,
@@ -596,7 +605,7 @@ export default function Apostila() {
             <BookOpen size={26} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-foreground">Apostila — Formação em Terapia Comportamental</h1>
+            <h1 className="text-2xl font-bold text-foreground">Apostila — {course === 'tcc' ? 'Formação em Terapia Comportamental' : courseInfo?.qualification}</h1>
             <p className="text-sm text-emerald-400 font-medium mt-1">Prof. William Ribeiro · Psicoterapeuta, Psicanalista e Sexólogo</p>
             <p className="text-xs text-muted-foreground mt-1">Coordenador do Instituto de Desenvolvimento Humano WR-EDU®</p>
             <div className="flex flex-wrap gap-3 mt-3">
@@ -608,17 +617,17 @@ export default function Apostila() {
             {isAdmin && <div className="mt-3"><Button size="sm" onClick={() => setRewriteOpen(true)} className="gap-1.5 bg-gradient-to-r from-violet-500 to-purple-700 text-white hover:opacity-90"><Wand2 size={13} /> Reescrever capítulo</Button></div>}
           </div>
         </div>
-        <div className="mt-5 pt-5 border-t border-emerald-500/15">
+        {course === 'tcc' && <div className="mt-5 pt-5 border-t border-emerald-500/15">
           <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Fundamentação teórica</p>
           <div className="flex flex-wrap gap-2">
             {['Donald Winnicott', 'Kurt Lewin', 'Heinz Kohut', 'George Engel', 'Viktor Frankl'].map((name) => <span key={name} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-medium">{name}</span>)}
           </div>
-        </div>
+        </div>}
       </div>
 
       <div className="rounded-xl bg-card border border-border p-4">
         <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Objetivo Geral</h3>
-        <p className="text-sm text-foreground leading-relaxed">Formar terapeutas capazes de aplicar um modelo termodinâmico, vetorial e não-destrutivo da psique, aliviando dores e fornecendo ferramentas terapêuticas eficientes, integrando trade-off comportamental, algozes e modulação consciente com os principais referenciais teóricos.</p>
+        <p className="text-sm text-foreground leading-relaxed">{course === 'tcc' ? 'Formar terapeutas capazes de aplicar um modelo termodinâmico, vetorial e não-destrutivo da psique, aliviando dores e fornecendo ferramentas terapêuticas eficientes, integrando trade-off comportamental, algozes e modulação consciente com os principais referenciais teóricos.' : courseInfo?.description}</p>
       </div>
 
       {readProgressError && <div role="alert" className="rounded-xl border border-destructive p-3 text-sm text-destructive">Não foi possível carregar suas leituras. Isso não significa que foram perdidas. <button onClick={() => reloadReadProgress()} className="underline">Tentar novamente</button></div>}

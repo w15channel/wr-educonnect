@@ -21,6 +21,11 @@
 .course-family { --course-accent: var(--course-family); }
 .course-analysis { --course-accent: var(--course-analysis); }
 .course-sexology { --course-accent: var(--course-sexology); }
+.course-workspace:not(.course-tcc) {
+  --primary: var(--course-accent);
+  --ring: var(--course-accent);
+  --sidebar-primary: var(--course-accent);
+}
 
 @layer components {
   .theme-lamp {

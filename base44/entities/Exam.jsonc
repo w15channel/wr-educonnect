@@ -4,18 +4,25 @@
   "properties": {
     "title": {
       "type": "string",
-      "description": "Título da prova"
+      "description": "T\u00edtulo da prova"
     },
     "description": {
       "type": "string",
-      "description": "Instruções para o aluno"
+      "description": "Instru\u00e7\u00f5es para o aluno"
     },
     "course": {
       "type": "string",
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "aconselhamento-familiar"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "pink",
+        "green"
       ],
       "default": "tcc",
       "description": "Curso ao qual a prova pertence"
@@ -23,16 +30,16 @@
     "deadline": {
       "type": "string",
       "format": "date-time",
-      "description": "Prazo final para realização"
+      "description": "Prazo final para realiza\u00e7\u00e3o"
     },
     "max_grade": {
       "type": "number",
       "default": 10,
-      "description": "Pontuação máxima"
+      "description": "Pontua\u00e7\u00e3o m\u00e1xima"
     },
     "quiz_questions": {
       "type": "array",
-      "description": "Questões geradas pela IA ou criadas manualmente",
+      "description": "Quest\u00f5es geradas pela IA ou criadas manualmente",
       "items": {
         "type": "object",
         "properties": {
@@ -54,14 +61,14 @@
           },
           "correct_index": {
             "type": "number",
-            "description": "Índice da resposta correta (somente múltipla escolha)"
+            "description": "\u00cdndice da resposta correta (somente m\u00faltipla escolha)"
           }
         }
       }
     },
     "module_ref": {
       "type": "string",
-      "description": "Referência ao módulo da apostila usado (ex: mod1)"
+      "description": "Refer\u00eancia ao m\u00f3dulo da apostila usado (ex: mod1)"
     },
     "generated_by_ai": {
       "type": "boolean",
@@ -71,7 +78,7 @@
     "is_published": {
       "type": "boolean",
       "default": true,
-      "description": "Se está visível para os alunos"
+      "description": "Se est\u00e1 vis\u00edvel para os alunos"
     }
   },
   "required": [

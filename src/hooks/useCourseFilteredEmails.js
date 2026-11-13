@@ -2,18 +2,21 @@ import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useMemo } from 'react';
+import { useCustomAuth } from '@/lib/CustomAuthContext';
 
 const SLUG_TO_PREFIX = { sex: 'SEX-', tcc: 'EDU-', psi: 'PSI-' };
 const SLUG_TO_COURSE = { sex: 'sexologia', tcc: 'tcc', psi: 'psicanalise' };
 
-export default function useCourseFilteredEmails(session) {
+export default function useCourseFilteredEmails(providedSession) {
+  const { session: currentSession } = useCustomAuth();
+  const session = providedSession || currentSession;
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
-  const courseSlug = (parts[0] === 'student' || parts[0] === 'adm') && parts[1] ? parts[1] : null;
+  const courseSlug = (parts[0] === 'student' || parts[0] === 'adm') && SLUG_TO_COURSE[parts[1]] ? parts[1] : null;
   // O acesso /degree/student usa exatamente a mesma turma do ambiente completo.
   // Nesse caminho não existe slug na URL, portanto a sessão é a fonte canônica.
   const sessionPrefix = String(session?.code || '').match(/^[A-Z]+-/i)?.[0]?.toUpperCase() || null;
-  const codePrefix = courseSlug ? SLUG_TO_PREFIX[courseSlug] : sessionPrefix;
+  const codePrefix = courseSlug ? SLUG_TO_PREFIX[courseSlug] : null;
   const course = courseSlug ? SLUG_TO_COURSE[courseSlug] : (session?.course || null);
 
   const { data: accessCodes = [] } = useQuery({

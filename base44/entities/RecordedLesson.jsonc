@@ -15,7 +15,14 @@
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "aconselhamento-familiar"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "pink",
+        "green"
       ],
       "default": "tcc",
       "description": "Curso ao qual a aula pertence"
@@ -65,7 +72,7 @@
     "is_hidden": {
       "type": "boolean",
       "default": false,
-      "description": "Quando verdadeiro, a aula fica visível somente para administradores"
+      "description": "Quando verdadeiro, a aula fica vis\u00edvel somente para administradores"
     },
     "module_type": {
       "type": "string",

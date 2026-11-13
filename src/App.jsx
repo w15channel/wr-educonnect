@@ -16,6 +16,7 @@ import PoliticaDeTrabalho from './pages/PoliticaDeTrabalho';
 import TermosDeUso from './pages/TermosDeUso';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade';
 import AppLayout from './components/layout/AppLayout';
+import CourseWorkspaceGuard from '@/components/courses/CourseWorkspaceGuard';
 import DiplomaLayout from './pages/DiplomaLayout';
 import DiplomaDashboard from './pages/DiplomaDashboard';
 import Dashboard from './pages/Dashboard';
@@ -76,7 +77,7 @@ function AdminOnly({ children }) {
 function AppRoutesTree() {
   return (
     <Routes>
-      <Route element={<AppLayout />}>
+      <Route element={<CourseWorkspaceGuard><AppLayout /></CourseWorkspaceGuard>}>
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="lessons" element={<Lessons />} />
@@ -171,7 +172,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Diploma isolated shell */}
-      <Route path="/degree/student/*" element={<DiplomaLayout />}>
+      <Route path="/degree/student/*" element={<CourseWorkspaceGuard><DiplomaLayout /></CourseWorkspaceGuard>}>
         <Route index element={<DiplomaDashboard />} />
         <Route path="dashboard" element={<DiplomaDashboard />} />
         <Route path="lessons" element={<Lessons />} />

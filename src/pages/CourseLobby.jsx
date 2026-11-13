@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useCustomAuth } from '@/lib/CustomAuthContext';
 import { setSession, getSession } from '@/lib/customAuth';
 import useSocialIdentity from '@/hooks/useSocialIdentity';
-import { PORTAL_COURSES, portalStudyPath } from '@/components/courses/portalCourses';
+import { PORTAL_COURSES, portalStudyPath, canPrepareCourses } from '@/components/courses/portalCourses';
+import { useQueryClient } from '@tanstack/react-query';
 import PortalHeader from '@/components/courses/PortalHeader';
 import PortalCourseCard from '@/components/courses/PortalCourseCard';
 import PortalModelNotice from '@/components/courses/PortalModelNotice';
@@ -14,13 +15,15 @@ export default function CourseLobby() {
   const { session, login, isAdmin } = useCustomAuth();
   const { firstName, isLoading } = useSocialIdentity(session);
   useEffect(() => { localStorage.setItem('wr_lobby_music_enabled', 'off'); }, []);
+  const queryClient = useQueryClient();
+  const staffAccess = canPrepareCourses(session);
   const enterCourse = (id) => {
-    if (!PORTAL_COURSES.some(course => course.id === id && course.available)) return;
-    if (isAdmin) {
-      setSession({ ...getSession(), course: id });
-      login();
-    }
-    navigate(`${portalStudyPath(session)}/dashboard`);
+    if (!PORTAL_COURSES.some(course => course.id === id && (course.available || staffAccess))) return;
+    const next = { ...getSession(), course: id };
+    setSession(next, { remember: !!localStorage.getItem('educonnect_session') });
+    queryClient.clear();
+    login();
+    navigate(`${portalStudyPath(next)}/dashboard`);
   };
   return <div className="portal-shell h-[100dvh] overflow-y-auto bg-portal-background text-portal-text">
     <PortalHeader />
@@ -32,7 +35,7 @@ export default function CourseLobby() {
         <PortalAccountLinks session={session} />
       </section>
       <section aria-label="Cursos do portal" className="grid gap-5 sm:grid-cols-2">
-        {PORTAL_COURSES.map(course => <PortalCourseCard key={course.id} course={course} isAdmin={isAdmin} onEnter={enterCourse} />)}
+        {PORTAL_COURSES.map(course => <PortalCourseCard key={course.id} course={course} isAdmin={isAdmin} staffAccess={staffAccess} onEnter={enterCourse} />)}
       </section>
       <PortalModelNotice />
     </main>

@@ -36,7 +36,14 @@
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "aconselhamento-familiar"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "pink",
+        "green"
       ],
       "default": "tcc",
       "description": "Turma/curso onde o post foi publicado"
@@ -48,12 +55,12 @@
         "debates"
       ],
       "default": "forum",
-      "description": "Área onde a publicação deve aparecer"
+      "description": "\u00c1rea onde a publica\u00e7\u00e3o deve aparecer"
     },
     "bot_replied": {
       "type": "boolean",
       "default": false,
-      "description": "Se o bot já respondeu automaticamente"
+      "description": "Se o bot j\u00e1 respondeu automaticamente"
     }
   },
   "required": [
