@@ -1,0 +1,73 @@
+const psychoanalysisCurriculum = [
+  ['Origens e fundamentos da psicanálise', [
+    ['O surgimento da psicanálise', 'A psicanálise surgiu no final do século XIX como uma investigação dos processos psíquicos e do sofrimento humano.'],
+    ['Freud e o contexto histórico', 'As ideias de Freud se desenvolveram em diálogo com a medicina, a cultura e os debates de seu tempo.'],
+    ['O inconsciente como hipótese', 'O inconsciente designa processos e sentidos que não estão imediatamente disponíveis à consciência.'],
+    ['Sintoma e sentido', 'Na perspectiva psicanalítica, o sintoma pode ser explorado em sua relação com conflitos e história singular.'],
+    ['Ética e limites da prática', 'O estudo psicanalítico exige respeito à autonomia, ao sigilo e aos limites legais e profissionais da atuação.'],
+  ]],
+  ['Bases da teoria freudiana', [
+    ['Primeira tópica', 'A primeira tópica distingue os sistemas consciente, pré-consciente e inconsciente como um modelo de compreensão psíquica.'],
+    ['Segunda tópica', 'Id, ego e superego compõem um modelo das tensões e funções da vida psíquica.'],
+    ['Pulsão e desejo', 'A teoria das pulsões procura pensar as exigências que o corpo coloca à vida psíquica e seus destinos.'],
+    ['Recalque e conflito', 'O recalque é um conceito que descreve a exclusão de certos conteúdos da consciência e seu possível retorno indireto.'],
+    ['Defesas psíquicas', 'Os mecanismos de defesa são maneiras pelas quais o psiquismo pode lidar com conflitos e angústias.'],
+  ]],
+  ['Formação psíquica e desenvolvimento', [
+    ['Infância e constituição subjetiva', 'As experiências iniciais e os vínculos participam da constituição da subjetividade em modelos psicanalíticos.'],
+    ['Desenvolvimento psicossexual em Freud', 'A teoria freudiana propõe fases para pensar a organização da experiência infantil, cuja leitura exige contexto histórico e crítico.'],
+    ['Complexo de Édipo e suas leituras', 'O complexo de Édipo é uma formulação sobre desejo, identificação e interdições, interpretada de formas distintas por escolas posteriores.'],
+    ['Narcisismo e identificação', 'Narcisismo e identificação ajudam a explorar a formação da imagem de si e as relações com outras pessoas.'],
+    ['Trauma e elaboração', 'A elaboração de experiências traumáticas deve ser abordada com cuidado e sem pressupor uma explicação única.'],
+  ]],
+  ['Método e escuta clássica', [
+    ['Associação livre', 'A associação livre convida a pessoa a falar sem selecionar previamente o que considera importante.'],
+    ['Atenção flutuante', 'A atenção flutuante propõe uma escuta aberta, evitando privilegiar antecipadamente um único detalhe.'],
+    ['Sonhos e trabalho do sonho', 'A interpretação dos sonhos em Freud examina transformações e associações, não significados universais fixos.'],
+    ['Atos falhos e formações do inconsciente', 'Atos falhos e outras manifestações podem ser investigados a partir das associações da própria pessoa.'],
+    ['Enquadre e contrato de trabalho', 'O enquadre organiza combinados, responsabilidades, limites e condições de uma prática ética.'],
+  ]],
+  ['Relação analítica e manejo', [
+    ['Transferência', 'A transferência descreve modos pelos quais vivências e expectativas podem se atualizar na relação analítica.'],
+    ['Contratransferência', 'A contratransferência envolve as respostas do analista e é compreendida de maneiras diversas pelas escolas.'],
+    ['Resistência e processo', 'A resistência pode ser compreendida como parte do processo, exigindo atenção ao ritmo e à segurança da pessoa.'],
+    ['Interpretação e intervenções', 'Intervenções devem ser contextualizadas, cuidadosas e abertas à resposta de quem é atendido.'],
+    ['Supervisão e cuidado profissional', 'Supervisão e estudo contínuo ajudam a refletir sobre limites, impasses e responsabilidade.'],
+  ]],
+  ['Escolas clássicas e pós-freudianas', [
+    ['Melanie Klein e relações de objeto', 'Klein desenvolveu conceitos sobre fantasia, ansiedade e relações de objeto nas experiências iniciais.'],
+    ['Anna Freud e defesas', 'Anna Freud aprofundou o estudo das defesas e a compreensão do trabalho com crianças.'],
+    ['Donald Winnicott e ambiente', 'Winnicott destacou a importância do ambiente, do brincar e das condições de amadurecimento.'],
+    ['Wilfred Bion e pensamento', 'Bion investigou experiências emocionais, pensamento e funções de acolhimento psíquico.'],
+    ['Jacques Lacan e linguagem', 'Lacan releu Freud destacando linguagem, desejo e a constituição do sujeito.'],
+  ]],
+  ['Abordagens modernas e contemporâneas', [
+    ['Psicanálise relacional', 'A perspectiva relacional enfatiza a participação das relações e do contexto na vida psíquica e na clínica.'],
+    ['Teoria do apego em diálogo', 'O diálogo com a teoria do apego examina vínculos e segurança, reconhecendo diferenças entre tradições teóricas.'],
+    ['Mentalização e compreensão de estados mentais', 'A mentalização descreve a capacidade de considerar pensamentos, sentimentos e intenções próprios e alheios.'],
+    ['Psicanálise e estudos do trauma', 'Perspectivas contemporâneas ampliam o diálogo sobre trauma, segurança e contexto relacional.'],
+    ['Pesquisa e avaliação crítica', 'O estudo contemporâneo considera pesquisas, limites das evidências e debates entre diferentes abordagens.'],
+  ]],
+  ['Subjetividade e contextos', [
+    ['Família e laços afetivos', 'Os vínculos familiares podem ser explorados sem pressupor um único modelo legítimo de família.'],
+    ['Cultura e sociedade', 'Cultura, linguagem e condições sociais influenciam a experiência subjetiva e o modo de expressar sofrimento.'],
+    ['Gênero e diversidade', 'A escuta respeita identidades e expressões diversas, evitando patologizar diferenças humanas.'],
+    ['Luto e perdas', 'O luto é uma experiência singular, cuja compreensão exige respeito ao tempo e ao contexto de cada pessoa.'],
+    ['Infância e adolescência', 'O trabalho com crianças e adolescentes requer atenção ao desenvolvimento, à proteção e às atribuições profissionais.'],
+  ]],
+  ['Clínica e responsabilidade', [
+    ['Primeiras entrevistas e demanda', 'As entrevistas iniciais ajudam a compreender a demanda e a avaliar a adequação do acompanhamento.'],
+    ['Sofrimento psíquico e escuta', 'O sofrimento deve ser acolhido sem reduzir a pessoa a uma categoria ou antecipar diagnósticos.'],
+    ['Risco e encaminhamento', 'Situações de risco ou necessidade de cuidados clínicos exigem encaminhamento e atuação conforme a rede competente.'],
+    ['Sigilo e documentação', 'Sigilo e registros devem observar os limites legais e proteger informações pessoais sensíveis.'],
+    ['Diálogo interdisciplinar', 'O trabalho com outros profissionais pode complementar o cuidado respeitando competências e consentimento.'],
+  ]],
+  ['Integração e percurso de formação', [
+    ['Comparando escolas e conceitos', 'A comparação entre escolas destaca convergências, diferenças e pressupostos de cada tradição.'],
+    ['Leitura crítica de casos', 'Casos fictícios ajudam a exercitar hipóteses sem transformar formulações teóricas em certezas.'],
+    ['Análise pessoal e supervisão', 'A formação em psicanálise costuma valorizar estudo teórico, experiência pessoal e supervisão.'],
+    ['Prática ética e seus limites', 'Cada atuação deve respeitar a legislação, as competências da profissão de origem e as necessidades de cuidado.'],
+    ['Formação continuada', 'O desenvolvimento profissional inclui leitura crítica, supervisão e atualização permanente.'],
+  ]],
+];
+export default psychoanalysisCurriculum;

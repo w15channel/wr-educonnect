@@ -1,0 +1,73 @@
+const familyCurriculum = [
+  ['Fundamentos do aconselhamento profissional', [
+    ['Aconselhamento e cuidado humano', 'O aconselhamento é uma prática de escuta e orientação que reconhece a dignidade, a autonomia e o contexto de cada pessoa.'],
+    ['Papéis e limites do conselheiro', 'A atuação do conselheiro exige clareza sobre suas competências, seus limites e os encaminhamentos necessários à rede de atendimento.'],
+    ['Escuta acolhedora e vínculo', 'A escuta ativa e a empatia favorecem vínculos de confiança sem substituir a decisão da pessoa atendida.'],
+    ['Ética, sigilo e proteção', 'A confidencialidade deve ser compreendida junto aos deveres legais de proteção e às situações que exigem comunicação responsável.'],
+    ['Diversidade e contexto social', 'Famílias e comunidades possuem diferentes histórias e configurações que devem ser acolhidas sem discriminação.'],
+  ]],
+  ['Direitos da criança e do adolescente', [
+    ['Proteção integral e prioridade absoluta', 'A proteção integral reconhece crianças e adolescentes como sujeitos de direitos em desenvolvimento, com prioridade na garantia de cuidados.'],
+    ['Estatuto da Criança e do Adolescente', 'O ECA estabelece direitos, medidas de proteção e responsabilidades compartilhadas entre família, sociedade e poder público.'],
+    ['Direitos fundamentais e convivência', 'Saúde, educação, respeito e convivência familiar e comunitária integram os direitos fundamentais de crianças e adolescentes.'],
+    ['Vulnerabilidade e violações de direitos', 'Identificar sinais de violação requer observação cuidadosa, proteção da criança e atenção à rede responsável.'],
+    ['Participação e escuta protegida', 'A escuta de crianças e adolescentes deve considerar idade, desenvolvimento, segurança e procedimentos de proteção aplicáveis.'],
+  ]],
+  ['Conselho tutelar e rede de garantia de direitos', [
+    ['Conselho tutelar: função e natureza', 'O conselho tutelar é órgão permanente e autônomo encarregado de zelar pelo cumprimento dos direitos de crianças e adolescentes.'],
+    ['Atribuições e limites legais', 'A atuação do conselheiro tutelar segue as atribuições previstas em lei e não substitui o Judiciário ou os serviços especializados.'],
+    ['Sistema de garantia de direitos', 'A proteção envolve a articulação entre educação, saúde, assistência social, Justiça e outros integrantes da rede.'],
+    ['Atendimento e encaminhamento', 'O atendimento deve registrar informações essenciais e encaminhar demandas de modo responsável aos serviços competentes.'],
+    ['Escolha, formação e responsabilidade pública', 'O exercício da função depende dos requisitos e processos legais aplicáveis, não sendo conferido apenas por uma formação.'],
+  ]],
+  ['Práticas de proteção e atendimento', [
+    ['Avaliação inicial de situações de risco', 'A avaliação inicial busca identificar necessidades urgentes e fatores de proteção sem antecipar conclusões.'],
+    ['Negligência e violência', 'O reconhecimento de possíveis situações de negligência ou violência exige cuidado, proteção e respeito aos fluxos legais.'],
+    ['Documentação e comunicação responsável', 'Registros objetivos e protegidos ajudam a dar continuidade ao atendimento e a evitar a exposição desnecessária de dados.'],
+    ['Trabalho com família e escola', 'O diálogo entre família, escola e serviços contribui para a proteção integral e a compreensão do contexto.'],
+    ['Encaminhamento e acompanhamento em rede', 'O acompanhamento considera o papel de cada serviço e busca verificar se a pessoa recebeu atendimento adequado.'],
+  ]],
+  ['Famílias e relações', [
+    ['Diversidade das configurações familiares', 'As famílias apresentam diferentes composições, vínculos e histórias, exigindo respeito às suas singularidades.'],
+    ['Ciclo de vida familiar', 'Transições como nascimento, separação e envelhecimento podem reorganizar papéis e necessidades familiares.'],
+    ['Comunicação e padrões relacionais', 'A comunicação familiar envolve formas de expressar necessidades, interpretar mensagens e responder a conflitos.'],
+    ['Vínculos, limites e papéis', 'Limites claros e relações respeitosas ajudam a compreender responsabilidades e promover convivência saudável.'],
+    ['Contexto cultural e comunitário', 'Valores culturais, condições materiais e redes de apoio influenciam a experiência das famílias.'],
+  ]],
+  ['Aconselhamento familiar', [
+    ['Acolhimento e definição da demanda', 'O primeiro encontro busca compreender o pedido da família, seus recursos e expectativas sem julgamentos precipitados.'],
+    ['Perguntas e escuta de diferentes perspectivas', 'Perguntas abertas permitem que diferentes membros expressem suas experiências com respeito e segurança.'],
+    ['Conflitos e comunicação não violenta', 'A abordagem de conflitos pode estimular diálogo, responsabilização e construção de alternativas sem coerção.'],
+    ['Apoio parental e corresponsabilidade', 'A orientação parental considera cuidado, desenvolvimento e responsabilidades compartilhadas conforme as necessidades da criança.'],
+    ['Limites, risco e encaminhamento profissional', 'Situações de violência, sofrimento intenso ou necessidades clínicas exigem avaliação e encaminhamento à rede especializada.'],
+  ]],
+  ['Aconselhamento religioso não doutrinário', [
+    ['Espiritualidade e sentido de vida', 'A espiritualidade pode ser uma fonte de sentido e apoio, respeitando a forma como cada pessoa a compreende.'],
+    ['Acolhimento sem imposição de crenças', 'O aconselhamento respeita crenças diversas e também o direito de não professar uma religião.'],
+    ['Escuta de valores e dilemas', 'O diálogo sobre valores busca compreender dilemas pessoais sem substituir a autonomia da pessoa atendida.'],
+    ['Comunidade, apoio e limites', 'Comunidades de fé podem oferecer apoio social, sem substituir atendimento profissional quando necessário.'],
+    ['Ética, liberdade e respeito', 'Liberdade religiosa, consentimento e respeito à diversidade orientam uma prática não doutrinária e não coercitiva.'],
+  ]],
+  ['Jovens e adolescentes', [
+    ['Desenvolvimento na adolescência', 'A adolescência envolve mudanças físicas, emocionais e sociais que variam conforme a pessoa e seu contexto.'],
+    ['Identidade, autonomia e pertencimento', 'A construção da identidade e da autonomia é influenciada pelos vínculos familiares, escolares e comunitários.'],
+    ['Escuta e comunicação com jovens', 'O acolhimento de jovens exige linguagem acessível, respeito à privacidade e atenção aos deveres de proteção.'],
+    ['Conflitos, escola e relações digitais', 'Desafios escolares, relacionais e digitais devem ser compreendidos com escuta e sem generalizações.'],
+    ['Riscos e rede de apoio', 'Sinais de sofrimento ou violência requerem proteção e encaminhamento oportuno aos serviços adequados.'],
+  ]],
+  ['Aconselhamento social e comunitário', [
+    ['Questões sociais e vulnerabilidade', 'Desigualdade, acesso a serviços e condições de vida influenciam as demandas de pessoas e famílias.'],
+    ['Direitos sociais e cidadania', 'A orientação social apresenta caminhos para acesso a direitos e serviços, respeitando a autonomia das pessoas.'],
+    ['Assistência social e rede pública', 'A rede socioassistencial e os serviços territoriais exercem funções específicas na proteção e no acompanhamento.'],
+    ['Trabalho comunitário e participação', 'A participação da comunidade favorece o reconhecimento de recursos locais e a construção coletiva de soluções.'],
+    ['Encaminhamento e limites de atuação', 'O conselheiro social identifica necessidades e encaminha situações que exigem profissionais ou órgãos competentes.'],
+  ]],
+  ['Integração e prática responsável', [
+    ['Planejamento do atendimento', 'Um atendimento responsável define objetivos, limites, cuidados de privacidade e possibilidade de encaminhamento.'],
+    ['Estudos de caso e reflexão ética', 'A análise de casos fictícios desenvolve a identificação de necessidades, riscos e alternativas de apoio.'],
+    ['Documentação e proteção de informações', 'Registros devem ser necessários, objetivos e protegidos conforme a legislação e os procedimentos aplicáveis.'],
+    ['Trabalho interdisciplinar', 'A articulação com profissionais e serviços amplia o cuidado sem confundir atribuições.'],
+    ['Desenvolvimento profissional contínuo', 'Formação continuada, supervisão e conhecimento dos limites profissionais sustentam uma atuação responsável.'],
+  ]],
+];
+export default familyCurriculum;

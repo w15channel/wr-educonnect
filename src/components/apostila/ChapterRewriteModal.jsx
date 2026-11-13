@@ -29,7 +29,7 @@ const stripHtml = (value = '') => {
   return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 };
 
-const buildRewritePrompt = (lessonTitle, sourceText) => `Você é professor especialista em terapia comportamental e redator didático do Instituto WR-EDU®.
+const buildRewritePrompt = (lessonTitle, sourceText, courseTitle) => `Você é professor especialista ${courseTitle ? `em ${courseTitle}` : 'em terapia comportamental'} e redator didático do Instituto WR-EDU®.
 Reescreva integralmente o conteúdo da aula abaixo, preservando o tema central e os conceitos, mas seguindo RIGOROSAMENTE a estrutura exigida.
 
 FORMATO DO CONTEÚDO (obrigatório):
@@ -80,7 +80,7 @@ const analyzeStructure = (text = '') => {
   return { topicCount, paragraphCount: paragraphs.length, outOfRange };
 };
 
-export default function ChapterRewriteModal({ chapters, onClose, onSave, saving }) {
+export default function ChapterRewriteModal({ chapters, courseTitle, onClose, onSave, saving }) {
   const [chapterId, setChapterId] = useState(chapters[0]?.id || '');
   const [lessonId, setLessonId] = useState(chapters[0]?.lessons?.[0]?.id || '');
   const [generating, setGenerating] = useState(false);
@@ -108,7 +108,7 @@ export default function ChapterRewriteModal({ chapters, onClose, onSave, saving 
         return;
       }
       const result = await invokePollinations({
-        prompt: buildRewritePrompt(lesson.title || 'Aula da apostila', sourceText),
+        prompt: buildRewritePrompt(lesson.title || 'Aula da apostila', sourceText, courseTitle),
         model: 'claude_sonnet_4_6',
       });
       const text = extractLlmText(result).trim();

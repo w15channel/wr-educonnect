@@ -1,0 +1,73 @@
+const sexualityCurriculum = [
+  ['Fundamentos da sexualidade integrativa', [
+    ['Sexualidade humana e integralidade', 'A sexualidade envolve dimensões biológicas, psicológicas, relacionais, culturais e sociais ao longo da vida.'],
+    ['Saúde sexual e direitos', 'Saúde sexual envolve bem-estar, informação, respeito, consentimento e acesso a cuidados apropriados.'],
+    ['Sexo, gênero e expressão', 'Sexo, identidade de gênero e expressão de gênero são conceitos distintos que devem ser tratados com respeito e precisão.'],
+    ['Afetividade e intimidade', 'Vínculos, afetos e intimidade podem assumir diferentes formas, sempre com respeito à autonomia e ao consentimento.'],
+    ['Ética e limites profissionais', 'A orientação em sexualidade não substitui diagnóstico ou tratamento por profissionais habilitados quando necessários.'],
+  ]],
+  ['História e cultura da sexualidade', [
+    ['Sexualidade em perspectiva histórica', 'As formas de compreender e regular a sexualidade mudam entre épocas, sociedades e tradições.'],
+    ['Costumes e normas sociais', 'Normas sociais influenciam a expressão da sexualidade e devem ser estudadas em seus contextos.'],
+    ['Medicina e conhecimento sexual', 'A história da medicina sexual inclui avanços, equívocos e debates que merecem análise crítica.'],
+    ['Direitos e transformações sociais', 'A discussão sobre direitos sexuais se relaciona com mudanças sociais, proteção e liberdade.'],
+    ['Mídia e representações', 'Representações da sexualidade na mídia influenciam expectativas e devem ser examinadas criticamente.'],
+  ]],
+  ['Religião e sexualidade', [
+    ['Tradições religiosas clássicas', 'Diferentes tradições religiosas apresentam leituras históricas variadas sobre corpo, sexualidade e relações.'],
+    ['Casamento e vínculos nas tradições', 'Concepções religiosas sobre casamento e vínculos variam no tempo e entre comunidades.'],
+    ['Valores, consciência e autonomia', 'A reflexão sobre valores pessoais deve preservar liberdade de consciência e decisões informadas.'],
+    ['Diversidade religiosa e diálogo', 'O diálogo respeitoso inclui diferentes crenças e também pessoas sem religião, sem imposição doutrinária.'],
+    ['Acolhimento sem discriminação', 'O cuidado ético não patologiza orientações ou identidades e evita práticas coercitivas.'],
+  ]],
+  ['Anatomia e fisiologia sexual', [
+    ['Anatomia reprodutiva feminina', 'O estudo introdutório apresenta estruturas da anatomia reprodutiva feminina e reconhece variações corporais.'],
+    ['Anatomia reprodutiva masculina', 'O estudo introdutório apresenta estruturas da anatomia reprodutiva masculina e reconhece variações corporais.'],
+    ['Resposta sexual e fisiologia', 'A resposta sexual envolve processos fisiológicos e fatores emocionais e relacionais que variam entre pessoas.'],
+    ['Hormônios e saúde', 'Hormônios participam de processos corporais diversos e suas alterações devem ser avaliadas por profissionais habilitados.'],
+    ['Prevenção e cuidado em saúde', 'Informação confiável, prevenção de infecções e acesso a serviços de saúde apoiam o cuidado sexual.'],
+  ]],
+  ['Orientação sexual e diversidade', [
+    ['Orientação sexual: conceitos científicos', 'Orientação sexual diz respeito a padrões de atração e não é, por si, uma doença.'],
+    ['Identidade, atração e comportamento', 'Identidade, atração e comportamento são dimensões distintas e podem ser vividas de modos diversos.'],
+    ['Diversidade e respeito', 'A educação em sexualidade reconhece a diversidade humana e rejeita discriminação e violência.'],
+    ['Evidências e mitos', 'Afirmações sobre orientação sexual devem ser examinadas à luz de evidências e sem interpretações estigmatizantes.'],
+    ['Acolhimento e encaminhamento', 'A escuta acolhedora respeita a autonomia e encaminha necessidades de saúde a profissionais habilitados.'],
+  ]],
+  ['Sexualidade na infância e adolescência', [
+    ['Desenvolvimento infantil e corpo', 'A educação infantil sobre corpo e limites deve ser adequada à idade e promover segurança e respeito.'],
+    ['Privacidade, proteção e consentimento', 'Ensinar limites corporais e buscar ajuda contribui para a proteção de crianças contra violência e abuso.'],
+    ['Puberdade e transformações', 'A puberdade envolve mudanças corporais e emocionais com ritmos diferentes entre adolescentes.'],
+    ['Adolescência, relações e prevenção', 'Informação adequada à idade aborda respeito, saúde, prevenção e apoio de adultos e serviços responsáveis.'],
+    ['Família, escola e rede de proteção', 'Família, escola e profissionais compartilham responsabilidades de orientação e proteção conforme a legislação.'],
+  ]],
+  ['Sexualidade na juventude, vida adulta e maturidade', [
+    ['Juventude e construção de vínculos', 'A juventude pode envolver descobertas e decisões relacionais que exigem informação, autonomia e respeito.'],
+    ['Vida adulta e intimidade', 'Na vida adulta, sexualidade e intimidade podem ser influenciadas por saúde, relacionamentos e condições de vida.'],
+    ['Comunicação e consentimento', 'Consentimento é livre, específico e revogável, e a comunicação respeitosa é essencial em todas as relações.'],
+    ['Maturidade e envelhecimento', 'A sexualidade pode permanecer relevante na maturidade, com necessidades e experiências diversas.'],
+    ['Saúde e mudanças ao longo da vida', 'Mudanças corporais e questões de saúde merecem atenção individualizada e encaminhamento profissional quando necessário.'],
+  ]],
+  ['Parafilias e cuidado responsável', [
+    ['Conceitos e diferenciações', 'Interesses sexuais atípicos não equivalem automaticamente a um transtorno; a avaliação depende de critérios clínicos e éticos.'],
+    ['Sofrimento, prejuízo e avaliação clínica', 'A avaliação de sofrimento ou prejuízo exige profissional qualificado e consideração do contexto individual.'],
+    ['Consentimento e proteção de terceiros', 'Qualquer situação que envolva ausência de consentimento ou pessoas incapazes de consentir exige proteção e observância da lei.'],
+    ['Estigma e abordagem ética', 'Uma abordagem responsável evita preconceitos e não normaliza danos, violência ou exploração.'],
+    ['Encaminhamento especializado', 'Demandas clínicas ou riscos devem ser encaminhados a profissionais e serviços competentes.'],
+  ]],
+  ['Assoalho pélvico e comportamentos sexuais', [
+    ['Anatomia do assoalho pélvico', 'O assoalho pélvico participa de funções urinárias, intestinais e sexuais em diferentes corpos.'],
+    ['Fisioterapia pélvica e suas indicações', 'A fisioterapia pélvica é conduzida por profissional habilitado após avaliação individual e consentimento.'],
+    ['Dor e dificuldades sexuais', 'Dor ou dificuldades sexuais podem ter causas diversas e exigem avaliação de saúde sem autodiagnóstico.'],
+    ['Comportamento sexual compulsivo', 'O comportamento sexual compulsivo pode envolver perda persistente de controle e prejuízo, sendo avaliado clinicamente sem moralização.'],
+    ['Cuidado interdisciplinar e encaminhamento', 'Apoio pode envolver diferentes profissionais habilitados, conforme necessidades e preferências da pessoa.'],
+  ]],
+  ['Educação, aulas e palestras', [
+    ['Planejamento de aulas em sexualidade', 'O planejamento define objetivos, público, linguagem apropriada e fontes confiáveis.'],
+    ['Comunicação inclusiva e acessível', 'Uma comunicação acessível respeita diversidade, contexto cultural e o estágio de desenvolvimento do público.'],
+    ['Metodologias educativas', 'Aulas e palestras podem utilizar perguntas e casos educativos sem expor experiências pessoais dos participantes.'],
+    ['Proteção, dúvidas e limites', 'Perguntas sensíveis devem ser acolhidas com privacidade, atenção à idade e encaminhamento quando necessário.'],
+    ['Avaliação e atualização profissional', 'A revisão das atividades e a atualização em evidências favorecem uma educação responsável.'],
+  ]],
+];
+export default sexualityCurriculum;

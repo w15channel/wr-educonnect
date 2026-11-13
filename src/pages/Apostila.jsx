@@ -597,7 +597,7 @@ export default function Apostila() {
     <div className="app-page max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-24">
       {celebrating && <ParticipationCelebration session={session} achievement={{ kind: 'book_lesson', message: 'concluiu uma aula na apostila.' }} message={celebrationMsg} onClose={() => setCelebrating(false)} />}
       {printLesson && <ApostilaPrintModal lesson={printLesson.lesson} chapterTitle={printLesson.chapterTitle} onClose={() => setPrintLesson(null)} />}
-      {rewriteOpen && isAdmin && <ChapterRewriteModal chapters={chapters} onClose={() => setRewriteOpen(false)} onSave={handleRewriteSave} saving={saveMutation.isPending} />}
+      {rewriteOpen && isAdmin && <ChapterRewriteModal chapters={chapters} courseTitle={course === 'tcc' ? null : courseInfo?.qualification} onClose={() => setRewriteOpen(false)} onSave={handleRewriteSave} saving={saveMutation.isPending} />}
 
       <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 p-6">
         <div className="flex items-start gap-4">
