@@ -1,18 +1,14 @@
 /**
  * ChapterRewriteModal — ferramenta admin de reescrita de capítulos da apostila.
- * Usa a mesma base temporária Pollinations do portal, também
- * utilizada no gerador de provas e no Tutor EDU) para reescrever o conteúdo de
- * uma aula seguindo a estrutura padronizada: cabeçalho, 6 tópicos numerados e
- * 6 parágrafos uniformes (~60–65 palavras) por tópico. Cada tópico é
- * dimensionado para ocupar exatamente uma página do PDF impresso: começa no
- * topo da página e termina antes da quebra — inclusive o último tópico.
+ * Usa a mesma base temporária Pollinations do portal, também utilizada no gerador
+ * de provas e no Tutor EDU para reescrever aulas em estrutura padronizada.
  */
 import { invokePollinations } from '@/lib/pollinationsAI';
 import React, { useMemo, useState } from 'react';
 import { Sparkles, Loader2, X, Wand2, Save, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { PROFESSOR_LINE, DIVIDER_LINE, TOPIC_COUNT, parseLesson, buildLessonText, analyzeLesson } from '@/lib/apostilaStructure';
+import { PROFESSOR_LINE, DIVIDER_LINE, parseLesson, buildLessonText, analyzeLesson } from '@/lib/apostilaStructure';
 import { repairLesson } from '@/lib/apostilaRepair';
 
 const stripHtml = (value = '') => {
@@ -29,7 +25,7 @@ const stripHtml = (value = '') => {
 };
 
 const buildRewritePrompt = (lessonTitle, sourceText, courseTitle) => `Você é professor especialista ${courseTitle ? `em ${courseTitle}` : 'em terapia comportamental'} e redator didático do Instituto WR-EDU®.
-Reescreva integralmente o conteúdo da aula abaixo, preservando o tema central e os conceitos, mas seguindo RIGOROSAMENTE a estrutura exigida.
+Reescreva integralmente o conteúdo da aula abaixo, preservando o tema central e os conceitos, e entregue o resultado correto nesta única resposta. Antes de responder, confira internamente cada requisito e ajuste o texto gerado; não deixe a validação para novas gerações.
 
 FORMATO DO CONTEÚDO (obrigatório):
 1. Cabeçalho com exatamente 3 linhas:
@@ -38,7 +34,7 @@ ${PROFESSOR_LINE}
 ${DIVIDER_LINE}
 2. Em seguida, EXATAMENTE 6 tópicos numerados (1 a 6), cada um iniciado por uma linha com o número e o título do tópico em MAIÚSCULAS (ex.: "1. TÍTULO DO TÓPICO").
 3. Cada tópico deve conter EXATAMENTE 6 parágrafos.
-4. Cada parágrafo deve ter aproximadamente 65 palavras, com no mínimo 60 e no máximo 65 palavras. Conte as palavras de cada parágrafo antes de finalizar.
+4. Cada parágrafo deve ter entre 60 e 65 palavras. Conte as palavras de cada parágrafo antes de finalizar.
 5. Parágrafos são blocos contínuos de texto, SEM quebras de linha internas.
 6. Separe cada parágrafo (e cada título de tópico) com UMA linha em branco.
 
@@ -54,6 +50,7 @@ REGRAS DE CONSTÂNCIA (obrigatórias):
 - Linguagem técnico-profissional, didática e acessível.
 - Cada tópico desenvolve um aspecto do tema central com começo, meio e fechamento.
 - O último parágrafo de cada tópico sintetiza ou conclui a ideia apresentada.
+- Se encontrar qualquer desvio durante a revisão, corrija-o nesta mesma resposta; não omita tópicos ou parágrafos para encerrar mais rápido.
 
 Retorne APENAS o texto final da aula, sem comentários, sem markdown e sem explicações adicionais.
 
@@ -82,31 +79,19 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
   const structure = useMemo(() => (rewritten ? analyzeLesson(parseLesson(rewritten)) : null), [rewritten]);
   const lessonTitle = lesson?.title || 'Aula da apostila';
 
-  // Valida a estrutura e corrige somente os trechos fora do padrão.
+  // Valida a resposta e, se necessário, envia um único pedido com apenas os trechos fora do padrão.
   const enforceStructure = async (text) => {
     const topics = parseLesson(text);
-    if (topics.length !== TOPIC_COUNT) {
-      setRewritten(topics.length ? buildLessonText(lessonTitle, topics) : text);
-      toast.error('A IA não entregou os 6 tópicos. Gere outra versão.');
-      return;
-    }
-    setRewritten(buildLessonText(lessonTitle, topics));
-    const fixed = await repairLesson(topics, lessonTitle, (round, total) => setStage(`Ajustando a estrutura (${round}/${total})...`));
-    setRewritten(buildLessonText(lessonTitle, fixed));
-    if (analyzeLesson(fixed).valid) toast.success('Capítulo reescrito dentro da estrutura! Revise antes de salvar.');
-    else toast.warning('Alguns trechos ainda estão fora da estrutura. Veja os pontos indicados.');
-  };
-
-  const handleRepair = async () => {
-    setGenerating(true);
-    try {
-      await enforceStructure(rewritten);
-    } catch (error) {
-      toast.error(`Erro ao ajustar com a IA: ${error?.message || 'tente novamente.'}`);
-    } finally {
-      setGenerating(false);
-      setStage('');
-    }
+    setRewritten(topics.length ? buildLessonText(lessonTitle, topics) : text);
+    const fixed = await repairLesson(
+      topics,
+      lessonTitle,
+      () => setStage('Fazendo um único ajuste pontual...'),
+      text,
+    );
+    setRewritten(fixed.length ? buildLessonText(lessonTitle, fixed) : text);
+    if (analyzeLesson(fixed).valid) toast.success('Capítulo conferido e dentro da estrutura. Revise antes de salvar.');
+    else toast.warning('Foi feito um único ajuste automático. Alguns trechos ainda precisam de revisão.');
   };
 
   const handleChapterChange = (nextChapterId) => {
@@ -152,7 +137,6 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true">
       <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-violet-500/30 bg-card shadow-2xl">
-        {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-700">
@@ -160,7 +144,7 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
             </div>
             <div>
               <h2 className="text-base font-bold text-foreground">Reescrever capítulo com IA</h2>
-              <p className="text-xs text-muted-foreground">6 tópicos em maiúsculas · 6 parágrafos uniformes (60–65 palavras) · 1 tópico por página no PDF</p>
+              <p className="text-xs text-muted-foreground">6 tópicos · 6 parágrafos uniformes (60–65 palavras) · 1 tópico por página no PDF</p>
             </div>
           </div>
           <Button size="sm" variant="ghost" onClick={onClose} aria-label="Fechar">
@@ -169,41 +153,23 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
         </div>
 
         <div className="space-y-4 p-5">
-          {/* Seleção de capítulo e aula */}
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="space-y-1.5 text-xs font-semibold text-muted-foreground">
               Capítulo (módulo)
-              <select
-                value={chapterId}
-                onChange={(event) => handleChapterChange(event.target.value)}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-normal text-foreground"
-              >
-                {chapters.map((item) => (
-                  <option key={item.id} value={item.id}>{item.title}</option>
-                ))}
+              <select value={chapterId} onChange={(event) => handleChapterChange(event.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-normal text-foreground">
+                {chapters.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
               </select>
             </label>
             <label className="space-y-1.5 text-xs font-semibold text-muted-foreground">
               Aula
-              <select
-                value={lessonId}
-                onChange={(event) => { setLessonId(event.target.value); setRewritten(''); }}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-normal text-foreground"
-              >
-                {(chapter?.lessons || []).map((item) => (
-                  <option key={item.id} value={item.id}>{item.title}</option>
-                ))}
+              <select value={lessonId} onChange={(event) => { setLessonId(event.target.value); setRewritten(''); }} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-normal text-foreground">
+                {(chapter?.lessons || []).map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
               </select>
             </label>
           </div>
 
           <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 text-xs leading-relaxed text-muted-foreground">
-            A IA reescreve o conteúdo atual da aula preservando o tema e aplicando a estrutura padrão: cabeçalho com
-            título em maiúsculas, nome do professor e linha divisória; 6 tópicos numerados com títulos em maiúsculas;
-            36 parágrafos contínuos e uniformes (60–65 palavras cada), separados por linha em branco, com linguagem
-            técnico-profissional e fechamento conclusivo em cada tópico. Cada tópico é dimensionado para ocupar
-            exatamente uma página do PDF impresso: inicia no topo da página e termina antes da quebra — o próximo
-            tópico começa na página seguinte e o último tópico também encerra antes da quebra de página.
+            A IA reescreve a aula com cabeçalho, 6 tópicos numerados e 36 parágrafos de 60–65 palavras. A estrutura é conferida na geração e, se necessário, recebe um único ajuste pontual — sem rodadas repetidas de geração.
           </div>
 
           <Button onClick={handleGenerate} disabled={generating || !lesson} className="gap-2">
@@ -211,14 +177,12 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
             {generating ? (stage || 'Reescrevendo com IA...') : rewritten ? 'Reescrever novamente' : 'Reescrever com IA'}
           </Button>
 
-          {/* Preview */}
           {rewritten && (
             <div className="space-y-3">
               {structure && (
                 <div className={`space-y-2 rounded-xl border p-3 text-xs font-medium ${structure.valid
                   ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                  : 'border-amber-500/30 bg-amber-500/10 text-amber-400'}`}
-                >
+                  : 'border-amber-500/30 bg-amber-500/10 text-amber-400'}`}>
                   <div className="flex flex-wrap items-center gap-2">
                     {structure.valid ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
                     <span>{structure.topicCount}/6 tópicos</span>
@@ -232,12 +196,7 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
                       <ul className="list-disc space-y-0.5 pl-5 font-normal">
                         {structure.issues.map((issue) => <li key={issue}>{issue}</li>)}
                       </ul>
-                      <p className="font-normal">O salvamento fica liberado quando toda a estrutura estiver dentro do padrão.</p>
-                      {structure.topicCount === TOPIC_COUNT && (
-                        <Button size="sm" variant="outline" onClick={handleRepair} disabled={generating} className="gap-1.5">
-                          {generating ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Corrigir automaticamente
-                        </Button>
-                      )}
+                      <p className="font-normal">O ajuste automático é limitado a uma chamada; não há novas rodadas repetidas. O salvamento permanece bloqueado enquanto houver desvios.</p>
                     </>
                   )}
                 </div>
@@ -253,9 +212,7 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
                 <Button size="sm" variant="outline" onClick={handleGenerate} disabled={generating} className="gap-1.5">
                   <RefreshCw size={13} /> Gerar outra versão
                 </Button>
-                <Button size="sm" variant="ghost" onClick={onClose}>
-                  Cancelar
-                </Button>
+                <Button size="sm" variant="ghost" onClick={onClose}>Cancelar</Button>
               </div>
             </div>
           )}
