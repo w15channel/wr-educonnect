@@ -1,11 +1,13 @@
 import familyCurriculum from '@/components/courses/familyCurriculum';
 import psychoanalysisCurriculum from '@/components/courses/psychoanalysisCurriculum';
 import sexualityCurriculum from '@/components/courses/sexualityCurriculum';
+import marriagePreparationCurriculum from '@/components/courses/marriagePreparationCurriculum';
 
 const curricula = {
   'aconselhamento-familiar': familyCurriculum,
   psicanalise: psychoanalysisCurriculum,
   sexologia: sexualityCurriculum,
+  'preparacao-casamento': marriagePreparationCurriculum,
 };
 
 export default function courseWorkbookChapters(course) {
