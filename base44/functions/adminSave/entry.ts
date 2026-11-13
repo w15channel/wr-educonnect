@@ -5,6 +5,7 @@ const ADMIN_ENTITIES = new Set([
   'RecordedLesson', 'Task', 'LiveSession', 'Announcement',
   'AccessCode', 'StudentProfile', 'MonitorHistory', 'MonitorFeedback',
   'ScoreItem', 'CalendarEvent', 'Book', 'BookChapter',
+  'TCBookChapter', 'FamilyBookChapter', 'PsychoanalysisBookChapter', 'SexologyBookChapter',
   'TrailActivity', 'TaskSubmission', 'TherapistPairing',
   'CertificateRecord', 'Tuition', 'SiteImprovementRequest',
   'Notification', 'DailyChallenge', 'AdminCredential',
@@ -14,11 +15,19 @@ const ADMIN_ENTITIES = new Set([
 ]);
 
 // Entidades que teacher/suporte podem criar e atualizar (sem excluir)
-// Restritas a conteúdo acadêmico: aulas, tarefas, provas, avisos, calendário, podcasts
 const TEACHER_ENTITIES = new Set([
   'RecordedLesson', 'Task', 'LiveSession', 'Announcement',
-  'Exam', 'BookChapter', 'CalendarEvent', 'Podcast',
+  'Exam', 'BookChapter', 'TCBookChapter', 'FamilyBookChapter',
+  'PsychoanalysisBookChapter', 'SexologyBookChapter', 'CalendarEvent', 'Podcast',
 ]);
+
+const COURSE_CHAPTER_ENTITIES = {
+  tc: 'TCBookChapter',
+  tcc: 'TCBookChapter', // identificador legado mantido para compatibilidade
+  'aconselhamento-familiar': 'FamilyBookChapter',
+  psicanalise: 'PsychoanalysisBookChapter',
+  sexologia: 'SexologyBookChapter',
+};
 
 function cleanObject(obj = {}) {
   const out = {};
@@ -26,6 +35,31 @@ function cleanObject(obj = {}) {
     if (value !== undefined) out[key] = value;
   }
   return out;
+}
+
+function courseChapterEntityName({ course, book_id } = {}) {
+  const normalizedCourse = String(course || '').trim().toLowerCase();
+  if (COURSE_CHAPTER_ENTITIES[normalizedCourse]) return COURSE_CHAPTER_ENTITIES[normalizedCourse];
+  const bookId = String(book_id || '').trim().toLowerCase();
+  if (bookId.startsWith('apostila-')) {
+    const inferredCourse = bookId.slice('apostila-'.length);
+    if (COURSE_CHAPTER_ENTITIES[inferredCourse]) return COURSE_CHAPTER_ENTITIES[inferredCourse];
+  }
+  return 'BookChapter';
+}
+
+function chapterDataForStore(rawData, storeName) {
+  const chapterData = cleanObject(rawData || {});
+  if (storeName !== 'BookChapter') delete chapterData.course;
+  return chapterData;
+}
+
+function chapterFilter(chapterData) {
+  return {
+    book_id: chapterData.book_id,
+    chapter_id: chapterData.chapter_id,
+    lesson_id: chapterData.lesson_id,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -41,11 +75,9 @@ Deno.serve(async (req) => {
     const normEmail = String(admin_email || '').trim().toLowerCase();
 
     // ── Validação de identidade ────────────────────────────────────────
-    // Primeiro verifica se é admin (tabela AdminCredential)
     const credentials = await base44.asServiceRole.entities.AdminCredential.list('-updated_date', 100);
     const isAdmin = credentials.some(c => String(c.email || '').trim().toLowerCase() === normEmail);
 
-    // Se não for admin, verifica se é teacher/suporte (tabela AccessCode)
     let isTeacher = false;
     if (!isAdmin) {
       const codes = await base44.asServiceRole.entities.AccessCode.filter(
@@ -61,47 +93,38 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Acesso não autorizado.' }, { status: 403 });
     }
 
-    // ── Permissões por perfil ─────────────────────────────────────────
-    // Teacher/suporte NÃO podem excluir — apenas admin
     if (action === 'delete' && !isAdmin) {
       return Response.json({ error: 'Exclusão restrita ao administrador.' }, { status: 403 });
     }
 
-    // Teacher/suporte só podem operar entidades de conteúdo (criar/atualizar)
-    // Listagem é permitida para todas as entidades (somente leitura)
     const isWriteOperation = ['create', 'update', 'upsertBookChapter', 'syncBookChapters'].includes(action);
     const allowedEntities = (isWriteOperation && !isAdmin) ? TEACHER_ENTITIES : ADMIN_ENTITIES;
-
     if (!entity || !allowedEntities.has(entity)) {
       return Response.json({ error: `Entidade '${entity}' não permitida para este perfil.` }, { status: 400 });
     }
 
-    const entityStore = base44.asServiceRole.entities[entity];
+    const routingData = action === 'list' ? (payload.filter || {}) : (data || {});
+    const entityName = entity === 'BookChapter'
+      ? courseChapterEntityName(routingData)
+      : entity;
+    const entityStore = base44.asServiceRole.entities[entityName];
     if (!entityStore) {
-      return Response.json({ error: `Entidade '${entity}' não encontrada.` }, { status: 400 });
+      return Response.json({ error: `Entidade '${entityName}' não encontrada.` }, { status: 400 });
     }
 
     if (action === 'upsertBookChapter') {
       if (entity !== 'BookChapter') {
         return Response.json({ error: 'upsertBookChapter aceita apenas BookChapter.' }, { status: 400 });
       }
-
-      const chapterData = cleanObject(data || {});
+      const chapterData = chapterDataForStore(data, entityName);
       if (!chapterData.book_id || !chapterData.chapter_id || !chapterData.lesson_id) {
         return Response.json({ error: 'book_id, chapter_id e lesson_id são obrigatórios para salvar a aula da apostila.' }, { status: 400 });
       }
-
       const existing = id
-        ? null
-        : (await entityStore.filter({
-          book_id: chapterData.book_id,
-          chapter_id: chapterData.chapter_id,
-          lesson_id: chapterData.lesson_id,
-        }, '-updated_date', 1))[0];
-
-      const recordId = id || existing?.id;
-      const record = recordId
-        ? await entityStore.update(recordId, chapterData)
+        ? await entityStore.get(id).catch(() => null)
+        : (await entityStore.filter(chapterFilter(chapterData), '-updated_date', 1))[0];
+      const record = existing?.id
+        ? await entityStore.update(existing.id, chapterData)
         : await entityStore.create(chapterData);
       return Response.json({ success: true, record });
     }
@@ -110,7 +133,6 @@ Deno.serve(async (req) => {
       if (entity !== 'BookChapter') {
         return Response.json({ error: 'syncBookChapters aceita apenas BookChapter.' }, { status: 400 });
       }
-
       const chapters = Array.isArray(data?.chapters) ? data.chapters : [];
       const createOnly = data?.createOnly !== false;
       if (chapters.length > 500) {
@@ -119,34 +141,46 @@ Deno.serve(async (req) => {
 
       const records = [];
       for (const rawChapter of chapters) {
-        const chapterData = cleanObject(rawChapter || {});
+        const storeName = courseChapterEntityName(rawChapter || {});
+        const store = base44.asServiceRole.entities[storeName];
+        if (!store) throw new Error(`Entidade '${storeName}' não encontrada.`);
+        const chapterData = chapterDataForStore(rawChapter, storeName);
         if (!chapterData.book_id || !chapterData.chapter_id || !chapterData.lesson_id) continue;
-
-        const existing = (await entityStore.filter({
-          book_id: chapterData.book_id,
-          chapter_id: chapterData.chapter_id,
-          lesson_id: chapterData.lesson_id,
-        }, '-updated_date', 1))[0];
-
+        const existing = (await store.filter(chapterFilter(chapterData), '-updated_date', 1))[0];
         if (existing?.id) {
-          if (!createOnly) records.push(await entityStore.update(existing.id, chapterData));
-          else records.push(existing);
+          records.push(createOnly ? existing : await store.update(existing.id, chapterData));
         } else {
-          records.push(await entityStore.create(chapterData));
+          records.push(await store.create(chapterData));
         }
       }
-
       return Response.json({ success: true, records });
     }
 
     if (action === 'create') {
-      const record = await entityStore.create(cleanObject(data || {}));
+      const chapterData = entity === 'BookChapter' ? chapterDataForStore(data, entityName) : cleanObject(data || {});
+      const record = await entityStore.create(chapterData);
       return Response.json({ success: true, record });
     }
 
     if (action === 'update') {
       if (!id) return Response.json({ error: 'ID obrigatório para update.' }, { status: 400 });
-      const record = await entityStore.update(id, cleanObject(data || {}));
+      const chapterData = entity === 'BookChapter' ? chapterDataForStore(data, entityName) : cleanObject(data || {});
+      if (entity === 'BookChapter') {
+        const existingById = await entityStore.get(id).catch(() => null);
+        if (existingById?.id) {
+          const record = await entityStore.update(id, chapterData);
+          return Response.json({ success: true, record });
+        }
+        if (!chapterData.book_id || !chapterData.chapter_id || !chapterData.lesson_id) {
+          return Response.json({ error: 'Não foi possível localizar a aula da apostila para atualizar.' }, { status: 404 });
+        }
+        const existing = (await entityStore.filter(chapterFilter(chapterData), '-updated_date', 1))[0];
+        const record = existing?.id
+          ? await entityStore.update(existing.id, chapterData)
+          : await entityStore.create(chapterData);
+        return Response.json({ success: true, record });
+      }
+      const record = await entityStore.update(id, chapterData);
       return Response.json({ success: true, record });
     }
 
