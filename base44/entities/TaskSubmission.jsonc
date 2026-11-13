@@ -22,7 +22,8 @@
         "sexologia",
         "sex",
         "psi",
-        "aconselhamento-familiar"
+        "aconselhamento-familiar",
+        "preparacao-casamento"
       ],
       "enumColors": [
         "blue",
@@ -30,7 +31,8 @@
         "pink",
         "pink",
         "purple",
-        "green"
+        "green",
+        "yellow"
       ],
       "default": "tcc",
       "description": "Curso/turma da entrega"
