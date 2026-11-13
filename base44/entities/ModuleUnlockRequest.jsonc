@@ -15,7 +15,9 @@
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "aconselhamento-familiar",
+        "preparacao-casamento"
       ],
       "default": "tcc"
     },
