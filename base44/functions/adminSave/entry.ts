@@ -6,7 +6,6 @@ const ADMIN_ENTITIES = new Set([
   'AccessCode', 'StudentProfile', 'MonitorHistory', 'MonitorFeedback',
   'ScoreItem', 'CalendarEvent', 'Book', 'BookChapter',
   'TCBookChapter', 'FamilyBookChapter', 'PsychoanalysisBookChapter', 'SexologyBookChapter',
-  'MarriagePreparationBookChapter',
   'TrailActivity', 'TaskSubmission', 'TherapistPairing',
   'CertificateRecord', 'Tuition', 'SiteImprovementRequest',
   'Notification', 'DailyChallenge', 'AdminCredential',
@@ -19,8 +18,7 @@ const ADMIN_ENTITIES = new Set([
 const TEACHER_ENTITIES = new Set([
   'RecordedLesson', 'Task', 'LiveSession', 'Announcement',
   'Exam', 'BookChapter', 'TCBookChapter', 'FamilyBookChapter',
-  'PsychoanalysisBookChapter', 'SexologyBookChapter', 'MarriagePreparationBookChapter',
-  'CalendarEvent', 'Podcast',
+  'PsychoanalysisBookChapter', 'SexologyBookChapter', 'CalendarEvent', 'Podcast',
 ]);
 
 const COURSE_CHAPTER_ENTITIES = {
@@ -29,7 +27,6 @@ const COURSE_CHAPTER_ENTITIES = {
   'aconselhamento-familiar': 'FamilyBookChapter',
   psicanalise: 'PsychoanalysisBookChapter',
   sexologia: 'SexologyBookChapter',
-  'preparacao-casamento': 'MarriagePreparationBookChapter',
 };
 
 function cleanObject(obj = {}) {
