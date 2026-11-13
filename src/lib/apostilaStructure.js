@@ -29,9 +29,7 @@ export function normalizeTopicParagraphs(paragraphs, fallbackText = '') {
   let words = current.flatMap((paragraph) => paragraph.split(/\s+/).filter(Boolean));
   const fallbackWords = normalizeParagraph(fallbackText).split(/\s+/).filter(Boolean);
   const seed = words.length ? words : fallbackWords;
-  if (!seed.length) {
-    seed.push('Conteúdo', 'didático', 'da', 'aula', 'em', 'desenvolvimento.');
-  }
+  if (!seed.length) seed.push('Conteúdo', 'didático', 'da', 'aula', 'em', 'desenvolvimento.');
 
   const target = PARAGRAPHS_PER_TOPIC * NORMALIZED_WORDS_PER_PARAGRAPH;
   while (words.length < target) words.push(seed[words.length % seed.length]);
@@ -54,7 +52,10 @@ export function parseLesson(text = '') {
 
   for (const block of blocks) {
     const headingMatch = block.match(TOPIC_TITLE);
-    if (headingMatch) {
+    const isHeading = headingMatch
+      && countWords(headingMatch[2]) <= 16
+      && headingMatch[2] === headingMatch[2].toLocaleUpperCase('pt-BR');
+    if (isHeading) {
       topics.push({ title: headingMatch[2].trim(), paragraphs: [] });
       continue;
     }
