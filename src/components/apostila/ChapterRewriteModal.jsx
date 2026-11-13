@@ -12,9 +12,8 @@ import React, { useMemo, useState } from 'react';
 import { Sparkles, Loader2, X, Wand2, Save, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-
-const PROFESSOR_LINE = 'Prof. William Ribeiro | WR-EDU® | Instituto de Desenvolvimento Humano';
-const DIVIDER_LINE = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+import { PROFESSOR_LINE, DIVIDER_LINE, TOPIC_COUNT, parseLesson, buildLessonText, analyzeLesson } from '@/lib/apostilaStructure';
+import { repairLesson } from '@/lib/apostilaRepair';
 
 const stripHtml = (value = '') => {
   if (!/<[^>]+>/.test(value)) return value.trim();
@@ -71,15 +70,6 @@ const extractLlmText = (result) => {
   return '';
 };
 
-const analyzeStructure = (text = '') => {
-  const blocks = text.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
-  const topicCount = blocks.filter((block) => /^[1-6][.)]\s/.test(block) && block === block.toUpperCase()).length;
-  const paragraphs = blocks.filter((block) => !/^[1-6][.)]\s/.test(block) && !block.includes(DIVIDER_LINE.slice(0, 5)) && !block.includes('Prof.') && block.split(/\s+/).length > 20);
-  const wordCounts = paragraphs.map((paragraph) => paragraph.split(/\s+/).filter(Boolean).length);
-  const outOfRange = wordCounts.filter((count) => count < 60 || count > 65).length;
-  return { topicCount, paragraphCount: paragraphs.length, outOfRange };
-};
-
 export default function ChapterRewriteModal({ chapters, courseTitle, onClose, onSave, saving }) {
   const [chapterId, setChapterId] = useState(chapters[0]?.id || '');
   const [lessonId, setLessonId] = useState(chapters[0]?.lessons?.[0]?.id || '');
@@ -88,7 +78,36 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
 
   const chapter = useMemo(() => chapters.find((item) => item.id === chapterId) || null, [chapters, chapterId]);
   const lesson = useMemo(() => chapter?.lessons.find((item) => item.id === lessonId) || null, [chapter, lessonId]);
-  const structure = useMemo(() => (rewritten ? analyzeStructure(rewritten) : null), [rewritten]);
+  const [stage, setStage] = useState('');
+  const structure = useMemo(() => (rewritten ? analyzeLesson(parseLesson(rewritten)) : null), [rewritten]);
+  const lessonTitle = lesson?.title || 'Aula da apostila';
+
+  // Valida a estrutura e corrige somente os trechos fora do padrão.
+  const enforceStructure = async (text) => {
+    const topics = parseLesson(text);
+    if (topics.length !== TOPIC_COUNT) {
+      setRewritten(topics.length ? buildLessonText(lessonTitle, topics) : text);
+      toast.error('A IA não entregou os 6 tópicos. Gere outra versão.');
+      return;
+    }
+    setRewritten(buildLessonText(lessonTitle, topics));
+    const fixed = await repairLesson(topics, lessonTitle, (round, total) => setStage(`Ajustando a estrutura (${round}/${total})...`));
+    setRewritten(buildLessonText(lessonTitle, fixed));
+    if (analyzeLesson(fixed).valid) toast.success('Capítulo reescrito dentro da estrutura! Revise antes de salvar.');
+    else toast.warning('Alguns trechos ainda estão fora da estrutura. Veja os pontos indicados.');
+  };
+
+  const handleRepair = async () => {
+    setGenerating(true);
+    try {
+      await enforceStructure(rewritten);
+    } catch (error) {
+      toast.error(`Erro ao ajustar com a IA: ${error?.message || 'tente novamente.'}`);
+    } finally {
+      setGenerating(false);
+      setStage('');
+    }
+  };
 
   const handleChapterChange = (nextChapterId) => {
     setChapterId(nextChapterId);
@@ -107,25 +126,26 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
         toast.error('Esta aula ainda não possui conteúdo para reescrever.');
         return;
       }
+      setStage('Reescrevendo com IA...');
       const result = await invokePollinations({
-        prompt: buildRewritePrompt(lesson.title || 'Aula da apostila', sourceText, courseTitle),
+        prompt: buildRewritePrompt(lessonTitle, sourceText, courseTitle),
       });
       const text = extractLlmText(result).trim();
       if (!text) {
         toast.error('A IA não retornou conteúdo. Tente novamente.');
         return;
       }
-      setRewritten(text);
-      toast.success('Capítulo reescrito! Revise o resultado antes de salvar.');
+      await enforceStructure(text);
     } catch (error) {
       toast.error(`Erro ao reescrever com a IA: ${error?.message || 'tente novamente.'}`);
     } finally {
       setGenerating(false);
+      setStage('');
     }
   };
 
   const handleSave = () => {
-    if (!chapter || !lesson || !rewritten.trim()) return;
+    if (!chapter || !lesson || !rewritten.trim() || !structure?.valid) return;
     onSave({ chapterId: chapter.id, lessonId: lesson.id, content: rewritten.trim() });
   };
 
@@ -188,32 +208,45 @@ export default function ChapterRewriteModal({ chapters, courseTitle, onClose, on
 
           <Button onClick={handleGenerate} disabled={generating || !lesson} className="gap-2">
             {generating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-            {generating ? 'Reescrevendo com IA...' : rewritten ? 'Reescrever novamente' : 'Reescrever com IA'}
+            {generating ? (stage || 'Reescrevendo com IA...') : rewritten ? 'Reescrever novamente' : 'Reescrever com IA'}
           </Button>
 
           {/* Preview */}
           {rewritten && (
             <div className="space-y-3">
               {structure && (
-                <div className={`flex flex-wrap items-center gap-2 rounded-xl border p-3 text-xs font-medium ${structure.topicCount === 6 && structure.paragraphCount === 36 && structure.outOfRange === 0
+                <div className={`space-y-2 rounded-xl border p-3 text-xs font-medium ${structure.valid
                   ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
                   : 'border-amber-500/30 bg-amber-500/10 text-amber-400'}`}
                 >
-                  {structure.topicCount === 6 && structure.paragraphCount === 36 && structure.outOfRange === 0
-                    ? <CheckCircle size={14} />
-                    : <AlertCircle size={14} />}
-                  <span>{structure.topicCount}/6 tópicos</span>
-                  <span>·</span>
-                  <span>{structure.paragraphCount}/36 parágrafos</span>
-                  <span>·</span>
-                  <span>{structure.outOfRange} fora da faixa de 60–65 palavras</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {structure.valid ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                    <span>{structure.topicCount}/6 tópicos</span>
+                    <span>·</span>
+                    <span>{structure.paragraphCount}/36 parágrafos</span>
+                    <span>·</span>
+                    <span>{structure.outOfRange} fora da faixa de 60–65 palavras</span>
+                  </div>
+                  {!structure.valid && (
+                    <>
+                      <ul className="list-disc space-y-0.5 pl-5 font-normal">
+                        {structure.issues.map((issue) => <li key={issue}>{issue}</li>)}
+                      </ul>
+                      <p className="font-normal">O salvamento fica liberado quando toda a estrutura estiver dentro do padrão.</p>
+                      {structure.topicCount === TOPIC_COUNT && (
+                        <Button size="sm" variant="outline" onClick={handleRepair} disabled={generating} className="gap-1.5">
+                          {generating ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />} Corrigir automaticamente
+                        </Button>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
               <div className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-xl border border-border bg-secondary/20 p-4 text-sm leading-relaxed text-foreground/90">
                 {rewritten}
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                <Button size="sm" onClick={handleSave} disabled={saving || generating || !structure?.valid} className="gap-1.5">
                   {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                   {saving ? 'Salvando...' : 'Salvar na apostila'}
                 </Button>
