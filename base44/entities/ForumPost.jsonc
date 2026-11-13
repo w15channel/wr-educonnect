@@ -37,13 +37,15 @@
         "tcc",
         "psicanalise",
         "sexologia",
-        "aconselhamento-familiar"
+        "aconselhamento-familiar",
+        "preparacao-casamento"
       ],
       "enumColors": [
         "blue",
         "purple",
         "pink",
-        "green"
+        "green",
+        "yellow"
       ],
       "default": "tcc",
       "description": "Turma/curso onde o post foi publicado"
