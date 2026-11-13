@@ -23,7 +23,7 @@ function formattedPrompt(prompt, schema) {
   return `${prompt}\n\nFORMATO OBRIGATÓRIO: responda somente com JSON válido, sem markdown ou comentários, seguindo este JSON Schema:\n${JSON.stringify(schema)}`;
 }
 
-const LUNA_TEXT_MODEL = 'gpt_6_luna';
+const LUNA_MODEL_ID = 'gpt_6_luna';
 const LLM_WRAPPER_KEYS = ['response', 'result', 'data', 'output', 'content', 'text'];
 
 function unwrapLunaResult(value, schema) {
@@ -70,7 +70,7 @@ export async function invokeLunaAI({ prompt, response_json_schema: schema }) {
   try {
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
-      model: LUNA_TEXT_MODEL,
+      model: LUNA_MODEL_ID,
       ...(schema ? { response_json_schema: schema } : {}),
     });
     return unwrapLunaResult(result, schema);
@@ -101,4 +101,4 @@ export async function invokePollinations({ prompt, response_json_schema: schema,
 }
 
 export const POLLINATIONS_TEXT_MODEL = 'grok';
-export const LUNA_TEXT_MODEL = LUNA_TEXT_MODEL;
+export const LUNA_TEXT_MODEL = LUNA_MODEL_ID;
