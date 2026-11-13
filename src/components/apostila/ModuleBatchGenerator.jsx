@@ -79,8 +79,6 @@ export default function ModuleBatchGenerator({ chapters, courseTitle, onClose, o
   const allValid = completed && drafts.every((draft) => draft.issues.length === 0);
   const publishable = allValid && review?.approved === true && confirmed;
 
-  const updateDraft = (index, patch) => setDrafts((current) => current.map((draft, i) => i === index ? { ...draft, ...patch } : draft));
-
   const generateModule = async () => {
     if (!selectedModule || busy || saving) return;
     setBusy(true);
