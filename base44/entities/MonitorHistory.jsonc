@@ -13,23 +13,24 @@
     "period_start": {
       "type": "string",
       "format": "date",
-      "description": "Início do período como monitor"
+      "description": "In\u00edcio do per\u00edodo como monitor"
     },
     "period_end": {
       "type": "string",
       "format": "date",
-      "description": "Fim do período como monitor"
+      "description": "Fim do per\u00edodo como monitor"
     },
     "rank_position": {
       "type": "number",
-      "description": "Posição no ranking (1, 2 ou 3)"
+      "description": "Posi\u00e7\u00e3o no ranking (1, 2 ou 3)"
     },
     "course": {
       "type": "string",
       "enum": [
         "tcc",
         "psicanalise",
-        "sexologia"
+        "sexologia",
+        "preparacao-casamento"
       ],
       "default": "tcc",
       "description": "Turma/curso do monitor"
