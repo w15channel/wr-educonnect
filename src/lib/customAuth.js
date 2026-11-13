@@ -68,10 +68,10 @@ export function nowBRT() {
   return brt.toISOString().replace('Z', '-03:00');
 }
 
-// Generate a random access code with course prefix: EDU/SEX/PSI-XXXX-XXXX (EDU remains the legacy prefix for TC)
+// Access-code prefixes identify their course: EDU (TC), PSI, SEX, CAS (premarital course).
 export function generateCode(course = 'tcc') {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const seg = (n) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  const prefix = course === 'psicanalise' ? 'PSI' : course === 'sexologia' ? 'SEX' : 'EDU';
+  const prefix = course === 'psicanalise' ? 'PSI' : course === 'sexologia' ? 'SEX' : course === 'preparacao-casamento' ? 'CAS' : 'EDU';
   return `${prefix}-${seg(4)}-${seg(4)}`;
 }
