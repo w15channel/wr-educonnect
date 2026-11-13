@@ -23,9 +23,26 @@ function formattedPrompt(prompt, schema) {
   return `${prompt}\n\nFORMATO OBRIGATÓRIO: responda somente com JSON válido, sem markdown ou comentários, seguindo este JSON Schema:\n${JSON.stringify(schema)}`;
 }
 
+/** Usa o mesmo modelo Base44 configurado para a agente Luna. */
+export async function invokeLunaAI({ prompt, response_json_schema: schema }) {
+  if (!prompt?.trim()) throw new Error('O prompt da IA não pode estar vazio.');
+  try {
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      model: 'gpt_6_luna',
+      ...(schema ? { response_json_schema: schema } : {}),
+    });
+    if (schema && typeof result === 'string') return parsePollinationsJson(result);
+    if (result === undefined || result === null || result === '') throw new Error('A IA retornou uma resposta vazia.');
+    return result;
+  } catch (error) {
+    throw new Error(error?.message || 'Não foi possível gerar o conteúdo com GPT Luna 6.');
+  }
+}
+
 /**
- * Geração de textos de todo o portal pela IA da Grok. A chave fica guardada no
- * servidor; o nome histórico da função foi mantido para os pontos que a utilizam.
+ * Geração histórica dos demais textos do portal pela IA da Grok. A chave fica
+ * guardada no servidor; os demais geradores continuam usando este fluxo.
  */
 export async function invokePollinations({ prompt, response_json_schema: schema, temperature = 0.35 }) {
   if (!prompt?.trim()) throw new Error('O prompt da IA não pode estar vazio.');
@@ -45,3 +62,4 @@ export async function invokePollinations({ prompt, response_json_schema: schema,
 }
 
 export const POLLINATIONS_TEXT_MODEL = 'grok';
+export const LUNA_TEXT_MODEL = 'gpt_6_luna';
