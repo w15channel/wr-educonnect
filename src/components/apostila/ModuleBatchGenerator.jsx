@@ -194,7 +194,7 @@ ${topics.map((topic, index) => `${index + 1}. ${topic.title}\n${topic.paragraphs
       if (alreadyApproved) return nextDrafts[index];
 
       for (let attempt = 0; attempt <= MAX_LESSON_REPAIRS; attempt += 1) {
-        setStage(`Aula ${index + 1}/${MODULE_SIZE}: ${attempt === 0 && !topics.length ? 'redação' : `correção ${attempt}/${MAX_LESSON_REPAIRS}`}`);
+        setStage(`Aula ${index + 1}/${MODULE_SIZE}: ${attempt === 0 && !topics.length ? 'redação' : `correção ${attempt + 1}/${MAX_LESSON_REPAIRS}`}`);
         topics = await requestTopics({
           lesson,
           source,
@@ -436,7 +436,7 @@ ${nextDrafts.map((draft, index) => `AULA ${index + 1}: ${draft.title}\n${draft.t
               {saving || busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
               Publicar as cinco aulas
             </Button>
-            <Button variant="outline" onClick={generateModule} disabled={busy || saving} className="gap-2"><RefreshCw size={14} /> Refazer módulo</Button>
+            <Button variant="outline" onClick={generateModule} disabled={busy || saving} className="gap-2"><RefreshCw size={14} /> Corrigir / continuar lote</Button>
             <Button variant="ghost" onClick={onClose} disabled={busy || saving}>Fechar</Button>
           </div>
         </div>
